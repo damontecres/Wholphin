@@ -1,0 +1,4 @@
+<resources>
+
+    <style name="Theme.Dolphin" parent="Theme.AppCompat.DayNight.NoActionBar" />
+</resources>
