@@ -1,7 +1,7 @@
 [versions]
 agp = "8.13.0"
 kotlin = "2.2.20"
-ksp = "2.2.20-2.0.3"
+ksp = "2.2.20-2.0.2" # https://github.com/google/ksp/issues/2596 2.0.3 is broken
 coreKtx = "1.17.0"
 appcompat = "1.7.1"
 composeBom = "2025.09.00"
@@ -11,7 +11,7 @@ lifecycleRuntimeKtx = "2.9.4"
 activityCompose = "1.11.0"
 androidx-media3 = "1.8.0"
 coil = "3.3.0"
-jellyfin-sdk = "1.6.8"
+jellyfin-sdk = "1.7.0-beta.6"
 nav3Core = "1.0.0-alpha09"
 lifecycleViewmodelNav3 = "1.0.0-alpha04"
 material3AdaptiveNav3 = "1.0.0-SNAPSHOT"
@@ -21,6 +21,8 @@ kotlinx-coroutines-android = "1.10.2"
 kotlinx-serialization = "1.9.0"
 protobuf-javalite = "4.32.1"
 hilt = "2.57.1"
+room = "2.8.0"
+material3 = "1.3.2"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -57,13 +59,19 @@ coil-network-okhttp = { module = "io.coil-kt.coil3:coil-network-okhttp", version
 coil-gif = { module = "io.coil-kt.coil3:coil-gif", version.ref = "coil" }
 coil-svg = { module = "io.coil-kt.coil3:coil-svg", version.ref = "coil" }
 
-jellyfin-sdk = { module = "org.jellyfin.sdk:jellyfin-core", version.ref = "jellyfin-sdk" }
+jellyfin-core = { module = "org.jellyfin.sdk:jellyfin-core", version.ref = "jellyfin-sdk" }
+jellyfin-api = { module = "org.jellyfin.sdk:jellyfin-api", version.ref = "jellyfin-sdk" }
+jellyfin-api-okhttp = { module = "org.jellyfin.sdk:jellyfin-api-okhttp-jvm", version.ref = "jellyfin-sdk" }
 
 androidx-navigation3-runtime = { module = "androidx.navigation3:navigation3-runtime", version.ref = "nav3Core" }
 androidx-navigation3-ui = { module = "androidx.navigation3:navigation3-ui", version.ref = "nav3Core" }
 androidx-lifecycle-viewmodel-navigation3 = { module = "androidx.lifecycle:lifecycle-viewmodel-navigation3", version.ref = "lifecycleViewmodelNav3" }
 androidx-material3-adaptive-navigation3 = { group = "androidx.compose.material3.adaptive", name = "adaptive-navigation3", version.ref = "material3AdaptiveNav3" }
 
+androidx-room-common-jvm = { group = "androidx.room", name = "room-common-jvm", version.ref = "room" }
+androidx-room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
+androidx-room-compiler = { module = "androidx.room:room-compiler", version.ref = "room" }
+androidx-compose-material3 = { group = "androidx.compose.material3", name = "material3", version.ref = "material3" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
@@ -74,3 +82,4 @@ kotlin-plugin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization"
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 protobuf = { id = "com.google.protobuf", version.ref = "protobuf" }
 hilt = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
+room = { id = "androidx.room", version.ref = "room" }

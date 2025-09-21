@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+option java_package = "com.github.damontecres.dolphin.preferences";
+option java_multiple_files = true;
+
+message UserPreferences {
+  // The currently signed in server and user IDs, mostly for restoring a session
+  string current_server_id = 1;
+  string current_user_id = 2;
+}

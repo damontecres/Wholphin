@@ -1,10 +1,13 @@
+import com.google.protobuf.gradle.id
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
-    alias(libs.plugins.protobuf)
     alias(libs.plugins.ksp)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.hilt)
+    alias(libs.plugins.room)
+    alias(libs.plugins.protobuf)
 }
 
 android {
@@ -24,8 +27,10 @@ android {
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
+                "proguard-rules.pro",
             )
+        }
+        debug {
         }
     }
     compileOptions {
@@ -38,6 +43,29 @@ android {
     buildFeatures {
         buildConfig = true
         compose = true
+    }
+    room {
+        schemaDirectory("$projectDir/schemas")
+    }
+}
+
+protobuf {
+    protoc {
+        artifact = "com.google.protobuf:protoc:${libs.protobuf.kotlin.lite.get().version}"
+    }
+    generateProtoTasks {
+        all().forEach {
+            it.plugins {
+                id("java") {
+                    option("lite")
+                }
+            }
+            it.builtins {
+                id("kotlin") {
+                    option("lite")
+                }
+            }
+        }
     }
 }
 
@@ -67,7 +95,9 @@ dependencies {
     implementation(libs.coil.gif)
     implementation(libs.coil.svg)
 
-    implementation(libs.jellyfin.sdk)
+    implementation(libs.jellyfin.core)
+    implementation(libs.jellyfin.api)
+    implementation(libs.jellyfin.api.okhttp)
 
     implementation(libs.androidx.navigation3.ui)
     implementation(libs.androidx.navigation3.runtime)
@@ -77,6 +107,10 @@ dependencies {
     implementation(libs.kotlinx.serialization.json)
 
     implementation(libs.hilt.android)
+    implementation(libs.androidx.room.common.jvm)
+    implementation(libs.androidx.room.ktx)
+    implementation(libs.androidx.compose.material3)
+    ksp(libs.androidx.room.compiler)
     ksp(libs.hilt.android.compiler)
 
     androidTestImplementation(platform(libs.androidx.compose.bom))

@@ -27,4 +27,3 @@ dependencyResolutionManagement {
 
 rootProject.name = "Dolphin"
 include(":app")
- 
