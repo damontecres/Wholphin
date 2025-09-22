@@ -2,9 +2,10 @@ package com.github.damontecres.dolphin.ui.nav
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.tv.material3.Text
 import com.github.damontecres.dolphin.preferences.UserPreferences
+import com.github.damontecres.dolphin.ui.detail.MediaItemContent
 import com.github.damontecres.dolphin.ui.main.MainPage
+import com.github.damontecres.dolphin.ui.playback.PlaybackContent
 
 @Composable
 fun DestinationContent(
@@ -22,9 +23,22 @@ fun DestinationContent(
             )
         }
         is Destination.MediaItem -> {
-            Text("MediaItem: ${destination.itemId}")
+            MediaItemContent(
+                preferences = preferences,
+                navigationManager = navigationManager,
+                destination = destination,
+                modifier = modifier,
+            )
         }
-        is Destination.Playback -> TODO()
+
+        is Destination.Playback -> {
+            PlaybackContent(
+                preferences = preferences,
+                navigationManager = navigationManager,
+                destination = destination,
+                modifier = modifier,
+            )
+        }
         Destination.Search -> TODO()
         Destination.Settings -> TODO()
         Destination.Setup -> TODO()

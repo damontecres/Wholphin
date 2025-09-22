@@ -3,6 +3,8 @@ package com.github.damontecres.dolphin.ui.nav
 import androidx.navigation3.runtime.NavKey
 import com.github.damontecres.dolphin.util.UuidSerializer
 import kotlinx.serialization.Serializable
+import org.jellyfin.sdk.model.api.BaseItemDto
+import org.jellyfin.sdk.model.api.BaseItemKind
 import java.util.UUID
 
 @Serializable
@@ -24,11 +26,14 @@ sealed class Destination(
     @Serializable
     data class MediaItem(
         @Serializable(with = UuidSerializer::class) val itemId: UUID,
+        val type: BaseItemKind,
+        @Transient val item: BaseItemDto? = null,
     ) : Destination()
 
     @Serializable
     data class Playback(
-        val itemId: String,
+        @Serializable(with = UuidSerializer::class) val itemId: UUID,
         val positionMs: Long,
+        @Transient val item: BaseItemDto? = null,
     ) : Destination(true)
 }

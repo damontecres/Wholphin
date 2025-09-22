@@ -8,6 +8,7 @@ import java.util.UUID
 sealed interface DolphinModel {
     val id: UUID
     val name: String?
+    val type: BaseItemKind
     val imageUrl: String?
 }
 

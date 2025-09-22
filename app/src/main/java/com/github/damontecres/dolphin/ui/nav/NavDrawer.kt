@@ -133,7 +133,14 @@ fun NavDrawer(
                     items(libraries) {
                         LibraryNavItem(
                             library = it,
-                            onClick = { navigationManager.navigateTo(Destination.MediaItem(it.id)) },
+                            onClick = {
+                                navigationManager.navigateTo(
+                                    Destination.MediaItem(
+                                        it.id,
+                                        it.type,
+                                    ),
+                                )
+                            },
                         )
                     }
                     item {
@@ -192,7 +199,7 @@ fun NavigationDrawerScope.LibraryNavItem(
 ) {
     // TODO
     val icon =
-        when (library.type) {
+        when (library.collectionType) {
             CollectionType.MOVIES -> Icons.Default.Email
             CollectionType.TVSHOWS -> Icons.Default.DateRange
             CollectionType.HOMEVIDEOS -> Icons.Default.ShoppingCart

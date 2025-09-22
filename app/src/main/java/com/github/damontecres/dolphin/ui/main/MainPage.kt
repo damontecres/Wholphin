@@ -32,9 +32,11 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.displayPreferencesApi
+import org.jellyfin.sdk.api.client.extensions.tvShowsApi
 import org.jellyfin.sdk.api.client.extensions.userApi
 import org.jellyfin.sdk.api.client.extensions.userLibraryApi
 import org.jellyfin.sdk.model.api.request.GetLatestMediaRequest
+import org.jellyfin.sdk.model.api.request.GetNextUpRequest
 import timber.log.Timber
 import javax.inject.Inject
 
@@ -87,8 +89,6 @@ class MainViewModel
                                                 .getLatestMedia(request)
                                                 .content
                                                 .map { convertModel(it, api) }
-                                        Timber.v("latest: %s", latest)
-                                        // api.itemsApi.getItems(request)
                                         HomeRow(
                                             section = section,
                                             items = latest,
@@ -100,7 +100,26 @@ class MainViewModel
                                 HomeSection.LIBRARY_TILES_SMALL -> null
                                 HomeSection.RESUME -> null
                                 HomeSection.ACTIVE_RECORDINGS -> null
-                                HomeSection.NEXT_UP -> null
+                                HomeSection.NEXT_UP -> {
+                                    val request =
+                                        GetNextUpRequest(
+                                            fields = listOf(),
+                                            imageTypeLimit = 1,
+                                            parentId = null,
+                                            limit = 25,
+                                            enableResumable = false,
+                                        )
+                                    val nextUp =
+                                        api.tvShowsApi
+                                            .getNextUp(request)
+                                            .content
+                                            .items
+                                            .map { convertModel(it, api) }
+                                    HomeRow(
+                                        section = section,
+                                        items = nextUp,
+                                    )
+                                }
                                 HomeSection.LIVE_TV -> null
 
                                 // TODO Not supported?
@@ -132,7 +151,14 @@ fun MainPage(
                 item {
                     HomePageRow(
                         row = row,
-                        onClickItem = { navigationManager.navigateTo(Destination.MediaItem(it.id)) },
+                        onClickItem = {
+                            navigationManager.navigateTo(
+                                Destination.MediaItem(
+                                    it.id,
+                                    it.type,
+                                ),
+                            )
+                        },
                         modifier = Modifier.fillMaxWidth(),
                     )
                 }
