@@ -12,13 +12,14 @@ import androidx.compose.ui.graphics.RectangleShape
 import androidx.datastore.core.DataStore
 import androidx.tv.material3.ExperimentalTvMaterial3Api
 import androidx.tv.material3.Surface
-import androidx.tv.material3.Text
 import com.github.damontecres.dolphin.data.ServerRepository
 import com.github.damontecres.dolphin.preferences.UserPreferences
 import com.github.damontecres.dolphin.ui.ServerLoginPage
+import com.github.damontecres.dolphin.ui.main.MainPage
 import com.github.damontecres.dolphin.ui.theme.DolphinTheme
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
+import okhttp3.OkHttpClient
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -28,6 +29,9 @@ class MainActivity : AppCompatActivity() {
 
     @Inject
     lateinit var userPreferencesDataStore: DataStore<UserPreferences>
+
+    @Inject
+    lateinit var okHttpClient: OkHttpClient
 
     @OptIn(ExperimentalTvMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -39,6 +43,8 @@ class MainActivity : AppCompatActivity() {
                     modifier = Modifier.fillMaxSize(),
                     shape = RectangleShape,
                 ) {
+                    CoilConfig(serverRepository, okHttpClient, false)
+
                     val preferences by userPreferencesDataStore.data.collectAsState(null)
                     preferences?.let { preferences ->
                         if (preferences.currentServerId.isNotBlank() && preferences.currentUserId.isNotBlank()) {
@@ -54,7 +60,11 @@ class MainActivity : AppCompatActivity() {
                         val server = serverRepository.currentServer
                         val user = serverRepository.currentUser
                         if (server != null && user != null) {
-                            Text("Logged in as ${user.name} on ${server.url}")
+                            // TODO navigation
+                            MainPage(
+                                preferences = preferences,
+                                modifier = Modifier.fillMaxSize(),
+                            )
                         }
                     }
                 }

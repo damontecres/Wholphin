@@ -15,11 +15,13 @@ import org.jellyfin.sdk.api.okhttp.OkHttpFactory
 import org.jellyfin.sdk.createJellyfin
 import org.jellyfin.sdk.model.ClientInfo
 import org.jellyfin.sdk.model.DeviceInfo
+import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
 object DolphinModule {
     @Provides
+    @Singleton
     fun okHttpClient() =
         OkHttpClient
             .Builder()
@@ -28,9 +30,11 @@ object DolphinModule {
             }.build()
 
     @Provides
+    @Singleton
     fun okHttpFactory(okHttpClient: OkHttpClient) = OkHttpFactory(okHttpClient)
 
     @Provides
+    @Singleton
     fun jellyfin(
         okHttpFactory: OkHttpFactory,
         @ApplicationContext context: Context,
@@ -53,5 +57,6 @@ object DolphinModule {
         }
 
     @Provides
+    @Singleton
     fun apiClient(jellyfin: Jellyfin) = jellyfin.createApi()
 }

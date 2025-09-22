@@ -1,3 +1,14 @@
 <resources>
     <string name="app_name">Dolphin</string>
+
+    <string name="home_section_latest_media">Recently added media</string>
+    <string name="home_section_library">My media</string>
+    <string name="home_section_library_small">My media (small)</string>
+    <string name="home_section_resume">Continue watching</string>
+    <string name="home_section_resume_audio">Continue listening</string>
+    <string name="home_section_resume_book">Continue reading</string>
+    <string name="home_section_active_recordings">Active recordings</string>
+    <string name="home_section_next_up">Next up</string>
+    <string name="home_section_livetv">Live TV</string>
+    <string name="home_section_none">None</string>
 </resources>

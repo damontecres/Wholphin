@@ -8,6 +8,7 @@ import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.exception.InvalidStatusException
 import org.jellyfin.sdk.api.client.extensions.userApi
+import timber.log.Timber
 import javax.inject.Inject
 
 class ServerRepository
@@ -51,6 +52,7 @@ class ServerRepository
             server: JellyfinServer,
             user: JellyfinUser,
         ) {
+            Timber.v("Changing user to ${user.name} on ${server.url}")
             apiClient.update(baseUrl = server.url, accessToken = user.accessToken)
             try {
                 apiClient.userApi
@@ -60,6 +62,7 @@ class ServerRepository
                 _currentUser = user
             } catch (e: InvalidStatusException) {
                 // TODO
+                Timber.e(e)
                 if (e.status == 401) {
                     // Unauthorized
                     _currentServer = null
