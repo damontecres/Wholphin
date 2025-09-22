@@ -30,7 +30,8 @@ object DatabaseModule {
                 context,
                 DolphinDatabase::class.java,
                 "dolphin",
-            ).build()
+            ).fallbackToDestructiveMigration(false)
+            .build()
 
     @Provides
     @Singleton

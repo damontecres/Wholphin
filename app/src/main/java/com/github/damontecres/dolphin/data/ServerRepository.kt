@@ -10,7 +10,9 @@ import org.jellyfin.sdk.api.client.exception.InvalidStatusException
 import org.jellyfin.sdk.api.client.extensions.userApi
 import timber.log.Timber
 import javax.inject.Inject
+import javax.inject.Singleton
 
+@Singleton
 class ServerRepository
     @Inject
     constructor(
@@ -55,11 +57,22 @@ class ServerRepository
             Timber.v("Changing user to ${user.name} on ${server.url}")
             apiClient.update(baseUrl = server.url, accessToken = user.accessToken)
             try {
-                apiClient.userApi
-                    .getCurrentUser()
-                    .content.name
-                _currentServer = server
-                _currentUser = user
+                val userDto =
+                    apiClient.userApi
+                        .getCurrentUser()
+                        .content
+                val updatedServer = server.copy(name = userDto.serverName)
+                val updatedUser =
+                    user.copy(
+                        id = userDto.id.toString(),
+                        name = userDto.name,
+                    )
+                withContext(Dispatchers.IO) {
+                    serverDao.addServer(updatedServer)
+                    serverDao.addUser(updatedUser)
+                }
+                _currentServer = updatedServer
+                _currentUser = updatedUser
             } catch (e: InvalidStatusException) {
                 // TODO
                 Timber.e(e)

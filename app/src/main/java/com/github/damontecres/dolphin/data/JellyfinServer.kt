@@ -15,7 +15,7 @@ import androidx.room.Transaction
 @Entity(tableName = "servers")
 data class JellyfinServer(
     @PrimaryKey val id: String,
-    val name: String,
+    val name: String?,
     val url: String,
 )
 
@@ -37,7 +37,7 @@ data class JellyfinUser(
     val name: String?,
     @ColumnInfo(index = true)
     val serverId: String,
-    val accessToken: String,
+    val accessToken: String?,
 )
 
 data class JellyfinServerUsers(

@@ -57,17 +57,18 @@ class ServerManagementViewModel
 
                 val accessToken = authenticationResult.accessToken
                 if (accessToken != null) {
+                    val authedUser = authenticationResult.user
                     val server =
                         authenticationResult.serverId?.let {
                             JellyfinServer(
                                 id = it,
-                                name = serverUrl,
+                                name = authedUser?.serverName,
                                 url = serverUrl,
                             )
                         }
                     if (server != null) {
                         val user =
-                            authenticationResult.user?.let {
+                            authedUser?.let {
                                 JellyfinUser(
                                     id = it.id.toString(),
                                     name = it.name,

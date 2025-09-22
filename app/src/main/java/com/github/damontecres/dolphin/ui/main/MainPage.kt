@@ -14,16 +14,18 @@ import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.tv.material3.Text
 import com.github.damontecres.dolphin.data.model.DolphinModel
 import com.github.damontecres.dolphin.data.model.convertModel
 import com.github.damontecres.dolphin.isNotNullOrBlank
 import com.github.damontecres.dolphin.preferences.UserPreferences
 import com.github.damontecres.dolphin.ui.cards.DolphinCard
+import com.github.damontecres.dolphin.ui.nav.Destination
+import com.github.damontecres.dolphin.ui.nav.NavigationManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -118,8 +120,9 @@ class MainViewModel
 @Composable
 fun MainPage(
     preferences: UserPreferences,
+    navigationManager: NavigationManager,
     modifier: Modifier,
-    viewModel: MainViewModel = viewModel(),
+    viewModel: MainViewModel = hiltViewModel(),
 ) {
     val homeRows by viewModel.homeRows.observeAsState(listOf())
     Column(modifier = modifier) {
@@ -129,6 +132,7 @@ fun MainPage(
                 item {
                     HomePageRow(
                         row = row,
+                        onClickItem = { navigationManager.navigateTo(Destination.MediaItem(it.id)) },
                         modifier = Modifier.fillMaxWidth(),
                     )
                 }
@@ -140,6 +144,7 @@ fun MainPage(
 @Composable
 fun HomePageRow(
     row: HomeRow,
+    onClickItem: (DolphinModel) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -160,7 +165,7 @@ fun HomePageRow(
             items(row.items) { item ->
                 DolphinCard(
                     item = item,
-                    onClick = {},
+                    onClick = { onClickItem.invoke(item) },
                     modifier = Modifier,
                 )
             }
