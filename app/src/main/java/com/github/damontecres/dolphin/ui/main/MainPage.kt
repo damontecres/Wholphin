@@ -32,11 +32,13 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.displayPreferencesApi
+import org.jellyfin.sdk.api.client.extensions.itemsApi
 import org.jellyfin.sdk.api.client.extensions.tvShowsApi
 import org.jellyfin.sdk.api.client.extensions.userApi
 import org.jellyfin.sdk.api.client.extensions.userLibraryApi
 import org.jellyfin.sdk.model.api.request.GetLatestMediaRequest
 import org.jellyfin.sdk.model.api.request.GetNextUpRequest
+import org.jellyfin.sdk.model.api.request.GetResumeItemsRequest
 import timber.log.Timber
 import javax.inject.Inject
 
@@ -98,7 +100,23 @@ class MainViewModel
 
                                 // TODO
                                 HomeSection.LIBRARY_TILES_SMALL -> null
-                                HomeSection.RESUME -> null
+                                HomeSection.RESUME -> {
+                                    val request =
+                                        GetResumeItemsRequest(
+                                            userId = user.id,
+                                            // TODO, more params?
+                                        )
+                                    val items =
+                                        api.itemsApi
+                                            .getResumeItems(request)
+                                            .content
+                                            .items
+                                            .map { convertModel(it, api) }
+                                    HomeRow(
+                                        section = section,
+                                        items = items,
+                                    )
+                                }
                                 HomeSection.ACTIVE_RECORDINGS -> null
                                 HomeSection.NEXT_UP -> {
                                     val request =

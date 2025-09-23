@@ -2,7 +2,9 @@ package com.github.damontecres.dolphin.ui.playback
 
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEvent
+import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.type
 
 fun isDirectionalDpad(event: KeyEvent): Boolean =
     event.key == Key.DirectionUp ||
@@ -42,3 +44,8 @@ fun isForwardButton(event: KeyEvent): Boolean =
         event.key == Key.MediaNext ||
         event.key == Key.MediaFastForward ||
         event.key == Key.MediaSkipForward
+
+/**
+ * Whether the [KeyEvent] is a key up event pressing media play or media play/pause
+ */
+fun isPlayKeyUp(key: KeyEvent) = key.type == KeyEventType.KeyUp && (key.key == Key.MediaPlay || key.key == Key.MediaPlayPause)

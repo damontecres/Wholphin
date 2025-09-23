@@ -1,9 +1,16 @@
 package com.github.damontecres.dolphin
 
 import android.view.KeyEvent
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.input.key.onPreviewKeyEvent
+import kotlinx.coroutines.CoroutineScope
 import timber.log.Timber
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.contract
@@ -84,4 +91,20 @@ fun Modifier.handleDPadKeyEvents(
     }
 
     false
+}
+
+/**
+ * Run a [LaunchedEffect] exactly once even with multiple recompositions.
+ *
+ * If the composition is removed from the navigation back stack and "re-added", this will run again
+ */
+@Composable
+fun OneTimeLaunchedEffect(runOnceBlock: suspend CoroutineScope.() -> Unit) {
+    var hasRun by rememberSaveable { mutableStateOf(false) }
+    if (!hasRun) {
+        LaunchedEffect(Unit) {
+            hasRun = true
+            runOnceBlock.invoke(this)
+        }
+    }
 }

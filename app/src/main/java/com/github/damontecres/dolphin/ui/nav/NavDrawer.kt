@@ -53,7 +53,6 @@ import kotlinx.coroutines.launch
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.userViewsApi
 import org.jellyfin.sdk.model.api.CollectionType
-import timber.log.Timber
 import javax.inject.Inject
 
 @HiltViewModel
@@ -71,7 +70,7 @@ class NavDrawerViewModel
                     api.userViewsApi
                         .getUserViews()
                         .content.items
-                Timber.v("userViews: ${userViews.map { it.type }}")
+//                Timber.v("userViews: $userViews")
                 libraries.value = userViews.map { Library.fromDto(it, api) }
             }
         }

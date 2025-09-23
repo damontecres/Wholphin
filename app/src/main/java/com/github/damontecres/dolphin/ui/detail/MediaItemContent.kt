@@ -21,6 +21,14 @@ fun MediaItemContent(
         BaseItemKind.EPISODE -> EpisodeDetails(preferences, navigationManager, destination, modifier)
         BaseItemKind.MOVIE -> TODO()
         BaseItemKind.VIDEO -> TODO()
+        BaseItemKind.COLLECTION_FOLDER -> {
+            CollectionFolderDetails(
+                preferences,
+                navigationManager,
+                destination,
+                modifier,
+            )
+        }
         else -> {
             Text("Unsupported item type: ${destination.type}")
         }
