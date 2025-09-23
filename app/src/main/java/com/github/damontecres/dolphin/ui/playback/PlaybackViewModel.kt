@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.media3.common.MediaItem
 import androidx.media3.exoplayer.ExoPlayer
+import com.github.damontecres.dolphin.data.model.BaseItem
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -15,7 +16,6 @@ import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.mediaInfoApi
 import org.jellyfin.sdk.api.client.extensions.videosApi
-import org.jellyfin.sdk.model.api.BaseItemDto
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.PlaybackInfoDto
 import org.jellyfin.sdk.model.extensions.ticks
@@ -70,19 +70,20 @@ class PlaybackViewModel
 
         fun init(
             itemId: UUID,
-            item: BaseItemDto?,
+            item: BaseItem?,
         ) {
             if (item != null) {
                 title.value = item.name
+                val base = item.data
                 if (item.type == BaseItemKind.EPISODE) {
-                    val season = item.parentIndexNumber?.toString()?.padStart(2, '0')
-                    val episode = item.indexNumber?.toString()?.padStart(2, '0')
+                    val season = base.parentIndexNumber?.toString()?.padStart(2, '0')
+                    val episode = base.indexNumber?.toString()?.padStart(2, '0')
                     // TODO multi episode support
                     if (season != null && episode != null) {
                         subtitle.value =
                             buildString {
-                                if (item.seriesName != null) {
-                                    append(item.seriesName)
+                                if (base.seriesName != null) {
+                                    append(base.seriesName)
                                     append(" - ")
                                 }
                                 append("S${season}E$episode")

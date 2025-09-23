@@ -1,6 +1,8 @@
 package com.github.damontecres.dolphin
 
 import android.view.KeyEvent
+import androidx.compose.foundation.MarqueeAnimationMode
+import androidx.compose.foundation.basicMarquee
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -10,6 +12,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.CoroutineScope
 import timber.log.Timber
 import kotlin.contracts.ExperimentalContracts
@@ -108,3 +111,14 @@ fun OneTimeLaunchedEffect(runOnceBlock: suspend CoroutineScope.() -> Unit) {
         }
     }
 }
+
+fun Modifier.enableMarquee(focused: Boolean) =
+    if (focused) {
+        basicMarquee(
+            initialDelayMillis = 250,
+            animationMode = MarqueeAnimationMode.Immediately,
+            velocity = 40.dp,
+        )
+    } else {
+        basicMarquee(animationMode = MarqueeAnimationMode.WhileFocused)
+    }

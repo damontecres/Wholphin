@@ -19,11 +19,11 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.tv.material3.Text
-import com.github.damontecres.dolphin.data.model.DolphinModel
-import com.github.damontecres.dolphin.data.model.convertModel
+import com.github.damontecres.dolphin.data.model.BaseItem
 import com.github.damontecres.dolphin.isNotNullOrBlank
 import com.github.damontecres.dolphin.preferences.UserPreferences
-import com.github.damontecres.dolphin.ui.cards.DolphinCard
+import com.github.damontecres.dolphin.ui.DefaultItemFields
+import com.github.damontecres.dolphin.ui.cards.ItemCard
 import com.github.damontecres.dolphin.ui.nav.Destination
 import com.github.damontecres.dolphin.ui.nav.NavigationManager
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -44,7 +44,7 @@ import javax.inject.Inject
 
 data class HomeRow(
     val section: HomeSection,
-    val items: List<DolphinModel>,
+    val items: List<BaseItem>,
 )
 
 @HiltViewModel
@@ -80,7 +80,7 @@ class MainViewModel
                                     user.configuration?.orderedViews?.firstOrNull()?.let { viewId ->
                                         val request =
                                             GetLatestMediaRequest(
-                                                fields = listOf(),
+                                                fields = DefaultItemFields,
                                                 imageTypeLimit = 1,
                                                 parentId = viewId,
                                                 groupItems = true,
@@ -90,7 +90,7 @@ class MainViewModel
                                             api.userLibraryApi
                                                 .getLatestMedia(request)
                                                 .content
-                                                .map { convertModel(it, api) }
+                                                .map { BaseItem.from(it, api) }
                                         HomeRow(
                                             section = section,
                                             items = latest,
@@ -104,6 +104,7 @@ class MainViewModel
                                     val request =
                                         GetResumeItemsRequest(
                                             userId = user.id,
+                                            fields = DefaultItemFields,
                                             // TODO, more params?
                                         )
                                     val items =
@@ -111,7 +112,7 @@ class MainViewModel
                                             .getResumeItems(request)
                                             .content
                                             .items
-                                            .map { convertModel(it, api) }
+                                            .map { BaseItem.from(it, api) }
                                     HomeRow(
                                         section = section,
                                         items = items,
@@ -121,7 +122,7 @@ class MainViewModel
                                 HomeSection.NEXT_UP -> {
                                     val request =
                                         GetNextUpRequest(
-                                            fields = listOf(),
+                                            fields = DefaultItemFields,
                                             imageTypeLimit = 1,
                                             parentId = null,
                                             limit = 25,
@@ -132,7 +133,7 @@ class MainViewModel
                                             .getNextUp(request)
                                             .content
                                             .items
-                                            .map { convertModel(it, api) }
+                                            .map { BaseItem.from(it, api) }
                                     HomeRow(
                                         section = section,
                                         items = nextUp,
@@ -177,6 +178,7 @@ fun MainPage(
                                 ),
                             )
                         },
+                        onLongClickItem = {},
                         modifier = Modifier.fillMaxWidth(),
                     )
                 }
@@ -188,7 +190,8 @@ fun MainPage(
 @Composable
 fun HomePageRow(
     row: HomeRow,
-    onClickItem: (DolphinModel) -> Unit,
+    onClickItem: (BaseItem) -> Unit,
+    onLongClickItem: (BaseItem) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -207,9 +210,10 @@ fun HomePageRow(
                     .fillMaxWidth(),
         ) {
             items(row.items) { item ->
-                DolphinCard(
+                ItemCard(
                     item = item,
                     onClick = { onClickItem.invoke(item) },
+                    onLongClick = { onLongClickItem.invoke(item) },
                     modifier = Modifier,
                 )
             }

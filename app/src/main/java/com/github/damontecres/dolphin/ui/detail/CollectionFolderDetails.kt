@@ -11,6 +11,7 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import androidx.tv.material3.Text
 import com.github.damontecres.dolphin.OneTimeLaunchedEffect
+import com.github.damontecres.dolphin.data.model.BaseItem
 import com.github.damontecres.dolphin.data.model.Library
 import com.github.damontecres.dolphin.preferences.UserPreferences
 import com.github.damontecres.dolphin.ui.nav.Destination
@@ -20,7 +21,6 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import org.jellyfin.sdk.api.client.ApiClient
-import org.jellyfin.sdk.model.api.BaseItemDto
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.CollectionType
 import org.jellyfin.sdk.model.api.ImageType
@@ -41,7 +41,7 @@ class CollectionFolderViewModel
 
         override fun init(
             itemId: UUID,
-            potential: BaseItemDto?,
+            potential: BaseItem?,
         ): Job =
             viewModelScope.launch {
                 super.init(itemId, potential)?.join()
@@ -93,7 +93,14 @@ fun CollectionFolderDetails(
                 CollectionType.UNKNOWN -> TODO()
                 CollectionType.MOVIES -> TODO()
                 CollectionType.TVSHOWS -> {
-                    TVShowCollectionDetails(viewModel.api, preferences, navigationManager, library!!, item!!, pager, modifier)
+                    TVShowCollectionDetails(
+                        preferences,
+                        navigationManager,
+                        library!!,
+                        item!!,
+                        pager,
+                        modifier,
+                    )
                 }
 
                 CollectionType.MUSIC -> TODO()
@@ -113,17 +120,15 @@ fun CollectionFolderDetails(
 
 @Composable
 fun TVShowCollectionDetails(
-    api: ApiClient,
     preferences: UserPreferences,
     navigationManager: NavigationManager,
     library: Library,
-    item: BaseItemDto,
+    item: BaseItem,
     pager: DolphinPager,
     modifier: Modifier = Modifier,
 ) {
     val gridFocusRequester = remember { FocusRequester() }
     CardGrid(
-        api = api,
         pager = pager,
         itemOnClick = { navigationManager.navigateTo(Destination.MediaItem(it.id, it.type, it)) },
         longClicker = {},

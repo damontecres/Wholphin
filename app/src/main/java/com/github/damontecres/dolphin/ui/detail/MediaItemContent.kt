@@ -16,8 +16,8 @@ fun MediaItemContent(
     modifier: Modifier = Modifier,
 ) {
     when (destination.type) {
-        BaseItemKind.SERIES -> TODO()
-        BaseItemKind.SEASON -> TODO()
+        BaseItemKind.SERIES -> SeriesDetails(preferences, navigationManager, destination, modifier)
+        BaseItemKind.SEASON -> SeasonDetails(preferences, navigationManager, destination, modifier)
         BaseItemKind.EPISODE -> EpisodeDetails(preferences, navigationManager, destination, modifier)
         BaseItemKind.MOVIE -> TODO()
         BaseItemKind.VIDEO -> TODO()

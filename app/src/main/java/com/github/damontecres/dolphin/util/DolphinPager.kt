@@ -4,6 +4,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import com.github.damontecres.dolphin.data.model.BaseItem
+import com.github.damontecres.dolphin.ui.DEFAULT_PAGE_SIZE
 import com.google.common.cache.CacheBuilder
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -13,7 +15,6 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.itemsApi
-import org.jellyfin.sdk.model.api.BaseItemDto
 import org.jellyfin.sdk.model.api.request.GetItemsRequest
 import timber.log.Timber
 
@@ -21,32 +22,35 @@ class DolphinPager(
     val api: ApiClient,
     val request: GetItemsRequest,
     private val scope: CoroutineScope,
-    private val pageSize: Int = 25,
+    private val pageSize: Int = DEFAULT_PAGE_SIZE,
+    itemCount: Int? = null,
     cacheSize: Long = 8,
-) : AbstractList<BaseItemDto?>() {
-    private var items by mutableStateOf(ItemList<BaseItemDto>(0, pageSize, mapOf()))
-    private var totalCount by mutableIntStateOf(-1)
+) : AbstractList<BaseItem?>() {
+    private var items by mutableStateOf(ItemList<BaseItem>(0, pageSize, mapOf()))
+    private var totalCount by mutableIntStateOf(itemCount ?: -1)
     private val mutex = Mutex()
     private val cachedPages =
         CacheBuilder
             .newBuilder()
             .maximumSize(cacheSize)
-            .build<Int, List<BaseItemDto>>()
+            .build<Int, List<BaseItem>>()
 
     suspend fun init() {
-        val result =
-            api.itemsApi
-                .getItems(
-                    request.copy(
-                        startIndex = 0,
-                        limit = 1,
-                        enableTotalRecordCount = true,
-                    ),
-                ).content
-        totalCount = result.totalRecordCount
+        if (totalCount < 0) {
+            val result =
+                api.itemsApi
+                    .getItems(
+                        request.copy(
+                            startIndex = 0,
+                            limit = 1,
+                            enableTotalRecordCount = true,
+                        ),
+                    ).content
+            totalCount = result.totalRecordCount
+        }
     }
 
-    override operator fun get(index: Int): BaseItemDto? {
+    override operator fun get(index: Int): BaseItem? {
         if (index in 0..<totalCount) {
             val item = items[index]
             if (item == null) {
@@ -58,7 +62,7 @@ class DolphinPager(
         }
     }
 
-    suspend fun getBlocking(position: Int): BaseItemDto? {
+    suspend fun getBlocking(position: Int): BaseItem? {
         if (position in 0..<totalCount) {
             val item = items[position]
             if (item == null) {
@@ -89,7 +93,7 @@ class DolphinPager(
                                     enableTotalRecordCount = false,
                                 ),
                             ).content
-                    val data = result.items
+                    val data = result.items.map { BaseItem.from(it, api) }
                     cachedPages.put(pageNumber, data)
                     items = ItemList(totalCount, pageSize, cachedPages.asMap())
                 }

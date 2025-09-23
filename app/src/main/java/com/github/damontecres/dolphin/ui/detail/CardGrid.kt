@@ -41,6 +41,7 @@ import androidx.tv.material3.Button
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.github.damontecres.dolphin.R
+import com.github.damontecres.dolphin.data.model.BaseItem
 import com.github.damontecres.dolphin.ifElse
 import com.github.damontecres.dolphin.tryRequestFocus
 import com.github.damontecres.dolphin.ui.AppColors
@@ -52,21 +53,16 @@ import com.github.damontecres.dolphin.ui.playback.isForwardButton
 import com.github.damontecres.dolphin.ui.playback.isPlayKeyUp
 import com.github.damontecres.dolphin.util.DolphinPager
 import kotlinx.coroutines.launch
-import org.jellyfin.sdk.api.client.ApiClient
-import org.jellyfin.sdk.api.client.extensions.imageApi
-import org.jellyfin.sdk.model.api.BaseItemDto
-import org.jellyfin.sdk.model.api.ImageType
 import timber.log.Timber
 import kotlin.math.max
 
-private val DEBUG = false
+private const val DEBUG = false
 
 @Composable
 fun CardGrid(
-    api: ApiClient,
     pager: DolphinPager,
-    itemOnClick: (BaseItemDto) -> Unit,
-    longClicker: (BaseItemDto) -> Unit,
+    itemOnClick: (BaseItem) -> Unit,
+    longClicker: (BaseItem) -> Unit,
     letterPosition: suspend (Char) -> Int,
     requestFocus: Boolean,
     gridFocusRequester: FocusRequester,
@@ -329,7 +325,6 @@ fun CardGrid(
                         item = item,
                         onClick = { if (item != null) itemOnClick.invoke(item) },
                         onLongClick = { if (item != null) longClicker.invoke(item) },
-                        imageUrlBuilder = { api.imageApi.getItemImageUrl(it, ImageType.PRIMARY) },
                     )
                 }
             }

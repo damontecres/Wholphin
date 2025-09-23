@@ -1,55 +1,209 @@
 package com.github.damontecres.dolphin.ui.cards
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.background
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.tv.material3.Card
+import androidx.tv.material3.Icon
+import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import coil3.compose.AsyncImage
-import org.jellyfin.sdk.model.api.BaseItemDto
-import java.util.UUID
+import com.github.damontecres.dolphin.R
+import com.github.damontecres.dolphin.data.model.BaseItem
+import com.github.damontecres.dolphin.enableMarquee
+import com.github.damontecres.dolphin.ui.FontAwesome
+import kotlinx.coroutines.delay
+import org.jellyfin.sdk.model.api.BaseItemKind
 
 @Composable
 fun ItemCard(
-    item: BaseItemDto?,
-    imageUrlBuilder: (UUID) -> String?,
+    item: BaseItem?,
     onClick: () -> Unit,
     onLongClick: () -> Unit,
     modifier: Modifier = Modifier,
     cardWidth: Dp = 150.dp,
     cardHeight: Dp = 200.dp,
+    interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
 ) {
+    val hideOverlayDelay = 1_000L
+
+    val focused = interactionSource.collectIsFocusedAsState().value
+    var focusedAfterDelay by remember { mutableStateOf(false) }
+
+    if (focused) {
+        LaunchedEffect(Unit) {
+            delay(hideOverlayDelay)
+            if (focused) {
+                focusedAfterDelay = true
+            } else {
+                focusedAfterDelay = false
+            }
+        }
+    } else {
+        focusedAfterDelay = false
+    }
+
     if (item == null) {
         NullCard(modifier, cardWidth, cardHeight)
     } else {
+        val dto = item.data
+        // TODO better aspect ratio handling
+        val height =
+            if (dto.primaryImageAspectRatio != null && dto.primaryImageAspectRatio!! > 1) cardWidth else cardHeight
         Card(
             modifier = modifier,
             onClick = onClick,
+            onLongClick = onLongClick,
+            interactionSource = interactionSource,
         ) {
             Column(
                 verticalArrangement = Arrangement.spacedBy(4.dp),
                 modifier = Modifier.width(cardWidth),
             ) {
-                AsyncImage(
-                    model = imageUrlBuilder.invoke(item.id),
-                    contentDescription = item.name,
-                    contentScale = ContentScale.Fit,
+                ItemCardImage(
+                    imageUrl = item.imageUrl,
+                    name = item.name,
+                    showOverlay = !focusedAfterDelay,
+                    favorite = dto.userData?.isFavorite ?: false,
+                    watched = dto.userData?.played ?: false,
+                    unwatchedCount = dto.userData?.unplayedItemCount ?: -1,
+                    watchedPercent = dto.userData?.playedPercentage,
                     modifier =
                         Modifier
                             .fillMaxWidth()
-                            .height(cardHeight),
+                            .height(height),
                 )
                 Text(
                     text = item.name ?: "",
+                    maxLines = 1,
+                    modifier =
+                        Modifier
+                            .enableMarquee(focusedAfterDelay),
                 )
-                Text(text = item.primaryImageAspectRatio.toString())
+                if (dto.type == BaseItemKind.EPISODE) {
+                    if (dto.parentIndexNumber != null && dto.indexNumber != null) {
+                        Text(
+                            text = "S${dto.parentIndexNumber} E${dto.indexNumber}",
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun ItemCardImage(
+    imageUrl: String?,
+    name: String?,
+    showOverlay: Boolean,
+    favorite: Boolean,
+    watched: Boolean,
+    unwatchedCount: Int,
+    watchedPercent: Double?,
+    modifier: Modifier = Modifier,
+) {
+    Box(modifier = modifier) {
+        AsyncImage(
+            model = imageUrl,
+            contentDescription = name,
+            contentScale = ContentScale.Fit,
+            modifier = Modifier.fillMaxSize(),
+        )
+        AnimatedVisibility(
+            visible = showOverlay,
+            enter = fadeIn(),
+            exit = fadeOut(),
+        ) {
+            Box(modifier = Modifier.fillMaxSize()) {
+                if (favorite) {
+                    Text(
+                        modifier =
+                            Modifier
+                                .align(Alignment.TopStart)
+                                .padding(8.dp),
+                        color = colorResource(android.R.color.holo_red_light),
+                        text = stringResource(R.string.fa_heart),
+                        fontSize = 20.sp,
+                        fontFamily = FontAwesome,
+                    )
+                }
+                if (watched) {
+                    Icon(
+                        imageVector = Icons.Default.CheckCircle,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.border.copy(alpha = 1f),
+                        modifier =
+                            Modifier
+                                .align(Alignment.TopEnd)
+                                .size(48.dp)
+                                .padding(8.dp),
+                    )
+                }
+                if (unwatchedCount > 0) {
+                    Box(
+                        modifier =
+                            Modifier
+                                .padding(8.dp)
+                                .align(Alignment.TopEnd),
+                    ) {
+                        Text(
+                            modifier =
+                                Modifier
+                                    .background(
+                                        MaterialTheme.colorScheme.border,
+                                        shape = CircleShape,
+                                    ),
+                            color = MaterialTheme.colorScheme.onSurface,
+                            text = unwatchedCount.toString(),
+                            fontSize = 20.sp,
+                        )
+                    }
+                }
+
+                watchedPercent?.let { percent ->
+                    Box(
+                        modifier =
+                            Modifier
+                                .align(Alignment.BottomStart)
+                                .background(
+                                    MaterialTheme.colorScheme.tertiary,
+                                ).clip(RectangleShape)
+                                .height(4.dp)
+                                .fillMaxWidth((percent / 100.0).toFloat()),
+                    )
+                }
             }
         }
     }
