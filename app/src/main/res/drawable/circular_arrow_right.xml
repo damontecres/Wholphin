@@ -1,0 +1,10 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="800dp"
+    android:height="800dp"
+    android:viewportWidth="75.695"
+    android:viewportHeight="75.695">
+    <!-- Modified from https://www.svgrepo.com/svg/168006/circular-arrow-clock under CC0 License -->
+    <path
+        android:pathData="M75.695,37.846c0,20.869 -16.98,37.85 -37.848,37.85C16.981,75.695 0,58.715 0,37.846C0,16.977 16.981,0 37.848,0c7.628,0 15.055,2.331 21.31,6.592l5.816,-5.817l4.679,17.946l-17.949,-4.678l4.069,-4.072c-5.319,-3.422 -11.538,-5.3 -17.929,-5.3c-18.294,0 -33.176,14.882 -33.176,33.174c0,18.294 14.882,33.178 33.176,33.178c18.293,0 33.175,-14.884 33.175,-33.178H75.695z"
+        android:fillColor="#ffffff" />
+</vector>

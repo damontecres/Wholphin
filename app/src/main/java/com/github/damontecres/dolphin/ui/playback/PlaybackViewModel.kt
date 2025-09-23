@@ -15,9 +15,12 @@ import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.mediaInfoApi
 import org.jellyfin.sdk.api.client.extensions.videosApi
+import org.jellyfin.sdk.model.api.BaseItemDto
 import org.jellyfin.sdk.model.api.PlaybackInfoDto
 import java.util.UUID
 import javax.inject.Inject
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.nanoseconds
 
 enum class TranscodeType {
     DIRECT_PLAY,
@@ -56,11 +59,22 @@ class PlaybackViewModel
 
         val stream = MutableLiveData<StreamDecision?>(null)
 
+        val title = MutableLiveData<String?>(null)
+        val subtitle = MutableLiveData<String?>(null)
+        val duration = MutableLiveData<Duration?>(null)
+
         init {
             addCloseable { player.release() }
         }
 
-        fun init(itemId: UUID) {
+        fun init(
+            itemId: UUID,
+            item: BaseItemDto?,
+        ) {
+            if (item != null) {
+                title.value = item.name
+                subtitle.value = item.episodeTitle
+            }
             viewModelScope.launch(Dispatchers.IO) {
                 val response =
                     api.mediaInfoApi
@@ -105,6 +119,7 @@ class PlaybackViewModel
                             }
                         val decision = StreamDecision(itemId, mediaUrl, transcodeType)
                         withContext(Dispatchers.Main) {
+                            duration.value = source.runTimeTicks?.nanoseconds
                             stream.value = decision
                             player.setMediaItem(decision.mediaItem)
                             player.prepare()
