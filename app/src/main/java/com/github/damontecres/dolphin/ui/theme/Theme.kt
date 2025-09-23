@@ -89,9 +89,7 @@ val unspecified_scheme =
 @Composable
 fun DolphinTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    content:
-        @Composable()
-        () -> Unit,
+    content: @Composable () -> Unit,
 ) {
     val colorScheme =
         when {
