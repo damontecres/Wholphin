@@ -50,6 +50,7 @@ import com.github.damontecres.dolphin.ui.nav.Destination
 import com.github.damontecres.dolphin.ui.nav.NavigationManager
 import com.github.damontecres.stashapp.ui.components.playback.SkipIndicator
 import com.github.damontecres.stashapp.ui.components.playback.rememberSeekBarState
+import org.jellyfin.sdk.model.api.DeviceProfile
 import kotlin.time.Duration.Companion.milliseconds
 
 @OptIn(UnstableApi::class)
@@ -57,13 +58,14 @@ import kotlin.time.Duration.Companion.milliseconds
 fun PlaybackContent(
     preferences: UserPreferences,
     navigationManager: NavigationManager,
+    deviceProfile: DeviceProfile,
     destination: Destination.Playback,
     modifier: Modifier = Modifier,
     viewModel: PlaybackViewModel = hiltViewModel(),
 ) {
     val scope = rememberCoroutineScope()
     LaunchedEffect(destination.itemId) {
-        viewModel.init(destination.itemId, destination.item)
+        viewModel.init(destination, deviceProfile)
     }
     val player = viewModel.player
     val stream by viewModel.stream.observeAsState(null)

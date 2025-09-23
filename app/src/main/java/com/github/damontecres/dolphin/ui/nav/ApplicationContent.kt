@@ -10,10 +10,12 @@ import androidx.navigation3.runtime.rememberSavedStateNavEntryDecorator
 import androidx.navigation3.scene.rememberSceneSetupNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import com.github.damontecres.dolphin.preferences.UserPreferences
+import org.jellyfin.sdk.model.api.DeviceProfile
 
 @Composable
 fun ApplicationContent(
     preferences: UserPreferences,
+    deviceProfile: DeviceProfile,
     modifier: Modifier = Modifier,
 ) {
     val backStack = rememberNavBackStack(Destination.Main)
@@ -51,6 +53,7 @@ fun ApplicationContent(
                         destination = key,
                         preferences = preferences,
                         navigationManager = navigationManager,
+                        deviceProfile = deviceProfile,
                         modifier = modifier.fillMaxSize(),
                     )
                 } else {
@@ -58,6 +61,7 @@ fun ApplicationContent(
                         destination = key,
                         preferences = preferences,
                         navigationManager = navigationManager,
+                        deviceProfile = deviceProfile,
                         modifier = modifier,
                     )
                 }

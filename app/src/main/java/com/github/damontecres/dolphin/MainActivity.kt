@@ -27,6 +27,7 @@ import com.github.damontecres.dolphin.preferences.UserPreferences
 import com.github.damontecres.dolphin.ui.ServerLoginPage
 import com.github.damontecres.dolphin.ui.nav.ApplicationContent
 import com.github.damontecres.dolphin.ui.theme.DolphinTheme
+import com.github.damontecres.dolphin.util.profile.createDeviceProfile
 import dagger.hilt.android.AndroidEntryPoint
 import okhttp3.OkHttpClient
 import javax.inject.Inject
@@ -66,11 +67,16 @@ class MainActivity : AppCompatActivity() {
                             }
                             isRestoringSession = false
                         }
+                        val deviceProfile =
+                            remember {
+                                createDeviceProfile(this@MainActivity, preferences, false)
+                            }
                         val server = serverRepository.currentServer
                         val user = serverRepository.currentUser
                         if (server != null && user != null) {
                             ApplicationContent(
                                 preferences = preferences,
+                                deviceProfile = deviceProfile,
                                 modifier = Modifier.fillMaxSize(),
                             )
                         } else if (isRestoringSession) {

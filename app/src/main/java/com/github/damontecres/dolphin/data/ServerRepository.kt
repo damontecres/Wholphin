@@ -61,6 +61,7 @@ class ServerRepository
                     apiClient.userApi
                         .getCurrentUser()
                         .content
+
                 val updatedServer = server.copy(name = userDto.serverName)
                 val updatedUser =
                     user.copy(

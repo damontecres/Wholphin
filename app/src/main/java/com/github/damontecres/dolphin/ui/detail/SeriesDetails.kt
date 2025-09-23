@@ -14,7 +14,7 @@ import androidx.tv.material3.Text
 import com.github.damontecres.dolphin.data.model.BaseItem
 import com.github.damontecres.dolphin.data.model.Video
 import com.github.damontecres.dolphin.preferences.UserPreferences
-import com.github.damontecres.dolphin.ui.cards.CardRow
+import com.github.damontecres.dolphin.ui.cards.ItemRow
 import com.github.damontecres.dolphin.ui.nav.Destination
 import com.github.damontecres.dolphin.ui.nav.NavigationManager
 import com.github.damontecres.dolphin.util.DolphinPager
@@ -88,7 +88,7 @@ fun SeriesDetails(
                     Text(text = item.name ?: "Unknown")
                 }
                 item {
-                    CardRow(
+                    ItemRow(
                         title = "Seasons",
                         items = seasons,
                         onClickItem = { navigationManager.navigateTo(it.destination()) },

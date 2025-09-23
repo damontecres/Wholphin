@@ -4,9 +4,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -18,12 +16,11 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.tv.material3.Text
 import com.github.damontecres.dolphin.data.model.BaseItem
 import com.github.damontecres.dolphin.isNotNullOrBlank
 import com.github.damontecres.dolphin.preferences.UserPreferences
 import com.github.damontecres.dolphin.ui.DefaultItemFields
-import com.github.damontecres.dolphin.ui.cards.ItemCard
+import com.github.damontecres.dolphin.ui.cards.ItemRow
 import com.github.damontecres.dolphin.ui.nav.Destination
 import com.github.damontecres.dolphin.ui.nav.NavigationManager
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -165,56 +162,24 @@ fun MainPage(
     val homeRows by viewModel.homeRows.observeAsState(listOf())
     Column(modifier = modifier) {
         // TODO header?
-        LazyColumn {
-            homeRows.forEach { row ->
-                item {
-                    HomePageRow(
-                        row = row,
-                        onClickItem = {
-                            navigationManager.navigateTo(
-                                Destination.MediaItem(
-                                    it.id,
-                                    it.type,
-                                ),
-                            )
-                        },
-                        onLongClickItem = {},
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun HomePageRow(
-    row: HomeRow,
-    onClickItem: (BaseItem) -> Unit,
-    onLongClickItem: (BaseItem) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Column(
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-        modifier = modifier,
-    ) {
-        Text(
-            text = stringResource(row.section.nameRes),
-        )
-        LazyRow(
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
-            contentPadding = PaddingValues(8.dp),
-            modifier =
-                Modifier
-                    .padding(start = 16.dp)
-                    .fillMaxWidth(),
+        LazyColumn(
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            contentPadding = PaddingValues(16.dp),
         ) {
-            items(row.items) { item ->
-                ItemCard(
-                    item = item,
-                    onClick = { onClickItem.invoke(item) },
-                    onLongClick = { onLongClickItem.invoke(item) },
-                    modifier = Modifier,
+            items(homeRows) { row ->
+                ItemRow(
+                    title = stringResource(row.section.nameRes),
+                    items = row.items,
+                    onClickItem = {
+                        navigationManager.navigateTo(
+                            Destination.MediaItem(
+                                it.id,
+                                it.type,
+                            ),
+                        )
+                    },
+                    onLongClickItem = {},
+                    modifier = Modifier.fillMaxWidth(),
                 )
             }
         }

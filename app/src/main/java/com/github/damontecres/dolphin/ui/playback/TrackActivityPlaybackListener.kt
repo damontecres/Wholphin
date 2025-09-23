@@ -11,6 +11,7 @@ import org.jellyfin.sdk.api.client.extensions.playStateApi
 import org.jellyfin.sdk.model.api.PlayMethod
 import org.jellyfin.sdk.model.api.PlaybackOrder
 import org.jellyfin.sdk.model.api.PlaybackProgressInfo
+import org.jellyfin.sdk.model.api.PlaybackStopInfo
 import org.jellyfin.sdk.model.api.RepeatMode
 import org.jellyfin.sdk.model.extensions.inWholeTicks
 import timber.log.Timber
@@ -73,6 +74,15 @@ class TrackActivityPlaybackListener(
     fun release() {
         task.cancel()
         TIMER.purge()
+        coroutineScope.launch {
+            api.playStateApi.reportPlaybackStopped(
+                PlaybackStopInfo(
+                    itemId = itemId,
+                    positionTicks = player.currentPosition.milliseconds.inWholeTicks,
+                    failed = false,
+                ),
+            )
+        }
     }
 
     override fun onIsPlayingChanged(isPlaying: Boolean) {
@@ -96,12 +106,14 @@ class TrackActivityPlaybackListener(
     private fun saveActivity(position: Long) {
         coroutineScope.launch {
             val totalDuration = totalPlayDurationMilliseconds.get()
-            val calcPosition = (if (position >= 0) position else player.currentPosition).milliseconds.inWholeTicks
+            val calcPosition =
+                (if (position >= 0) position else player.currentPosition).milliseconds
+            Timber.v("saveActivity: itemId=$itemId, pos=$calcPosition")
             // TODO parameters
             api.playStateApi.reportPlaybackProgress(
                 PlaybackProgressInfo(
                     itemId = itemId,
-                    positionTicks = calcPosition,
+                    positionTicks = calcPosition.inWholeTicks,
                     canSeek = true,
                     isPaused = !player.isPlaying,
                     isMuted = false,

@@ -53,6 +53,7 @@ import kotlinx.coroutines.launch
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.userViewsApi
 import org.jellyfin.sdk.model.api.CollectionType
+import org.jellyfin.sdk.model.api.DeviceProfile
 import javax.inject.Inject
 
 @HiltViewModel
@@ -81,6 +82,7 @@ fun NavDrawer(
     destination: Destination,
     preferences: UserPreferences,
     navigationManager: NavigationManager,
+    deviceProfile: DeviceProfile,
     modifier: Modifier = Modifier,
     viewModel: NavDrawerViewModel = hiltViewModel(LocalView.current.findViewTreeViewModelStoreOwner()!!),
 ) {
@@ -126,7 +128,7 @@ fun NavDrawer(
                         IconNavItem(
                             text = "Home",
                             icon = Icons.Default.Home,
-                            onClick = {},
+                            onClick = { navigationManager.goToHome() },
                         )
                     }
                     items(libraries) {
@@ -158,6 +160,7 @@ fun NavDrawer(
             destination = destination,
             preferences = preferences,
             navigationManager = navigationManager,
+            deviceProfile = deviceProfile,
             modifier = Modifier.fillMaxSize(),
         )
     }

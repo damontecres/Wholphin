@@ -18,7 +18,9 @@ import com.github.damontecres.dolphin.ui.nav.Destination
 import com.github.damontecres.dolphin.ui.nav.NavigationManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import org.jellyfin.sdk.api.client.ApiClient
+import org.jellyfin.sdk.model.extensions.ticks
 import javax.inject.Inject
+import kotlin.time.Duration.Companion.seconds
 
 @HiltViewModel
 class EpisodeViewModel
@@ -62,6 +64,25 @@ fun EpisodeDetails(
                 dto.overview?.let {
                     item {
                         Text(text = it)
+                    }
+                }
+                dto.userData?.playbackPositionTicks?.ticks?.let {
+                    if (it > 60.seconds) {
+                        item {
+                            Button(
+                                onClick = {
+                                    navigationManager.navigateTo(
+                                        Destination.Playback(
+                                            item.id,
+                                            it.inWholeMilliseconds,
+                                            item,
+                                        ),
+                                    )
+                                },
+                            ) {
+                                Text(text = "Resume")
+                            }
+                        }
                     }
                 }
                 item {
