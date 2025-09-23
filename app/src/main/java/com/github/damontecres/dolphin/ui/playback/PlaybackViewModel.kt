@@ -16,11 +16,12 @@ import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.mediaInfoApi
 import org.jellyfin.sdk.api.client.extensions.videosApi
 import org.jellyfin.sdk.model.api.BaseItemDto
+import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.PlaybackInfoDto
+import org.jellyfin.sdk.model.extensions.ticks
 import java.util.UUID
 import javax.inject.Inject
 import kotlin.time.Duration
-import kotlin.time.Duration.Companion.nanoseconds
 
 enum class TranscodeType {
     DIRECT_PLAY,
@@ -73,7 +74,21 @@ class PlaybackViewModel
         ) {
             if (item != null) {
                 title.value = item.name
-                subtitle.value = item.episodeTitle
+                if (item.type == BaseItemKind.EPISODE) {
+                    val season = item.parentIndexNumber?.toString()?.padStart(2, '0')
+                    val episode = item.indexNumber?.toString()?.padStart(2, '0')
+                    // TODO multi episode support
+                    if (season != null && episode != null) {
+                        subtitle.value =
+                            buildString {
+                                if (item.seriesName != null) {
+                                    append(item.seriesName)
+                                    append(" - ")
+                                }
+                                append("S${season}E$episode")
+                            }
+                    }
+                }
             }
             viewModelScope.launch(Dispatchers.IO) {
                 val response =
@@ -119,7 +134,11 @@ class PlaybackViewModel
                             }
                         val decision = StreamDecision(itemId, mediaUrl, transcodeType)
                         withContext(Dispatchers.Main) {
-                            duration.value = source.runTimeTicks?.nanoseconds
+                            val activityListener =
+                                TrackActivityPlaybackListener(api, itemId, player)
+                            addCloseable { activityListener.release() }
+                            player.addListener(activityListener)
+                            duration.value = source.runTimeTicks?.ticks
                             stream.value = decision
                             player.setMediaItem(decision.mediaItem)
                             player.prepare()

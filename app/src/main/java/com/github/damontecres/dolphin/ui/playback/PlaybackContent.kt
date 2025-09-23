@@ -50,6 +50,7 @@ import com.github.damontecres.dolphin.ui.nav.Destination
 import com.github.damontecres.dolphin.ui.nav.NavigationManager
 import com.github.damontecres.stashapp.ui.components.playback.SkipIndicator
 import com.github.damontecres.stashapp.ui.components.playback.rememberSeekBarState
+import kotlin.time.Duration.Companion.milliseconds
 
 @OptIn(UnstableApi::class)
 @Composable
@@ -158,8 +159,7 @@ fun PlaybackContent(
                     val showSkipProgress = true // TODO get from preferences
                     if (showSkipProgress) {
                         duration?.let {
-                            val percent =
-                                skipPosition.toFloat() / (it.inWholeMilliseconds).toFloat()
+                            val percent = (skipPosition.milliseconds / it).toFloat()
                             Box(
                                 modifier =
                                     Modifier
