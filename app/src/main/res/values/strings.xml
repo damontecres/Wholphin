@@ -11,4 +11,5 @@
     <string name="home_section_next_up">Next up</string>
     <string name="home_section_livetv">Live TV</string>
     <string name="home_section_none">None</string>
+    <string name="search">Search</string>
 </resources>

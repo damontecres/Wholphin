@@ -4,6 +4,7 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -12,12 +13,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
-import androidx.compose.material.icons.filled.DateRange
-import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
@@ -30,7 +28,10 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -45,9 +46,11 @@ import androidx.tv.material3.NavigationDrawerScope
 import androidx.tv.material3.ProvideTextStyle
 import androidx.tv.material3.Text
 import androidx.tv.material3.rememberDrawerState
+import com.github.damontecres.dolphin.R
 import com.github.damontecres.dolphin.data.ServerRepository
 import com.github.damontecres.dolphin.data.model.Library
 import com.github.damontecres.dolphin.preferences.UserPreferences
+import com.github.damontecres.dolphin.ui.FontAwesome
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import org.jellyfin.sdk.api.client.ApiClient
@@ -121,7 +124,14 @@ fun NavDrawer(
                         IconNavItem(
                             text = user?.name ?: "",
                             icon = Icons.Default.AccountCircle,
-                            onClick = {},
+                            onClick = { navigationManager.navigateTo(Destination.Setup) },
+                        )
+                    }
+                    item {
+                        IconNavItem(
+                            text = "Search",
+                            icon = Icons.Default.Search,
+                            onClick = { navigationManager.navigateTo(Destination.Search) },
                         )
                     }
                     item {
@@ -148,7 +158,7 @@ fun NavDrawer(
                         IconNavItem(
                             text = "Settings",
                             icon = Icons.Default.Settings,
-                            onClick = {},
+                            onClick = { navigationManager.navigateTo(Destination.Settings) },
                         )
                     }
                 }
@@ -202,20 +212,26 @@ fun NavigationDrawerScope.LibraryNavItem(
     // TODO
     val icon =
         when (library.collectionType) {
-            CollectionType.MOVIES -> Icons.Default.Email
-            CollectionType.TVSHOWS -> Icons.Default.DateRange
-            CollectionType.HOMEVIDEOS -> Icons.Default.ShoppingCart
-            else -> Icons.Default.Info
+            CollectionType.MOVIES -> R.string.fa_film
+            CollectionType.TVSHOWS -> R.string.fa_tv
+            CollectionType.HOMEVIDEOS -> R.string.fa_video
+            CollectionType.LIVETV -> R.string.fa_tv
+            CollectionType.MUSIC -> R.string.fa_music
+            else -> R.string.fa_film
         }
     NavigationDrawerItem(
         modifier = modifier,
         selected = false,
         onClick = onClick,
         leadingContent = {
-            Icon(
-                icon,
-                contentDescription = null,
-            )
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Text(
+                    text = stringResource(icon),
+                    textAlign = TextAlign.Center,
+                    fontSize = 16.sp,
+                    fontFamily = FontAwesome,
+                )
+            }
         },
         interactionSource = null,
     ) {

@@ -1,5 +1,7 @@
 package com.github.damontecres.dolphin.ui
 
+import android.content.Context
+import android.media.AudioManager
 import android.view.KeyEvent
 import androidx.compose.foundation.MarqueeAnimationMode
 import androidx.compose.foundation.basicMarquee
@@ -7,11 +9,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.CoroutineScope
 import timber.log.Timber
@@ -122,3 +127,28 @@ fun Modifier.enableMarquee(focused: Boolean) =
     } else {
         basicMarquee(animationMode = MarqueeAnimationMode.WhileFocused)
     }
+
+@Composable
+fun Modifier.playSoundOnFocus(enabled: Boolean): Modifier {
+    if (!enabled) {
+        return this
+    }
+    val context = LocalContext.current
+    val audioManager =
+        remember {
+            context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+        }
+    return onFocusChanged {
+        if (it.isFocused) {
+            audioManager.playSoundEffect(AudioManager.FX_FOCUS_NAVIGATION_UP)
+        }
+    }
+}
+
+fun playOnClickSound(
+    context: Context,
+    effectType: Int = AudioManager.FX_KEY_CLICK,
+) {
+    val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+    audioManager.playSoundEffect(effectType)
+}
