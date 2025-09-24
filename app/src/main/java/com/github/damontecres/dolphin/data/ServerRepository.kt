@@ -3,11 +3,14 @@ package com.github.damontecres.dolphin.data
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.datastore.core.DataStore
+import com.github.damontecres.dolphin.preferences.UserPreferences
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.exception.InvalidStatusException
 import org.jellyfin.sdk.api.client.extensions.userApi
+import org.jellyfin.sdk.model.api.AuthenticationResult
 import timber.log.Timber
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -18,6 +21,7 @@ class ServerRepository
     constructor(
         val serverDao: JellyfinServerDao,
         val apiClient: ApiClient,
+        val userPreferencesDataStore: DataStore<UserPreferences>,
     ) {
         private var _currentServer by mutableStateOf<JellyfinServer?>(null)
         val currentServer get() = _currentServer
@@ -102,5 +106,45 @@ class ServerRepository
                 }
             }
             return false
+        }
+
+        suspend fun changeUser(
+            serverUrl: String,
+            authenticationResult: AuthenticationResult,
+        ) {
+            val accessToken = authenticationResult.accessToken
+            if (accessToken != null) {
+                val authedUser = authenticationResult.user
+                val server =
+                    authenticationResult.serverId?.let {
+                        JellyfinServer(
+                            id = it,
+                            name = authedUser?.serverName,
+                            url = serverUrl,
+                        )
+                    }
+                if (server != null) {
+                    val user =
+                        authedUser?.let {
+                            JellyfinUser(
+                                id = it.id.toString(),
+                                name = it.name,
+                                serverId = server.id,
+                                accessToken = accessToken,
+                            )
+                        }
+                    if (user != null) {
+                        userPreferencesDataStore.updateData {
+                            it
+                                .toBuilder()
+                                .apply {
+                                    currentServerId = server.id
+                                    currentUserId = user.id
+                                }.build()
+                        }
+                        addAndChangeUser(server, user)
+                    }
+                }
+            }
         }
     }

@@ -19,14 +19,18 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.unit.dp
 import androidx.datastore.core.DataStore
+import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.tv.material3.ExperimentalTvMaterial3Api
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Surface
 import com.github.damontecres.dolphin.data.ServerRepository
 import com.github.damontecres.dolphin.preferences.UserPreferences
 import com.github.damontecres.dolphin.ui.CoilConfig
-import com.github.damontecres.dolphin.ui.ServerLoginPage
 import com.github.damontecres.dolphin.ui.nav.ApplicationContent
+import com.github.damontecres.dolphin.ui.nav.Destination
+import com.github.damontecres.dolphin.ui.nav.NavigationManager
+import com.github.damontecres.dolphin.ui.setup.SwitchServerContent
+import com.github.damontecres.dolphin.ui.setup.SwitchUserContent
 import com.github.damontecres.dolphin.ui.theme.DolphinTheme
 import com.github.damontecres.dolphin.util.profile.createDeviceProfile
 import dagger.hilt.android.AndroidEntryPoint
@@ -69,13 +73,19 @@ class MainActivity : AppCompatActivity() {
                             isRestoringSession = false
                         }
                         val deviceProfile =
-                            remember {
+                            remember(preferences) {
                                 createDeviceProfile(this@MainActivity, preferences, false)
                             }
                         val server = serverRepository.currentServer
                         val user = serverRepository.currentUser
+                        val backStack = rememberNavBackStack(Destination.Main)
+                        val navigationManager = NavigationManager(backStack)
+
                         if (server != null && user != null) {
                             ApplicationContent(
+                                user = user,
+                                server = server,
+                                navigationManager = navigationManager,
                                 preferences = preferences,
                                 deviceProfile = deviceProfile,
                                 modifier = Modifier.fillMaxSize(),
@@ -90,8 +100,17 @@ class MainActivity : AppCompatActivity() {
                                     modifier = Modifier.align(Alignment.Center),
                                 )
                             }
+                        } else if (server != null) {
+                            // Have server but no user, go to user selection
+                            SwitchUserContent(
+                                navigationManager = navigationManager,
+                                modifier = Modifier.fillMaxSize(),
+                            )
                         } else {
-                            ServerLoginPage(modifier = Modifier.fillMaxSize())
+                            SwitchServerContent(
+                                navigationManager = navigationManager,
+                                modifier = Modifier.fillMaxSize(),
+                            )
                         }
                     }
                 }

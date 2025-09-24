@@ -124,7 +124,7 @@ fun NavDrawer(
                         IconNavItem(
                             text = user?.name ?: "",
                             icon = Icons.Default.AccountCircle,
-                            onClick = { navigationManager.navigateTo(Destination.Setup) },
+                            onClick = { navigationManager.navigateTo(Destination.UserList) },
                         )
                     }
                     item {

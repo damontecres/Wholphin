@@ -16,6 +16,12 @@ sealed class Destination(
     data object Setup : Destination(true)
 
     @Serializable
+    data object ServerList : Destination(true)
+
+    @Serializable
+    data object UserList : Destination(true)
+
+    @Serializable
     data object Main : Destination()
 
     @Serializable

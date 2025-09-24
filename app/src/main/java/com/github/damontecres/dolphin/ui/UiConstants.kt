@@ -1,8 +1,10 @@
 package com.github.damontecres.dolphin.ui
 
+import android.content.res.Configuration.UI_MODE_TYPE_TELEVISION
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.tooling.preview.Preview
 import com.github.damontecres.dolphin.R
 import org.jellyfin.sdk.model.api.ItemFields
 
@@ -24,3 +26,10 @@ val DefaultItemFields =
         ItemFields.SEASON_USER_DATA,
         ItemFields.CHILD_COUNT,
     )
+
+@Preview(
+    device = "spec:parent=tv_1080p",
+    backgroundColor = 0xFF383535,
+    uiMode = UI_MODE_TYPE_TELEVISION,
+)
+annotation class PreviewTvSpec

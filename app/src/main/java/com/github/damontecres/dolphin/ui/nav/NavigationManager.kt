@@ -1,9 +1,21 @@
 package com.github.damontecres.dolphin.ui.nav
 
-interface NavigationManager {
-    fun navigateTo(destination: Destination)
+import androidx.navigation3.runtime.NavBackStack
+import androidx.navigation3.runtime.NavKey
 
-    fun goBack()
+class NavigationManager(
+    val backStack: NavBackStack<NavKey>,
+) {
+    fun navigateTo(destination: Destination) {
+        backStack.add(destination)
+    }
 
-    fun goToHome()
+    fun goBack() {
+        backStack.removeLastOrNull()
+    }
+
+    fun goToHome() {
+        backStack.clear()
+        backStack.add(Destination.Main)
+    }
 }

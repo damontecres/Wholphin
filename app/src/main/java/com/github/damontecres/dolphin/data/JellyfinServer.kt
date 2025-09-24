@@ -51,7 +51,7 @@ data class JellyfinServerUsers(
 
 @Dao
 interface JellyfinServerDao {
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
     fun addServer(vararg servers: JellyfinServer)
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
