@@ -41,8 +41,8 @@ import androidx.tv.material3.Text
 import coil3.compose.AsyncImage
 import com.github.damontecres.dolphin.R
 import com.github.damontecres.dolphin.data.model.BaseItem
-import com.github.damontecres.dolphin.enableMarquee
 import com.github.damontecres.dolphin.ui.FontAwesome
+import com.github.damontecres.dolphin.ui.enableMarquee
 import kotlinx.coroutines.delay
 import org.jellyfin.sdk.model.api.BaseItemKind
 

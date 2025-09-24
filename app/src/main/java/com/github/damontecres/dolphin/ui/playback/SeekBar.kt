@@ -41,7 +41,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.unit.dp
 import androidx.tv.material3.MaterialTheme
-import com.github.damontecres.dolphin.handleDPadKeyEvents
+import com.github.damontecres.dolphin.ui.handleDPadKeyEvents
 import com.github.damontecres.dolphin.ui.playback.ControllerViewState
 
 @Composable

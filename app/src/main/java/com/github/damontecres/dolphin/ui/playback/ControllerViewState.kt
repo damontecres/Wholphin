@@ -11,7 +11,7 @@ import kotlinx.coroutines.flow.consumeAsFlow
 import kotlinx.coroutines.flow.debounce
 
 class ControllerViewState internal constructor(
-    @IntRange(from = 0)
+    @param:IntRange(from = 0)
     private val hideMilliseconds: Int,
     val controlsEnabled: Boolean,
 ) {
@@ -31,7 +31,6 @@ class ControllerViewState internal constructor(
     }
 
     fun pulseControls(milliseconds: Int = hideMilliseconds) {
-//        Log.i("PlaybackPageContent", "pulseControls=$milliseconds")
         channel.trySend(milliseconds)
     }
 
@@ -41,7 +40,6 @@ class ControllerViewState internal constructor(
             .consumeAsFlow()
             .debounce { it.toLong() }
             .collect {
-//                Log.i("PlaybackPageContent", "collect")
                 _controlsVisible = false
             }
     }

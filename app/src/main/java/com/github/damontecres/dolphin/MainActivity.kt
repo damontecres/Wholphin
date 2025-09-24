@@ -24,6 +24,7 @@ import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Surface
 import com.github.damontecres.dolphin.data.ServerRepository
 import com.github.damontecres.dolphin.preferences.UserPreferences
+import com.github.damontecres.dolphin.ui.CoilConfig
 import com.github.damontecres.dolphin.ui.ServerLoginPage
 import com.github.damontecres.dolphin.ui.nav.ApplicationContent
 import com.github.damontecres.dolphin.ui.theme.DolphinTheme

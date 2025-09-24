@@ -17,7 +17,7 @@ import com.github.damontecres.dolphin.preferences.UserPreferences
 import com.github.damontecres.dolphin.ui.cards.ItemRow
 import com.github.damontecres.dolphin.ui.nav.Destination
 import com.github.damontecres.dolphin.ui.nav.NavigationManager
-import com.github.damontecres.dolphin.util.DolphinPager
+import com.github.damontecres.dolphin.util.ItemPager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -54,7 +54,8 @@ class SeasonViewModel
                             sortOrder = listOf(SortOrder.ASCENDING),
                             fields = listOf(ItemFields.PRIMARY_IMAGE_ASPECT_RATIO, ItemFields.CHILD_COUNT),
                         )
-                    val pager = DolphinPager(api, request, viewModelScope, itemCount = item.data.childCount)
+                    val pager =
+                        ItemPager(api, request, viewModelScope, itemCount = item.data.childCount)
                     pager.init()
                     episodes.value = pager
                 }

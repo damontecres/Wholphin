@@ -18,7 +18,7 @@ import org.jellyfin.sdk.api.client.extensions.itemsApi
 import org.jellyfin.sdk.model.api.request.GetItemsRequest
 import timber.log.Timber
 
-class DolphinPager(
+class ItemPager(
     val api: ApiClient,
     val request: GetItemsRequest,
     private val scope: CoroutineScope,
@@ -101,8 +101,7 @@ class DolphinPager(
         }
 
     companion object {
-        private const val TAG = "DolphinPager"
-        private const val DEBUG = true
+        private const val DEBUG = false
     }
 
     class ItemList<T>(

@@ -42,16 +42,16 @@ import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.github.damontecres.dolphin.R
 import com.github.damontecres.dolphin.data.model.BaseItem
-import com.github.damontecres.dolphin.ifElse
-import com.github.damontecres.dolphin.tryRequestFocus
 import com.github.damontecres.dolphin.ui.AppColors
 import com.github.damontecres.dolphin.ui.FontAwesome
 import com.github.damontecres.dolphin.ui.cards.ItemCard
+import com.github.damontecres.dolphin.ui.ifElse
 import com.github.damontecres.dolphin.ui.nav.NavigationManager
 import com.github.damontecres.dolphin.ui.playback.isBackwardButton
 import com.github.damontecres.dolphin.ui.playback.isForwardButton
 import com.github.damontecres.dolphin.ui.playback.isPlayKeyUp
-import com.github.damontecres.dolphin.util.DolphinPager
+import com.github.damontecres.dolphin.ui.tryRequestFocus
+import com.github.damontecres.dolphin.util.ItemPager
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import kotlin.math.max
@@ -60,7 +60,7 @@ private const val DEBUG = false
 
 @Composable
 fun CardGrid(
-    pager: DolphinPager,
+    pager: ItemPager,
     itemOnClick: (BaseItem) -> Unit,
     longClicker: (BaseItem) -> Unit,
     letterPosition: suspend (Char) -> Int,

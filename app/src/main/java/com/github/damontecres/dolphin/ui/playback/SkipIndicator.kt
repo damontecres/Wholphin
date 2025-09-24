@@ -22,7 +22,7 @@ import androidx.compose.ui.unit.sp
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.github.damontecres.dolphin.R
-import com.github.damontecres.dolphin.ifElse
+import com.github.damontecres.dolphin.ui.ifElse
 import kotlin.math.abs
 
 @Composable

@@ -10,13 +10,13 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import androidx.tv.material3.Text
-import com.github.damontecres.dolphin.OneTimeLaunchedEffect
 import com.github.damontecres.dolphin.data.model.BaseItem
 import com.github.damontecres.dolphin.data.model.Library
 import com.github.damontecres.dolphin.preferences.UserPreferences
+import com.github.damontecres.dolphin.ui.OneTimeLaunchedEffect
 import com.github.damontecres.dolphin.ui.nav.Destination
 import com.github.damontecres.dolphin.ui.nav.NavigationManager
-import com.github.damontecres.dolphin.util.DolphinPager
+import com.github.damontecres.dolphin.util.ItemPager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -37,7 +37,7 @@ class CollectionFolderViewModel
     constructor(
         api: ApiClient,
     ) : ItemViewModel<Library>(api) {
-        val pager = MutableLiveData<DolphinPager?>()
+        val pager = MutableLiveData<ItemPager?>()
 
         override fun init(
             itemId: UUID,
@@ -63,7 +63,7 @@ class CollectionFolderViewModel
                             sortOrder = listOf(SortOrder.ASCENDING),
                             fields = listOf(ItemFields.PRIMARY_IMAGE_ASPECT_RATIO),
                         )
-                    val newPager = DolphinPager(api, request, viewModelScope)
+                    val newPager = ItemPager(api, request, viewModelScope)
                     newPager.init()
                     pager.value = newPager
                 }
@@ -124,7 +124,7 @@ fun TVShowCollectionDetails(
     navigationManager: NavigationManager,
     library: Library,
     item: BaseItem,
-    pager: DolphinPager,
+    pager: ItemPager,
     modifier: Modifier = Modifier,
 ) {
     val gridFocusRequester = remember { FocusRequester() }

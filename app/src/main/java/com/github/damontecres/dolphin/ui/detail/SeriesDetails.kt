@@ -17,7 +17,7 @@ import com.github.damontecres.dolphin.preferences.UserPreferences
 import com.github.damontecres.dolphin.ui.cards.ItemRow
 import com.github.damontecres.dolphin.ui.nav.Destination
 import com.github.damontecres.dolphin.ui.nav.NavigationManager
-import com.github.damontecres.dolphin.util.DolphinPager
+import com.github.damontecres.dolphin.util.ItemPager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -59,7 +59,8 @@ class SeriesViewModel
                                     ItemFields.SEASON_USER_DATA,
                                 ),
                         )
-                    val pager = DolphinPager(api, request, viewModelScope, itemCount = item.data.childCount)
+                    val pager =
+                        ItemPager(api, request, viewModelScope, itemCount = item.data.childCount)
                     pager.init()
                     seasons.value = pager
                 }

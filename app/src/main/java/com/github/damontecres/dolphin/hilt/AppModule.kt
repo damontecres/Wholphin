@@ -19,7 +19,7 @@ import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
-object DolphinModule {
+object AppModule {
     @Provides
     @Singleton
     fun okHttpClient() =

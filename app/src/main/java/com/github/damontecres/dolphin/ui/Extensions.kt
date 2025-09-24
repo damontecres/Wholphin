@@ -1,4 +1,4 @@
-package com.github.damontecres.dolphin
+package com.github.damontecres.dolphin.ui
 
 import android.view.KeyEvent
 import androidx.compose.foundation.MarqueeAnimationMode

@@ -1,4 +1,4 @@
-package com.github.damontecres.dolphin.ui.playback
+package com.github.damontecres.dolphin.util
 
 import androidx.annotation.OptIn
 import androidx.media3.common.Player
@@ -64,7 +64,7 @@ class TrackActivityPlaybackListener(
                         }
                         timestamp = now
                     } catch (ex: Exception) {
-                        Timber.w(ex, "Exception during track activity timer")
+                        Timber.Forest.w(ex, "Exception during track activity timer")
                     }
                 }
             }
@@ -98,7 +98,7 @@ class TrackActivityPlaybackListener(
 
     override fun onPlaybackStateChanged(playbackState: Int) {
         if (playbackState == Player.STATE_ENDED) {
-            Timber.v("onPlaybackStateChanged STATE_ENDED")
+            Timber.Forest.v("onPlaybackStateChanged STATE_ENDED")
             // TODO mark as watched
         }
     }
@@ -108,7 +108,7 @@ class TrackActivityPlaybackListener(
             val totalDuration = totalPlayDurationMilliseconds.get()
             val calcPosition =
                 (if (position >= 0) position else player.currentPosition).milliseconds
-            Timber.v("saveActivity: itemId=$itemId, pos=$calcPosition")
+            Timber.Forest.v("saveActivity: itemId=$itemId, pos=$calcPosition")
             // TODO parameters
             api.playStateApi.reportPlaybackProgress(
                 PlaybackProgressInfo(

@@ -6,7 +6,7 @@ import androidx.datastore.core.DataStoreFactory
 import androidx.datastore.core.handlers.ReplaceFileCorruptionHandler
 import androidx.datastore.dataStoreFile
 import androidx.room.Room
-import com.github.damontecres.dolphin.data.DolphinDatabase
+import com.github.damontecres.dolphin.data.AppDatabase
 import com.github.damontecres.dolphin.data.JellyfinServerDao
 import com.github.damontecres.dolphin.preferences.UserPreferences
 import com.github.damontecres.dolphin.preferences.UserPreferencesSerializer
@@ -24,18 +24,18 @@ object DatabaseModule {
     @Singleton
     fun database(
         @ApplicationContext context: Context,
-    ): DolphinDatabase =
+    ): AppDatabase =
         Room
             .databaseBuilder(
                 context,
-                DolphinDatabase::class.java,
+                AppDatabase::class.java,
                 "dolphin",
             ).fallbackToDestructiveMigration(false)
             .build()
 
     @Provides
     @Singleton
-    fun serverDao(db: DolphinDatabase): JellyfinServerDao = db.serverDao()
+    fun serverDao(db: AppDatabase): JellyfinServerDao = db.serverDao()
 
     @Provides
     @Singleton

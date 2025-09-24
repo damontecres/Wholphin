@@ -1,4 +1,4 @@
-package com.github.damontecres.dolphin.ui.playback
+package com.github.damontecres.dolphin.util
 
 import android.content.Context
 import androidx.annotation.OptIn

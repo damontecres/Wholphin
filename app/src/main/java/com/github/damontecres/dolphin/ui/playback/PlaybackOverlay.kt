@@ -16,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.media3.common.Player
 import androidx.tv.material3.Text
+import com.github.damontecres.dolphin.util.TrackSupport
 
 @Composable
 fun PlaybackOverlay(

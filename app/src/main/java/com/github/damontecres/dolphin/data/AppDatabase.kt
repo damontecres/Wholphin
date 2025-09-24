@@ -8,6 +8,6 @@ import androidx.room.RoomDatabase
     version = 2,
     exportSchema = false,
 )
-abstract class DolphinDatabase : RoomDatabase() {
+abstract class AppDatabase : RoomDatabase() {
     abstract fun serverDao(): JellyfinServerDao
 }

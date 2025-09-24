@@ -1,4 +1,4 @@
-package com.github.damontecres.dolphin
+package com.github.damontecres.dolphin.ui
 
 import androidx.compose.runtime.Composable
 import coil3.ImageLoader
