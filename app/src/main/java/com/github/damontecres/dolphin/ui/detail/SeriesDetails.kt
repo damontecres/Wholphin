@@ -100,8 +100,7 @@ class SeriesViewModel
                         sortOrder = listOf(SortOrder.ASCENDING),
                         fields =
                             listOf(
-                                ItemFields.PRIMARY_IMAGE_ASPECT_RATIO,
-                                ItemFields.CHILD_COUNT,
+                                ItemFields.MEDIA_SOURCES,
                                 ItemFields.MEDIA_STREAMS,
                                 ItemFields.OVERVIEW,
                             ),

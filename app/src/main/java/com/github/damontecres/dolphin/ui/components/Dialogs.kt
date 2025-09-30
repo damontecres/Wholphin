@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
@@ -241,10 +242,10 @@ fun ScrollableDialog(
             modifier =
                 modifier
                     .width(600.dp)
-                    .height(380.dp)
+                    .heightIn(max = 380.dp)
                     .focusable()
                     .background(
-                        MaterialTheme.colorScheme.surface,
+                        MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp),
                         shape = RoundedCornerShape(8.dp),
                     ).onKeyEvent {
                         if (it.type == KeyEventType.KeyUp) {

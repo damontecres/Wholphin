@@ -15,6 +15,8 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.tv.material3.Text
 import com.github.damontecres.dolphin.preferences.UserPreferences
 import com.github.damontecres.dolphin.ui.OneTimeLaunchedEffect
+import com.github.damontecres.dolphin.ui.data.ItemDetailsDialog
+import com.github.damontecres.dolphin.ui.data.ItemDetailsDialogInfo
 import com.github.damontecres.dolphin.ui.detail.SeriesViewModel
 import com.github.damontecres.dolphin.ui.nav.Destination
 import com.github.damontecres.dolphin.ui.nav.NavigationManager
@@ -57,6 +59,8 @@ fun SeriesOverview(
             ),
     ) { mutableStateOf(initialSeasonEpisode) }
 
+    var overviewDialog by remember { mutableStateOf<ItemDetailsDialogInfo?>(null) }
+
     LaunchedEffect(episodes) {
         if (episodes.isNotEmpty()) {
             // TODO focus on first episode when changing seasons
@@ -90,9 +94,48 @@ fun SeriesOverview(
                     navigationManager.navigateTo(Destination.Playback(it.id, resumePosition.inWholeMilliseconds, it))
                 },
                 onLongClick = {
+                    // TODO
+                },
+                playOnClick = { resume ->
+                    episodes.getOrNull(seasonEpisode.episode)?.let {
+                        navigationManager.navigateTo(
+                            Destination.Playback(
+                                it.id,
+                                resume.inWholeMilliseconds,
+                                it,
+                            ),
+                        )
+                    }
+                },
+                watchOnClick = {
+                    // TODO toggle watched state
+                },
+                moreOnClick = {
+                    // TODO show more actions
+                },
+                overviewOnClick = {
+                    episodes.getOrNull(seasonEpisode.episode)?.let {
+                        overviewDialog =
+                            ItemDetailsDialogInfo(
+                                title = it.name ?: "Unknown",
+                                overview = it.data.overview,
+                                files =
+                                    it.data.mediaSources
+                                        ?.mapNotNull { it.path }
+                                        .orEmpty(),
+                            )
+                    }
                 },
                 modifier = modifier,
             )
         }
+    }
+
+    overviewDialog?.let { info ->
+        ItemDetailsDialog(
+            info = info,
+            onDismissRequest = { overviewDialog = null },
+            modifier = Modifier,
+        )
     }
 }

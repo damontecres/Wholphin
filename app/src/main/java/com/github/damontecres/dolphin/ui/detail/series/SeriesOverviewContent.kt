@@ -42,6 +42,7 @@ import com.github.damontecres.dolphin.data.model.BaseItem
 import com.github.damontecres.dolphin.ui.cards.BannerCard
 import com.github.damontecres.dolphin.ui.ifElse
 import com.github.damontecres.dolphin.ui.isNotNullOrBlank
+import kotlin.time.Duration
 
 @Composable
 fun SeriesOverviewContent(
@@ -54,6 +55,10 @@ fun SeriesOverviewContent(
     onFocus: (SeasonEpisode) -> Unit,
     onClick: (BaseItem) -> Unit,
     onLongClick: (BaseItem) -> Unit,
+    playOnClick: (Duration) -> Unit,
+    watchOnClick: () -> Unit,
+    moreOnClick: () -> Unit,
+    overviewOnClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val bringIntoViewRequester = remember { BringIntoViewRequester() }
@@ -156,9 +161,7 @@ fun SeriesOverviewContent(
                 focusedEpisode?.let { ep ->
                     FocusedEpisodeHeader(
                         ep = ep,
-                        overviewOnClick = {
-                            // TODO show full overview dialog
-                        },
+                        overviewOnClick = overviewOnClick,
                         modifier = Modifier.fillMaxWidth(.66f),
                     )
                 }
@@ -199,9 +202,9 @@ fun SeriesOverviewContent(
                 focusedEpisode?.let { ep ->
                     FocusedEpisodeFooter(
                         ep = ep,
-                        playOnClick = {},
-                        moreOnClick = {},
-                        watchOnClick = {},
+                        playOnClick = playOnClick,
+                        moreOnClick = moreOnClick,
+                        watchOnClick = watchOnClick,
                         modifier =
                             Modifier
                                 .fillMaxWidth()
