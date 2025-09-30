@@ -36,6 +36,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
+import androidx.tv.material3.surfaceColorAtElevation
 import com.github.damontecres.dolphin.R
 import com.github.damontecres.dolphin.preferences.AppPreferences
 import com.github.damontecres.dolphin.ui.ifElse
@@ -133,7 +134,7 @@ fun PreferencesContent(
             horizontalAlignment = Alignment.Start,
             verticalArrangement = Arrangement.spacedBy(0.dp),
             contentPadding = PaddingValues(16.dp),
-            modifier = Modifier.background(MaterialTheme.colorScheme.secondaryContainer),
+            modifier = Modifier.background(MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp)),
         ) {
             stickyHeader {
                 Text(
@@ -152,7 +153,7 @@ fun PreferencesContent(
                     Text(
                         text = stringResource(group.title),
                         style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.border,
+                        color = MaterialTheme.colorScheme.onSurface,
                         textAlign = TextAlign.Start,
                         modifier =
                             Modifier

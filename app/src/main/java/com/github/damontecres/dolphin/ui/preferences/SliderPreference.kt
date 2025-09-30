@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.ProvideTextStyle
+import androidx.tv.material3.contentColorFor
 import com.github.damontecres.dolphin.ui.components.SliderBar
 
 @Composable
@@ -40,16 +41,12 @@ fun SliderPreference(
     val focused = interactionSource.collectIsFocusedAsState().value
     val background =
         if (focused) {
-            MaterialTheme.colorScheme.onBackground
+            MaterialTheme.colorScheme.inverseSurface
         } else {
             Color.Unspecified
         }
-    val contentColor =
-        if (focused) {
-            Color.Unspecified
-        } else {
-            MaterialTheme.colorScheme.onSurface
-        }
+    val contentColor = contentColorFor(background)
+
     Column(
         verticalArrangement = Arrangement.spacedBy(8.dp),
         modifier =
