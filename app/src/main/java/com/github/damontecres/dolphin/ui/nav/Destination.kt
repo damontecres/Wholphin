@@ -4,7 +4,7 @@ package com.github.damontecres.dolphin.ui.nav
 
 import androidx.navigation3.runtime.NavKey
 import com.github.damontecres.dolphin.data.model.BaseItem
-import com.github.damontecres.dolphin.ui.components.details.SeasonEpisode
+import com.github.damontecres.dolphin.ui.detail.series.SeasonEpisode
 import com.github.damontecres.dolphin.util.UuidSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient

@@ -1,6 +1,6 @@
 package com.github.damontecres.dolphin.data.model
 
-import com.github.damontecres.dolphin.ui.components.details.SeasonEpisode
+import com.github.damontecres.dolphin.ui.detail.series.SeasonEpisode
 import com.github.damontecres.dolphin.ui.nav.Destination
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
