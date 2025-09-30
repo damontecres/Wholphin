@@ -45,7 +45,7 @@ fun FocusedEpisodeHeader(
     ) {
         Text(
             text = dto.episodeTitle ?: dto.name ?: "",
-            style = MaterialTheme.typography.headlineMedium,
+            style = MaterialTheme.typography.headlineSmall,
             modifier = Modifier,
         )
         Row(
@@ -64,18 +64,20 @@ fun FocusedEpisodeHeader(
                 }
             DotSeparatedRow(
                 texts = details,
-                textStyle = MaterialTheme.typography.titleLarge,
+                textStyle = MaterialTheme.typography.titleSmall,
             )
         }
         Row(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text(
-                text = "Critic: ${dto.criticRating}",
-                style = MaterialTheme.typography.bodySmall,
-                modifier = Modifier,
-            )
+            dto.criticRating?.let {
+                Text(
+                    text = "Critic: ${dto.criticRating}",
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier,
+                )
+            }
             StarRating(
                 rating100 =
                     dto
@@ -115,11 +117,14 @@ fun FocusedEpisodeHeader(
             ) {
                 Text(
                     text = overview,
-                    style = MaterialTheme.typography.bodyLarge,
+                    style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 3,
                     overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.padding(8.dp),
+                    modifier =
+                        Modifier
+                            .padding(8.dp)
+                            .height(60.dp),
                 )
             }
         }

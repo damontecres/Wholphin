@@ -24,6 +24,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -38,7 +39,7 @@ import androidx.tv.material3.TabRow
 import androidx.tv.material3.Text
 import coil3.compose.AsyncImage
 import com.github.damontecres.dolphin.data.model.BaseItem
-import com.github.damontecres.dolphin.ui.cards.ItemCard
+import com.github.damontecres.dolphin.ui.cards.BannerCard
 import com.github.damontecres.dolphin.ui.ifElse
 import com.github.damontecres.dolphin.ui.isNotNullOrBlank
 
@@ -81,7 +82,8 @@ fun SeriesOverviewContent(
                 alignment = Alignment.TopEnd,
                 modifier =
                     Modifier
-                        .fillMaxHeight(.5f)
+                        .fillMaxHeight(.6f)
+                        .alpha(.4f)
                         .drawWithContent {
                             drawContent()
                             drawRect(
@@ -110,8 +112,10 @@ fun SeriesOverviewContent(
                     selectedTabIndex = selectedTabIndex,
                     modifier =
                         Modifier
-                            .ifElse(focusRequesters.size > selectedTabIndex, { Modifier.focusRestorer(focusRequesters[selectedTabIndex]) })
-                            .focusRequester(tabRowFocusRequester)
+                            .ifElse(
+                                focusRequesters.size > selectedTabIndex,
+                                { Modifier.focusRestorer(focusRequesters[selectedTabIndex]) },
+                            ).focusRequester(tabRowFocusRequester)
                             .padding(horizontal = 16.dp)
                             .fillMaxWidth(),
                 ) {
@@ -142,7 +146,7 @@ fun SeriesOverviewContent(
                 series.name?.let {
                     Text(
                         text = it,
-                        style = MaterialTheme.typography.headlineLarge,
+                        style = MaterialTheme.typography.headlineMedium,
                         modifier = Modifier,
                     )
                 }
@@ -155,7 +159,7 @@ fun SeriesOverviewContent(
                         overviewOnClick = {
                             // TODO show full overview dialog
                         },
-                        modifier = Modifier,
+                        modifier = Modifier.fillMaxWidth(.66f),
                     )
                 }
             }
@@ -165,7 +169,7 @@ fun SeriesOverviewContent(
                     LazyRow(
                         state = state,
                         horizontalArrangement = Arrangement.spacedBy(16.dp),
-                        contentPadding = PaddingValues(start = 32.dp),
+                        contentPadding = PaddingValues(start = 16.dp),
                         modifier = modifier.focusRestorer(firstItemFocusRequester),
                     ) {
                         itemsIndexed(episodes) { index, episode ->
@@ -173,8 +177,11 @@ fun SeriesOverviewContent(
                             if (interactionSource.collectIsFocusedAsState().value) {
                                 onFocus.invoke(SeasonEpisode(selectedTabIndex, index))
                             }
-                            ItemCard(
-                                item = episode,
+                            BannerCard(
+                                imageUrl = episode?.imageUrl,
+                                cornerText = "E${episode?.data?.indexNumber}",
+                                played = episode?.data?.userData?.played ?: false,
+                                playPercent = episode?.data?.userData?.playedPercentage ?: 0.0,
                                 onClick = { if (episode != null) onClick.invoke(episode) },
                                 onLongClick = { if (episode != null) onLongClick.invoke(episode) },
                                 modifier =
@@ -195,7 +202,10 @@ fun SeriesOverviewContent(
                         playOnClick = {},
                         moreOnClick = {},
                         watchOnClick = {},
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(start = 16.dp),
                     )
                 }
             }

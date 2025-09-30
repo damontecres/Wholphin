@@ -117,7 +117,7 @@ fun FocusedEpisodeFooter(
         }
 
         Row(
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             dto.mediaStreams
                 ?.firstOrNull { it.type == MediaStreamType.VIDEO }
@@ -133,12 +133,17 @@ fun FocusedEpisodeFooter(
             dto.mediaStreams
                 ?.firstOrNull { it.type == MediaStreamType.AUDIO }
                 ?.let { stream ->
-                    stream.displayTitle?.let {
-                        TitleValueText(
-                            "Audio",
-                            it,
-                        )
-                    }
+                    // TODO probably a cleaner way to do this
+                    // Removes part of "5.1 Surround - English - AAC - Default"
+                    stream.displayTitle
+                        ?.replace(" - Default", "")
+                        ?.ifBlank { null }
+                        ?.let {
+                            TitleValueText(
+                                "Audio",
+                                it,
+                            )
+                        }
                 }
 
             dto.mediaStreams

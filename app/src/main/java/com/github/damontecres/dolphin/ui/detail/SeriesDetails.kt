@@ -103,6 +103,7 @@ class SeriesViewModel
                                 ItemFields.PRIMARY_IMAGE_ASPECT_RATIO,
                                 ItemFields.CHILD_COUNT,
                                 ItemFields.MEDIA_STREAMS,
+                                ItemFields.OVERVIEW,
                             ),
                     )
                 val pager = ItemPager(api, request, viewModelScope)
