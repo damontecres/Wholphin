@@ -62,7 +62,7 @@ fun BannerCard(
                             .align(Alignment.TopEnd)
                             .padding(4.dp),
                 ) {
-                    if (played) {
+                    if (played && (playPercent <= 0 || playPercent >= 100)) {
                         Icon(
                             imageVector = Icons.Default.CheckCircle,
                             contentDescription = null,

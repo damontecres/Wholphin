@@ -22,6 +22,8 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import org.jellyfin.sdk.api.client.ApiClient
+import org.jellyfin.sdk.api.client.extensions.playStateApi
+import org.jellyfin.sdk.api.client.extensions.userLibraryApi
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.ItemFields
 import org.jellyfin.sdk.model.api.ItemSortBy
@@ -103,6 +105,7 @@ class SeriesViewModel
                                 ItemFields.MEDIA_SOURCES,
                                 ItemFields.MEDIA_STREAMS,
                                 ItemFields.OVERVIEW,
+                                ItemFields.CUSTOM_RATING,
                             ),
                     )
                 val pager = ItemPager(api, request, viewModelScope)
@@ -110,6 +113,31 @@ class SeriesViewModel
                 Timber.v("Loaded ${pager.size} episodes for season $seasonId")
                 episodes.value = pager
             }
+        }
+
+        fun setWatched(
+            itemId: UUID,
+            played: Boolean,
+            listIndex: Int,
+        ) = viewModelScope.launch {
+            if (played) {
+                api.playStateApi.markPlayedItem(itemId)
+            } else {
+                api.playStateApi.markUnplayedItem(itemId)
+            }
+            refreshEpisode(itemId, listIndex)
+        }
+
+        fun refreshEpisode(
+            itemId: UUID,
+            listIndex: Int,
+        ) = viewModelScope.launch {
+            val base = api.userLibraryApi.getItem(itemId).content
+            val item = BaseItem.from(base, api)
+            episodes.value =
+                episodes.value!!.toMutableList().apply {
+                    this[listIndex] = item
+                }
         }
     }
 

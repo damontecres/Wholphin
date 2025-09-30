@@ -19,9 +19,14 @@ import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.CoroutineScope
+import org.jellyfin.sdk.model.api.BaseItemDto
+import org.jellyfin.sdk.model.extensions.ticks
 import timber.log.Timber
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.contract
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.minutes
+import kotlin.time.Duration.Companion.seconds
 
 @OptIn(ExperimentalContracts::class)
 fun CharSequence?.isNotNullOrBlank(): Boolean {
@@ -163,3 +168,16 @@ fun playOnClickSound(
     val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
     audioManager.playSoundEffect(effectType)
 }
+
+val Duration.roundMinutes: Duration
+    get() = (this + 30.seconds).inWholeMinutes.minutes
+
+val BaseItemDto.timeRemaining: Duration?
+    get() =
+        userData?.playbackPositionTicks?.let {
+            if (it > 0) {
+                runTimeTicks?.minus(it)?.ticks
+            } else {
+                null
+            }
+        }

@@ -35,6 +35,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Tab
+import androidx.tv.material3.TabDefaults
 import androidx.tv.material3.TabRow
 import androidx.tv.material3.Text
 import coil3.compose.AsyncImage
@@ -133,13 +134,16 @@ fun SeriesOverviewContent(
                                     selectedTabIndex = index
                                     onFocus.invoke(SeasonEpisode(index, 0))
                                 },
+                                colors =
+                                    TabDefaults.pillIndicatorTabColors(
+                                        // TODO
+                                    ),
                                 modifier =
                                     Modifier
                                         .focusRequester(focusRequesters[index]),
                             ) {
                                 Text(
                                     text = season.name ?: "Season ${season.data.indexNumber}",
-                                    style = MaterialTheme.typography.titleMedium,
                                     modifier = Modifier.padding(8.dp),
                                 )
                             }

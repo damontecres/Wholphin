@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -28,6 +29,8 @@ import com.github.damontecres.dolphin.ui.components.StarRating
 import com.github.damontecres.dolphin.ui.components.StarRatingPrecision
 import com.github.damontecres.dolphin.ui.playOnClickSound
 import com.github.damontecres.dolphin.ui.playSoundOnFocus
+import com.github.damontecres.dolphin.ui.roundMinutes
+import com.github.damontecres.dolphin.ui.timeRemaining
 import com.github.damontecres.dolphin.util.formatDateTime
 import org.jellyfin.sdk.model.extensions.ticks
 
@@ -57,10 +60,14 @@ fun FocusedEpisodeHeader(
                         add("S${dto.parentIndexNumber} E${dto.indexNumber}")
                     }
                     dto.premiereDate?.let { add(formatDateTime(it)) }
-                    dto.mediaSources?.firstOrNull()?.runTimeTicks?.ticks?.inWholeMinutes?.toString()?.let {
-                        add(it)
-                    }
-                    dto.seriesStudio?.let { add(it) }
+                    val duration = dto.runTimeTicks?.ticks
+                    duration
+                        ?.roundMinutes
+                        ?.toString()
+                        ?.let {
+                            add(it)
+                        }
+                    dto.timeRemaining?.roundMinutes?.let { add("$it left") }
                 }
             DotSeparatedRow(
                 texts = details,
@@ -71,33 +78,28 @@ fun FocusedEpisodeHeader(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            dto.criticRating?.let {
-                Text(
-                    text = "Critic: ${dto.criticRating}",
-                    style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier,
-                )
+            // TODO ratings?
+            dto.communityRating?.let {
+                if (it > 0f) {
+                    StarRating(
+                        rating100 = (it * 10).toInt(),
+                        onRatingChange = {},
+                        enabled = false,
+                        precision = StarRatingPrecision.HALF,
+                        playSoundOnFocus = true,
+                        modifier = Modifier.height(24.dp),
+                    )
+                } else {
+                    Spacer(Modifier.height(24.dp))
+                }
             }
-            StarRating(
-                rating100 =
-                    dto
-                        .userData
-                        ?.rating
-                        ?.times(100)
-                        ?.toInt() ?: 0,
-                onRatingChange = {},
-                enabled = false,
-                precision = StarRatingPrecision.HALF,
-                playSoundOnFocus = true,
-                modifier = Modifier.height(32.dp),
-            )
         }
         dto.overview?.let { overview ->
             val interactionSource = remember { MutableInteractionSource() }
             val isFocused = interactionSource.collectIsFocusedAsState().value
             val bgColor =
                 if (isFocused) {
-                    MaterialTheme.colorScheme.onPrimary.copy(alpha = .75f)
+                    MaterialTheme.colorScheme.onPrimary.copy(alpha = .4f)
                 } else {
                     Color.Unspecified
                 }

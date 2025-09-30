@@ -14,6 +14,7 @@ import org.jellyfin.sdk.model.api.ImageType
 data class BaseItem(
     val data: BaseItemDto,
     val imageUrl: String?,
+    val backdropImageUrl: String? = null,
 ) {
     @Transient val id = data.id
 
@@ -57,6 +58,23 @@ data class BaseItem(
         fun from(
             dto: BaseItemDto,
             api: ApiClient,
-        ) = BaseItem(dto, api.imageApi.getItemImageUrl(dto.id, ImageType.PRIMARY))
+        ): BaseItem {
+            val backdropImageUrl =
+                if (dto.type == BaseItemKind.EPISODE) {
+                    val seriesId = dto.seriesId
+                    if (seriesId != null) {
+                        api.imageApi.getItemImageUrl(seriesId, ImageType.BACKDROP)
+                    } else {
+                        api.imageApi.getItemImageUrl(dto.id, ImageType.BACKDROP)
+                    }
+                } else {
+                    api.imageApi.getItemImageUrl(dto.id, ImageType.BACKDROP)
+                }
+            return BaseItem(
+                dto,
+                api.imageApi.getItemImageUrl(dto.id, ImageType.PRIMARY),
+                backdropImageUrl,
+            )
+        }
     }
 }

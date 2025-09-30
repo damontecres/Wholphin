@@ -159,7 +159,7 @@ fun ItemCardImage(
                         fontFamily = FontAwesome,
                     )
                 }
-                if (watched) {
+                if (watched && watchedPercent?.let { it <= 0 || it >= 100 } == true) {
                     Icon(
                         imageVector = Icons.Default.CheckCircle,
                         contentDescription = null,

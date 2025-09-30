@@ -25,6 +25,7 @@ val DefaultItemFields =
         ItemFields.PRIMARY_IMAGE_ASPECT_RATIO,
         ItemFields.SEASON_USER_DATA,
         ItemFields.CHILD_COUNT,
+        ItemFields.OVERVIEW,
     )
 
 @Preview(

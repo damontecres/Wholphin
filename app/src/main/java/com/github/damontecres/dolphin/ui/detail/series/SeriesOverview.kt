@@ -65,7 +65,13 @@ fun SeriesOverview(
         if (episodes.isNotEmpty()) {
             // TODO focus on first episode when changing seasons
 //            firstItemFocusRequester.requestFocus()
+            episodes.getOrNull(seasonEpisode.episode)?.let {
+                viewModel.refreshEpisode(it.id, seasonEpisode.episode)
+            }
         }
+    }
+
+    LaunchedEffect(Unit) {
     }
 
     if (series == null) {
@@ -109,6 +115,11 @@ fun SeriesOverview(
                 },
                 watchOnClick = {
                     // TODO toggle watched state
+                    episodes.getOrNull(seasonEpisode.episode)?.let {
+                        val played = it.data.userData?.played ?: false
+                        // TODO map indexes
+                        viewModel.setWatched(it.id, !played, seasonEpisode.episode)
+                    }
                 },
                 moreOnClick = {
                     // TODO show more actions
