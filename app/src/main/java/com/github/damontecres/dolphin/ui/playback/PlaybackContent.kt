@@ -65,7 +65,7 @@ fun PlaybackContent(
 ) {
     val scope = rememberCoroutineScope()
     LaunchedEffect(destination.itemId) {
-        viewModel.init(destination, deviceProfile)
+        viewModel.init(destination, deviceProfile, preferences)
     }
     val player = viewModel.player
     val stream by viewModel.stream.observeAsState(null)
@@ -73,6 +73,8 @@ fun PlaybackContent(
     val title by viewModel.title.observeAsState(null)
     val subtitle by viewModel.subtitle.observeAsState(null)
     val duration by viewModel.duration.observeAsState(null)
+    val audioStreams by viewModel.audioStreams.observeAsState(listOf())
+    val subtitleStreams by viewModel.subtitleStreams.observeAsState(listOf())
 
     if (stream == null) {
         // TODO loading
@@ -191,14 +193,35 @@ fun PlaybackContent(
                                 .background(Color.Transparent),
                         title = title,
                         subtitle = subtitle,
-                        captions = listOf(),
+                        subtitleStreams = subtitleStreams,
                         playerControls = player,
                         controllerViewState = controllerViewState,
                         showPlay = playPauseState.showPlay,
                         previousEnabled = previousState.isEnabled,
                         nextEnabled = nextState.isEnabled,
                         seekEnabled = true,
-                        onPlaybackActionClick = {},
+                        onPlaybackActionClick = {
+                            when (it) {
+                                is PlaybackAction.PlaybackSpeed -> {
+                                    playbackSpeed = it.value
+                                }
+
+                                is PlaybackAction.Scale -> {
+                                    contentScale = it.scale
+                                }
+
+                                PlaybackAction.ShowDebug -> TODO()
+                                PlaybackAction.ShowPlaylist -> TODO()
+                                PlaybackAction.ShowVideoFilterDialog -> TODO()
+                                is PlaybackAction.ToggleAudio -> {
+                                    viewModel.changeAudioStream(it.index)
+                                }
+
+                                is PlaybackAction.ToggleCaptions -> {
+                                    viewModel.changeSubtitleStream(it.index)
+                                }
+                            }
+                        },
                         onSeekBarChange = seekBarState::onValueChange,
                         showDebugInfo = false,
                         scale = contentScale,
@@ -206,7 +229,7 @@ fun PlaybackContent(
                         moreButtonOptions = MoreButtonOptions(mapOf()),
                         subtitleIndex = null,
                         audioIndex = null,
-                        audioOptions = listOf(),
+                        audioStreams = audioStreams,
                     )
                 }
             }

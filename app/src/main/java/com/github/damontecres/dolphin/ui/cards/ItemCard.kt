@@ -75,7 +75,7 @@ fun ItemCard(
     }
 
     if (item == null) {
-        NullCard(modifier, cardWidth, cardHeight)
+        NullCard(modifier, cardWidth, cardHeight, interactionSource)
     } else {
         val dto = item.data
         // TODO better aspect ratio handling

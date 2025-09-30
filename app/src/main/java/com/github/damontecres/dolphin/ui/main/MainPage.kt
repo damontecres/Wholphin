@@ -21,7 +21,6 @@ import com.github.damontecres.dolphin.preferences.UserPreferences
 import com.github.damontecres.dolphin.ui.DefaultItemFields
 import com.github.damontecres.dolphin.ui.cards.ItemRow
 import com.github.damontecres.dolphin.ui.isNotNullOrBlank
-import com.github.damontecres.dolphin.ui.nav.Destination
 import com.github.damontecres.dolphin.ui.nav.NavigationManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
@@ -171,12 +170,7 @@ fun MainPage(
                     title = stringResource(row.section.nameRes),
                     items = row.items,
                     onClickItem = {
-                        navigationManager.navigateTo(
-                            Destination.MediaItem(
-                                it.id,
-                                it.type,
-                            ),
-                        )
+                        navigationManager.navigateTo(it.destination())
                     },
                     onLongClickItem = {},
                     modifier = Modifier.fillMaxWidth(),

@@ -1,11 +1,15 @@
 package com.github.damontecres.dolphin.ui.detail
 
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.MutableLiveData
@@ -79,9 +83,12 @@ fun SeasonDetails(
         Text(text = "Loading...")
     } else {
         item?.let { item ->
+            var focusedChild by remember { mutableIntStateOf(0) }
             LazyColumn(modifier = modifier) {
                 item {
                     Text(text = item.name ?: "Unknown")
+                }
+                item {
                 }
                 item {
                     ItemRow(
@@ -89,10 +96,22 @@ fun SeasonDetails(
                         items = episodes,
                         onClickItem = { navigationManager.navigateTo(it.destination()) },
                         onLongClickItem = { },
+                        cardOnFocus = { isFocused, index ->
+                            if (isFocused) focusedChild = index
+                        },
                         modifier = Modifier.fillMaxWidth(),
                     )
                 }
             }
         }
+    }
+}
+
+@Composable
+fun EpisodeHeader(
+    item: BaseItem,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier = modifier) {
     }
 }

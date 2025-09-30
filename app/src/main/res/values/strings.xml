@@ -12,4 +12,10 @@
     <string name="home_section_livetv">Live TV</string>
     <string name="home_section_none">None</string>
     <string name="search">Search</string>
+    <string name="resume">Resume</string>
+    <string name="restart">Restart</string>
+    <string name="play">Play</string>
+    <string name="more">More</string>
+    <string name="mark_unwatched">Mark as unwatched</string>
+    <string name="mark_watched">Mark as watched</string>
 </resources>

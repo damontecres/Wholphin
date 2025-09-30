@@ -68,7 +68,7 @@ fun ServerList(
             ListItem(
                 enabled = true,
                 selected = false,
-                headlineContent = { Text(text = "Add User") },
+                headlineContent = { Text(text = "Add Server") },
                 supportingContent = { },
                 onClick = { onAddServer.invoke() },
                 modifier = Modifier,

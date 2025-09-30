@@ -31,6 +31,11 @@ fun CharSequence?.isNotNullOrBlank(): Boolean {
     return !this.isNullOrBlank()
 }
 
+inline fun <T> List<T>.indexOfFirstOrNull(predicate: (T) -> Boolean): Int? {
+    val index = this.indexOfFirst(predicate)
+    return if (index >= 0) index else null
+}
+
 /**
  * Try to call [FocusRequester.requestFocus], but catch & log the exception if something is not configured properly
  */
@@ -60,6 +65,12 @@ fun Modifier.ifElse(
     ifTrueModifier: Modifier,
     ifFalseModifier: Modifier = Modifier,
 ): Modifier = ifElse({ condition }, ifTrueModifier, ifFalseModifier)
+
+fun Modifier.ifElse(
+    condition: Boolean,
+    ifTrueModifier: () -> Modifier,
+    ifFalseModifier: () -> Modifier = { Modifier },
+): Modifier = then(if (condition) ifTrueModifier.invoke() else ifFalseModifier.invoke())
 
 /**
  * Handles horizontal (Left & Right) D-Pad Keys and consumes the event(s) so that the focus doesn't

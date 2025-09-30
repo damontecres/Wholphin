@@ -2,12 +2,20 @@ package com.github.damontecres.dolphin.ui.nav
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.tv.material3.Text
 import com.github.damontecres.dolphin.preferences.UserPreferences
-import com.github.damontecres.dolphin.ui.detail.MediaItemContent
+import com.github.damontecres.dolphin.ui.components.details.SeasonEpisode
+import com.github.damontecres.dolphin.ui.components.details.SeriesDetailParent
+import com.github.damontecres.dolphin.ui.detail.CollectionFolderDetails
+import com.github.damontecres.dolphin.ui.detail.EpisodeDetails
+import com.github.damontecres.dolphin.ui.detail.MovieDetails
+import com.github.damontecres.dolphin.ui.detail.SeasonDetails
+import com.github.damontecres.dolphin.ui.detail.VideoDetails
 import com.github.damontecres.dolphin.ui.main.MainPage
 import com.github.damontecres.dolphin.ui.playback.PlaybackContent
 import com.github.damontecres.dolphin.ui.setup.SwitchServerContent
 import com.github.damontecres.dolphin.ui.setup.SwitchUserContent
+import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.DeviceProfile
 
 @Composable
@@ -26,14 +34,6 @@ fun DestinationContent(
                 modifier = modifier,
             )
 
-        is Destination.MediaItem ->
-            MediaItemContent(
-                preferences = preferences,
-                navigationManager = navigationManager,
-                destination = destination,
-                modifier = modifier,
-            )
-
         is Destination.Playback ->
             PlaybackContent(
                 preferences = preferences,
@@ -45,6 +45,63 @@ fun DestinationContent(
 
         Destination.ServerList -> SwitchServerContent(navigationManager, modifier)
         Destination.UserList -> SwitchUserContent(navigationManager, modifier)
+
+        is Destination.MediaItem ->
+            when (destination.type) {
+                BaseItemKind.SERIES ->
+                    SeriesDetailParent(
+                        preferences,
+                        navigationManager,
+                        destination,
+                        modifier,
+                        initialSeasonEpisode = destination.seasonEpisode ?: SeasonEpisode(0, 0),
+                    )
+
+                BaseItemKind.SEASON ->
+                    SeasonDetails(
+                        preferences,
+                        navigationManager,
+                        destination,
+                        modifier,
+                    )
+
+                BaseItemKind.EPISODE ->
+                    EpisodeDetails(
+                        preferences,
+                        navigationManager,
+                        destination,
+                        modifier,
+                    )
+
+                BaseItemKind.MOVIE ->
+                    MovieDetails(
+                        preferences,
+                        navigationManager,
+                        destination,
+                        modifier,
+                    )
+
+                BaseItemKind.VIDEO ->
+                    VideoDetails(
+                        preferences,
+                        navigationManager,
+                        destination,
+                        modifier,
+                    )
+
+                BaseItemKind.COLLECTION_FOLDER -> {
+                    CollectionFolderDetails(
+                        preferences,
+                        navigationManager,
+                        destination,
+                        modifier,
+                    )
+                }
+
+                else -> {
+                    Text("Unsupported item type: ${destination.type}")
+                }
+            }
 
         Destination.Search -> TODO()
         Destination.Settings -> TODO()

@@ -59,7 +59,6 @@ import androidx.tv.material3.Text
 import com.github.damontecres.dolphin.R
 import com.github.damontecres.dolphin.ui.AppColors
 import com.github.damontecres.dolphin.ui.tryRequestFocus
-import com.github.damontecres.dolphin.util.TrackSupport
 import com.github.damontecres.stashapp.ui.components.playback.SeekBarImpl
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -94,7 +93,7 @@ sealed interface PlaybackAction {
 @OptIn(UnstableApi::class)
 @Composable
 fun PlaybackControls(
-    captions: List<TrackSupport>,
+    subtitleStreams: List<SubtitleStream>,
     playerControls: Player,
     controllerViewState: ControllerViewState,
     onPlaybackActionClick: (PlaybackAction) -> Unit,
@@ -107,7 +106,7 @@ fun PlaybackControls(
     moreButtonOptions: MoreButtonOptions,
     subtitleIndex: Int?,
     audioIndex: Int?,
-    audioOptions: List<String>,
+    audioStreams: List<AudioStream>,
     playbackSpeed: Float,
     scale: ContentScale,
     seekBarIntervals: Int,
@@ -174,12 +173,12 @@ fun PlaybackControls(
                 modifier = Modifier.align(Alignment.Center),
             )
             RightPlaybackButtons(
-                captions = captions,
+                subtitleStreams = subtitleStreams,
                 onControllerInteraction = onControllerInteraction,
                 onControllerInteractionForDialog = onControllerInteractionForDialog,
                 onPlaybackActionClick = onPlaybackActionClick,
                 subtitleIndex = subtitleIndex,
-                audioOptions = audioOptions,
+                audioStreams = audioStreams,
                 audioIndex = audioIndex,
                 playbackSpeed = playbackSpeed,
                 scale = scale,
@@ -300,12 +299,12 @@ private val speedOptions = listOf(".25", ".5", ".75", "1.0", "1.25", "1.5", "2.0
 
 @Composable
 fun RightPlaybackButtons(
-    captions: List<TrackSupport>,
+    subtitleStreams: List<SubtitleStream>,
     onControllerInteraction: () -> Unit,
     onControllerInteractionForDialog: () -> Unit,
     onPlaybackActionClick: (PlaybackAction) -> Unit,
     subtitleIndex: Int?,
-    audioOptions: List<String>,
+    audioStreams: List<AudioStream>,
     audioIndex: Int?,
     playbackSpeed: Float,
     scale: ContentScale,
@@ -322,7 +321,7 @@ fun RightPlaybackButtons(
     ) {
         // Captions
         PlaybackButton(
-            enabled = captions.isNotEmpty(),
+            enabled = subtitleStreams.isNotEmpty(),
             iconRes = R.drawable.captions_svgrepo_com,
             onClick = {
                 onControllerInteractionForDialog.invoke()
@@ -343,7 +342,7 @@ fun RightPlaybackButtons(
     }
     if (showCaptionDialog) {
         val context = LocalContext.current
-        val options = captions.map { it.displayString(context) }
+        val options = subtitleStreams.map { it.displayName }
         Timber.v("subtitleIndex=$subtitleIndex, options=$options")
         BottomDialog(
             choices = options,
@@ -353,7 +352,7 @@ fun RightPlaybackButtons(
                 showCaptionDialog = false
             },
             onSelectChoice = { index, _ ->
-                onPlaybackActionClick.invoke(PlaybackAction.ToggleCaptions(index))
+                onPlaybackActionClick.invoke(PlaybackAction.ToggleCaptions(subtitleStreams[index].index))
             },
             gravity = Gravity.END,
         )
@@ -379,14 +378,14 @@ fun RightPlaybackButtons(
     }
     if (showAudioDialog) {
         BottomDialog(
-            choices = audioOptions,
+            choices = audioStreams.map { it.displayName },
             currentChoice = audioIndex,
             onDismissRequest = {
                 onControllerInteraction.invoke()
                 showAudioDialog = false
             },
             onSelectChoice = { index, _ ->
-                onPlaybackActionClick.invoke(PlaybackAction.ToggleAudio(index))
+                onPlaybackActionClick.invoke(PlaybackAction.ToggleAudio(audioStreams[index].index))
             },
             gravity = Gravity.END,
         )

@@ -9,7 +9,9 @@ import com.github.damontecres.dolphin.data.model.convertModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import org.jellyfin.sdk.api.client.ApiClient
+import org.jellyfin.sdk.api.client.extensions.imageApi
 import org.jellyfin.sdk.api.client.extensions.userLibraryApi
+import org.jellyfin.sdk.model.api.ImageType
 import timber.log.Timber
 import java.util.UUID
 
@@ -42,4 +44,9 @@ abstract class ItemViewModel<T : DolphinModel>(
             }
         }
     }
+
+    fun imageUrl(
+        itemId: UUID,
+        type: ImageType,
+    ): String? = api.imageApi.getItemImageUrl(itemId, type)
 }

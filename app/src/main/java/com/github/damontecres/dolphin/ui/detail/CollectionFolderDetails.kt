@@ -51,6 +51,23 @@ class CollectionFolderViewModel
         private suspend fun setup() {
             if (!pager.isInitialized) {
                 item.value?.let { item ->
+                    val includeItemTypes =
+                        when (item.data.collectionType) {
+                            CollectionType.UNKNOWN -> TODO()
+                            CollectionType.MOVIES -> listOf(BaseItemKind.MOVIE)
+                            CollectionType.TVSHOWS -> listOf(BaseItemKind.SERIES)
+                            CollectionType.MUSIC -> TODO()
+                            CollectionType.MUSICVIDEOS -> TODO()
+                            CollectionType.TRAILERS -> TODO()
+                            CollectionType.HOMEVIDEOS -> listOf(BaseItemKind.VIDEO)
+                            CollectionType.BOXSETS -> TODO()
+                            CollectionType.BOOKS -> TODO()
+                            CollectionType.PHOTOS -> TODO()
+                            CollectionType.LIVETV -> TODO()
+                            CollectionType.PLAYLISTS -> TODO()
+                            CollectionType.FOLDERS -> TODO()
+                            null -> TODO()
+                        }
                     val request =
                         GetItemsRequest(
                             parentId = item.id,
@@ -58,7 +75,7 @@ class CollectionFolderViewModel
                             mediaTypes = null,
 //                            recursive = true,
                             enableImageTypes = listOf(ImageType.PRIMARY, ImageType.THUMB),
-                            includeItemTypes = listOf(BaseItemKind.SERIES),
+                            includeItemTypes = includeItemTypes,
                             sortBy = listOf(ItemSortBy.SORT_NAME),
                             sortOrder = listOf(SortOrder.ASCENDING),
                             fields = listOf(ItemFields.PRIMARY_IMAGE_ASPECT_RATIO),
@@ -91,7 +108,17 @@ fun CollectionFolderDetails(
         pager?.let { pager ->
             when (library!!.collectionType) {
                 CollectionType.UNKNOWN -> TODO()
-                CollectionType.MOVIES -> TODO()
+
+                // TODO?
+                CollectionType.MOVIES ->
+                    TVShowCollectionDetails(
+                        preferences,
+                        navigationManager,
+                        library!!,
+                        item!!,
+                        pager,
+                        modifier,
+                    )
                 CollectionType.TVSHOWS -> {
                     TVShowCollectionDetails(
                         preferences,
@@ -106,7 +133,17 @@ fun CollectionFolderDetails(
                 CollectionType.MUSIC -> TODO()
                 CollectionType.MUSICVIDEOS -> TODO()
                 CollectionType.TRAILERS -> TODO()
-                CollectionType.HOMEVIDEOS -> TODO()
+
+                // TODO?
+                CollectionType.HOMEVIDEOS ->
+                    TVShowCollectionDetails(
+                        preferences,
+                        navigationManager,
+                        library!!,
+                        item!!,
+                        pager,
+                        modifier,
+                    )
                 CollectionType.BOXSETS -> TODO()
                 CollectionType.BOOKS -> TODO()
                 CollectionType.PHOTOS -> TODO()

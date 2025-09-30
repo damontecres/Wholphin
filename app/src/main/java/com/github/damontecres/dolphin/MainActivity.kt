@@ -53,7 +53,7 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             val scope = rememberCoroutineScope()
-            DolphinTheme {
+            DolphinTheme(true) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     shape = RectangleShape,

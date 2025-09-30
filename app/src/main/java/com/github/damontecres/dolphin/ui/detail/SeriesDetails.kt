@@ -27,6 +27,7 @@ import org.jellyfin.sdk.model.api.ItemFields
 import org.jellyfin.sdk.model.api.ItemSortBy
 import org.jellyfin.sdk.model.api.SortOrder
 import org.jellyfin.sdk.model.api.request.GetItemsRequest
+import timber.log.Timber
 import java.util.UUID
 import javax.inject.Inject
 
@@ -41,7 +42,7 @@ class SeriesViewModel
         override fun init(
             itemId: UUID,
             potential: BaseItem?,
-        ): Job? =
+        ): Job =
             viewModelScope.launch {
                 super.init(itemId, potential)?.join()
                 item.value?.let { item ->
@@ -63,8 +64,53 @@ class SeriesViewModel
                         ItemPager(api, request, viewModelScope, itemCount = item.data.childCount)
                     pager.init()
                     seasons.value = pager
+                    Timber.v("Loaded ${pager.size} seasons for series ${item.id}")
                 }
             }
+
+        fun init(
+            itemId: UUID,
+            potential: BaseItem?,
+            season: Int?,
+        ) {
+            viewModelScope.launch {
+                init(itemId, potential).join()
+                season?.let {
+                    (seasons.value!! as ItemPager)
+                        .getBlocking(season)
+                        ?.let {
+                            loadEpisodes(it.id)
+                        }
+                }
+            }
+        }
+
+        val episodes = MutableLiveData<List<BaseItem?>>(listOf())
+
+        fun loadEpisodes(seasonId: UUID): Job {
+            Timber.v("Loading episodes for season $seasonId")
+            episodes.value = listOf()
+            return viewModelScope.launch {
+                val request =
+                    GetItemsRequest(
+                        parentId = seasonId,
+                        recursive = false,
+                        includeItemTypes = listOf(BaseItemKind.EPISODE),
+                        sortBy = listOf(ItemSortBy.INDEX_NUMBER),
+                        sortOrder = listOf(SortOrder.ASCENDING),
+                        fields =
+                            listOf(
+                                ItemFields.PRIMARY_IMAGE_ASPECT_RATIO,
+                                ItemFields.CHILD_COUNT,
+                                ItemFields.MEDIA_STREAMS,
+                            ),
+                    )
+                val pager = ItemPager(api, request, viewModelScope)
+                pager.init()
+                Timber.v("Loaded ${pager.size} episodes for season $seasonId")
+                episodes.value = pager
+            }
+        }
     }
 
 @Composable

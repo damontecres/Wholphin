@@ -48,8 +48,13 @@ fun SwitchServerContent(
         ServerList(
             servers = servers,
             connectionStatus = serverStatus,
-            onSwitchServer = {},
+            onSwitchServer = {
+                viewModel.addServer(it.url) {
+                    navigationManager.navigateTo(Destination.UserList)
+                }
+            },
             onAddServer = {
+                showAddServer = true
             },
             onRemoveServer = {
                 // TODO

@@ -16,12 +16,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.media3.common.Player
 import androidx.tv.material3.Text
-import com.github.damontecres.dolphin.util.TrackSupport
 
 @Composable
 fun PlaybackOverlay(
     title: String?,
-    captions: List<TrackSupport>,
+    subtitleStreams: List<SubtitleStream>,
     playerControls: Player,
     controllerViewState: ControllerViewState,
     showPlay: Boolean,
@@ -36,7 +35,7 @@ fun PlaybackOverlay(
     moreButtonOptions: MoreButtonOptions,
     subtitleIndex: Int?,
     audioIndex: Int?,
-    audioOptions: List<String>,
+    audioStreams: List<AudioStream>,
     modifier: Modifier = Modifier,
     subtitle: String? = null,
     seekBarInteractionSource: MutableInteractionSource = remember { MutableInteractionSource() },
@@ -63,7 +62,7 @@ fun PlaybackOverlay(
             }
             PlaybackControls(
                 modifier = Modifier.fillMaxWidth(),
-                captions = captions,
+                subtitleStreams = subtitleStreams,
                 playerControls = playerControls,
                 onPlaybackActionClick = onPlaybackActionClick,
                 controllerViewState = controllerViewState,
@@ -80,7 +79,7 @@ fun PlaybackOverlay(
                 moreButtonOptions = moreButtonOptions,
                 subtitleIndex = subtitleIndex,
                 audioIndex = audioIndex,
-                audioOptions = audioOptions,
+                audioStreams = audioStreams,
                 playbackSpeed = playbackSpeed,
                 scale = scale,
                 seekBarIntervals = 16,

@@ -39,7 +39,8 @@ fun SwitchUserContent(
     val currentUser = viewModel.serverRepository.currentUser
     val users by viewModel.users.observeAsState(listOf())
 
-    val quickConnectEnabled by viewModel.quickConnectEnabled.observeAsState(false)
+    val serverQuickConnect by viewModel.serverQuickConnect.observeAsState(mapOf())
+    val quickConnectEnabled = currentServer?.let { serverQuickConnect[it.id] ?: false } ?: false
     val quickConnect by viewModel.quickConnectState.observeAsState(null)
     var showAddUser by remember { mutableStateOf(false) }
 
@@ -76,7 +77,7 @@ fun SwitchUserContent(
         if (showAddUser) {
             var useQuickConnect by remember { mutableStateOf(quickConnectEnabled) }
             LaunchedEffect(Unit) {
-                if (quickConnectEnabled) {
+                if (useQuickConnect) {
                     viewModel.initiateQuickConnect(server) {
                         navigationManager.goToHome()
                     }
@@ -90,7 +91,10 @@ fun SwitchUserContent(
             ) {
                 Column(
                     verticalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.padding(16.dp).fillMaxWidth(),
+                    modifier =
+                        Modifier
+                            .padding(16.dp)
+                            .fillMaxWidth(),
                 ) {
                     if (useQuickConnect) {
                         quickConnect?.let { qc ->

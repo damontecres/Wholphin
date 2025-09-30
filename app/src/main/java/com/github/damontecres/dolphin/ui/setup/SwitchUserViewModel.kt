@@ -34,9 +34,9 @@ class SwitchUserViewModel
     ) : ViewModel() {
         val servers = MutableLiveData<List<JellyfinServer>>(listOf())
         val serverStatus = MutableLiveData<Map<String, ServerConnectionStatus>>(mapOf())
+        val serverQuickConnect = MutableLiveData<Map<String, Boolean>>(mapOf())
 
         val users = MutableLiveData<List<JellyfinUser>>(listOf())
-        val quickConnectEnabled = MutableLiveData(false)
         val quickConnectState = MutableLiveData<QuickConnectResult?>(null)
 
         private var quickConnectJob: Job? = null
@@ -57,6 +57,11 @@ class SwitchUserViewModel
                             .createApi(server.url)
                             .systemApi
                             .getPublicSystemInfo()
+                        val quickConnect by
+                            jellyfin
+                                .createApi(server.url)
+                                .quickConnectApi
+                                .getQuickConnectEnabled()
                         withContext(Dispatchers.Main) {
                             serverStatus.value =
                                 serverStatus.value!!.toMutableMap().apply {
@@ -64,6 +69,10 @@ class SwitchUserViewModel
                                         server.id,
                                         ServerConnectionStatus.Success,
                                     )
+                                }
+                            serverQuickConnect.value =
+                                serverQuickConnect.value!!.toMutableMap().apply {
+                                    put(server.id, quickConnect)
                                 }
                         }
                     } catch (ex: Exception) {
@@ -88,7 +97,10 @@ class SwitchUserViewModel
                             .content
                     val serverUsers = serverDao.getServer(it.id)?.users?.sortedBy { it.name } ?: listOf()
                     withContext(Dispatchers.Main) {
-                        quickConnectEnabled.value = quickConnect
+                        serverQuickConnect.value =
+                            serverQuickConnect.value!!.toMutableMap().apply {
+                                put(it.id, quickConnect)
+                            }
                         users.value = serverUsers
                     }
                 }
@@ -173,7 +185,10 @@ class SwitchUserViewModel
                 } catch (err: InvalidStatusException) {
                     if (err.status == 401) {
                         quickConnectState.value = null
-                        quickConnectEnabled.value = false
+                        serverQuickConnect.value =
+                            serverQuickConnect.value!!.toMutableMap().apply {
+                                put(server.id, false)
+                            }
                     }
                 }
             }
@@ -203,6 +218,18 @@ class SwitchUserViewModel
                                 url = serverUrl,
                             ),
                         )
+                        val quickConnect =
+                            jellyfin
+                                .createApi(serverUrl)
+                                .quickConnectApi
+                                .getQuickConnectEnabled()
+                                .content
+                        withContext(Dispatchers.Main) {
+                            serverQuickConnect.value =
+                                serverQuickConnect.value!!.toMutableMap().apply {
+                                    put(id, quickConnect)
+                                }
+                        }
                         callback.invoke()
                     } else {
                         // TODO
