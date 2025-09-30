@@ -8,8 +8,8 @@ import androidx.datastore.dataStoreFile
 import androidx.room.Room
 import com.github.damontecres.dolphin.data.AppDatabase
 import com.github.damontecres.dolphin.data.JellyfinServerDao
-import com.github.damontecres.dolphin.preferences.UserPreferences
-import com.github.damontecres.dolphin.preferences.UserPreferencesSerializer
+import com.github.damontecres.dolphin.preferences.AppPreferences
+import com.github.damontecres.dolphin.preferences.AppPreferencesSerializer
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -41,14 +41,14 @@ object DatabaseModule {
     @Singleton
     fun userPreferencesDataStore(
         @ApplicationContext context: Context,
-        userPreferencesSerializer: UserPreferencesSerializer,
-    ): DataStore<UserPreferences> =
+        userPreferencesSerializer: AppPreferencesSerializer,
+    ): DataStore<AppPreferences> =
         DataStoreFactory.create(
             serializer = userPreferencesSerializer,
-            produceFile = { context.dataStoreFile("user_preferences.pb") },
+            produceFile = { context.dataStoreFile("app_preferences.pb") },
             corruptionHandler =
                 ReplaceFileCorruptionHandler(
-                    produceNewData = { UserPreferences.getDefaultInstance() },
+                    produceNewData = { AppPreferences.getDefaultInstance() },
                 ),
         )
 }

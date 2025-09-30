@@ -3,8 +3,17 @@ syntax = "proto3";
 option java_package = "com.github.damontecres.dolphin.preferences";
 option java_multiple_files = true;
 
-message UserPreferences {
+message PlaybackPreferences {
+  int64 skip_forward_ms = 1;
+  int64 skip_back_ms = 2;
+  int64 controller_timeout_ms = 3;
+  int32 seek_bar_steps = 4;
+}
+
+message AppPreferences {
   // The currently signed in server and user IDs, mostly for restoring a session
   string current_server_id = 1;
   string current_user_id = 2;
+
+  PlaybackPreferences playback_preferences = 3;
 }

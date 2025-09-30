@@ -24,6 +24,8 @@ import androidx.tv.material3.ExperimentalTvMaterial3Api
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Surface
 import com.github.damontecres.dolphin.data.ServerRepository
+import com.github.damontecres.dolphin.preferences.AppPreferences
+import com.github.damontecres.dolphin.preferences.DefaultUserConfiguration
 import com.github.damontecres.dolphin.preferences.UserPreferences
 import com.github.damontecres.dolphin.ui.CoilConfig
 import com.github.damontecres.dolphin.ui.nav.ApplicationContent
@@ -43,7 +45,7 @@ class MainActivity : AppCompatActivity() {
     lateinit var serverRepository: ServerRepository
 
     @Inject
-    lateinit var userPreferencesDataStore: DataStore<UserPreferences>
+    lateinit var userPreferencesDataStore: DataStore<AppPreferences>
 
     @Inject
     lateinit var okHttpClient: OkHttpClient
@@ -61,23 +63,31 @@ class MainActivity : AppCompatActivity() {
                     CoilConfig(serverRepository, okHttpClient, false)
 
                     var isRestoringSession by remember { mutableStateOf(true) }
-                    val preferences by userPreferencesDataStore.data.collectAsState(null)
-                    preferences?.let { preferences ->
+                    val appPreferences by userPreferencesDataStore.data.collectAsState(null)
+                    appPreferences?.let { appPreferences ->
                         LaunchedEffect(Unit) {
-                            if (preferences.currentServerId.isNotBlank() && preferences.currentUserId.isNotBlank()) {
+                            if (appPreferences.currentServerId.isNotBlank() && appPreferences.currentUserId.isNotBlank()) {
                                 serverRepository.restoreSession(
-                                    preferences.currentServerId,
-                                    preferences.currentUserId,
+                                    appPreferences.currentServerId,
+                                    appPreferences.currentUserId,
                                 )
                             }
                             isRestoringSession = false
                         }
-                        val deviceProfile =
-                            remember(preferences) {
-                                createDeviceProfile(this@MainActivity, preferences, false)
-                            }
                         val server = serverRepository.currentServer
                         val user = serverRepository.currentUser
+                        val userDto = serverRepository.currentUserDto
+
+                        val preferences =
+                            UserPreferences(
+                                appPreferences,
+                                userDto?.configuration ?: DefaultUserConfiguration,
+                            )
+
+                        val deviceProfile =
+                            remember(appPreferences) {
+                                createDeviceProfile(this@MainActivity, preferences, false)
+                            }
                         val backStack = rememberNavBackStack(Destination.Main)
                         val navigationManager = NavigationManager(backStack)
 

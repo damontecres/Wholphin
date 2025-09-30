@@ -18,4 +18,22 @@
     <string name="more">More</string>
     <string name="mark_unwatched">Mark as unwatched</string>
     <string name="mark_watched">Mark as watched</string>
+    <string name="cancel">Cancel</string>
+    <string name="save">Save</string>
+    <string name="app_name_long">Dolphin</string>
+    <string name="basic_interface">Basic Interface</string>
+    <string name="playback">Playback</string>
+    <string name="about">About</string>
+    <string name="advanced_settings">Advanced Settings</string>
+    <string name="advanced_ui">Advanced UI</string>
+    <string name="install_update">Install update</string>
+    <string name="installed_version">Installed version</string>
+    <string name="show">Show</string>
+    <string name="hide">Hide</string>
+    <string name="enabled">Enabled</string>
+    <string name="disabled">Disabled</string>
+    <string name="skip_forward_preference">Skip forward</string>
+    <string name="skip_back_preference">Skip back</string>
+    <string name="hide_controller_timeout">Hide playback controls</string>
+    <string name="seek_bar_steps">Seek bar steps</string>
 </resources>

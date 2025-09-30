@@ -1,4 +1,4 @@
-package com.github.damontecres.stashapp.ui.components.playback
+package com.github.damontecres.dolphin.ui.playback
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect

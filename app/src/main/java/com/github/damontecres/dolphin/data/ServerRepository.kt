@@ -4,13 +4,14 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.datastore.core.DataStore
-import com.github.damontecres.dolphin.preferences.UserPreferences
+import com.github.damontecres.dolphin.preferences.AppPreferences
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.exception.InvalidStatusException
 import org.jellyfin.sdk.api.client.extensions.userApi
 import org.jellyfin.sdk.model.api.AuthenticationResult
+import org.jellyfin.sdk.model.api.UserDto
 import timber.log.Timber
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -21,12 +22,14 @@ class ServerRepository
     constructor(
         val serverDao: JellyfinServerDao,
         val apiClient: ApiClient,
-        val userPreferencesDataStore: DataStore<UserPreferences>,
+        val userPreferencesDataStore: DataStore<AppPreferences>,
     ) {
         private var _currentServer by mutableStateOf<JellyfinServer?>(null)
         val currentServer get() = _currentServer
         private var _currentUser by mutableStateOf<JellyfinUser?>(null)
         val currentUser get() = _currentUser
+        private var _currentUserDto by mutableStateOf<UserDto?>(null)
+        val currentUserDto get() = _currentUserDto
 
         suspend fun addAndChangeServer(server: JellyfinServer) {
             withContext(Dispatchers.IO) {
@@ -76,6 +79,7 @@ class ServerRepository
                     serverDao.addServer(updatedServer)
                     serverDao.addUser(updatedUser)
                 }
+                _currentUserDto = userDto
                 _currentServer = updatedServer
                 _currentUser = updatedUser
             } catch (e: InvalidStatusException) {

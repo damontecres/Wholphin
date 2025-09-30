@@ -13,6 +13,8 @@ import com.github.damontecres.dolphin.ui.detail.series.SeasonEpisode
 import com.github.damontecres.dolphin.ui.detail.series.SeriesOverview
 import com.github.damontecres.dolphin.ui.main.MainPage
 import com.github.damontecres.dolphin.ui.playback.PlaybackContent
+import com.github.damontecres.dolphin.ui.preferences.PreferenceScreenOption
+import com.github.damontecres.dolphin.ui.preferences.PreferencesPage
 import com.github.damontecres.dolphin.ui.setup.SwitchServerContent
 import com.github.damontecres.dolphin.ui.setup.SwitchUserContent
 import org.jellyfin.sdk.model.api.BaseItemKind
@@ -45,6 +47,14 @@ fun DestinationContent(
 
         Destination.ServerList -> SwitchServerContent(navigationManager, modifier)
         Destination.UserList -> SwitchUserContent(navigationManager, modifier)
+
+        Destination.Settings ->
+            PreferencesPage(
+                navigationManager,
+                preferences.appPreferences,
+                PreferenceScreenOption.BASIC,
+                modifier,
+            )
 
         is Destination.MediaItem ->
             when (destination.type) {
@@ -104,7 +114,6 @@ fun DestinationContent(
             }
 
         Destination.Search -> TODO()
-        Destination.Settings -> TODO()
         Destination.Setup -> TODO()
     }
 }

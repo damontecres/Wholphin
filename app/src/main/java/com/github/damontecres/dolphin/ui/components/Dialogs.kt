@@ -49,6 +49,12 @@ import com.github.damontecres.dolphin.ui.FontAwesome
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
+data class DialogParams(
+    val fromLongClick: Boolean,
+    val title: String,
+    val items: List<DialogItem>,
+)
+
 sealed interface DialogItemEntry
 
 data object DialogItemDivider : DialogItemEntry

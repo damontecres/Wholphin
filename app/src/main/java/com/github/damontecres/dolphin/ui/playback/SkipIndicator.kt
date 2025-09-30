@@ -1,4 +1,4 @@
-package com.github.damontecres.stashapp.ui.components.playback
+package com.github.damontecres.dolphin.ui.playback
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween

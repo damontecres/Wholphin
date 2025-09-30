@@ -48,8 +48,6 @@ import com.github.damontecres.dolphin.preferences.UserPreferences
 import com.github.damontecres.dolphin.ui.nav.Destination
 import com.github.damontecres.dolphin.ui.nav.NavigationManager
 import com.github.damontecres.dolphin.ui.tryRequestFocus
-import com.github.damontecres.stashapp.ui.components.playback.SkipIndicator
-import com.github.damontecres.stashapp.ui.components.playback.rememberSeekBarState
 import org.jellyfin.sdk.model.api.DeviceProfile
 import kotlin.time.Duration.Companion.milliseconds
 

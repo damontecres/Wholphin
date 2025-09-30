@@ -59,7 +59,6 @@ import androidx.tv.material3.Text
 import com.github.damontecres.dolphin.R
 import com.github.damontecres.dolphin.ui.AppColors
 import com.github.damontecres.dolphin.ui.tryRequestFocus
-import com.github.damontecres.stashapp.ui.components.playback.SeekBarImpl
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch

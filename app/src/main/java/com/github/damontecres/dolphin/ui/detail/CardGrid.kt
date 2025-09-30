@@ -89,7 +89,7 @@ fun CardGrid(
 
     if (DEBUG) {
         Timber.d(
-            "StashGrid: hasRun=$hasRequestFocusRun, requestFocus=$requestFocus, initialPosition=$initialPosition, focusedIndex=$focusedIndex",
+            "Grid: hasRun=$hasRequestFocusRun, requestFocus=$requestFocus, initialPosition=$initialPosition, focusedIndex=$focusedIndex",
         )
     }
 
