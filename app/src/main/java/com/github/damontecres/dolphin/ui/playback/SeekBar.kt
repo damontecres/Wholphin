@@ -18,6 +18,7 @@ package com.github.damontecres.dolphin.ui.playback
  * limitations under the License.
  */
 
+import android.view.KeyEvent
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.focusable
@@ -30,8 +31,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -39,15 +42,21 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.unit.dp
 import androidx.tv.material3.MaterialTheme
 import com.github.damontecres.dolphin.ui.handleDPadKeyEvents
+import kotlinx.coroutines.FlowPreview
+import kotlin.time.Duration.Companion.seconds
 
 @Composable
-fun SeekBarImpl(
+fun SteppedSeekBarImpl(
     progress: Float,
+    durationMs: Long,
     bufferedProgress: Float,
-    onSeek: (seekProgress: Float) -> Unit,
+    onSeek: (Long) -> Unit,
     controllerViewState: ControllerViewState,
     modifier: Modifier = Modifier,
     intervals: Int = 10,
@@ -55,10 +64,6 @@ fun SeekBarImpl(
     enabled: Boolean = true,
 ) {
     val isFocused by interactionSource.collectIsFocusedAsState()
-    val color = MaterialTheme.colorScheme.border
-    val animatedIndicatorHeight by animateDpAsState(
-        targetValue = 6.dp.times((if (isFocused) 2f else 1f)),
-    )
     var hasSeeked by remember { mutableStateOf(false) }
     var seekProgress by remember { mutableFloatStateOf(progress) }
     val progressToUse = if (isFocused && hasSeeked) seekProgress else progress
@@ -68,25 +73,91 @@ fun SeekBarImpl(
 
     val offset = 1f / intervals
 
-    val handleSeekEventModifier =
-        Modifier.handleDPadKeyEvents(
-            onCenter = {
-                controllerViewState.pulseControls()
-                onSeek(seekProgress)
-            },
-            onLeft = {
-                controllerViewState.pulseControls()
-                seekProgress = (progressToUse - offset).coerceAtLeast(0f)
-                hasSeeked = true
-                onSeek(seekProgress)
-            },
-            onRight = {
-                controllerViewState.pulseControls()
-                seekProgress = (progressToUse + offset).coerceAtMost(1f)
-                hasSeeked = true
-                onSeek(seekProgress)
-            },
-        )
+    val seek = { percent: Float ->
+        onSeek((percent * durationMs).toLong())
+    }
+
+    SeekBarDisplay(
+        enabled = enabled,
+        progress = progressToUse,
+        bufferedProgress = bufferedProgress,
+        onLeft = {
+            controllerViewState.pulseControls()
+            seekProgress = (progressToUse - offset).coerceAtLeast(0f)
+            hasSeeked = true
+            seek(seekProgress)
+        },
+        onRight = {
+            controllerViewState.pulseControls()
+            seekProgress = (progressToUse + offset).coerceAtMost(1f)
+            hasSeeked = true
+            seek(seekProgress)
+        },
+        interactionSource = interactionSource,
+        modifier = modifier,
+    )
+}
+
+@OptIn(FlowPreview::class)
+@Composable
+fun IntervalSeekBarImpl(
+    progress: Float,
+    durationMs: Long,
+    bufferedProgress: Float,
+    onSeek: (Long) -> Unit,
+    controllerViewState: ControllerViewState,
+    modifier: Modifier = Modifier,
+    interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
+    enabled: Boolean = true,
+) {
+    val isFocused by interactionSource.collectIsFocusedAsState()
+    var hasSeeked by remember { mutableStateOf(false) }
+    var seekPositionMs by remember { mutableLongStateOf((progress * durationMs).toLong()) }
+    val progressToUse by remember { derivedStateOf { if (isFocused && hasSeeked) seekPositionMs else (progress * durationMs).toLong() } }
+
+    LaunchedEffect(isFocused) {
+        if (!isFocused) hasSeeked = false
+    }
+
+    val offset = 30.seconds.inWholeMilliseconds
+
+    SeekBarDisplay(
+        enabled = enabled,
+        progress = (progressToUse.toDouble() / durationMs).toFloat(),
+        bufferedProgress = bufferedProgress,
+        onLeft = {
+            controllerViewState.pulseControls()
+            seekPositionMs = (progressToUse - offset).coerceAtLeast(0L)
+            hasSeeked = true
+            onSeek(seekPositionMs)
+        },
+        onRight = {
+            controllerViewState.pulseControls()
+            seekPositionMs = (progressToUse + offset).coerceAtMost(durationMs)
+            hasSeeked = true
+            onSeek(seekPositionMs)
+        },
+        interactionSource = interactionSource,
+        modifier = modifier,
+    )
+}
+
+@Composable
+fun SeekBarDisplay(
+    progress: Float,
+    bufferedProgress: Float,
+    onLeft: () -> Unit,
+    onRight: () -> Unit,
+    interactionSource: MutableInteractionSource,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+) {
+    val color = MaterialTheme.colorScheme.border
+
+    val isFocused by interactionSource.collectIsFocusedAsState()
+    val animatedIndicatorHeight by animateDpAsState(
+        targetValue = 6.dp.times((if (isFocused) 2f else 1f)),
+    )
 
     Column(
         modifier = modifier,
@@ -98,8 +169,25 @@ fun SeekBarImpl(
                     .fillMaxWidth()
                     .height(animatedIndicatorHeight)
                     .padding(horizontal = 4.dp)
-                    .then(handleSeekEventModifier)
-                    .focusable(enabled = enabled, interactionSource = interactionSource),
+                    .onPreviewKeyEvent { event ->
+                        val trigger =
+                            event.type == KeyEventType.KeyUp || event.nativeKeyEvent.repeatCount > 0
+                        when (event.nativeKeyEvent.keyCode) {
+                            KeyEvent.KEYCODE_DPAD_LEFT, KeyEvent.KEYCODE_SYSTEM_NAVIGATION_LEFT -> {
+                                if (trigger) onLeft.invoke()
+                                return@onPreviewKeyEvent true
+                            }
+
+                            KeyEvent.KEYCODE_DPAD_RIGHT, KeyEvent.KEYCODE_SYSTEM_NAVIGATION_RIGHT -> {
+                                if (trigger) onRight.invoke()
+                                return@onPreviewKeyEvent true
+                            }
+                        }
+                        false
+                    }.handleDPadKeyEvents(
+                        onLeft = onLeft,
+                        onRight = onRight,
+                    ).focusable(enabled = enabled, interactionSource = interactionSource),
             onDraw = {
                 val yOffset = size.height.div(2)
                 drawLine(
@@ -126,7 +214,7 @@ fun SeekBarImpl(
                     end =
                         Offset(
 //                        x = size.width.times(if (isSelected) seekProgress else progress),
-                            x = size.width.times(progressToUse),
+                            x = size.width.times(progress),
                             y = yOffset,
                         ),
                     strokeWidth = size.height,
@@ -135,7 +223,7 @@ fun SeekBarImpl(
                 drawCircle(
                     color = Color.White,
                     radius = size.height + 2,
-                    center = Offset(x = size.width.times(progressToUse), y = yOffset),
+                    center = Offset(x = size.width.times(progress), y = yOffset),
                 )
             },
         )

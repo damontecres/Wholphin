@@ -7,14 +7,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.media3.common.Player
-import androidx.media3.common.listen
 import androidx.media3.common.util.UnstableApi
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.Channel.Factory.CONFLATED
+import kotlinx.coroutines.flow.consumeAsFlow
+import kotlinx.coroutines.flow.debounce
 
 @UnstableApi
 @Composable
@@ -37,23 +36,26 @@ class SeekBarState(
     var isEnabled by mutableStateOf(player.isCommandAvailable(Player.COMMAND_SEEK_FORWARD))
         private set
 
-    private var job: Job? = null
+    private val channel = Channel<Long>(CONFLATED)
 
-    fun onValueChange(progress: Float) {
-        job?.cancel()
-        job =
-            scope.launch(Dispatchers.IO) {
-                delay(750L)
-                withContext(Dispatchers.Main) {
-                    player.seekTo((player.duration * progress).toLong())
-                }
+    fun onValueChange(positionMs: Long) {
+        channel.trySend(positionMs)
+    }
+
+    @OptIn(FlowPreview::class)
+    suspend fun observe() {
+        channel
+            .consumeAsFlow()
+            .debounce { 750L }
+            .collect {
+                player.seekTo(it)
             }
     }
 
-    suspend fun observe(): Nothing =
-        player.listen { events ->
-            if (events.contains(Player.EVENT_AVAILABLE_COMMANDS_CHANGED)) {
-                isEnabled = isCommandAvailable(Player.COMMAND_SEEK_FORWARD)
-            }
-        }
+//    suspend fun observe(): Nothing =
+//        player.listen { events ->
+//            if (events.contains(Player.EVENT_AVAILABLE_COMMANDS_CHANGED)) {
+//                isEnabled = isCommandAvailable(Player.COMMAND_SEEK_FORWARD)
+//            }
+//        }
 }

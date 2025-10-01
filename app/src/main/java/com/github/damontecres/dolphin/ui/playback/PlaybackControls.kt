@@ -97,7 +97,7 @@ fun PlaybackControls(
     controllerViewState: ControllerViewState,
     onPlaybackActionClick: (PlaybackAction) -> Unit,
     showDebugInfo: Boolean,
-    onSeekProgress: (Float) -> Unit,
+    onSeekProgress: (Long) -> Unit,
     showPlay: Boolean,
     previousEnabled: Boolean,
     nextEnabled: Boolean,
@@ -194,7 +194,7 @@ fun SeekBar(
     isEnabled: Boolean,
     intervals: Int,
     controllerViewState: ControllerViewState,
-    onSeekProgress: (Float) -> Unit,
+    onSeekProgress: (Long) -> Unit,
     modifier: Modifier = Modifier,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
 ) {
@@ -213,17 +213,18 @@ fun SeekBar(
         modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        SeekBarImpl(
+        IntervalSeekBarImpl(
             progress = progress,
             bufferedProgress = bufferedProgress,
             onSeek = {
                 onSeekProgress(it)
             },
             controllerViewState = controllerViewState,
-            intervals = intervals,
+//            intervals = intervals,
             modifier = Modifier.fillMaxWidth(),
             interactionSource = interactionSource,
             enabled = isEnabled,
+            durationMs = player.contentDuration,
         )
         Row(
             modifier = Modifier.fillMaxWidth(),

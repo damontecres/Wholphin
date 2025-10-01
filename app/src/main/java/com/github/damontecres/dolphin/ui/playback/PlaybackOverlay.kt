@@ -9,7 +9,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -33,7 +33,7 @@ fun PlaybackOverlay(
     nextEnabled: Boolean,
     seekEnabled: Boolean,
     onPlaybackActionClick: (PlaybackAction) -> Unit,
-    onSeekBarChange: (Float) -> Unit,
+    onSeekBarChange: (Long) -> Unit,
     showDebugInfo: Boolean,
     scale: ContentScale,
     playbackSpeed: Float,
@@ -48,8 +48,8 @@ fun PlaybackOverlay(
     seekBarInteractionSource: MutableInteractionSource = remember { MutableInteractionSource() },
 ) {
     // Will be used for preview/trick play images
-    var seekProgressPercent by remember { mutableFloatStateOf(-1f) }
-    val seekProgressMs = seekProgressPercent * playerControls.duration
+    var seekProgressMs by remember { mutableLongStateOf(-1L) }
+    var seekProgressPercent = (seekProgressMs.toDouble() / playerControls.duration).toFloat()
     val seekBarFocused by seekBarInteractionSource.collectIsFocusedAsState()
 
     Box(
@@ -97,7 +97,7 @@ fun PlaybackOverlay(
                                     ),
                             previewImageUrl = imageUrl,
                             duration = playerControls.duration,
-                            seekProgress = seekProgressPercent,
+                            seekProgressMs = seekProgressMs,
                             videoWidth = trickplayInfo.width,
                             videoHeight = trickplayInfo.height,
                             trickPlayInfo = trickplayInfo,
@@ -114,7 +114,7 @@ fun PlaybackOverlay(
                 controllerViewState = controllerViewState,
                 showDebugInfo = showDebugInfo,
                 onSeekProgress = {
-                    seekProgressPercent = it
+                    seekProgressMs = it
                     onSeekBarChange(it)
                 },
                 showPlay = showPlay,

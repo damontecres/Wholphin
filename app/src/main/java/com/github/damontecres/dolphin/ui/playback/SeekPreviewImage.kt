@@ -63,7 +63,7 @@ fun Modifier.offsetByPercent(xPercentage: Float) =
 fun SeekPreviewImage(
     previewImageUrl: String,
     duration: Long,
-    seekProgress: Float,
+    seekProgressMs: Long,
     videoWidth: Int?,
     videoHeight: Int?,
     trickPlayInfo: TrickplayInfo,
@@ -86,7 +86,7 @@ fun SeekPreviewImage(
             val heightPx = with(LocalDensity.current) { height.toPx().toInt() }
             val widthPx = with(LocalDensity.current) { width.toPx().toInt() }
 
-            val index = (duration * seekProgress / trickPlayInfo.interval).toInt() // Which tile
+            val index = (seekProgressMs.toDouble() / trickPlayInfo.interval).toInt() // Which tile
             val numberOfTitlesPerImage = trickPlayInfo.tileHeight * trickPlayInfo.tileWidth
             val imageIndex = index % numberOfTitlesPerImage
 
@@ -118,7 +118,7 @@ fun SeekPreviewImage(
             )
         }
         Text(
-            text = (seekProgress * duration / 1000).toLong().seconds.toString(),
+            text = (seekProgressMs / 1000L).seconds.toString(),
             color = MaterialTheme.colorScheme.onSurface,
             style = MaterialTheme.typography.labelLarge,
         )
