@@ -106,6 +106,7 @@ class SeriesViewModel
                                 ItemFields.MEDIA_STREAMS,
                                 ItemFields.OVERVIEW,
                                 ItemFields.CUSTOM_RATING,
+                                ItemFields.TRICKPLAY,
                             ),
                     )
                 val pager = ItemPager(api, request, viewModelScope)

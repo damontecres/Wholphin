@@ -19,13 +19,17 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.mediaInfoApi
+import org.jellyfin.sdk.api.client.extensions.trickplayApi
 import org.jellyfin.sdk.api.client.extensions.userLibraryApi
 import org.jellyfin.sdk.api.client.extensions.videosApi
+import org.jellyfin.sdk.model.api.BaseItemDto
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.DeviceProfile
 import org.jellyfin.sdk.model.api.MediaStreamType
 import org.jellyfin.sdk.model.api.PlaybackInfoDto
+import org.jellyfin.sdk.model.api.TrickplayInfo
 import org.jellyfin.sdk.model.extensions.ticks
+import org.jellyfin.sdk.model.serializer.toUUIDOrNull
 import timber.log.Timber
 import java.util.UUID
 import javax.inject.Inject
@@ -74,8 +78,10 @@ class PlaybackViewModel
         val audioStreams = MutableLiveData<List<AudioStream>>(listOf())
         val subtitleStreams = MutableLiveData<List<SubtitleStream>>(listOf())
         val currentPlayback = MutableLiveData<CurrentPlayback?>(null)
+        val trickplay = MutableLiveData<TrickplayInfo?>(null)
 
         private lateinit var deviceProfile: DeviceProfile
+        private lateinit var dto: BaseItemDto
 
         init {
             addCloseable { player.release() }
@@ -91,6 +97,7 @@ class PlaybackViewModel
             val item = destination.item
             viewModelScope.launch(Dispatchers.IO) {
                 val base = item?.data ?: api.userLibraryApi.getItem(itemId).content
+                dto = base
 
                 val title = base.name
                 val subtitle =
@@ -170,7 +177,7 @@ class PlaybackViewModel
             }
         }
 
-        fun changeStreams(
+        private suspend fun changeStreams(
             itemId: UUID,
             audioIndex: Int?,
             subtitleIndex: Int?,
@@ -185,72 +192,111 @@ class PlaybackViewModel
                 Timber.i("No change in playback for changeStreams")
                 return
             }
-            viewModelScope.launch(Dispatchers.IO) {
-                val response =
-                    api.mediaInfoApi
-                        .getPostedPlaybackInfo(
-                            itemId,
-                            // TODO device profile, etc
-                            PlaybackInfoDto(
-                                startTimeTicks = null,
-                                deviceProfile = deviceProfile,
-                                enableDirectPlay = true,
-                                enableDirectStream = true,
-                                maxAudioChannels = null,
-                                audioStreamIndex = audioIndex,
-                                subtitleStreamIndex = subtitleIndex,
-                                allowVideoStreamCopy = true,
-                                allowAudioStreamCopy = true,
-                                autoOpenLiveStream = true,
-                                mediaSourceId = null,
-                            ),
-                        ).content
-                val source = response.mediaSources.firstOrNull()
-                source?.let { source ->
-                    val mediaUrl =
-                        if (source.supportsDirectPlay) {
-                            api.videosApi.getVideoStreamUrl(
-                                itemId = itemId,
-                                mediaSourceId = source.id,
-                                static = true,
-                                tag = source.eTag,
-                            )
-                        } else if (source.supportsDirectStream) {
-                            api.createUrl(source.transcodingUrl!!)
-                        } else {
-                            api.createUrl(source.transcodingUrl!!)
-                        }
-                    val transcodeType =
-                        when {
-                            source.supportsDirectPlay -> TranscodeType.DIRECT_PLAY
-                            source.supportsDirectStream -> TranscodeType.DIRECT_STREAM
-                            source.supportsTranscoding -> TranscodeType.TRANSCODE
-                            else -> throw Exception("No supported playback method")
-                        }
-                    val decision = StreamDecision(itemId, transcodeType, mediaUrl)
-                    Timber.v("Playback decision: $decision")
-
-                    withContext(Dispatchers.Main) {
-                        duration.value = source.runTimeTicks?.ticks
-                        stream.value = decision
-                        currentPlayback.value = CurrentPlayback(itemId, audioIndex, subtitleIndex)
-                        player.setMediaItem(
-                            decision.mediaItem,
-                            positionMs,
+            val response =
+                api.mediaInfoApi
+                    .getPostedPlaybackInfo(
+                        itemId,
+                        // TODO device profile, etc
+                        PlaybackInfoDto(
+                            startTimeTicks = null,
+                            deviceProfile = deviceProfile,
+                            enableDirectPlay = true,
+                            enableDirectStream = true,
+                            maxAudioChannels = null,
+                            audioStreamIndex = audioIndex,
+                            subtitleStreamIndex = subtitleIndex,
+                            allowVideoStreamCopy = true,
+                            allowAudioStreamCopy = true,
+                            autoOpenLiveStream = true,
+                            mediaSourceId = null,
+                        ),
+                    ).content
+            val source = response.mediaSources.firstOrNull()
+            source?.let { source ->
+                val mediaUrl =
+                    if (source.supportsDirectPlay) {
+                        api.videosApi.getVideoStreamUrl(
+                            itemId = itemId,
+                            mediaSourceId = source.id,
+                            static = true,
+                            tag = source.eTag,
                         )
+                    } else if (source.supportsDirectStream) {
+                        api.createUrl(source.transcodingUrl!!)
+                    } else {
+                        api.createUrl(source.transcodingUrl!!)
                     }
+                val transcodeType =
+                    when {
+                        source.supportsDirectPlay -> TranscodeType.DIRECT_PLAY
+                        source.supportsDirectStream -> TranscodeType.DIRECT_STREAM
+                        source.supportsTranscoding -> TranscodeType.TRANSCODE
+                        else -> throw Exception("No supported playback method")
+                    }
+                val decision = StreamDecision(itemId, transcodeType, mediaUrl)
+                Timber.v("Playback decision: $decision")
+
+                withContext(Dispatchers.Main) {
+                    duration.value = source.runTimeTicks?.ticks
+                    stream.value = decision
+                    currentPlayback.value =
+                        CurrentPlayback(
+                            itemId,
+                            audioIndex,
+                            subtitleIndex,
+                            source.id?.toUUIDOrNull(),
+                        )
+                    player.setMediaItem(
+                        decision.mediaItem,
+                        positionMs,
+                    )
+                }
+                val trickPlayInfo =
+                    dto.trickplay
+                        ?.get(source.id)
+                        ?.values
+                        ?.firstOrNull()
+                Timber.v("Trickplay info: $trickPlayInfo")
+                withContext(Dispatchers.Main) {
+                    trickplay.value = trickPlayInfo
                 }
             }
         }
 
         fun changeAudioStream(index: Int) {
             val itemId = currentPlayback.value?.itemId ?: return
-            changeStreams(itemId, index, currentPlayback.value?.subtitleIndex, player.currentPosition)
+            viewModelScope.launch {
+                changeStreams(
+                    itemId,
+                    index,
+                    currentPlayback.value?.subtitleIndex,
+                    player.currentPosition,
+                )
+            }
         }
 
         fun changeSubtitleStream(index: Int?) {
             val itemId = currentPlayback.value?.itemId ?: return
-            changeStreams(itemId, currentPlayback.value?.audioIndex, index, player.currentPosition)
+            viewModelScope.launch {
+                changeStreams(
+                    itemId,
+                    currentPlayback.value?.audioIndex,
+                    index,
+                    player.currentPosition,
+                )
+            }
+        }
+
+        fun getTrickplayUrl(index: Int): String? {
+            val itemId = dto.id
+            val mediaSourceId = currentPlayback.value?.mediaSourceId
+            val trickPlayInfo = trickplay.value ?: return null
+            return api.trickplayApi.getTrickplayTileImageUrl(
+                itemId,
+                trickPlayInfo.width,
+                index,
+                mediaSourceId,
+            )
         }
     }
 
@@ -258,4 +304,5 @@ data class CurrentPlayback(
     val itemId: UUID,
     val audioIndex: Int?,
     val subtitleIndex: Int?,
+    val mediaSourceId: UUID?,
 )

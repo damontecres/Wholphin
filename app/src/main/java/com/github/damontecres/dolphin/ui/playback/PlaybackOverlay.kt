@@ -1,21 +1,26 @@
 package com.github.damontecres.dolphin.ui.playback
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.dp
 import androidx.media3.common.Player
 import androidx.tv.material3.Text
+import org.jellyfin.sdk.model.api.TrickplayInfo
+import timber.log.Timber
 
 @Composable
 fun PlaybackOverlay(
@@ -38,12 +43,14 @@ fun PlaybackOverlay(
     audioStreams: List<AudioStream>,
     modifier: Modifier = Modifier,
     subtitle: String? = null,
+    trickplayInfo: TrickplayInfo? = null,
+    trickplayUrlFor: (Int) -> String? = { null },
     seekBarInteractionSource: MutableInteractionSource = remember { MutableInteractionSource() },
 ) {
     // Will be used for preview/trick play images
-    var seekProgress by remember { mutableFloatStateOf(-1f) }
+    var seekProgressPercent by remember { mutableFloatStateOf(-1f) }
+    val seekProgressMs = seekProgressPercent * playerControls.duration
     val seekBarFocused by seekBarInteractionSource.collectIsFocusedAsState()
-    var seekBarDragging by remember { mutableStateOf(false) }
 
     Box(
         modifier = modifier,
@@ -60,6 +67,45 @@ fun PlaybackOverlay(
                     text = it,
                 )
             }
+            if (seekBarInteractionSource.collectIsFocusedAsState().value) {
+                LaunchedEffect(Unit) {
+                    seekProgressPercent =
+                        (playerControls.currentPosition.toFloat() / playerControls.duration)
+                }
+            }
+            if (trickplayInfo != null) {
+                AnimatedVisibility(seekProgressPercent >= 0 && seekBarFocused) {
+                    val tilesPerImage = trickplayInfo.tileWidth * trickplayInfo.tileHeight
+                    val index =
+                        (seekProgressMs / trickplayInfo.interval).toInt() / tilesPerImage
+
+                    val yOffsetDp = 180.dp + 160.dp
+                    val heightPx = with(LocalDensity.current) { yOffsetDp.toPx().toInt() }
+
+                    val imageUrl = trickplayUrlFor(index)
+                    Timber.v("Trickplay imageUrl: $imageUrl")
+
+                    if (imageUrl != null) {
+                        SeekPreviewImage(
+                            modifier =
+                                Modifier
+//                                    .align(Alignment.TopStart)
+                                    .offsetByPercent(
+                                        xPercentage = seekProgressPercent.coerceIn(0f, 1f),
+//                                        yOffset = heightPx,
+//                                yPercentage = 1 - controlHeight,
+                                    ),
+                            previewImageUrl = imageUrl,
+                            duration = playerControls.duration,
+                            seekProgress = seekProgressPercent,
+                            videoWidth = trickplayInfo.width,
+                            videoHeight = trickplayInfo.height,
+                            trickPlayInfo = trickplayInfo,
+                        )
+                    }
+                }
+            }
+
             PlaybackControls(
                 modifier = Modifier.fillMaxWidth(),
                 subtitleStreams = subtitleStreams,
@@ -68,7 +114,7 @@ fun PlaybackOverlay(
                 controllerViewState = controllerViewState,
                 showDebugInfo = showDebugInfo,
                 onSeekProgress = {
-                    seekProgress = it
+                    seekProgressPercent = it
                     onSeekBarChange(it)
                 },
                 showPlay = showPlay,
