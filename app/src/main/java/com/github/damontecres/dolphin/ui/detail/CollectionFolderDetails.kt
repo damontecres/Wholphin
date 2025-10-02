@@ -16,8 +16,9 @@ import com.github.damontecres.dolphin.preferences.UserPreferences
 import com.github.damontecres.dolphin.ui.OneTimeLaunchedEffect
 import com.github.damontecres.dolphin.ui.nav.Destination
 import com.github.damontecres.dolphin.ui.nav.NavigationManager
+import com.github.damontecres.dolphin.util.ApiRequestPager
 import com.github.damontecres.dolphin.util.ExceptionHandler
-import com.github.damontecres.dolphin.util.ItemPager
+import com.github.damontecres.dolphin.util.GetItemsRequestHandler
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -38,7 +39,7 @@ class CollectionFolderViewModel
     constructor(
         api: ApiClient,
     ) : ItemViewModel<Library>(api) {
-        val pager = MutableLiveData<ItemPager?>()
+        val pager = MutableLiveData<ApiRequestPager<GetItemsRequest>?>()
 
         override fun init(
             itemId: UUID,
@@ -81,7 +82,8 @@ class CollectionFolderViewModel
                             sortOrder = listOf(SortOrder.ASCENDING),
                             fields = listOf(ItemFields.PRIMARY_IMAGE_ASPECT_RATIO),
                         )
-                    val newPager = ItemPager(api, request, viewModelScope)
+                    val newPager =
+                        ApiRequestPager(api, request, GetItemsRequestHandler, viewModelScope)
                     newPager.init()
                     pager.value = newPager
                 }
@@ -162,7 +164,7 @@ fun TVShowCollectionDetails(
     navigationManager: NavigationManager,
     library: Library,
     item: BaseItem,
-    pager: ItemPager,
+    pager: List<BaseItem?>,
     modifier: Modifier = Modifier,
 ) {
     val gridFocusRequester = remember { FocusRequester() }

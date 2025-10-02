@@ -15,13 +15,12 @@ import com.github.damontecres.dolphin.data.model.BaseItem
 import com.github.damontecres.dolphin.data.model.Video
 import com.github.damontecres.dolphin.preferences.UserPreferences
 import com.github.damontecres.dolphin.ui.cards.ItemRow
-import com.github.damontecres.dolphin.ui.indexOfFirstOrNull
 import com.github.damontecres.dolphin.ui.nav.Destination
 import com.github.damontecres.dolphin.ui.nav.NavigationManager
 import com.github.damontecres.dolphin.util.ApiRequestPager
 import com.github.damontecres.dolphin.util.ExceptionHandler
 import com.github.damontecres.dolphin.util.GetEpisodesRequestHandler
-import com.github.damontecres.dolphin.util.ItemPager
+import com.github.damontecres.dolphin.util.GetItemsRequestHandler
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Job
@@ -71,7 +70,13 @@ class SeriesViewModel
                                 ),
                         )
                     val pager =
-                        ItemPager(api, request, viewModelScope, itemCount = item.data.childCount)
+                        ApiRequestPager(
+                            api,
+                            request,
+                            GetItemsRequestHandler,
+                            viewModelScope,
+                            itemCount = item.data.childCount,
+                        )
                     pager.init()
                     seasons.value = pager
                     Timber.v("Loaded ${pager.size} seasons for series ${item.id}")
@@ -94,10 +99,7 @@ class SeriesViewModel
             viewModelScope.launch(ExceptionHandler()) {
                 init(itemId, potential).join()
                 season?.let { seasonNum ->
-                    val targetSeasonPosition =
-                        (seasons.value!! as ItemPager)
-                            .toBlockingList()
-                            .indexOfFirstOrNull { it.indexNumber == seasonNum }
+                    // TODO map season number to index in list
                     loadEpisodes(seasonNum)
                 }
             }

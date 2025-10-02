@@ -52,7 +52,6 @@ import com.github.damontecres.dolphin.ui.playback.isForwardButton
 import com.github.damontecres.dolphin.ui.playback.isPlayKeyUp
 import com.github.damontecres.dolphin.ui.tryRequestFocus
 import com.github.damontecres.dolphin.util.ExceptionHandler
-import com.github.damontecres.dolphin.util.ItemPager
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import kotlin.math.max
@@ -61,7 +60,7 @@ private const val DEBUG = false
 
 @Composable
 fun CardGrid(
-    pager: ItemPager,
+    pager: List<BaseItem?>,
     itemOnClick: (BaseItem) -> Unit,
     longClicker: (BaseItem) -> Unit,
     letterPosition: suspend (Char) -> Int,
