@@ -3,6 +3,7 @@ package com.github.damontecres.dolphin
 import android.os.Bundle
 import androidx.activity.compose.setContent
 import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
@@ -57,7 +58,10 @@ class MainActivity : AppCompatActivity() {
             val scope = rememberCoroutineScope()
             DolphinTheme(true) {
                 Surface(
-                    modifier = Modifier.fillMaxSize(),
+                    modifier =
+                        Modifier
+                            .fillMaxSize()
+                            .background(MaterialTheme.colorScheme.background),
                     shape = RectangleShape,
                 ) {
                     CoilConfig(serverRepository, okHttpClient, false)

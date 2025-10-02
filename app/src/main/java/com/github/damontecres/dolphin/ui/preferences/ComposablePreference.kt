@@ -38,6 +38,14 @@ import androidx.tv.material3.Switch
 import androidx.tv.material3.Text
 import androidx.tv.material3.surfaceColorAtElevation
 import com.github.damontecres.dolphin.R
+import com.github.damontecres.dolphin.preferences.AppChoicePreference
+import com.github.damontecres.dolphin.preferences.AppClickablePreference
+import com.github.damontecres.dolphin.preferences.AppDestinationPreference
+import com.github.damontecres.dolphin.preferences.AppMultiChoicePreference
+import com.github.damontecres.dolphin.preferences.AppPreference
+import com.github.damontecres.dolphin.preferences.AppSliderPreference
+import com.github.damontecres.dolphin.preferences.AppStringPreference
+import com.github.damontecres.dolphin.preferences.AppSwitchPreference
 import com.github.damontecres.dolphin.ui.components.DialogItem
 import com.github.damontecres.dolphin.ui.components.DialogParams
 import com.github.damontecres.dolphin.ui.components.DialogPopup

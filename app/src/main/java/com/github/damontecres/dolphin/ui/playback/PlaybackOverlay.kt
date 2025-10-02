@@ -18,6 +18,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.media3.common.Player
 import androidx.tv.material3.Text
 import org.jellyfin.sdk.model.api.TrickplayInfo
+import kotlin.time.Duration
 
 @Composable
 fun PlaybackOverlay(
@@ -29,6 +30,8 @@ fun PlaybackOverlay(
     previousEnabled: Boolean,
     nextEnabled: Boolean,
     seekEnabled: Boolean,
+    seekBack: Duration,
+    seekForward: Duration,
     onPlaybackActionClick: (PlaybackAction) -> Unit,
     onSeekBarChange: (Long) -> Unit,
     showDebugInfo: Boolean,
@@ -121,6 +124,8 @@ fun PlaybackOverlay(
                 playbackSpeed = playbackSpeed,
                 scale = scale,
                 seekBarIntervals = 16,
+                seekBack = seekBack,
+                seekForward = seekForward,
             )
         }
     }

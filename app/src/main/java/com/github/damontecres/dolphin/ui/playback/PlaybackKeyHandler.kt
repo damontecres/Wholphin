@@ -7,11 +7,16 @@ import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.type
 import androidx.media3.common.Player
 import androidx.media3.common.util.Util
+import com.github.damontecres.dolphin.ui.seekBack
+import com.github.damontecres.dolphin.ui.seekForward
+import kotlin.time.Duration
 
 class PlaybackKeyHandler(
     private val player: Player,
     private val controlsEnabled: Boolean,
     private val skipWithLeftRight: Boolean,
+    private val seekBack: Duration,
+    private val seekForward: Duration,
     private val controllerViewState: ControllerViewState,
     private val updateSkipIndicator: (Long) -> Unit,
 ) {
@@ -24,11 +29,11 @@ class PlaybackKeyHandler(
         } else if (isDpad(it)) {
             if (!controllerViewState.controlsVisible) {
                 if (skipWithLeftRight && it.key == Key.DirectionLeft) {
-                    updateSkipIndicator(-player.seekBackIncrement)
-                    player.seekBack()
+                    updateSkipIndicator(-seekBack.inWholeMilliseconds)
+                    player.seekBack(seekBack)
                 } else if (skipWithLeftRight && it.key == Key.DirectionRight) {
-                    player.seekForward()
-                    updateSkipIndicator(player.seekForwardIncrement)
+                    player.seekForward(seekForward)
+                    updateSkipIndicator(seekForward.inWholeMilliseconds)
                 } else {
                     controllerViewState.showControls()
                 }
@@ -54,13 +59,13 @@ class PlaybackKeyHandler(
                 }
 
                 Key.MediaFastForward, Key.MediaSkipForward -> {
-                    player.seekForward()
-                    updateSkipIndicator(player.seekForwardIncrement)
+                    player.seekForward(seekForward)
+                    updateSkipIndicator(seekForward.inWholeMilliseconds)
                 }
 
                 Key.MediaRewind, Key.MediaSkipBackward -> {
-                    player.seekBack()
-                    updateSkipIndicator(-player.seekBackIncrement)
+                    player.seekBack(seekBack)
+                    updateSkipIndicator(-seekBack.inWholeMilliseconds)
                 }
 
                 Key.MediaNext -> if (player.isCommandAvailable(Player.COMMAND_SEEK_TO_NEXT)) player.seekToNext()

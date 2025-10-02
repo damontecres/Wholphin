@@ -98,7 +98,7 @@ fun PlaybackContent(
             val controllerViewState =
                 remember {
                     ControllerViewState(
-                        5_000,
+                        preferences.appPreferences.playbackPreferences.controllerTimeoutMs,
                         true,
                     )
                 }.also {
@@ -124,6 +124,8 @@ fun PlaybackContent(
                     player = player,
                     controlsEnabled = true,
                     skipWithLeftRight = true,
+                    seekForward = preferences.appPreferences.playbackPreferences.skipForwardMs.milliseconds,
+                    seekBack = preferences.appPreferences.playbackPreferences.skipBackMs.milliseconds,
                     controllerViewState = controllerViewState,
                     updateSkipIndicator = updateSkipIndicator,
                 )
@@ -199,6 +201,8 @@ fun PlaybackContent(
                         previousEnabled = previousState.isEnabled,
                         nextEnabled = nextState.isEnabled,
                         seekEnabled = true,
+                        seekForward = preferences.appPreferences.playbackPreferences.skipForwardMs.milliseconds,
+                        seekBack = preferences.appPreferences.playbackPreferences.skipBackMs.milliseconds,
                         onPlaybackActionClick = {
                             when (it) {
                                 is PlaybackAction.PlaybackSpeed -> {

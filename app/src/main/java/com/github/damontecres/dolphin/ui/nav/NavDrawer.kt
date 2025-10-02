@@ -109,8 +109,7 @@ fun NavDrawer(
     NavigationDrawer(
         modifier =
             modifier
-                .focusRequester(drawerFocusRequester)
-                .background(MaterialTheme.colorScheme.background),
+                .focusRequester(drawerFocusRequester),
         drawerState = drawerState,
         drawerContent = {
             ProvideTextStyle(MaterialTheme.typography.labelMedium) {

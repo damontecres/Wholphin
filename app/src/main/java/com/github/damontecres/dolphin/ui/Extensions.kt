@@ -18,6 +18,7 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.media3.common.Player
 import kotlinx.coroutines.CoroutineScope
 import org.jellyfin.sdk.model.api.BaseItemDto
 import org.jellyfin.sdk.model.extensions.ticks
@@ -181,3 +182,7 @@ val BaseItemDto.timeRemaining: Duration?
                 null
             }
         }
+
+fun Player.seekBack(amount: Duration) = seekTo((currentPosition - amount.inWholeMilliseconds).coerceAtLeast(0L))
+
+fun Player.seekForward(amount: Duration) = seekTo((currentPosition + amount.inWholeMilliseconds).coerceAtMost(duration))

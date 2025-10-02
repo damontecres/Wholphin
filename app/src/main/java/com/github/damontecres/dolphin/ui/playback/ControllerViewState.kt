@@ -12,14 +12,14 @@ import kotlinx.coroutines.flow.debounce
 
 class ControllerViewState internal constructor(
     @param:IntRange(from = 0)
-    private val hideMilliseconds: Int,
+    private val hideMilliseconds: Long,
     val controlsEnabled: Boolean,
 ) {
-    private val channel = Channel<Int>(CONFLATED)
+    private val channel = Channel<Long>(CONFLATED)
     private var _controlsVisible by mutableStateOf(false)
     val controlsVisible get() = _controlsVisible
 
-    fun showControls(milliseconds: Int = hideMilliseconds) {
+    fun showControls(milliseconds: Long = hideMilliseconds) {
         if (controlsEnabled) {
             _controlsVisible = true
         }
@@ -30,7 +30,7 @@ class ControllerViewState internal constructor(
         _controlsVisible = false
     }
 
-    fun pulseControls(milliseconds: Int = hideMilliseconds) {
+    fun pulseControls(milliseconds: Long = hideMilliseconds) {
         channel.trySend(milliseconds)
     }
 
@@ -38,7 +38,7 @@ class ControllerViewState internal constructor(
     suspend fun observe() {
         channel
             .consumeAsFlow()
-            .debounce { it.toLong() }
+            .debounce { it }
             .collect {
                 _controlsVisible = false
             }

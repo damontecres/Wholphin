@@ -36,4 +36,6 @@
     <string name="skip_back_preference">Skip back</string>
     <string name="hide_controller_timeout">Hide playback controls</string>
     <string name="seek_bar_steps">Seek bar steps</string>
+    <string name="max_homepage_items">Max items on home page rows</string>
+    <string name="rewatch_next_up">Enable rewatching in next up</string>
 </resources>

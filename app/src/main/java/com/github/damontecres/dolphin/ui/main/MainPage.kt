@@ -39,6 +39,7 @@ import androidx.tv.material3.Text
 import coil3.compose.AsyncImage
 import com.github.damontecres.dolphin.data.model.BaseItem
 import com.github.damontecres.dolphin.preferences.UserPreferences
+import com.github.damontecres.dolphin.ui.OneTimeLaunchedEffect
 import com.github.damontecres.dolphin.ui.cards.BannerCard
 import com.github.damontecres.dolphin.ui.cards.ItemRow
 import com.github.damontecres.dolphin.ui.components.CircularProgress
@@ -67,6 +68,9 @@ fun MainPage(
     modifier: Modifier,
     viewModel: MainViewModel = hiltViewModel(),
 ) {
+    OneTimeLaunchedEffect {
+        viewModel.init(preferences)
+    }
     val loading by viewModel.loadingState.observeAsState(LoadingState.Loading)
     when (val state = loading) {
         is LoadingState.Error -> Text(text = "Error: ${state.message}", modifier = modifier)

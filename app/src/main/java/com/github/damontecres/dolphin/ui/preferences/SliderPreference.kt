@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.dp
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.ProvideTextStyle
 import androidx.tv.material3.contentColorFor
+import com.github.damontecres.dolphin.preferences.AppSliderPreference
 import com.github.damontecres.dolphin.ui.components.SliderBar
 
 @Composable

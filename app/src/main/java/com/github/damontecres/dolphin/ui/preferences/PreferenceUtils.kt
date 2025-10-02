@@ -1,6 +1,7 @@
 package com.github.damontecres.dolphin.ui.preferences
 
 import androidx.annotation.StringRes
+import com.github.damontecres.dolphin.preferences.AppPreference
 import kotlinx.serialization.Serializable
 
 /**

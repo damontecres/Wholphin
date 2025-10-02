@@ -38,7 +38,11 @@ import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import androidx.tv.material3.surfaceColorAtElevation
 import com.github.damontecres.dolphin.R
+import com.github.damontecres.dolphin.preferences.AppPreference
 import com.github.damontecres.dolphin.preferences.AppPreferences
+import com.github.damontecres.dolphin.preferences.advancedPreferences
+import com.github.damontecres.dolphin.preferences.basicPreferences
+import com.github.damontecres.dolphin.preferences.uiPreferences
 import com.github.damontecres.dolphin.ui.ifElse
 import com.github.damontecres.dolphin.ui.nav.NavigationManager
 import com.github.damontecres.dolphin.ui.playOnClickSound
@@ -46,24 +50,6 @@ import com.github.damontecres.dolphin.ui.playSoundOnFocus
 import com.github.damontecres.dolphin.ui.tryRequestFocus
 import com.github.damontecres.dolphin.util.ExceptionHandler
 import kotlinx.coroutines.launch
-
-val basicPreferences =
-    listOf(
-        PreferenceGroup(
-            title = R.string.basic_interface,
-            preferences =
-                listOf(
-                    AppPreference.SkipForward,
-                    AppPreference.SkipBack,
-                    AppPreference.ControllerTimeout,
-                    AppPreference.SeekBarSteps,
-                ),
-        ),
-    )
-
-val uiPreferences = listOf<PreferenceGroup>()
-
-val advancedPreferences = listOf<PreferenceGroup>()
 
 data class Release(
     val version: String,

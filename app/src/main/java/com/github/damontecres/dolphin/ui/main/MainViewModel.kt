@@ -4,6 +4,7 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.github.damontecres.dolphin.data.model.BaseItem
+import com.github.damontecres.dolphin.preferences.UserPreferences
 import com.github.damontecres.dolphin.ui.DefaultItemFields
 import com.github.damontecres.dolphin.ui.isNotNullOrBlank
 import com.github.damontecres.dolphin.util.ExceptionHandler
@@ -34,7 +35,8 @@ class MainViewModel
         val loadingState = MutableLiveData<LoadingState>(LoadingState.Loading)
         val homeRows = MutableLiveData<List<HomeRow>>()
 
-        init {
+        fun init(preferences: UserPreferences) {
+            val limit = preferences.appPreferences.homePagePreferences.maxItemsPerRow
             viewModelScope.launch(ExceptionHandler() + Dispatchers.IO) {
                 val user = api.userApi.getCurrentUser().content
                 val displayPrefs =
@@ -74,7 +76,7 @@ class MainViewModel
                                                 imageTypeLimit = 1,
                                                 parentId = viewId,
                                                 groupItems = true,
-                                                limit = 25,
+                                                limit = limit,
                                             )
                                         val latest =
                                             api.userLibraryApi
@@ -94,6 +96,7 @@ class MainViewModel
                                         GetResumeItemsRequest(
                                             userId = user.id,
                                             fields = DefaultItemFields,
+                                            limit = limit,
                                             // TODO, more params?
                                         )
                                     val items =
@@ -116,8 +119,10 @@ class MainViewModel
                                             fields = DefaultItemFields,
                                             imageTypeLimit = 1,
                                             parentId = null,
-                                            limit = 25,
+                                            limit = limit,
                                             enableResumable = false,
+                                            enableUserData = true,
+                                            enableRewatching = preferences.appPreferences.homePagePreferences.enableRewatchingNextUp,
                                         )
                                     val nextUp =
                                         api.tvShowsApi

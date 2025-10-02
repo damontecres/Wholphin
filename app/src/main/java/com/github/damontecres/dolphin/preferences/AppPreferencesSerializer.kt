@@ -2,7 +2,6 @@ package com.github.damontecres.dolphin.preferences
 
 import androidx.datastore.core.CorruptionException
 import androidx.datastore.core.Serializer
-import com.github.damontecres.dolphin.ui.preferences.AppPreference
 import com.google.protobuf.InvalidProtocolBufferException
 import java.io.InputStream
 import java.io.OutputStream
@@ -27,6 +26,13 @@ class AppPreferencesSerializer
                                 controllerTimeoutMs = AppPreference.ControllerTimeout.defaultValue
                                 seekBarSteps = AppPreference.SeekBarSteps.defaultValue.toInt()
                             }.build()
+                    homePagePreferences =
+                        HomePagePreferences
+                            .newBuilder()
+                            .apply {
+                                maxItemsPerRow = AppPreference.HomePageItems.defaultValue.toInt()
+                                enableRewatchingNextUp = AppPreference.RewatchNextUp.defaultValue
+                            }.build()
                 }.build()
 
         override suspend fun readFrom(input: InputStream): AppPreferences {
@@ -48,4 +54,9 @@ inline fun AppPreferences.update(block: AppPreferences.Builder.() -> Unit): AppP
 inline fun AppPreferences.updatePlaybackPreferences(block: PlaybackPreferences.Builder.() -> Unit): AppPreferences =
     update {
         playbackPreferences = playbackPreferences.toBuilder().apply(block).build()
+    }
+
+inline fun AppPreferences.updateHomePagePreferences(block: HomePagePreferences.Builder.() -> Unit): AppPreferences =
+    update {
+        homePagePreferences = homePagePreferences.toBuilder().apply(block).build()
     }

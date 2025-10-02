@@ -58,12 +58,15 @@ import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.github.damontecres.dolphin.R
 import com.github.damontecres.dolphin.ui.AppColors
+import com.github.damontecres.dolphin.ui.seekBack
+import com.github.damontecres.dolphin.ui.seekForward
 import com.github.damontecres.dolphin.ui.tryRequestFocus
 import com.github.damontecres.dolphin.util.ExceptionHandler
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import timber.log.Timber
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
 sealed interface PlaybackAction {
@@ -110,6 +113,8 @@ fun PlaybackControls(
     playbackSpeed: Float,
     scale: ContentScale,
     seekBarIntervals: Int,
+    seekBack: Duration,
+    seekForward: Duration,
     modifier: Modifier = Modifier,
     initialFocusRequester: FocusRequester = remember { FocusRequester() },
     seekBarInteractionSource: MutableInteractionSource = remember { MutableInteractionSource() },
@@ -127,7 +132,7 @@ fun PlaybackControls(
         scope.launch(ExceptionHandler()) {
             bringIntoViewRequester.bringIntoView()
         }
-        controllerViewState.pulseControls(Int.MAX_VALUE)
+        controllerViewState.pulseControls(Long.MAX_VALUE)
     }
     LaunchedEffect(controllerViewState.controlsVisible) {
         if (controllerViewState.controlsVisible) {
@@ -170,6 +175,8 @@ fun PlaybackControls(
                 showPlay = showPlay,
                 previousEnabled = previousEnabled,
                 nextEnabled = nextEnabled,
+                seekBack = seekBack,
+                seekForward = seekForward,
                 modifier = Modifier.align(Alignment.Center),
             )
             RightPlaybackButtons(
@@ -430,6 +437,8 @@ fun PlaybackButtons(
     showPlay: Boolean,
     previousEnabled: Boolean,
     nextEnabled: Boolean,
+    seekBack: Duration,
+    seekForward: Duration,
     modifier: Modifier = Modifier,
 ) {
     Row(
@@ -449,7 +458,7 @@ fun PlaybackButtons(
             iconRes = R.drawable.baseline_fast_rewind_24,
             onClick = {
                 onControllerInteraction.invoke()
-                player.seekBack()
+                player.seekBack(seekBack)
             },
             onControllerInteraction = onControllerInteraction,
         )
@@ -466,7 +475,7 @@ fun PlaybackButtons(
             iconRes = R.drawable.baseline_fast_forward_24,
             onClick = {
                 onControllerInteraction.invoke()
-                player.seekForward()
+                player.seekForward(seekForward)
             },
             onControllerInteraction = onControllerInteraction,
         )

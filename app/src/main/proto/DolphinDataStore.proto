@@ -10,10 +10,16 @@ message PlaybackPreferences {
   int32 seek_bar_steps = 4;
 }
 
+message HomePagePreferences{
+  int32 max_items_per_row = 1;
+  bool enable_rewatching_next_up = 2;
+}
+
 message AppPreferences {
   // The currently signed in server and user IDs, mostly for restoring a session
   string current_server_id = 1;
   string current_user_id = 2;
 
   PlaybackPreferences playback_preferences = 3;
+  HomePagePreferences home_page_preferences = 4;
 }

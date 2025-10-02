@@ -1,12 +1,12 @@
-package com.github.damontecres.dolphin.ui.preferences
+package com.github.damontecres.dolphin.preferences
 
 import android.content.Context
 import androidx.annotation.ArrayRes
 import androidx.annotation.StringRes
 import com.github.damontecres.dolphin.R
-import com.github.damontecres.dolphin.preferences.AppPreferences
-import com.github.damontecres.dolphin.preferences.updatePlaybackPreferences
 import com.github.damontecres.dolphin.ui.nav.Destination
+import com.github.damontecres.dolphin.ui.preferences.PreferenceGroup
+import com.github.damontecres.dolphin.ui.preferences.PreferenceValidation
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
@@ -149,6 +149,32 @@ sealed interface AppPreference<T> {
                 summarizer = { value -> value?.toString() },
             )
 
+        val HomePageItems =
+            AppSliderPreference(
+                title = R.string.max_homepage_items,
+                defaultValue = 25,
+                min = 5,
+                max = 50,
+                interval = 1,
+                getter = { it.homePagePreferences.maxItemsPerRow.toLong() },
+                setter = { prefs, value ->
+                    prefs.updateHomePagePreferences { maxItemsPerRow = value.toInt() }
+                },
+                summarizer = { value -> value?.toString() },
+            )
+
+        val RewatchNextUp =
+            AppSwitchPreference(
+                title = R.string.rewatch_next_up,
+                defaultValue = false,
+                getter = { it.homePagePreferences.enableRewatchingNextUp },
+                setter = { prefs, value ->
+                    prefs.updateHomePagePreferences { enableRewatchingNextUp = value }
+                },
+                summaryOn = R.string.enabled,
+                summaryOff = R.string.disabled,
+            )
+
 //        val PlaybackDebugInfo =
 //            AppSwitchPreference(
 //                title = R.string.playback_debug_info,
@@ -193,6 +219,26 @@ sealed interface AppPreference<T> {
 //            )
     }
 }
+
+val basicPreferences =
+    listOf(
+        PreferenceGroup(
+            title = R.string.basic_interface,
+            preferences =
+                listOf(
+                    AppPreference.SkipForward,
+                    AppPreference.SkipBack,
+                    AppPreference.ControllerTimeout,
+                    AppPreference.SeekBarSteps,
+                    AppPreference.HomePageItems,
+                    AppPreference.RewatchNextUp,
+                ),
+        ),
+    )
+
+val uiPreferences = listOf<PreferenceGroup>()
+
+val advancedPreferences = listOf<PreferenceGroup>()
 
 data class AppSwitchPreference(
     @get:StringRes override val title: Int,
