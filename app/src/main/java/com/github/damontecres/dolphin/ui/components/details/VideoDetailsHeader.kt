@@ -38,6 +38,7 @@ import com.github.damontecres.dolphin.ui.components.TitleValueText
 import com.github.damontecres.dolphin.ui.isNotNullOrBlank
 import com.github.damontecres.dolphin.ui.playOnClickSound
 import com.github.damontecres.dolphin.ui.playSoundOnFocus
+import com.github.damontecres.dolphin.util.ExceptionHandler
 import kotlinx.coroutines.launch
 import java.util.SortedMap
 import kotlin.time.Duration
@@ -137,7 +138,7 @@ fun VideoDetailsHeader(
                             .background(bgColor, shape = RoundedCornerShape(8.dp))
                             .onFocusChanged {
                                 if (it.isFocused) {
-                                    scope.launch { bringIntoViewRequester.bringIntoView() }
+                                    scope.launch(ExceptionHandler()) { bringIntoViewRequester.bringIntoView() }
                                 }
                             }.playSoundOnFocus(true)
                             .clickable(
@@ -181,7 +182,7 @@ fun VideoDetailsHeader(
             },
             moreOnClick = { moreOnClick.invoke() },
             buttonOnFocusChanged = {
-                scope.launch { bringIntoViewRequester.bringIntoView() }
+                scope.launch(ExceptionHandler()) { bringIntoViewRequester.bringIntoView() }
             },
             focusRequester = focusRequester,
             modifier = Modifier,

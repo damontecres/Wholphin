@@ -19,6 +19,7 @@ import com.github.damontecres.dolphin.ui.indexOfFirstOrNull
 import com.github.damontecres.dolphin.ui.nav.Destination
 import com.github.damontecres.dolphin.ui.nav.NavigationManager
 import com.github.damontecres.dolphin.util.ApiRequestPager
+import com.github.damontecres.dolphin.util.ExceptionHandler
 import com.github.damontecres.dolphin.util.GetEpisodesRequestHandler
 import com.github.damontecres.dolphin.util.ItemPager
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -52,7 +53,7 @@ class SeriesViewModel
             itemId: UUID,
             potential: BaseItem?,
         ): Job =
-            viewModelScope.launch {
+            viewModelScope.launch(ExceptionHandler()) {
                 super.init(itemId, potential)?.join()
                 item.value?.let { item ->
                     val request =
@@ -90,7 +91,7 @@ class SeriesViewModel
             season: Int?,
             episode: Int?,
         ) {
-            viewModelScope.launch {
+            viewModelScope.launch(ExceptionHandler()) {
                 init(itemId, potential).join()
                 season?.let { seasonNum ->
                     val targetSeasonPosition =
@@ -103,7 +104,7 @@ class SeriesViewModel
         }
 
         fun loadEpisodes(season: Int): Deferred<ApiRequestPager<*>> =
-            viewModelScope.async {
+            viewModelScope.async(ExceptionHandler()) {
                 val request =
                     GetEpisodesRequest(
                         seriesId = item.value!!.id,
@@ -130,7 +131,7 @@ class SeriesViewModel
             itemId: UUID,
             played: Boolean,
             listIndex: Int,
-        ) = viewModelScope.launch {
+        ) = viewModelScope.launch(ExceptionHandler()) {
             if (played) {
                 api.playStateApi.markPlayedItem(itemId)
             } else {
@@ -142,7 +143,7 @@ class SeriesViewModel
         fun refreshEpisode(
             itemId: UUID,
             listIndex: Int,
-        ) = viewModelScope.launch {
+        ) = viewModelScope.launch(ExceptionHandler()) {
             val base = api.userLibraryApi.getItem(itemId).content
             val item = BaseItem.from(base, api)
             episodes.value =

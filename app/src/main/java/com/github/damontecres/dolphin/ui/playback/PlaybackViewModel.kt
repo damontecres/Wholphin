@@ -10,6 +10,7 @@ import androidx.media3.common.MediaItem
 import androidx.media3.exoplayer.ExoPlayer
 import com.github.damontecres.dolphin.preferences.UserPreferences
 import com.github.damontecres.dolphin.ui.nav.Destination
+import com.github.damontecres.dolphin.util.ExceptionHandler
 import com.github.damontecres.dolphin.util.TrackActivityPlaybackListener
 import com.github.damontecres.dolphin.util.profile.PlaybackListener
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -95,7 +96,7 @@ class PlaybackViewModel
             this.deviceProfile = deviceProfile
             val itemId = destination.itemId
             val item = destination.item
-            viewModelScope.launch(Dispatchers.IO) {
+            viewModelScope.launch(ExceptionHandler() + Dispatchers.IO) {
                 val base = item?.data ?: api.userLibraryApi.getItem(itemId).content
                 dto = base
 
@@ -265,7 +266,7 @@ class PlaybackViewModel
 
         fun changeAudioStream(index: Int) {
             val itemId = currentPlayback.value?.itemId ?: return
-            viewModelScope.launch {
+            viewModelScope.launch(ExceptionHandler()) {
                 changeStreams(
                     itemId,
                     index,
@@ -277,7 +278,7 @@ class PlaybackViewModel
 
         fun changeSubtitleStream(index: Int?) {
             val itemId = currentPlayback.value?.itemId ?: return
-            viewModelScope.launch {
+            viewModelScope.launch(ExceptionHandler()) {
                 changeStreams(
                     itemId,
                     currentPlayback.value?.audioIndex,

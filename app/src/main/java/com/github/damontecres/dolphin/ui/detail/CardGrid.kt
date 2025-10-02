@@ -51,6 +51,7 @@ import com.github.damontecres.dolphin.ui.playback.isBackwardButton
 import com.github.damontecres.dolphin.ui.playback.isForwardButton
 import com.github.damontecres.dolphin.ui.playback.isPlayKeyUp
 import com.github.damontecres.dolphin.ui.tryRequestFocus
+import com.github.damontecres.dolphin.util.ExceptionHandler
 import com.github.damontecres.dolphin.util.ItemPager
 import kotlinx.coroutines.launch
 import timber.log.Timber
@@ -169,7 +170,7 @@ fun CardGrid(
         }
 
     val jump = { jump: Int ->
-        scope.launch {
+        scope.launch(ExceptionHandler()) {
             val newPosition =
                 (gridState.firstVisibleItemIndex + jump).coerceIn(0..<pager.size)
             if (DEBUG) Timber.d("newPosition=$newPosition")
@@ -179,7 +180,7 @@ fun CardGrid(
         }
     }
     val jumpToTop = {
-        scope.launch {
+        scope.launch(ExceptionHandler()) {
             if (focusedIndex < (columns * 6)) {
                 // If close, animate the scroll
                 gridState.animateScrollToItem(0, 0)
@@ -205,7 +206,7 @@ fun CardGrid(
                         if (DEBUG) Timber.d("Back long pressed: newPosition=$newPosition")
                         if (newPosition > 0) {
                             focusOn(newPosition)
-                            scope.launch {
+                            scope.launch(ExceptionHandler()) {
                                 gridState.scrollToItem(newPosition, -columns)
                                 firstFocus.tryRequestFocus()
                             }
@@ -366,7 +367,7 @@ fun CardGrid(
             AlphabetButtons(
                 modifier = Modifier.align(Alignment.CenterVertically),
                 letterClicked = { letter ->
-                    scope.launch {
+                    scope.launch(ExceptionHandler()) {
                         val jumpPosition = letterPosition.invoke(letter)
                         Timber.d("Alphabet jump to $jumpPosition")
                         gridState.scrollToItem(jumpPosition)

@@ -6,6 +6,8 @@ import androidx.lifecycle.viewModelScope
 import com.github.damontecres.dolphin.data.model.BaseItem
 import com.github.damontecres.dolphin.ui.DefaultItemFields
 import com.github.damontecres.dolphin.ui.isNotNullOrBlank
+import com.github.damontecres.dolphin.util.ExceptionHandler
+import com.github.damontecres.dolphin.util.LoadingState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -29,10 +31,11 @@ class MainViewModel
     constructor(
         val api: ApiClient,
     ) : ViewModel() {
+        val loadingState = MutableLiveData<LoadingState>(LoadingState.Loading)
         val homeRows = MutableLiveData<List<HomeRow>>()
 
         init {
-            viewModelScope.launch(Dispatchers.IO) {
+            viewModelScope.launch(ExceptionHandler() + Dispatchers.IO) {
                 val user = api.userApi.getCurrentUser().content
                 val displayPrefs =
                     api.displayPreferencesApi
@@ -145,6 +148,7 @@ class MainViewModel
                         .filter { it.items.isNotEmpty() }
                 withContext(Dispatchers.Main) {
                     this@MainViewModel.homeRows.value = homeRows
+                    loadingState.value = LoadingState.Success
                 }
             }
         }

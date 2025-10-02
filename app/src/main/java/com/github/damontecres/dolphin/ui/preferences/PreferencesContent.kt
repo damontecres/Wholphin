@@ -44,6 +44,7 @@ import com.github.damontecres.dolphin.ui.nav.NavigationManager
 import com.github.damontecres.dolphin.ui.playOnClickSound
 import com.github.damontecres.dolphin.ui.playSoundOnFocus
 import com.github.damontecres.dolphin.ui.tryRequestFocus
+import com.github.damontecres.dolphin.util.ExceptionHandler
 import kotlinx.coroutines.launch
 
 val basicPreferences =
@@ -295,7 +296,7 @@ fun PreferencesContent(
                                             }
 
                                             PreferenceValidation.Valid -> {
-                                                scope.launch {
+                                                scope.launch(ExceptionHandler()) {
                                                     preferences =
                                                         viewModel.preferenceDataStore.updateData { prefs ->
                                                             pref.setter(prefs, newValue)

@@ -5,6 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -25,6 +26,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
@@ -46,11 +48,13 @@ import androidx.tv.material3.NavigationDrawerScope
 import androidx.tv.material3.ProvideTextStyle
 import androidx.tv.material3.Text
 import androidx.tv.material3.rememberDrawerState
+import androidx.tv.material3.surfaceColorAtElevation
 import com.github.damontecres.dolphin.R
 import com.github.damontecres.dolphin.data.ServerRepository
 import com.github.damontecres.dolphin.data.model.Library
 import com.github.damontecres.dolphin.preferences.UserPreferences
 import com.github.damontecres.dolphin.ui.FontAwesome
+import com.github.damontecres.dolphin.util.ExceptionHandler
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import org.jellyfin.sdk.api.client.ApiClient
@@ -69,7 +73,7 @@ class NavDrawerViewModel
         val libraries = MutableLiveData<List<Library>>(listOf())
 
         init {
-            viewModelScope.launch {
+            viewModelScope.launch(ExceptionHandler()) {
                 val userViews =
                     api.userViewsApi
                         .getUserViews()
@@ -105,62 +109,65 @@ fun NavDrawer(
     NavigationDrawer(
         modifier =
             modifier
-                .focusRequester(drawerFocusRequester),
+                .focusRequester(drawerFocusRequester)
+                .background(MaterialTheme.colorScheme.background),
         drawerState = drawerState,
         drawerContent = {
             ProvideTextStyle(MaterialTheme.typography.labelMedium) {
-                LazyColumn(
-                    state = listState,
-                    contentPadding = PaddingValues(0.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.SpaceBetween,
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
                     modifier =
                         Modifier
+                            .focusGroup()
+                            // TODO fix focus restorer
+                            .focusRestorer()
                             .fillMaxHeight()
-                            .background(MaterialTheme.colorScheme.background)
-                            .focusGroup(),
+                            .background(MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp)),
                 ) {
-                    item {
-                        IconNavItem(
-                            text = user?.name ?: "",
-                            icon = Icons.Default.AccountCircle,
-                            onClick = { navigationManager.navigateTo(Destination.UserList) },
-                        )
+                    IconNavItem(
+                        text = user?.name ?: "",
+                        icon = Icons.Default.AccountCircle,
+                        onClick = { navigationManager.navigateTo(Destination.UserList) },
+                    )
+                    IconNavItem(
+                        text = "Search",
+                        icon = Icons.Default.Search,
+                        onClick = { navigationManager.navigateTo(Destination.Search) },
+                    )
+                    IconNavItem(
+                        text = "Home",
+                        icon = Icons.Default.Home,
+                        onClick = { navigationManager.goToHome() },
+                    )
+                    LazyColumn(
+                        state = listState,
+                        contentPadding = PaddingValues(0.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier =
+                            Modifier
+                                .weight(1f),
+                    ) {
+                        items(libraries) {
+                            LibraryNavItem(
+                                library = it,
+                                onClick = {
+                                    navigationManager.navigateTo(
+                                        Destination.MediaItem(
+                                            it.id,
+                                            it.type,
+                                        ),
+                                    )
+                                },
+                            )
+                        }
                     }
-                    item {
-                        IconNavItem(
-                            text = "Search",
-                            icon = Icons.Default.Search,
-                            onClick = { navigationManager.navigateTo(Destination.Search) },
-                        )
-                    }
-                    item {
-                        IconNavItem(
-                            text = "Home",
-                            icon = Icons.Default.Home,
-                            onClick = { navigationManager.goToHome() },
-                        )
-                    }
-                    items(libraries) {
-                        LibraryNavItem(
-                            library = it,
-                            onClick = {
-                                navigationManager.navigateTo(
-                                    Destination.MediaItem(
-                                        it.id,
-                                        it.type,
-                                    ),
-                                )
-                            },
-                        )
-                    }
-                    item {
-                        IconNavItem(
-                            text = "Settings",
-                            icon = Icons.Default.Settings,
-                            onClick = { navigationManager.navigateTo(Destination.Settings) },
-                        )
-                    }
+                    IconNavItem(
+                        text = "Settings",
+                        icon = Icons.Default.Settings,
+                        onClick = { navigationManager.navigateTo(Destination.Settings) },
+                        modifier = Modifier,
+                    )
                 }
             }
         },

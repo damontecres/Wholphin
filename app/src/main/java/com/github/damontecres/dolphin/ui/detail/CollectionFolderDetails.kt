@@ -16,6 +16,7 @@ import com.github.damontecres.dolphin.preferences.UserPreferences
 import com.github.damontecres.dolphin.ui.OneTimeLaunchedEffect
 import com.github.damontecres.dolphin.ui.nav.Destination
 import com.github.damontecres.dolphin.ui.nav.NavigationManager
+import com.github.damontecres.dolphin.util.ExceptionHandler
 import com.github.damontecres.dolphin.util.ItemPager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
@@ -43,7 +44,7 @@ class CollectionFolderViewModel
             itemId: UUID,
             potential: BaseItem?,
         ): Job =
-            viewModelScope.launch {
+            viewModelScope.launch(ExceptionHandler()) {
                 super.init(itemId, potential)?.join()
                 setup()
             }

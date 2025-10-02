@@ -21,6 +21,7 @@ import com.github.damontecres.dolphin.preferences.UserPreferences
 import com.github.damontecres.dolphin.ui.cards.ItemRow
 import com.github.damontecres.dolphin.ui.nav.Destination
 import com.github.damontecres.dolphin.ui.nav.NavigationManager
+import com.github.damontecres.dolphin.util.ExceptionHandler
 import com.github.damontecres.dolphin.util.ItemPager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
@@ -46,7 +47,7 @@ class SeasonViewModel
             itemId: UUID,
             potential: BaseItem?,
         ): Job? =
-            viewModelScope.launch {
+            viewModelScope.launch(ExceptionHandler()) {
                 super.init(itemId, potential)?.join()
                 item.value?.let { item ->
                     val request =

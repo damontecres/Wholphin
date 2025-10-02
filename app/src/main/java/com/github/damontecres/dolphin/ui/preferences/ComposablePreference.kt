@@ -43,6 +43,7 @@ import com.github.damontecres.dolphin.ui.components.DialogParams
 import com.github.damontecres.dolphin.ui.components.DialogPopup
 import com.github.damontecres.dolphin.ui.components.EditTextBox
 import com.github.damontecres.dolphin.ui.nav.NavigationManager
+import com.github.damontecres.dolphin.util.ExceptionHandler
 import kotlinx.coroutines.launch
 
 @Suppress("UNCHECKED_CAST")
@@ -64,14 +65,14 @@ fun <T> ComposablePreference(
     val title = stringResource(preference.title)
 
     val onClick: () -> Unit = {
-        scope.launch {
+        scope.launch(ExceptionHandler()) {
             when (preference) {
                 else -> {}
             }
         }
     }
     val onLongClick: () -> Unit = {
-        scope.launch {
+        scope.launch(ExceptionHandler()) {
             when (preference) {
                 else -> null
             }

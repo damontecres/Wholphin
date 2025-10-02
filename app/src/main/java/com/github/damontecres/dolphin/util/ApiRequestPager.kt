@@ -131,7 +131,7 @@ class ApiRequestPager<T>(
         get() = totalCount
 
     private fun fetchPage(position: Int): Job =
-        scope.launch(Dispatchers.IO) {
+        scope.launch(ExceptionHandler() + Dispatchers.IO) {
             mutex.withLock {
                 val pageNumber = position / pageSize
                 if (cachedPages.getIfPresent(pageNumber) == null) {

@@ -7,6 +7,7 @@ import com.github.damontecres.dolphin.data.JellyfinServer
 import com.github.damontecres.dolphin.data.JellyfinServerDao
 import com.github.damontecres.dolphin.data.JellyfinUser
 import com.github.damontecres.dolphin.data.ServerRepository
+import com.github.damontecres.dolphin.util.ExceptionHandler
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -42,7 +43,7 @@ class SwitchUserViewModel
         private var quickConnectJob: Job? = null
 
         init {
-            viewModelScope.launch(Dispatchers.IO) {
+            viewModelScope.launch(ExceptionHandler() + Dispatchers.IO) {
                 val allServers =
                     serverDao
                         .getServers()
@@ -87,7 +88,7 @@ class SwitchUserViewModel
                     }
                 }
             }
-            viewModelScope.launch(Dispatchers.IO) {
+            viewModelScope.launch(ExceptionHandler() + Dispatchers.IO) {
                 serverRepository.currentServer?.let {
                     val quickConnect =
                         jellyfin
@@ -112,7 +113,7 @@ class SwitchUserViewModel
             user: JellyfinUser,
             callback: () -> Unit,
         ) {
-            viewModelScope.launch {
+            viewModelScope.launch(ExceptionHandler()) {
                 serverRepository.changeUser(server, user)
                 callback.invoke()
             }
@@ -125,7 +126,7 @@ class SwitchUserViewModel
             onAuthenticated: () -> Unit,
         ) {
             quickConnectJob?.cancel()
-            viewModelScope.launch {
+            viewModelScope.launch(ExceptionHandler()) {
                 try {
                     val api = jellyfin.createApi(baseUrl = server.url)
                     val authenticationResult by api.userApi.authenticateUserByName(
@@ -149,7 +150,7 @@ class SwitchUserViewModel
             onAuthenticated: () -> Unit,
         ) {
             quickConnectJob?.cancel()
-            viewModelScope.launch(Dispatchers.IO) {
+            viewModelScope.launch(ExceptionHandler() + Dispatchers.IO) {
                 try {
                     val api = jellyfin.createApi(server.url)
                     var state =
@@ -162,7 +163,7 @@ class SwitchUserViewModel
                     }
 
                     quickConnectJob =
-                        viewModelScope.launch {
+                        viewModelScope.launch(ExceptionHandler()) {
                             while (!state.authenticated) {
                                 delay(5_000L)
                                 state =
@@ -203,7 +204,7 @@ class SwitchUserViewModel
             serverUrl: String,
             callback: () -> Unit,
         ) {
-            viewModelScope.launch {
+            viewModelScope.launch(ExceptionHandler()) {
                 try {
                     val serverInfo by jellyfin
                         .createApi(serverUrl)

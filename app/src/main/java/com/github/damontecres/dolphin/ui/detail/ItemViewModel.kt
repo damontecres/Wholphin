@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.github.damontecres.dolphin.data.model.BaseItem
 import com.github.damontecres.dolphin.data.model.DolphinModel
 import com.github.damontecres.dolphin.data.model.convertModel
+import com.github.damontecres.dolphin.util.ExceptionHandler
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import org.jellyfin.sdk.api.client.ApiClient
@@ -32,7 +33,7 @@ abstract class ItemViewModel<T : DolphinModel>(
         if (item.value?.id == itemId) {
             return null
         }
-        return viewModelScope.launch {
+        return viewModelScope.launch(ExceptionHandler()) {
             try {
                 val fetchedItem = api.userLibraryApi.getItem(itemId).content
                 val modelInstance = convertModel(fetchedItem, api)

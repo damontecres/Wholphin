@@ -46,6 +46,7 @@ import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import androidx.tv.material3.surfaceColorAtElevation
 import com.github.damontecres.dolphin.ui.FontAwesome
+import com.github.damontecres.dolphin.util.ExceptionHandler
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -229,7 +230,7 @@ fun ScrollableDialog(
     val scope = rememberCoroutineScope()
 
     fun scroll(reverse: Boolean = false) {
-        scope.launch {
+        scope.launch(ExceptionHandler()) {
             columnState.scrollBy(if (reverse) -scrollAmount else scrollAmount)
         }
     }

@@ -74,7 +74,7 @@ class TrackActivityPlaybackListener(
     fun release() {
         task.cancel()
         TIMER.purge()
-        coroutineScope.launch {
+        coroutineScope.launch(ExceptionHandler()) {
             api.playStateApi.reportPlaybackStopped(
                 PlaybackStopInfo(
                     itemId = itemId,
@@ -104,7 +104,7 @@ class TrackActivityPlaybackListener(
     }
 
     private fun saveActivity(position: Long) {
-        coroutineScope.launch {
+        coroutineScope.launch(ExceptionHandler()) {
             val totalDuration = totalPlayDurationMilliseconds.get()
             val calcPosition =
                 (if (position >= 0) position else player.currentPosition).milliseconds

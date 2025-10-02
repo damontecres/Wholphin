@@ -10,9 +10,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
@@ -22,6 +24,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -37,11 +41,15 @@ import com.github.damontecres.dolphin.data.model.BaseItem
 import com.github.damontecres.dolphin.preferences.UserPreferences
 import com.github.damontecres.dolphin.ui.cards.BannerCard
 import com.github.damontecres.dolphin.ui.cards.ItemRow
+import com.github.damontecres.dolphin.ui.components.CircularProgress
 import com.github.damontecres.dolphin.ui.components.DotSeparatedRow
+import com.github.damontecres.dolphin.ui.ifElse
 import com.github.damontecres.dolphin.ui.isNotNullOrBlank
 import com.github.damontecres.dolphin.ui.nav.NavigationManager
 import com.github.damontecres.dolphin.ui.roundMinutes
 import com.github.damontecres.dolphin.ui.timeRemaining
+import com.github.damontecres.dolphin.ui.tryRequestFocus
+import com.github.damontecres.dolphin.util.LoadingState
 import com.github.damontecres.dolphin.util.formatDateTime
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.extensions.ticks
@@ -59,8 +67,39 @@ fun MainPage(
     modifier: Modifier,
     viewModel: MainViewModel = hiltViewModel(),
 ) {
-    val homeRows by viewModel.homeRows.observeAsState(listOf())
-    var focusedItem by remember { mutableStateOf<BaseItem?>(null) }
+    val loading by viewModel.loadingState.observeAsState(LoadingState.Loading)
+    when (val state = loading) {
+        is LoadingState.Error -> Text(text = "Error: ${state.message}", modifier = modifier)
+        LoadingState.Loading ->
+            Box(
+                modifier = modifier,
+                contentAlignment = Alignment.Center,
+            ) {
+                CircularProgress(modifier = Modifier.size(250.dp))
+            }
+
+        LoadingState.Success -> {
+            val homeRows by viewModel.homeRows.observeAsState(listOf())
+            MainPageContent(navigationManager, homeRows, modifier)
+        }
+    }
+}
+
+@Composable
+fun MainPageContent(
+    navigationManager: NavigationManager,
+    homeRows: List<HomeRow>,
+    modifier: Modifier = Modifier,
+) {
+    var focusedItem by remember {
+        mutableStateOf<BaseItem?>(
+            homeRows.getOrNull(0)?.items?.getOrNull(
+                0,
+            ),
+        )
+    }
+    val focusRequester = remember { FocusRequester() }
+    LaunchedEffect(Unit) { if (focusedItem != null) focusRequester.tryRequestFocus() }
     Box(modifier = modifier) {
         if (focusedItem?.backdropImageUrl.isNotNullOrBlank()) {
             val gradientColor = MaterialTheme.colorScheme.background
@@ -136,7 +175,11 @@ fun MainPage(
                                 playPercent = item?.data?.userData?.playedPercentage ?: 0.0,
                                 onClick = onClick,
                                 onLongClick = onLongClick,
-                                modifier = modifier,
+                                modifier =
+                                    modifier.ifElse(
+                                        focusedItem == item,
+                                        Modifier.focusRequester(focusRequester),
+                                    ),
                                 interactionSource = null,
                                 cardHeight = 200.dp,
                             )
