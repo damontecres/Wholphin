@@ -24,7 +24,7 @@ fun ApplicationContent(
 ) {
     NavDisplay(
         backStack = navigationManager.backStack,
-        onBack = { navigationManager.goBack() },
+        onBack = { repeat(it) { navigationManager.goBack() } },
         entryDecorators =
             listOf(
                 rememberSceneSetupNavEntryDecorator(),

@@ -26,7 +26,9 @@ sealed class Destination(
     data object UserList : Destination(true)
 
     @Serializable
-    data object Main : Destination()
+    data class Main(
+        val id: Long = 0L,
+    ) : Destination()
 
     @Serializable
     data object Settings : Destination(true)

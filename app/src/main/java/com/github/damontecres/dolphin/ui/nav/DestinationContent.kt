@@ -29,7 +29,7 @@ fun DestinationContent(
     modifier: Modifier = Modifier,
 ) {
     when (destination) {
-        Destination.Main ->
+        is Destination.Main ->
             MainPage(
                 preferences = preferences,
                 navigationManager = navigationManager,

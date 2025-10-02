@@ -136,7 +136,13 @@ fun NavDrawer(
                     IconNavItem(
                         text = "Home",
                         icon = Icons.Default.Home,
-                        onClick = { navigationManager.goToHome() },
+                        onClick = {
+                            if (destination is Destination.Main) {
+                                navigationManager.reloadHome()
+                            } else {
+                                navigationManager.goToHome()
+                            }
+                        },
                     )
                     LazyColumn(
                         state = listState,

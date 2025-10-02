@@ -15,7 +15,14 @@ class NavigationManager(
     }
 
     fun goToHome() {
-        backStack.clear()
-        backStack.add(Destination.Main)
+        while (backStack.size > 1) {
+            backStack.removeLastOrNull()
+        }
+    }
+
+    fun reloadHome() {
+        goToHome()
+        val id = (backStack[0] as Destination.Main).id + 1
+        backStack[0] = Destination.Main(id)
     }
 }

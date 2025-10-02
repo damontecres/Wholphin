@@ -92,7 +92,7 @@ class MainActivity : AppCompatActivity() {
                             remember(appPreferences) {
                                 createDeviceProfile(this@MainActivity, preferences, false)
                             }
-                        val backStack = rememberNavBackStack(Destination.Main)
+                        val backStack = rememberNavBackStack(Destination.Main())
                         val navigationManager = NavigationManager(backStack)
 
                         if (server != null && user != null) {
