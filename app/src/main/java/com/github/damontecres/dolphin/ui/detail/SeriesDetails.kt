@@ -15,11 +15,16 @@ import com.github.damontecres.dolphin.data.model.BaseItem
 import com.github.damontecres.dolphin.data.model.Video
 import com.github.damontecres.dolphin.preferences.UserPreferences
 import com.github.damontecres.dolphin.ui.cards.ItemRow
+import com.github.damontecres.dolphin.ui.indexOfFirstOrNull
 import com.github.damontecres.dolphin.ui.nav.Destination
 import com.github.damontecres.dolphin.ui.nav.NavigationManager
+import com.github.damontecres.dolphin.util.ApiRequestPager
+import com.github.damontecres.dolphin.util.GetEpisodesRequestHandler
 import com.github.damontecres.dolphin.util.ItemPager
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.playStateApi
@@ -28,6 +33,7 @@ import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.ItemFields
 import org.jellyfin.sdk.model.api.ItemSortBy
 import org.jellyfin.sdk.model.api.SortOrder
+import org.jellyfin.sdk.model.api.request.GetEpisodesRequest
 import org.jellyfin.sdk.model.api.request.GetItemsRequest
 import timber.log.Timber
 import java.util.UUID
@@ -40,6 +46,7 @@ class SeriesViewModel
         api: ApiClient,
     ) : ItemViewModel<Video>(api) {
         val seasons = MutableLiveData<List<BaseItem?>>(listOf())
+        val episodes = MutableLiveData<List<BaseItem?>>(listOf())
 
         override fun init(
             itemId: UUID,
@@ -67,6 +74,13 @@ class SeriesViewModel
                     pager.init()
                     seasons.value = pager
                     Timber.v("Loaded ${pager.size} seasons for series ${item.id}")
+                    val pairs =
+                        pager.mapIndexed { index, _ ->
+                            val season = pager.getBlocking(index)
+                            Pair(season?.indexNumber!!, index)
+                        }
+                    mapOf(*pairs.toTypedArray())
+                    mapOf(*pairs.map { Pair(it.second, it.first) }.toTypedArray())
                 }
             }
 
@@ -74,32 +88,27 @@ class SeriesViewModel
             itemId: UUID,
             potential: BaseItem?,
             season: Int?,
+            episode: Int?,
         ) {
             viewModelScope.launch {
                 init(itemId, potential).join()
-                season?.let {
-                    (seasons.value!! as ItemPager)
-                        .getBlocking(season)
-                        ?.let {
-                            loadEpisodes(it.id)
-                        }
+                season?.let { seasonNum ->
+                    val targetSeasonPosition =
+                        (seasons.value!! as ItemPager)
+                            .toBlockingList()
+                            .indexOfFirstOrNull { it.indexNumber == seasonNum }
+                    loadEpisodes(seasonNum)
                 }
             }
         }
 
-        val episodes = MutableLiveData<List<BaseItem?>>(listOf())
-
-        fun loadEpisodes(seasonId: UUID): Job {
-            Timber.v("Loading episodes for season $seasonId")
-            episodes.value = listOf()
-            return viewModelScope.launch {
+        fun loadEpisodes(season: Int): Deferred<ApiRequestPager<*>> =
+            viewModelScope.async {
                 val request =
-                    GetItemsRequest(
-                        parentId = seasonId,
-                        recursive = false,
-                        includeItemTypes = listOf(BaseItemKind.EPISODE),
-                        sortBy = listOf(ItemSortBy.INDEX_NUMBER),
-                        sortOrder = listOf(SortOrder.ASCENDING),
+                    GetEpisodesRequest(
+                        seriesId = item.value!!.id,
+                        season = season,
+                        sortBy = ItemSortBy.INDEX_NUMBER,
                         fields =
                             listOf(
                                 ItemFields.MEDIA_SOURCES,
@@ -109,12 +118,12 @@ class SeriesViewModel
                                 ItemFields.TRICKPLAY,
                             ),
                     )
-                val pager = ItemPager(api, request, viewModelScope)
+                val pager = ApiRequestPager(api, request, GetEpisodesRequestHandler, viewModelScope)
                 pager.init()
-                Timber.v("Loaded ${pager.size} episodes for season $seasonId")
+                Timber.v("Loaded ${pager.size} episodes for season $season")
                 episodes.value = pager
+                pager
             }
-        }
 
         fun setWatched(
             itemId: UUID,

@@ -22,6 +22,9 @@ data class BaseItem(
 
     @Transient val name = data.name
 
+    @Transient
+    val indexNumber = data.indexNumber
+
     fun destination(): Destination.MediaItem {
         val result =
             // Redirect episodes & seasons to their series if possible

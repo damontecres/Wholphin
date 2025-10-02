@@ -15,12 +15,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.unit.dp
 import androidx.media3.common.Player
 import androidx.tv.material3.Text
 import org.jellyfin.sdk.model.api.TrickplayInfo
-import timber.log.Timber
 
 @Composable
 fun PlaybackOverlay(
@@ -78,12 +75,7 @@ fun PlaybackOverlay(
                     val tilesPerImage = trickplayInfo.tileWidth * trickplayInfo.tileHeight
                     val index =
                         (seekProgressMs / trickplayInfo.interval).toInt() / tilesPerImage
-
-                    val yOffsetDp = 180.dp + 160.dp
-                    val heightPx = with(LocalDensity.current) { yOffsetDp.toPx().toInt() }
-
                     val imageUrl = trickplayUrlFor(index)
-                    Timber.v("Trickplay imageUrl: $imageUrl")
 
                     if (imageUrl != null) {
                         SeekPreviewImage(

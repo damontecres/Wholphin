@@ -50,10 +50,10 @@ fun SeriesOverviewContent(
     series: BaseItem,
     seasons: List<BaseItem?>,
     episodes: List<BaseItem?>,
-    seasonEpisode: SeasonEpisode,
+    position: SeriesOverviewPosition,
     backdropImageUrl: String?,
     firstItemFocusRequester: FocusRequester,
-    onFocus: (SeasonEpisode) -> Unit,
+    onFocus: (SeriesOverviewPosition) -> Unit,
     onClick: (BaseItem) -> Unit,
     onLongClick: (BaseItem) -> Unit,
     playOnClick: (Duration) -> Unit,
@@ -64,12 +64,12 @@ fun SeriesOverviewContent(
 ) {
     val bringIntoViewRequester = remember { BringIntoViewRequester() }
     // TODO need to map between season index and tab index in case of missing seasons
-    var selectedTabIndex by rememberSaveable(seasonEpisode) { mutableIntStateOf(seasonEpisode.season) }
+    var selectedTabIndex by rememberSaveable(position) { mutableIntStateOf(position.seasonTabIndex) }
     val focusRequesters = remember(seasons.size) { List(seasons.size) { FocusRequester() } }
     var resolvedTabIndex by remember { mutableIntStateOf(selectedTabIndex) }
     val tabRowFocusRequester = remember { FocusRequester() }
 
-    val focusedEpisode = episodes.getOrNull(seasonEpisode.episode)
+    val focusedEpisode = episodes.getOrNull(position.episodeRowIndex)
 
     Box(
         modifier =
@@ -132,7 +132,7 @@ fun SeriesOverviewContent(
                                 onFocus = {},
                                 onClick = {
                                     selectedTabIndex = index
-                                    onFocus.invoke(SeasonEpisode(index, 0))
+                                    onFocus.invoke(SeriesOverviewPosition(index, 0))
                                 },
                                 colors =
                                     TabDefaults.pillIndicatorTabColors(
@@ -171,7 +171,7 @@ fun SeriesOverviewContent(
                 }
             }
             item {
-                key(seasonEpisode.season) {
+                key(position.seasonTabIndex) {
                     val state = rememberLazyListState()
                     LazyRow(
                         state = state,
@@ -179,10 +179,15 @@ fun SeriesOverviewContent(
                         contentPadding = PaddingValues(start = 16.dp),
                         modifier = modifier.focusRestorer(firstItemFocusRequester),
                     ) {
-                        itemsIndexed(episodes) { index, episode ->
+                        itemsIndexed(episodes) { episodeIndex, episode ->
                             val interactionSource = remember { MutableInteractionSource() }
                             if (interactionSource.collectIsFocusedAsState().value) {
-                                onFocus.invoke(SeasonEpisode(selectedTabIndex, index))
+                                onFocus.invoke(
+                                    SeriesOverviewPosition(
+                                        selectedTabIndex,
+                                        episodeIndex,
+                                    ),
+                                )
                             }
                             BannerCard(
                                 imageUrl = episode?.imageUrl,
@@ -193,7 +198,7 @@ fun SeriesOverviewContent(
                                 onLongClick = { if (episode != null) onLongClick.invoke(episode) },
                                 modifier =
                                     Modifier.ifElse(
-                                        index == 0,
+                                        episodeIndex == 0,
                                         Modifier.focusRequester(firstItemFocusRequester),
                                     ),
                                 interactionSource = interactionSource,

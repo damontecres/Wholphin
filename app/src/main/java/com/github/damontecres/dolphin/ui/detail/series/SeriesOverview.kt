@@ -32,6 +32,12 @@ data class SeasonEpisode(
     val episode: Int,
 )
 
+@Serializable
+data class SeriesOverviewPosition(
+    val seasonTabIndex: Int,
+    val episodeRowIndex: Int,
+)
+
 @Composable
 fun SeriesOverview(
     preferences: UserPreferences,
@@ -45,19 +51,33 @@ fun SeriesOverview(
 
     OneTimeLaunchedEffect {
         Timber.v("SeriesDetailParent: itemId=${destination.itemId}, initialSeasonEpisode=$initialSeasonEpisode")
-        viewModel.init(destination.itemId, destination.item, initialSeasonEpisode.season)
+        viewModel.init(
+            destination.itemId,
+            destination.item,
+            initialSeasonEpisode.season,
+            initialSeasonEpisode.episode,
+        )
     }
     val series by viewModel.item.observeAsState(null)
     val seasons by viewModel.seasons.observeAsState(listOf())
     val episodes by viewModel.episodes.observeAsState(listOf())
-    var seasonEpisode by rememberSaveable(
+
+    // TODO need to translate season/episode into tab/row index in case of missing seasons/episodes
+    var position by rememberSaveable(
         destination,
         stateSaver =
             Saver(
-                save = { listOf(it.season, it.episode) },
-                restore = { SeasonEpisode(it[0], it[1]) },
+                save = { listOf(it.seasonTabIndex, it.episodeRowIndex) },
+                restore = { SeriesOverviewPosition(it[0], it[1]) },
             ),
-    ) { mutableStateOf(initialSeasonEpisode) }
+    ) {
+        mutableStateOf(
+            SeriesOverviewPosition(
+                initialSeasonEpisode.season,
+                initialSeasonEpisode.episode,
+            ),
+        )
+    }
 
     var overviewDialog by remember { mutableStateOf<ItemDetailsDialogInfo?>(null) }
 
@@ -65,8 +85,8 @@ fun SeriesOverview(
         if (episodes.isNotEmpty()) {
             // TODO focus on first episode when changing seasons
 //            firstItemFocusRequester.requestFocus()
-            episodes.getOrNull(seasonEpisode.episode)?.let {
-                viewModel.refreshEpisode(it.id, seasonEpisode.episode)
+            episodes.getOrNull(position.episodeRowIndex)?.let {
+                viewModel.refreshEpisode(it.id, position.episodeRowIndex)
             }
         }
     }
@@ -83,14 +103,14 @@ fun SeriesOverview(
                 series = series,
                 seasons = seasons,
                 episodes = episodes,
-                seasonEpisode = seasonEpisode,
+                position = position,
                 backdropImageUrl = remember { viewModel.imageUrl(series.id, ImageType.BACKDROP) },
                 firstItemFocusRequester = firstItemFocusRequester,
                 onFocus = {
-                    if (it.season != seasonEpisode.season) {
-                        viewModel.loadEpisodes(seasons[it.season]!!.id)
+                    if (it.seasonTabIndex != position.seasonTabIndex) {
+                        viewModel.loadEpisodes(seasons[it.seasonTabIndex]!!.indexNumber!!)
                     }
-                    seasonEpisode = it
+                    position = it
                 },
                 onClick = {
                     val resumePosition =
@@ -103,7 +123,7 @@ fun SeriesOverview(
                     // TODO
                 },
                 playOnClick = { resume ->
-                    episodes.getOrNull(seasonEpisode.episode)?.let {
+                    episodes.getOrNull(position.episodeRowIndex)?.let {
                         navigationManager.navigateTo(
                             Destination.Playback(
                                 it.id,
@@ -114,18 +134,16 @@ fun SeriesOverview(
                     }
                 },
                 watchOnClick = {
-                    // TODO toggle watched state
-                    episodes.getOrNull(seasonEpisode.episode)?.let {
+                    episodes.getOrNull(position.episodeRowIndex)?.let {
                         val played = it.data.userData?.played ?: false
-                        // TODO map indexes
-                        viewModel.setWatched(it.id, !played, seasonEpisode.episode)
+                        viewModel.setWatched(it.id, !played, position.episodeRowIndex)
                     }
                 },
                 moreOnClick = {
                     // TODO show more actions
                 },
                 overviewOnClick = {
-                    episodes.getOrNull(seasonEpisode.episode)?.let {
+                    episodes.getOrNull(position.episodeRowIndex)?.let {
                         overviewDialog =
                             ItemDetailsDialogInfo(
                                 title = it.name ?: "Unknown",
