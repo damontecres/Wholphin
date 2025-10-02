@@ -191,6 +191,9 @@ fun SeriesOverviewContent(
                             }
                             BannerCard(
                                 imageUrl = episode?.imageUrl,
+                                aspectRatio =
+                                    episode?.data?.primaryImageAspectRatio?.toFloat()
+                                        ?: (16f / 9),
                                 cornerText = "E${episode?.data?.indexNumber}",
                                 played = episode?.data?.userData?.played ?: false,
                                 playPercent = episode?.data?.userData?.playedPercentage ?: 0.0,

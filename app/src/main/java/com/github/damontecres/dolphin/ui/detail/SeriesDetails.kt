@@ -116,6 +116,7 @@ class SeriesViewModel
                                 ItemFields.OVERVIEW,
                                 ItemFields.CUSTOM_RATING,
                                 ItemFields.TRICKPLAY,
+                                ItemFields.PRIMARY_IMAGE_ASPECT_RATIO,
                             ),
                     )
                 val pager = ApiRequestPager(api, request, GetEpisodesRequestHandler, viewModelScope)

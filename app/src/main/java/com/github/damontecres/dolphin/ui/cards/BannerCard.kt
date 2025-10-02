@@ -5,6 +5,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -36,22 +37,22 @@ fun BannerCard(
     onClick: () -> Unit,
     onLongClick: () -> Unit,
     modifier: Modifier = Modifier,
-    cardWidth: Dp = 200.dp,
-    cardHeight: Dp = cardWidth * 9 / 16,
+    cardHeight: Dp = 140.dp,
+    aspectRatio: Float = 16f / 9,
     interactionSource: MutableInteractionSource? = null,
 ) {
     Card(
-        modifier = modifier.size(cardWidth, cardHeight),
+        modifier = modifier.size(cardHeight * aspectRatio, cardHeight),
         onClick = onClick,
         onLongClick = onLongClick,
         interactionSource = interactionSource,
     ) {
-        Box {
+        Box(modifier = Modifier.fillMaxSize()) {
             AsyncImage(
                 model = imageUrl,
                 contentDescription = null,
                 contentScale = ContentScale.Fit,
-                modifier = Modifier,
+                modifier = Modifier.fillMaxSize(),
             )
             if (played || cornerText.isNotNullOrBlank()) {
                 Row(
