@@ -61,6 +61,7 @@ data class BaseItem(
         fun from(
             dto: BaseItemDto,
             api: ApiClient,
+            useSeriesForPrimary: Boolean = false,
         ): BaseItem {
             val backdropImageUrl =
                 if (dto.type == BaseItemKind.EPISODE) {
@@ -73,9 +74,20 @@ data class BaseItem(
                 } else {
                     api.imageApi.getItemImageUrl(dto.id, ImageType.BACKDROP)
                 }
+            val primaryImageUrl =
+                if (useSeriesForPrimary && dto.type == BaseItemKind.EPISODE) {
+                    val seriesId = dto.seriesId
+                    if (seriesId != null) {
+                        api.imageApi.getItemImageUrl(seriesId, ImageType.PRIMARY)
+                    } else {
+                        api.imageApi.getItemImageUrl(dto.id, ImageType.PRIMARY)
+                    }
+                } else {
+                    api.imageApi.getItemImageUrl(dto.id, ImageType.PRIMARY)
+                }
             return BaseItem(
                 dto,
-                api.imageApi.getItemImageUrl(dto.id, ImageType.PRIMARY),
+                primaryImageUrl,
                 backdropImageUrl,
             )
         }

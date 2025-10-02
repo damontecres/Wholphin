@@ -30,15 +30,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import coil3.compose.AsyncImage
 import com.github.damontecres.dolphin.data.model.BaseItem
 import com.github.damontecres.dolphin.preferences.UserPreferences
-import com.github.damontecres.dolphin.ui.DefaultItemFields
+import com.github.damontecres.dolphin.ui.cards.BannerCard
 import com.github.damontecres.dolphin.ui.cards.ItemRow
 import com.github.damontecres.dolphin.ui.components.DotSeparatedRow
 import com.github.damontecres.dolphin.ui.isNotNullOrBlank
@@ -46,136 +43,14 @@ import com.github.damontecres.dolphin.ui.nav.NavigationManager
 import com.github.damontecres.dolphin.ui.roundMinutes
 import com.github.damontecres.dolphin.ui.timeRemaining
 import com.github.damontecres.dolphin.util.formatDateTime
-import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import org.jellyfin.sdk.api.client.ApiClient
-import org.jellyfin.sdk.api.client.extensions.displayPreferencesApi
-import org.jellyfin.sdk.api.client.extensions.itemsApi
-import org.jellyfin.sdk.api.client.extensions.tvShowsApi
-import org.jellyfin.sdk.api.client.extensions.userApi
-import org.jellyfin.sdk.api.client.extensions.userLibraryApi
 import org.jellyfin.sdk.model.api.BaseItemKind
-import org.jellyfin.sdk.model.api.request.GetLatestMediaRequest
-import org.jellyfin.sdk.model.api.request.GetNextUpRequest
-import org.jellyfin.sdk.model.api.request.GetResumeItemsRequest
 import org.jellyfin.sdk.model.extensions.ticks
-import timber.log.Timber
-import javax.inject.Inject
 
 data class HomeRow(
     val section: HomeSection,
     val items: List<BaseItem>,
+    val title: String? = null,
 )
-
-@HiltViewModel
-class MainViewModel
-    @Inject
-    constructor(
-        val api: ApiClient,
-    ) : ViewModel() {
-        val homeRows = MutableLiveData<List<HomeRow>>()
-
-        init {
-            viewModelScope.launch(Dispatchers.IO) {
-                val user = api.userApi.getCurrentUser().content
-                val displayPrefs =
-                    api.displayPreferencesApi
-                        .getDisplayPreferences(
-                            displayPreferencesId = "usersettings",
-                            client = "emby",
-                        ).content
-                val homeSections =
-                    displayPrefs.customPrefs.entries
-                        .filter { it.key.startsWith("homesection") && it.value.isNotNullOrBlank() }
-                        .sortedBy { it.key }
-                        .map { HomeSection.fromKey(it.value ?: "") }
-                        .filterNot { it == HomeSection.NONE }
-
-                val homeRows =
-                    homeSections
-                        .mapNotNull { section ->
-                            Timber.v("Loading section: %s", section.name)
-                            when (section) {
-                                HomeSection.LATEST_MEDIA -> {
-                                    user.configuration?.orderedViews?.firstOrNull()?.let { viewId ->
-                                        val request =
-                                            GetLatestMediaRequest(
-                                                fields = DefaultItemFields,
-                                                imageTypeLimit = 1,
-                                                parentId = viewId,
-                                                groupItems = true,
-                                                limit = 25,
-                                            )
-                                        val latest =
-                                            api.userLibraryApi
-                                                .getLatestMedia(request)
-                                                .content
-                                                .map { BaseItem.from(it, api) }
-                                        HomeRow(
-                                            section = section,
-                                            items = latest,
-                                        )
-                                    }
-                                }
-
-                                // TODO
-                                HomeSection.LIBRARY_TILES_SMALL -> null
-                                HomeSection.RESUME -> {
-                                    val request =
-                                        GetResumeItemsRequest(
-                                            userId = user.id,
-                                            fields = DefaultItemFields,
-                                            // TODO, more params?
-                                        )
-                                    val items =
-                                        api.itemsApi
-                                            .getResumeItems(request)
-                                            .content
-                                            .items
-                                            .map { BaseItem.from(it, api) }
-                                    HomeRow(
-                                        section = section,
-                                        items = items,
-                                    )
-                                }
-                                HomeSection.ACTIVE_RECORDINGS -> null
-                                HomeSection.NEXT_UP -> {
-                                    val request =
-                                        GetNextUpRequest(
-                                            fields = DefaultItemFields,
-                                            imageTypeLimit = 1,
-                                            parentId = null,
-                                            limit = 25,
-                                            enableResumable = false,
-                                        )
-                                    val nextUp =
-                                        api.tvShowsApi
-                                            .getNextUp(request)
-                                            .content
-                                            .items
-                                            .map { BaseItem.from(it, api) }
-                                    HomeRow(
-                                        section = section,
-                                        items = nextUp,
-                                    )
-                                }
-                                HomeSection.LIVE_TV -> null
-
-                                // TODO Not supported?
-                                HomeSection.LIBRARY_BUTTONS -> null
-                                HomeSection.RESUME_AUDIO -> null
-                                HomeSection.RESUME_BOOK -> null
-                                HomeSection.NONE -> null
-                            }
-                        }.filter { it.items.isNotEmpty() }
-                withContext(Dispatchers.Main) {
-                    this@MainViewModel.homeRows.value = homeRows
-                }
-            }
-        }
-    }
 
 @Composable
 fun MainPage(
@@ -241,7 +116,7 @@ fun MainPage(
             ) {
                 items(homeRows) { row ->
                     ItemRow(
-                        title = stringResource(row.section.nameRes),
+                        title = row.title ?: stringResource(row.section.nameRes),
                         items = row.items,
                         onClickItem = {
                             navigationManager.navigateTo(it.destination())
@@ -251,6 +126,21 @@ fun MainPage(
                         },
                         onLongClickItem = {},
                         modifier = Modifier.fillMaxWidth(),
+                        cardContent = { item, modifier, onClick, onLongClick ->
+                            // TODO better aspect ration handling?
+                            BannerCard(
+                                imageUrl = item?.imageUrl,
+                                aspectRatio = (2f / 3f),
+                                cornerText = item?.data?.indexNumber?.let { "E$it" },
+                                played = item?.data?.userData?.played ?: false,
+                                playPercent = item?.data?.userData?.playedPercentage ?: 0.0,
+                                onClick = onClick,
+                                onLongClick = onLongClick,
+                                modifier = modifier,
+                                interactionSource = null,
+                                cardHeight = 200.dp,
+                            )
+                        },
                     )
                 }
             }

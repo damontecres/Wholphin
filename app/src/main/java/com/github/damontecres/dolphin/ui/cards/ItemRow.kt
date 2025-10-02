@@ -31,6 +31,19 @@ fun ItemRow(
     onClickItem: (BaseItem) -> Unit,
     onLongClickItem: (BaseItem) -> Unit,
     modifier: Modifier = Modifier,
+    cardContent: @Composable (
+        item: BaseItem?,
+        modifier: Modifier,
+        onClick: () -> Unit,
+        onLongClick: () -> Unit,
+    ) -> Unit = { item, modifier, onClick, onLongClick ->
+        ItemCard(
+            item = item,
+            onClick = onClick,
+            onLongClick = onLongClick,
+            modifier = modifier,
+        )
+    },
     focusPair: FocusPair? = null,
     cardOnFocus: ((isFocused: Boolean, index: Int) -> Unit)? = null,
 ) {
@@ -72,13 +85,47 @@ fun ItemRow(
                         }
                         cardOnFocus?.invoke(it.isFocused, index)
                     }
-                ItemCard(
-                    item = item,
-                    onClick = { if (item != null) onClickItem.invoke(item) },
-                    onLongClick = { if (item != null) onLongClickItem.invoke(item) },
-                    modifier = cardModifier,
+                cardContent.invoke(
+                    item,
+                    cardModifier,
+                    { if (item != null) onClickItem.invoke(item) },
+                    { if (item != null) onLongClickItem.invoke(item) },
                 )
             }
         }
     }
 }
+
+@Composable
+fun BannerItemRow(
+    title: String,
+    items: List<BaseItem?>,
+    onClickItem: (BaseItem) -> Unit,
+    onLongClickItem: (BaseItem) -> Unit,
+    modifier: Modifier = Modifier,
+    focusPair: FocusPair? = null,
+    cardOnFocus: ((isFocused: Boolean, index: Int) -> Unit)? = null,
+    aspectRatioOverride: Float? = null,
+) = ItemRow(
+    title = title,
+    items = items,
+    onClickItem = onClickItem,
+    onLongClickItem = onLongClickItem,
+    modifier = modifier,
+    cardContent = { item, modifier, onClick, onLongClick ->
+        BannerCard(
+            imageUrl = item?.imageUrl,
+            aspectRatio =
+                aspectRatioOverride ?: item?.data?.primaryImageAspectRatio?.toFloat() ?: (16f / 9),
+            cornerText = item?.data?.indexNumber?.let { "E$it" },
+            played = item?.data?.userData?.played ?: false,
+            playPercent = item?.data?.userData?.playedPercentage ?: 0.0,
+            onClick = onClick,
+            onLongClick = onLongClick,
+            modifier = modifier,
+            interactionSource = null,
+        )
+    },
+    focusPair = focusPair,
+    cardOnFocus = cardOnFocus,
+)
