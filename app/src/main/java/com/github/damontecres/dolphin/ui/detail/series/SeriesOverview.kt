@@ -18,6 +18,7 @@ import com.github.damontecres.dolphin.ui.components.ErrorMessage
 import com.github.damontecres.dolphin.ui.components.LoadingPage
 import com.github.damontecres.dolphin.ui.data.ItemDetailsDialog
 import com.github.damontecres.dolphin.ui.data.ItemDetailsDialogInfo
+import com.github.damontecres.dolphin.ui.detail.ItemListAndMapping
 import com.github.damontecres.dolphin.ui.detail.SeriesViewModel
 import com.github.damontecres.dolphin.ui.nav.Destination
 import com.github.damontecres.dolphin.ui.nav.NavigationManager
@@ -48,7 +49,7 @@ fun SeriesOverview(
     destination: Destination.MediaItem,
     modifier: Modifier = Modifier,
     viewModel: SeriesViewModel = hiltViewModel(),
-    initialSeasonEpisode: SeasonEpisode = SeasonEpisode(0, 0),
+    initialSeasonEpisode: SeasonEpisode? = null,
 ) {
     val firstItemFocusRequester = remember { FocusRequester() }
     val episodeRowFocusRequester = remember { FocusRequester() }
@@ -58,19 +59,20 @@ fun SeriesOverview(
         viewModel.init(
             destination.itemId,
             destination.item,
-            initialSeasonEpisode.season,
-            initialSeasonEpisode.episode,
+            initialSeasonEpisode?.season,
+            initialSeasonEpisode?.episode,
         )
     }
     val loading by viewModel.loading.observeAsState(LoadingState.Loading)
 
     val series by viewModel.item.observeAsState(null)
-    val seasons by viewModel.seasons.observeAsState(listOf())
-    val episodes by viewModel.episodes.observeAsState(listOf())
+    val seasons by viewModel.seasons.observeAsState(ItemListAndMapping.empty())
+    val episodes by viewModel.episodes.observeAsState(ItemListAndMapping.empty())
 
     // TODO need to translate season/episode into tab/row index in case of missing seasons/episodes
     var position by rememberSaveable(
         destination,
+        loading,
         stateSaver =
             Saver(
                 save = { listOf(it.seasonTabIndex, it.episodeRowIndex) },
@@ -79,19 +81,19 @@ fun SeriesOverview(
     ) {
         mutableStateOf(
             SeriesOverviewPosition(
-                initialSeasonEpisode.season,
-                initialSeasonEpisode.episode,
+                seasons.numberToIndex[initialSeasonEpisode?.season ?: 0] ?: 0,
+                episodes.numberToIndex[initialSeasonEpisode?.episode ?: 0] ?: 0,
             ),
         )
     }
 
     var overviewDialog by remember { mutableStateOf<ItemDetailsDialogInfo?>(null) }
 
-    LaunchedEffect(episodes) {
-        if (episodes.isNotEmpty()) {
+    LaunchedEffect(episodes.items) {
+        if (episodes.items.isNotEmpty()) {
             // TODO focus on first episode when changing seasons
 //            firstItemFocusRequester.requestFocus()
-            episodes.getOrNull(position.episodeRowIndex)?.let {
+            episodes.items.getOrNull(position.episodeRowIndex)?.let {
                 viewModel.refreshEpisode(it.id, position.episodeRowIndex)
             }
         }
@@ -107,8 +109,8 @@ fun SeriesOverview(
                 LaunchedEffect(Unit) { episodeRowFocusRequester.tryRequestFocus() }
                 SeriesOverviewContent(
                     series = series,
-                    seasons = seasons,
-                    episodes = episodes,
+                    seasons = seasons.items,
+                    episodes = episodes.items,
                     position = position,
                     backdropImageUrl =
                         remember {
@@ -121,7 +123,9 @@ fun SeriesOverview(
                     episodeRowFocusRequester = episodeRowFocusRequester,
                     onFocus = {
                         if (it.seasonTabIndex != position.seasonTabIndex) {
-                            viewModel.loadEpisodes(seasons[it.seasonTabIndex]!!.indexNumber!!)
+                            seasons.indexToNumber[it.seasonTabIndex]?.let { seasonNumber ->
+                                viewModel.loadEpisodes(seasonNumber)
+                            }
                         }
                         position = it
                     },
@@ -143,7 +147,7 @@ fun SeriesOverview(
                         // TODO
                     },
                     playOnClick = { resume ->
-                        episodes.getOrNull(position.episodeRowIndex)?.let {
+                        episodes.items.getOrNull(position.episodeRowIndex)?.let {
                             viewModel.release()
                             navigationManager.navigateTo(
                                 Destination.Playback(
@@ -155,7 +159,7 @@ fun SeriesOverview(
                         }
                     },
                     watchOnClick = {
-                        episodes.getOrNull(position.episodeRowIndex)?.let {
+                        episodes.items.getOrNull(position.episodeRowIndex)?.let {
                             val played = it.data.userData?.played ?: false
                             viewModel.setWatched(it.id, !played, position.episodeRowIndex)
                         }
@@ -164,7 +168,7 @@ fun SeriesOverview(
                         // TODO show more actions
                     },
                     overviewOnClick = {
-                        episodes.getOrNull(position.episodeRowIndex)?.let {
+                        episodes.items.getOrNull(position.episodeRowIndex)?.let {
                             overviewDialog =
                                 ItemDetailsDialogInfo(
                                     title = it.name ?: "Unknown",

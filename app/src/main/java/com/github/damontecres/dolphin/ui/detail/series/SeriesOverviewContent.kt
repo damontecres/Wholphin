@@ -16,6 +16,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
@@ -40,9 +41,11 @@ import androidx.tv.material3.TabRow
 import androidx.tv.material3.Text
 import coil3.compose.AsyncImage
 import com.github.damontecres.dolphin.data.model.BaseItem
+import com.github.damontecres.dolphin.ui.OneTimeLaunchedEffect
 import com.github.damontecres.dolphin.ui.cards.BannerCard
 import com.github.damontecres.dolphin.ui.ifElse
 import com.github.damontecres.dolphin.ui.isNotNullOrBlank
+import com.github.damontecres.dolphin.ui.tryRequestFocus
 import kotlin.time.Duration
 
 @Composable
@@ -71,6 +74,8 @@ fun SeriesOverviewContent(
     val tabRowFocusRequester = remember { FocusRequester() }
 
     val focusedEpisode = episodes.getOrNull(position.episodeRowIndex)
+    LaunchedEffect(position) {
+    }
 
     Box(
         modifier =
@@ -174,6 +179,12 @@ fun SeriesOverviewContent(
             item {
                 key(position.seasonTabIndex) {
                     val state = rememberLazyListState()
+                    OneTimeLaunchedEffect {
+                        if (state.firstVisibleItemIndex != position.episodeRowIndex) {
+                            state.scrollToItem(position.episodeRowIndex)
+                            firstItemFocusRequester.tryRequestFocus()
+                        }
+                    }
                     LazyRow(
                         state = state,
                         horizontalArrangement = Arrangement.spacedBy(16.dp),
@@ -205,7 +216,7 @@ fun SeriesOverviewContent(
                                 onLongClick = { if (episode != null) onLongClick.invoke(episode) },
                                 modifier =
                                     Modifier.ifElse(
-                                        episodeIndex == 0,
+                                        episodeIndex == position.episodeRowIndex,
                                         Modifier.focusRequester(firstItemFocusRequester),
                                     ),
                                 interactionSource = interactionSource,

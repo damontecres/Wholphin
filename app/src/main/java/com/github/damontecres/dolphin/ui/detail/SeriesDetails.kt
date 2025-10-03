@@ -29,7 +29,7 @@ fun SeriesDetails(
         viewModel.init(destination.itemId, destination.item, null, null)
     }
     val item by viewModel.item.observeAsState()
-    val seasons by viewModel.seasons.observeAsState(listOf())
+    val seasons by viewModel.seasons.observeAsState(ItemListAndMapping.empty())
     val loading by viewModel.loading.observeAsState(LoadingState.Loading)
 
     when (val state = loading) {
@@ -44,7 +44,7 @@ fun SeriesDetails(
                     item {
                         ItemRow(
                             title = "Seasons",
-                            items = seasons,
+                            items = seasons.items,
                             onClickItem = { navigationManager.navigateTo(it.destination()) },
                             onLongClickItem = { },
                             modifier = Modifier.fillMaxWidth(),

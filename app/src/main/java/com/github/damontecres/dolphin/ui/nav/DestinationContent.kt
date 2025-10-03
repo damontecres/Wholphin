@@ -9,7 +9,6 @@ import com.github.damontecres.dolphin.ui.detail.EpisodeDetails
 import com.github.damontecres.dolphin.ui.detail.SeasonDetails
 import com.github.damontecres.dolphin.ui.detail.VideoDetails
 import com.github.damontecres.dolphin.ui.detail.movie.MovieDetails
-import com.github.damontecres.dolphin.ui.detail.series.SeasonEpisode
 import com.github.damontecres.dolphin.ui.detail.series.SeriesOverview
 import com.github.damontecres.dolphin.ui.main.MainPage
 import com.github.damontecres.dolphin.ui.playback.PlaybackContent
@@ -64,7 +63,7 @@ fun DestinationContent(
                         navigationManager,
                         destination,
                         modifier,
-                        initialSeasonEpisode = destination.seasonEpisode ?: SeasonEpisode(0, 0),
+                        initialSeasonEpisode = destination.seasonEpisode,
                     )
 
                 BaseItemKind.SEASON ->
