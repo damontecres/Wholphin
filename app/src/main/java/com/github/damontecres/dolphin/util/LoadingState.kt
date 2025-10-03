@@ -7,6 +7,6 @@ sealed interface LoadingState {
 
     data class Error(
         val message: String? = null,
-        val exception: Exception? = null,
+        val exception: Throwable? = null,
     ) : LoadingState
 }

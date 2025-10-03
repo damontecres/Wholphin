@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.Composable
@@ -42,8 +41,9 @@ import com.github.damontecres.dolphin.preferences.UserPreferences
 import com.github.damontecres.dolphin.ui.OneTimeLaunchedEffect
 import com.github.damontecres.dolphin.ui.cards.BannerCard
 import com.github.damontecres.dolphin.ui.cards.ItemRow
-import com.github.damontecres.dolphin.ui.components.CircularProgress
 import com.github.damontecres.dolphin.ui.components.DotSeparatedRow
+import com.github.damontecres.dolphin.ui.components.ErrorMessage
+import com.github.damontecres.dolphin.ui.components.LoadingPage
 import com.github.damontecres.dolphin.ui.ifElse
 import com.github.damontecres.dolphin.ui.isNotNullOrBlank
 import com.github.damontecres.dolphin.ui.nav.NavigationManager
@@ -73,14 +73,9 @@ fun MainPage(
     }
     val loading by viewModel.loadingState.observeAsState(LoadingState.Loading)
     when (val state = loading) {
-        is LoadingState.Error -> Text(text = "Error: ${state.message}", modifier = modifier)
-        LoadingState.Loading ->
-            Box(
-                modifier = modifier,
-                contentAlignment = Alignment.Center,
-            ) {
-                CircularProgress(modifier = Modifier.size(250.dp))
-            }
+        is LoadingState.Error -> ErrorMessage(state)
+
+        LoadingState.Loading -> LoadingPage()
 
         LoadingState.Success -> {
             val homeRows by viewModel.homeRows.observeAsState(listOf())

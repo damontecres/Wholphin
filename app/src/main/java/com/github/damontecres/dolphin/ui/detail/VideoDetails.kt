@@ -14,8 +14,11 @@ import androidx.tv.material3.Button
 import androidx.tv.material3.Text
 import com.github.damontecres.dolphin.data.model.Video
 import com.github.damontecres.dolphin.preferences.UserPreferences
+import com.github.damontecres.dolphin.ui.components.ErrorMessage
+import com.github.damontecres.dolphin.ui.components.LoadingPage
 import com.github.damontecres.dolphin.ui.nav.Destination
 import com.github.damontecres.dolphin.ui.nav.NavigationManager
+import com.github.damontecres.dolphin.util.LoadingState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.model.extensions.ticks
@@ -27,7 +30,7 @@ class VideoViewModel
     @Inject
     constructor(
         api: ApiClient,
-    ) : ItemViewModel<Video>(api)
+    ) : LoadingItemViewModel<Video>(api)
 
 @Composable
 fun VideoDetails(
@@ -41,50 +44,59 @@ fun VideoDetails(
         viewModel.init(destination.itemId, destination.item)
     }
     val item by viewModel.item.observeAsState()
-    if (item == null) {
-        Text(text = "Loading...")
-    } else {
-        item?.let { item ->
-            val dto = item.data
-            LazyColumn(
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                contentPadding = PaddingValues(32.dp),
-                modifier = modifier,
-            ) {
-                item {
-                    Text(text = item.name ?: "Unknown")
-                }
-                dto.overview?.let {
+    val loading by viewModel.loading.observeAsState(LoadingState.Loading)
+    when (val state = loading) {
+        is LoadingState.Error -> ErrorMessage(state)
+        LoadingState.Loading -> LoadingPage()
+        LoadingState.Success -> {
+            item?.let { item ->
+                val dto = item.data
+                LazyColumn(
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    contentPadding = PaddingValues(32.dp),
+                    modifier = modifier,
+                ) {
                     item {
-                        Text(text = it)
+                        Text(text = item.name ?: "Unknown")
                     }
-                }
-                dto.userData?.playbackPositionTicks?.ticks?.let {
-                    if (it > 60.seconds) {
+                    dto.overview?.let {
                         item {
-                            Button(
-                                onClick = {
-                                    navigationManager.navigateTo(
-                                        Destination.Playback(
-                                            item.id,
-                                            it.inWholeMilliseconds,
-                                            item,
-                                        ),
-                                    )
-                                },
-                            ) {
-                                Text(text = "Resume")
+                            Text(text = it)
+                        }
+                    }
+                    dto.userData?.playbackPositionTicks?.ticks?.let {
+                        if (it > 60.seconds) {
+                            item {
+                                Button(
+                                    onClick = {
+                                        navigationManager.navigateTo(
+                                            Destination.Playback(
+                                                item.id,
+                                                it.inWholeMilliseconds,
+                                                item,
+                                            ),
+                                        )
+                                    },
+                                ) {
+                                    Text(text = "Resume")
+                                }
                             }
                         }
                     }
-                }
-                item {
-                    Button(
-                        onClick = {
-                            navigationManager.navigateTo(Destination.Playback(item.id, 0L, item))
-                        },
-                    ) {
-                        Text(text = "Play")
+                    item {
+                        Button(
+                            onClick = {
+                                navigationManager.navigateTo(
+                                    Destination.Playback(
+                                        item.id,
+                                        0L,
+                                        item,
+                                    ),
+                                )
+                            },
+                        ) {
+                            Text(text = "Play")
+                        }
                     }
                 }
             }

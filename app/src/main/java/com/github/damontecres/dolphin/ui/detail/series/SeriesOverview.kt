@@ -12,14 +12,17 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.tv.material3.Text
 import com.github.damontecres.dolphin.preferences.UserPreferences
 import com.github.damontecres.dolphin.ui.OneTimeLaunchedEffect
+import com.github.damontecres.dolphin.ui.components.ErrorMessage
+import com.github.damontecres.dolphin.ui.components.LoadingPage
 import com.github.damontecres.dolphin.ui.data.ItemDetailsDialog
 import com.github.damontecres.dolphin.ui.data.ItemDetailsDialogInfo
 import com.github.damontecres.dolphin.ui.detail.SeriesViewModel
 import com.github.damontecres.dolphin.ui.nav.Destination
 import com.github.damontecres.dolphin.ui.nav.NavigationManager
+import com.github.damontecres.dolphin.ui.tryRequestFocus
+import com.github.damontecres.dolphin.util.LoadingState
 import kotlinx.serialization.Serializable
 import org.jellyfin.sdk.model.api.ImageType
 import org.jellyfin.sdk.model.extensions.ticks
@@ -48,6 +51,7 @@ fun SeriesOverview(
     initialSeasonEpisode: SeasonEpisode = SeasonEpisode(0, 0),
 ) {
     val firstItemFocusRequester = remember { FocusRequester() }
+    val episodeRowFocusRequester = remember { FocusRequester() }
 
     OneTimeLaunchedEffect {
         Timber.v("SeriesDetailParent: itemId=${destination.itemId}, initialSeasonEpisode=$initialSeasonEpisode")
@@ -58,6 +62,8 @@ fun SeriesOverview(
             initialSeasonEpisode.episode,
         )
     }
+    val loading by viewModel.loading.observeAsState(LoadingState.Loading)
+
     val series by viewModel.item.observeAsState(null)
     val seasons by viewModel.seasons.observeAsState(listOf())
     val episodes by viewModel.episodes.observeAsState(listOf())
@@ -91,72 +97,86 @@ fun SeriesOverview(
         }
     }
 
-    LaunchedEffect(Unit) {
-    }
+    when (val state = loading) {
+        is LoadingState.Error -> ErrorMessage(state)
 
-    if (series == null) {
-        // TODO
-        Text(text = "Loading...")
-    } else {
-        series?.let { series ->
-            SeriesOverviewContent(
-                series = series,
-                seasons = seasons,
-                episodes = episodes,
-                position = position,
-                backdropImageUrl = remember { viewModel.imageUrl(series.id, ImageType.BACKDROP) },
-                firstItemFocusRequester = firstItemFocusRequester,
-                onFocus = {
-                    if (it.seasonTabIndex != position.seasonTabIndex) {
-                        viewModel.loadEpisodes(seasons[it.seasonTabIndex]!!.indexNumber!!)
-                    }
-                    position = it
-                },
-                onClick = {
-                    val resumePosition =
-                        it.data.userData
-                            ?.playbackPositionTicks
-                            ?.ticks ?: Duration.ZERO
-                    navigationManager.navigateTo(Destination.Playback(it.id, resumePosition.inWholeMilliseconds, it))
-                },
-                onLongClick = {
-                    // TODO
-                },
-                playOnClick = { resume ->
-                    episodes.getOrNull(position.episodeRowIndex)?.let {
+        LoadingState.Loading -> LoadingPage()
+
+        LoadingState.Success -> {
+            series?.let { series ->
+                LaunchedEffect(Unit) { episodeRowFocusRequester.tryRequestFocus() }
+                SeriesOverviewContent(
+                    series = series,
+                    seasons = seasons,
+                    episodes = episodes,
+                    position = position,
+                    backdropImageUrl =
+                        remember {
+                            viewModel.imageUrl(
+                                series.id,
+                                ImageType.BACKDROP,
+                            )
+                        },
+                    firstItemFocusRequester = firstItemFocusRequester,
+                    episodeRowFocusRequester = episodeRowFocusRequester,
+                    onFocus = {
+                        if (it.seasonTabIndex != position.seasonTabIndex) {
+                            viewModel.loadEpisodes(seasons[it.seasonTabIndex]!!.indexNumber!!)
+                        }
+                        position = it
+                    },
+                    onClick = {
+                        val resumePosition =
+                            it.data.userData
+                                ?.playbackPositionTicks
+                                ?.ticks ?: Duration.ZERO
                         navigationManager.navigateTo(
                             Destination.Playback(
                                 it.id,
-                                resume.inWholeMilliseconds,
+                                resumePosition.inWholeMilliseconds,
                                 it,
                             ),
                         )
-                    }
-                },
-                watchOnClick = {
-                    episodes.getOrNull(position.episodeRowIndex)?.let {
-                        val played = it.data.userData?.played ?: false
-                        viewModel.setWatched(it.id, !played, position.episodeRowIndex)
-                    }
-                },
-                moreOnClick = {
-                    // TODO show more actions
-                },
-                overviewOnClick = {
-                    episodes.getOrNull(position.episodeRowIndex)?.let {
-                        overviewDialog =
-                            ItemDetailsDialogInfo(
-                                title = it.name ?: "Unknown",
-                                overview = it.data.overview,
-                                files =
-                                    it.data.mediaSources
-                                        ?.mapNotNull { it.path }
-                                        .orEmpty(),
+                    },
+                    onLongClick = {
+                        // TODO
+                    },
+                    playOnClick = { resume ->
+                        episodes.getOrNull(position.episodeRowIndex)?.let {
+                            navigationManager.navigateTo(
+                                Destination.Playback(
+                                    it.id,
+                                    resume.inWholeMilliseconds,
+                                    it,
+                                ),
                             )
-                    }
-                },
-                modifier = modifier,
-            )
+                        }
+                    },
+                    watchOnClick = {
+                        episodes.getOrNull(position.episodeRowIndex)?.let {
+                            val played = it.data.userData?.played ?: false
+                            viewModel.setWatched(it.id, !played, position.episodeRowIndex)
+                        }
+                    },
+                    moreOnClick = {
+                        // TODO show more actions
+                    },
+                    overviewOnClick = {
+                        episodes.getOrNull(position.episodeRowIndex)?.let {
+                            overviewDialog =
+                                ItemDetailsDialogInfo(
+                                    title = it.name ?: "Unknown",
+                                    overview = it.data.overview,
+                                    files =
+                                        it.data.mediaSources
+                                            ?.mapNotNull { it.path }
+                                            .orEmpty(),
+                                )
+                        }
+                    },
+                    modifier = modifier,
+                )
+            }
         }
     }
 

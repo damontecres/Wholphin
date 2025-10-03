@@ -44,13 +44,12 @@ class SeasonViewModel
     ) : ItemViewModel<Video>(api) {
         val episodes = MutableLiveData<List<BaseItem?>>(listOf())
 
-        override fun init(
+        fun init(
             itemId: UUID,
             potential: BaseItem?,
         ): Job? =
             viewModelScope.launch(ExceptionHandler()) {
-                super.init(itemId, potential)?.join()
-                item.value?.let { item ->
+                fetchItem(itemId, potential)?.let { item ->
                     val request =
                         GetItemsRequest(
                             parentId = item.id,

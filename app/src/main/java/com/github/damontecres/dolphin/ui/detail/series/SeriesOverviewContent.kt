@@ -53,6 +53,7 @@ fun SeriesOverviewContent(
     position: SeriesOverviewPosition,
     backdropImageUrl: String?,
     firstItemFocusRequester: FocusRequester,
+    episodeRowFocusRequester: FocusRequester,
     onFocus: (SeriesOverviewPosition) -> Unit,
     onClick: (BaseItem) -> Unit,
     onLongClick: (BaseItem) -> Unit,
@@ -177,7 +178,10 @@ fun SeriesOverviewContent(
                         state = state,
                         horizontalArrangement = Arrangement.spacedBy(16.dp),
                         contentPadding = PaddingValues(start = 16.dp),
-                        modifier = modifier.focusRestorer(firstItemFocusRequester),
+                        modifier =
+                            Modifier
+                                .focusRestorer(firstItemFocusRequester)
+                                .focusRequester(episodeRowFocusRequester),
                     ) {
                         itemsIndexed(episodes) { episodeIndex, episode ->
                             val interactionSource = remember { MutableInteractionSource() }
@@ -205,6 +209,7 @@ fun SeriesOverviewContent(
                                         Modifier.focusRequester(firstItemFocusRequester),
                                     ),
                                 interactionSource = interactionSource,
+                                cardHeight = 120.dp,
                             )
                         }
                     }

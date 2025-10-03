@@ -24,15 +24,17 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.tv.material3.MaterialTheme
-import androidx.tv.material3.Text
 import coil3.compose.AsyncImage
 import com.github.damontecres.dolphin.data.model.BaseItem
 import com.github.damontecres.dolphin.data.model.Video
 import com.github.damontecres.dolphin.preferences.UserPreferences
+import com.github.damontecres.dolphin.ui.components.ErrorMessage
+import com.github.damontecres.dolphin.ui.components.LoadingPage
 import com.github.damontecres.dolphin.ui.components.details.VideoDetailsHeader
 import com.github.damontecres.dolphin.ui.isNotNullOrBlank
 import com.github.damontecres.dolphin.ui.nav.Destination
 import com.github.damontecres.dolphin.ui.nav.NavigationManager
+import com.github.damontecres.dolphin.util.LoadingState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.model.api.ImageType
@@ -46,7 +48,7 @@ class EpisodeViewModel
     @Inject
     constructor(
         api: ApiClient,
-    ) : ItemViewModel<Video>(api)
+    ) : LoadingItemViewModel<Video>(api)
 
 @Composable
 fun EpisodeDetails(
@@ -60,20 +62,23 @@ fun EpisodeDetails(
         viewModel.init(destination.itemId, destination.item)
     }
     val item by viewModel.item.observeAsState()
-    if (item == null) {
-        Text(text = "Loading...")
-    } else {
-        item?.let { item ->
-            EpisodeDetailsContent(
-                item = item,
-                backdropImageUrl =
-                    remember {
-                        item.data.parentBackdropItemId?.let {
-                            viewModel.imageUrl(it, ImageType.BACKDROP)
-                        }
-                    },
-                modifier = modifier,
-            )
+    val loading by viewModel.loading.observeAsState(LoadingState.Loading)
+    when (val state = loading) {
+        is LoadingState.Error -> ErrorMessage(state)
+        LoadingState.Loading -> LoadingPage()
+        LoadingState.Success -> {
+            item?.let { item ->
+                EpisodeDetailsContent(
+                    item = item,
+                    backdropImageUrl =
+                        remember {
+                            item.data.parentBackdropItemId?.let {
+                                viewModel.imageUrl(it, ImageType.BACKDROP)
+                            }
+                        },
+                    modifier = modifier,
+                )
+            }
         }
     }
 }
