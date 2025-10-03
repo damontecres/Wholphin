@@ -50,4 +50,7 @@ sealed class Destination(
         val positionMs: Long,
         @Transient val item: BaseItem? = null,
     ) : Destination(true)
+
+    @Serializable
+    data object License : Destination(true)
 }

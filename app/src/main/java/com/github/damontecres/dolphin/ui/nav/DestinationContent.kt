@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.tv.material3.Text
 import com.github.damontecres.dolphin.preferences.UserPreferences
+import com.github.damontecres.dolphin.ui.components.LicenseInfo
 import com.github.damontecres.dolphin.ui.detail.CollectionFolderDetails
 import com.github.damontecres.dolphin.ui.detail.EpisodeDetails
 import com.github.damontecres.dolphin.ui.detail.SeasonDetails
@@ -111,6 +112,8 @@ fun DestinationContent(
                     Text("Unsupported item type: ${destination.type}")
                 }
             }
+
+        Destination.License -> LicenseInfo(modifier)
 
         Destination.Search -> TODO()
         Destination.Setup -> TODO()

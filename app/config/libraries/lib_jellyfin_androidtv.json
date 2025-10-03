@@ -1,0 +1,11 @@
+{
+  "uniqueId": "org.jellyfin.androidtv:androidtv",
+  "developers": [],
+  "artifactVersion": "v0.18.11",
+  "description": "Android TV Client for Jellyfin",
+  "name": "Jellyfin Android TV",
+  "licenses": [
+    "gpl-2.0"
+  ],
+  "website": "https://github.com/jellyfin/jellyfin-androidtv"
+}

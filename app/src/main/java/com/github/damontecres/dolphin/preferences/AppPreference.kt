@@ -224,11 +224,11 @@ sealed interface AppPreference<T> {
 //                summary = R.string.update_url_summary,
 //            )
 
-//        val OssLicenseInfo =
-//            AppDestinationPreference(
-//                title = R.string.oss_license_info,
-//                destination = Destination.LicenseInfo,
-//            )
+        val OssLicenseInfo =
+            AppDestinationPreference(
+                title = R.string.license_info,
+                destination = Destination.License,
+            )
     }
 }
 
@@ -245,6 +245,7 @@ val basicPreferences =
                     AppPreference.HomePageItems,
                     AppPreference.RewatchNextUp,
                     AppPreference.PlayThemeMusic,
+                    AppPreference.OssLicenseInfo,
                 ),
         ),
     )

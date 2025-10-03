@@ -1,4 +1,6 @@
 import com.google.protobuf.gradle.id
+import com.mikepenz.aboutlibraries.plugin.DuplicateMode
+import com.mikepenz.aboutlibraries.plugin.DuplicateRule
 
 plugins {
     alias(libs.plugins.android.application)
@@ -9,6 +11,7 @@ plugins {
     alias(libs.plugins.room)
     alias(libs.plugins.protobuf)
     alias(libs.plugins.kotlin.plugin.serialization)
+    alias(libs.plugins.aboutLibraries)
 }
 
 android {
@@ -69,7 +72,15 @@ protobuf {
         }
     }
 }
-
+aboutLibraries {
+    collect {
+        configPath = file("config")
+    }
+    library {
+        duplicationMode = DuplicateMode.MERGE
+        duplicationRule = DuplicateRule.SIMPLE
+    }
+}
 dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
@@ -120,6 +131,8 @@ dependencies {
     ksp(libs.hilt.android.compiler)
 
     implementation(libs.timber)
+    implementation(libs.aboutlibraries.core)
+    implementation(libs.aboutlibraries.compose.m3)
 
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
