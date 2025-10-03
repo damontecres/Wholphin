@@ -137,7 +137,6 @@ fun ExpandablePlayButtons(
     ) {
         if (resumePosition > Duration.ZERO) {
             item {
-//                LaunchedEffect(Unit) { firstFocus.tryRequestFocus() }
                 ExpandablePlayButton(
                     R.string.resume,
                     resumePosition,
@@ -170,6 +169,7 @@ fun ExpandablePlayButtons(
                 )
             }
         }
+
         // Watched button
         item {
             ExpandableFaButton(

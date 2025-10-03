@@ -67,7 +67,7 @@ private val darkScheme =
         inverseSurface = inverseSurfaceDark,
         inverseOnSurface = inverseOnSurfaceDark,
         inversePrimary = inversePrimaryDark,
-        border = inversePrimaryDark.copy(alpha = .5f),
+        border = inversePrimaryDark.copy(alpha = .75f),
     )
 
 @Immutable

@@ -32,11 +32,12 @@ fun ItemRow(
     onLongClickItem: (BaseItem) -> Unit,
     modifier: Modifier = Modifier,
     cardContent: @Composable (
+        index: Int,
         item: BaseItem?,
         modifier: Modifier,
         onClick: () -> Unit,
         onLongClick: () -> Unit,
-    ) -> Unit = { item, modifier, onClick, onLongClick ->
+    ) -> Unit = { index, item, modifier, onClick, onLongClick ->
         ItemCard(
             item = item,
             onClick = onClick,
@@ -86,6 +87,7 @@ fun ItemRow(
                         cardOnFocus?.invoke(it.isFocused, index)
                     }
                 cardContent.invoke(
+                    index,
                     item,
                     cardModifier,
                     { if (item != null) onClickItem.invoke(item) },
@@ -112,7 +114,7 @@ fun BannerItemRow(
     onClickItem = onClickItem,
     onLongClickItem = onLongClickItem,
     modifier = modifier,
-    cardContent = { item, modifier, onClick, onLongClick ->
+    cardContent = { index, item, modifier, onClick, onLongClick ->
         BannerCard(
             imageUrl = item?.imageUrl,
             aspectRatio =

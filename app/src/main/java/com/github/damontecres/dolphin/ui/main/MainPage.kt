@@ -11,13 +11,14 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -44,6 +45,8 @@ import com.github.damontecres.dolphin.ui.cards.ItemRow
 import com.github.damontecres.dolphin.ui.components.DotSeparatedRow
 import com.github.damontecres.dolphin.ui.components.ErrorMessage
 import com.github.damontecres.dolphin.ui.components.LoadingPage
+import com.github.damontecres.dolphin.ui.data.RowColumn
+import com.github.damontecres.dolphin.ui.data.RowColumnSaver
 import com.github.damontecres.dolphin.ui.ifElse
 import com.github.damontecres.dolphin.ui.isNotNullOrBlank
 import com.github.damontecres.dolphin.ui.nav.NavigationManager
@@ -90,6 +93,10 @@ fun MainPageContent(
     homeRows: List<HomeRow>,
     modifier: Modifier = Modifier,
 ) {
+    var position by rememberSaveable(stateSaver = RowColumnSaver) {
+        mutableStateOf(RowColumn(0, 0))
+    }
+    // TODO use position instead?
     var focusedItem by remember {
         mutableStateOf<BaseItem?>(
             homeRows.getOrNull(0)?.items?.getOrNull(
@@ -98,7 +105,10 @@ fun MainPageContent(
         )
     }
     val focusRequester = remember { FocusRequester() }
-    LaunchedEffect(Unit) { if (focusedItem != null) focusRequester.tryRequestFocus() }
+    val positionFocusRequester = remember { FocusRequester() }
+    LaunchedEffect(Unit) {
+        positionFocusRequester.tryRequestFocus()
+    }
     Box(modifier = modifier) {
         if (focusedItem?.backdropImageUrl.isNotNullOrBlank()) {
             val gradientColor = MaterialTheme.colorScheme.background
@@ -152,7 +162,7 @@ fun MainPageContent(
                     ),
                 modifier = Modifier,
             ) {
-                items(homeRows) { row ->
+                itemsIndexed(homeRows) { rowIndex, row ->
                     ItemRow(
                         title = row.title ?: stringResource(row.section.nameRes),
                         items = row.items,
@@ -160,11 +170,14 @@ fun MainPageContent(
                             navigationManager.navigateTo(it.destination())
                         },
                         cardOnFocus = { isFocused, index ->
-                            focusedItem = row.items.getOrNull(index)
+                            if (isFocused) {
+                                focusedItem = row.items.getOrNull(index)
+                                position = RowColumn(rowIndex, index)
+                            }
                         },
                         onLongClickItem = {},
                         modifier = Modifier.fillMaxWidth(),
-                        cardContent = { item, modifier, onClick, onLongClick ->
+                        cardContent = { index, item, modifier, onClick, onLongClick ->
                             // TODO better aspect ration handling?
                             BannerCard(
                                 imageUrl = item?.imageUrl,
@@ -175,10 +188,14 @@ fun MainPageContent(
                                 onClick = onClick,
                                 onLongClick = onLongClick,
                                 modifier =
-                                    modifier.ifElse(
-                                        focusedItem == item,
-                                        Modifier.focusRequester(focusRequester),
-                                    ),
+                                    modifier
+                                        .ifElse(
+                                            focusedItem == item,
+                                            Modifier.focusRequester(focusRequester),
+                                        ).ifElse(
+                                            RowColumn(rowIndex, index) == position,
+                                            Modifier.focusRequester(positionFocusRequester),
+                                        ),
                                 interactionSource = null,
                                 cardHeight = 200.dp,
                             )
