@@ -5,6 +5,9 @@ import androidx.lifecycle.MutableLiveData
 import com.github.damontecres.dolphin.DolphinApplication
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineExceptionHandler
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import timber.log.Timber
 import kotlin.coroutines.CoroutineContext
 
@@ -25,11 +28,15 @@ class LoadingExceptionHandler(
             return
         }
         Timber.e(exception, "Exception in coroutine")
-        loadingState.value =
-            LoadingState.Error(
-                message = errorMessage,
-                exception = exception,
-            )
+        runBlocking {
+            withContext(Dispatchers.Main) {
+                loadingState.value =
+                    LoadingState.Error(
+                        message = errorMessage,
+                        exception = exception,
+                    )
+            }
+        }
 
         if (autoToast) {
             Toast

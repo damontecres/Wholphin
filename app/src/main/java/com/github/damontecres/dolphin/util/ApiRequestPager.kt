@@ -82,11 +82,10 @@ class ApiRequestPager<T>(
     val requestHandler: RequestHandler<T>,
     private val scope: CoroutineScope,
     private val pageSize: Int = DEFAULT_PAGE_SIZE,
-    itemCount: Int? = null,
     cacheSize: Long = 8,
 ) : AbstractList<BaseItem?>() {
     private var items by mutableStateOf(ItemList<BaseItem>(0, pageSize, mapOf()))
-    private var totalCount by mutableIntStateOf(itemCount ?: -1)
+    private var totalCount by mutableIntStateOf(-1)
     private val mutex = Mutex()
     private val cachedPages =
         CacheBuilder

@@ -65,7 +65,6 @@ class SeasonViewModel
                             request,
                             GetItemsRequestHandler,
                             viewModelScope,
-                            itemCount = item.data.childCount,
                         )
                     pager.init()
                     episodes.value = pager

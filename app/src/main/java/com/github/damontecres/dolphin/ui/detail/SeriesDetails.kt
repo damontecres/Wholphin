@@ -111,7 +111,6 @@ class SeriesViewModel
                     request,
                     GetItemsRequestHandler,
                     viewModelScope,
-                    itemCount = item.data.childCount,
                 )
             pager.init()
             Timber.v("Loaded ${pager.size} seasons for series ${item.id}")
