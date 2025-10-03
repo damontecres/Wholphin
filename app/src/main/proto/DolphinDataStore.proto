@@ -15,6 +15,10 @@ message HomePagePreferences{
   bool enable_rewatching_next_up = 2;
 }
 
+message InterfacePreferences {
+  bool play_theme_songs = 1;
+}
+
 message AppPreferences {
   // The currently signed in server and user IDs, mostly for restoring a session
   string current_server_id = 1;
@@ -22,4 +26,5 @@ message AppPreferences {
 
   PlaybackPreferences playback_preferences = 3;
   HomePagePreferences home_page_preferences = 4;
+  InterfacePreferences interface_preferences = 5;
 }

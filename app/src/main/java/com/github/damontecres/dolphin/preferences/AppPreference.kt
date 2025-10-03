@@ -175,6 +175,18 @@ sealed interface AppPreference<T> {
                 summaryOff = R.string.disabled,
             )
 
+        val PlayThemeMusic =
+            AppSwitchPreference(
+                title = R.string.play_theme_music,
+                defaultValue = true,
+                getter = { it.interfacePreferences.playThemeSongs },
+                setter = { prefs, value ->
+                    prefs.updateInterfacePreferences { playThemeSongs = value }
+                },
+                summaryOn = R.string.enabled,
+                summaryOff = R.string.disabled,
+            )
+
 //        val PlaybackDebugInfo =
 //            AppSwitchPreference(
 //                title = R.string.playback_debug_info,
@@ -232,6 +244,7 @@ val basicPreferences =
                     AppPreference.SeekBarSteps,
                     AppPreference.HomePageItems,
                     AppPreference.RewatchNextUp,
+                    AppPreference.PlayThemeMusic,
                 ),
         ),
     )

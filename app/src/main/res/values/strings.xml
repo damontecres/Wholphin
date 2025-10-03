@@ -42,4 +42,5 @@
     <string name="video">Video</string>
     <string name="audio">Audio</string>
     <string name="genres">Genres</string>
+    <string name="play_theme_music">Play theme music</string>
 </resources>

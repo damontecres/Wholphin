@@ -33,6 +33,12 @@ class AppPreferencesSerializer
                                 maxItemsPerRow = AppPreference.HomePageItems.defaultValue.toInt()
                                 enableRewatchingNextUp = AppPreference.RewatchNextUp.defaultValue
                             }.build()
+                    interfacePreferences =
+                        InterfacePreferences
+                            .newBuilder()
+                            .apply {
+                                playThemeSongs = AppPreference.PlayThemeMusic.defaultValue
+                            }.build()
                 }.build()
 
         override suspend fun readFrom(input: InputStream): AppPreferences {
@@ -59,4 +65,9 @@ inline fun AppPreferences.updatePlaybackPreferences(block: PlaybackPreferences.B
 inline fun AppPreferences.updateHomePagePreferences(block: HomePagePreferences.Builder.() -> Unit): AppPreferences =
     update {
         homePagePreferences = homePagePreferences.toBuilder().apply(block).build()
+    }
+
+inline fun AppPreferences.updateInterfacePreferences(block: InterfacePreferences.Builder.() -> Unit): AppPreferences =
+    update {
+        interfacePreferences = interfacePreferences.toBuilder().apply(block).build()
     }
