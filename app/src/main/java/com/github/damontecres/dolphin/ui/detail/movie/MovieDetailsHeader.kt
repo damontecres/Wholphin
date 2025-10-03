@@ -207,7 +207,7 @@ fun MovieDetailsHeader(
                 }
                 dto.genres?.letNotEmpty {
                     TitleValueText(
-                        stringResource(R.string.studios),
+                        stringResource(R.string.genres),
                         it.joinToString(", "),
                         modifier = Modifier.widthIn(max = 80.dp),
                     )

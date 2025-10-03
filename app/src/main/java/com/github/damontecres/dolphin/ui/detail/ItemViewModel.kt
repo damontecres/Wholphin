@@ -63,17 +63,8 @@ abstract class LoadingItemViewModel<T : DolphinModel>(
     open fun init(
         itemId: UUID,
         potential: BaseItem?,
-    ): Job? {
-        if (item.value == null && potential?.id == itemId) {
-            item.value = potential
-            loading.value = LoadingState.Success
-            return null
-        }
-        if (item.value?.id == itemId) {
-            loading.value = LoadingState.Success
-            return null
-        }
-        return viewModelScope.launch(
+    ): Job? =
+        viewModelScope.launch(
             LoadingExceptionHandler(
                 loading,
                 "Error loading item $itemId",
@@ -93,5 +84,4 @@ abstract class LoadingItemViewModel<T : DolphinModel>(
                 loading.value = LoadingState.Error("Error loading item $itemId", e)
             }
         }
-    }
 }

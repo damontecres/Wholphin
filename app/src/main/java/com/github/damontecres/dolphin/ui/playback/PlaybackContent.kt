@@ -45,6 +45,7 @@ import androidx.media3.ui.compose.state.rememberPresentationState
 import androidx.media3.ui.compose.state.rememberPreviousButtonState
 import androidx.tv.material3.MaterialTheme
 import com.github.damontecres.dolphin.preferences.UserPreferences
+import com.github.damontecres.dolphin.ui.components.LoadingPage
 import com.github.damontecres.dolphin.ui.nav.Destination
 import com.github.damontecres.dolphin.ui.nav.NavigationManager
 import com.github.damontecres.dolphin.ui.tryRequestFocus
@@ -147,7 +148,9 @@ fun PlaybackContent(
                         Modifier
                             .matchParentSize()
                             .background(Color.Black),
-                    )
+                    ) {
+                        LoadingPage()
+                    }
                 }
 
                 if (!controllerViewState.controlsVisible && skipIndicatorDuration != 0L) {
