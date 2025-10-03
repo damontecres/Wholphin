@@ -1,5 +1,7 @@
 package com.github.damontecres.dolphin.ui.detail
 
+import android.content.Context
+import androidx.annotation.OptIn
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.runtime.Composable
@@ -10,9 +12,16 @@ import androidx.compose.ui.Modifier
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
+import androidx.media3.common.MediaItem
+import androidx.media3.common.Player
+import androidx.media3.common.util.UnstableApi
+import androidx.media3.datasource.okhttp.OkHttpDataSource
+import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.tv.material3.Text
 import com.github.damontecres.dolphin.data.model.BaseItem
 import com.github.damontecres.dolphin.data.model.Video
+import com.github.damontecres.dolphin.hilt.AuthOkHttpClient
 import com.github.damontecres.dolphin.preferences.UserPreferences
 import com.github.damontecres.dolphin.ui.cards.ItemRow
 import com.github.damontecres.dolphin.ui.components.ErrorMessage
@@ -26,12 +35,16 @@ import com.github.damontecres.dolphin.util.GetItemsRequestHandler
 import com.github.damontecres.dolphin.util.LoadingExceptionHandler
 import com.github.damontecres.dolphin.util.LoadingState
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import okhttp3.OkHttpClient
 import org.jellyfin.sdk.api.client.ApiClient
+import org.jellyfin.sdk.api.client.extensions.libraryApi
 import org.jellyfin.sdk.api.client.extensions.playStateApi
+import org.jellyfin.sdk.api.client.extensions.universalAudioApi
 import org.jellyfin.sdk.api.client.extensions.userLibraryApi
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.ItemFields
@@ -48,7 +61,10 @@ class SeriesViewModel
     @Inject
     constructor(
         api: ApiClient,
+        @param:ApplicationContext val context: Context,
+        @param:AuthOkHttpClient private val okHttpClient: OkHttpClient,
     ) : ItemViewModel<Video>(api) {
+        private var player: Player? = null
         private lateinit var seriesId: UUID
         val loading = MutableLiveData<LoadingState>(LoadingState.Loading)
         val seasons = MutableLiveData<List<BaseItem?>>(listOf())
@@ -80,6 +96,7 @@ class SeriesViewModel
                         episodes.value = episodePager.orEmpty()
                         loading.value = LoadingState.Success
                     }
+                    maybePlayThemeSong()
                 } else {
                     withContext(Dispatchers.Main) {
                         seasons.value = listOf()
@@ -88,6 +105,49 @@ class SeriesViewModel
                     }
                 }
             }
+        }
+
+        @OptIn(UnstableApi::class)
+        private fun maybePlayThemeSong() {
+            // TODO user preference to enable/disable this
+            viewModelScope.launch(ExceptionHandler()) {
+                val themeSongs = api.libraryApi.getThemeSongs(seriesId).content
+                themeSongs.items.firstOrNull()?.let { theme ->
+                    theme.mediaSources?.firstOrNull()?.let { source ->
+                        val url =
+                            api.universalAudioApi.getUniversalAudioStreamUrl(
+                                theme.id,
+                                container = listOf("opus", "mp3", "aaa", "flac"),
+                            )
+                        Timber.v("Found theme song for series $seriesId")
+                        withContext(Dispatchers.Main) {
+                            val player =
+                                ExoPlayer
+                                    .Builder(context)
+                                    .setMediaSourceFactory(
+                                        DefaultMediaSourceFactory(
+                                            OkHttpDataSource.Factory(okHttpClient),
+                                        ),
+                                    ).build()
+                                    .apply {
+                                        volume = .1f
+                                        playWhenReady = true
+                                        this@SeriesViewModel.player = this
+                                    }
+                            addCloseable {
+                                player.release()
+                            }
+                            player.setMediaItem(MediaItem.fromUri(url))
+                            player.prepare()
+                        }
+                    }
+                }
+            }
+        }
+
+        fun release() {
+            player?.release()
+            player = null
         }
 
         private suspend fun getSeasons(item: BaseItem): ApiRequestPager<GetItemsRequest>? {

@@ -25,6 +25,7 @@ import androidx.tv.material3.ExperimentalTvMaterial3Api
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Surface
 import com.github.damontecres.dolphin.data.ServerRepository
+import com.github.damontecres.dolphin.hilt.AuthOkHttpClient
 import com.github.damontecres.dolphin.preferences.AppPreferences
 import com.github.damontecres.dolphin.preferences.DefaultUserConfiguration
 import com.github.damontecres.dolphin.preferences.UserPreferences
@@ -48,6 +49,7 @@ class MainActivity : AppCompatActivity() {
     @Inject
     lateinit var userPreferencesDataStore: DataStore<AppPreferences>
 
+    @AuthOkHttpClient
     @Inject
     lateinit var okHttpClient: OkHttpClient
 
@@ -64,7 +66,7 @@ class MainActivity : AppCompatActivity() {
                             .background(MaterialTheme.colorScheme.background),
                     shape = RectangleShape,
                 ) {
-                    CoilConfig(serverRepository, okHttpClient, false)
+                    CoilConfig(okHttpClient, false)
 
                     var isRestoringSession by remember { mutableStateOf(true) }
                     val appPreferences by userPreferencesDataStore.data.collectAsState(null)

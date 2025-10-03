@@ -10,15 +10,12 @@ import coil3.network.cachecontrol.CacheControlCacheStrategy
 import coil3.network.okhttp.OkHttpNetworkFetcherFactory
 import coil3.request.crossfade
 import coil3.util.DebugLogger
-import com.github.damontecres.dolphin.data.ServerRepository
-import okhttp3.Call
 import okhttp3.OkHttpClient
 import kotlin.time.ExperimentalTime
 
 @OptIn(ExperimentalTime::class, ExperimentalCoilApi::class)
 @Composable
 fun CoilConfig(
-    serverRepository: ServerRepository,
     okHttpClient: OkHttpClient,
     debugLogging: Boolean,
 ) {
@@ -37,18 +34,7 @@ fun CoilConfig(
                 add(
                     OkHttpNetworkFetcherFactory(
                         cacheStrategy = { CacheControlCacheStrategy() },
-                        callFactory = {
-                            Call.Factory { request ->
-                                // Ref: https://gist.github.com/nielsvanvelzen/ea047d9028f676185832e51ffaf12a6f
-                                val token = serverRepository.currentUser?.accessToken
-                                okHttpClient.newCall(
-                                    request
-                                        .newBuilder()
-                                        .addHeader("Authorization", "MediaBrowser Token=\"$token\"")
-                                        .build(),
-                                )
-                            }
-                        },
+                        callFactory = { okHttpClient },
                     ),
                 )
             }.build()

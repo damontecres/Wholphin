@@ -126,6 +126,7 @@ fun SeriesOverview(
                         position = it
                     },
                     onClick = {
+                        viewModel.release()
                         val resumePosition =
                             it.data.userData
                                 ?.playbackPositionTicks
@@ -143,6 +144,7 @@ fun SeriesOverview(
                     },
                     playOnClick = { resume ->
                         episodes.getOrNull(position.episodeRowIndex)?.let {
+                            viewModel.release()
                             navigationManager.navigateTo(
                                 Destination.Playback(
                                     it.id,
