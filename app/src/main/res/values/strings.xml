@@ -38,4 +38,7 @@
     <string name="seek_bar_steps">Seek bar steps</string>
     <string name="max_homepage_items">Max items on home page rows</string>
     <string name="rewatch_next_up">Enable rewatching in next up</string>
+    <string name="studios">Studios</string>
+    <string name="video">Video</string>
+    <string name="audio">Audio</string>
 </resources>

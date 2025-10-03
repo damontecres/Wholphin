@@ -6,9 +6,9 @@ import androidx.tv.material3.Text
 import com.github.damontecres.dolphin.preferences.UserPreferences
 import com.github.damontecres.dolphin.ui.detail.CollectionFolderDetails
 import com.github.damontecres.dolphin.ui.detail.EpisodeDetails
-import com.github.damontecres.dolphin.ui.detail.MovieDetails
 import com.github.damontecres.dolphin.ui.detail.SeasonDetails
 import com.github.damontecres.dolphin.ui.detail.VideoDetails
+import com.github.damontecres.dolphin.ui.detail.movie.MovieDetails
 import com.github.damontecres.dolphin.ui.detail.series.SeasonEpisode
 import com.github.damontecres.dolphin.ui.detail.series.SeriesOverview
 import com.github.damontecres.dolphin.ui.main.MainPage

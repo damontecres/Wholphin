@@ -15,6 +15,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.FocusState
+import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.focus.onFocusChanged
@@ -26,6 +27,7 @@ import androidx.tv.material3.Icon
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.github.damontecres.dolphin.R
+import com.github.damontecres.dolphin.ui.tryRequestFocus
 import kotlin.time.Duration
 
 @Composable
@@ -106,6 +108,87 @@ fun PlayButtons(
                     style = MaterialTheme.typography.titleSmall,
                 )
             }
+        }
+    }
+}
+
+@Composable
+fun ExpandablePlayButtons(
+    resumePosition: Duration,
+    watched: Boolean,
+    playOnClick: (position: Duration) -> Unit,
+    watchOnClick: () -> Unit,
+    moreOnClick: () -> Unit,
+    buttonOnFocusChanged: (FocusState) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val firstFocus = remember { FocusRequester() }
+    LazyRow(
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
+        contentPadding = PaddingValues(8.dp),
+        modifier =
+            modifier
+                .focusGroup()
+                .focusProperties {
+                    onEnter = {
+                        firstFocus.tryRequestFocus()
+                    }
+                },
+    ) {
+        if (resumePosition > Duration.ZERO) {
+            item {
+//                LaunchedEffect(Unit) { firstFocus.tryRequestFocus() }
+                ExpandablePlayButton(
+                    R.string.resume,
+                    resumePosition,
+                    Icons.Default.PlayArrow,
+                    playOnClick,
+                    Modifier
+                        .onFocusChanged(buttonOnFocusChanged)
+                        .focusRequester(firstFocus),
+                )
+            }
+            item {
+                ExpandablePlayButton(
+                    R.string.restart,
+                    Duration.ZERO,
+                    Icons.Default.Refresh,
+                    playOnClick,
+                    Modifier.onFocusChanged(buttonOnFocusChanged),
+                )
+            }
+        } else {
+            item {
+                ExpandablePlayButton(
+                    R.string.play,
+                    Duration.ZERO,
+                    Icons.Default.PlayArrow,
+                    playOnClick,
+                    Modifier
+                        .onFocusChanged(buttonOnFocusChanged)
+                        .focusRequester(firstFocus),
+                )
+            }
+        }
+        // Watched button
+        item {
+            ExpandableFaButton(
+                title = if (watched) R.string.mark_unwatched else R.string.mark_watched,
+                iconStringRes = if (watched) R.string.fa_eye else R.string.fa_eye_slash,
+                onClick = watchOnClick,
+                modifier = Modifier.onFocusChanged(buttonOnFocusChanged),
+            )
+        }
+
+        // More button
+        item {
+            ExpandablePlayButton(
+                R.string.more,
+                Duration.ZERO,
+                Icons.Default.MoreVert,
+                { moreOnClick.invoke() },
+                Modifier.onFocusChanged(buttonOnFocusChanged),
+            )
         }
     }
 }

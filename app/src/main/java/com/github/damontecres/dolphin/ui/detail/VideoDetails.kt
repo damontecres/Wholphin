@@ -16,6 +16,7 @@ import com.github.damontecres.dolphin.data.model.Video
 import com.github.damontecres.dolphin.preferences.UserPreferences
 import com.github.damontecres.dolphin.ui.components.ErrorMessage
 import com.github.damontecres.dolphin.ui.components.LoadingPage
+import com.github.damontecres.dolphin.ui.detail.movie.MovieViewModel
 import com.github.damontecres.dolphin.ui.nav.Destination
 import com.github.damontecres.dolphin.ui.nav.NavigationManager
 import com.github.damontecres.dolphin.util.LoadingState

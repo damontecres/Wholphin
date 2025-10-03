@@ -24,6 +24,7 @@ import org.jellyfin.sdk.model.api.BaseItemDto
 import org.jellyfin.sdk.model.extensions.ticks
 import timber.log.Timber
 import kotlin.contracts.ExperimentalContracts
+import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
@@ -186,3 +187,11 @@ val BaseItemDto.timeRemaining: Duration?
 fun Player.seekBack(amount: Duration) = seekTo((currentPosition - amount.inWholeMilliseconds).coerceAtLeast(0L))
 
 fun Player.seekForward(amount: Duration) = seekTo((currentPosition + amount.inWholeMilliseconds).coerceAtMost(duration))
+
+@OptIn(ExperimentalContracts::class)
+inline fun <T : Collection<*>, R> T.letNotEmpty(block: (T) -> R): R? {
+    contract {
+        callsInPlace(block, InvocationKind.AT_MOST_ONCE)
+    }
+    return if (this.isNotEmpty()) block(this) else null
+}
