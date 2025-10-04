@@ -8,6 +8,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.exoplayer.ExoPlayer
+import com.github.damontecres.dolphin.data.model.Chapter
 import com.github.damontecres.dolphin.preferences.UserPreferences
 import com.github.damontecres.dolphin.ui.nav.Destination
 import com.github.damontecres.dolphin.util.ExceptionHandler
@@ -80,6 +81,7 @@ class PlaybackViewModel
         val subtitleStreams = MutableLiveData<List<SubtitleStream>>(listOf())
         val currentPlayback = MutableLiveData<CurrentPlayback?>(null)
         val trickplay = MutableLiveData<TrickplayInfo?>(null)
+        val chapters = MutableLiveData<List<Chapter>>(listOf())
 
         private lateinit var deviceProfile: DeviceProfile
         private lateinit var dto: BaseItemDto
@@ -174,6 +176,9 @@ class PlaybackViewModel
                         if (destination.positionMs > 0) destination.positionMs else C.TIME_UNSET,
                     )
                     player.prepare()
+
+                    this@PlaybackViewModel.chapters.value = Chapter.fromDto(dto, api)
+                    Timber.v("chapters=${this@PlaybackViewModel.chapters.value}")
                 }
             }
         }

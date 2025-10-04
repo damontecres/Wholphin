@@ -5,12 +5,10 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.runtime.Composable
@@ -25,7 +23,6 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -34,13 +31,14 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import androidx.tv.material3.MaterialTheme
-import androidx.tv.material3.Text
 import coil3.compose.AsyncImage
 import com.github.damontecres.dolphin.data.model.BaseItem
+import com.github.damontecres.dolphin.data.model.Chapter
 import com.github.damontecres.dolphin.data.model.Person
 import com.github.damontecres.dolphin.data.model.Video
 import com.github.damontecres.dolphin.preferences.UserPreferences
-import com.github.damontecres.dolphin.ui.cards.PersonCard
+import com.github.damontecres.dolphin.ui.cards.ChapterRow
+import com.github.damontecres.dolphin.ui.cards.PersonRow
 import com.github.damontecres.dolphin.ui.components.ErrorMessage
 import com.github.damontecres.dolphin.ui.components.ExpandablePlayButtons
 import com.github.damontecres.dolphin.ui.components.LoadingPage
@@ -68,6 +66,7 @@ class MovieViewModel
         api: ApiClient,
     ) : LoadingItemViewModel<Video>(api) {
         val people = MutableLiveData<List<Person>>(listOf())
+        val chapters = MutableLiveData<List<Chapter>>(listOf())
 
         override fun init(
             itemId: UUID,
@@ -80,6 +79,7 @@ class MovieViewModel
                         item.data.people?.letNotEmpty { people ->
                             people.map { Person.fromDto(it, api) }
                         }
+                    chapters.value = Chapter.fromDto(item.data, api)
                 }
             }
     }
@@ -97,17 +97,28 @@ fun MovieDetails(
     }
     val item by viewModel.item.observeAsState()
     val people by viewModel.people.observeAsState(listOf())
+    val chapters by viewModel.chapters.observeAsState(listOf())
     val loading by viewModel.loading.observeAsState(LoadingState.Loading)
     when (val state = loading) {
         is LoadingState.Error -> ErrorMessage(state)
         LoadingState.Loading -> LoadingPage()
         LoadingState.Success -> {
-            item?.let {
+            item?.let { movie ->
                 MovieDetailsContent(
                     preferences = preferences,
                     navigationManager = navigationManager,
-                    movie = it,
+                    movie = movie,
                     people = people,
+                    chapters = chapters,
+                    playOnClick = {
+                        navigationManager.navigateTo(
+                            Destination.Playback(
+                                movie.id,
+                                it.inWholeMilliseconds,
+                                movie,
+                            ),
+                        )
+                    },
                     overviewOnClick = {},
                     moreOnClick = {},
                     watchOnClick = {},
@@ -124,6 +135,8 @@ fun MovieDetailsContent(
     navigationManager: NavigationManager,
     movie: BaseItem,
     people: List<Person>,
+    chapters: List<Chapter>,
+    playOnClick: (Duration) -> Unit,
     overviewOnClick: () -> Unit,
     watchOnClick: () -> Unit,
     moreOnClick: () -> Unit,
@@ -171,14 +184,17 @@ fun MovieDetailsContent(
             )
         }
         LazyColumn(
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
             contentPadding = PaddingValues(32.dp),
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxSize(),
         ) {
             item {
                 Column(
                     verticalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.bringIntoViewRequester(bringIntoViewRequester),
+                    modifier =
+                        Modifier
+                            .bringIntoViewRequester(bringIntoViewRequester)
+                            .padding(bottom = 120.dp),
                 ) {
                     MovieDetailsHeader(
                         movie = movie,
@@ -190,15 +206,7 @@ fun MovieDetailsContent(
                     ExpandablePlayButtons(
                         resumePosition = resumePosition,
                         watched = dto.userData?.played ?: false,
-                        playOnClick = {
-                            navigationManager.navigateTo(
-                                Destination.Playback(
-                                    movie.id,
-                                    it.inWholeMilliseconds,
-                                    movie,
-                                ),
-                            )
-                        },
+                        playOnClick = playOnClick,
                         moreOnClick = moreOnClick,
                         watchOnClick = watchOnClick,
                         buttonOnFocusChanged = {
@@ -214,38 +222,22 @@ fun MovieDetailsContent(
             }
             if (people.isNotEmpty()) {
                 item {
-                    Column(
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
-                        modifier =
-                            Modifier
-                                .fillMaxWidth()
-                                .padding(top = 120.dp),
-                    ) {
-                        Text(
-                            text = "People",
-                            style = MaterialTheme.typography.titleLarge,
-                            color = MaterialTheme.colorScheme.onBackground,
-                        )
-                        LazyRow(
-                            state = rememberLazyListState(),
-                            horizontalArrangement = Arrangement.spacedBy(16.dp),
-                            contentPadding = PaddingValues(8.dp),
-                            modifier =
-                                Modifier
-                                    .padding(start = 16.dp)
-                                    .fillMaxWidth()
-                                    .focusRestorer(),
-                        ) {
-                            itemsIndexed(people) { index, item ->
-                                PersonCard(
-                                    item = item,
-                                    onClick = {},
-                                    onLongClick = {},
-                                    modifier = Modifier,
-                                )
-                            }
-                        }
-                    }
+                    PersonRow(
+                        people = people,
+                        onClick = {},
+                        onLongClick = {},
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+            }
+            if (chapters.isNotEmpty()) {
+                item {
+                    ChapterRow(
+                        chapters = chapters,
+                        onClick = { playOnClick.invoke(it.position) },
+                        onLongClick = {},
+                        modifier = Modifier.fillMaxWidth(),
+                    )
                 }
             }
         }
