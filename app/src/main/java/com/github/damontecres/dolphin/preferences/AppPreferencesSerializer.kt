@@ -25,6 +25,7 @@ class AppPreferencesSerializer
                                     AppPreference.SkipBack.defaultValue.seconds.inWholeMilliseconds
                                 controllerTimeoutMs = AppPreference.ControllerTimeout.defaultValue
                                 seekBarSteps = AppPreference.SeekBarSteps.defaultValue.toInt()
+                                showDebugInfo = AppPreference.PlaybackDebugInfo.defaultValue
                             }.build()
                     homePagePreferences =
                         HomePagePreferences

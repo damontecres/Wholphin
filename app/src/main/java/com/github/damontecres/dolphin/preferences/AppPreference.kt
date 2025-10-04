@@ -187,18 +187,17 @@ sealed interface AppPreference<T> {
                 summaryOff = R.string.disabled,
             )
 
-//        val PlaybackDebugInfo =
-//            AppSwitchPreference(
-//                title = R.string.playback_debug_info,
-//                prefKey = R.string.pref_key_show_playback_debug_info,
-//                defaultValue = false,
-//                getter = { it.playbackPreferences.showDebugInfo },
-//                setter = { prefs, value ->
-//                    prefs.updatePlaybackPreferences { showDebugInfo = value }
-//                },
-//                summaryOn = R.string.show,
-//                summaryOff = R.string.hide,
-//            )
+        val PlaybackDebugInfo =
+            AppSwitchPreference(
+                title = R.string.playback_debug_info,
+                defaultValue = false,
+                getter = { it.playbackPreferences.showDebugInfo },
+                setter = { prefs, value ->
+                    prefs.updatePlaybackPreferences { showDebugInfo = value }
+                },
+                summaryOn = R.string.show,
+                summaryOff = R.string.hide,
+            )
 
 //        val AutoCheckForUpdates =
 //            AppSwitchPreference(
@@ -246,6 +245,7 @@ val basicPreferences =
                     AppPreference.RewatchNextUp,
                     AppPreference.PlayThemeMusic,
                     AppPreference.OssLicenseInfo,
+                    AppPreference.PlaybackDebugInfo,
                 ),
         ),
     )

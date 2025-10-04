@@ -2,6 +2,7 @@ package com.github.damontecres.dolphin.ui.playback
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
@@ -35,9 +36,11 @@ import androidx.media3.common.Player
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.github.damontecres.dolphin.data.model.Chapter
+import com.github.damontecres.dolphin.ui.AppColors
 import com.github.damontecres.dolphin.ui.cards.ChapterCard
 import com.github.damontecres.dolphin.ui.ifElse
 import com.github.damontecres.dolphin.ui.isNotNullOrBlank
+import com.github.damontecres.dolphin.ui.letNotEmpty
 import org.jellyfin.sdk.model.api.TrickplayInfo
 import kotlin.time.Duration
 
@@ -60,8 +63,7 @@ fun PlaybackOverlay(
     scale: ContentScale,
     playbackSpeed: Float,
     moreButtonOptions: MoreButtonOptions,
-    subtitleIndex: Int?,
-    audioIndex: Int?,
+    currentPlayback: CurrentPlayback?,
     audioStreams: List<AudioStream>,
     modifier: Modifier = Modifier,
     subtitle: String? = null,
@@ -168,8 +170,8 @@ fun PlaybackOverlay(
                         seekEnabled = seekEnabled,
                         seekBarInteractionSource = seekBarInteractionSource,
                         moreButtonOptions = moreButtonOptions,
-                        subtitleIndex = subtitleIndex,
-                        audioIndex = audioIndex,
+                        subtitleIndex = currentPlayback?.subtitleIndex,
+                        audioIndex = currentPlayback?.audioIndex,
                         audioStreams = audioStreams,
                         playbackSpeed = playbackSpeed,
                         scale = scale,
@@ -274,6 +276,23 @@ fun PlaybackOverlay(
                         )
                     }
                 }
+            }
+        }
+        AnimatedVisibility(
+            showDebugInfo && controllerViewState.controlsVisible,
+            modifier =
+                Modifier
+                    .align(Alignment.TopStart),
+        ) {
+            currentPlayback?.tracks?.letNotEmpty {
+                PlaybackTrackInfo(
+                    trackSupport = it,
+                    modifier =
+                        Modifier
+                            .align(Alignment.TopStart)
+                            .padding(16.dp)
+                            .background(AppColors.TransparentBlack50),
+                )
             }
         }
     }

@@ -289,7 +289,7 @@ fun LeftPlaybackButtons(
         val options =
             buildList {
                 addAll(moreButtonOptions.options.keys)
-                add(if (showDebugInfo) "Hide transcode info" else "Show transcode info")
+                add(if (showDebugInfo) "Hide debug info" else "Show debug info")
             }
         BottomDialog(
             choices = options,

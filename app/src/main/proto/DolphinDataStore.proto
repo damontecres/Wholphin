@@ -8,6 +8,7 @@ message PlaybackPreferences {
   int64 skip_back_ms = 2;
   int64 controller_timeout_ms = 3;
   int32 seek_bar_steps = 4;
+  bool show_debug_info = 5;
 }
 
 message HomePagePreferences{

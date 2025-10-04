@@ -70,6 +70,7 @@ fun PlaybackContent(
     modifier: Modifier = Modifier,
     viewModel: PlaybackViewModel = hiltViewModel(),
 ) {
+    val prefs = preferences.appPreferences.playbackPreferences
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     LaunchedEffect(destination.itemId) {
@@ -88,6 +89,7 @@ fun PlaybackContent(
     val currentPlayback by viewModel.currentPlayback.observeAsState(null)
 
     var cues by remember { mutableStateOf<List<Cue>>(listOf()) }
+    var showDebugInfo by remember { mutableStateOf(prefs.showDebugInfo) }
 
     // TODO move to viewmodel?
     val cueListener =
@@ -246,7 +248,9 @@ fun PlaybackContent(
                                     contentScale = it.scale
                                 }
 
-                                PlaybackAction.ShowDebug -> TODO()
+                                PlaybackAction.ShowDebug -> {
+                                    showDebugInfo = !showDebugInfo
+                                }
                                 PlaybackAction.ShowPlaylist -> TODO()
                                 PlaybackAction.ShowVideoFilterDialog -> TODO()
                                 is PlaybackAction.ToggleAudio -> {
@@ -259,12 +263,11 @@ fun PlaybackContent(
                             }
                         },
                         onSeekBarChange = seekBarState::onValueChange,
-                        showDebugInfo = false,
+                        showDebugInfo = showDebugInfo,
                         scale = contentScale,
                         playbackSpeed = playbackSpeed,
                         moreButtonOptions = MoreButtonOptions(mapOf()),
-                        subtitleIndex = currentPlayback?.subtitleIndex,
-                        audioIndex = currentPlayback?.audioIndex,
+                        currentPlayback = currentPlayback,
                         audioStreams = audioStreams,
                         trickplayInfo = trickplay,
                         trickplayUrlFor = viewModel::getTrickplayUrl,

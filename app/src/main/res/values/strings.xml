@@ -44,4 +44,5 @@
     <string name="genres">Genres</string>
     <string name="play_theme_music">Play theme music</string>
     <string name="license_info">License information</string>
+    <string name="playback_debug_info">Show playback debug info</string>
 </resources>

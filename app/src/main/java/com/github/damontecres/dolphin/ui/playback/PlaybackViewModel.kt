@@ -19,6 +19,8 @@ import com.github.damontecres.dolphin.preferences.UserPreferences
 import com.github.damontecres.dolphin.ui.nav.Destination
 import com.github.damontecres.dolphin.util.ExceptionHandler
 import com.github.damontecres.dolphin.util.TrackActivityPlaybackListener
+import com.github.damontecres.dolphin.util.TrackSupport
+import com.github.damontecres.dolphin.util.checkForSupport
 import com.github.damontecres.dolphin.util.profile.PlaybackListener
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -224,6 +226,7 @@ class PlaybackViewModel
                             allowAudioStreamCopy = true,
                             autoOpenLiveStream = true,
                             mediaSourceId = null,
+                            alwaysBurnInSubtitleWhenTranscoding = false,
                         ),
                     ).content
             val source = response.mediaSources.firstOrNull()
@@ -251,16 +254,19 @@ class PlaybackViewModel
                 val decision = StreamDecision(itemId, transcodeType, mediaUrl)
                 Timber.v("Playback decision: $decision")
 
+                val playback =
+                    CurrentPlayback(
+                        itemId,
+                        audioIndex,
+                        subtitleIndex,
+                        source.id?.toUUIDOrNull(),
+                        listOf(),
+                    )
+
                 withContext(Dispatchers.Main) {
                     duration.value = source.runTimeTicks?.ticks
                     stream.value = decision
-                    currentPlayback.value =
-                        CurrentPlayback(
-                            itemId,
-                            audioIndex,
-                            subtitleIndex,
-                            source.id?.toUUIDOrNull(),
-                        )
+                    currentPlayback.value = playback
                     player.setMediaItem(
                         decision.mediaItem,
                         positionMs,
@@ -277,6 +283,10 @@ class PlaybackViewModel
                                             audioIndex,
                                             subtitleIndex,
                                         )
+                                        currentPlayback.value =
+                                            currentPlayback.value?.copy(
+                                                tracks = checkForSupport(tracks),
+                                            )
                                         player.removeListener(this)
                                     }
                                 }
@@ -338,6 +348,7 @@ data class CurrentPlayback(
     val audioIndex: Int?,
     val subtitleIndex: Int?,
     val mediaSourceId: UUID?,
+    val tracks: List<TrackSupport>,
 )
 
 private val Format.idAsInt: Int?
