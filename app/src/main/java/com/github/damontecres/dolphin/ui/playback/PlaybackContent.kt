@@ -75,6 +75,7 @@ fun PlaybackContent(
     val audioStreams by viewModel.audioStreams.observeAsState(listOf())
     val subtitleStreams by viewModel.subtitleStreams.observeAsState(listOf())
     val trickplay by viewModel.trickplay.observeAsState(null)
+    val chapters by viewModel.chapters.observeAsState(listOf())
 
     if (stream == null) {
         // TODO loading
@@ -238,6 +239,7 @@ fun PlaybackContent(
                         audioStreams = audioStreams,
                         trickplayInfo = trickplay,
                         trickplayUrlFor = viewModel::getTrickplayUrl,
+                        chapters = chapters,
                     )
                 }
             }
