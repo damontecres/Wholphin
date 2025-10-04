@@ -17,11 +17,6 @@ class PlaybackListener : Player.Listener {
     var currentPlaylistIndex = -2
 
     override fun onCues(cueGroup: CueGroup) {
-//                    val cues =
-//                        cueGroup.cues
-//                            .mapNotNull { it.text }
-//                            .joinToString("\n")
-//                    Log.v(TAG, "onCues: \n$cues")
         val subtitles = cueGroup.cues.ifEmpty { null }
     }
 

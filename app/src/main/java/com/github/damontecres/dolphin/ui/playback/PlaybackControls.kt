@@ -41,7 +41,6 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
@@ -58,6 +57,7 @@ import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.github.damontecres.dolphin.R
 import com.github.damontecres.dolphin.ui.AppColors
+import com.github.damontecres.dolphin.ui.indexOfFirstOrNull
 import com.github.damontecres.dolphin.ui.seekBack
 import com.github.damontecres.dolphin.ui.seekForward
 import com.github.damontecres.dolphin.ui.tryRequestFocus
@@ -349,18 +349,25 @@ fun RightPlaybackButtons(
         )
     }
     if (showCaptionDialog) {
-        val context = LocalContext.current
         val options = subtitleStreams.map { it.displayName }
         Timber.v("subtitleIndex=$subtitleIndex, options=$options")
+        val currentChoice =
+            subtitleStreams.indexOfFirstOrNull { it.index == subtitleIndex }?.plus(1) ?: 0
         BottomDialog(
-            choices = options,
-            currentChoice = subtitleIndex,
+            choices = listOf("None") + options,
+            currentChoice = currentChoice,
             onDismissRequest = {
                 onControllerInteraction.invoke()
                 showCaptionDialog = false
             },
             onSelectChoice = { index, _ ->
-                onPlaybackActionClick.invoke(PlaybackAction.ToggleCaptions(subtitleStreams[index].index))
+                val send =
+                    if (index == 0) {
+                        -1
+                    } else {
+                        subtitleStreams[index - 1].index
+                    }
+                onPlaybackActionClick.invoke(PlaybackAction.ToggleCaptions(send))
             },
             gravity = Gravity.END,
         )
@@ -387,7 +394,7 @@ fun RightPlaybackButtons(
     if (showAudioDialog) {
         BottomDialog(
             choices = audioStreams.map { it.displayName },
-            currentChoice = audioIndex,
+            currentChoice = audioStreams.indexOfFirstOrNull { it.index == audioIndex },
             onDismissRequest = {
                 onControllerInteraction.invoke()
                 showAudioDialog = false

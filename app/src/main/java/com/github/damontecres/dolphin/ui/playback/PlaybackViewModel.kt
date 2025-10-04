@@ -1,12 +1,18 @@
 package com.github.damontecres.dolphin.ui.playback
 
 import android.content.Context
+import androidx.annotation.OptIn
 import androidx.core.net.toUri
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.media3.common.C
+import androidx.media3.common.Format
 import androidx.media3.common.MediaItem
+import androidx.media3.common.Player
+import androidx.media3.common.TrackSelectionOverride
+import androidx.media3.common.Tracks
+import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import com.github.damontecres.dolphin.data.model.Chapter
 import com.github.damontecres.dolphin.preferences.UserPreferences
@@ -27,6 +33,7 @@ import org.jellyfin.sdk.api.client.extensions.videosApi
 import org.jellyfin.sdk.model.api.BaseItemDto
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.DeviceProfile
+import org.jellyfin.sdk.model.api.MediaSourceInfo
 import org.jellyfin.sdk.model.api.MediaStreamType
 import org.jellyfin.sdk.model.api.PlaybackInfoDto
 import org.jellyfin.sdk.model.api.TrickplayInfo
@@ -157,6 +164,7 @@ class PlaybackViewModel
                     audioStreams.firstOrNull { it.language == "eng" }?.index
                         ?: audioStreams.firstOrNull()?.index
 
+                Timber.v("base.mediaStreams=${base.mediaStreams}")
                 Timber.v("subtitleTracks=$subtitleStreams")
                 Timber.v("audioStreams=$audioStreams")
                 Timber.d("Selected audioIndex=$audioIndex, subtitleIndex=$subtitleIndex")
@@ -183,6 +191,7 @@ class PlaybackViewModel
             }
         }
 
+        @OptIn(UnstableApi::class)
         private suspend fun changeStreams(
             itemId: UUID,
             audioIndex: Int?,
@@ -256,6 +265,24 @@ class PlaybackViewModel
                         decision.mediaItem,
                         positionMs,
                     )
+                    if (audioIndex != null || subtitleIndex != null) {
+                        val trackActivationListener =
+                            object : Player.Listener {
+                                override fun onTracksChanged(tracks: Tracks) {
+                                    Timber.v("onTracksChanged: $tracks")
+                                    if (tracks.groups.isNotEmpty()) {
+                                        applyTrackSelections(
+                                            player,
+                                            source,
+                                            audioIndex,
+                                            subtitleIndex,
+                                        )
+                                        player.removeListener(this)
+                                    }
+                                }
+                            }
+                        player.addListener(trackActivationListener)
+                    }
                 }
                 val trickPlayInfo =
                     dto.trickplay
@@ -312,3 +339,77 @@ data class CurrentPlayback(
     val subtitleIndex: Int?,
     val mediaSourceId: UUID?,
 )
+
+private val Format.idAsInt: Int?
+    @OptIn(UnstableApi::class)
+    get() =
+        id?.let {
+            if (it.contains(":")) {
+                it.split(":").last().toIntOrNull()
+            } else {
+                it.toIntOrNull()
+            }
+        }
+
+@OptIn(UnstableApi::class)
+private fun applyTrackSelections(
+    player: Player,
+    source: MediaSourceInfo,
+    audioIndex: Int?,
+    subtitleIndex: Int?,
+) {
+    if (source.supportsDirectPlay) {
+        if (subtitleIndex != null && subtitleIndex >= 0) {
+            val chosenTrack =
+                player.currentTracks.groups.firstOrNull { group ->
+                    group.type == C.TRACK_TYPE_TEXT && group.isSupported &&
+                        (0..<group.mediaTrackGroup.length)
+                            .map {
+                                group.getTrackFormat(it).idAsInt
+                            }.contains(subtitleIndex + 1)
+                }
+            Timber.v("Chosen subtitle track: $chosenTrack")
+            chosenTrack?.let {
+                player.trackSelectionParameters =
+                    player.trackSelectionParameters
+                        .buildUpon()
+                        .setTrackTypeDisabled(C.TRACK_TYPE_TEXT, false)
+                        .setOverrideForType(
+                            TrackSelectionOverride(
+                                chosenTrack.mediaTrackGroup,
+                                0,
+                            ),
+                        ).build()
+            }
+        } else {
+            player.trackSelectionParameters =
+                player.trackSelectionParameters
+                    .buildUpon()
+                    .setTrackTypeDisabled(C.TRACK_TYPE_TEXT, true)
+                    .build()
+        }
+        if (audioIndex != null) {
+            val chosenTrack =
+                player.currentTracks.groups.firstOrNull { group ->
+                    group.type == C.TRACK_TYPE_AUDIO && group.isSupported &&
+                        (0..<group.mediaTrackGroup.length)
+                            .map {
+                                group.getTrackFormat(it).idAsInt
+                            }.contains(audioIndex + 1)
+                }
+            Timber.v("Chosen audio track: $chosenTrack")
+            chosenTrack?.let {
+                player.trackSelectionParameters =
+                    player.trackSelectionParameters
+                        .buildUpon()
+                        .setTrackTypeDisabled(C.TRACK_TYPE_AUDIO, false)
+                        .setOverrideForType(
+                            TrackSelectionOverride(
+                                chosenTrack.mediaTrackGroup,
+                                0,
+                            ),
+                        ).build()
+            }
+        }
+    }
+}

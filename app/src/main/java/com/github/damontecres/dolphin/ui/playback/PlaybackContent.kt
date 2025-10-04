@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
@@ -33,9 +34,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.media3.common.Player
+import androidx.media3.common.text.Cue
+import androidx.media3.common.text.CueGroup
 import androidx.media3.common.util.UnstableApi
+import androidx.media3.ui.SubtitleView
 import androidx.media3.ui.compose.PlayerSurface
 import androidx.media3.ui.compose.SURFACE_TYPE_SURFACE_VIEW
 import androidx.media3.ui.compose.modifiers.resizeWithContentScale
@@ -45,6 +52,7 @@ import androidx.media3.ui.compose.state.rememberPresentationState
 import androidx.media3.ui.compose.state.rememberPreviousButtonState
 import androidx.tv.material3.MaterialTheme
 import com.github.damontecres.dolphin.preferences.UserPreferences
+import com.github.damontecres.dolphin.ui.OneTimeLaunchedEffect
 import com.github.damontecres.dolphin.ui.components.LoadingPage
 import com.github.damontecres.dolphin.ui.nav.Destination
 import com.github.damontecres.dolphin.ui.nav.NavigationManager
@@ -62,6 +70,7 @@ fun PlaybackContent(
     modifier: Modifier = Modifier,
     viewModel: PlaybackViewModel = hiltViewModel(),
 ) {
+    val context = LocalContext.current
     val scope = rememberCoroutineScope()
     LaunchedEffect(destination.itemId) {
         viewModel.init(destination, deviceProfile, preferences)
@@ -76,6 +85,26 @@ fun PlaybackContent(
     val subtitleStreams by viewModel.subtitleStreams.observeAsState(listOf())
     val trickplay by viewModel.trickplay.observeAsState(null)
     val chapters by viewModel.chapters.observeAsState(listOf())
+    val currentPlayback by viewModel.currentPlayback.observeAsState(null)
+
+    var cues by remember { mutableStateOf<List<Cue>>(listOf()) }
+
+    // TODO move to viewmodel?
+    val cueListener =
+        remember {
+            object : Player.Listener {
+                override fun onCues(cueGroup: CueGroup) {
+                    cues = cueGroup.cues
+                }
+            }
+        }
+
+    OneTimeLaunchedEffect {
+        player.addListener(cueListener)
+    }
+    DisposableEffect(Unit) {
+        onDispose { player.removeListener(cueListener) }
+    }
 
     if (stream == null) {
         // TODO loading
@@ -234,12 +263,33 @@ fun PlaybackContent(
                         scale = contentScale,
                         playbackSpeed = playbackSpeed,
                         moreButtonOptions = MoreButtonOptions(mapOf()),
-                        subtitleIndex = null,
-                        audioIndex = null,
+                        subtitleIndex = currentPlayback?.subtitleIndex,
+                        audioIndex = currentPlayback?.audioIndex,
                         audioStreams = audioStreams,
                         trickplayInfo = trickplay,
                         trickplayUrlFor = viewModel::getTrickplayUrl,
                         chapters = chapters,
+                    )
+                }
+
+                if (!controllerViewState.controlsVisible && skipIndicatorDuration == 0L && currentPlayback?.subtitleIndex != null) {
+                    AndroidView(
+                        factory = { context ->
+                            SubtitleView(context).apply {
+                                setUserDefaultStyle()
+                                setUserDefaultTextSize()
+                            }
+                        },
+                        update = {
+                            it.setCues(cues)
+                        },
+                        onReset = {
+                            it.setCues(null)
+                        },
+                        modifier =
+                            Modifier
+                                .fillMaxSize()
+                                .background(Color.Transparent),
                     )
                 }
             }
