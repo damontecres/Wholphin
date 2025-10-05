@@ -25,14 +25,14 @@ data class BaseItem(
     @Transient
     val indexNumber = data.indexNumber
 
-    fun destination(): Destination.MediaItem {
+    fun destination(): Destination {
         val result =
             // Redirect episodes & seasons to their series if possible
             when (type) {
                 BaseItemKind.EPISODE -> {
                     data.indexNumber?.let { episode ->
                         data.parentIndexNumber?.let { season ->
-                            Destination.MediaItem(
+                            Destination.SeriesOverview(
                                 data.seriesId!!,
                                 BaseItemKind.SERIES,
                                 this,
@@ -43,8 +43,8 @@ data class BaseItem(
                 }
 
                 BaseItemKind.SEASON ->
-                    data.parentIndexNumber?.let { season ->
-                        Destination.MediaItem(
+                    data.indexNumber?.let { season ->
+                        Destination.SeriesOverview(
                             data.seriesId!!,
                             BaseItemKind.SERIES,
                             this,

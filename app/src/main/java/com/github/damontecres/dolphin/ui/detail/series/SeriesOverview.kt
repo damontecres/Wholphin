@@ -46,7 +46,7 @@ data class SeriesOverviewPosition(
 fun SeriesOverview(
     preferences: UserPreferences,
     navigationManager: NavigationManager,
-    destination: Destination.MediaItem,
+    destination: Destination.SeriesOverview,
     modifier: Modifier = Modifier,
     viewModel: SeriesViewModel = hiltViewModel(),
     initialSeasonEpisode: SeasonEpisode? = null,

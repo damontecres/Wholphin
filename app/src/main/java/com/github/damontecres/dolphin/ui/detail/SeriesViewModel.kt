@@ -11,8 +11,10 @@ import androidx.media3.datasource.okhttp.OkHttpDataSource
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import com.github.damontecres.dolphin.data.model.BaseItem
+import com.github.damontecres.dolphin.data.model.Person
 import com.github.damontecres.dolphin.data.model.Video
 import com.github.damontecres.dolphin.hilt.AuthOkHttpClient
+import com.github.damontecres.dolphin.ui.letNotEmpty
 import com.github.damontecres.dolphin.util.ApiRequestPager
 import com.github.damontecres.dolphin.util.ExceptionHandler
 import com.github.damontecres.dolphin.util.GetEpisodesRequestHandler
@@ -54,6 +56,7 @@ class SeriesViewModel
         val loading = MutableLiveData<LoadingState>(LoadingState.Loading)
         val seasons = MutableLiveData<ItemListAndMapping>(ItemListAndMapping.empty())
         val episodes = MutableLiveData<ItemListAndMapping>(ItemListAndMapping.empty())
+        val people = MutableLiveData<List<Person>>(listOf())
 
         fun init(
             itemId: UUID,
@@ -80,6 +83,11 @@ class SeriesViewModel
                         seasons.value = seasonsInfo
                         episodes.value = episodeInfo
                         loading.value = LoadingState.Success
+                        people.value =
+                            item.data.people
+                                ?.letNotEmpty { people ->
+                                    people.map { Person.fromDto(it, api) }
+                                }.orEmpty()
                     }
                     maybePlayThemeSong()
                 } else {

@@ -37,6 +37,14 @@ sealed class Destination(
     data object Search : Destination()
 
     @Serializable
+    data class SeriesOverview(
+        val itemId: UUID,
+        val type: BaseItemKind,
+        @Transient val item: BaseItem? = null,
+        val seasonEpisode: SeasonEpisode? = null,
+    ) : Destination()
+
+    @Serializable
     data class MediaItem(
         val itemId: UUID,
         val type: BaseItemKind,

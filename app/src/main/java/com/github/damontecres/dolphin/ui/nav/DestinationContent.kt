@@ -8,6 +8,7 @@ import com.github.damontecres.dolphin.ui.components.LicenseInfo
 import com.github.damontecres.dolphin.ui.detail.CollectionFolderDetails
 import com.github.damontecres.dolphin.ui.detail.EpisodeDetails
 import com.github.damontecres.dolphin.ui.detail.SeasonDetails
+import com.github.damontecres.dolphin.ui.detail.SeriesDetails
 import com.github.damontecres.dolphin.ui.detail.VideoDetails
 import com.github.damontecres.dolphin.ui.detail.movie.MovieDetails
 import com.github.damontecres.dolphin.ui.detail.series.SeriesOverview
@@ -56,15 +57,23 @@ fun DestinationContent(
                 modifier,
             )
 
+        is Destination.SeriesOverview ->
+            SeriesOverview(
+                preferences,
+                navigationManager,
+                destination,
+                modifier,
+                initialSeasonEpisode = destination.seasonEpisode,
+            )
+
         is Destination.MediaItem ->
             when (destination.type) {
                 BaseItemKind.SERIES ->
-                    SeriesOverview(
+                    SeriesDetails(
                         preferences,
                         navigationManager,
                         destination,
                         modifier,
-                        initialSeasonEpisode = destination.seasonEpisode,
                     )
 
                 BaseItemKind.SEASON ->

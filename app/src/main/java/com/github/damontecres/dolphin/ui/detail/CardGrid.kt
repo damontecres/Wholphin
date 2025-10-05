@@ -72,7 +72,7 @@ fun CardGrid(
     positionCallback: ((columns: Int, position: Int) -> Unit)? = null,
 ) {
     val startPosition = initialPosition.coerceIn(0, (pager.size - 1).coerceAtLeast(0))
-    val columns = 5
+    val columns = 6
 
     val gridState = rememberLazyGridState()
     val scope = rememberCoroutineScope()

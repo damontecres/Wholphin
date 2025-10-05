@@ -88,7 +88,7 @@ class MainViewModel
                                             api.userLibraryApi
                                                 .getLatestMedia(request)
                                                 .content
-                                                .map { BaseItem.Companion.from(it, api, true) }
+                                                .map { BaseItem.from(it, api, true) }
                                         HomeRow(
                                             section = section,
                                             items = latest,

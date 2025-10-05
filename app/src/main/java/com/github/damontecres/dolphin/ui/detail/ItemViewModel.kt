@@ -30,15 +30,17 @@ abstract class ItemViewModel<T : DolphinModel>(
         potential: BaseItem?,
     ): BaseItem? =
         withContext(Dispatchers.IO) {
-            val fetchedItem =
-                when {
-                    item.value == null && potential?.id == itemId -> potential
-                    item.value?.id == itemId -> item.value
-                    else -> {
-                        val it = api.userLibraryApi.getItem(itemId).content
-                        BaseItem.from(it, api)
-                    }
-                }
+//            val fetchedItem =
+//                when {
+//                    item.value == null && potential?.id == itemId -> potential
+//                    item.value?.id == itemId -> item.value
+//                    else -> {
+//                        val it = api.userLibraryApi.getItem(itemId).content
+//                        BaseItem.from(it, api)
+//                    }
+//                }
+            val it = api.userLibraryApi.getItem(itemId).content
+            val fetchedItem = BaseItem.from(it, api)
             return@withContext fetchedItem?.let {
                 val modelInstance = convertModel(fetchedItem.data, api)
                 withContext(Dispatchers.Main) {

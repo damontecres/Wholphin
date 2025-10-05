@@ -12,6 +12,7 @@ import com.github.damontecres.dolphin.data.JellyfinServer
 import com.github.damontecres.dolphin.data.JellyfinUser
 import com.github.damontecres.dolphin.preferences.UserPreferences
 import org.jellyfin.sdk.model.api.DeviceProfile
+import timber.log.Timber
 
 @Composable
 fun ApplicationContent(
@@ -34,6 +35,7 @@ fun ApplicationContent(
         entryProvider = { key ->
             key as Destination
             val contentKey = "${key}_${server.id}_${user.id}"
+            Timber.d("Navigate: %s", key)
             NavEntry(key, contentKey = contentKey) {
                 if (key.fullScreen) {
                     DestinationContent(
