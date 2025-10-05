@@ -7,6 +7,8 @@ data class SubtitleStream(
     val codec: String?,
     val codecTag: String?,
     val external: Boolean,
+    val forced: Boolean,
+    val default: Boolean,
 ) {
     val displayName: String
         get() =

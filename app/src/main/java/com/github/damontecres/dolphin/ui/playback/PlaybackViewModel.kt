@@ -39,6 +39,7 @@ import org.jellyfin.sdk.model.api.DeviceProfile
 import org.jellyfin.sdk.model.api.MediaSourceInfo
 import org.jellyfin.sdk.model.api.MediaStreamType
 import org.jellyfin.sdk.model.api.PlaybackInfoDto
+import org.jellyfin.sdk.model.api.SubtitlePlaybackMode
 import org.jellyfin.sdk.model.api.TrickplayInfo
 import org.jellyfin.sdk.model.extensions.ticks
 import org.jellyfin.sdk.model.serializer.toUUIDOrNull
@@ -103,7 +104,6 @@ class PlaybackViewModel
             viewModelScope.launch(ExceptionHandler() + Dispatchers.IO) {
                 val base = item?.data ?: api.userLibraryApi.getItem(itemId).content
                 dto = base
-
                 val title =
                     if (base.type == BaseItemKind.EPISODE) {
                         base.seriesName
@@ -143,6 +143,8 @@ class PlaybackViewModel
                                 it.codec,
                                 it.codecTag,
                                 it.isExternal,
+                                it.isForced,
+                                it.isDefault,
                             )
                         }.orEmpty()
                 val audioStreams =
@@ -160,12 +162,54 @@ class PlaybackViewModel
                             )
                         }?.sortedWith(compareBy<AudioStream> { it.language }.thenByDescending { it.channels })
                         .orEmpty()
-                // TODO use preferences to select audio/subtitle
+
                 // TODO audio selection based on channel layout, etc
-                val subtitleIndex = subtitleStreams.firstOrNull { it.language == "eng" }?.index
+                val audioLanguage = preferences.userConfig.audioLanguagePreference
                 val audioIndex =
-                    audioStreams.firstOrNull { it.language == "eng" }?.index
-                        ?: audioStreams.firstOrNull()?.index
+                    if (audioLanguage != null) {
+                        audioStreams.firstOrNull { it.language == audioLanguage }?.index
+                            ?: audioStreams.firstOrNull()?.index
+                    } else {
+                        audioStreams.firstOrNull()?.index
+                    }
+                val subtitleMode = preferences.userConfig.subtitleMode
+                val subtitleLanguage = preferences.userConfig.subtitleLanguagePreference
+                val subtitleIndex =
+                    when (subtitleMode) {
+                        SubtitlePlaybackMode.ALWAYS -> {
+                            if (subtitleLanguage != null) {
+                                subtitleStreams.firstOrNull { it.language == subtitleLanguage }?.index
+                            } else {
+                                subtitleStreams.firstOrNull()?.index
+                            }
+                        }
+
+                        SubtitlePlaybackMode.ONLY_FORCED ->
+                            if (subtitleLanguage != null) {
+                                subtitleStreams.firstOrNull { it.language == subtitleLanguage && it.forced }?.index
+                            } else {
+                                subtitleStreams.firstOrNull { it.forced }?.index
+                            }
+
+                        SubtitlePlaybackMode.SMART -> {
+                            if (audioLanguage != null && subtitleLanguage != null && audioLanguage != subtitleLanguage) {
+                                subtitleStreams.firstOrNull { it.language == subtitleLanguage }?.index
+                            } else {
+                                null
+                            }
+                        }
+
+                        SubtitlePlaybackMode.DEFAULT -> {
+                            // TODO check for language?
+                            (
+                                subtitleStreams.firstOrNull { it.default && it.forced }
+                                    ?: subtitleStreams.firstOrNull { it.default }
+                                    ?: subtitleStreams.firstOrNull { it.forced }
+                            )?.index
+                        }
+
+                        SubtitlePlaybackMode.NONE -> null
+                    }
 
                 Timber.v("base.mediaStreams=${base.mediaStreams}")
                 Timber.v("subtitleTracks=$subtitleStreams")
@@ -213,7 +257,6 @@ class PlaybackViewModel
                 api.mediaInfoApi
                     .getPostedPlaybackInfo(
                         itemId,
-                        // TODO device profile, etc
                         PlaybackInfoDto(
                             startTimeTicks = null,
                             deviceProfile = deviceProfile,

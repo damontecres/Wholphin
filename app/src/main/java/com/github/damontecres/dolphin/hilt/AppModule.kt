@@ -12,6 +12,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import okhttp3.OkHttpClient
 import org.jellyfin.sdk.Jellyfin
+import org.jellyfin.sdk.api.client.util.AuthorizationHeaderBuilder
 import org.jellyfin.sdk.api.okhttp.OkHttpFactory
 import org.jellyfin.sdk.createJellyfin
 import org.jellyfin.sdk.model.ClientInfo
@@ -30,6 +31,27 @@ annotation class StandardOkHttpClient
 @Module
 @InstallIn(SingletonComponent::class)
 object AppModule {
+    @Provides
+    @Singleton
+    fun clientInfo(): ClientInfo =
+        ClientInfo(
+            name = "Dolphin",
+            version = BuildConfig.VERSION_NAME,
+        )
+
+    @Provides
+    @Singleton
+    fun deviceInfo(
+        @ApplicationContext context: Context,
+    ): DeviceInfo =
+        DeviceInfo(
+            id = @SuppressLint("HardwareIds") Settings.Secure.getString(
+                context.contentResolver,
+                Settings.Secure.ANDROID_ID,
+            ),
+            name = Settings.Global.getString(context.contentResolver, Settings.Global.DEVICE_NAME),
+        )
+
     @StandardOkHttpClient
     @Provides
     @Singleton
@@ -46,6 +68,8 @@ object AppModule {
     fun authOkHttpClient(
         serverRepository: ServerRepository,
         @StandardOkHttpClient okHttpClient: OkHttpClient,
+        clientInfo: ClientInfo,
+        deviceInfo: DeviceInfo,
     ) = okHttpClient
         .newBuilder()
         .addInterceptor {
@@ -56,7 +80,13 @@ object AppModule {
                         .newBuilder()
                         .addHeader(
                             "Authorization",
-                            "MediaBrowser Token=\"$token\"",
+                            AuthorizationHeaderBuilder.buildHeader(
+                                clientName = clientInfo.name,
+                                clientVersion = clientInfo.version,
+                                deviceId = deviceInfo.id,
+                                deviceName = deviceInfo.name,
+                                accessToken = serverRepository.currentUser?.accessToken,
+                            ),
                         ).build()
                 }
             it.proceed(newRequest ?: request)
@@ -73,19 +103,13 @@ object AppModule {
     fun jellyfin(
         okHttpFactory: OkHttpFactory,
         @ApplicationContext context: Context,
+        clientInfo: ClientInfo,
+        deviceInfo: DeviceInfo,
     ): Jellyfin =
         createJellyfin {
             this.context = context
-            clientInfo =
-                ClientInfo(
-                    name = "Dolphin",
-                    version = BuildConfig.VERSION_NAME,
-                )
-            deviceInfo =
-                DeviceInfo(
-                    id = @SuppressLint("HardwareIds") Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID),
-                    name = Settings.Global.getString(context.contentResolver, Settings.Global.DEVICE_NAME),
-                )
+            this.clientInfo = clientInfo
+            this.deviceInfo = deviceInfo
             apiClientFactory = okHttpFactory
             socketConnectionFactory = okHttpFactory
             minimumServerVersion = Jellyfin.minimumVersion
