@@ -21,9 +21,15 @@ import androidx.tv.material3.Text
 import com.github.damontecres.dolphin.data.model.BaseItem
 import com.github.damontecres.dolphin.data.model.Library
 import com.github.damontecres.dolphin.preferences.UserPreferences
+import com.github.damontecres.dolphin.ui.DefaultItemFields
 import com.github.damontecres.dolphin.ui.OneTimeLaunchedEffect
 import com.github.damontecres.dolphin.ui.components.ErrorMessage
 import com.github.damontecres.dolphin.ui.components.LoadingPage
+import com.github.damontecres.dolphin.ui.components.SortByButton
+import com.github.damontecres.dolphin.ui.data.MovieSortOptions
+import com.github.damontecres.dolphin.ui.data.SeriesSortOptions
+import com.github.damontecres.dolphin.ui.data.SortAndDirection
+import com.github.damontecres.dolphin.ui.data.VideoSortOptions
 import com.github.damontecres.dolphin.ui.nav.Destination
 import com.github.damontecres.dolphin.ui.nav.NavigationManager
 import com.github.damontecres.dolphin.ui.tryRequestFocus
@@ -40,7 +46,6 @@ import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.CollectionType
 import org.jellyfin.sdk.model.api.ImageType
-import org.jellyfin.sdk.model.api.ItemFields
 import org.jellyfin.sdk.model.api.ItemSortBy
 import org.jellyfin.sdk.model.api.SortOrder
 import org.jellyfin.sdk.model.api.request.GetItemsRequest
@@ -54,11 +59,13 @@ class CollectionFolderViewModel
         api: ApiClient,
     ) : ItemViewModel<Library>(api) {
         val loading = MutableLiveData<LoadingState>(LoadingState.Loading)
-        val pager = MutableLiveData<ApiRequestPager<GetItemsRequest>?>()
+        val pager = MutableLiveData<List<BaseItem?>>(listOf())
+        val sortAndDirection = MutableLiveData<SortAndDirection>()
 
         fun init(
             itemId: UUID,
             potential: BaseItem?,
+            sortAndDirection: SortAndDirection,
         ): Job =
             viewModelScope.launch(
                 LoadingExceptionHandler(
@@ -67,53 +74,57 @@ class CollectionFolderViewModel
                 ) + Dispatchers.IO,
             ) {
                 fetchItem(itemId, potential)
-                setup()
+                loadResults(sortAndDirection)
             }
 
-        private suspend fun setup() =
-            withContext(Dispatchers.IO) {
-                if (!pager.isInitialized) {
-                    item.value?.let { item ->
-                        val includeItemTypes =
-                            when (item.data.collectionType) {
-                                CollectionType.UNKNOWN -> TODO()
-                                CollectionType.MOVIES -> listOf(BaseItemKind.MOVIE)
-                                CollectionType.TVSHOWS -> listOf(BaseItemKind.SERIES)
-                                CollectionType.MUSIC -> TODO()
-                                CollectionType.MUSICVIDEOS -> TODO()
-                                CollectionType.TRAILERS -> TODO()
-                                CollectionType.HOMEVIDEOS -> listOf(BaseItemKind.VIDEO)
-                                CollectionType.BOXSETS -> TODO()
-                                CollectionType.BOOKS -> TODO()
-                                CollectionType.PHOTOS -> TODO()
-                                CollectionType.LIVETV -> TODO()
-                                CollectionType.PLAYLISTS -> TODO()
-                                CollectionType.FOLDERS -> TODO()
-                                null -> TODO()
-                            }
-                        val request =
-                            GetItemsRequest(
-                                parentId = item.id,
-                                isSeries = true,
-                                mediaTypes = null,
-//                            recursive = true,
-                                enableImageTypes = listOf(ImageType.PRIMARY, ImageType.THUMB),
-                                includeItemTypes = includeItemTypes,
-                                sortBy = listOf(ItemSortBy.SORT_NAME),
-                                sortOrder = listOf(SortOrder.ASCENDING),
-                                fields = listOf(ItemFields.PRIMARY_IMAGE_ASPECT_RATIO),
-                            )
-                        val newPager =
-                            ApiRequestPager(api, request, GetItemsRequestHandler, viewModelScope)
-                        newPager.init()
-                        newPager.getBlocking(0)
-                        withContext(Dispatchers.Main) {
-                            pager.value = newPager
-                            loading.value = LoadingState.Success
+        fun loadResults(sortAndDirection: SortAndDirection) {
+            item.value?.let { item ->
+                viewModelScope.launch(Dispatchers.IO) {
+                    withContext(Dispatchers.Main) {
+                        pager.value = listOf()
+                        loading.value = LoadingState.Loading
+                        this@CollectionFolderViewModel.sortAndDirection.value = sortAndDirection
+                    }
+                    val includeItemTypes =
+                        when (item.data.collectionType) {
+                            CollectionType.UNKNOWN -> TODO()
+                            CollectionType.MOVIES -> listOf(BaseItemKind.MOVIE)
+                            CollectionType.TVSHOWS -> listOf(BaseItemKind.SERIES)
+                            CollectionType.MUSIC -> TODO()
+                            CollectionType.MUSICVIDEOS -> TODO()
+                            CollectionType.TRAILERS -> TODO()
+                            CollectionType.HOMEVIDEOS -> listOf(BaseItemKind.VIDEO)
+                            CollectionType.BOXSETS -> TODO()
+                            CollectionType.BOOKS -> TODO()
+                            CollectionType.PHOTOS -> TODO()
+                            CollectionType.LIVETV -> TODO()
+                            CollectionType.PLAYLISTS -> TODO()
+                            CollectionType.FOLDERS -> TODO()
+                            null -> listOf()
                         }
+                    val request =
+                        GetItemsRequest(
+                            parentId = item.id,
+                            isSeries = true,
+                            mediaTypes = null,
+//                            recursive = true,
+                            enableImageTypes = listOf(ImageType.PRIMARY, ImageType.THUMB),
+                            includeItemTypes = includeItemTypes,
+                            sortBy = listOf(sortAndDirection.sort),
+                            sortOrder = listOf(sortAndDirection.direction),
+                            fields = DefaultItemFields,
+                        )
+                    val newPager =
+                        ApiRequestPager(api, request, GetItemsRequestHandler, viewModelScope)
+                    newPager.init()
+                    newPager.getBlocking(0)
+                    withContext(Dispatchers.Main) {
+                        pager.value = newPager
+                        loading.value = LoadingState.Success
                     }
                 }
             }
+        }
     }
 
 @Composable
@@ -123,10 +134,16 @@ fun CollectionFolderDetails(
     destination: Destination.MediaItem,
     modifier: Modifier = Modifier,
     viewModel: CollectionFolderViewModel = hiltViewModel(),
+    initialSortAndDirection: SortAndDirection =
+        SortAndDirection(
+            ItemSortBy.SORT_NAME,
+            SortOrder.ASCENDING,
+        ),
 ) {
     OneTimeLaunchedEffect {
-        viewModel.init(destination.itemId, destination.item)
+        viewModel.init(destination.itemId, destination.item, initialSortAndDirection)
     }
+    val sortAndDirection by viewModel.sortAndDirection.observeAsState(initialSortAndDirection)
     val loading by viewModel.loading.observeAsState(LoadingState.Loading)
     val item by viewModel.item.observeAsState()
     val library by viewModel.model.observeAsState()
@@ -137,67 +154,42 @@ fun CollectionFolderDetails(
         LoadingState.Loading -> LoadingPage()
         LoadingState.Success -> {
             pager?.let { pager ->
-                when (library!!.collectionType) {
-                    CollectionType.UNKNOWN -> TODO()
-
-                    // TODO?
-                    CollectionType.MOVIES ->
-                        TVShowCollectionDetails(
-                            preferences,
-                            navigationManager,
-                            library!!,
-                            item!!,
-                            pager,
-                            modifier,
-                        )
-
-                    CollectionType.TVSHOWS -> {
-                        TVShowCollectionDetails(
-                            preferences,
-                            navigationManager,
-                            library!!,
-                            item!!,
-                            pager,
-                            modifier,
-                        )
-                    }
-
-                    // TODO?
-                    CollectionType.HOMEVIDEOS ->
-                        TVShowCollectionDetails(
-                            preferences,
-                            navigationManager,
-                            library!!,
-                            item!!,
-                            pager,
-                            modifier,
-                        )
-
-                    CollectionType.MUSIC -> TODO()
-                    CollectionType.MUSICVIDEOS -> TODO()
-                    CollectionType.TRAILERS -> TODO()
-                    CollectionType.BOXSETS -> TODO()
-                    CollectionType.BOOKS -> TODO()
-                    CollectionType.PHOTOS -> TODO()
-                    CollectionType.LIVETV -> TODO()
-                    CollectionType.PLAYLISTS -> TODO()
-                    CollectionType.FOLDERS -> TODO()
-                }
+                CollectionDetails(
+                    preferences,
+                    navigationManager,
+                    library!!,
+                    item!!,
+                    pager,
+                    sortAndDirection = sortAndDirection,
+                    modifier = modifier,
+                    onSortChange = {
+                        viewModel.loadResults(it)
+                    },
+                )
             }
         }
     }
 }
 
 @Composable
-fun TVShowCollectionDetails(
+fun CollectionDetails(
     preferences: UserPreferences,
     navigationManager: NavigationManager,
     library: Library,
     item: BaseItem,
     pager: List<BaseItem?>,
+    sortAndDirection: SortAndDirection,
+    onSortChange: (SortAndDirection) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val title = library.name ?: item.data.name ?: item.data.collectionType?.name ?: "Collection"
+    val sortOptions =
+        when (item.data.collectionType) {
+            CollectionType.MOVIES -> MovieSortOptions
+            CollectionType.TVSHOWS -> SeriesSortOptions
+            CollectionType.HOMEVIDEOS -> VideoSortOptions
+            else -> listOf(ItemSortBy.SORT_NAME, ItemSortBy.DATE_CREATED, ItemSortBy.RANDOM)
+        }
 
     val gridFocusRequester = remember { FocusRequester() }
     LaunchedEffect(Unit) { gridFocusRequester.tryRequestFocus() }
@@ -211,6 +203,12 @@ fun TVShowCollectionDetails(
             color = MaterialTheme.colorScheme.onBackground,
             textAlign = TextAlign.Center,
             modifier = Modifier.fillMaxWidth(),
+        )
+        SortByButton(
+            sortOptions = sortOptions,
+            current = sortAndDirection,
+            onSortChange = onSortChange,
+            modifier = Modifier,
         )
         CardGrid(
             pager = pager,
