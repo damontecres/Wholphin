@@ -188,7 +188,7 @@ fun SeriesOverviewContent(
                     LazyRow(
                         state = state,
                         horizontalArrangement = Arrangement.spacedBy(16.dp),
-                        contentPadding = PaddingValues(start = 16.dp),
+                        contentPadding = PaddingValues(horizontal = 16.dp),
                         modifier =
                             Modifier
                                 .focusRestorer(firstItemFocusRequester)

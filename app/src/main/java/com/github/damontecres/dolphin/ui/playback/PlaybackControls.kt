@@ -142,6 +142,7 @@ fun PlaybackControls(
     Column(
         modifier = modifier.bringIntoViewRequester(bringIntoViewRequester),
         horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(0.dp),
     ) {
         SeekBar(
             player = playerControls,
@@ -152,7 +153,7 @@ fun PlaybackControls(
             intervals = seekBarIntervals,
             modifier =
                 Modifier
-                    .padding(vertical = 8.dp)
+                    .padding(vertical = 0.dp)
                     .fillMaxWidth(.95f),
         )
         Box(
@@ -516,11 +517,11 @@ fun PlaybackButton(
                 containerColor = AppColors.TransparentBlack25,
                 focusedContainerColor = selectedColor,
             ),
-        contentPadding = PaddingValues(8.dp),
+        contentPadding = PaddingValues(4.dp),
         modifier =
             modifier
-                .padding(8.dp)
-                .size(56.dp, 56.dp)
+                .padding(4.dp)
+                .size(44.dp, 44.dp)
                 .onFocusChanged { onControllerInteraction.invoke() },
     ) {
         Icon(

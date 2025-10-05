@@ -194,7 +194,7 @@ fun MovieDetailsContent(
                     modifier =
                         Modifier
                             .bringIntoViewRequester(bringIntoViewRequester)
-                            .padding(bottom = 120.dp),
+                            .padding(bottom = 56.dp),
                 ) {
                     MovieDetailsHeader(
                         movie = movie,

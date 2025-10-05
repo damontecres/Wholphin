@@ -94,41 +94,40 @@ fun FocusedEpisodeHeader(
                 }
             }
         }
-        dto.overview?.let { overview ->
-            val interactionSource = remember { MutableInteractionSource() }
-            val isFocused = interactionSource.collectIsFocusedAsState().value
-            val bgColor =
-                if (isFocused) {
-                    MaterialTheme.colorScheme.onPrimary.copy(alpha = .4f)
-                } else {
-                    Color.Unspecified
-                }
-            Box(
+
+        val interactionSource = remember { MutableInteractionSource() }
+        val isFocused = interactionSource.collectIsFocusedAsState().value
+        val bgColor =
+            if (isFocused) {
+                MaterialTheme.colorScheme.onPrimary.copy(alpha = .4f)
+            } else {
+                Color.Unspecified
+            }
+        Box(
+            modifier =
+                Modifier
+                    .background(bgColor, shape = RoundedCornerShape(8.dp))
+                    .playSoundOnFocus(true)
+                    .clickable(
+                        enabled = true,
+                        interactionSource = interactionSource,
+                        indication = LocalIndication.current,
+                    ) {
+                        playOnClickSound(context)
+                        overviewOnClick.invoke()
+                    },
+        ) {
+            Text(
+                text = dto.overview ?: "",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 3,
+                overflow = TextOverflow.Ellipsis,
                 modifier =
                     Modifier
-                        .background(bgColor, shape = RoundedCornerShape(8.dp))
-                        .playSoundOnFocus(true)
-                        .clickable(
-                            enabled = true,
-                            interactionSource = interactionSource,
-                            indication = LocalIndication.current,
-                        ) {
-                            playOnClickSound(context)
-                            overviewOnClick.invoke()
-                        },
-            ) {
-                Text(
-                    text = overview,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    maxLines = 3,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier =
-                        Modifier
-                            .padding(8.dp)
-                            .height(60.dp),
-                )
-            }
+                        .padding(8.dp)
+                        .height(60.dp),
+            )
         }
     }
 }

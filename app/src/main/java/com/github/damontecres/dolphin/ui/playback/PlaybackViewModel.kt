@@ -21,7 +21,7 @@ import com.github.damontecres.dolphin.util.ExceptionHandler
 import com.github.damontecres.dolphin.util.TrackActivityPlaybackListener
 import com.github.damontecres.dolphin.util.TrackSupport
 import com.github.damontecres.dolphin.util.checkForSupport
-import com.github.damontecres.dolphin.util.profile.PlaybackListener
+import com.github.damontecres.dolphin.util.formatDateTime
 import com.github.damontecres.dolphin.util.subtitleMimeTypes
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -57,15 +57,7 @@ data class StreamDecision(
     val itemId: UUID,
     val type: TranscodeType,
     val url: String,
-) {
-    val mediaItem: MediaItem
-        get() =
-            MediaItem
-                .Builder()
-                .setMediaId(itemId.toString())
-                .setUri(url.toUri())
-                .build()
-}
+)
 
 @HiltViewModel
 class PlaybackViewModel
@@ -112,25 +104,26 @@ class PlaybackViewModel
                 val base = item?.data ?: api.userLibraryApi.getItem(itemId).content
                 dto = base
 
-                val title = base.name
+                val title =
+                    if (base.type == BaseItemKind.EPISODE) {
+                        base.seriesName
+                    } else {
+                        base.name
+                    }
                 val subtitle =
                     if (base.type == BaseItemKind.EPISODE) {
                         val season = base.parentIndexNumber?.toString()?.padStart(2, '0')
                         val episode = base.indexNumber?.toString()?.padStart(2, '0')
                         // TODO multi episode support
-                        if (season != null && episode != null) {
-                            buildString {
-                                if (base.seriesName != null) {
-                                    append(base.seriesName)
-                                    append(" - ")
-                                }
-                                append("S${season}E$episode")
+                        buildList {
+                            if (season != null && episode != null) {
+                                add("S${season}E$episode")
                             }
-                        } else {
-                            null
-                        }
+                            add(base.name)
+                            add(base.premiereDate?.let { formatDateTime(it) })
+                        }.filterNotNull().joinToString(" - ")
                     } else {
-                        null
+                        base.productionYear?.toString()
                     }
                 withContext(Dispatchers.Main) {
                     this@PlaybackViewModel.title.value = title
@@ -186,7 +179,6 @@ class PlaybackViewModel
                         TrackActivityPlaybackListener(api, itemId, player)
                     addCloseable { activityListener.release() }
                     player.addListener(activityListener)
-                    player.addListener(PlaybackListener())
                     changeStreams(
                         itemId,
                         audioIndex,

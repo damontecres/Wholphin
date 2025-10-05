@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -17,6 +18,7 @@ import androidx.tv.material3.Card
 import androidx.tv.material3.Text
 import coil3.compose.AsyncImage
 import com.github.damontecres.dolphin.ui.AppColors
+import com.github.damontecres.dolphin.ui.roundSeconds
 import kotlin.time.Duration
 
 @Composable
@@ -44,21 +46,23 @@ fun ChapterCard(
                 contentScale = ContentScale.Fit,
                 modifier = Modifier.fillMaxSize(),
             )
-            Column(
+            Box(
                 modifier =
                     Modifier
                         .align(Alignment.BottomStart)
                         .fillMaxWidth()
                         .background(AppColors.TransparentBlack50),
             ) {
-                name?.let {
+                Column(modifier = Modifier.padding(4.dp)) {
+                    name?.let {
+                        Text(
+                            text = it,
+                        )
+                    }
                     Text(
-                        text = it,
+                        text = position.roundSeconds.toString(),
                     )
                 }
-                Text(
-                    text = position.toString(),
-                )
             }
         }
     }

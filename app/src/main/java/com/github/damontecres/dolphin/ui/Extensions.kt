@@ -27,6 +27,7 @@ import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
 import kotlin.time.Duration
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 
@@ -173,6 +174,9 @@ fun playOnClickSound(
 
 val Duration.roundMinutes: Duration
     get() = (this + 30.seconds).inWholeMinutes.minutes
+
+val Duration.roundSeconds: Duration
+    get() = (this + 30.milliseconds).inWholeSeconds.seconds
 
 val BaseItemDto.timeRemaining: Duration?
     get() =

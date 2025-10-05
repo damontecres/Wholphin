@@ -32,6 +32,7 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.media3.common.Player
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
@@ -81,32 +82,33 @@ fun PlaybackOverlay(
 //    val chapterRowFocused = chapterInteractionSources.any { it.collectIsFocusedAsState().value }
     var chapterRowFocused by remember { mutableStateOf(false) }
 
-    val titleTextStyle = MaterialTheme.typography.displaySmall
-    val subtitleTextStyle = MaterialTheme.typography.headlineMedium
+    val titleTextSize = 28.sp
+    val subtitleTextSize = 18.sp
     val density = LocalDensity.current
 
     val titleHeight =
-        if (title.isNotNullOrBlank()) with(density) { titleTextStyle.fontSize.toDp() } else 0.dp
+        if (title.isNotNullOrBlank()) with(density) { titleTextSize.toDp() } else 0.dp
     val subtitleHeight =
-        if (subtitle.isNotNullOrBlank()) with(density) { subtitleTextStyle.fontSize.toDp() } else 0.dp
+        if (subtitle.isNotNullOrBlank()) with(density) { subtitleTextSize.toDp() } else 0.dp
 
     // Calculate height based on content
     // Base height (with or w/o chapters) + title + subtitle
     // The extra 8dp is for padding between title, subtitle, and playback controls
     // When chapter row is focused, the title/subtitle/playback controls will be hidden, but need extra height for the chapter images
     val height by animateDpAsState(
-        (if (chapters.isNotEmpty()) 184.dp else 140.dp) +
-            (if (chapterRowFocused) 40.dp else 0.dp) +
+        96.dp +
+            (if (chapters.isNotEmpty()) 40.dp else 0.dp) +
+            (if (chapterRowFocused) 80.dp else 0.dp) +
             (
                 if (!chapterRowFocused && title.isNotNullOrBlank()) {
-                    titleHeight + 8.dp
+                    titleHeight + 12.dp
                 } else {
                     0.dp
                 }
             ) +
             (
                 if (!chapterRowFocused && subtitle.isNotNullOrBlank()) {
-                    subtitleHeight + 8.dp
+                    subtitleHeight + 12.dp
                 } else {
                     0.dp
                 }
@@ -132,6 +134,7 @@ fun PlaybackOverlay(
                     modifier = Modifier,
                 ) {
                     Column(
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
                         modifier =
                             Modifier
                                 .padding(start = 16.dp)
@@ -140,13 +143,15 @@ fun PlaybackOverlay(
                         title?.let {
                             Text(
                                 text = it,
-                                style = titleTextStyle,
+                                style = MaterialTheme.typography.titleLarge,
+                                fontSize = titleTextSize,
                             )
                         }
                         subtitle?.let {
                             Text(
                                 text = it,
-                                style = subtitleTextStyle,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontSize = subtitleTextSize,
                             )
                         }
                     }
