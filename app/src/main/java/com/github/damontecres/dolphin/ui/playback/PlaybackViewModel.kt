@@ -22,6 +22,7 @@ import com.github.damontecres.dolphin.util.TrackActivityPlaybackListener
 import com.github.damontecres.dolphin.util.TrackSupport
 import com.github.damontecres.dolphin.util.checkForSupport
 import com.github.damontecres.dolphin.util.profile.PlaybackListener
+import com.github.damontecres.dolphin.util.subtitleMimeTypes
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -142,7 +143,14 @@ class PlaybackViewModel
                     base.mediaStreams
                         ?.filter { it.type == MediaStreamType.SUBTITLE }
                         ?.map {
-                            SubtitleStream(it.index, it.language, it.title, it.codec, it.codecTag)
+                            SubtitleStream(
+                                it.index,
+                                it.language,
+                                it.title,
+                                it.codec,
+                                it.codecTag,
+                                it.isExternal,
+                            )
                         }.orEmpty()
                 val audioStreams =
                     base.mediaStreams
@@ -226,7 +234,7 @@ class PlaybackViewModel
                             allowAudioStreamCopy = true,
                             autoOpenLiveStream = true,
                             mediaSourceId = null,
-                            alwaysBurnInSubtitleWhenTranscoding = false,
+                            alwaysBurnInSubtitleWhenTranscoding = null,
                         ),
                     ).content
             val source = response.mediaSources.firstOrNull()
@@ -254,6 +262,33 @@ class PlaybackViewModel
                 val decision = StreamDecision(itemId, transcodeType, mediaUrl)
                 Timber.v("Playback decision: $decision")
 
+                val externalSubtitle =
+                    source.mediaStreams
+                        ?.firstOrNull { it.type == MediaStreamType.SUBTITLE && it.index == subtitleIndex && it.isExternal }
+                        ?.let {
+                            it.deliveryUrl?.let { deliveryUrl ->
+                                var flags = 0
+                                if (it.isForced) flags = flags.and(C.SELECTION_FLAG_FORCED)
+                                if (it.isDefault) flags = flags.and(C.SELECTION_FLAG_DEFAULT)
+                                MediaItem.SubtitleConfiguration
+                                    .Builder(
+                                        api.createUrl(deliveryUrl).toUri(),
+                                    ).setId("${it.index + 1}") // Indexes are 1 based
+                                    .setMimeType(subtitleMimeTypes[it.codec])
+                                    .setLanguage(it.language)
+                                    .setSelectionFlags(flags)
+                                    .build()
+                            }
+                        }
+
+                val mediaItem =
+                    MediaItem
+                        .Builder()
+                        .setMediaId(itemId.toString())
+                        .setUri(mediaUrl.toUri())
+                        .setSubtitleConfigurations(listOfNotNull(externalSubtitle))
+                        .build()
+
                 val playback =
                     CurrentPlayback(
                         itemId,
@@ -268,7 +303,7 @@ class PlaybackViewModel
                     stream.value = decision
                     currentPlayback.value = playback
                     player.setMediaItem(
-                        decision.mediaItem,
+                        mediaItem,
                         positionMs,
                     )
                     if (audioIndex != null || subtitleIndex != null) {
@@ -377,7 +412,7 @@ private fun applyTrackSelections(
                         (0..<group.mediaTrackGroup.length)
                             .map {
                                 group.getTrackFormat(it).idAsInt
-                            }.contains(subtitleIndex + 1)
+                            }.contains(subtitleIndex + 1) // Indexes are 1 based
                 }
             Timber.v("Chosen subtitle track: $chosenTrack")
             chosenTrack?.let {
@@ -406,7 +441,7 @@ private fun applyTrackSelections(
                         (0..<group.mediaTrackGroup.length)
                             .map {
                                 group.getTrackFormat(it).idAsInt
-                            }.contains(audioIndex + 1)
+                            }.contains(audioIndex + 1) // Indexes are 1 based
                 }
             Timber.v("Chosen audio track: $chosenTrack")
             chosenTrack?.let {
