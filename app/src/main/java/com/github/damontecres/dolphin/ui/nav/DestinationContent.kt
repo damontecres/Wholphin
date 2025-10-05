@@ -13,6 +13,7 @@ import com.github.damontecres.dolphin.ui.detail.VideoDetails
 import com.github.damontecres.dolphin.ui.detail.movie.MovieDetails
 import com.github.damontecres.dolphin.ui.detail.series.SeriesOverview
 import com.github.damontecres.dolphin.ui.main.HomePage
+import com.github.damontecres.dolphin.ui.main.SearchPage
 import com.github.damontecres.dolphin.ui.playback.PlaybackContent
 import com.github.damontecres.dolphin.ui.preferences.PreferenceScreenOption
 import com.github.damontecres.dolphin.ui.preferences.PreferencesPage
@@ -124,7 +125,12 @@ fun DestinationContent(
 
         Destination.License -> LicenseInfo(modifier)
 
-        Destination.Search -> TODO()
+        Destination.Search ->
+            SearchPage(
+                navigationManager = navigationManager,
+                userPreferences = preferences,
+                modifier = modifier,
+            )
         Destination.Setup -> TODO()
     }
 }
