@@ -12,7 +12,7 @@ import com.github.damontecres.dolphin.ui.detail.SeriesDetails
 import com.github.damontecres.dolphin.ui.detail.VideoDetails
 import com.github.damontecres.dolphin.ui.detail.movie.MovieDetails
 import com.github.damontecres.dolphin.ui.detail.series.SeriesOverview
-import com.github.damontecres.dolphin.ui.main.MainPage
+import com.github.damontecres.dolphin.ui.main.HomePage
 import com.github.damontecres.dolphin.ui.playback.PlaybackContent
 import com.github.damontecres.dolphin.ui.preferences.PreferenceScreenOption
 import com.github.damontecres.dolphin.ui.preferences.PreferencesPage
@@ -31,7 +31,7 @@ fun DestinationContent(
 ) {
     when (destination) {
         is Destination.Main ->
-            MainPage(
+            HomePage(
                 preferences = preferences,
                 navigationManager = navigationManager,
                 modifier = modifier,

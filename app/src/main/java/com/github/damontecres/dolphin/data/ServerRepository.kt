@@ -38,20 +38,6 @@ class ServerRepository
             changeServer(server)
         }
 
-        suspend fun addAndChangeUser(
-            server: JellyfinServer,
-            user: JellyfinUser,
-        ) {
-            if (server.id != user.serverId) {
-                throw IllegalStateException()
-            }
-            withContext(Dispatchers.IO) {
-                serverDao.addServer(server)
-                serverDao.addUser(user)
-            }
-            changeUser(server, user)
-        }
-
         fun changeServer(server: JellyfinServer) {
             apiClient.update(baseUrl = server.url, accessToken = null)
             _currentServer = server
@@ -60,10 +46,13 @@ class ServerRepository
         suspend fun changeUser(
             server: JellyfinServer,
             user: JellyfinUser,
-        ) {
-            Timber.v("Changing user to ${user.name} on ${server.url}")
-            apiClient.update(baseUrl = server.url, accessToken = user.accessToken)
+        ) = withContext(Dispatchers.IO) {
             try {
+                if (server.id != user.serverId) {
+                    throw IllegalStateException()
+                }
+                Timber.v("Changing user to ${user.name} on ${server.url}")
+                apiClient.update(baseUrl = server.url, accessToken = user.accessToken)
                 val userDto =
                     apiClient.userApi
                         .getCurrentUser()
@@ -75,21 +64,31 @@ class ServerRepository
                         id = userDto.id.toString(),
                         name = userDto.name,
                     )
-                withContext(Dispatchers.IO) {
-                    serverDao.addServer(updatedServer)
-                    serverDao.addUser(updatedUser)
+                serverDao.addServer(updatedServer)
+                serverDao.addUser(updatedUser)
+                userPreferencesDataStore.updateData {
+                    it
+                        .toBuilder()
+                        .apply {
+                            currentServerId = updatedServer.id
+                            currentUserId = updatedUser.id
+                        }.build()
                 }
-                _currentUserDto = userDto
-                _currentServer = updatedServer
-                _currentUser = updatedUser
+                withContext(Dispatchers.Main) {
+                    _currentUserDto = userDto
+                    _currentServer = updatedServer
+                    _currentUser = updatedUser
+                }
             } catch (e: InvalidStatusException) {
                 // TODO
                 Timber.e(e)
-                if (e.status == 401) {
+                withContext(Dispatchers.Main) {
                     // Unauthorized
                     _currentServer = null
                     _currentUser = null
-                    return
+                }
+                if (e.status == 401) {
+                    return@withContext
                 }
             }
         }
@@ -115,7 +114,7 @@ class ServerRepository
         suspend fun changeUser(
             serverUrl: String,
             authenticationResult: AuthenticationResult,
-        ) {
+        ) = withContext(Dispatchers.IO) {
             val accessToken = authenticationResult.accessToken
             if (accessToken != null) {
                 val authedUser = authenticationResult.user
@@ -138,15 +137,7 @@ class ServerRepository
                             )
                         }
                     if (user != null) {
-                        userPreferencesDataStore.updateData {
-                            it
-                                .toBuilder()
-                                .apply {
-                                    currentServerId = server.id
-                                    currentUserId = user.id
-                                }.build()
-                        }
-                        addAndChangeUser(server, user)
+                        changeUser(server, user)
                     }
                 }
             }

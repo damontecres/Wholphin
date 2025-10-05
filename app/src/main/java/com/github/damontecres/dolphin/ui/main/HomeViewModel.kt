@@ -27,7 +27,7 @@ import timber.log.Timber
 import javax.inject.Inject
 
 @HiltViewModel
-class MainViewModel
+class HomeViewModel
     @Inject
     constructor(
         val api: ApiClient,
@@ -135,7 +135,7 @@ class MainViewModel
                                             .getNextUp(request)
                                             .content
                                             .items
-                                            .map { BaseItem.Companion.from(it, api) }
+                                            .map { BaseItem.Companion.from(it, api, true) }
                                     listOf(
                                         HomeRow(
                                             section = section,
@@ -158,7 +158,7 @@ class MainViewModel
                         }.flatten()
                         .filter { it.items.isNotEmpty() }
                 withContext(Dispatchers.Main) {
-                    this@MainViewModel.homeRows.value = homeRows
+                    this@HomeViewModel.homeRows.value = homeRows
                     loadingState.value = LoadingState.Success
                 }
             }

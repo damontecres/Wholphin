@@ -51,6 +51,8 @@ fun ApplicationContent(
                         preferences = preferences,
                         navigationManager = navigationManager,
                         deviceProfile = deviceProfile,
+                        user = user,
+                        server = server,
                         modifier = modifier,
                     )
                 }

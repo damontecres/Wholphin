@@ -50,6 +50,8 @@ import androidx.tv.material3.Text
 import androidx.tv.material3.rememberDrawerState
 import androidx.tv.material3.surfaceColorAtElevation
 import com.github.damontecres.dolphin.R
+import com.github.damontecres.dolphin.data.JellyfinServer
+import com.github.damontecres.dolphin.data.JellyfinUser
 import com.github.damontecres.dolphin.data.ServerRepository
 import com.github.damontecres.dolphin.data.model.Library
 import com.github.damontecres.dolphin.preferences.UserPreferences
@@ -89,9 +91,15 @@ fun NavDrawer(
     destination: Destination,
     preferences: UserPreferences,
     navigationManager: NavigationManager,
+    user: JellyfinUser?,
+    server: JellyfinServer?,
     deviceProfile: DeviceProfile,
     modifier: Modifier = Modifier,
-    viewModel: NavDrawerViewModel = hiltViewModel(LocalView.current.findViewTreeViewModelStoreOwner()!!),
+    viewModel: NavDrawerViewModel =
+        hiltViewModel(
+            LocalView.current.findViewTreeViewModelStoreOwner()!!,
+            key = "${server?.id}_${user?.id}",
+        ),
 ) {
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val listState = rememberLazyListState()
@@ -102,8 +110,6 @@ fun NavDrawer(
         drawerState.setValue(DrawerValue.Open)
         drawerFocusRequester.requestFocus()
     }
-
-    val user = viewModel.serverRepository.currentUser
     val libraries by viewModel.libraries.observeAsState(listOf())
 
     NavigationDrawer(
@@ -125,6 +131,7 @@ fun NavDrawer(
                 ) {
                     IconNavItem(
                         text = user?.name ?: "",
+                        subtext = server?.name ?: server?.url,
                         icon = Icons.Default.AccountCircle,
                         onClick = { navigationManager.navigateTo(Destination.UserList) },
                     )
@@ -194,6 +201,7 @@ fun NavigationDrawerScope.IconNavItem(
     icon: ImageVector,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    subtext: String? = null,
 ) {
     NavigationDrawerItem(
         modifier = modifier,
@@ -205,6 +213,15 @@ fun NavigationDrawerScope.IconNavItem(
                 contentDescription = null,
             )
         },
+        supportingContent =
+            subtext?.let {
+                {
+                    Text(
+                        text = it,
+                        maxLines = 1,
+                    )
+                }
+            },
         interactionSource = null,
     ) {
         Text(

@@ -65,11 +65,11 @@ data class HomeRow(
 )
 
 @Composable
-fun MainPage(
+fun HomePage(
     preferences: UserPreferences,
     navigationManager: NavigationManager,
     modifier: Modifier,
-    viewModel: MainViewModel = hiltViewModel(),
+    viewModel: HomeViewModel = hiltViewModel(),
 ) {
     OneTimeLaunchedEffect {
         viewModel.init(preferences)
