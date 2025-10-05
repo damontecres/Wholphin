@@ -27,14 +27,17 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.tv.material3.Card
+import androidx.tv.material3.CardDefaults
 import androidx.tv.material3.Icon
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
@@ -43,6 +46,7 @@ import com.github.damontecres.dolphin.R
 import com.github.damontecres.dolphin.data.model.BaseItem
 import com.github.damontecres.dolphin.ui.FontAwesome
 import com.github.damontecres.dolphin.ui.enableMarquee
+import com.github.damontecres.dolphin.ui.ifElse
 import kotlinx.coroutines.delay
 import org.jellyfin.sdk.model.api.BaseItemKind
 
@@ -52,11 +56,11 @@ fun ItemCard(
     onClick: () -> Unit,
     onLongClick: () -> Unit,
     modifier: Modifier = Modifier,
-    cardWidth: Dp = 150.dp,
-    cardHeight: Dp = 200.dp,
+    cardWidth: Dp? = null,
+    cardHeight: Dp = 200.dp * .85f,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
 ) {
-    val hideOverlayDelay = 1_000L
+    val hideOverlayDelay = 750L
 
     val focused = interactionSource.collectIsFocusedAsState().value
     var focusedAfterDelay by remember { mutableStateOf(false) }
@@ -79,17 +83,21 @@ fun ItemCard(
     } else {
         val dto = item.data
         // TODO better aspect ratio handling
-        val height =
-            if (dto.primaryImageAspectRatio != null && dto.primaryImageAspectRatio!! > 1) cardWidth else cardHeight
+//        val height =
+//            if (dto.primaryImageAspectRatio != null && dto.primaryImageAspectRatio!! > 1) cardWidth else cardHeight
         Card(
             modifier = modifier,
             onClick = onClick,
             onLongClick = onLongClick,
             interactionSource = interactionSource,
+            colors =
+                CardDefaults.colors(
+                    containerColor = Color.Transparent,
+                ),
         ) {
             Column(
                 verticalArrangement = Arrangement.spacedBy(4.dp),
-                modifier = Modifier.width(cardWidth),
+                modifier = Modifier.ifElse(cardWidth != null, { Modifier.width(cardWidth!!) }),
             ) {
                 ItemCardImage(
                     imageUrl = item.imageUrl,
@@ -102,15 +110,33 @@ fun ItemCard(
                     modifier =
                         Modifier
                             .fillMaxWidth()
-                            .height(height),
+                            .height(cardHeight),
                 )
-                Text(
-                    text = item.name ?: "",
-                    maxLines = 1,
-                    modifier =
-                        Modifier
-                            .enableMarquee(focusedAfterDelay),
-                )
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(0.dp),
+                    modifier = Modifier.padding(bottom = 4.dp),
+                ) {
+                    Text(
+                        text = item.name ?: "",
+                        maxLines = 1,
+                        textAlign = TextAlign.Center,
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 4.dp)
+                                .enableMarquee(focusedAfterDelay),
+                    )
+                    Text(
+                        text = item.data.productionYear?.toString() ?: "",
+                        maxLines = 1,
+                        textAlign = TextAlign.Center,
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 4.dp)
+                                .enableMarquee(focusedAfterDelay),
+                    )
+                }
                 if (dto.type == BaseItemKind.EPISODE) {
                     if (dto.parentIndexNumber != null && dto.indexNumber != null) {
                         Text(
@@ -139,7 +165,11 @@ fun ItemCardImage(
             model = imageUrl,
             contentDescription = name,
             contentScale = ContentScale.Fit,
-            modifier = Modifier.fillMaxSize(),
+            alignment = Alignment.Center,
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .align(Alignment.TopCenter),
         )
         AnimatedVisibility(
             visible = showOverlay,

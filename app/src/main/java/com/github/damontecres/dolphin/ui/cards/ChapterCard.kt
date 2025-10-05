@@ -28,7 +28,7 @@ fun ChapterCard(
     imageUrl: String?,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    cardHeight: Dp = 140.dp,
+    cardHeight: Dp = 140.dp * .85f,
     aspectRatio: Float = 16f / 9,
     onLongClick: (() -> Unit)? = null,
     interactionSource: MutableInteractionSource? = null,

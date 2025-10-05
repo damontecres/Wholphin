@@ -2,19 +2,21 @@ package com.github.damontecres.dolphin.ui.cards
 
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.tv.material3.Card
 import androidx.tv.material3.Text
+import com.github.damontecres.dolphin.ui.ifElse
 
 @Composable
 fun NullCard(
     modifier: Modifier = Modifier,
-    cardWidth: Dp = 150.dp,
-    cardHeight: Dp = 200.dp,
+    cardWidth: Dp? = null,
+    cardHeight: Dp = 200.dp * .75f,
     interactionSource: MutableInteractionSource? = null,
 ) {
     Card(
@@ -23,7 +25,10 @@ fun NullCard(
         interactionSource = interactionSource,
     ) {
         Column(
-            modifier = Modifier.size(cardWidth, cardHeight),
+            modifier =
+                Modifier
+                    .height(cardHeight)
+                    .ifElse(cardWidth != null, { Modifier.width(cardWidth!!) }),
         ) {
             Text(
                 text = "Loading...",

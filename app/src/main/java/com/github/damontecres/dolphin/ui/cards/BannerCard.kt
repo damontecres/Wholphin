@@ -37,7 +37,7 @@ fun BannerCard(
     onClick: () -> Unit,
     onLongClick: () -> Unit,
     modifier: Modifier = Modifier,
-    cardHeight: Dp = 140.dp,
+    cardHeight: Dp = 140.dp * .85f,
     aspectRatio: Float = 16f / 9,
     interactionSource: MutableInteractionSource? = null,
 ) {
