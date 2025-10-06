@@ -45,4 +45,6 @@
     <string name="play_theme_music">Play theme music</string>
     <string name="license_info">License information</string>
     <string name="playback_debug_info">Show playback debug info</string>
+    <string name="auto_play_next_delay">Delay before playing next up</string>
+    <string name="auto_play_next">Auto play next up</string>
 </resources>

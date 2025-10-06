@@ -9,6 +9,8 @@ message PlaybackPreferences {
   int64 controller_timeout_ms = 3;
   int32 seek_bar_steps = 4;
   bool show_debug_info = 5;
+  bool auto_play_next = 6;
+  int64 auto_play_next_delay_seconds = 7;
 }
 
 message HomePagePreferences{

@@ -200,6 +200,38 @@ sealed interface AppPreference<T> {
                 summaryOff = R.string.hide,
             )
 
+        val AutoPlayNextUp =
+            AppSwitchPreference(
+                title = R.string.auto_play_next,
+                defaultValue = true,
+                getter = { it.playbackPreferences.autoPlayNext },
+                setter = { prefs, value ->
+                    prefs.updatePlaybackPreferences { autoPlayNext = value }
+                },
+                summaryOn = R.string.enabled,
+                summaryOff = R.string.disabled,
+            )
+
+        val AutoPlayNextDelay =
+            AppSliderPreference(
+                title = R.string.auto_play_next_delay,
+                defaultValue = 15,
+                min = 0,
+                max = 60,
+                interval = 5,
+                getter = { it.playbackPreferences.autoPlayNextDelaySeconds },
+                setter = { prefs, value ->
+                    prefs.updatePlaybackPreferences { autoPlayNextDelaySeconds = value }
+                },
+                summarizer = { value ->
+                    if (value == 0L) {
+                        "Immediate"
+                    } else {
+                        "$value seconds"
+                    }
+                },
+            )
+
         val InstalledVersion =
             AppClickablePreference(
                 title = R.string.installed_version,
@@ -256,6 +288,8 @@ val basicPreferences =
                     AppPreference.SkipForward,
                     AppPreference.SkipBack,
                     AppPreference.ControllerTimeout,
+                    AppPreference.AutoPlayNextUp,
+                    AppPreference.AutoPlayNextDelay,
                     AppPreference.PlaybackDebugInfo,
                 ),
         ),

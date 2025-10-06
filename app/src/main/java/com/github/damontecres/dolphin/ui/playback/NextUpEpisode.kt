@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PlayArrow
@@ -22,17 +23,22 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.tv.material3.Card
 import androidx.tv.material3.Icon
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import androidx.tv.material3.surfaceColorAtElevation
+import coil3.compose.AsyncImage
+import com.github.damontecres.dolphin.ui.AppColors
 import com.github.damontecres.dolphin.ui.PreviewTvSpec
-import com.github.damontecres.dolphin.ui.cards.BannerCard
 import com.github.damontecres.dolphin.ui.theme.DolphinTheme
 import com.github.damontecres.dolphin.ui.tryRequestFocus
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
 
 @Composable
 fun NextUpEpisode(
@@ -40,6 +46,7 @@ fun NextUpEpisode(
     description: String?,
     imageUrl: String?,
     onClick: () -> Unit,
+    timeLeft: Duration?,
     modifier: Modifier = Modifier,
     aspectRatio: Float = 16f / 9,
 ) {
@@ -67,28 +74,16 @@ fun NextUpEpisode(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.padding(8.dp),
             ) {
-                Box {
-                    BannerCard(
-                        imageUrl = imageUrl,
-                        onClick = onClick,
-                        onLongClick = {},
-                        cardHeight = 100.dp,
-                        aspectRatio = aspectRatio,
-                        modifier =
-                            Modifier
-                                .focusRequester(focusRequester)
-                                .align(Alignment.Center),
-                    )
-                    Icon(
-                        imageVector = Icons.Default.PlayArrow,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.border,
-                        modifier =
-                            Modifier
-                                .size(60.dp)
-                                .align(Alignment.Center),
-                    )
-                }
+                NextUpCard(
+                    imageUrl = imageUrl,
+                    onClick = onClick,
+                    timeLeft = timeLeft,
+                    modifier =
+                        Modifier
+                            .fillMaxWidth(.4f)
+                            .fillMaxHeight()
+                            .focusRequester(focusRequester),
+                )
                 Column(
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                     modifier = Modifier.fillMaxHeight(),
@@ -114,6 +109,56 @@ fun NextUpEpisode(
     }
 }
 
+@Composable
+fun NextUpCard(
+    imageUrl: String?,
+    onClick: () -> Unit,
+    timeLeft: Duration?,
+    modifier: Modifier = Modifier,
+) {
+    Card(
+        modifier = modifier,
+        onClick = onClick,
+    ) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            AsyncImage(
+                model = imageUrl,
+                contentDescription = null,
+                contentScale = ContentScale.Fit,
+                modifier = Modifier.fillMaxSize(),
+            )
+            if (timeLeft != null && timeLeft > Duration.ZERO) {
+                Box(
+                    modifier =
+                        Modifier
+                            .align(Alignment.Center)
+                            .background(
+                                AppColors.TransparentBlack50,
+                                shape = CircleShape,
+                            ),
+                ) {
+                    Text(
+                        text = timeLeft.toString(),
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.padding(8.dp),
+                    )
+                }
+            } else {
+                Icon(
+                    imageVector = Icons.Default.PlayArrow,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurface,
+                    modifier =
+                        Modifier
+                            .size(60.dp)
+                            .align(Alignment.Center),
+                )
+            }
+        }
+    }
+}
+
 @PreviewTvSpec
 @Composable
 fun NextUpEpisodePreview() {
@@ -124,6 +169,7 @@ fun NextUpEpisodePreview() {
             imageUrl = "",
             onClick = {},
             aspectRatio = 4f / 3,
+            timeLeft = 30.seconds,
             modifier =
                 Modifier
                     .padding(16.dp)

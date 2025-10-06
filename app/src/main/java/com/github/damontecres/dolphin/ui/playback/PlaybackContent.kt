@@ -62,8 +62,10 @@ import com.github.damontecres.dolphin.ui.components.LoadingPage
 import com.github.damontecres.dolphin.ui.nav.Destination
 import com.github.damontecres.dolphin.ui.nav.NavigationManager
 import com.github.damontecres.dolphin.ui.tryRequestFocus
+import kotlinx.coroutines.delay
 import org.jellyfin.sdk.model.api.DeviceProfile
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 
 @OptIn(UnstableApi::class)
 @Composable
@@ -322,12 +324,44 @@ fun PlaybackContent(
                             .align(Alignment.BottomCenter),
                 ) {
                     nextUp?.let {
+                        var autoPlayEnabled by
+                            remember {
+                                mutableStateOf(
+                                    preferences.appPreferences.playbackPreferences.autoPlayNext,
+                                )
+                            }
+                        var timeLeft by remember {
+                            mutableLongStateOf(
+                                preferences.appPreferences.playbackPreferences.autoPlayNextDelaySeconds,
+                            )
+                        }
+                        // TODO need extra back press for some reason
+                        BackHandler(timeLeft > 0 && autoPlayEnabled) {
+                            timeLeft = -1
+                            autoPlayEnabled = false
+                        }
+                        if (autoPlayEnabled) {
+                            LaunchedEffect(Unit) {
+                                if (timeLeft == 0L) {
+                                    viewModel.playUpNextEpisode()
+                                } else {
+                                    while (timeLeft > 0) {
+                                        delay(1.seconds)
+                                        timeLeft--
+                                    }
+                                    if (timeLeft == 0L && autoPlayEnabled) {
+                                        viewModel.playUpNextEpisode()
+                                    }
+                                }
+                            }
+                        }
                         NextUpEpisode(
                             title = it.name,
                             description = it.data.overview,
                             imageUrl = it.imageUrl,
                             aspectRatio = it.data.primaryImageAspectRatio?.toFloat() ?: (16f / 9),
                             onClick = { viewModel.playUpNextEpisode() },
+                            timeLeft = if (autoPlayEnabled) timeLeft.seconds else null,
                             modifier =
                                 Modifier
                                     .padding(8.dp)
