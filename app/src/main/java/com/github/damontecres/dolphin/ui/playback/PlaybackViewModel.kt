@@ -26,6 +26,7 @@ import com.github.damontecres.dolphin.util.TrackActivityPlaybackListener
 import com.github.damontecres.dolphin.util.TrackSupport
 import com.github.damontecres.dolphin.util.checkForSupport
 import com.github.damontecres.dolphin.util.formatDateTime
+import com.github.damontecres.dolphin.util.seasonEpisodePadded
 import com.github.damontecres.dolphin.util.subtitleMimeTypes
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -126,13 +127,8 @@ class PlaybackViewModel
                     }
                 val subtitle =
                     if (base.type == BaseItemKind.EPISODE) {
-                        val season = base.parentIndexNumber?.toString()?.padStart(2, '0')
-                        val episode = base.indexNumber?.toString()?.padStart(2, '0')
-                        // TODO multi episode support
                         buildList {
-                            if (season != null && episode != null) {
-                                add("S${season}E$episode")
-                            }
+                            add(base.seasonEpisodePadded)
                             add(base.name)
                             add(base.premiereDate?.let { formatDateTime(it) })
                         }.filterNotNull().joinToString(" - ")

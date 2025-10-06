@@ -32,6 +32,7 @@ import com.github.damontecres.dolphin.ui.playSoundOnFocus
 import com.github.damontecres.dolphin.ui.roundMinutes
 import com.github.damontecres.dolphin.ui.timeRemaining
 import com.github.damontecres.dolphin.util.formatDateTime
+import com.github.damontecres.dolphin.util.seasonEpisode
 import org.jellyfin.sdk.model.extensions.ticks
 
 @Composable
@@ -56,9 +57,7 @@ fun FocusedEpisodeHeader(
         ) {
             val details =
                 buildList {
-                    if (dto.parentIndexNumber != null && dto.indexNumber != null) {
-                        add("S${dto.parentIndexNumber} E${dto.indexNumber}")
-                    }
+                    dto.seasonEpisode?.let(::add)
                     dto.premiereDate?.let { add(formatDateTime(it)) }
                     val duration = dto.runTimeTicks?.ticks
                     duration

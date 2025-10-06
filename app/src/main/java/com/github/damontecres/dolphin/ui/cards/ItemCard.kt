@@ -47,6 +47,7 @@ import com.github.damontecres.dolphin.data.model.BaseItem
 import com.github.damontecres.dolphin.ui.FontAwesome
 import com.github.damontecres.dolphin.ui.enableMarquee
 import com.github.damontecres.dolphin.ui.ifElse
+import com.github.damontecres.dolphin.util.seasonEpisode
 import kotlinx.coroutines.delay
 import org.jellyfin.sdk.model.api.BaseItemKind
 
@@ -138,9 +139,9 @@ fun ItemCard(
                     )
                 }
                 if (dto.type == BaseItemKind.EPISODE) {
-                    if (dto.parentIndexNumber != null && dto.indexNumber != null) {
+                    dto.seasonEpisode?.let {
                         Text(
-                            text = "S${dto.parentIndexNumber} E${dto.indexNumber}",
+                            text = it,
                         )
                     }
                 }

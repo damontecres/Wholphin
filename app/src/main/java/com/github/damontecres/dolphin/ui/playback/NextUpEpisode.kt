@@ -1,6 +1,7 @@
 package com.github.damontecres.dolphin.ui.playback
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -50,6 +51,7 @@ fun NextUpEpisode(
     modifier: Modifier = Modifier,
     aspectRatio: Float = 16f / 9,
 ) {
+    val interactionSource = remember { MutableInteractionSource() }
     val focusRequester = remember { FocusRequester() }
     LaunchedEffect(Unit) { focusRequester.tryRequestFocus() }
     Box(
@@ -60,11 +62,11 @@ fun NextUpEpisode(
             modifier =
                 Modifier
                     .fillMaxSize()
-                    .padding(8.dp),
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
         ) {
             Text(
                 text = "Up Next...",
-                style = MaterialTheme.typography.titleSmall,
+                style = MaterialTheme.typography.titleLarge,
                 color = MaterialTheme.colorScheme.onSurface,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth(),
@@ -78,19 +80,23 @@ fun NextUpEpisode(
                     imageUrl = imageUrl,
                     onClick = onClick,
                     timeLeft = timeLeft,
+                    interactionSource = interactionSource,
                     modifier =
                         Modifier
-                            .fillMaxWidth(.4f)
-                            .fillMaxHeight()
+//                            .fillMaxWidth(.4f)
+//                            .fillMaxHeight()
                             .focusRequester(focusRequester),
                 )
                 Column(
                     verticalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.fillMaxHeight(),
+                    modifier =
+                        Modifier
+                            .fillMaxHeight()
+                            .weight(1f),
                 ) {
                     Text(
                         text = title ?: "",
-                        style = MaterialTheme.typography.bodyMedium,
+                        style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.onSurface,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
@@ -98,7 +104,7 @@ fun NextUpEpisode(
                     )
                     Text(
                         text = description ?: "",
-                        style = MaterialTheme.typography.bodySmall,
+                        style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurface,
                         overflow = TextOverflow.Ellipsis,
                         modifier = Modifier,
@@ -114,18 +120,20 @@ fun NextUpCard(
     imageUrl: String?,
     onClick: () -> Unit,
     timeLeft: Duration?,
+    interactionSource: MutableInteractionSource,
     modifier: Modifier = Modifier,
 ) {
     Card(
         modifier = modifier,
         onClick = onClick,
+        interactionSource = interactionSource,
     ) {
-        Box(modifier = Modifier.fillMaxSize()) {
+        Box(modifier = Modifier) {
             AsyncImage(
                 model = imageUrl,
                 contentDescription = null,
                 contentScale = ContentScale.Fit,
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier,
             )
             if (timeLeft != null && timeLeft > Duration.ZERO) {
                 Box(

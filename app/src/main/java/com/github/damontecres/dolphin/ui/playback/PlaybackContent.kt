@@ -62,6 +62,7 @@ import com.github.damontecres.dolphin.ui.components.LoadingPage
 import com.github.damontecres.dolphin.ui.nav.Destination
 import com.github.damontecres.dolphin.ui.nav.NavigationManager
 import com.github.damontecres.dolphin.ui.tryRequestFocus
+import com.github.damontecres.dolphin.util.seasonEpisode
 import kotlinx.coroutines.delay
 import org.jellyfin.sdk.model.api.DeviceProfile
 import kotlin.time.Duration.Companion.milliseconds
@@ -356,7 +357,11 @@ fun PlaybackContent(
                             }
                         }
                         NextUpEpisode(
-                            title = it.name,
+                            title =
+                                listOfNotNull(
+                                    it.data.seasonEpisode,
+                                    it.name,
+                                ).joinToString(" - "),
                             description = it.data.overview,
                             imageUrl = it.imageUrl,
                             aspectRatio = it.data.primaryImageAspectRatio?.toFloat() ?: (16f / 9),
@@ -366,8 +371,8 @@ fun PlaybackContent(
                                 Modifier
                                     .padding(8.dp)
 //                                    .height(128.dp)
-                                    .fillMaxHeight(.3f)
-                                    .fillMaxWidth(.5f)
+                                    .fillMaxHeight(.5f)
+                                    .fillMaxWidth(.66f)
                                     .align(Alignment.BottomCenter)
                                     .background(
                                         MaterialTheme.colorScheme.surfaceColorAtElevation(2.dp),

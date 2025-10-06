@@ -35,6 +35,7 @@ import com.github.damontecres.dolphin.ui.isNotNullOrBlank
 import com.github.damontecres.dolphin.ui.nav.Destination
 import com.github.damontecres.dolphin.ui.nav.NavigationManager
 import com.github.damontecres.dolphin.util.LoadingState
+import com.github.damontecres.dolphin.util.seasonEpisode
 import dagger.hilt.android.lifecycle.HiltViewModel
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.model.api.ImageType
@@ -100,9 +101,7 @@ fun EpisodeDetailsContent(
 
     val details =
         buildList {
-            if (dto.parentIndexNumber != null && dto.indexNumber != null) {
-                add("S${dto.parentIndexNumber} E${dto.indexNumber}")
-            }
+            dto.seasonEpisode?.let(::add)
             dto.mediaSources?.firstOrNull()?.runTimeTicks?.ticks?.inWholeMinutes?.toString()?.let {
                 add(it)
             }

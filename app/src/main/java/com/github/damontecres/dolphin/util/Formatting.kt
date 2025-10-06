@@ -1,6 +1,7 @@
 package com.github.damontecres.dolphin.util
 
 import android.os.Build
+import org.jellyfin.sdk.model.api.BaseItemDto
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
@@ -13,3 +14,22 @@ fun formatDateTime(dateTime: LocalDateTime): String =
     } else {
         dateTime.toString()
     }
+
+// TODO multi episode support
+val BaseItemDto.seasonEpisode: String?
+    get() =
+        if (parentIndexNumber != null && indexNumber != null) {
+            "S$parentIndexNumber E$indexNumber"
+        } else {
+            null
+        }
+
+val BaseItemDto.seasonEpisodePadded: String?
+    get() =
+        if (parentIndexNumber != null && indexNumber != null) {
+            val season = parentIndexNumber?.toString()?.padStart(2, '0')
+            val episode = indexNumber?.toString()?.padStart(2, '0')
+            "S${season}E$episode"
+        } else {
+            null
+        }
