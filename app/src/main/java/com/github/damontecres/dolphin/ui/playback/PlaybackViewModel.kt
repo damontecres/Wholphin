@@ -30,8 +30,6 @@ import com.github.damontecres.dolphin.util.subtitleMimeTypes
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
@@ -54,9 +52,6 @@ import timber.log.Timber
 import java.util.UUID
 import javax.inject.Inject
 import kotlin.time.Duration
-import kotlin.time.Duration.Companion.milliseconds
-import kotlin.time.Duration.Companion.minutes
-import kotlin.time.Duration.Companion.seconds
 
 enum class TranscodeType {
     DIRECT_PLAY,
@@ -451,23 +446,40 @@ class PlaybackViewModel
                 Timber.v("Current episode is $currentEpisodeIndex of ${episodes.size}")
                 val nextIndex = currentEpisodeIndex + 1
                 if (nextIndex < episodes.size) {
-                    viewModelScope.launch(Dispatchers.IO) {
-                        while (this.isActive) {
-                            delay(5.seconds)
-                            val remaining =
-                                withContext(Dispatchers.Main) {
-                                    (player.duration - player.currentPosition).milliseconds
+                    val listener =
+                        object : Player.Listener {
+                            override fun onPlaybackStateChanged(playbackState: Int) {
+                                if (playbackState == Player.STATE_ENDED) {
+                                    viewModelScope.launch(Dispatchers.IO) {
+                                        val nextItem = episodes.getBlocking(nextIndex)
+                                        Timber.v("Setting next up episode to ${nextItem?.id}")
+                                        withContext(Dispatchers.Main) {
+                                            nextUpEpisode.value = nextItem
+                                        }
+                                    }
+                                    player.removeListener(this)
                                 }
-                            if (remaining < 2.minutes) { // TODO time & preference
-                                val nextItem = episodes.getBlocking(nextIndex)
-                                Timber.v("Setting next up episode to ${nextItem?.id}")
-                                withContext(Dispatchers.Main) {
-                                    nextUpEpisode.value = nextItem
-                                }
-                                break
                             }
                         }
-                    }
+                    player.addListener(listener)
+
+//                    viewModelScope.launch(Dispatchers.IO) {
+//                        while (this.isActive) {
+//                            delay(5.seconds)
+//                            val remaining =
+//                                withContext(Dispatchers.Main) {
+//                                    (player.duration - player.currentPosition).milliseconds
+//                                }
+//                            if (remaining < 2.minutes) { // TODO time & preference
+//                                val nextItem = episodes.getBlocking(nextIndex)
+//                                Timber.v("Setting next up episode to ${nextItem?.id}")
+//                                withContext(Dispatchers.Main) {
+//                                    nextUpEpisode.value = nextItem
+//                                }
+//                                break
+//                            }
+//                        }
+//                    }
                 }
             }
         }

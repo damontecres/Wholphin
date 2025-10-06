@@ -11,11 +11,13 @@ import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -53,6 +55,7 @@ import androidx.media3.ui.compose.state.rememberPlayPauseButtonState
 import androidx.media3.ui.compose.state.rememberPresentationState
 import androidx.media3.ui.compose.state.rememberPreviousButtonState
 import androidx.tv.material3.MaterialTheme
+import androidx.tv.material3.surfaceColorAtElevation
 import com.github.damontecres.dolphin.preferences.UserPreferences
 import com.github.damontecres.dolphin.ui.OneTimeLaunchedEffect
 import com.github.damontecres.dolphin.ui.components.LoadingPage
@@ -320,14 +323,22 @@ fun PlaybackContent(
                 ) {
                     nextUp?.let {
                         NextUpEpisode(
-                            ep = it,
+                            title = it.name,
+                            description = it.data.overview,
+                            imageUrl = it.imageUrl,
+                            aspectRatio = it.data.primaryImageAspectRatio?.toFloat() ?: (16f / 9),
                             onClick = { viewModel.playUpNextEpisode() },
                             modifier =
                                 Modifier
-                                    .padding(16.dp)
-                                    .height(128.dp)
-                                    .fillMaxWidth(.4f)
-                                    .align(Alignment.BottomCenter),
+                                    .padding(8.dp)
+//                                    .height(128.dp)
+                                    .fillMaxHeight(.3f)
+                                    .fillMaxWidth(.5f)
+                                    .align(Alignment.BottomCenter)
+                                    .background(
+                                        MaterialTheme.colorScheme.surfaceColorAtElevation(2.dp),
+                                        shape = RoundedCornerShape(8.dp),
+                                    ),
                         )
                     }
                 }

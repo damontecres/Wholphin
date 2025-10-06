@@ -31,12 +31,12 @@ import com.github.damontecres.dolphin.ui.isNotNullOrBlank
 @Composable
 fun BannerCard(
     imageUrl: String?,
-    cornerText: String?,
-    played: Boolean,
-    playPercent: Double,
     onClick: () -> Unit,
     onLongClick: () -> Unit,
     modifier: Modifier = Modifier,
+    cornerText: String? = null,
+    played: Boolean = false,
+    playPercent: Double = 0.0,
     cardHeight: Dp = 140.dp * .85f,
     aspectRatio: Float = 16f / 9,
     interactionSource: MutableInteractionSource? = null,
