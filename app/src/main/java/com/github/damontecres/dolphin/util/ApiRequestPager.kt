@@ -144,6 +144,7 @@ class ApiRequestPager<T>(
     private val scope: CoroutineScope,
     private val pageSize: Int = DEFAULT_PAGE_SIZE,
     cacheSize: Long = 8,
+    private val useSeriesForPrimary: Boolean = false,
 ) : AbstractList<BaseItem?>(),
     BlockingList<BaseItem?> {
     private var items by mutableStateOf(ItemList<BaseItem>(0, pageSize, mapOf()))
@@ -217,7 +218,7 @@ class ApiRequestPager<T>(
                             false,
                         )
                     val result = requestHandler.execute(api, newRequest).content
-                    val data = result.items.map { BaseItem.from(it, api) }
+                    val data = result.items.map { BaseItem.from(it, api, useSeriesForPrimary) }
                     cachedPages.put(pageNumber, data)
                     items = ItemList(totalCount, pageSize, cachedPages.asMap())
                 }

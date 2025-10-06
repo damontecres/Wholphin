@@ -163,44 +163,46 @@ fun HomePageContent(
                 modifier = Modifier,
             ) {
                 itemsIndexed(homeRows) { rowIndex, row ->
-                    ItemRow(
-                        title = row.title ?: stringResource(row.section.nameRes),
-                        items = row.items,
-                        onClickItem = {
-                            navigationManager.navigateTo(it.destination())
-                        },
-                        cardOnFocus = { isFocused, index ->
-                            if (isFocused) {
-                                focusedItem = row.items.getOrNull(index)
-                                position = RowColumn(rowIndex, index)
-                            }
-                        },
-                        onLongClickItem = {},
-                        modifier = Modifier.fillMaxWidth(),
-                        cardContent = { index, item, modifier, onClick, onLongClick ->
-                            // TODO better aspect ration handling?
-                            BannerCard(
-                                imageUrl = item?.imageUrl,
-                                aspectRatio = (2f / 3f),
-                                cornerText = item?.data?.indexNumber?.let { "E$it" },
-                                played = item?.data?.userData?.played ?: false,
-                                playPercent = item?.data?.userData?.playedPercentage ?: 0.0,
-                                onClick = onClick,
-                                onLongClick = onLongClick,
-                                modifier =
-                                    modifier
-                                        .ifElse(
-                                            focusedItem == item,
-                                            Modifier.focusRequester(focusRequester),
-                                        ).ifElse(
-                                            RowColumn(rowIndex, index) == position,
-                                            Modifier.focusRequester(positionFocusRequester),
-                                        ),
-                                interactionSource = null,
-                                cardHeight = 200.dp,
-                            )
-                        },
-                    )
+                    if (row.items.isNotEmpty()) {
+                        ItemRow(
+                            title = row.title ?: stringResource(row.section.nameRes),
+                            items = row.items,
+                            onClickItem = {
+                                navigationManager.navigateTo(it.destination())
+                            },
+                            cardOnFocus = { isFocused, index ->
+                                if (isFocused) {
+                                    focusedItem = row.items.getOrNull(index)
+                                    position = RowColumn(rowIndex, index)
+                                }
+                            },
+                            onLongClickItem = {},
+                            modifier = Modifier.fillMaxWidth(),
+                            cardContent = { index, item, modifier, onClick, onLongClick ->
+                                // TODO better aspect ration handling?
+                                BannerCard(
+                                    imageUrl = item?.imageUrl,
+                                    aspectRatio = (2f / 3f),
+                                    cornerText = item?.data?.indexNumber?.let { "E$it" },
+                                    played = item?.data?.userData?.played ?: false,
+                                    playPercent = item?.data?.userData?.playedPercentage ?: 0.0,
+                                    onClick = onClick,
+                                    onLongClick = onLongClick,
+                                    modifier =
+                                        modifier
+                                            .ifElse(
+                                                focusedItem == item,
+                                                Modifier.focusRequester(focusRequester),
+                                            ).ifElse(
+                                                RowColumn(rowIndex, index) == position,
+                                                Modifier.focusRequester(positionFocusRequester),
+                                            ),
+                                    interactionSource = null,
+                                    cardHeight = 200.dp,
+                                )
+                            },
+                        )
+                    }
                 }
             }
         }

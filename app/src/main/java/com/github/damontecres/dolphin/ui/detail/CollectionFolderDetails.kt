@@ -135,6 +135,7 @@ fun CollectionFolderDetails(
             ItemSortBy.SORT_NAME,
             SortOrder.ASCENDING,
         ),
+    showTitle: Boolean = true,
 ) {
     OneTimeLaunchedEffect {
         viewModel.init(destination.itemId, destination.item, initialSortAndDirection)
@@ -161,6 +162,7 @@ fun CollectionFolderDetails(
                     onSortChange = {
                         viewModel.loadResults(it)
                     },
+                    showTitle = showTitle,
                 )
             }
         }
@@ -177,6 +179,7 @@ fun CollectionDetails(
     sortAndDirection: SortAndDirection,
     onSortChange: (SortAndDirection) -> Unit,
     modifier: Modifier = Modifier,
+    showTitle: Boolean = true,
 ) {
     val title = library.name ?: item.data.name ?: item.data.collectionType?.name ?: "Collection"
     val sortOptions =
@@ -193,13 +196,15 @@ fun CollectionDetails(
         verticalArrangement = Arrangement.spacedBy(0.dp),
         modifier = modifier,
     ) {
-        Text(
-            text = title,
-            style = MaterialTheme.typography.displayMedium,
-            color = MaterialTheme.colorScheme.onBackground,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.fillMaxWidth(),
-        )
+        if (showTitle) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.displayMedium,
+                color = MaterialTheme.colorScheme.onBackground,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
         SortByButton(
             sortOptions = sortOptions,
             current = sortAndDirection,

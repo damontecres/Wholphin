@@ -53,7 +53,7 @@ import com.github.damontecres.dolphin.R
 import com.github.damontecres.dolphin.data.JellyfinServer
 import com.github.damontecres.dolphin.data.JellyfinUser
 import com.github.damontecres.dolphin.data.ServerRepository
-import com.github.damontecres.dolphin.data.model.Library
+import com.github.damontecres.dolphin.data.model.BaseItem
 import com.github.damontecres.dolphin.preferences.UserPreferences
 import com.github.damontecres.dolphin.ui.FontAwesome
 import com.github.damontecres.dolphin.util.ExceptionHandler
@@ -72,7 +72,7 @@ class NavDrawerViewModel
         val serverRepository: ServerRepository,
         val api: ApiClient,
     ) : ViewModel() {
-        val libraries = MutableLiveData<List<Library>>(listOf())
+        val libraries = MutableLiveData<List<BaseItem>>(listOf())
 
         init {
             viewModelScope.launch(ExceptionHandler()) {
@@ -81,7 +81,7 @@ class NavDrawerViewModel
                         .getUserViews()
                         .content.items
 //                Timber.v("userViews: $userViews")
-                libraries.value = userViews.map { Library.fromDto(it, api) }
+                libraries.value = userViews.map { BaseItem.from(it, api) }
             }
         }
     }
@@ -164,12 +164,7 @@ fun NavDrawer(
                             LibraryNavItem(
                                 library = it,
                                 onClick = {
-                                    navigationManager.navigateTo(
-                                        Destination.MediaItem(
-                                            it.id,
-                                            it.type,
-                                        ),
-                                    )
+                                    navigationManager.navigateTo(it.destination())
                                 },
                             )
                         }
@@ -234,13 +229,13 @@ fun NavigationDrawerScope.IconNavItem(
 
 @Composable
 fun NavigationDrawerScope.LibraryNavItem(
-    library: Library,
+    library: BaseItem,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     // TODO
     val icon =
-        when (library.collectionType) {
+        when (library.data.collectionType) {
             CollectionType.MOVIES -> R.string.fa_film
             CollectionType.TVSHOWS -> R.string.fa_tv
             CollectionType.HOMEVIDEOS -> R.string.fa_video

@@ -6,6 +6,8 @@ import androidx.tv.material3.Text
 import com.github.damontecres.dolphin.preferences.UserPreferences
 import com.github.damontecres.dolphin.ui.components.LicenseInfo
 import com.github.damontecres.dolphin.ui.detail.CollectionFolderDetails
+import com.github.damontecres.dolphin.ui.detail.CollectionFolderMovie
+import com.github.damontecres.dolphin.ui.detail.CollectionFolderTv
 import com.github.damontecres.dolphin.ui.detail.EpisodeDetails
 import com.github.damontecres.dolphin.ui.detail.SeasonDetails
 import com.github.damontecres.dolphin.ui.detail.SeriesDetails
@@ -20,6 +22,7 @@ import com.github.damontecres.dolphin.ui.preferences.PreferencesPage
 import com.github.damontecres.dolphin.ui.setup.SwitchServerContent
 import com.github.damontecres.dolphin.ui.setup.SwitchUserContent
 import org.jellyfin.sdk.model.api.BaseItemKind
+import org.jellyfin.sdk.model.api.CollectionType
 import org.jellyfin.sdk.model.api.DeviceProfile
 
 @Composable
@@ -110,12 +113,31 @@ fun DestinationContent(
                     )
 
                 BaseItemKind.COLLECTION_FOLDER -> {
-                    CollectionFolderDetails(
-                        preferences,
-                        navigationManager,
-                        destination,
-                        modifier,
-                    )
+                    when (destination.item?.data?.collectionType) {
+                        CollectionType.TVSHOWS ->
+                            CollectionFolderTv(
+                                preferences,
+                                navigationManager,
+                                destination,
+                                modifier,
+                            )
+
+                        CollectionType.MOVIES ->
+                            CollectionFolderMovie(
+                                preferences,
+                                navigationManager,
+                                destination,
+                                modifier,
+                            )
+
+                        else ->
+                            CollectionFolderDetails(
+                                preferences,
+                                navigationManager,
+                                destination,
+                                modifier,
+                            )
+                    }
                 }
 
                 else -> {

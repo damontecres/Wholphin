@@ -53,7 +53,8 @@ sealed class Destination(
         @Transient val item: BaseItem? = null,
         val seasonEpisode: SeasonEpisode? = null,
     ) : Destination() {
-        override fun toString(): String = "MediaItem(itemId=$itemId, type=$type, seasonEpisode=$seasonEpisode)"
+        override fun toString(): String =
+            "MediaItem(itemId=$itemId, type=$type, seasonEpisode=$seasonEpisode, collectionType=${item?.data?.collectionType})"
     }
 
     @Serializable
