@@ -176,15 +176,16 @@ sealed interface AppPreference<T> {
             )
 
         val PlayThemeMusic =
-            AppSwitchPreference(
+            AppChoicePreference<ThemeSongVolume>(
                 title = R.string.play_theme_music,
-                defaultValue = true,
+                defaultValue = ThemeSongVolume.MEDIUM,
                 getter = { it.interfacePreferences.playThemeSongs },
                 setter = { prefs, value ->
                     prefs.updateInterfacePreferences { playThemeSongs = value }
                 },
-                summaryOn = R.string.enabled,
-                summaryOff = R.string.disabled,
+                displayValues = R.array.theme_song_volume,
+                indexToValue = { ThemeSongVolume.forNumber(it) },
+                valueToIndex = { it.number },
             )
 
         val PlaybackDebugInfo =
@@ -199,6 +200,12 @@ sealed interface AppPreference<T> {
                 summaryOff = R.string.hide,
             )
 
+        val InstalledVersion =
+            AppClickablePreference(
+                title = R.string.installed_version,
+                getter = { },
+                setter = { prefs, _ -> prefs },
+            )
 //        val AutoCheckForUpdates =
 //            AppSwitchPreference(
 //                title = R.string.check_for_updates,
@@ -237,15 +244,27 @@ val basicPreferences =
             title = R.string.basic_interface,
             preferences =
                 listOf(
-                    AppPreference.SkipForward,
-                    AppPreference.SkipBack,
-                    AppPreference.ControllerTimeout,
-                    AppPreference.SeekBarSteps,
                     AppPreference.HomePageItems,
                     AppPreference.RewatchNextUp,
                     AppPreference.PlayThemeMusic,
-                    AppPreference.OssLicenseInfo,
+                ),
+        ),
+        PreferenceGroup(
+            title = R.string.playback,
+            preferences =
+                listOf(
+                    AppPreference.SkipForward,
+                    AppPreference.SkipBack,
+                    AppPreference.ControllerTimeout,
                     AppPreference.PlaybackDebugInfo,
+                ),
+        ),
+        PreferenceGroup(
+            title = R.string.about,
+            preferences =
+                listOf(
+                    AppPreference.InstalledVersion,
+                    AppPreference.OssLicenseInfo,
                 ),
         ),
     )

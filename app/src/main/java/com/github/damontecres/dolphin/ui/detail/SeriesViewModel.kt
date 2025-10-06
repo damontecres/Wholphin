@@ -14,6 +14,8 @@ import com.github.damontecres.dolphin.data.model.BaseItem
 import com.github.damontecres.dolphin.data.model.Person
 import com.github.damontecres.dolphin.data.model.Video
 import com.github.damontecres.dolphin.hilt.AuthOkHttpClient
+import com.github.damontecres.dolphin.preferences.ThemeSongVolume
+import com.github.damontecres.dolphin.preferences.UserPreferences
 import com.github.damontecres.dolphin.ui.letNotEmpty
 import com.github.damontecres.dolphin.util.ApiRequestPager
 import com.github.damontecres.dolphin.util.ExceptionHandler
@@ -59,6 +61,7 @@ class SeriesViewModel
         val people = MutableLiveData<List<Person>>(listOf())
 
         fun init(
+            prefs: UserPreferences,
             itemId: UUID,
             potential: BaseItem?,
             season: Int?,
@@ -89,7 +92,7 @@ class SeriesViewModel
                                     people.map { Person.fromDto(it, api) }
                                 }.orEmpty()
                     }
-                    maybePlayThemeSong()
+                    maybePlayThemeSong(prefs.appPreferences.interfacePreferences.playThemeSongs)
                 } else {
                     withContext(Dispatchers.Main) {
                         seasons.value = ItemListAndMapping.empty()
@@ -101,8 +104,19 @@ class SeriesViewModel
         }
 
         @OptIn(UnstableApi::class)
-        private fun maybePlayThemeSong() {
-            // TODO user preference to enable/disable this
+        private fun maybePlayThemeSong(playThemeSongs: ThemeSongVolume) {
+            val volume =
+                when (playThemeSongs) {
+                    ThemeSongVolume.UNRECOGNIZED,
+                    ThemeSongVolume.DISABLED,
+                    -> return
+
+                    ThemeSongVolume.LOWEST -> .1f
+                    ThemeSongVolume.LOW -> .25f
+                    ThemeSongVolume.MEDIUM -> .5f
+                    ThemeSongVolume.HIGH -> .75f
+                    ThemeSongVolume.HIGHEST -> 1f
+                }
             viewModelScope.launch(ExceptionHandler()) {
                 val themeSongs = api.libraryApi.getThemeSongs(seriesId).content
                 themeSongs.items.firstOrNull()?.let { theme ->
@@ -123,7 +137,7 @@ class SeriesViewModel
                                         ),
                                     ).build()
                                     .apply {
-                                        volume = .1f
+                                        this.volume = volume
                                         playWhenReady = true
                                         this@SeriesViewModel.player = this
                                     }

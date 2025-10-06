@@ -16,8 +16,17 @@ message HomePagePreferences{
   bool enable_rewatching_next_up = 2;
 }
 
+enum ThemeSongVolume {
+  DISABLED = 0;
+  LOWEST = 1;
+  LOW = 2;
+  MEDIUM = 3;
+  HIGH = 4;
+  HIGHEST = 5;
+}
+
 message InterfacePreferences {
-  bool play_theme_songs = 1;
+  ThemeSongVolume play_theme_songs = 1;
 }
 
 message AppPreferences {

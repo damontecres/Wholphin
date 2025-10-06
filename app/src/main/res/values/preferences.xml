@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="theme_song_volume">
+        <item>Disabled</item>
+        <item>Lowest</item>
+        <item>Low</item>
+        <item>Medium</item>
+        <item>High</item>
+        <item>Full</item>
+    </string-array>
+
+</resources>

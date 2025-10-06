@@ -57,6 +57,7 @@ fun SeriesOverview(
     OneTimeLaunchedEffect {
         Timber.v("SeriesDetailParent: itemId=${destination.itemId}, initialSeasonEpisode=$initialSeasonEpisode")
         viewModel.init(
+            preferences,
             destination.itemId,
             destination.item,
             initialSeasonEpisode?.season,

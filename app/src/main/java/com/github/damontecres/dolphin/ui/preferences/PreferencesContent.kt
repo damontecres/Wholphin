@@ -20,6 +20,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -76,7 +77,8 @@ fun PreferencesContent(
     }
 
     val movementSounds = true
-    val installedVersion = remember { "v1.0.0" }
+    val installedVersion =
+        remember { context.packageManager.getPackageInfo(context.packageName, 0).versionName }
     var updateVersion by remember { mutableStateOf<Release?>(null) }
     val updateAvailable = false
 //        remember(updateVersion) { updateVersion?.version?.isGreaterThan(installedVersion) == true }
@@ -188,27 +190,27 @@ fun PreferencesContent(
                             }
                         }
                         when (pref) {
-//                            AppPreference.InstalledVersion -> {
-//                                var clickCount by remember { mutableIntStateOf(0) }
-//                                ClickPreference(
-//                                    title = stringResource(R.string.installed_version),
-//                                    onClick = {
-//                                        if (movementSounds) playOnClickSound(context)
-//                                        if (clickCount++ >= 2) {
-//                                            clickCount = 0
-// //                                            navigationManager.navigateTo(Destination.Debug)
-//                                        }
-//                                    },
-//                                    summary = installedVersion.toString(),
-//                                    interactionSource = interactionSource,
-//                                    modifier =
-//                                        Modifier
-//                                            .ifElse(
-//                                                groupIndex == focusedIndex.first && prefIndex == focusedIndex.second,
-//                                                Modifier.focusRequester(focusRequester),
-//                                            ),
-//                                )
-//                            }
+                            AppPreference.InstalledVersion -> {
+                                var clickCount by remember { mutableIntStateOf(0) }
+                                ClickPreference(
+                                    title = stringResource(R.string.installed_version),
+                                    onClick = {
+                                        if (movementSounds) playOnClickSound(context)
+                                        if (clickCount++ >= 2) {
+                                            clickCount = 0
+                                            //                                            navigationManager.navigateTo(Destination.Debug)
+                                        }
+                                    },
+                                    summary = installedVersion.toString(),
+                                    interactionSource = interactionSource,
+                                    modifier =
+                                        Modifier
+                                            .ifElse(
+                                                groupIndex == focusedIndex.first && prefIndex == focusedIndex.second,
+                                                Modifier.focusRequester(focusRequester),
+                                            ),
+                                )
+                            }
 
 //                            AppPreference.Update -> {
 //                                ClickPreference(

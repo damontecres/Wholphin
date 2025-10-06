@@ -66,7 +66,7 @@ fun SeriesDetails(
     viewModel: SeriesViewModel = hiltViewModel(),
 ) {
     LaunchedEffect(Unit) {
-        viewModel.init(destination.itemId, destination.item, null, null)
+        viewModel.init(preferences, destination.itemId, destination.item, null, null)
     }
     val loading by viewModel.loading.observeAsState(LoadingState.Loading)
 
