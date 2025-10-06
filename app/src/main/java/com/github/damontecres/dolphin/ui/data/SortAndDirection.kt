@@ -1,5 +1,7 @@
 package com.github.damontecres.dolphin.ui.data
 
+import androidx.annotation.StringRes
+import com.github.damontecres.dolphin.R
 import org.jellyfin.sdk.model.api.ItemSortBy
 import org.jellyfin.sdk.model.api.SortOrder
 
@@ -15,13 +17,9 @@ fun SortOrder.flip() = if (this == SortOrder.ASCENDING) SortOrder.DESCENDING els
 val MovieSortOptions =
     listOf(
         ItemSortBy.SORT_NAME,
-        ItemSortBy.PRODUCTION_YEAR,
-        ItemSortBy.COMMUNITY_RATING,
+        ItemSortBy.PREMIERE_DATE,
         ItemSortBy.DATE_CREATED,
         ItemSortBy.DATE_PLAYED,
-        ItemSortBy.PLAY_COUNT,
-        ItemSortBy.STUDIO,
-        ItemSortBy.OFFICIAL_RATING,
         ItemSortBy.RANDOM,
     )
 
@@ -29,12 +27,9 @@ val SeriesSortOptions =
     listOf(
         ItemSortBy.SORT_NAME,
         ItemSortBy.PREMIERE_DATE,
-        ItemSortBy.COMMUNITY_RATING,
         ItemSortBy.DATE_CREATED,
         ItemSortBy.DATE_LAST_CONTENT_ADDED,
         ItemSortBy.DATE_PLAYED,
-        ItemSortBy.STUDIO,
-        ItemSortBy.OFFICIAL_RATING,
         ItemSortBy.RANDOM,
     )
 
@@ -45,3 +40,15 @@ val VideoSortOptions =
         ItemSortBy.DATE_PLAYED,
         ItemSortBy.RANDOM,
     )
+
+@StringRes
+fun getStringRes(sort: ItemSortBy): Int =
+    when (sort) {
+        ItemSortBy.SORT_NAME -> R.string.sort_by_name
+        ItemSortBy.PREMIERE_DATE -> R.string.sort_by_date_released
+        ItemSortBy.DATE_CREATED -> R.string.sort_by_date_added
+        ItemSortBy.DATE_LAST_CONTENT_ADDED -> R.string.sort_by_date_episode_added
+        ItemSortBy.DATE_PLAYED -> R.string.sort_by_date_played
+        ItemSortBy.RANDOM -> R.string.sort_by_random
+        else -> throw IllegalArgumentException("Unsupported sort option: $sort")
+    }

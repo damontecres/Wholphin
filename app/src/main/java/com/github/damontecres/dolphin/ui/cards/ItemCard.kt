@@ -50,6 +50,7 @@ import com.github.damontecres.dolphin.ui.ifElse
 import com.github.damontecres.dolphin.util.seasonEpisode
 import kotlinx.coroutines.delay
 import org.jellyfin.sdk.model.api.BaseItemKind
+import timber.log.Timber
 
 @Composable
 fun ItemCard(
@@ -167,6 +168,12 @@ fun ItemCardImage(
             contentDescription = name,
             contentScale = ContentScale.Fit,
             alignment = Alignment.Center,
+            // TODO error/fallback images
+            error = null,
+            fallback = null,
+            onError = {
+                Timber.e(it.result.throwable, "Error loading image: $imageUrl")
+            },
             modifier =
                 Modifier
                     .fillMaxSize()

@@ -21,6 +21,7 @@ import com.github.damontecres.dolphin.R
 import com.github.damontecres.dolphin.ui.FontAwesome
 import com.github.damontecres.dolphin.ui.data.SortAndDirection
 import com.github.damontecres.dolphin.ui.data.flip
+import com.github.damontecres.dolphin.ui.data.getStringRes
 import org.jellyfin.sdk.model.api.ItemSortBy
 import org.jellyfin.sdk.model.api.SortOrder
 
@@ -32,6 +33,7 @@ fun SortByButton(
     modifier: Modifier = Modifier,
 ) {
     val currentSort = current.sort
+    val name = stringResource(getStringRes(currentSort))
     val currentDirection = current.direction
     var sortByDropDown by remember { mutableStateOf(false) }
     val context = LocalContext.current
@@ -58,7 +60,7 @@ fun SortByButton(
                             )
                         }
                         append(" ")
-                        append(currentSort.name) // TODO names
+                        append(name)
                     },
             )
         }
@@ -69,7 +71,7 @@ fun SortByButton(
             onDismissRequest = { sortByDropDown = false },
         ) {
             sortOptions
-                .sortedBy { it.name }
+//                .sortedBy { it.name }
                 .forEach { sortOption ->
                     DropdownMenuItem(
                         leadingIcon = {
@@ -91,7 +93,7 @@ fun SortByButton(
                         },
                         text = {
                             Text(
-                                text = sortOption.name,
+                                text = stringResource(getStringRes(sortOption)),
                                 color = MaterialTheme.colorScheme.onSecondaryContainer,
                             )
                         },

@@ -60,7 +60,7 @@ import org.jellyfin.sdk.model.extensions.ticks
 
 data class HomeRow(
     val section: HomeSection,
-    val items: List<BaseItem>,
+    val items: List<BaseItem?>,
     val title: String? = null,
 )
 
@@ -82,13 +82,13 @@ fun HomePage(
 
         LoadingState.Success -> {
             val homeRows by viewModel.homeRows.observeAsState(listOf())
-            MainPageContent(navigationManager, homeRows, modifier)
+            HomePageContent(navigationManager, homeRows, modifier)
         }
     }
 }
 
 @Composable
-fun MainPageContent(
+fun HomePageContent(
     navigationManager: NavigationManager,
     homeRows: List<HomeRow>,
     modifier: Modifier = Modifier,

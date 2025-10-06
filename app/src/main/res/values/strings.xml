@@ -47,4 +47,13 @@
     <string name="playback_debug_info">Show playback debug info</string>
     <string name="auto_play_next_delay">Delay before playing next up</string>
     <string name="auto_play_next">Auto play next up</string>
+
+
+    <string name="sort_by_name">Name</string>
+    <string name="sort_by_random">Random</string>
+    <string name="sort_by_date_episode_added">Date Episode Added</string>
+    <string name="sort_by_date_added">Date Added</string>
+    <string name="sort_by_date_played">Date Played</string>
+    <string name="sort_by_date_released">Date Released</string>
+
 </resources>

@@ -87,20 +87,11 @@ class CollectionFolderViewModel
                     }
                     val includeItemTypes =
                         when (item.data.collectionType) {
-                            CollectionType.UNKNOWN -> TODO()
                             CollectionType.MOVIES -> listOf(BaseItemKind.MOVIE)
                             CollectionType.TVSHOWS -> listOf(BaseItemKind.SERIES)
-                            CollectionType.MUSIC -> TODO()
-                            CollectionType.MUSICVIDEOS -> TODO()
-                            CollectionType.TRAILERS -> TODO()
                             CollectionType.HOMEVIDEOS -> listOf(BaseItemKind.VIDEO)
-                            CollectionType.BOXSETS -> TODO()
-                            CollectionType.BOOKS -> TODO()
-                            CollectionType.PHOTOS -> TODO()
-                            CollectionType.LIVETV -> TODO()
-                            CollectionType.PLAYLISTS -> TODO()
-                            CollectionType.FOLDERS -> TODO()
-                            null -> listOf()
+
+                            else -> listOf()
                         }
                     val request =
                         GetItemsRequest(
@@ -110,7 +101,12 @@ class CollectionFolderViewModel
 //                            recursive = true,
                             enableImageTypes = listOf(ImageType.PRIMARY, ImageType.THUMB),
                             includeItemTypes = includeItemTypes,
-                            sortBy = listOf(sortAndDirection.sort),
+                            sortBy =
+                                listOf(
+                                    sortAndDirection.sort,
+                                    ItemSortBy.SORT_NAME,
+                                    ItemSortBy.PRODUCTION_YEAR,
+                                ),
                             sortOrder = listOf(sortAndDirection.direction),
                             fields = DefaultItemFields,
                         )
@@ -225,7 +221,7 @@ fun CollectionDetails(
             letterPosition = { 0 },
             requestFocus = true,
             gridFocusRequester = gridFocusRequester,
-            navigationManager = navigationManager,
+            showJumpButtons = false, // TODO add preference
             modifier = Modifier.fillMaxSize(),
             initialPosition = 0,
             positionCallback = { _, _ -> },

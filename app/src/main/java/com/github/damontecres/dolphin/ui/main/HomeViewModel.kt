@@ -6,15 +6,15 @@ import androidx.lifecycle.viewModelScope
 import com.github.damontecres.dolphin.data.model.BaseItem
 import com.github.damontecres.dolphin.preferences.UserPreferences
 import com.github.damontecres.dolphin.ui.DefaultItemFields
-import com.github.damontecres.dolphin.ui.isNotNullOrBlank
 import com.github.damontecres.dolphin.util.LoadingExceptionHandler
 import com.github.damontecres.dolphin.util.LoadingState
+import com.github.damontecres.dolphin.util.supportItemKinds
+import com.github.damontecres.dolphin.util.supportedCollectionTypes
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
-import org.jellyfin.sdk.api.client.extensions.displayPreferencesApi
 import org.jellyfin.sdk.api.client.extensions.itemsApi
 import org.jellyfin.sdk.api.client.extensions.tvShowsApi
 import org.jellyfin.sdk.api.client.extensions.userApi
@@ -44,19 +44,33 @@ class HomeViewModel
                         "Error loading home page",
                     ),
             ) {
-                val user = api.userApi.getCurrentUser().content
-                val displayPrefs =
-                    api.displayPreferencesApi
-                        .getDisplayPreferences(
-                            displayPreferencesId = "usersettings",
-                            client = "emby",
-                        ).content
+                val user by api.userApi.getCurrentUser()
+//                val displayPrefs =
+//                    api.displayPreferencesApi
+//                        .getDisplayPreferences(
+//                            displayPreferencesId = "usersettings",
+//                            client = "emby",
+//                        ).content
                 val homeSections =
-                    displayPrefs.customPrefs.entries
-                        .filter { it.key.startsWith("homesection") && it.value.isNotNullOrBlank() }
-                        .sortedBy { it.key }
-                        .map { HomeSection.fromKey(it.value ?: "") }
-                        .filterNot { it == HomeSection.NONE }
+                    listOf(
+                        HomeSection.RESUME,
+                        HomeSection.NEXT_UP,
+                        HomeSection.LATEST_MEDIA,
+                    )
+                // TODO use display preferences?
+
+//                    displayPrefs.customPrefs.entries
+//                        .filter { it.key.startsWith("homesection") && it.value.isNotNullOrBlank() }
+//                        .sortedBy { it.key }
+//                        .map { HomeSection.fromKey(it.value ?: "") }
+//                        .filter {
+//                            it in
+//                                setOf(
+//                                    HomeSection.LATEST_MEDIA,
+//                                    HomeSection.NEXT_UP,
+//                                    HomeSection.RESUME,
+//                                )
+//                        }
 
                 val latestMediaIncludes =
                     user.configuration?.orderedViews.orEmpty().toMutableList().apply {
@@ -71,29 +85,38 @@ class HomeViewModel
                             Timber.Forest.v("Loading section: %s", section.name)
                             when (section) {
                                 HomeSection.LATEST_MEDIA -> {
-                                    latestMediaIncludes.map { viewId ->
-                                        val title =
-                                            views.items.firstOrNull { it.id == viewId }?.name?.let {
-                                                "Recently Added in $it"
-                                            }
-                                        val request =
-                                            GetLatestMediaRequest(
-                                                fields = DefaultItemFields,
-                                                imageTypeLimit = 1,
-                                                parentId = viewId,
-                                                groupItems = true,
-                                                limit = limit,
+                                    latestMediaIncludes.mapNotNull { viewId ->
+                                        val view =
+                                            views.items
+                                                .firstOrNull { it.id == viewId }
+                                        if (view?.collectionType in supportedCollectionTypes) {
+                                            val title =
+                                                view
+                                                    ?.name
+                                                    ?.let {
+                                                        "Recently Added in $it"
+                                                    }
+                                            val request =
+                                                GetLatestMediaRequest(
+                                                    fields = DefaultItemFields,
+                                                    imageTypeLimit = 1,
+                                                    parentId = viewId,
+                                                    groupItems = true,
+                                                    limit = limit,
+                                                )
+                                            val latest =
+                                                api.userLibraryApi
+                                                    .getLatestMedia(request)
+                                                    .content
+                                                    .map { BaseItem.from(it, api, true) }
+                                            HomeRow(
+                                                section = section,
+                                                items = latest,
+                                                title = title,
                                             )
-                                        val latest =
-                                            api.userLibraryApi
-                                                .getLatestMedia(request)
-                                                .content
-                                                .map { BaseItem.from(it, api, true) }
-                                        HomeRow(
-                                            section = section,
-                                            items = latest,
-                                            title = title,
-                                        )
+                                        } else {
+                                            null
+                                        }
                                     }
                                 }
 
@@ -103,7 +126,7 @@ class HomeViewModel
                                             userId = user.id,
                                             fields = DefaultItemFields,
                                             limit = limit,
-                                            // TODO, more params?
+                                            includeItemTypes = supportItemKinds,
                                         )
                                     val items =
                                         api.itemsApi

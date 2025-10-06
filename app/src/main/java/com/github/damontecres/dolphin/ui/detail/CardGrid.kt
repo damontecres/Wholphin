@@ -34,7 +34,6 @@ import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.type
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.tv.material3.Button
@@ -46,7 +45,6 @@ import com.github.damontecres.dolphin.ui.AppColors
 import com.github.damontecres.dolphin.ui.FontAwesome
 import com.github.damontecres.dolphin.ui.cards.ItemCard
 import com.github.damontecres.dolphin.ui.ifElse
-import com.github.damontecres.dolphin.ui.nav.NavigationManager
 import com.github.damontecres.dolphin.ui.playback.isBackwardButton
 import com.github.damontecres.dolphin.ui.playback.isForwardButton
 import com.github.damontecres.dolphin.ui.playback.isPlayKeyUp
@@ -66,7 +64,7 @@ fun CardGrid(
     letterPosition: suspend (Char) -> Int,
     requestFocus: Boolean,
     gridFocusRequester: FocusRequester,
-    navigationManager: NavigationManager,
+    showJumpButtons: Boolean,
     modifier: Modifier = Modifier,
     initialPosition: Int = 0,
     positionCallback: ((columns: Int, position: Int) -> Unit)? = null,
@@ -119,9 +117,6 @@ fun CardGrid(
         }
 //        hasRun = true
     }
-
-    val context = LocalContext.current
-    val showJumpButtons = true
 
     var alphabetFocus by remember { mutableStateOf(false) }
     val focusOn = { index: Int ->
@@ -237,7 +232,7 @@ fun CardGrid(
                     }
                 },
     ) {
-        if (showJumpButtons && pager.size > 0) {
+        if (showJumpButtons && pager.isNotEmpty()) {
             JumpButtons(
                 jump1 = jump1,
                 jump2 = jump2,
@@ -286,8 +281,7 @@ fun CardGrid(
                         } else {
                             Modifier
                         }
-                    // TODO
-                    val item = pager[index] // ?.let { convertModel(it, api) }
+                    val item = pager[index]
                     if (!hasRequestFocusRun && requestFocus && initialPosition >= 0) {
                         // On very first composition, if parent wants to focus on the grid, do so
                         LaunchedEffect(Unit) {
@@ -328,7 +322,7 @@ fun CardGrid(
                     )
                 }
             }
-            if (pager.size == 0) {
+            if (pager.isEmpty()) {
 //                focusedIndex = -1
                 Box(modifier = Modifier.fillMaxSize()) {
                     Text(

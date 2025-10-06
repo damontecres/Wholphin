@@ -16,10 +16,14 @@ import kotlinx.coroutines.sync.withLock
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.Response
 import org.jellyfin.sdk.api.client.extensions.itemsApi
+import org.jellyfin.sdk.api.client.extensions.suggestionsApi
 import org.jellyfin.sdk.api.client.extensions.tvShowsApi
 import org.jellyfin.sdk.model.api.BaseItemDtoQueryResult
 import org.jellyfin.sdk.model.api.request.GetEpisodesRequest
 import org.jellyfin.sdk.model.api.request.GetItemsRequest
+import org.jellyfin.sdk.model.api.request.GetNextUpRequest
+import org.jellyfin.sdk.model.api.request.GetResumeItemsRequest
+import org.jellyfin.sdk.model.api.request.GetSuggestionsRequest
 import timber.log.Timber
 import java.util.function.Predicate
 
@@ -74,6 +78,63 @@ val GetEpisodesRequestHandler =
             api: ApiClient,
             request: GetEpisodesRequest,
         ): Response<BaseItemDtoQueryResult> = api.tvShowsApi.getEpisodes(request)
+    }
+
+val GetResumeItemsRequestHandler =
+    object : RequestHandler<GetResumeItemsRequest> {
+        override fun prepare(
+            request: GetResumeItemsRequest,
+            startIndex: Int,
+            limit: Int,
+            enableTotalRecordCount: Boolean,
+        ): GetResumeItemsRequest =
+            request.copy(
+                startIndex = startIndex,
+                limit = limit,
+            )
+
+        override suspend fun execute(
+            api: ApiClient,
+            request: GetResumeItemsRequest,
+        ): Response<BaseItemDtoQueryResult> = api.itemsApi.getResumeItems(request)
+    }
+
+val GetNextUpRequestHandler =
+    object : RequestHandler<GetNextUpRequest> {
+        override fun prepare(
+            request: GetNextUpRequest,
+            startIndex: Int,
+            limit: Int,
+            enableTotalRecordCount: Boolean,
+        ): GetNextUpRequest =
+            request.copy(
+                startIndex = startIndex,
+                limit = limit,
+            )
+
+        override suspend fun execute(
+            api: ApiClient,
+            request: GetNextUpRequest,
+        ): Response<BaseItemDtoQueryResult> = api.tvShowsApi.getNextUp(request)
+    }
+
+val GetSuggestionsRequestHandler =
+    object : RequestHandler<GetSuggestionsRequest> {
+        override fun prepare(
+            request: GetSuggestionsRequest,
+            startIndex: Int,
+            limit: Int,
+            enableTotalRecordCount: Boolean,
+        ): GetSuggestionsRequest =
+            request.copy(
+                startIndex = startIndex,
+                limit = limit,
+            )
+
+        override suspend fun execute(
+            api: ApiClient,
+            request: GetSuggestionsRequest,
+        ): Response<BaseItemDtoQueryResult> = api.suggestionsApi.getSuggestions(request)
     }
 
 class ApiRequestPager<T>(
