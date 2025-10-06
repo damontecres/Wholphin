@@ -14,10 +14,14 @@ import androidx.media3.common.TrackSelectionOverride
 import androidx.media3.common.Tracks
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
+import com.github.damontecres.dolphin.data.model.BaseItem
 import com.github.damontecres.dolphin.data.model.Chapter
 import com.github.damontecres.dolphin.preferences.UserPreferences
+import com.github.damontecres.dolphin.ui.DefaultItemFields
 import com.github.damontecres.dolphin.ui.nav.Destination
+import com.github.damontecres.dolphin.util.ApiRequestPager
 import com.github.damontecres.dolphin.util.ExceptionHandler
+import com.github.damontecres.dolphin.util.GetEpisodesRequestHandler
 import com.github.damontecres.dolphin.util.TrackActivityPlaybackListener
 import com.github.damontecres.dolphin.util.TrackSupport
 import com.github.damontecres.dolphin.util.checkForSupport
@@ -26,6 +30,8 @@ import com.github.damontecres.dolphin.util.subtitleMimeTypes
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
@@ -41,12 +47,16 @@ import org.jellyfin.sdk.model.api.MediaStreamType
 import org.jellyfin.sdk.model.api.PlaybackInfoDto
 import org.jellyfin.sdk.model.api.SubtitlePlaybackMode
 import org.jellyfin.sdk.model.api.TrickplayInfo
+import org.jellyfin.sdk.model.api.request.GetEpisodesRequest
 import org.jellyfin.sdk.model.extensions.ticks
 import org.jellyfin.sdk.model.serializer.toUUIDOrNull
 import timber.log.Timber
 import java.util.UUID
 import javax.inject.Inject
 import kotlin.time.Duration
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.minutes
+import kotlin.time.Duration.Companion.seconds
 
 enum class TranscodeType {
     DIRECT_PLAY,
@@ -86,8 +96,14 @@ class PlaybackViewModel
         val trickplay = MutableLiveData<TrickplayInfo?>(null)
         val chapters = MutableLiveData<List<Chapter>>(listOf())
 
+        private lateinit var preferences: UserPreferences
         private lateinit var deviceProfile: DeviceProfile
+        private lateinit var itemId: UUID
         private lateinit var dto: BaseItemDto
+
+        private val episodes = MutableLiveData<ApiRequestPager<GetEpisodesRequest>>()
+        private var currentEpisodeIndex = Int.MAX_VALUE
+        val nextUpEpisode = MutableLiveData<BaseItem?>()
 
         init {
             addCloseable { player.release() }
@@ -98,8 +114,11 @@ class PlaybackViewModel
             deviceProfile: DeviceProfile,
             preferences: UserPreferences,
         ) {
+            nextUpEpisode.value = null
+            this.preferences = preferences
             this.deviceProfile = deviceProfile
             val itemId = destination.itemId
+            this.itemId = itemId
             val item = destination.item
             viewModelScope.launch(ExceptionHandler() + Dispatchers.IO) {
                 val base = item?.data ?: api.userLibraryApi.getItem(itemId).content
@@ -233,6 +252,9 @@ class PlaybackViewModel
 
                     this@PlaybackViewModel.chapters.value = Chapter.fromDto(dto, api)
                     Timber.v("chapters=${this@PlaybackViewModel.chapters.value}")
+                }
+                if (base.type == BaseItemKind.EPISODE) {
+                    base.seriesId?.let(::getEpisodes)
                 }
             }
         }
@@ -410,6 +432,54 @@ class PlaybackViewModel
                 index,
                 mediaSourceId,
             )
+        }
+
+        fun getEpisodes(seriesId: UUID) {
+            viewModelScope.launch(Dispatchers.IO) {
+                val episodes =
+                    if (!this@PlaybackViewModel.episodes.isInitialized) {
+                        val request =
+                            GetEpisodesRequest(seriesId = seriesId, fields = DefaultItemFields)
+                        val pager =
+                            ApiRequestPager(api, request, GetEpisodesRequestHandler, viewModelScope)
+                        pager.init()
+                        currentEpisodeIndex = pager.indexOfBlocking { it?.id == itemId }
+                        pager
+                    } else {
+                        this@PlaybackViewModel.episodes.value!!
+                    }
+                Timber.v("Current episode is $currentEpisodeIndex of ${episodes.size}")
+                val nextIndex = currentEpisodeIndex + 1
+                if (nextIndex < episodes.size) {
+                    viewModelScope.launch(Dispatchers.IO) {
+                        while (this.isActive) {
+                            delay(5.seconds)
+                            val remaining =
+                                withContext(Dispatchers.Main) {
+                                    (player.duration - player.currentPosition).milliseconds
+                                }
+                            if (remaining < 2.minutes) { // TODO time & preference
+                                val nextItem = episodes.getBlocking(nextIndex)
+                                Timber.v("Setting next up episode to ${nextItem?.id}")
+                                withContext(Dispatchers.Main) {
+                                    nextUpEpisode.value = nextItem
+                                }
+                                break
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        fun playUpNextEpisode() {
+            nextUpEpisode.value?.let {
+                init(Destination.Playback(it.id, 0, it), deviceProfile, preferences)
+            }
+        }
+
+        fun cancelUpNextEpisode() {
+            nextUpEpisode.value = null
         }
     }
 

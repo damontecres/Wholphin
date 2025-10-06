@@ -11,7 +11,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import org.jellyfin.sdk.api.client.ApiClient
@@ -22,6 +21,7 @@ import org.jellyfin.sdk.model.api.BaseItemDtoQueryResult
 import org.jellyfin.sdk.model.api.request.GetEpisodesRequest
 import org.jellyfin.sdk.model.api.request.GetItemsRequest
 import timber.log.Timber
+import java.util.function.Predicate
 
 interface RequestHandler<T> {
     fun prepare(
@@ -83,7 +83,8 @@ class ApiRequestPager<T>(
     private val scope: CoroutineScope,
     private val pageSize: Int = DEFAULT_PAGE_SIZE,
     cacheSize: Long = 8,
-) : AbstractList<BaseItem?>() {
+) : AbstractList<BaseItem?>(),
+    BlockingList<BaseItem?> {
     private var items by mutableStateOf(ItemList<BaseItem>(0, pageSize, mapOf()))
     private var totalCount by mutableIntStateOf(-1)
     private val mutex = Mutex()
@@ -93,12 +94,13 @@ class ApiRequestPager<T>(
             .maximumSize(cacheSize)
             .build<Int, List<BaseItem>>()
 
-    suspend fun init() {
+    suspend fun init(): ApiRequestPager<T> {
         if (totalCount < 0) {
             val newRequest = requestHandler.prepare(request, 0, 1, true)
             val result = requestHandler.execute(api, newRequest).content
             totalCount = result.totalRecordCount
         }
+        return this
     }
 
     override operator fun get(index: Int): BaseItem? {
@@ -113,7 +115,7 @@ class ApiRequestPager<T>(
         }
     }
 
-    suspend fun getBlocking(position: Int): BaseItem? {
+    override suspend fun getBlocking(position: Int): BaseItem? {
         if (position in 0..<totalCount) {
             val item = items[position]
             if (item == null) {
@@ -124,6 +126,17 @@ class ApiRequestPager<T>(
         } else {
             throw IndexOutOfBoundsException("$position of $totalCount")
         }
+    }
+
+    override suspend fun indexOfBlocking(predicate: Predicate<BaseItem?>): Int {
+        init()
+        for (i in 0 until totalCount) {
+            val currentItem = getBlocking(i)
+            if (currentItem != null && predicate.test(currentItem)) {
+                return i
+            }
+        }
+        return -1
     }
 
     override val size: Int
@@ -149,16 +162,6 @@ class ApiRequestPager<T>(
                 }
             }
         }
-
-    suspend fun toBlockingList(): List<BaseItem> {
-        init()
-        return object : AbstractList<BaseItem>() {
-            override val size: Int
-                get() = totalCount
-
-            override fun get(index: Int): BaseItem = runBlocking { getBlocking(index)!! }
-        }
-    }
 
     companion object {
         private const val DEBUG = false

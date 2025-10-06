@@ -1,7 +1,9 @@
 package com.github.damontecres.dolphin.ui.playback
 
+import androidx.activity.compose.BackHandler
 import androidx.annotation.OptIn
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
@@ -91,6 +93,8 @@ fun PlaybackContent(
     var cues by remember { mutableStateOf<List<Cue>>(listOf()) }
     var showDebugInfo by remember { mutableStateOf(prefs.showDebugInfo) }
 
+    val nextUp by viewModel.nextUpEpisode.observeAsState(null)
+
     // TODO move to viewmodel?
     val cueListener =
         remember {
@@ -155,7 +159,7 @@ fun PlaybackContent(
             val keyHandler =
                 PlaybackKeyHandler(
                     player = player,
-                    controlsEnabled = true,
+                    controlsEnabled = nextUp == null,
                     skipWithLeftRight = true,
                     seekForward = preferences.appPreferences.playbackPreferences.skipForwardMs.milliseconds,
                     seekBack = preferences.appPreferences.playbackPreferences.skipBackMs.milliseconds,
@@ -170,130 +174,162 @@ fun PlaybackContent(
                     .focusRequester(focusRequester)
                     .focusable(),
             ) {
-                PlayerSurface(
-                    player = player,
-                    surfaceType = SURFACE_TYPE_SURFACE_VIEW,
-                    modifier = scaledModifier,
-                )
-                if (presentationState.coverSurface) {
-                    Box(
+                val playerSize by animateFloatAsState(if (nextUp == null) 1f else .66f)
+                Box(
+                    modifier =
                         Modifier
-                            .matchParentSize()
-                            .background(Color.Black),
-                    ) {
-                        LoadingPage()
-                    }
-                }
-
-                if (!controllerViewState.controlsVisible && skipIndicatorDuration != 0L) {
-                    SkipIndicator(
-                        durationMs = skipIndicatorDuration,
-                        onFinish = {
-                            skipIndicatorDuration = 0L
-                        },
-                        modifier =
-                            Modifier
-                                .align(Alignment.BottomCenter)
-                                .padding(bottom = 70.dp),
+                            .fillMaxSize(playerSize)
+                            .align(Alignment.TopCenter),
+                ) {
+                    PlayerSurface(
+                        player = player,
+                        surfaceType = SURFACE_TYPE_SURFACE_VIEW,
+                        modifier = scaledModifier,
                     )
-                    val showSkipProgress = true // TODO get from preferences
-                    if (showSkipProgress) {
-                        duration?.let {
-                            val percent = (skipPosition.milliseconds / it).toFloat()
-                            Box(
-                                modifier =
-                                    Modifier
-                                        .align(Alignment.BottomStart)
-                                        .background(MaterialTheme.colorScheme.border)
-                                        .clip(RectangleShape)
-                                        .height(3.dp)
-                                        .fillMaxWidth(percent),
-                            ) {
-                                // No-op
+                    if (presentationState.coverSurface) {
+                        Box(
+                            Modifier
+                                .matchParentSize()
+                                .background(Color.Black),
+                        ) {
+                            LoadingPage()
+                        }
+                    }
+
+                    if (!controllerViewState.controlsVisible && skipIndicatorDuration != 0L) {
+                        SkipIndicator(
+                            durationMs = skipIndicatorDuration,
+                            onFinish = {
+                                skipIndicatorDuration = 0L
+                            },
+                            modifier =
+                                Modifier
+                                    .align(Alignment.BottomCenter)
+                                    .padding(bottom = 70.dp),
+                        )
+                        val showSkipProgress = true // TODO get from preferences
+                        if (showSkipProgress) {
+                            duration?.let {
+                                val percent = (skipPosition.milliseconds / it).toFloat()
+                                Box(
+                                    modifier =
+                                        Modifier
+                                            .align(Alignment.BottomStart)
+                                            .background(MaterialTheme.colorScheme.border)
+                                            .clip(RectangleShape)
+                                            .height(3.dp)
+                                            .fillMaxWidth(percent),
+                                ) {
+                                    // No-op
+                                }
                             }
                         }
                     }
+
+                    AnimatedVisibility(
+                        controllerViewState.controlsVisible,
+                        Modifier,
+                        slideInVertically { it },
+                        slideOutVertically { it },
+                    ) {
+                        PlaybackOverlay(
+                            modifier =
+                                Modifier
+                                    .padding(WindowInsets.systemBars.asPaddingValues())
+                                    .fillMaxSize()
+                                    .background(Color.Transparent),
+                            title = title,
+                            subtitle = subtitle,
+                            subtitleStreams = subtitleStreams,
+                            playerControls = player,
+                            controllerViewState = controllerViewState,
+                            showPlay = playPauseState.showPlay,
+                            previousEnabled = previousState.isEnabled,
+                            nextEnabled = nextState.isEnabled,
+                            seekEnabled = true,
+                            seekForward = preferences.appPreferences.playbackPreferences.skipForwardMs.milliseconds,
+                            seekBack = preferences.appPreferences.playbackPreferences.skipBackMs.milliseconds,
+                            onPlaybackActionClick = {
+                                when (it) {
+                                    is PlaybackAction.PlaybackSpeed -> {
+                                        playbackSpeed = it.value
+                                    }
+
+                                    is PlaybackAction.Scale -> {
+                                        contentScale = it.scale
+                                    }
+
+                                    PlaybackAction.ShowDebug -> {
+                                        showDebugInfo = !showDebugInfo
+                                    }
+
+                                    PlaybackAction.ShowPlaylist -> TODO()
+                                    PlaybackAction.ShowVideoFilterDialog -> TODO()
+                                    is PlaybackAction.ToggleAudio -> {
+                                        viewModel.changeAudioStream(it.index)
+                                    }
+
+                                    is PlaybackAction.ToggleCaptions -> {
+                                        viewModel.changeSubtitleStream(it.index)
+                                    }
+                                }
+                            },
+                            onSeekBarChange = seekBarState::onValueChange,
+                            showDebugInfo = showDebugInfo,
+                            scale = contentScale,
+                            playbackSpeed = playbackSpeed,
+                            moreButtonOptions = MoreButtonOptions(mapOf()),
+                            currentPlayback = currentPlayback,
+                            audioStreams = audioStreams,
+                            trickplayInfo = trickplay,
+                            trickplayUrlFor = viewModel::getTrickplayUrl,
+                            chapters = chapters,
+                        )
+                    }
+
+                    if (!controllerViewState.controlsVisible && skipIndicatorDuration == 0L && currentPlayback?.subtitleIndex != null) {
+                        AndroidView(
+                            factory = { context ->
+                                SubtitleView(context).apply {
+                                    setUserDefaultStyle()
+                                    setUserDefaultTextSize()
+                                }
+                            },
+                            update = {
+                                it.setCues(cues)
+                            },
+                            onReset = {
+                                it.setCues(null)
+                            },
+                            modifier =
+                                Modifier
+                                    .fillMaxSize()
+                                    .background(Color.Transparent),
+                        )
+                    }
                 }
 
+                BackHandler(nextUp != null) {
+                    viewModel.cancelUpNextEpisode()
+                }
                 AnimatedVisibility(
-                    controllerViewState.controlsVisible,
-                    Modifier,
-                    slideInVertically { it },
-                    slideOutVertically { it },
+                    nextUp != null,
+                    modifier =
+                        Modifier
+                            .align(Alignment.BottomCenter),
                 ) {
-                    PlaybackOverlay(
-                        modifier =
-                            Modifier
-                                .padding(WindowInsets.systemBars.asPaddingValues())
-                                .fillMaxSize()
-                                .background(Color.Transparent),
-                        title = title,
-                        subtitle = subtitle,
-                        subtitleStreams = subtitleStreams,
-                        playerControls = player,
-                        controllerViewState = controllerViewState,
-                        showPlay = playPauseState.showPlay,
-                        previousEnabled = previousState.isEnabled,
-                        nextEnabled = nextState.isEnabled,
-                        seekEnabled = true,
-                        seekForward = preferences.appPreferences.playbackPreferences.skipForwardMs.milliseconds,
-                        seekBack = preferences.appPreferences.playbackPreferences.skipBackMs.milliseconds,
-                        onPlaybackActionClick = {
-                            when (it) {
-                                is PlaybackAction.PlaybackSpeed -> {
-                                    playbackSpeed = it.value
-                                }
-
-                                is PlaybackAction.Scale -> {
-                                    contentScale = it.scale
-                                }
-
-                                PlaybackAction.ShowDebug -> {
-                                    showDebugInfo = !showDebugInfo
-                                }
-                                PlaybackAction.ShowPlaylist -> TODO()
-                                PlaybackAction.ShowVideoFilterDialog -> TODO()
-                                is PlaybackAction.ToggleAudio -> {
-                                    viewModel.changeAudioStream(it.index)
-                                }
-
-                                is PlaybackAction.ToggleCaptions -> {
-                                    viewModel.changeSubtitleStream(it.index)
-                                }
-                            }
-                        },
-                        onSeekBarChange = seekBarState::onValueChange,
-                        showDebugInfo = showDebugInfo,
-                        scale = contentScale,
-                        playbackSpeed = playbackSpeed,
-                        moreButtonOptions = MoreButtonOptions(mapOf()),
-                        currentPlayback = currentPlayback,
-                        audioStreams = audioStreams,
-                        trickplayInfo = trickplay,
-                        trickplayUrlFor = viewModel::getTrickplayUrl,
-                        chapters = chapters,
-                    )
-                }
-
-                if (!controllerViewState.controlsVisible && skipIndicatorDuration == 0L && currentPlayback?.subtitleIndex != null) {
-                    AndroidView(
-                        factory = { context ->
-                            SubtitleView(context).apply {
-                                setUserDefaultStyle()
-                                setUserDefaultTextSize()
-                            }
-                        },
-                        update = {
-                            it.setCues(cues)
-                        },
-                        onReset = {
-                            it.setCues(null)
-                        },
-                        modifier =
-                            Modifier
-                                .fillMaxSize()
-                                .background(Color.Transparent),
-                    )
+                    nextUp?.let {
+                        NextUpEpisode(
+                            ep = it,
+                            onClick = { viewModel.playUpNextEpisode() },
+                            modifier =
+                                Modifier
+                                    .padding(16.dp)
+                                    .height(128.dp)
+                                    .fillMaxWidth(.4f)
+                                    .align(Alignment.BottomCenter),
+                        )
+                    }
                 }
             }
         }

@@ -42,7 +42,9 @@ sealed class Destination(
         val type: BaseItemKind,
         @Transient val item: BaseItem? = null,
         val seasonEpisode: SeasonEpisode? = null,
-    ) : Destination()
+    ) : Destination() {
+        override fun toString(): String = "SeriesOverview(itemId=$itemId, type=$type, seasonEpisode=$seasonEpisode)"
+    }
 
     @Serializable
     data class MediaItem(
@@ -50,14 +52,18 @@ sealed class Destination(
         val type: BaseItemKind,
         @Transient val item: BaseItem? = null,
         val seasonEpisode: SeasonEpisode? = null,
-    ) : Destination()
+    ) : Destination() {
+        override fun toString(): String = "MediaItem(itemId=$itemId, type=$type, seasonEpisode=$seasonEpisode)"
+    }
 
     @Serializable
     data class Playback(
         val itemId: UUID,
         val positionMs: Long,
         @Transient val item: BaseItem? = null,
-    ) : Destination(true)
+    ) : Destination(true) {
+        override fun toString(): String = "Playback(itemId=$itemId, positionMs=$positionMs)"
+    }
 
     @Serializable
     data object License : Destination(true)
