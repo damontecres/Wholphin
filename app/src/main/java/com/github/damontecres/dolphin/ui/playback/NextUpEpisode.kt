@@ -72,7 +72,7 @@ fun NextUpEpisode(
                 modifier = Modifier.fillMaxWidth(),
             )
             Row(
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                horizontalArrangement = Arrangement.spacedBy(32.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.padding(8.dp),
             ) {

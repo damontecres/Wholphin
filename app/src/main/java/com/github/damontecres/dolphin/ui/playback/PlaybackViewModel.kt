@@ -18,6 +18,7 @@ import com.github.damontecres.dolphin.data.model.BaseItem
 import com.github.damontecres.dolphin.data.model.Chapter
 import com.github.damontecres.dolphin.preferences.UserPreferences
 import com.github.damontecres.dolphin.ui.DefaultItemFields
+import com.github.damontecres.dolphin.ui.indexOfFirstOrNull
 import com.github.damontecres.dolphin.ui.nav.Destination
 import com.github.damontecres.dolphin.util.ApiRequestPager
 import com.github.damontecres.dolphin.util.ExceptionHandler
@@ -427,37 +428,35 @@ class PlaybackViewModel
 
         fun getEpisodes(seriesId: UUID) {
             viewModelScope.launch(Dispatchers.IO) {
-                val episodes =
-                    if (!this@PlaybackViewModel.episodes.isInitialized) {
-                        val request =
-                            GetEpisodesRequest(seriesId = seriesId, fields = DefaultItemFields)
-                        val pager =
-                            ApiRequestPager(api, request, GetEpisodesRequestHandler, viewModelScope)
-                        pager.init()
-                        currentEpisodeIndex = pager.indexOfBlocking { it?.id == itemId }
-                        pager
-                    } else {
-                        this@PlaybackViewModel.episodes.value!!
-                    }
+                val request =
+                    GetEpisodesRequest(
+                        seriesId = seriesId,
+                        fields = DefaultItemFields,
+                        startItemId = itemId,
+                        limit = 2,
+                    )
+                val episodes = GetEpisodesRequestHandler.execute(api, request).content.items
+                val currentEpisodeIndex = episodes.indexOfFirstOrNull { it.id == itemId }
                 Timber.v("Current episode is $currentEpisodeIndex of ${episodes.size}")
-                val nextIndex = currentEpisodeIndex + 1
-                if (nextIndex < episodes.size) {
-                    val listener =
-                        object : Player.Listener {
-                            override fun onPlaybackStateChanged(playbackState: Int) {
-                                if (playbackState == Player.STATE_ENDED) {
-                                    viewModelScope.launch(Dispatchers.IO) {
-                                        val nextItem = episodes.getBlocking(nextIndex)
-                                        Timber.v("Setting next up episode to ${nextItem?.id}")
-                                        withContext(Dispatchers.Main) {
-                                            nextUpEpisode.value = nextItem
+                if (currentEpisodeIndex != null) {
+                    val nextIndex = currentEpisodeIndex + 1
+                    if (nextIndex < episodes.size) {
+                        val listener =
+                            object : Player.Listener {
+                                override fun onPlaybackStateChanged(playbackState: Int) {
+                                    if (playbackState == Player.STATE_ENDED) {
+                                        viewModelScope.launch(Dispatchers.IO) {
+                                            val nextItem = BaseItem.from(episodes[nextIndex], api)
+                                            Timber.v("Setting next up episode to ${nextItem.id}")
+                                            withContext(Dispatchers.Main) {
+                                                nextUpEpisode.value = nextItem
+                                            }
                                         }
+                                        player.removeListener(this)
                                     }
-                                    player.removeListener(this)
                                 }
                             }
-                        }
-                    player.addListener(listener)
+                        player.addListener(listener)
 
 //                    viewModelScope.launch(Dispatchers.IO) {
 //                        while (this.isActive) {
@@ -476,6 +475,7 @@ class PlaybackViewModel
 //                            }
 //                        }
 //                    }
+                    }
                 }
             }
         }
