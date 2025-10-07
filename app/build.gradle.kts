@@ -127,6 +127,7 @@ dependencies {
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.lifecycle.viewmodel.navigation3)
     implementation(libs.androidx.hilt.navigation.compose)
+    implementation(libs.androidx.preference.ktx)
     ksp(libs.androidx.room.compiler)
     ksp(libs.hilt.android.compiler)
 

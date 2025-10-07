@@ -56,5 +56,8 @@
     <string name="sort_by_date_played">Date Played</string>
     <string name="sort_by_date_released">Date Released</string>
     <string name="skip_back_on_resume_preference">Skip back when resuming playback</string>
+    <string name="pref_key_update_last_check_threshold">preference.update.threshold</string>
+    <string name="pref_key_update_last_check">preference.update.lastTimestamp</string>
+    <string name="confirm">Confirm</string>
 
 </resources>

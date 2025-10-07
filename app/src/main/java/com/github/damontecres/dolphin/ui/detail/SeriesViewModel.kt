@@ -1,6 +1,7 @@
 package com.github.damontecres.dolphin.ui.detail
 
 import android.content.Context
+import android.widget.Toast
 import androidx.annotation.OptIn
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
@@ -17,6 +18,8 @@ import com.github.damontecres.dolphin.hilt.AuthOkHttpClient
 import com.github.damontecres.dolphin.preferences.ThemeSongVolume
 import com.github.damontecres.dolphin.preferences.UserPreferences
 import com.github.damontecres.dolphin.ui.letNotEmpty
+import com.github.damontecres.dolphin.ui.nav.Destination
+import com.github.damontecres.dolphin.ui.nav.NavigationManager
 import com.github.damontecres.dolphin.util.ApiRequestPager
 import com.github.damontecres.dolphin.util.ExceptionHandler
 import com.github.damontecres.dolphin.util.GetEpisodesRequestHandler
@@ -33,6 +36,7 @@ import okhttp3.OkHttpClient
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.libraryApi
 import org.jellyfin.sdk.api.client.extensions.playStateApi
+import org.jellyfin.sdk.api.client.extensions.tvShowsApi
 import org.jellyfin.sdk.api.client.extensions.universalAudioApi
 import org.jellyfin.sdk.api.client.extensions.userLibraryApi
 import org.jellyfin.sdk.model.api.BaseItemKind
@@ -55,6 +59,7 @@ class SeriesViewModel
     ) : ItemViewModel<Video>(api) {
         private var player: Player? = null
         private lateinit var seriesId: UUID
+        private lateinit var prefs: UserPreferences
         val loading = MutableLiveData<LoadingState>(LoadingState.Loading)
         val seasons = MutableLiveData<ItemListAndMapping>(ItemListAndMapping.empty())
         val episodes = MutableLiveData<ItemListAndMapping>(ItemListAndMapping.empty())
@@ -68,6 +73,7 @@ class SeriesViewModel
             episode: Int?,
         ) {
             this.seriesId = itemId
+            this.prefs = prefs
             viewModelScope.launch(
                 LoadingExceptionHandler(
                     loading,
@@ -241,20 +247,52 @@ class SeriesViewModel
             refreshEpisode(itemId, listIndex)
         }
 
+        fun setWatchedSeries(played: Boolean) =
+            viewModelScope.launch(ExceptionHandler() + Dispatchers.IO) {
+                if (played) {
+                    api.playStateApi.markPlayedItem(seriesId)
+                } else {
+                    api.playStateApi.markUnplayedItem(seriesId)
+                }
+                init(prefs, seriesId, null, null, null)
+            }
+
         fun refreshEpisode(
             itemId: UUID,
             listIndex: Int,
-        ) = viewModelScope.launch(ExceptionHandler()) {
+        ) = viewModelScope.launch(ExceptionHandler() + Dispatchers.IO) {
             val base = api.userLibraryApi.getItem(itemId).content
             val item = BaseItem.Companion.from(base, api)
             val eps = episodes.value!!
-            episodes.value =
-                eps.copy(
-                    items =
-                        eps.items.toMutableList().apply {
-                            this[listIndex] = item
-                        },
-                )
+            withContext(Dispatchers.Main) {
+                episodes.value =
+                    eps.copy(
+                        items =
+                            eps.items.toMutableList().apply {
+                                this[listIndex] = item
+                            },
+                    )
+            }
+        }
+
+        fun playNextUp(nav: NavigationManager) {
+            viewModelScope.launch(ExceptionHandler() + Dispatchers.IO) {
+                val result by api.tvShowsApi.getNextUp(seriesId = seriesId)
+                val nextUp =
+                    result.items.firstOrNull() ?: api.tvShowsApi
+                        .getEpisodes(
+                            seriesId,
+                            limit = 1,
+                        ).content.items
+                        .firstOrNull()
+                if (nextUp != null) {
+                    nav.navigateTo(Destination.Playback(nextUp.id, 0L))
+                } else {
+                    Toast
+                        .makeText(context, "Could not find an episode to play", Toast.LENGTH_SHORT)
+                        .show()
+                }
+            }
         }
     }
 

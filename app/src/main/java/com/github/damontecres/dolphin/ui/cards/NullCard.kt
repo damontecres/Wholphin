@@ -16,7 +16,7 @@ import com.github.damontecres.dolphin.ui.ifElse
 fun NullCard(
     modifier: Modifier = Modifier,
     cardWidth: Dp? = null,
-    cardHeight: Dp = 200.dp * .75f,
+    cardHeight: Dp? = 200.dp * .75f,
     interactionSource: MutableInteractionSource? = null,
 ) {
     Card(
@@ -27,7 +27,7 @@ fun NullCard(
         Column(
             modifier =
                 Modifier
-                    .height(cardHeight)
+                    .ifElse(cardHeight != null, { Modifier.height(cardHeight!!) })
                     .ifElse(cardWidth != null, { Modifier.width(cardWidth!!) }),
         ) {
             Text(

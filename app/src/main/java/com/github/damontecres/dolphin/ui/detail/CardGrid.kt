@@ -319,6 +319,7 @@ fun CardGrid(
                         item = item,
                         onClick = { if (item != null) itemOnClick.invoke(item) },
                         onLongClick = { if (item != null) longClicker.invoke(item) },
+                        cardHeight = null,
                     )
                 }
             }

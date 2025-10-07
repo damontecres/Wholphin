@@ -10,6 +10,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
@@ -38,16 +40,19 @@ import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import androidx.tv.material3.Button
 import androidx.tv.material3.Icon
 import androidx.tv.material3.ListItem
 import androidx.tv.material3.LocalContentColor
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import androidx.tv.material3.surfaceColorAtElevation
+import com.github.damontecres.dolphin.R
 import com.github.damontecres.dolphin.ui.FontAwesome
 import com.github.damontecres.dolphin.util.ExceptionHandler
 import kotlinx.coroutines.delay
@@ -282,6 +287,7 @@ fun ScrollableDialog(
 fun BasicDialog(
     onDismissRequest: () -> Unit,
     properties: DialogProperties = DialogProperties(),
+    elevation: Dp = 3.dp,
     content: @Composable () -> Unit,
 ) {
     Dialog(
@@ -292,11 +298,83 @@ fun BasicDialog(
             modifier =
                 Modifier
                     .background(
-                        MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp),
+                        MaterialTheme.colorScheme.surfaceColorAtElevation(elevation),
                         shape = RoundedCornerShape(8.dp),
                     ),
         ) {
             content()
+        }
+    }
+}
+
+@Composable
+fun ConfirmDialog(
+    title: String,
+    body: String?,
+    onCancel: () -> Unit,
+    onConfirm: () -> Unit,
+    properties: DialogProperties = DialogProperties(),
+    elevation: Dp = 3.dp,
+) = BasicDialog(
+    onDismissRequest = onCancel,
+    properties = properties,
+    elevation = elevation,
+    content = {
+        ConfirmDialogContent(title, body, onCancel, onConfirm, Modifier)
+    },
+)
+
+@Composable
+fun ConfirmDialogContent(
+    title: String,
+    body: String?,
+    onCancel: () -> Unit,
+    onConfirm: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    LazyColumn(
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        contentPadding = PaddingValues(16.dp),
+        modifier = modifier,
+    ) {
+        item {
+            Text(
+                text = title,
+                color = MaterialTheme.colorScheme.onSurface,
+                style = MaterialTheme.typography.titleLarge,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillParentMaxWidth(),
+            )
+        }
+        body?.let {
+            item {
+                Text(
+                    text = body,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+            }
+        }
+
+        item {
+            Row(
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Button(
+                    onClick = onCancel,
+                ) {
+                    Text(
+                        text = stringResource(R.string.cancel),
+                    )
+                }
+                Button(
+                    onClick = onConfirm,
+                ) {
+                    Text(
+                        text = stringResource(R.string.confirm),
+                    )
+                }
+            }
         }
     }
 }

@@ -8,18 +8,26 @@ import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -36,16 +44,22 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import coil3.compose.AsyncImage
+import com.github.damontecres.dolphin.R
 import com.github.damontecres.dolphin.data.model.BaseItem
 import com.github.damontecres.dolphin.data.model.Person
 import com.github.damontecres.dolphin.preferences.UserPreferences
 import com.github.damontecres.dolphin.ui.cards.ItemRow
 import com.github.damontecres.dolphin.ui.cards.PersonRow
+import com.github.damontecres.dolphin.ui.components.ConfirmDialog
 import com.github.damontecres.dolphin.ui.components.DotSeparatedRow
 import com.github.damontecres.dolphin.ui.components.ErrorMessage
+import com.github.damontecres.dolphin.ui.components.ExpandableFaButton
+import com.github.damontecres.dolphin.ui.components.ExpandablePlayButton
 import com.github.damontecres.dolphin.ui.components.LoadingPage
 import com.github.damontecres.dolphin.ui.components.StarRating
 import com.github.damontecres.dolphin.ui.components.StarRatingPrecision
+import com.github.damontecres.dolphin.ui.data.ItemDetailsDialog
+import com.github.damontecres.dolphin.ui.data.ItemDetailsDialogInfo
 import com.github.damontecres.dolphin.ui.isNotNullOrBlank
 import com.github.damontecres.dolphin.ui.letNotEmpty
 import com.github.damontecres.dolphin.ui.nav.Destination
@@ -56,6 +70,7 @@ import com.github.damontecres.dolphin.ui.roundMinutes
 import com.github.damontecres.dolphin.ui.tryRequestFocus
 import com.github.damontecres.dolphin.util.LoadingState
 import org.jellyfin.sdk.model.extensions.ticks
+import kotlin.time.Duration
 
 @Composable
 fun SeriesDetails(
@@ -74,22 +89,56 @@ fun SeriesDetails(
     val seasons by viewModel.seasons.observeAsState(ItemListAndMapping.empty())
     val people by viewModel.people.observeAsState(listOf())
 
+    var overviewDialog by remember { mutableStateOf<ItemDetailsDialogInfo?>(null) }
+    var showWatchConfirmation by remember { mutableStateOf(false) }
+
     when (val state = loading) {
         is LoadingState.Error -> ErrorMessage(state)
         LoadingState.Loading -> LoadingPage()
         LoadingState.Success -> {
             item?.let { item ->
+                val played = item.data.userData?.played ?: false
                 SeriesDetailsContent(
                     preferences = preferences,
                     navigationManager = navigationManager,
                     series = item,
                     seasons = seasons,
                     people = people,
+                    played = played,
                     modifier = modifier,
-                    overviewOnClick = {}, // TODO
+                    overviewOnClick = {
+                        overviewDialog =
+                            ItemDetailsDialogInfo(
+                                title = item.name ?: "Unknown",
+                                overview = item.data.overview,
+                                files = listOf(),
+                            )
+                    },
+                    playOnClick = { viewModel.playNextUp(navigationManager) },
+                    watchOnClick = { showWatchConfirmation = true },
                 )
+                if (showWatchConfirmation) {
+                    ConfirmDialog(
+                        title = item.name ?: "",
+                        body = if (played) "Mark entire series as unplayed?" else "Mark entire series as played?",
+                        onCancel = {
+                            showWatchConfirmation = false
+                        },
+                        onConfirm = {
+                            viewModel.setWatchedSeries(!played)
+                            showWatchConfirmation = false
+                        },
+                    )
+                }
             }
         }
+    }
+    overviewDialog?.let { info ->
+        ItemDetailsDialog(
+            info = info,
+            onDismissRequest = { overviewDialog = null },
+            modifier = Modifier,
+        )
     }
 }
 
@@ -100,18 +149,16 @@ fun SeriesDetailsContent(
     series: BaseItem,
     seasons: ItemListAndMapping,
     people: List<Person>,
+    played: Boolean,
     overviewOnClick: () -> Unit,
+    playOnClick: () -> Unit,
+    watchOnClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val context = LocalContext.current
-    val dto = series.data
+    val bringIntoViewRequester = remember { BringIntoViewRequester() }
 
-    val seasonsFocusRequester = remember { FocusRequester() }
-    if (seasons.items.isNotEmpty()) {
-        LaunchedEffect(Unit) {
-            seasonsFocusRequester.tryRequestFocus()
-        }
-    }
+    val focusRequester = remember { FocusRequester() }
+    LaunchedEffect(Unit) { focusRequester.tryRequestFocus() }
 
     Box(
         modifier = modifier,
@@ -153,14 +200,23 @@ fun SeriesDetailsContent(
                     .fillMaxSize(),
         ) {
             LazyColumn(
-                verticalArrangement = Arrangement.spacedBy(8.dp),
+                contentPadding = PaddingValues(bottom = 80.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
                 modifier = modifier,
             ) {
                 item {
                     SeriesDetailsHeader(
                         series = series,
+                        played = played,
                         overviewOnClick = overviewOnClick,
-                        modifier = Modifier.fillMaxWidth(.7f),
+                        playOnClick = playOnClick,
+                        watchOnClick = watchOnClick,
+                        modifier =
+                            Modifier
+                                .fillMaxWidth(.6f)
+                                .bringIntoViewRequester(bringIntoViewRequester)
+                                .focusRequester(focusRequester)
+                                .padding(bottom = 80.dp),
                     )
                 }
                 item {
@@ -169,10 +225,16 @@ fun SeriesDetailsContent(
                         items = seasons.items,
                         onClickItem = { navigationManager.navigateTo(it.destination()) },
                         onLongClickItem = { },
+                        cardOnFocus = { isFocused, index ->
+//                            if (isFocused) {
+//                                scope.launch(ExceptionHandler()) {
+//                                    bringIntoViewRequester.bringIntoView()
+//                                }
+//                            }
+                        },
                         modifier =
                             Modifier
-                                .fillMaxWidth()
-                                .focusRequester(seasonsFocusRequester),
+                                .fillMaxWidth(),
                     )
                 }
                 if (people.isNotEmpty()) {
@@ -193,7 +255,10 @@ fun SeriesDetailsContent(
 @Composable
 fun SeriesDetailsHeader(
     series: BaseItem,
+    played: Boolean,
     overviewOnClick: () -> Unit,
+    playOnClick: () -> Unit,
+    watchOnClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -205,6 +270,7 @@ fun SeriesDetailsHeader(
                 ?.ticks
                 ?.roundMinutes
                 ?.let { add(it.toString()) }
+            dto.officialRating?.let(::add)
         }
     Column(
         verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -212,12 +278,12 @@ fun SeriesDetailsHeader(
     ) {
         Text(
             text = series.name ?: "Unknown",
-            style = MaterialTheme.typography.displayMedium,
+            style = MaterialTheme.typography.displaySmall,
             modifier = Modifier.fillMaxWidth(),
         )
         DotSeparatedRow(
             texts = details,
-            textStyle = MaterialTheme.typography.headlineSmall,
+            textStyle = MaterialTheme.typography.titleMedium,
         )
 
         dto.genres?.letNotEmpty {
@@ -237,7 +303,7 @@ fun SeriesDetailsHeader(
                     enabled = false,
                     precision = StarRatingPrecision.HALF,
                     playSoundOnFocus = true,
-                    modifier = Modifier.height(32.dp),
+                    modifier = Modifier.height(24.dp),
                 )
             }
         }
@@ -277,6 +343,24 @@ fun SeriesDetailsHeader(
                             .height(60.dp),
                 )
             }
+        }
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            modifier = Modifier.padding(start = 16.dp),
+        ) {
+            ExpandablePlayButton(
+                title = R.string.play,
+                resume = Duration.ZERO,
+                icon = Icons.Default.PlayArrow,
+                onClick = { playOnClick.invoke() },
+                modifier = Modifier,
+            )
+            ExpandableFaButton(
+                title = if (played) R.string.mark_unwatched else R.string.mark_watched,
+                iconStringRes = if (played) R.string.fa_eye else R.string.fa_eye_slash,
+                onClick = watchOnClick,
+                modifier = Modifier,
+            )
         }
     }
 }

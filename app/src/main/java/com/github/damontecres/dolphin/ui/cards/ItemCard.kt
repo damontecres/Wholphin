@@ -59,7 +59,7 @@ fun ItemCard(
     onLongClick: () -> Unit,
     modifier: Modifier = Modifier,
     cardWidth: Dp? = null,
-    cardHeight: Dp = 200.dp * .85f,
+    cardHeight: Dp? = 200.dp * .85f,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
 ) {
     val hideOverlayDelay = 750L
@@ -112,7 +112,7 @@ fun ItemCard(
                     modifier =
                         Modifier
                             .fillMaxWidth()
-                            .height(cardHeight),
+                            .ifElse(cardHeight != null, { Modifier.height(cardHeight!!) }),
                 )
                 Column(
                     verticalArrangement = Arrangement.spacedBy(0.dp),

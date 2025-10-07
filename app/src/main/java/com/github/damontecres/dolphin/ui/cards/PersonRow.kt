@@ -9,12 +9,16 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.unit.dp
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.github.damontecres.dolphin.data.model.Person
+import com.github.damontecres.dolphin.ui.ifElse
 
 @Composable
 fun PersonRow(
@@ -23,6 +27,7 @@ fun PersonRow(
     modifier: Modifier = Modifier,
     onLongClick: ((Person) -> Unit)? = null,
 ) {
+    val firstFocus = remember { FocusRequester() }
     Column(
         verticalArrangement = Arrangement.spacedBy(8.dp),
         modifier = modifier,
@@ -40,14 +45,14 @@ fun PersonRow(
                 Modifier
                     .padding(start = 16.dp)
                     .fillMaxWidth()
-                    .focusRestorer(),
+                    .focusRestorer(firstFocus),
         ) {
             itemsIndexed(people) { index, item ->
                 PersonCard(
                     item = item,
                     onClick = { onClick.invoke(item) },
                     onLongClick = { onLongClick?.invoke(item) },
-                    modifier = Modifier,
+                    modifier = Modifier.ifElse(index == 0, Modifier.focusRequester(firstFocus)),
                 )
             }
         }

@@ -27,6 +27,7 @@ protobuf-javalite = "4.32.1"
 hilt = "2.57.2"
 room = "2.8.1"
 material3 = "1.4.0"
+preferenceKtx = "1.2.1"
 
 [libraries]
 aboutlibraries-core = { module = "com.mikepenz:aboutlibraries-core", version.ref = "aboutLibraries" }
@@ -85,6 +86,7 @@ androidx-room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = 
 androidx-room-compiler = { module = "androidx.room:room-compiler", version.ref = "room" }
 
 timber = { module = "com.jakewharton.timber:timber", version.ref = "timber" }
+androidx-preference-ktx = { group = "androidx.preference", name = "preference-ktx", version.ref = "preferenceKtx" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
