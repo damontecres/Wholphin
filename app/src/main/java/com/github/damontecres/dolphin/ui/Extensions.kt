@@ -1,8 +1,11 @@
 package com.github.damontecres.dolphin.ui
 
+import android.app.Activity
 import android.content.Context
+import android.content.ContextWrapper
 import android.media.AudioManager
 import android.view.KeyEvent
+import android.view.WindowManager
 import androidx.compose.foundation.MarqueeAnimationMode
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.layout.Arrangement
@@ -229,3 +232,24 @@ fun Arrangement.spacedByWithFooter(space: Dp) =
             }
         }
     }
+
+fun Context.findActivity(): Activity? {
+    if (this is Activity) {
+        return this
+    }
+    var context = this
+    while (context is ContextWrapper) {
+        if (context is Activity) return context
+        context = context.baseContext
+    }
+    return null
+}
+
+fun Activity.keepScreenOn(keep: Boolean) {
+    Timber.v("Keep screen on: $keep")
+    if (keep) {
+        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+    } else {
+        window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+    }
+}

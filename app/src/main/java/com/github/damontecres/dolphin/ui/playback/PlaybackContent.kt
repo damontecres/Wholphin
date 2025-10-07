@@ -118,6 +118,7 @@ fun PlaybackContent(
     DisposableEffect(Unit) {
         onDispose { player.removeListener(cueListener) }
     }
+    AmbientPlayerListener(player)
 
     if (stream == null) {
         // TODO loading
