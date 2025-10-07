@@ -15,8 +15,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -42,6 +44,8 @@ import com.github.damontecres.dolphin.ui.cards.PersonRow
 import com.github.damontecres.dolphin.ui.components.ErrorMessage
 import com.github.damontecres.dolphin.ui.components.ExpandablePlayButtons
 import com.github.damontecres.dolphin.ui.components.LoadingPage
+import com.github.damontecres.dolphin.ui.data.ItemDetailsDialog
+import com.github.damontecres.dolphin.ui.data.ItemDetailsDialogInfo
 import com.github.damontecres.dolphin.ui.detail.LoadingItemViewModel
 import com.github.damontecres.dolphin.ui.isNotNullOrBlank
 import com.github.damontecres.dolphin.ui.letNotEmpty
@@ -99,6 +103,9 @@ fun MovieDetails(
     val people by viewModel.people.observeAsState(listOf())
     val chapters by viewModel.chapters.observeAsState(listOf())
     val loading by viewModel.loading.observeAsState(LoadingState.Loading)
+
+    var overviewDialog by remember { mutableStateOf<ItemDetailsDialogInfo?>(null) }
+
     when (val state = loading) {
         is LoadingState.Error -> ErrorMessage(state)
         LoadingState.Loading -> LoadingPage()
@@ -119,13 +126,30 @@ fun MovieDetails(
                             ),
                         )
                     },
-                    overviewOnClick = {},
+                    overviewOnClick = {
+                        overviewDialog =
+                            ItemDetailsDialogInfo(
+                                title = movie.name ?: "Unknown",
+                                overview = movie.data.overview,
+                                files =
+                                    movie.data.mediaSources
+                                        ?.mapNotNull { it.path }
+                                        .orEmpty(),
+                            )
+                    },
                     moreOnClick = {},
                     watchOnClick = {},
                     modifier = modifier,
                 )
             }
         }
+    }
+    overviewDialog?.let { info ->
+        ItemDetailsDialog(
+            info = info,
+            onDismissRequest = { overviewDialog = null },
+            modifier = Modifier,
+        )
     }
 }
 
