@@ -5,6 +5,7 @@ import android.media.AudioManager
 import android.view.KeyEvent
 import androidx.compose.foundation.MarqueeAnimationMode
 import androidx.compose.foundation.basicMarquee
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -17,6 +18,8 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.media3.common.Player
 import kotlinx.coroutines.CoroutineScope
@@ -26,6 +29,7 @@ import timber.log.Timber
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
+import kotlin.math.min
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
@@ -199,3 +203,29 @@ inline fun <T : Collection<*>, R> T.letNotEmpty(block: (T) -> R): R? {
     }
     return if (this.isNotEmpty()) block(this) else null
 }
+
+// Adapted from https://stackoverflow.com/a/69196765
+fun Arrangement.spacedByWithFooter(space: Dp) =
+    object : Arrangement.Vertical {
+        override val spacing = space
+
+        override fun Density.arrange(
+            totalSize: Int,
+            sizes: IntArray,
+            outPositions: IntArray,
+        ) {
+            if (sizes.isEmpty()) return
+            val spacePx = space.roundToPx()
+
+            var occupied = 0
+            sizes.forEachIndexed { index, size ->
+                if (index == sizes.lastIndex) {
+                    outPositions[index] = totalSize - size
+                } else {
+                    outPositions[index] = min(occupied, totalSize - size)
+                }
+                val lastSpace = min(spacePx, totalSize - outPositions[index] - size)
+                occupied = outPositions[index] + size + lastSpace
+            }
+        }
+    }

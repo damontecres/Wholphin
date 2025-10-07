@@ -7,7 +7,6 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -27,8 +26,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
@@ -60,6 +59,9 @@ import com.github.damontecres.dolphin.data.ServerRepository
 import com.github.damontecres.dolphin.data.model.BaseItem
 import com.github.damontecres.dolphin.preferences.UserPreferences
 import com.github.damontecres.dolphin.ui.FontAwesome
+import com.github.damontecres.dolphin.ui.ifElse
+import com.github.damontecres.dolphin.ui.spacedByWithFooter
+import com.github.damontecres.dolphin.ui.tryRequestFocus
 import com.github.damontecres.dolphin.util.ExceptionHandler
 import com.github.damontecres.dolphin.util.supportedCollectionTypes
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -124,6 +126,7 @@ fun NavDrawer(
     }
     val libraries by viewModel.libraries.observeAsState(listOf())
     val selectedIndex by viewModel.selectedIndex.observeAsState(-1)
+    val focusRequester = remember { FocusRequester() }
 
     NavigationDrawer(
         modifier =
@@ -132,76 +135,94 @@ fun NavDrawer(
         drawerState = drawerState,
         drawerContent = {
             ProvideTextStyle(MaterialTheme.typography.labelMedium) {
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                LazyColumn(
+                    state = listState,
+                    contentPadding = PaddingValues(0.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedByWithFooter(8.dp),
                     modifier =
                         Modifier
                             .focusGroup()
-                            // TODO fix focus restorer
-                            .focusRestorer()
-                            .fillMaxHeight()
+                            .focusProperties {
+                                onEnter = {
+                                    focusRequester.tryRequestFocus()
+                                }
+                            }.fillMaxHeight()
                             .background(MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp)),
                 ) {
-                    IconNavItem(
-                        text = user?.name ?: "",
-                        subtext = server?.name ?: server?.url,
-                        icon = Icons.Default.AccountCircle,
-                        selected = false,
-                        onClick = {
-                            navigationManager.navigateTo(Destination.UserList)
-                        },
-                    )
-                    IconNavItem(
-                        text = "Search",
-                        icon = Icons.Default.Search,
-                        selected = selectedIndex == -2,
-                        onClick = {
-                            viewModel.setIndex(-2)
-                            navigationManager.navigateToFromDrawer(Destination.Search)
-                        },
-                    )
-                    IconNavItem(
-                        text = "Home",
-                        icon = Icons.Default.Home,
-                        selected = selectedIndex == -1,
-                        onClick = {
-                            viewModel.setIndex(-1)
-                            if (destination is Destination.Main) {
-                                navigationManager.reloadHome()
-                            } else {
-                                navigationManager.goToHome()
-                            }
-                        },
-                    )
-                    LazyColumn(
-                        state = listState,
-                        contentPadding = PaddingValues(0.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
-                        modifier =
-                            Modifier
-                                .weight(1f),
-                    ) {
-                        itemsIndexed(libraries) { index, it ->
-                            LibraryNavItem(
-                                library = it,
-                                selected = selectedIndex == index,
-                                onClick = {
-                                    viewModel.setIndex(index)
-                                    navigationManager.navigateToFromDrawer(it.destination())
-                                },
-                            )
-                        }
+                    item {
+                        IconNavItem(
+                            text = user?.name ?: "",
+                            subtext = server?.name ?: server?.url,
+                            icon = Icons.Default.AccountCircle,
+                            selected = false,
+                            onClick = {
+                                navigationManager.navigateTo(Destination.UserList)
+                            },
+                        )
                     }
-                    IconNavItem(
-                        text = "Settings",
-                        icon = Icons.Default.Settings,
-                        selected = false,
-                        onClick = {
-                            navigationManager.navigateTo(Destination.Settings)
-                        },
-                        modifier = Modifier,
-                    )
+                    item {
+                        IconNavItem(
+                            text = "Search",
+                            icon = Icons.Default.Search,
+                            selected = selectedIndex == -2,
+                            onClick = {
+                                viewModel.setIndex(-2)
+                                navigationManager.navigateToFromDrawer(Destination.Search)
+                            },
+                            modifier =
+                                Modifier.ifElse(
+                                    selectedIndex == -2,
+                                    Modifier.focusRequester(focusRequester),
+                                ),
+                        )
+                    }
+                    item {
+                        IconNavItem(
+                            text = "Home",
+                            icon = Icons.Default.Home,
+                            selected = selectedIndex == -1,
+                            onClick = {
+                                viewModel.setIndex(-1)
+                                if (destination is Destination.Main) {
+                                    navigationManager.reloadHome()
+                                } else {
+                                    navigationManager.goToHome()
+                                }
+                            },
+                            modifier =
+                                Modifier.ifElse(
+                                    selectedIndex == -1,
+                                    Modifier.focusRequester(focusRequester),
+                                ),
+                        )
+                    }
+                    itemsIndexed(libraries) { index, it ->
+                        LibraryNavItem(
+                            library = it,
+                            selected = selectedIndex == index,
+                            onClick = {
+                                viewModel.setIndex(index)
+                                navigationManager.navigateToFromDrawer(it.destination())
+                            },
+                            modifier =
+                                Modifier.ifElse(
+                                    selectedIndex == index,
+                                    Modifier.focusRequester(focusRequester),
+                                ),
+                        )
+                    }
+                    item {
+                        IconNavItem(
+                            text = "Settings",
+                            icon = Icons.Default.Settings,
+                            selected = false,
+                            onClick = {
+                                navigationManager.navigateTo(Destination.Settings)
+                            },
+                            modifier = Modifier,
+                        )
+                    }
                 }
             }
         },
