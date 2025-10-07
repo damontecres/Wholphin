@@ -49,3 +49,7 @@ fun isForwardButton(event: KeyEvent): Boolean =
  * Whether the [KeyEvent] is a key up event pressing media play or media play/pause
  */
 fun isPlayKeyUp(key: KeyEvent) = key.type == KeyEventType.KeyUp && (key.key == Key.MediaPlay || key.key == Key.MediaPlayPause)
+
+fun isUp(event: KeyEvent): Boolean = event.key == Key.DirectionUp || event.key == Key.SystemNavigationUp
+
+fun isDown(event: KeyEvent): Boolean = event.key == Key.DirectionDown || event.key == Key.SystemNavigationDown

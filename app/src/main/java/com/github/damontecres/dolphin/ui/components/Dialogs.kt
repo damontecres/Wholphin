@@ -233,7 +233,6 @@ fun DialogPopup(
 @Composable
 fun ScrollableDialog(
     onDismissRequest: () -> Unit,
-    modifier: Modifier = Modifier,
     content: LazyListScope.() -> Unit,
 ) {
     val scrollAmount = 100f
@@ -258,7 +257,7 @@ fun ScrollableDialog(
             verticalArrangement = Arrangement.spacedBy(8.dp),
             content = content,
             modifier =
-                modifier
+                Modifier
                     .width(600.dp)
                     .heightIn(max = 380.dp)
                     .focusable()

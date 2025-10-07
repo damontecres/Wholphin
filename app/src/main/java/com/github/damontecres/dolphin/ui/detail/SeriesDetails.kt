@@ -137,7 +137,6 @@ fun SeriesDetails(
         ItemDetailsDialog(
             info = info,
             onDismissRequest = { overviewDialog = null },
-            modifier = Modifier,
         )
     }
 }
@@ -202,7 +201,7 @@ fun SeriesDetailsContent(
             LazyColumn(
                 contentPadding = PaddingValues(bottom = 80.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
-                modifier = modifier,
+                modifier = Modifier,
             ) {
                 item {
                     SeriesDetailsHeader(

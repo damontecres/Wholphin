@@ -1,7 +1,10 @@
 package com.github.damontecres.dolphin.ui.playback
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
@@ -10,9 +13,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.runtime.Composable
@@ -24,12 +25,16 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -42,8 +47,12 @@ import com.github.damontecres.dolphin.ui.cards.ChapterCard
 import com.github.damontecres.dolphin.ui.ifElse
 import com.github.damontecres.dolphin.ui.isNotNullOrBlank
 import com.github.damontecres.dolphin.ui.letNotEmpty
+import com.github.damontecres.dolphin.ui.tryRequestFocus
 import org.jellyfin.sdk.model.api.TrickplayInfo
 import kotlin.time.Duration
+
+private val titleTextSize = 28.sp
+private val subtitleTextSize = 18.sp
 
 @Composable
 fun PlaybackOverlay(
@@ -80,171 +89,144 @@ fun PlaybackOverlay(
 
     val chapterInteractionSources =
         remember(chapters.size) { List(chapters.size) { MutableInteractionSource() } }
-//    val chapterRowFocused = chapterInteractionSources.any { it.collectIsFocusedAsState().value }
-    var chapterRowFocused by remember { mutableStateOf(false) }
 
-    val titleTextSize = 28.sp
-    val subtitleTextSize = 18.sp
     val density = LocalDensity.current
 
     val titleHeight =
-        if (title.isNotNullOrBlank()) with(density) { titleTextSize.toDp() } else 0.dp
+        remember {
+            if (title.isNotNullOrBlank()) with(density) { titleTextSize.toDp() } else 0.dp
+        }
     val subtitleHeight =
-        if (subtitle.isNotNullOrBlank()) with(density) { subtitleTextSize.toDp() } else 0.dp
+        remember {
+            if (subtitle.isNotNullOrBlank()) with(density) { subtitleTextSize.toDp() } else 0.dp
+        }
 
-    // Calculate height based on content
-    // Base height (with or w/o chapters) + title + subtitle
-    // The extra 8dp is for padding between title, subtitle, and playback controls
-    // When chapter row is focused, the title/subtitle/playback controls will be hidden, but need extra height for the chapter images
-    val height by animateDpAsState(
-        96.dp +
-            (if (chapters.isNotEmpty()) 40.dp else 0.dp) +
-            (if (chapterRowFocused) 80.dp else 0.dp) +
-            (
-                if (!chapterRowFocused && title.isNotNullOrBlank()) {
-                    titleHeight + 12.dp
-                } else {
-                    0.dp
-                }
-            ) +
-            (
-                if (!chapterRowFocused && subtitle.isNotNullOrBlank()) {
-                    subtitleHeight + 12.dp
-                } else {
-                    0.dp
-                }
-            ),
-    )
+    // This will be calculated after composition
+    var controllerHeight by remember { mutableStateOf(0.dp) }
+    var state by remember { mutableStateOf(ViewState.CONTROLLER) }
 
     Box(
         modifier = modifier,
         contentAlignment = Alignment.BottomCenter,
     ) {
-        LazyColumn(
-            contentPadding = PaddingValues(bottom = if (chapterRowFocused) 32.dp else 8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            modifier =
-                Modifier
-                    .padding(bottom = 16.dp)
-                    .height(height)
-                    .fillMaxWidth(),
+        AnimatedVisibility(
+            state == ViewState.CONTROLLER,
+            enter = slideInVertically() + fadeIn(),
+            exit = slideOutVertically() + fadeOut(),
         ) {
-            item {
+            Controller(
+                title = title,
+                subtitleStreams = subtitleStreams,
+                chapters = chapters,
+                playerControls = playerControls,
+                controllerViewState = controllerViewState,
+                showPlay = showPlay,
+                previousEnabled = previousEnabled,
+                nextEnabled = nextEnabled,
+                seekEnabled = seekEnabled,
+                seekBack = seekBack,
+                skipBackOnResume = skipBackOnResume,
+                seekForward = seekForward,
+                onPlaybackActionClick = onPlaybackActionClick,
+                onSeekProgress = {
+                    onSeekBarChange(it)
+                    seekProgressMs = it
+                },
+                showDebugInfo = showDebugInfo,
+                scale = scale,
+                playbackSpeed = playbackSpeed,
+                moreButtonOptions = moreButtonOptions,
+                currentPlayback = currentPlayback,
+                audioStreams = audioStreams,
+                subtitle = subtitle,
+                seekBarInteractionSource = seekBarInteractionSource,
+                modifier =
+                    Modifier
+                        .onKeyEvent { e ->
+                            if (chapters.isNotEmpty() &&
+                                e.type == KeyEventType.KeyDown && isDown(e) &&
+                                !seekBarFocused
+                            ) {
+                                state = ViewState.CHAPTERS
+                                true
+                            }
+                            false
+                        }.onGloballyPositioned {
+                            controllerHeight = with(density) { it.size.height.toDp() }
+                        },
+            )
+        }
+        AnimatedVisibility(
+            state == ViewState.CHAPTERS,
+            enter = slideInVertically { it / 2 } + fadeIn(),
+            exit = slideOutVertically { it / 2 } + fadeOut(),
+        ) {
+            if (chapters.isNotEmpty()) {
+                val focusRequester = remember { FocusRequester() }
+                LaunchedEffect(Unit) { focusRequester.tryRequestFocus() }
                 Column(
                     verticalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier,
-                ) {
-                    Column(
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
-                        modifier =
-                            Modifier
-                                .padding(start = 16.dp)
-                                .alpha(if (chapterRowFocused) 0f else 1f),
-                    ) {
-                        title?.let {
-                            Text(
-                                text = it,
-                                style = MaterialTheme.typography.titleLarge,
-                                fontSize = titleTextSize,
-                            )
-                        }
-                        subtitle?.let {
-                            Text(
-                                text = it,
-                                style = MaterialTheme.typography.titleMedium,
-                                fontSize = subtitleTextSize,
-                            )
-                        }
-                    }
-                    PlaybackControls(
-                        modifier =
-                            Modifier
-                                .fillMaxWidth()
-                                .alpha(if (chapterRowFocused) 0f else 1f),
-                        subtitleStreams = subtitleStreams,
-                        playerControls = playerControls,
-                        onPlaybackActionClick = onPlaybackActionClick,
-                        controllerViewState = controllerViewState,
-                        showDebugInfo = showDebugInfo,
-                        onSeekProgress = {
-                            seekProgressMs = it
-                            onSeekBarChange(it)
-                        },
-                        showPlay = showPlay,
-                        previousEnabled = previousEnabled,
-                        nextEnabled = nextEnabled,
-                        seekEnabled = seekEnabled,
-                        seekBarInteractionSource = seekBarInteractionSource,
-                        moreButtonOptions = moreButtonOptions,
-                        subtitleIndex = currentPlayback?.subtitleIndex,
-                        audioIndex = currentPlayback?.audioIndex,
-                        audioStreams = audioStreams,
-                        playbackSpeed = playbackSpeed,
-                        scale = scale,
-                        seekBarIntervals = 16,
-                        seekBack = seekBack,
-                        seekForward = seekForward,
-                        skipBackOnResume = skipBackOnResume,
-                    )
-                }
-            }
-
-            if (chapters.isNotEmpty()) {
-                item {
-                    Column(
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
-                        modifier =
-                            Modifier
-                                .fillMaxWidth()
-//                                .offset(y = 200.dp)
-                                .padding(8.dp),
-                    ) {
-                        Text(
-                            text = "Chapters",
-                            style = MaterialTheme.typography.titleLarge,
-                        )
-                        val focusRequester = remember { FocusRequester() }
-                        LazyRow(
-                            contentPadding = PaddingValues(16.dp),
-                            horizontalArrangement = Arrangement.spacedBy(16.dp),
-                            modifier =
-                                Modifier
-                                    .fillMaxWidth()
-                                    .focusRestorer(focusRequester)
-                                    .onFocusChanged {
-                                        if (it.hasFocus) {
-                                            controllerViewState.pulseControls()
-                                        }
-                                        chapterRowFocused = it.hasFocus || it.isFocused
-                                    },
-                        ) {
-                            itemsIndexed(chapters) { index, chapter ->
-                                val interactionSource = chapterInteractionSources[index]
-                                val isFocused = interactionSource.collectIsFocusedAsState().value
-                                LaunchedEffect(isFocused) {
-                                    if (isFocused) controllerViewState.pulseControls()
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(8.dp)
+                            .onPreviewKeyEvent { e ->
+                                if (e.type == KeyEventType.KeyUp && isUp(e)) {
+                                    state = ViewState.CONTROLLER
+                                    true
                                 }
-                                ChapterCard(
-                                    name = chapter.name,
-                                    position = chapter.position,
-                                    imageUrl = chapter.imageUrl,
-                                    onClick = {
-                                        playerControls.seekTo(chapter.position.inWholeMilliseconds)
-                                        controllerViewState.hideControls()
-                                    },
-                                    interactionSource = interactionSource,
-                                    modifier =
-                                        Modifier.ifElse(
-                                            index == 0,
-                                            Modifier.focusRequester(focusRequester),
-                                        ),
-                                )
+                                false
+                            },
+                ) {
+                    Text(
+                        text = "Chapters",
+                        style = MaterialTheme.typography.titleLarge,
+                    )
+                    LazyRow(
+                        contentPadding = PaddingValues(16.dp),
+                        horizontalArrangement = Arrangement.spacedBy(16.dp),
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .focusRestorer(focusRequester)
+                                .onFocusChanged {
+                                    if (it.hasFocus) {
+                                        controllerViewState.pulseControls()
+                                    }
+                                },
+                    ) {
+                        itemsIndexed(chapters) { index, chapter ->
+                            val interactionSource = chapterInteractionSources[index]
+                            val isFocused = interactionSource.collectIsFocusedAsState().value
+                            LaunchedEffect(isFocused) {
+                                if (isFocused) controllerViewState.pulseControls()
                             }
+                            ChapterCard(
+                                name = chapter.name,
+                                position = chapter.position,
+                                imageUrl = chapter.imageUrl,
+                                onClick = {
+                                    playerControls.seekTo(chapter.position.inWholeMilliseconds)
+                                    controllerViewState.hideControls()
+                                },
+                                interactionSource = interactionSource,
+                                modifier =
+                                    Modifier.ifElse(
+                                        index == 0,
+                                        Modifier.focusRequester(focusRequester),
+                                    ),
+                            )
                         }
                     }
                 }
             }
         }
+        when (state) {
+            ViewState.CONTROLLER -> {}
+
+            ViewState.CHAPTERS -> {}
+        }
+
         if (seekBarInteractionSource.collectIsFocusedAsState().value) {
             LaunchedEffect(Unit) {
                 seekProgressPercent =
@@ -273,7 +255,7 @@ fun PlaybackOverlay(
                                     .align(Alignment.BottomStart)
                                     .offsetByPercent(
                                         xPercentage = seekProgressPercent.coerceIn(0f, 1f),
-                                    ).padding(bottom = height - titleHeight - subtitleHeight),
+                                    ).padding(bottom = controllerHeight - titleHeight - subtitleHeight),
                             previewImageUrl = imageUrl,
                             duration = playerControls.duration,
                             seekProgressMs = seekProgressMs,
@@ -284,23 +266,113 @@ fun PlaybackOverlay(
                     }
                 }
             }
+            AnimatedVisibility(
+                showDebugInfo && controllerViewState.controlsVisible,
+                modifier =
+                    Modifier
+                        .align(Alignment.TopStart),
+            ) {
+                currentPlayback?.tracks?.letNotEmpty {
+                    PlaybackTrackInfo(
+                        trackSupport = it,
+                        modifier =
+                            Modifier
+                                .align(Alignment.TopStart)
+                                .padding(16.dp)
+                                .background(AppColors.TransparentBlack50),
+                    )
+                }
+            }
         }
-        AnimatedVisibility(
-            showDebugInfo && controllerViewState.controlsVisible,
-            modifier =
-                Modifier
-                    .align(Alignment.TopStart),
+    }
+}
+
+enum class ViewState {
+    CONTROLLER,
+    CHAPTERS,
+}
+
+@Composable
+fun Controller(
+    title: String?,
+    subtitleStreams: List<SubtitleStream>,
+    chapters: List<Chapter>,
+    playerControls: Player,
+    controllerViewState: ControllerViewState,
+    showPlay: Boolean,
+    previousEnabled: Boolean,
+    nextEnabled: Boolean,
+    seekEnabled: Boolean,
+    seekBack: Duration,
+    skipBackOnResume: Duration?,
+    seekForward: Duration,
+    onPlaybackActionClick: (PlaybackAction) -> Unit,
+    onSeekProgress: (Long) -> Unit,
+    showDebugInfo: Boolean,
+    scale: ContentScale,
+    playbackSpeed: Float,
+    moreButtonOptions: MoreButtonOptions,
+    currentPlayback: CurrentPlayback?,
+    audioStreams: List<AudioStream>,
+    modifier: Modifier = Modifier,
+    subtitle: String? = null,
+    seekBarInteractionSource: MutableInteractionSource = remember { MutableInteractionSource() },
+) {
+    Column(
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = modifier,
+    ) {
+        Column(
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.padding(start = 16.dp),
         ) {
-            currentPlayback?.tracks?.letNotEmpty {
-                PlaybackTrackInfo(
-                    trackSupport = it,
-                    modifier =
-                        Modifier
-                            .align(Alignment.TopStart)
-                            .padding(16.dp)
-                            .background(AppColors.TransparentBlack50),
+            title?.let {
+                Text(
+                    text = it,
+                    style = MaterialTheme.typography.titleLarge,
+                    fontSize = titleTextSize,
                 )
             }
+            subtitle?.let {
+                Text(
+                    text = it,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontSize = subtitleTextSize,
+                )
+            }
+        }
+        PlaybackControls(
+            modifier = Modifier.fillMaxWidth(),
+            subtitleStreams = subtitleStreams,
+            playerControls = playerControls,
+            onPlaybackActionClick = onPlaybackActionClick,
+            controllerViewState = controllerViewState,
+            showDebugInfo = showDebugInfo,
+            onSeekProgress = {
+                onSeekProgress(it)
+            },
+            showPlay = showPlay,
+            previousEnabled = previousEnabled,
+            nextEnabled = nextEnabled,
+            seekEnabled = seekEnabled,
+            seekBarInteractionSource = seekBarInteractionSource,
+            moreButtonOptions = moreButtonOptions,
+            subtitleIndex = currentPlayback?.subtitleIndex,
+            audioIndex = currentPlayback?.audioIndex,
+            audioStreams = audioStreams,
+            playbackSpeed = playbackSpeed,
+            scale = scale,
+            seekBarIntervals = 16,
+            seekBack = seekBack,
+            seekForward = seekForward,
+            skipBackOnResume = skipBackOnResume,
+        )
+        if (chapters.isNotEmpty()) {
+            Text(
+                text = "Chapters",
+                style = MaterialTheme.typography.titleLarge,
+                modifier = Modifier.padding(start = 16.dp),
+            )
         }
     }
 }

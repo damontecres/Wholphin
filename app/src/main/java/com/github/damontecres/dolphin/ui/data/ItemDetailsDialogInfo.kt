@@ -21,36 +21,32 @@ data class ItemDetailsDialogInfo(
 fun ItemDetailsDialog(
     info: ItemDetailsDialogInfo,
     onDismissRequest: () -> Unit,
-    modifier: Modifier = Modifier,
+) = ScrollableDialog(
+    onDismissRequest = onDismissRequest,
 ) {
-    ScrollableDialog(
-        onDismissRequest = onDismissRequest,
-        modifier = modifier,
-    ) {
+    item {
+        Text(
+            text = info.title,
+            style = MaterialTheme.typography.titleMedium,
+        )
+    }
+    if (info.overview.isNotNullOrBlank()) {
         item {
             Text(
-                text = info.title,
-                style = MaterialTheme.typography.titleMedium,
-            )
-        }
-        if (info.overview.isNotNullOrBlank()) {
-            item {
-                Text(
-                    text = info.overview,
-                    style = MaterialTheme.typography.bodyMedium,
-                )
-            }
-        }
-        if (info.files.isNotEmpty()) {
-            item {
-                Spacer(Modifier.height(8.dp))
-            }
-        }
-        items(info.files) { file ->
-            Text(
-                text = "- $file",
+                text = info.overview,
                 style = MaterialTheme.typography.bodyMedium,
             )
         }
+    }
+    if (info.files.isNotEmpty()) {
+        item {
+            Spacer(Modifier.height(8.dp))
+        }
+    }
+    items(info.files) { file ->
+        Text(
+            text = "- $file",
+            style = MaterialTheme.typography.bodyMedium,
+        )
     }
 }

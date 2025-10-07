@@ -31,7 +31,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableLongStateOf
@@ -113,7 +112,9 @@ fun IntervalSeekBarImpl(
     val isFocused by interactionSource.collectIsFocusedAsState()
     var hasSeeked by remember { mutableStateOf(false) }
     var seekPositionMs by remember { mutableLongStateOf((progress * durationMs).toLong()) }
-    val progressToUse by remember { derivedStateOf { if (isFocused && hasSeeked) seekPositionMs else (progress * durationMs).toLong() } }
+//    val progressToUse by remember { derivedStateOf { if (isFocused && hasSeeked) seekPositionMs else (progress * durationMs).toLong() } }
+    val progressToUse =
+        if (isFocused && hasSeeked) seekPositionMs else (progress * durationMs).toLong()
 
     LaunchedEffect(isFocused) {
         if (!isFocused) hasSeeked = false

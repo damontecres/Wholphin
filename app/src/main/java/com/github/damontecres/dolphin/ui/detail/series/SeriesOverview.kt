@@ -253,7 +253,6 @@ fun SeriesOverview(
         ItemDetailsDialog(
             info = info,
             onDismissRequest = { overviewDialog = null },
-            modifier = Modifier,
         )
     }
     moreDialog?.let { params ->
