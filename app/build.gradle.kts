@@ -1,6 +1,9 @@
 import com.google.protobuf.gradle.id
 import com.mikepenz.aboutlibraries.plugin.DuplicateMode
 import com.mikepenz.aboutlibraries.plugin.DuplicateRule
+import java.io.ByteArrayOutputStream
+import java.util.Base64
+import java.util.Properties
 
 plugins {
     alias(libs.plugins.android.application)
@@ -14,6 +17,35 @@ plugins {
     alias(libs.plugins.aboutLibraries)
 }
 
+val isCI = if (System.getenv("CI") != null) System.getenv("CI").toBoolean() else false
+val shouldSign = isCI && System.getenv("KEY_ALIAS") != null
+
+fun getVersionCode(): Int {
+    val stdout = ByteArrayOutputStream()
+    exec {
+        commandLine = listOf("git", "tag", "--list", "v*")
+        standardOutput = stdout
+    }
+    return stdout
+        .toString()
+        .trim()
+        .lines()
+        .size
+}
+
+fun getAppVersion(): String {
+    val stdout = ByteArrayOutputStream()
+    exec {
+        commandLine = listOf("git", "describe", "--tags", "--long", "--match=v*")
+        standardOutput = stdout
+    }
+    return stdout
+        .toString()
+        .trim()
+        .removePrefix("v")
+        .ifBlank { "0.0.0" }
+}
+
 android {
     namespace = "com.github.damontecres.dolphin"
     compileSdk = 36
@@ -22,8 +54,8 @@ android {
         applicationId = "com.github.damontecres.dolphin"
         minSdk = 25
         targetSdk = 36
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = getVersionCode()
+        versionName = getAppVersion()
     }
 
     buildTypes {
@@ -50,6 +82,61 @@ android {
     }
     room {
         schemaDirectory("$projectDir/schemas")
+    }
+    signingConfigs {
+        if (shouldSign) {
+            create("ci") {
+                file("ci.keystore").writeBytes(
+                    Base64.getDecoder().decode(System.getenv("SIGNING_KEY")),
+                )
+                keyAlias = System.getenv("KEY_ALIAS")
+                keyPassword = System.getenv("KEY_PASSWORD")
+                storePassword = System.getenv("KEY_STORE_PASSWORD")
+                storeFile = file("ci.keystore")
+                enableV1Signing = true
+                enableV2Signing = true
+                enableV3Signing = true
+                enableV4Signing = true
+            }
+        }
+    }
+    buildTypes {
+        release {
+            isMinifyEnabled = false
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro",
+            )
+            if (shouldSign) {
+                signingConfig = signingConfigs.getByName("ci")
+            } else {
+                val localPropertiesFile = project.rootProject.file("local.properties")
+                if (localPropertiesFile.exists()) {
+                    val properties = Properties()
+                    properties.load(localPropertiesFile.inputStream())
+                    val signingConfigName = properties["release.signing.config"]?.toString()
+                    if (signingConfigName != null) {
+                        signingConfig = signingConfigs.getByName(signingConfigName)
+                    }
+                }
+            }
+        }
+        debug {
+            if (shouldSign) {
+                signingConfig = signingConfigs.getByName("ci")
+            }
+        }
+
+        applicationVariants.all {
+            val variant = this
+            variant.outputs
+                .map { it as com.android.build.gradle.internal.api.BaseVariantOutputImpl }
+                .forEach { output ->
+                    val outputFileName =
+                        "Dolphin-${variant.baseName}-${variant.versionName}-${variant.versionCode}.apk"
+                    output.outputFileName = outputFileName
+                }
+        }
     }
 }
 
