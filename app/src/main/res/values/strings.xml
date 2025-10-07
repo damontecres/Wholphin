@@ -59,5 +59,6 @@
     <string name="pref_key_update_last_check_threshold">preference.update.threshold</string>
     <string name="pref_key_update_last_check">preference.update.lastTimestamp</string>
     <string name="confirm">Confirm</string>
+    <string name="remember_selected_tab">Remember selected tabs</string>
 
 </resources>

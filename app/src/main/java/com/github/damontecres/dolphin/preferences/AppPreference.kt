@@ -254,6 +254,18 @@ sealed interface AppPreference<T> {
                 },
             )
 
+        val RememberSelectedTab =
+            AppSwitchPreference(
+                title = R.string.remember_selected_tab,
+                defaultValue = false,
+                getter = { it.interfacePreferences.rememberSelectedTab },
+                setter = { prefs, value ->
+                    prefs.updateInterfacePreferences { rememberSelectedTab = value }
+                },
+                summaryOn = R.string.enabled,
+                summaryOff = R.string.disabled,
+            )
+
         val InstalledVersion =
             AppClickablePreference(
                 title = R.string.installed_version,
@@ -301,6 +313,7 @@ val basicPreferences =
                     AppPreference.HomePageItems,
                     AppPreference.RewatchNextUp,
                     AppPreference.PlayThemeMusic,
+                    AppPreference.RememberSelectedTab,
                 ),
         ),
         PreferenceGroup(

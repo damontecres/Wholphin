@@ -14,17 +14,23 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusRestorer
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.unit.dp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Tab
+import androidx.tv.material3.TabDefaults
 import androidx.tv.material3.TabRow
+import androidx.tv.material3.TabRowDefaults
 import androidx.tv.material3.Text
 import com.github.damontecres.dolphin.preferences.UserPreferences
+import com.github.damontecres.dolphin.preferences.rememberTab
 import com.github.damontecres.dolphin.ui.components.ErrorMessage
 import com.github.damontecres.dolphin.ui.components.RecommendedTvShow
 import com.github.damontecres.dolphin.ui.ifElse
 import com.github.damontecres.dolphin.ui.nav.Destination
 import com.github.damontecres.dolphin.ui.nav.NavigationManager
+import com.github.damontecres.dolphin.ui.preferences.PreferencesViewModel
 import com.github.damontecres.dolphin.ui.tryRequestFocus
 
 @Composable
@@ -33,29 +39,71 @@ fun CollectionFolderTv(
     navigationManager: NavigationManager,
     destination: Destination.MediaItem,
     modifier: Modifier = Modifier,
+    preferencesViewModel: PreferencesViewModel = hiltViewModel(),
 ) {
+    val uiPrefs = preferences.appPreferences.interfacePreferences
+    val rememberedTabIndex =
+        if (uiPrefs.rememberSelectedTab) {
+            uiPrefs.getRememberedTabsOrDefault(destination.itemId.toString(), 0)
+        } else {
+            0
+        }
+
     val tabs = listOf("Recommended", "Library")
-    var selectedTabIndex by rememberSaveable { mutableIntStateOf(0) }
+    var focusTabIndex by rememberSaveable { mutableIntStateOf(rememberedTabIndex) }
+    var selectedTabIndex by rememberSaveable { mutableIntStateOf(rememberedTabIndex) }
     val focusRequester = remember { FocusRequester() }
+
     val firstTabFocusRequester = remember { FocusRequester() }
     LaunchedEffect(Unit) { firstTabFocusRequester.tryRequestFocus() }
+
+    if (uiPrefs.rememberSelectedTab) {
+        LaunchedEffect(selectedTabIndex) {
+            preferencesViewModel.preferenceDataStore.updateData {
+                preferences.appPreferences.rememberTab(destination.itemId, selectedTabIndex)
+            }
+        }
+    }
 
     LaunchedEffect(Unit) { focusRequester.tryRequestFocus() }
     Column(
         modifier = modifier,
     ) {
         TabRow(
-            selectedTabIndex = selectedTabIndex,
+            selectedTabIndex = focusTabIndex,
             modifier =
                 Modifier
-                    .padding(start = 32.dp, top = 16.dp)
-                    .focusRestorer(firstTabFocusRequester),
+                    .padding(start = 32.dp, top = 16.dp, bottom = 16.dp)
+                    .focusRestorer(firstTabFocusRequester)
+                    .onFocusChanged {
+                        if (!it.isFocused) {
+                            focusTabIndex = selectedTabIndex
+                        }
+                    },
+            indicator =
+                @Composable { tabPositions, doesTabRowHaveFocus ->
+                    tabPositions.getOrNull(focusTabIndex)?.let { currentTabPosition ->
+//                        TabRowDefaults.PillIndicator(
+//                            currentTabPosition = currentTabPosition,
+//                            doesTabRowHaveFocus = doesTabRowHaveFocus,
+//                        )
+                        TabRowDefaults.UnderlinedIndicator(
+                            currentTabPosition = currentTabPosition,
+                            doesTabRowHaveFocus = doesTabRowHaveFocus,
+                            activeColor = MaterialTheme.colorScheme.border,
+                        )
+                    }
+                },
             tabs = {
                 tabs.forEachIndexed { index, title ->
                     Tab(
-                        selected = selectedTabIndex == index,
+                        selected = focusTabIndex == index,
                         onClick = { selectedTabIndex = index },
-                        onFocus = {},
+                        onFocus = { focusTabIndex = index },
+                        colors =
+                            TabDefaults.pillIndicatorTabColors(
+                                focusedContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            ),
                     ) {
                         Text(
                             text = title,
@@ -64,7 +112,7 @@ fun CollectionFolderTv(
                                 Modifier
                                     .padding(8.dp)
                                     .ifElse(
-                                        index == 0,
+                                        index == selectedTabIndex,
                                         Modifier.focusRequester(firstTabFocusRequester),
                                     ),
                         )

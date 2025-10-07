@@ -68,7 +68,7 @@ data class HomeRow(
 fun HomePage(
     preferences: UserPreferences,
     navigationManager: NavigationManager,
-    modifier: Modifier,
+    modifier: Modifier = Modifier,
     viewModel: HomeViewModel = hiltViewModel(),
 ) {
     OneTimeLaunchedEffect {
