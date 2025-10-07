@@ -29,6 +29,8 @@ class AppPreferencesSerializer
                                 autoPlayNext = AppPreference.AutoPlayNextUp.defaultValue
                                 autoPlayNextDelaySeconds =
                                     AppPreference.AutoPlayNextDelay.defaultValue
+                                skipBackOnResumeSeconds =
+                                    AppPreference.SkipBackOnResume.defaultValue.seconds.inWholeMilliseconds
                             }.build()
                     homePagePreferences =
                         HomePagePreferences

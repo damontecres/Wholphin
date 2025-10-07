@@ -57,6 +57,7 @@ import androidx.media3.ui.compose.state.rememberPreviousButtonState
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.surfaceColorAtElevation
 import com.github.damontecres.dolphin.preferences.UserPreferences
+import com.github.damontecres.dolphin.preferences.skipBackOnResume
 import com.github.damontecres.dolphin.ui.OneTimeLaunchedEffect
 import com.github.damontecres.dolphin.ui.components.LoadingPage
 import com.github.damontecres.dolphin.ui.nav.Destination
@@ -171,6 +172,7 @@ fun PlaybackContent(
                     seekBack = preferences.appPreferences.playbackPreferences.skipBackMs.milliseconds,
                     controllerViewState = controllerViewState,
                     updateSkipIndicator = updateSkipIndicator,
+                    skipBackOnResume = preferences.appPreferences.playbackPreferences.skipBackOnResume,
                 )
 
             Box(
@@ -255,6 +257,7 @@ fun PlaybackContent(
                             seekEnabled = true,
                             seekForward = preferences.appPreferences.playbackPreferences.skipForwardMs.milliseconds,
                             seekBack = preferences.appPreferences.playbackPreferences.skipBackMs.milliseconds,
+                            skipBackOnResume = preferences.appPreferences.playbackPreferences.skipBackOnResume,
                             onPlaybackActionClick = {
                                 when (it) {
                                     is PlaybackAction.PlaybackSpeed -> {

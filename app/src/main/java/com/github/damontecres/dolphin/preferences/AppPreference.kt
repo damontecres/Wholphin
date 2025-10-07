@@ -212,6 +212,28 @@ sealed interface AppPreference<T> {
                 summaryOff = R.string.disabled,
             )
 
+        val SkipBackOnResume =
+            AppSliderPreference(
+                title = R.string.skip_back_on_resume_preference,
+                defaultValue = 0,
+                min = 0,
+                max = 10,
+                interval = 1,
+                getter = { it.playbackPreferences.skipBackOnResumeSeconds.milliseconds.inWholeSeconds },
+                setter = { prefs, value ->
+                    prefs.updatePlaybackPreferences {
+                        skipBackOnResumeSeconds = value.seconds.inWholeMilliseconds
+                    }
+                },
+                summarizer = { value ->
+                    if (value == 0L) {
+                        "Disabled"
+                    } else {
+                        "${value}s"
+                    }
+                },
+            )
+
         val AutoPlayNextDelay =
             AppSliderPreference(
                 title = R.string.auto_play_next_delay,
@@ -290,6 +312,7 @@ val basicPreferences =
                     AppPreference.ControllerTimeout,
                     AppPreference.AutoPlayNextUp,
                     AppPreference.AutoPlayNextDelay,
+                    AppPreference.SkipBackOnResume,
                     AppPreference.PlaybackDebugInfo,
                 ),
         ),

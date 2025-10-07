@@ -19,6 +19,7 @@ class PlaybackKeyHandler(
     private val seekForward: Duration,
     private val controllerViewState: ControllerViewState,
     private val updateSkipIndicator: (Long) -> Unit,
+    private val skipBackOnResume: Duration?,
 ) {
     fun onKeyEvent(it: KeyEvent): Boolean {
         var result = true
@@ -44,6 +45,9 @@ class PlaybackKeyHandler(
             when (it.key) {
                 Key.MediaPlay -> {
                     Util.handlePlayButtonAction(player)
+                    skipBackOnResume?.let {
+                        player.seekBack(it)
+                    }
                 }
 
                 Key.MediaPause -> {
@@ -55,6 +59,10 @@ class PlaybackKeyHandler(
                     Util.handlePlayPauseButtonAction(player)
                     if (!player.isPlaying) {
                         controllerViewState.showControls()
+                    } else {
+                        skipBackOnResume?.let {
+                            player.seekBack(it)
+                        }
                     }
                 }
 

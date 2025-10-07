@@ -114,6 +114,7 @@ fun PlaybackControls(
     scale: ContentScale,
     seekBarIntervals: Int,
     seekBack: Duration,
+    skipBackOnResume: Duration?,
     seekForward: Duration,
     modifier: Modifier = Modifier,
     initialFocusRequester: FocusRequester = remember { FocusRequester() },
@@ -178,6 +179,7 @@ fun PlaybackControls(
                 nextEnabled = nextEnabled,
                 seekBack = seekBack,
                 seekForward = seekForward,
+                skipBackOnResume = skipBackOnResume,
                 modifier = Modifier.align(Alignment.Center),
             )
             RightPlaybackButtons(
@@ -446,6 +448,7 @@ fun PlaybackButtons(
     previousEnabled: Boolean,
     nextEnabled: Boolean,
     seekBack: Duration,
+    skipBackOnResume: Duration?,
     seekForward: Duration,
     modifier: Modifier = Modifier,
 ) {
@@ -475,7 +478,14 @@ fun PlaybackButtons(
             iconRes = if (showPlay) R.drawable.baseline_play_arrow_24 else R.drawable.baseline_pause_24,
             onClick = {
                 onControllerInteraction.invoke()
-                if (showPlay) player.play() else player.pause()
+                if (showPlay) {
+                    player.play()
+                    skipBackOnResume?.let {
+                        player.seekBack(it)
+                    }
+                } else {
+                    player.pause()
+                }
             },
             onControllerInteraction = onControllerInteraction,
         )

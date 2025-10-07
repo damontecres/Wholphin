@@ -11,6 +11,7 @@ message PlaybackPreferences {
   bool show_debug_info = 5;
   bool auto_play_next = 6;
   int64 auto_play_next_delay_seconds = 7;
+  int64 skip_back_on_resume_seconds = 8;
 }
 
 message HomePagePreferences{

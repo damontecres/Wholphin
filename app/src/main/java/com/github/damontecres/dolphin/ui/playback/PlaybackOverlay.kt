@@ -57,6 +57,7 @@ fun PlaybackOverlay(
     nextEnabled: Boolean,
     seekEnabled: Boolean,
     seekBack: Duration,
+    skipBackOnResume: Duration?,
     seekForward: Duration,
     onPlaybackActionClick: (PlaybackAction) -> Unit,
     onSeekBarChange: (Long) -> Unit,
@@ -183,6 +184,7 @@ fun PlaybackOverlay(
                         seekBarIntervals = 16,
                         seekBack = seekBack,
                         seekForward = seekForward,
+                        skipBackOnResume = skipBackOnResume,
                     )
                 }
             }

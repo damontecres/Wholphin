@@ -55,5 +55,6 @@
     <string name="sort_by_date_added">Date Added</string>
     <string name="sort_by_date_played">Date Played</string>
     <string name="sort_by_date_released">Date Released</string>
+    <string name="skip_back_on_resume_preference">Skip back when resuming playback</string>
 
 </resources>
