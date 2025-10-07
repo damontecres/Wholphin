@@ -113,7 +113,7 @@ class CollectionFolderViewModel
                     val newPager =
                         ApiRequestPager(api, request, GetItemsRequestHandler, viewModelScope)
                     newPager.init()
-                    newPager.getBlocking(0)
+                    if (newPager.isNotEmpty()) newPager.getBlocking(0)
                     withContext(Dispatchers.Main) {
                         pager.value = newPager
                         loading.value = LoadingState.Success

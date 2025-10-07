@@ -10,6 +10,11 @@ class NavigationManager(
         backStack.add(destination)
     }
 
+    fun navigateToFromDrawer(destination: Destination) {
+        goToHome()
+        backStack.add(destination)
+    }
+
     fun goBack() {
         backStack.removeLastOrNull()
     }

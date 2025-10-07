@@ -3,6 +3,8 @@ package com.github.damontecres.dolphin.ui.nav
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusGroup
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -10,7 +12,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
@@ -27,6 +29,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusRestorer
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
@@ -41,6 +44,7 @@ import androidx.lifecycle.findViewTreeViewModelStoreOwner
 import androidx.lifecycle.viewModelScope
 import androidx.tv.material3.DrawerValue
 import androidx.tv.material3.Icon
+import androidx.tv.material3.LocalContentColor
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.NavigationDrawer
 import androidx.tv.material3.NavigationDrawerItem
@@ -57,6 +61,7 @@ import com.github.damontecres.dolphin.data.model.BaseItem
 import com.github.damontecres.dolphin.preferences.UserPreferences
 import com.github.damontecres.dolphin.ui.FontAwesome
 import com.github.damontecres.dolphin.util.ExceptionHandler
+import com.github.damontecres.dolphin.util.supportedCollectionTypes
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import org.jellyfin.sdk.api.client.ApiClient
@@ -73,6 +78,7 @@ class NavDrawerViewModel
         val api: ApiClient,
     ) : ViewModel() {
         val libraries = MutableLiveData<List<BaseItem>>(listOf())
+        val selectedIndex = MutableLiveData<Int>(-1)
 
         init {
             viewModelScope.launch(ExceptionHandler()) {
@@ -80,9 +86,15 @@ class NavDrawerViewModel
                     api.userViewsApi
                         .getUserViews()
                         .content.items
-//                Timber.v("userViews: $userViews")
-                libraries.value = userViews.map { BaseItem.from(it, api) }
+                libraries.value =
+                    userViews
+                        .filter { it.collectionType in supportedCollectionTypes }
+                        .map { BaseItem.from(it, api) }
             }
+        }
+
+        fun setIndex(index: Int) {
+            selectedIndex.value = index
         }
     }
 
@@ -111,6 +123,7 @@ fun NavDrawer(
         drawerFocusRequester.requestFocus()
     }
     val libraries by viewModel.libraries.observeAsState(listOf())
+    val selectedIndex by viewModel.selectedIndex.observeAsState(-1)
 
     NavigationDrawer(
         modifier =
@@ -133,17 +146,26 @@ fun NavDrawer(
                         text = user?.name ?: "",
                         subtext = server?.name ?: server?.url,
                         icon = Icons.Default.AccountCircle,
-                        onClick = { navigationManager.navigateTo(Destination.UserList) },
+                        selected = false,
+                        onClick = {
+                            navigationManager.navigateTo(Destination.UserList)
+                        },
                     )
                     IconNavItem(
                         text = "Search",
                         icon = Icons.Default.Search,
-                        onClick = { navigationManager.navigateTo(Destination.Search) },
+                        selected = selectedIndex == -2,
+                        onClick = {
+                            viewModel.setIndex(-2)
+                            navigationManager.navigateToFromDrawer(Destination.Search)
+                        },
                     )
                     IconNavItem(
                         text = "Home",
                         icon = Icons.Default.Home,
+                        selected = selectedIndex == -1,
                         onClick = {
+                            viewModel.setIndex(-1)
                             if (destination is Destination.Main) {
                                 navigationManager.reloadHome()
                             } else {
@@ -160,11 +182,13 @@ fun NavDrawer(
                             Modifier
                                 .weight(1f),
                     ) {
-                        items(libraries) {
+                        itemsIndexed(libraries) { index, it ->
                             LibraryNavItem(
                                 library = it,
+                                selected = selectedIndex == index,
                                 onClick = {
-                                    navigationManager.navigateTo(it.destination())
+                                    viewModel.setIndex(index)
+                                    navigationManager.navigateToFromDrawer(it.destination())
                                 },
                             )
                         }
@@ -172,7 +196,10 @@ fun NavDrawer(
                     IconNavItem(
                         text = "Settings",
                         icon = Icons.Default.Settings,
-                        onClick = { navigationManager.navigateTo(Destination.Settings) },
+                        selected = false,
+                        onClick = {
+                            navigationManager.navigateTo(Destination.Settings)
+                        },
                         modifier = Modifier,
                     )
                 }
@@ -195,17 +222,27 @@ fun NavigationDrawerScope.IconNavItem(
     text: String,
     icon: ImageVector,
     onClick: () -> Unit,
+    selected: Boolean,
     modifier: Modifier = Modifier,
     subtext: String? = null,
+    interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
 ) {
+    val isFocused = interactionSource.collectIsFocusedAsState().value
     NavigationDrawerItem(
         modifier = modifier,
         selected = false,
         onClick = onClick,
         leadingContent = {
+            val color =
+                when {
+                    isFocused -> LocalContentColor.current
+                    selected -> MaterialTheme.colorScheme.border
+                    else -> LocalContentColor.current
+                }
             Icon(
                 icon,
                 contentDescription = null,
+                tint = color,
             )
         },
         supportingContent =
@@ -217,7 +254,7 @@ fun NavigationDrawerScope.IconNavItem(
                     )
                 }
             },
-        interactionSource = null,
+        interactionSource = interactionSource,
     ) {
         Text(
             modifier = Modifier,
@@ -231,7 +268,9 @@ fun NavigationDrawerScope.IconNavItem(
 fun NavigationDrawerScope.LibraryNavItem(
     library: BaseItem,
     onClick: () -> Unit,
+    selected: Boolean,
     modifier: Modifier = Modifier,
+    interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
 ) {
     // TODO
     val icon =
@@ -242,6 +281,13 @@ fun NavigationDrawerScope.LibraryNavItem(
             CollectionType.LIVETV -> R.string.fa_tv
             CollectionType.MUSIC -> R.string.fa_music
             else -> R.string.fa_film
+        }
+    val isFocused = interactionSource.collectIsFocusedAsState().value
+    val color =
+        when {
+            isFocused -> Color.Unspecified
+            selected -> MaterialTheme.colorScheme.border
+            else -> Color.Unspecified
         }
     NavigationDrawerItem(
         modifier = modifier,
@@ -254,6 +300,7 @@ fun NavigationDrawerScope.LibraryNavItem(
                     textAlign = TextAlign.Center,
                     fontSize = 16.sp,
                     fontFamily = FontAwesome,
+                    color = color,
                 )
             }
         },

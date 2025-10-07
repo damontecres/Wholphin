@@ -38,6 +38,7 @@ fun CollectionFolderTv(
     var selectedTabIndex by rememberSaveable { mutableIntStateOf(0) }
     val focusRequester = remember { FocusRequester() }
     val firstTabFocusRequester = remember { FocusRequester() }
+    LaunchedEffect(Unit) { firstTabFocusRequester.tryRequestFocus() }
 
     LaunchedEffect(Unit) { focusRequester.tryRequestFocus() }
     Column(
@@ -62,7 +63,10 @@ fun CollectionFolderTv(
                             modifier =
                                 Modifier
                                     .padding(8.dp)
-                                    .ifElse(index == 0, Modifier.focusRequester(firstTabFocusRequester)),
+                                    .ifElse(
+                                        index == 0,
+                                        Modifier.focusRequester(firstTabFocusRequester),
+                                    ),
                         )
                     }
                 }
