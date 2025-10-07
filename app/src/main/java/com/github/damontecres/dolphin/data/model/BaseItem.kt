@@ -9,6 +9,7 @@ import org.jellyfin.sdk.api.client.extensions.imageApi
 import org.jellyfin.sdk.model.api.BaseItemDto
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.ImageType
+import org.jellyfin.sdk.model.extensions.ticks
 
 @Serializable
 data class BaseItem(
@@ -24,6 +25,13 @@ data class BaseItem(
 
     @Transient
     val indexNumber = data.indexNumber
+
+    @Transient
+    val resumeMs =
+        data.userData
+            ?.playbackPositionTicks
+            ?.ticks
+            ?.inWholeMilliseconds
 
     fun destination(): Destination {
         val result =

@@ -11,6 +11,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.relocation.bringIntoViewRequester
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -41,6 +44,9 @@ import com.github.damontecres.dolphin.data.model.Video
 import com.github.damontecres.dolphin.preferences.UserPreferences
 import com.github.damontecres.dolphin.ui.cards.ChapterRow
 import com.github.damontecres.dolphin.ui.cards.PersonRow
+import com.github.damontecres.dolphin.ui.components.DialogItem
+import com.github.damontecres.dolphin.ui.components.DialogParams
+import com.github.damontecres.dolphin.ui.components.DialogPopup
 import com.github.damontecres.dolphin.ui.components.ErrorMessage
 import com.github.damontecres.dolphin.ui.components.ExpandablePlayButtons
 import com.github.damontecres.dolphin.ui.components.LoadingPage
@@ -55,9 +61,11 @@ import com.github.damontecres.dolphin.ui.tryRequestFocus
 import com.github.damontecres.dolphin.util.ExceptionHandler
 import com.github.damontecres.dolphin.util.LoadingState
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import org.jellyfin.sdk.api.client.ApiClient
+import org.jellyfin.sdk.api.client.extensions.playStateApi
 import org.jellyfin.sdk.model.extensions.ticks
 import java.util.UUID
 import javax.inject.Inject
@@ -69,14 +77,16 @@ class MovieViewModel
     constructor(
         api: ApiClient,
     ) : LoadingItemViewModel<Video>(api) {
+        private lateinit var itemId: UUID
         val people = MutableLiveData<List<Person>>(listOf())
         val chapters = MutableLiveData<List<Chapter>>(listOf())
 
         override fun init(
             itemId: UUID,
             potential: BaseItem?,
-        ): Job? =
-            viewModelScope.launch(ExceptionHandler()) {
+        ): Job? {
+            this.itemId = itemId
+            return viewModelScope.launch(ExceptionHandler()) {
                 super.init(itemId, potential)?.join()
                 item.value?.let { item ->
                     people.value =
@@ -85,6 +95,17 @@ class MovieViewModel
                         }
                     chapters.value = Chapter.fromDto(item.data, api)
                 }
+            }
+        }
+
+        fun setWatched(played: Boolean) =
+            viewModelScope.launch(ExceptionHandler() + Dispatchers.IO) {
+                if (played) {
+                    api.playStateApi.markPlayedItem(itemId)
+                } else {
+                    api.playStateApi.markUnplayedItem(itemId)
+                }
+                init(itemId, null)
             }
     }
 
@@ -105,6 +126,7 @@ fun MovieDetails(
     val loading by viewModel.loading.observeAsState(LoadingState.Loading)
 
     var overviewDialog by remember { mutableStateOf<ItemDetailsDialogInfo?>(null) }
+    var moreDialog by remember { mutableStateOf<DialogParams?>(null) }
 
     when (val state = loading) {
         is LoadingState.Error -> ErrorMessage(state)
@@ -137,8 +159,46 @@ fun MovieDetails(
                                         .orEmpty(),
                             )
                     },
-                    moreOnClick = {},
-                    watchOnClick = {},
+                    moreOnClick = {
+                        moreDialog =
+                            DialogParams(
+                                fromLongClick = false,
+                                title = movie.name + " (${movie.data.productionYear ?: ""})",
+                                items =
+                                    listOf(
+                                        DialogItem(
+                                            "Play",
+                                            Icons.Default.PlayArrow,
+                                            iconColor = Color.Green.copy(alpha = .8f),
+                                        ) {
+                                            navigationManager.navigateTo(
+                                                Destination.Playback(
+                                                    movie.id,
+                                                    movie.resumeMs ?: 0L,
+                                                    movie,
+                                                ),
+                                            )
+                                        },
+                                        DialogItem(
+                                            "Playback Settings",
+                                            Icons.Default.Settings,
+//                                                iconColor = Color.Green.copy(alpha = .8f),
+                                        ) {
+                                            // TODO choose audio or subtitle tracks?
+                                        },
+                                        DialogItem(
+                                            "Play Version",
+                                            Icons.Default.PlayArrow,
+                                            iconColor = Color.Green.copy(alpha = .8f),
+                                        ) {
+                                            // TODO only show for multiple files
+                                        },
+                                    ),
+                            )
+                    },
+                    watchOnClick = {
+                        viewModel.setWatched((movie.data.userData?.played ?: false).not())
+                    },
                     modifier = modifier,
                 )
             }
@@ -149,6 +209,16 @@ fun MovieDetails(
             info = info,
             onDismissRequest = { overviewDialog = null },
             modifier = Modifier,
+        )
+    }
+    moreDialog?.let { params ->
+        DialogPopup(
+            showDialog = true,
+            title = params.title,
+            dialogItems = params.items,
+            onDismissRequest = { moreDialog = null },
+            dismissOnClick = true,
+            waitToLoad = params.fromLongClick,
         )
     }
 }

@@ -3,6 +3,7 @@ package com.github.damontecres.dolphin.ui.detail.series
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -192,11 +193,7 @@ fun SeriesOverview(
                                                 navigationManager.navigateTo(
                                                     Destination.Playback(
                                                         ep.id,
-                                                        ep.data.userData
-                                                            ?.playbackPositionTicks
-                                                            ?.ticks
-                                                            ?.inWholeMilliseconds
-                                                            ?: 0L,
+                                                        ep.resumeMs ?: 0L,
                                                         ep,
                                                     ),
                                                 )
@@ -216,11 +213,18 @@ fun SeriesOverview(
                                                 )
                                             },
                                             DialogItem(
+                                                "Playback Settings",
+                                                Icons.Default.Settings,
+//                                                iconColor = Color.Green.copy(alpha = .8f),
+                                            ) {
+                                                // TODO choose audio or subtitle tracks?
+                                            },
+                                            DialogItem(
                                                 "Play Version",
                                                 Icons.Default.PlayArrow,
                                                 iconColor = Color.Green.copy(alpha = .8f),
                                             ) {
-                                                // TODO
+                                                // TODO only show for multiple files
                                             },
                                         ),
                                 )
