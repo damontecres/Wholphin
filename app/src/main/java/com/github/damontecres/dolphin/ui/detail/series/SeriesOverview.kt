@@ -1,5 +1,8 @@
 package com.github.damontecres.dolphin.ui.detail.series
 
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -11,9 +14,13 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.graphics.Color
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.github.damontecres.dolphin.preferences.UserPreferences
 import com.github.damontecres.dolphin.ui.OneTimeLaunchedEffect
+import com.github.damontecres.dolphin.ui.components.DialogItem
+import com.github.damontecres.dolphin.ui.components.DialogParams
+import com.github.damontecres.dolphin.ui.components.DialogPopup
 import com.github.damontecres.dolphin.ui.components.ErrorMessage
 import com.github.damontecres.dolphin.ui.components.LoadingPage
 import com.github.damontecres.dolphin.ui.data.ItemDetailsDialog
@@ -24,7 +31,9 @@ import com.github.damontecres.dolphin.ui.nav.Destination
 import com.github.damontecres.dolphin.ui.nav.NavigationManager
 import com.github.damontecres.dolphin.ui.tryRequestFocus
 import com.github.damontecres.dolphin.util.LoadingState
+import com.github.damontecres.dolphin.util.seasonEpisode
 import kotlinx.serialization.Serializable
+import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.ImageType
 import org.jellyfin.sdk.model.extensions.ticks
 import timber.log.Timber
@@ -89,6 +98,7 @@ fun SeriesOverview(
     }
 
     var overviewDialog by remember { mutableStateOf<ItemDetailsDialogInfo?>(null) }
+    var moreDialog by remember { mutableStateOf<DialogParams?>(null) }
 
     LaunchedEffect(episodes.items) {
         if (episodes.items.isNotEmpty()) {
@@ -166,7 +176,55 @@ fun SeriesOverview(
                         }
                     },
                     moreOnClick = {
-                        // TODO show more actions
+                        episodes.items.getOrNull(position.episodeRowIndex)?.let { ep ->
+                            moreDialog =
+                                DialogParams(
+                                    fromLongClick = false,
+                                    title = series.name + " - " + ep.data.seasonEpisode,
+                                    items =
+                                        listOf(
+                                            DialogItem(
+                                                "Play",
+                                                Icons.Default.PlayArrow,
+                                                iconColor = Color.Green.copy(alpha = .8f),
+                                            ) {
+                                                viewModel.release()
+                                                navigationManager.navigateTo(
+                                                    Destination.Playback(
+                                                        ep.id,
+                                                        ep.data.userData
+                                                            ?.playbackPositionTicks
+                                                            ?.ticks
+                                                            ?.inWholeMilliseconds
+                                                            ?: 0L,
+                                                        ep,
+                                                    ),
+                                                )
+                                            },
+                                            DialogItem(
+                                                "Go to series",
+                                                Icons.AutoMirrored.Filled.ArrowForward,
+//                                            iconColor = Color.Green.copy(alpha = .8f),
+                                            ) {
+                                                viewModel.release()
+                                                navigationManager.navigateTo(
+                                                    Destination.MediaItem(
+                                                        series.id,
+                                                        BaseItemKind.SERIES,
+                                                        series,
+                                                    ),
+                                                )
+                                            },
+                                            DialogItem(
+                                                "Play Version",
+                                                Icons.Default.PlayArrow,
+                                                iconColor = Color.Green.copy(alpha = .8f),
+                                            ) {
+                                                // TODO
+                                            },
+                                        ),
+                                )
+                        }
                     },
                     overviewOnClick = {
                         episodes.items.getOrNull(position.episodeRowIndex)?.let {
@@ -192,6 +250,16 @@ fun SeriesOverview(
             info = info,
             onDismissRequest = { overviewDialog = null },
             modifier = Modifier,
+        )
+    }
+    moreDialog?.let { params ->
+        DialogPopup(
+            showDialog = true,
+            title = params.title,
+            dialogItems = params.items,
+            onDismissRequest = { moreDialog = null },
+            dismissOnClick = true,
+            waitToLoad = params.fromLongClick,
         )
     }
 }
