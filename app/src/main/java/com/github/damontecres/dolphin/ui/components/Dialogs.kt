@@ -29,6 +29,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.key.Key
@@ -37,11 +38,13 @@ import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.tv.material3.Icon
 import androidx.tv.material3.ListItem
+import androidx.tv.material3.LocalContentColor
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import androidx.tv.material3.surfaceColorAtElevation
@@ -93,6 +96,7 @@ data class DialogItem(
     constructor(
         text: String,
         icon: ImageVector,
+        iconColor: Color? = null,
         onClick: () -> Unit,
     ) : this(
         headlineContent = {
@@ -105,7 +109,7 @@ data class DialogItem(
             Icon(
                 imageVector = icon,
                 contentDescription = text,
-//                tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                tint = iconColor ?: LocalContentColor.current,
             )
         },
         onClick = onClick,
@@ -139,6 +143,7 @@ fun DialogPopup(
     dismissOnClick: Boolean = true,
     waitToLoad: Boolean = true,
     properties: DialogProperties = DialogProperties(),
+    elevation: Dp = 3.dp,
 ) {
     var waiting by remember { mutableStateOf(waitToLoad) }
     if (showDialog) {
@@ -158,7 +163,8 @@ fun DialogPopup(
             onDismissRequest = onDismissRequest,
             properties = properties,
         ) {
-            val elevatedContainerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp)
+            val elevatedContainerColor =
+                MaterialTheme.colorScheme.surfaceColorAtElevation(elevation)
             LazyColumn(
                 modifier =
                     Modifier

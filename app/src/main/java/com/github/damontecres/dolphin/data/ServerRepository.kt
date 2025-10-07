@@ -102,6 +102,7 @@ class ServerRepository
                     serverDao.getServer(serverId)
                 }
             if (serverAndUsers != null) {
+                _currentServer = serverAndUsers.server
                 val user = serverAndUsers.users.firstOrNull { it.id == userId }
                 if (user != null) {
                     changeUser(serverAndUsers.server, user)
@@ -140,6 +141,39 @@ class ServerRepository
                         changeUser(server, user)
                     }
                 }
+            }
+        }
+
+        suspend fun removeUser(user: JellyfinUser) {
+            if (currentUser == user) {
+                _currentUser = null
+                userPreferencesDataStore.updateData {
+                    it
+                        .toBuilder()
+                        .apply {
+                            currentUserId = ""
+                        }.build()
+                }
+                apiClient.update(accessToken = null)
+            }
+            withContext(Dispatchers.IO) {
+                serverDao.deleteUser(user.serverId, user.id)
+            }
+        }
+
+        suspend fun removeServer(server: JellyfinServer) {
+            if (currentServer == server) {
+                _currentServer = null
+                userPreferencesDataStore.updateData {
+                    it
+                        .toBuilder()
+                        .apply {
+                            currentServerId = ""
+                        }.build()
+                }
+            }
+            withContext(Dispatchers.IO) {
+                serverDao.deleteServer(server.id)
             }
         }
     }

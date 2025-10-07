@@ -72,7 +72,7 @@ class MainActivity : AppCompatActivity() {
                     val appPreferences by userPreferencesDataStore.data.collectAsState(null)
                     appPreferences?.let { appPreferences ->
                         LaunchedEffect(Unit) {
-                            if (appPreferences.currentServerId.isNotBlank() && appPreferences.currentUserId.isNotBlank()) {
+                            if (appPreferences.currentServerId.isNotBlank()) {
                                 serverRepository.restoreSession(
                                     appPreferences.currentServerId,
                                     appPreferences.currentUserId,

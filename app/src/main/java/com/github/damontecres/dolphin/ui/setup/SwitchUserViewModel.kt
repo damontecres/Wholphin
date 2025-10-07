@@ -241,4 +241,16 @@ class SwitchUserViewModel
                 }
             }
         }
+
+        fun removeUser(user: JellyfinUser) {
+            viewModelScope.launch(ExceptionHandler()) {
+                serverRepository.removeUser(user)
+            }
+        }
+
+        fun removeServer(server: JellyfinServer) {
+            viewModelScope.launch(ExceptionHandler()) {
+                serverRepository.removeServer(server)
+            }
+        }
     }

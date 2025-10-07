@@ -3,14 +3,28 @@ package com.github.damontecres.dolphin.ui.setup
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.DialogProperties
 import androidx.tv.material3.Icon
 import androidx.tv.material3.ListItem
 import androidx.tv.material3.Text
+import com.github.damontecres.dolphin.R
 import com.github.damontecres.dolphin.data.JellyfinUser
+import com.github.damontecres.dolphin.ui.FontAwesome
+import com.github.damontecres.dolphin.ui.components.DialogItem
+import com.github.damontecres.dolphin.ui.components.DialogPopup
 
 @Composable
 fun UserList(
@@ -22,13 +36,14 @@ fun UserList(
     onSwitchServer: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    var showDeleteDialog by remember { mutableStateOf<JellyfinUser?>(null) }
+
     LazyColumn(modifier = modifier) {
         items(users) { user ->
             ListItem(
                 enabled = true,
-                selected = false,
+                selected = user == currentUser,
                 headlineContent = { Text(text = user.name ?: user.id) },
-                supportingContent = { },
                 leadingContent = {
                     if (user.id == currentUser?.id) {
                         Icon(
@@ -39,7 +54,7 @@ fun UserList(
                 },
                 onClick = { onSwitchUser.invoke(user) },
                 onLongClick = {
-                    // TODO dialog to remove user
+                    showDeleteDialog = user
                 },
                 modifier = Modifier,
             )
@@ -50,7 +65,13 @@ fun UserList(
                 enabled = true,
                 selected = false,
                 headlineContent = { Text(text = "Add User") },
-                supportingContent = { },
+                leadingContent = {
+                    Icon(
+                        imageVector = Icons.Default.Add,
+                        tint = Color.Green.copy(alpha = .8f),
+                        contentDescription = null,
+                    )
+                },
                 onClick = { onAddUser.invoke() },
                 modifier = Modifier,
             )
@@ -61,10 +82,39 @@ fun UserList(
                 enabled = true,
                 selected = false,
                 headlineContent = { Text(text = "Switch servers") },
-                supportingContent = { },
+                leadingContent = {
+                    Text(
+                        text = stringResource(R.string.fa_arrow_left_arrow_right),
+                        fontFamily = FontAwesome,
+                    )
+                },
                 onClick = { onSwitchServer.invoke() },
                 modifier = Modifier,
             )
         }
+    }
+    showDeleteDialog?.let { user ->
+        DialogPopup(
+            showDialog = true,
+            title = user.name ?: user.id,
+            dialogItems =
+                listOf(
+                    DialogItem("Switch", R.string.fa_arrow_left_arrow_right) {
+                        onSwitchUser.invoke(user)
+                    },
+                    DialogItem(
+                        "Delete",
+                        Icons.Default.Delete,
+                        Color.Red.copy(alpha = .8f),
+                    ) {
+                        onRemoveUser.invoke(user)
+                    },
+                ),
+            onDismissRequest = { showDeleteDialog = null },
+            dismissOnClick = true,
+            waitToLoad = true,
+            properties = DialogProperties(),
+            elevation = 5.dp,
+        )
     }
 }
