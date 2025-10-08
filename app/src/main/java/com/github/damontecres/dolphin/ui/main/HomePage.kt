@@ -39,7 +39,6 @@ import androidx.tv.material3.Text
 import coil3.compose.AsyncImage
 import com.github.damontecres.dolphin.data.model.BaseItem
 import com.github.damontecres.dolphin.preferences.UserPreferences
-import com.github.damontecres.dolphin.ui.OneTimeLaunchedEffect
 import com.github.damontecres.dolphin.ui.cards.BannerCard
 import com.github.damontecres.dolphin.ui.cards.ItemRow
 import com.github.damontecres.dolphin.ui.components.DotSeparatedRow
@@ -71,7 +70,7 @@ fun HomePage(
     modifier: Modifier = Modifier,
     viewModel: HomeViewModel = hiltViewModel(),
 ) {
-    OneTimeLaunchedEffect {
+    LaunchedEffect(Unit) {
         viewModel.init(preferences)
     }
     val loading by viewModel.loadingState.observeAsState(LoadingState.Loading)
@@ -96,14 +95,8 @@ fun HomePageContent(
     var position by rememberSaveable(stateSaver = RowColumnSaver) {
         mutableStateOf(RowColumn(0, 0))
     }
+    var focusedItem = position.let { homeRows.getOrNull(it.row)?.items?.getOrNull(it.column) }
 
-    var focusedItem by remember {
-        mutableStateOf<BaseItem?>(
-            homeRows.getOrNull(0)?.items?.getOrNull(
-                0,
-            ),
-        )
-    }
     val focusRequester = remember { FocusRequester() }
     val positionFocusRequester = remember { FocusRequester() }
     LaunchedEffect(Unit) {
@@ -181,6 +174,7 @@ fun HomePageContent(
                             cardContent = { index, item, cardModifier, onClick, onLongClick ->
                                 // TODO better aspect ration handling?
                                 BannerCard(
+                                    name = item?.data?.seriesName ?: item?.name,
                                     imageUrl = item?.imageUrl,
                                     aspectRatio = (2f / 3f),
                                     cornerText = item?.data?.indexNumber?.let { "E$it" },

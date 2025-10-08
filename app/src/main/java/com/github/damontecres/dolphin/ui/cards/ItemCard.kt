@@ -3,6 +3,7 @@ package com.github.damontecres.dolphin.ui.cards
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
@@ -27,10 +28,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
@@ -47,6 +51,7 @@ import com.github.damontecres.dolphin.data.model.BaseItem
 import com.github.damontecres.dolphin.ui.FontAwesome
 import com.github.damontecres.dolphin.ui.enableMarquee
 import com.github.damontecres.dolphin.ui.ifElse
+import com.github.damontecres.dolphin.ui.isNotNullOrBlank
 import com.github.damontecres.dolphin.util.seasonEpisode
 import kotlinx.coroutines.delay
 import org.jellyfin.sdk.model.api.BaseItemKind
@@ -161,24 +166,64 @@ fun ItemCardImage(
     unwatchedCount: Int,
     watchedPercent: Double?,
     modifier: Modifier = Modifier,
+    useFallbackText: Boolean = true,
 ) {
+    var imageError by remember { mutableStateOf(false) }
     Box(modifier = modifier) {
-        AsyncImage(
-            model = imageUrl,
-            contentDescription = name,
-            contentScale = ContentScale.Fit,
-            alignment = Alignment.Center,
-            // TODO error/fallback images
-            error = null,
-            fallback = null,
-            onError = {
-                Timber.e(it.result.throwable, "Error loading image: $imageUrl")
-            },
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .align(Alignment.TopCenter),
-        )
+        if (!imageError && imageUrl.isNotNullOrBlank()) {
+            AsyncImage(
+                model = imageUrl,
+                contentDescription = name,
+                contentScale = ContentScale.Fit,
+                alignment = Alignment.Center,
+                // TODO error/fallback images
+                error = null,
+                fallback = null,
+                onError = {
+                    Timber.e(it.result.throwable, "Error loading image: $imageUrl")
+                    imageError = true
+                },
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .align(Alignment.TopCenter),
+            )
+        } else {
+            Box(
+                modifier =
+                    Modifier
+                        .background(MaterialTheme.colorScheme.surfaceVariant)
+                        .fillMaxSize()
+                        .align(Alignment.TopCenter),
+            ) {
+                if (useFallbackText && name.isNotNullOrBlank()) {
+                    Text(
+                        text = name,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 14.sp,
+                        modifier =
+                            Modifier
+                                .padding(8.dp)
+                                .align(Alignment.Center),
+                    )
+                } else {
+                    Image(
+                        painter = painterResource(id = R.drawable.video_solid),
+                        contentDescription = null,
+                        contentScale = ContentScale.Fit,
+                        colorFilter =
+                            ColorFilter.tint(
+                                MaterialTheme.colorScheme.onSurfaceVariant,
+                                BlendMode.SrcIn,
+                            ),
+                        modifier =
+                            Modifier
+                                .fillMaxSize(.4f)
+                                .align(Alignment.Center),
+                    )
+                }
+            }
+        }
         AnimatedVisibility(
             visible = showOverlay,
             enter = fadeIn(),

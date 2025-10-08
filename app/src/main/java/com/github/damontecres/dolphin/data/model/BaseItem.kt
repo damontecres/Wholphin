@@ -90,6 +90,9 @@ data class BaseItem(
                     } else {
                         api.imageApi.getItemImageUrl(dto.id, ImageType.PRIMARY)
                     }
+                } else if (dto.imageTags == null || dto.imageTags!![ImageType.PRIMARY] == null) {
+                    // TODO is this a bad assumption?
+                    null
                 } else {
                     api.imageApi.getItemImageUrl(dto.id, ImageType.PRIMARY)
                 }

@@ -15,7 +15,6 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -44,7 +43,7 @@ import com.github.damontecres.dolphin.R
 import com.github.damontecres.dolphin.data.model.BaseItem
 import com.github.damontecres.dolphin.ui.AppColors
 import com.github.damontecres.dolphin.ui.FontAwesome
-import com.github.damontecres.dolphin.ui.cards.ItemCard
+import com.github.damontecres.dolphin.ui.cards.GridCard
 import com.github.damontecres.dolphin.ui.ifElse
 import com.github.damontecres.dolphin.ui.playback.isBackwardButton
 import com.github.damontecres.dolphin.ui.playback.isForwardButton
@@ -53,7 +52,6 @@ import com.github.damontecres.dolphin.ui.tryRequestFocus
 import com.github.damontecres.dolphin.util.ExceptionHandler
 import kotlinx.coroutines.launch
 import timber.log.Timber
-import kotlin.math.max
 
 private const val DEBUG = false
 
@@ -63,7 +61,6 @@ fun CardGrid(
     itemOnClick: (BaseItem) -> Unit,
     longClicker: (BaseItem) -> Unit,
     letterPosition: suspend (Char) -> Int,
-    requestFocus: Boolean,
     gridFocusRequester: FocusRequester,
     showJumpButtons: Boolean,
     modifier: Modifier = Modifier,
@@ -79,45 +76,6 @@ fun CardGrid(
     val zeroFocus = remember { FocusRequester() }
     var previouslyFocusedIndex by rememberSaveable { mutableIntStateOf(0) }
     var focusedIndex by rememberSaveable { mutableIntStateOf(initialPosition) }
-    var focusedIndexOnExit by rememberSaveable { mutableIntStateOf(-1) }
-
-    // Tracks whether the very first requestFocus has run, if the caller isn't requesting focus,
-    // then the first time will never run
-    var hasRequestFocusRun by rememberSaveable { mutableStateOf(!requestFocus) }
-    var savedFocusedIndex by rememberSaveable { mutableIntStateOf(-1) }
-
-    if (DEBUG) {
-        Timber.d(
-            "Grid: hasRun=$hasRequestFocusRun, requestFocus=$requestFocus, initialPosition=$initialPosition, focusedIndex=$focusedIndex",
-        )
-    }
-
-    LaunchedEffect(Unit) {
-        if (!hasRequestFocusRun) {
-            // On very first composition, if parent wants to focus on the grid, scroll to the item
-            if (requestFocus && initialPosition >= 0) {
-                if (DEBUG) {
-                    Timber.d(
-                        "focus on startPosition=$startPosition, from initialPosition=$initialPosition",
-                    )
-                }
-                focusedIndex = startPosition
-                gridState.scrollToItem(startPosition, 0)
-                firstFocus.tryRequestFocus()
-            }
-        } else {
-            val index = savedFocusedIndex
-            if (DEBUG) Timber.d("savedFocusedIndex=$index")
-            if (index in 0..<pager.size) {
-                // If this is a recomposition, but not the first
-                // focus on the restored index
-                // gridState.scrollToItem(index, -columns)
-                firstFocus.tryRequestFocus()
-            }
-            savedFocusedIndex = -1
-        }
-//        hasRun = true
-    }
 
     var alphabetFocus by remember { mutableStateOf(false) }
     val focusOn = { index: Int ->
@@ -129,12 +87,12 @@ fun CardGrid(
     }
 
     // Wait for a recomposition to focus
-    LaunchedEffect(alphabetFocus) {
-        if (alphabetFocus) {
-            firstFocus.tryRequestFocus()
-        }
-        alphabetFocus = false
-    }
+//    LaunchedEffect(alphabetFocus) {
+//        if (alphabetFocus) {
+//            firstFocus.tryRequestFocus()
+//        }
+//        alphabetFocus = false
+//    }
 
     val useBackToJump = true // uiConfig.preferences.interfacePreferences.scrollTopOnBack
     val showFooter = true // uiConfig.preferences.interfacePreferences.showPositionFooter
@@ -169,7 +127,6 @@ fun CardGrid(
             val newPosition =
                 (gridState.firstVisibleItemIndex + jump).coerceIn(0..<pager.size)
             if (DEBUG) Timber.d("newPosition=$newPosition")
-            savedFocusedIndex = newPosition
             focusOn(newPosition)
             gridState.scrollToItem(newPosition, 0)
         }
@@ -255,51 +212,38 @@ fun CardGrid(
                         .fillMaxSize()
                         .focusGroup()
                         .focusRestorer(firstFocus)
-                        .focusRequester(gridFocusRequester)
                         .focusProperties {
                             onExit = {
                                 // Leaving the grid, so "forget" the position
-                                focusedIndexOnExit = focusedIndex
                                 focusedIndex = -1
-                                savedFocusedIndex = -1
                             }
                             onEnter = {
-                                focusedIndexOnExit = -1
                                 if (focusedIndex < 0 && gridState.firstVisibleItemIndex <= startPosition) {
-                                    Timber.d("onEnter: focusedIndex=$focusedIndex, savedFocusedIndex=$savedFocusedIndex")
                                     focusedIndex = startPosition
-                                    firstFocus.tryRequestFocus()
                                 }
                             }
                         },
             ) {
                 items(pager.size) { index ->
                     val mod =
-                        if (index == savedFocusedIndex) {
-                            if (DEBUG) Timber.d("Adding firstFocus to itemClickedIndex $index")
-                            Modifier.focusRequester(firstFocus)
-                        } else if ((index == focusedIndex) or (focusedIndex < 0 && index == 0)) {
+                        if ((index == focusedIndex) or (focusedIndex < 0 && index == 0)) {
                             if (DEBUG) Timber.d("Adding firstFocus to focusedIndex $index")
-                            Modifier.focusRequester(firstFocus)
+                            Modifier
+                                .focusRequester(firstFocus)
+                                .focusRequester(gridFocusRequester)
                         } else {
                             Modifier
                         }
                     val item = pager[index]
-                    if (!hasRequestFocusRun && requestFocus && initialPosition >= 0) {
-                        // On very first composition, if parent wants to focus on the grid, do so
-                        LaunchedEffect(Unit) {
-                            if (DEBUG) {
-                                Timber.d(
-                                    "non-null focus on startPosition=$startPosition, from initialPosition=$initialPosition",
-                                )
+                    GridCard(
+                        item = item,
+                        onClick = {
+                            if (item != null) {
+                                focusedIndex = index
+                                itemOnClick.invoke(item)
                             }
-                            // focus on startPosition
-                            gridState.scrollToItem(startPosition, 0)
-                            firstFocus.tryRequestFocus()
-                            hasRequestFocusRun = true
-                        }
-                    }
-                    ItemCard(
+                        },
+                        onLongClick = { if (item != null) longClicker.invoke(item) },
                         modifier =
                             mod
                                 .ifElse(index == 0, Modifier.focusRequester(zeroFocus))
@@ -314,20 +258,11 @@ fun CardGrid(
                                         focusOn(index)
                                         positionCallback?.invoke(columns, index)
                                     } else if (focusedIndex == index) {
-                                        savedFocusedIndex = index
-                                        // Was focused on this, so mark unfocused
-                                        focusedIndex = -1
+//                                        savedFocusedIndex = index
+//                                        // Was focused on this, so mark unfocused
+//                                        focusedIndex = -1
                                     }
                                 },
-                        item = item,
-                        onClick = {
-                            if (item != null) {
-                                itemOnClick.invoke(item)
-                                savedFocusedIndex = index
-                            }
-                        },
-                        onLongClick = { if (item != null) longClicker.invoke(item) },
-                        cardHeight = null,
                     )
                 }
             }
@@ -349,12 +284,12 @@ fun CardGrid(
                             .align(Alignment.BottomCenter)
                             .background(AppColors.TransparentBlack50),
                 ) {
-                    val index =
-                        if (focusedIndex >= 0) {
-                            focusedIndex + 1
-                        } else {
-                            max(savedFocusedIndex, focusedIndexOnExit) + 1
-                        }
+                    val index = (focusedIndex + 1).takeIf { it > 0 } ?: "?"
+//                        if (focusedIndex >= 0) {
+//                            focusedIndex + 1
+//                        } else {
+//                            max(savedFocusedIndex, focusedIndexOnExit) + 1
+//                        }
                     Text(
                         modifier = Modifier.padding(4.dp),
                         color = MaterialTheme.colorScheme.onBackground,

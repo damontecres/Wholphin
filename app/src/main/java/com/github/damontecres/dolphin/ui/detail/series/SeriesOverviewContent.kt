@@ -226,6 +226,7 @@ fun SeriesOverviewContent(
                                 )
                             }
                             BannerCard(
+                                name = episode?.name,
                                 imageUrl = episode?.imageUrl,
                                 aspectRatio =
                                     episode?.data?.primaryImageAspectRatio?.toFloat()

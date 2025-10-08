@@ -20,10 +20,12 @@ import org.jellyfin.sdk.api.client.extensions.tvShowsApi
 import org.jellyfin.sdk.api.client.extensions.userApi
 import org.jellyfin.sdk.api.client.extensions.userLibraryApi
 import org.jellyfin.sdk.api.client.extensions.userViewsApi
+import org.jellyfin.sdk.model.api.UserDto
 import org.jellyfin.sdk.model.api.request.GetLatestMediaRequest
 import org.jellyfin.sdk.model.api.request.GetNextUpRequest
 import org.jellyfin.sdk.model.api.request.GetResumeItemsRequest
 import timber.log.Timber
+import java.util.UUID
 import javax.inject.Inject
 
 @HiltViewModel
@@ -44,6 +46,7 @@ class HomeViewModel
                         "Error loading home page",
                     ),
             ) {
+                Timber.d("init HomeViewModel")
                 val user by api.userApi.getCurrentUser()
 //                val displayPrefs =
 //                    api.displayPreferencesApi
@@ -72,68 +75,17 @@ class HomeViewModel
 //                                )
 //                        }
 
-                val latestMediaIncludes =
-                    user.configuration?.orderedViews.orEmpty().toMutableList().apply {
-                        removeAll(user.configuration?.latestItemsExcludes.orEmpty())
-                    }
-
-                val views by api.userViewsApi.getUserViews()
-
                 val homeRows =
                     homeSections
                         .mapNotNull { section ->
                             Timber.Forest.v("Loading section: %s", section.name)
                             when (section) {
                                 HomeSection.LATEST_MEDIA -> {
-                                    latestMediaIncludes.mapNotNull { viewId ->
-                                        val view =
-                                            views.items
-                                                .firstOrNull { it.id == viewId }
-                                        if (view?.collectionType in supportedCollectionTypes) {
-                                            val title =
-                                                view
-                                                    ?.name
-                                                    ?.let {
-                                                        "Recently Added in $it"
-                                                    }
-                                            val request =
-                                                GetLatestMediaRequest(
-                                                    fields = DefaultItemFields,
-                                                    imageTypeLimit = 1,
-                                                    parentId = viewId,
-                                                    groupItems = true,
-                                                    limit = limit,
-                                                )
-                                            val latest =
-                                                api.userLibraryApi
-                                                    .getLatestMedia(request)
-                                                    .content
-                                                    .map { BaseItem.from(it, api, true) }
-                                            HomeRow(
-                                                section = section,
-                                                items = latest,
-                                                title = title,
-                                            )
-                                        } else {
-                                            null
-                                        }
-                                    }
+                                    getLatest(user, limit)
                                 }
 
                                 HomeSection.RESUME -> {
-                                    val request =
-                                        GetResumeItemsRequest(
-                                            userId = user.id,
-                                            fields = DefaultItemFields,
-                                            limit = limit,
-                                            includeItemTypes = supportItemKinds,
-                                        )
-                                    val items =
-                                        api.itemsApi
-                                            .getResumeItems(request)
-                                            .content
-                                            .items
-                                            .map { BaseItem.Companion.from(it, api, true) }
+                                    val items = getResume(user.id, limit)
                                     listOf(
                                         HomeRow(
                                             section = section,
@@ -143,22 +95,12 @@ class HomeViewModel
                                 }
 
                                 HomeSection.NEXT_UP -> {
-                                    val request =
-                                        GetNextUpRequest(
-                                            fields = DefaultItemFields,
-                                            imageTypeLimit = 1,
-                                            parentId = null,
-                                            limit = limit,
-                                            enableResumable = false,
-                                            enableUserData = true,
-                                            enableRewatching = preferences.appPreferences.homePagePreferences.enableRewatchingNextUp,
-                                        )
                                     val nextUp =
-                                        api.tvShowsApi
-                                            .getNextUp(request)
-                                            .content
-                                            .items
-                                            .map { BaseItem.Companion.from(it, api, true) }
+                                        getNextUp(
+                                            user.id,
+                                            limit,
+                                            preferences.appPreferences.homePagePreferences.enableRewatchingNextUp,
+                                        )
                                     listOf(
                                         HomeRow(
                                             section = section,
@@ -185,5 +127,93 @@ class HomeViewModel
                     loadingState.value = LoadingState.Success
                 }
             }
+        }
+
+        private suspend fun getResume(
+            userId: UUID,
+            limit: Int,
+        ): List<BaseItem> {
+            val request =
+                GetResumeItemsRequest(
+                    userId = userId,
+                    fields = DefaultItemFields,
+                    limit = limit,
+                    includeItemTypes = supportItemKinds,
+                )
+            val items =
+                api.itemsApi
+                    .getResumeItems(request)
+                    .content
+                    .items
+                    .map { BaseItem.Companion.from(it, api, true) }
+            return items
+        }
+
+        private suspend fun getNextUp(
+            userId: UUID,
+            limit: Int,
+            enableRewatching: Boolean,
+        ): List<BaseItem> {
+            val request =
+                GetNextUpRequest(
+                    userId = userId,
+                    fields = DefaultItemFields,
+                    imageTypeLimit = 1,
+                    parentId = null,
+                    limit = limit,
+                    enableResumable = false,
+                    enableUserData = true,
+                    enableRewatching = enableRewatching,
+                )
+            val nextUp =
+                api.tvShowsApi
+                    .getNextUp(request)
+                    .content
+                    .items
+                    .map { BaseItem.Companion.from(it, api, true) }
+            return nextUp
+        }
+
+        private suspend fun getLatest(
+            user: UserDto,
+            limit: Int,
+        ): List<HomeRow> {
+            val latestMediaIncludes =
+                user.configuration?.orderedViews.orEmpty().toMutableList().apply {
+                    removeAll(user.configuration?.latestItemsExcludes.orEmpty())
+                }
+
+            val views by api.userViewsApi.getUserViews()
+            val rows =
+                latestMediaIncludes
+                    .mapNotNull { viewId -> views.items.firstOrNull { it.id == viewId } }
+                    .filter { it.collectionType in supportedCollectionTypes }
+                    .map { view ->
+                        val title =
+                            view
+                                ?.name
+                                ?.let {
+                                    "Recently Added in $it"
+                                }
+                        val request =
+                            GetLatestMediaRequest(
+                                fields = DefaultItemFields,
+                                imageTypeLimit = 1,
+                                parentId = view.id,
+                                groupItems = true,
+                                limit = limit,
+                            )
+                        val latest =
+                            api.userLibraryApi
+                                .getLatestMedia(request)
+                                .content
+                                .map { BaseItem.from(it, api, true) }
+                        HomeRow(
+                            section = HomeSection.LATEST_MEDIA,
+                            items = latest,
+                            title = title,
+                        )
+                    }
+            return rows
         }
     }

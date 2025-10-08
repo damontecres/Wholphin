@@ -13,11 +13,16 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.tv.material3.Card
@@ -30,6 +35,7 @@ import com.github.damontecres.dolphin.ui.isNotNullOrBlank
 
 @Composable
 fun BannerCard(
+    name: String?,
     imageUrl: String?,
     onClick: () -> Unit,
     onLongClick: () -> Unit,
@@ -41,19 +47,39 @@ fun BannerCard(
     aspectRatio: Float = 16f / 9,
     interactionSource: MutableInteractionSource? = null,
 ) {
+    var imageError by remember { mutableStateOf(false) }
     Card(
         modifier = modifier.size(cardHeight * aspectRatio, cardHeight),
         onClick = onClick,
         onLongClick = onLongClick,
         interactionSource = interactionSource,
     ) {
-        Box(modifier = Modifier.fillMaxSize()) {
-            AsyncImage(
-                model = imageUrl,
-                contentDescription = null,
-                contentScale = ContentScale.Fit,
-                modifier = Modifier.fillMaxSize(),
-            )
+        Box(
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.surfaceVariant),
+        ) {
+            if (!imageError && imageUrl.isNotNullOrBlank()) {
+                AsyncImage(
+                    model = imageUrl,
+                    contentDescription = null,
+                    contentScale = ContentScale.Fit,
+                    onError = { imageError = true },
+                    modifier = Modifier.fillMaxSize(),
+                )
+            } else {
+                Text(
+                    text = name ?: "",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.titleLarge,
+                    textAlign = TextAlign.Center,
+                    modifier =
+                        Modifier
+                            .padding(16.dp)
+                            .align(Alignment.Center),
+                )
+            }
             if (played || cornerText.isNotNullOrBlank()) {
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(4.dp),

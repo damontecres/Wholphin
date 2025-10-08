@@ -116,6 +116,7 @@ fun BannerItemRow(
     modifier = modifier,
     cardContent = { index, item, modifier, onClick, onLongClick ->
         BannerCard(
+            name = title,
             imageUrl = item?.imageUrl,
             aspectRatio =
                 aspectRatioOverride ?: item?.data?.primaryImageAspectRatio?.toFloat() ?: (16f / 9),

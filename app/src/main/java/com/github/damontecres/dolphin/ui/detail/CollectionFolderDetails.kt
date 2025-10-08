@@ -243,7 +243,6 @@ fun CollectionDetails(
             },
             longClicker = {},
             letterPosition = { 0 },
-            requestFocus = true,
             gridFocusRequester = gridFocusRequester,
             showJumpButtons = false, // TODO add preference
             modifier = Modifier.fillMaxSize(),

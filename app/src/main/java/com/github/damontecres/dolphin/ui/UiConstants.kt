@@ -18,7 +18,7 @@ sealed class AppColors private constructor() {
     }
 }
 
-const val DEFAULT_PAGE_SIZE = 50
+const val DEFAULT_PAGE_SIZE = 100
 
 val DefaultItemFields =
     listOf(
