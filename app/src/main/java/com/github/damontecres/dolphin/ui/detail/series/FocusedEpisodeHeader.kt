@@ -67,6 +67,7 @@ fun FocusedEpisodeHeader(
                             add(it)
                         }
                     dto.timeRemaining?.roundMinutes?.let { add("$it left") }
+                    dto.officialRating?.let(::add)
                 }
             DotSeparatedRow(
                 texts = details,
@@ -77,7 +78,6 @@ fun FocusedEpisodeHeader(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            // TODO ratings?
             dto.communityRating?.let {
                 if (it > 0f) {
                     StarRating(

@@ -11,7 +11,6 @@ import com.github.damontecres.dolphin.ui.detail.CollectionFolderTv
 import com.github.damontecres.dolphin.ui.detail.EpisodeDetails
 import com.github.damontecres.dolphin.ui.detail.SeasonDetails
 import com.github.damontecres.dolphin.ui.detail.SeriesDetails
-import com.github.damontecres.dolphin.ui.detail.VideoDetails
 import com.github.damontecres.dolphin.ui.detail.movie.MovieDetails
 import com.github.damontecres.dolphin.ui.detail.series.SeriesOverview
 import com.github.damontecres.dolphin.ui.main.HomePage
@@ -105,7 +104,8 @@ fun DestinationContent(
                     )
 
                 BaseItemKind.VIDEO ->
-                    VideoDetails(
+                    // TODO Use VideoDetails
+                    MovieDetails(
                         preferences,
                         navigationManager,
                         destination,
@@ -153,6 +153,5 @@ fun DestinationContent(
                 userPreferences = preferences,
                 modifier = modifier,
             )
-        Destination.Setup -> TODO()
     }
 }

@@ -96,7 +96,7 @@ fun HomePageContent(
     var position by rememberSaveable(stateSaver = RowColumnSaver) {
         mutableStateOf(RowColumn(0, 0))
     }
-    // TODO use position instead?
+
     var focusedItem by remember {
         mutableStateOf<BaseItem?>(
             homeRows.getOrNull(0)?.items?.getOrNull(
@@ -178,7 +178,7 @@ fun HomePageContent(
                             },
                             onLongClickItem = {},
                             modifier = Modifier.fillMaxWidth(),
-                            cardContent = { index, item, modifier, onClick, onLongClick ->
+                            cardContent = { index, item, cardModifier, onClick, onLongClick ->
                                 // TODO better aspect ration handling?
                                 BannerCard(
                                     imageUrl = item?.imageUrl,
@@ -189,7 +189,7 @@ fun HomePageContent(
                                     onClick = onClick,
                                     onLongClick = onLongClick,
                                     modifier =
-                                        modifier
+                                        cardModifier
                                             .ifElse(
                                                 focusedItem == item,
                                                 Modifier.focusRequester(focusRequester),

@@ -30,6 +30,7 @@ import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusRestorer
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -38,6 +39,7 @@ import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Tab
 import androidx.tv.material3.TabDefaults
 import androidx.tv.material3.TabRow
+import androidx.tv.material3.TabRowDefaults
 import androidx.tv.material3.Text
 import coil3.compose.AsyncImage
 import com.github.damontecres.dolphin.data.model.BaseItem
@@ -67,7 +69,7 @@ fun SeriesOverviewContent(
     modifier: Modifier = Modifier,
 ) {
     val bringIntoViewRequester = remember { BringIntoViewRequester() }
-    // TODO need to map between season index and tab index in case of missing seasons
+    var focusTabIndex by rememberSaveable(position) { mutableIntStateOf(position.seasonTabIndex) }
     var selectedTabIndex by rememberSaveable(position) { mutableIntStateOf(position.seasonTabIndex) }
     val focusRequesters = remember(seasons.size) { List(seasons.size) { FocusRequester() } }
     var resolvedTabIndex by remember { mutableIntStateOf(selectedTabIndex) }
@@ -121,7 +123,7 @@ fun SeriesOverviewContent(
         ) {
             item {
                 TabRow(
-                    selectedTabIndex = selectedTabIndex,
+                    selectedTabIndex = focusTabIndex,
                     modifier =
                         Modifier
                             .ifElse(
@@ -129,20 +131,39 @@ fun SeriesOverviewContent(
                                 { Modifier.focusRestorer(focusRequesters[selectedTabIndex]) },
                             ).focusRequester(tabRowFocusRequester)
                             .padding(horizontal = 16.dp)
-                            .fillMaxWidth(),
+                            .fillMaxWidth()
+                            .onFocusChanged {
+                                if (!it.isFocused) {
+                                    focusTabIndex = selectedTabIndex
+                                }
+                            },
+                    indicator =
+                        @Composable { tabPositions, doesTabRowHaveFocus ->
+                            tabPositions.getOrNull(focusTabIndex)?.let { currentTabPosition ->
+//                        TabRowDefaults.PillIndicator(
+//                            currentTabPosition = currentTabPosition,
+//                            doesTabRowHaveFocus = doesTabRowHaveFocus,
+//                        )
+                                TabRowDefaults.UnderlinedIndicator(
+                                    currentTabPosition = currentTabPosition,
+                                    doesTabRowHaveFocus = doesTabRowHaveFocus,
+                                    activeColor = MaterialTheme.colorScheme.border,
+                                )
+                            }
+                        },
                 ) {
                     seasons.forEachIndexed { index, season ->
                         season?.let { season ->
                             Tab(
-                                selected = index == selectedTabIndex,
-                                onFocus = {},
+                                selected = focusTabIndex == index,
+                                onFocus = { focusTabIndex = index },
                                 onClick = {
                                     selectedTabIndex = index
                                     onFocus.invoke(SeriesOverviewPosition(index, 0))
                                 },
                                 colors =
                                     TabDefaults.pillIndicatorTabColors(
-                                        // TODO
+                                        focusedContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
                                     ),
                                 modifier =
                                     Modifier

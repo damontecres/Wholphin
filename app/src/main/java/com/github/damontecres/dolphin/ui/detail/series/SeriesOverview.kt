@@ -80,7 +80,6 @@ fun SeriesOverview(
     val seasons by viewModel.seasons.observeAsState(ItemListAndMapping.empty())
     val episodes by viewModel.episodes.observeAsState(ItemListAndMapping.empty())
 
-    // TODO need to translate season/episode into tab/row index in case of missing seasons/episodes
     var position by rememberSaveable(
         destination,
         loading,
@@ -103,7 +102,7 @@ fun SeriesOverview(
 
     LaunchedEffect(episodes.items) {
         if (episodes.items.isNotEmpty()) {
-            // TODO focus on first episode when changing seasons
+            // TODO focus on first episode when changing seasons?
 //            firstItemFocusRequester.requestFocus()
             episodes.items.getOrNull(position.episodeRowIndex)?.let {
                 viewModel.refreshEpisode(it.id, position.episodeRowIndex)

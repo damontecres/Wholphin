@@ -15,10 +15,11 @@ fun formatDateTime(dateTime: LocalDateTime): String =
         dateTime.toString()
     }
 
-// TODO multi episode support
 val BaseItemDto.seasonEpisode: String?
     get() =
-        if (parentIndexNumber != null && indexNumber != null) {
+        if (parentIndexNumber != null && indexNumber != null && indexNumberEnd != null) {
+            "S$parentIndexNumber E$indexNumber-E$indexNumberEnd"
+        } else if (parentIndexNumber != null && indexNumber != null) {
             "S$parentIndexNumber E$indexNumber"
         } else {
             null
@@ -29,7 +30,12 @@ val BaseItemDto.seasonEpisodePadded: String?
         if (parentIndexNumber != null && indexNumber != null) {
             val season = parentIndexNumber?.toString()?.padStart(2, '0')
             val episode = indexNumber?.toString()?.padStart(2, '0')
-            "S${season}E$episode"
+            val endEpisode = indexNumberEnd?.toString()?.padStart(2, '0')
+            if (endEpisode != null) {
+                "S${season}E$episode-E$endEpisode"
+            } else {
+                "S${season}E$episode"
+            }
         } else {
             null
         }

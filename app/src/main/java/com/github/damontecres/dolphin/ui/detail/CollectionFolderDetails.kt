@@ -1,5 +1,10 @@
 package com.github.damontecres.dolphin.ui.detail
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -8,7 +13,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.text.style.TextAlign
@@ -136,6 +144,7 @@ fun CollectionFolderDetails(
             SortOrder.ASCENDING,
         ),
     showTitle: Boolean = true,
+    positionCallback: ((columns: Int, position: Int) -> Unit)? = null,
 ) {
     OneTimeLaunchedEffect {
         viewModel.init(destination.itemId, destination.item, initialSortAndDirection)
@@ -163,6 +172,7 @@ fun CollectionFolderDetails(
                         viewModel.loadResults(it)
                     },
                     showTitle = showTitle,
+                    positionCallback = positionCallback,
                 )
             }
         }
@@ -180,6 +190,7 @@ fun CollectionDetails(
     onSortChange: (SortAndDirection) -> Unit,
     modifier: Modifier = Modifier,
     showTitle: Boolean = true,
+    positionCallback: ((columns: Int, position: Int) -> Unit)? = null,
 ) {
     val title = library.name ?: item.data.name ?: item.data.collectionType?.name ?: "Collection"
     val sortOptions =
@@ -190,27 +201,35 @@ fun CollectionDetails(
             else -> listOf(ItemSortBy.SORT_NAME, ItemSortBy.DATE_CREATED, ItemSortBy.RANDOM)
         }
 
+    var showHeader by rememberSaveable { mutableStateOf(true) }
+
     val gridFocusRequester = remember { FocusRequester() }
     LaunchedEffect(Unit) { gridFocusRequester.tryRequestFocus() }
     Column(
         verticalArrangement = Arrangement.spacedBy(0.dp),
         modifier = modifier,
     ) {
-        if (showTitle) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.displayMedium,
-                color = MaterialTheme.colorScheme.onBackground,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth(),
+        AnimatedVisibility(
+            showHeader,
+            enter = slideInVertically() + fadeIn(),
+            exit = slideOutVertically() + fadeOut(),
+        ) {
+            if (showTitle) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.displayMedium,
+                    color = MaterialTheme.colorScheme.onBackground,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+            SortByButton(
+                sortOptions = sortOptions,
+                current = sortAndDirection,
+                onSortChange = onSortChange,
+                modifier = Modifier,
             )
         }
-        SortByButton(
-            sortOptions = sortOptions,
-            current = sortAndDirection,
-            onSortChange = onSortChange,
-            modifier = Modifier,
-        )
         CardGrid(
             pager = pager,
             itemOnClick = {
@@ -229,7 +248,10 @@ fun CollectionDetails(
             showJumpButtons = false, // TODO add preference
             modifier = Modifier.fillMaxSize(),
             initialPosition = 0,
-            positionCallback = { _, _ -> },
+            positionCallback = { columns, position ->
+                showHeader = position < columns
+                positionCallback?.invoke(columns, position)
+            },
         )
     }
 }

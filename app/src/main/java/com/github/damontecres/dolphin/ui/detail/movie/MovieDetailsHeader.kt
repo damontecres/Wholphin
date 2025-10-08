@@ -43,6 +43,7 @@ import com.github.damontecres.dolphin.ui.playSoundOnFocus
 import com.github.damontecres.dolphin.ui.roundMinutes
 import com.github.damontecres.dolphin.ui.timeRemaining
 import org.jellyfin.sdk.model.api.MediaStreamType
+import org.jellyfin.sdk.model.api.PersonKind
 import org.jellyfin.sdk.model.extensions.ticks
 
 @Composable
@@ -93,13 +94,13 @@ fun MovieDetailsHeader(
                                 add(it)
                             }
                         dto.timeRemaining?.roundMinutes?.let { add("$it left") }
+                        dto.officialRating?.let(::add)
                     }
                 DotSeparatedRow(
                     texts = details,
                     textStyle = MaterialTheme.typography.titleLarge,
                 )
             }
-            // TODO ratings?
             dto.communityRating?.let {
                 if (it > 0f) {
                     StarRating(
@@ -196,15 +197,21 @@ fun MovieDetailsHeader(
                             )
                         }
                     }
-                // TODO director
-                // TODO writers
-                dto.studios?.letNotEmpty {
+                // TODO add writers, studio, etc to overview dialog
+                dto.people?.firstOrNull { it.type == PersonKind.DIRECTOR }?.name?.let {
                     TitleValueText(
-                        stringResource(R.string.studios),
-                        it.joinToString(", ") { s -> s.name ?: "" },
+                        stringResource(R.string.director),
+                        it,
                         modifier = Modifier.widthIn(max = 80.dp),
                     )
                 }
+//                dto.studios?.letNotEmpty {
+//                    TitleValueText(
+//                        stringResource(R.string.studios),
+//                        it.joinToString(", ") { s -> s.name ?: "" },
+//                        modifier = Modifier.widthIn(max = 80.dp),
+//                    )
+//                }
                 dto.genres?.letNotEmpty {
                     TitleValueText(
                         stringResource(R.string.genres),

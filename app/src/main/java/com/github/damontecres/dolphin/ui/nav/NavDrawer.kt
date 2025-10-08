@@ -120,7 +120,7 @@ fun NavDrawer(
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
     val drawerFocusRequester = remember { FocusRequester() }
-    BackHandler(enabled = (drawerState.currentValue == DrawerValue.Closed && destination == Destination.Main)) {
+    BackHandler(enabled = (drawerState.currentValue == DrawerValue.Closed && destination is Destination.Main)) {
         drawerState.setValue(DrawerValue.Open)
         drawerFocusRequester.requestFocus()
     }

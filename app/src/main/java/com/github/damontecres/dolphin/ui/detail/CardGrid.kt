@@ -28,6 +28,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
@@ -253,6 +254,7 @@ fun CardGrid(
                     Modifier
                         .fillMaxSize()
                         .focusGroup()
+                        .focusRestorer(firstFocus)
                         .focusRequester(gridFocusRequester)
                         .focusProperties {
                             onExit = {
@@ -264,6 +266,7 @@ fun CardGrid(
                             onEnter = {
                                 focusedIndexOnExit = -1
                                 if (focusedIndex < 0 && gridState.firstVisibleItemIndex <= startPosition) {
+                                    Timber.d("onEnter: focusedIndex=$focusedIndex, savedFocusedIndex=$savedFocusedIndex")
                                     focusedIndex = startPosition
                                     firstFocus.tryRequestFocus()
                                 }
@@ -317,7 +320,12 @@ fun CardGrid(
                                     }
                                 },
                         item = item,
-                        onClick = { if (item != null) itemOnClick.invoke(item) },
+                        onClick = {
+                            if (item != null) {
+                                itemOnClick.invoke(item)
+                                savedFocusedIndex = index
+                            }
+                        },
                         onLongClick = { if (item != null) longClicker.invoke(item) },
                         cardHeight = null,
                     )

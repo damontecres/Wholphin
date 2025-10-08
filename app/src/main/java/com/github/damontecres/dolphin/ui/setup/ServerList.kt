@@ -73,7 +73,7 @@ fun ServerList(
                 },
                 onClick = { onSwitchServer.invoke(server) },
                 onLongClick = {
-                    // TODO dialog to remove server
+                    showDeleteDialog = server
                 },
                 modifier = Modifier,
             )

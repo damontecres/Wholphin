@@ -9,8 +9,10 @@ class DolphinApplication : Application() {
     init {
         instance = this
 
-        // TODO only plant in debug builds
-        Timber.plant(Timber.DebugTree())
+        if (BuildConfig.DEBUG) {
+            // TODO minimal logging for release builds?
+            Timber.plant(Timber.DebugTree())
+        }
     }
 
     companion object {

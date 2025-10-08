@@ -121,7 +121,7 @@ fun PlaybackContent(
     AmbientPlayerListener(player)
 
     if (stream == null) {
-        // TODO loading
+        LoadingPage()
     } else {
         stream?.let {
             var contentScale by remember { mutableStateOf(ContentScale.Fit) }

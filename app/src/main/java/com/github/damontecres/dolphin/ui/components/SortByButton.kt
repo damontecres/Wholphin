@@ -65,7 +65,6 @@ fun SortByButton(
             )
         }
 
-        // TODO switch to dialog?
         DropdownMenu(
             expanded = sortByDropDown,
             onDismissRequest = { sortByDropDown = false },

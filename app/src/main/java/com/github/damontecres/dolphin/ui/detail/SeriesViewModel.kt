@@ -225,7 +225,7 @@ class SeriesViewModel
                     try {
                         loadEpisodesInternal(season)
                     } catch (e: Exception) {
-                        Timber.Forest.e(e, "Error loading episodes for $seriesId for season $season")
+                        Timber.e(e, "Error loading episodes for $seriesId for season $season")
                         // TODO show error in UI?
                         ItemListAndMapping.empty()
                     }

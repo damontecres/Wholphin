@@ -1,6 +1,5 @@
 package com.github.damontecres.dolphin.ui.components
 
-import android.widget.Toast
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -51,11 +50,6 @@ fun SwitchWithLabel(
                     onClick = {
                         if (enabled) {
                             onStateChange(!checked)
-                        } else {
-                            // TODO there are other uses, so shouldn't hardcode this toast
-                            Toast
-                                .makeText(context, "Item has no children", Toast.LENGTH_SHORT)
-                                .show()
                         }
                     },
                 ).padding(8.dp),

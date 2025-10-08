@@ -288,7 +288,6 @@ fun LeftPlaybackButtons(
         )
     }
     if (showMoreOptions) {
-        // TODO options need context about what to display
         val options =
             buildList {
                 addAll(moreButtonOptions.options.keys)

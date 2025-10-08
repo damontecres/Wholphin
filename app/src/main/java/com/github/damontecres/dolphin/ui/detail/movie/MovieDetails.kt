@@ -90,9 +90,10 @@ class MovieViewModel
                 super.init(itemId, potential)?.join()
                 item.value?.let { item ->
                     people.value =
-                        item.data.people?.letNotEmpty { people ->
-                            people.map { Person.fromDto(it, api) }
-                        }
+                        item.data.people
+                            ?.letNotEmpty { people ->
+                                people.map { Person.fromDto(it, api) }
+                            }.orEmpty()
                     chapters.value = Chapter.fromDto(item.data, api)
                 }
             }

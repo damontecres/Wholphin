@@ -17,9 +17,6 @@ sealed class Destination(
     val fullScreen: Boolean = false,
 ) : NavKey {
     @Serializable
-    data object Setup : Destination(true)
-
-    @Serializable
     data object ServerList : Destination(true)
 
     @Serializable
