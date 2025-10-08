@@ -63,7 +63,6 @@ import com.github.damontecres.dolphin.ui.data.ItemDetailsDialogInfo
 import com.github.damontecres.dolphin.ui.isNotNullOrBlank
 import com.github.damontecres.dolphin.ui.letNotEmpty
 import com.github.damontecres.dolphin.ui.nav.Destination
-import com.github.damontecres.dolphin.ui.nav.NavigationManager
 import com.github.damontecres.dolphin.ui.playOnClickSound
 import com.github.damontecres.dolphin.ui.playSoundOnFocus
 import com.github.damontecres.dolphin.ui.roundMinutes
@@ -75,7 +74,6 @@ import kotlin.time.Duration
 @Composable
 fun SeriesDetails(
     preferences: UserPreferences,
-    navigationManager: NavigationManager,
     destination: Destination.MediaItem,
     modifier: Modifier = Modifier,
     viewModel: SeriesViewModel = hiltViewModel(),
@@ -100,12 +98,12 @@ fun SeriesDetails(
                 val played = item.data.userData?.played ?: false
                 SeriesDetailsContent(
                     preferences = preferences,
-                    navigationManager = navigationManager,
                     series = item,
                     seasons = seasons,
                     people = people,
                     played = played,
                     modifier = modifier,
+                    onClickItem = { viewModel.navigateTo(it.destination()) },
                     overviewOnClick = {
                         overviewDialog =
                             ItemDetailsDialogInfo(
@@ -114,7 +112,7 @@ fun SeriesDetails(
                                 files = listOf(),
                             )
                     },
-                    playOnClick = { viewModel.playNextUp(navigationManager) },
+                    playOnClick = { viewModel.playNextUp() },
                     watchOnClick = { showWatchConfirmation = true },
                 )
                 if (showWatchConfirmation) {
@@ -144,11 +142,11 @@ fun SeriesDetails(
 @Composable
 fun SeriesDetailsContent(
     preferences: UserPreferences,
-    navigationManager: NavigationManager,
     series: BaseItem,
     seasons: ItemListAndMapping,
     people: List<Person>,
     played: Boolean,
+    onClickItem: (BaseItem) -> Unit,
     overviewOnClick: () -> Unit,
     playOnClick: () -> Unit,
     watchOnClick: () -> Unit,
@@ -222,7 +220,7 @@ fun SeriesDetailsContent(
                     ItemRow(
                         title = "Seasons",
                         items = seasons.items,
-                        onClickItem = { navigationManager.navigateTo(it.destination()) },
+                        onClickItem = onClickItem,
                         onLongClickItem = { },
                         cardOnFocus = { isFocused, index ->
 //                            if (isFocused) {

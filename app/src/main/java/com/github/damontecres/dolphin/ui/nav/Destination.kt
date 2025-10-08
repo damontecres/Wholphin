@@ -61,6 +61,8 @@ sealed class Destination(
         @Transient val item: BaseItem? = null,
     ) : Destination(true) {
         override fun toString(): String = "Playback(itemId=$itemId, positionMs=$positionMs)"
+
+        constructor(item: BaseItem) : this(item.id, item.resumeMs ?: 0, item)
     }
 
     @Serializable

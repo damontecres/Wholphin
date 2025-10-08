@@ -7,6 +7,7 @@ import com.github.damontecres.dolphin.data.JellyfinServer
 import com.github.damontecres.dolphin.data.JellyfinServerDao
 import com.github.damontecres.dolphin.data.JellyfinUser
 import com.github.damontecres.dolphin.data.ServerRepository
+import com.github.damontecres.dolphin.ui.nav.NavigationManager
 import com.github.damontecres.dolphin.util.ExceptionHandler
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
@@ -32,6 +33,7 @@ class SwitchUserViewModel
         val jellyfin: Jellyfin,
         val serverRepository: ServerRepository,
         val serverDao: JellyfinServerDao,
+        val navigationManager: NavigationManager,
     ) : ViewModel() {
         val servers = MutableLiveData<List<JellyfinServer>>(listOf())
         val serverStatus = MutableLiveData<Map<String, ServerConnectionStatus>>(mapOf())

@@ -78,6 +78,7 @@ class NavDrawerViewModel
     constructor(
         val serverRepository: ServerRepository,
         val api: ApiClient,
+        val navigationManager: NavigationManager,
     ) : ViewModel() {
         val libraries = MutableLiveData<List<BaseItem>>(listOf())
         val selectedIndex = MutableLiveData<Int>(-1)
@@ -104,7 +105,6 @@ class NavDrawerViewModel
 fun NavDrawer(
     destination: Destination,
     preferences: UserPreferences,
-    navigationManager: NavigationManager,
     user: JellyfinUser?,
     server: JellyfinServer?,
     deviceProfile: DeviceProfile,
@@ -157,7 +157,7 @@ fun NavDrawer(
                             icon = Icons.Default.AccountCircle,
                             selected = false,
                             onClick = {
-                                navigationManager.navigateTo(Destination.UserList)
+                                viewModel.navigationManager.navigateTo(Destination.UserList)
                             },
                         )
                     }
@@ -168,7 +168,7 @@ fun NavDrawer(
                             selected = selectedIndex == -2,
                             onClick = {
                                 viewModel.setIndex(-2)
-                                navigationManager.navigateToFromDrawer(Destination.Search)
+                                viewModel.navigationManager.navigateToFromDrawer(Destination.Search)
                             },
                             modifier =
                                 Modifier.ifElse(
@@ -185,9 +185,9 @@ fun NavDrawer(
                             onClick = {
                                 viewModel.setIndex(-1)
                                 if (destination is Destination.Main) {
-                                    navigationManager.reloadHome()
+                                    viewModel.navigationManager.reloadHome()
                                 } else {
-                                    navigationManager.goToHome()
+                                    viewModel.navigationManager.goToHome()
                                 }
                             },
                             modifier =
@@ -203,7 +203,7 @@ fun NavDrawer(
                             selected = selectedIndex == index,
                             onClick = {
                                 viewModel.setIndex(index)
-                                navigationManager.navigateToFromDrawer(it.destination())
+                                viewModel.navigationManager.navigateToFromDrawer(it.destination())
                             },
                             modifier =
                                 Modifier.ifElse(
@@ -218,7 +218,7 @@ fun NavDrawer(
                             icon = Icons.Default.Settings,
                             selected = false,
                             onClick = {
-                                navigationManager.navigateTo(Destination.Settings)
+                                viewModel.navigationManager.navigateTo(Destination.Settings)
                             },
                             modifier = Modifier,
                         )
@@ -231,7 +231,6 @@ fun NavDrawer(
         DestinationContent(
             destination = destination,
             preferences = preferences,
-            navigationManager = navigationManager,
             deviceProfile = deviceProfile,
             modifier = Modifier.fillMaxSize(),
         )

@@ -31,12 +31,12 @@ class VideoViewModel
     @Inject
     constructor(
         api: ApiClient,
+        val navigationManager: NavigationManager,
     ) : LoadingItemViewModel<Video>(api)
 
 @Composable
 fun VideoDetails(
     preferences: UserPreferences,
-    navigationManager: NavigationManager,
     destination: Destination.MediaItem,
     modifier: Modifier = Modifier,
     viewModel: MovieViewModel = hiltViewModel(),
@@ -70,7 +70,7 @@ fun VideoDetails(
                             item {
                                 Button(
                                     onClick = {
-                                        navigationManager.navigateTo(
+                                        viewModel.navigationManager.navigateTo(
                                             Destination.Playback(
                                                 item.id,
                                                 it.inWholeMilliseconds,
@@ -87,7 +87,7 @@ fun VideoDetails(
                     item {
                         Button(
                             onClick = {
-                                navigationManager.navigateTo(
+                                viewModel.navigationManager.navigateTo(
                                     Destination.Playback(
                                         item.id,
                                         0L,

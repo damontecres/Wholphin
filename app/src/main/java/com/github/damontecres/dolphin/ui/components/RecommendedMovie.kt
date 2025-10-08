@@ -8,13 +8,13 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.github.damontecres.dolphin.data.model.BaseItem
 import com.github.damontecres.dolphin.preferences.UserPreferences
 import com.github.damontecres.dolphin.ui.DefaultItemFields
 import com.github.damontecres.dolphin.ui.OneTimeLaunchedEffect
 import com.github.damontecres.dolphin.ui.main.HomePageContent
 import com.github.damontecres.dolphin.ui.main.HomeRow
 import com.github.damontecres.dolphin.ui.main.HomeSection
-import com.github.damontecres.dolphin.ui.nav.NavigationManager
 import com.github.damontecres.dolphin.util.ApiRequestPager
 import com.github.damontecres.dolphin.util.ExceptionHandler
 import com.github.damontecres.dolphin.util.GetItemsRequestHandler
@@ -126,9 +126,9 @@ class RecommendedMovieViewModel
 @Composable
 fun RecommendedMovie(
     preferences: UserPreferences,
-    navigationManager: NavigationManager,
     parentId: UUID,
-    modifier: Modifier,
+    onClickItem: (BaseItem) -> Unit,
+    modifier: Modifier = Modifier,
     viewModel: RecommendedMovieViewModel = hiltViewModel(),
 ) {
     OneTimeLaunchedEffect {
@@ -144,8 +144,8 @@ fun RecommendedMovie(
 
         LoadingState.Success ->
             HomePageContent(
-                navigationManager = navigationManager,
                 homeRows = rows,
+                onClickItem = onClickItem,
                 modifier = modifier,
             )
     }

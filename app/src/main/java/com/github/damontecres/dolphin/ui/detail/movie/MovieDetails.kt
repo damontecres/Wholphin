@@ -76,6 +76,7 @@ class MovieViewModel
     @Inject
     constructor(
         api: ApiClient,
+        val navigationManager: NavigationManager,
     ) : LoadingItemViewModel<Video>(api) {
         private lateinit var itemId: UUID
         val people = MutableLiveData<List<Person>>(listOf())
@@ -113,7 +114,6 @@ class MovieViewModel
 @Composable
 fun MovieDetails(
     preferences: UserPreferences,
-    navigationManager: NavigationManager,
     destination: Destination.MediaItem,
     modifier: Modifier = Modifier,
     viewModel: MovieViewModel = hiltViewModel(),
@@ -136,12 +136,11 @@ fun MovieDetails(
             item?.let { movie ->
                 MovieDetailsContent(
                     preferences = preferences,
-                    navigationManager = navigationManager,
                     movie = movie,
                     people = people,
                     chapters = chapters,
                     playOnClick = {
-                        navigationManager.navigateTo(
+                        viewModel.navigationManager.navigateTo(
                             Destination.Playback(
                                 movie.id,
                                 it.inWholeMilliseconds,
@@ -172,12 +171,8 @@ fun MovieDetails(
                                             Icons.Default.PlayArrow,
                                             iconColor = Color.Green.copy(alpha = .8f),
                                         ) {
-                                            navigationManager.navigateTo(
-                                                Destination.Playback(
-                                                    movie.id,
-                                                    movie.resumeMs ?: 0L,
-                                                    movie,
-                                                ),
+                                            viewModel.navigationManager.navigateTo(
+                                                Destination.Playback(movie),
                                             )
                                         },
                                         DialogItem(
@@ -226,7 +221,6 @@ fun MovieDetails(
 @Composable
 fun MovieDetailsContent(
     preferences: UserPreferences,
-    navigationManager: NavigationManager,
     movie: BaseItem,
     people: List<Person>,
     chapters: List<Chapter>,

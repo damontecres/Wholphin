@@ -29,20 +29,19 @@ import androidx.tv.material3.TabDefaults
 import androidx.tv.material3.TabRow
 import androidx.tv.material3.TabRowDefaults
 import androidx.tv.material3.Text
+import com.github.damontecres.dolphin.data.model.BaseItem
 import com.github.damontecres.dolphin.preferences.UserPreferences
 import com.github.damontecres.dolphin.preferences.rememberTab
 import com.github.damontecres.dolphin.ui.components.ErrorMessage
 import com.github.damontecres.dolphin.ui.components.RecommendedTvShow
 import com.github.damontecres.dolphin.ui.ifElse
 import com.github.damontecres.dolphin.ui.nav.Destination
-import com.github.damontecres.dolphin.ui.nav.NavigationManager
 import com.github.damontecres.dolphin.ui.preferences.PreferencesViewModel
 import com.github.damontecres.dolphin.ui.tryRequestFocus
 
 @Composable
 fun CollectionFolderTv(
     preferences: UserPreferences,
-    navigationManager: NavigationManager,
     destination: Destination.MediaItem,
     modifier: Modifier = Modifier,
     preferencesViewModel: PreferencesViewModel = hiltViewModel(),
@@ -69,6 +68,9 @@ fun CollectionFolderTv(
                 preferences.appPreferences.rememberTab(destination.itemId, selectedTabIndex)
             }
         }
+    }
+    val onClickItem = { item: BaseItem ->
+        preferencesViewModel.navigationManager.navigateTo(item.destination())
     }
 
     var showHeader by rememberSaveable { mutableStateOf(true) }
@@ -138,8 +140,8 @@ fun CollectionFolderTv(
             0 -> {
                 RecommendedTvShow(
                     preferences = preferences,
-                    navigationManager = navigationManager,
                     parentId = destination.itemId,
+                    onClickItem = onClickItem,
                     modifier =
                         Modifier
                             .padding(start = 16.dp)
@@ -150,7 +152,6 @@ fun CollectionFolderTv(
             1 -> {
                 CollectionFolderDetails(
                     preferences = preferences,
-                    navigationManager = navigationManager,
                     destination = destination,
                     showTitle = false,
                     modifier =
@@ -161,6 +162,7 @@ fun CollectionFolderTv(
                     positionCallback = { columns, position ->
                         showHeader = position < columns
                     },
+                    onClickItem = onClickItem,
                 )
             }
             else -> ErrorMessage("Invalid tab index $selectedTabIndex", null)

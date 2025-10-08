@@ -33,7 +33,6 @@ import com.github.damontecres.dolphin.ui.components.LoadingPage
 import com.github.damontecres.dolphin.ui.components.details.VideoDetailsHeader
 import com.github.damontecres.dolphin.ui.isNotNullOrBlank
 import com.github.damontecres.dolphin.ui.nav.Destination
-import com.github.damontecres.dolphin.ui.nav.NavigationManager
 import com.github.damontecres.dolphin.util.LoadingState
 import com.github.damontecres.dolphin.util.seasonEpisode
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -54,7 +53,6 @@ class EpisodeViewModel
 @Composable
 fun EpisodeDetails(
     preferences: UserPreferences,
-    navigationManager: NavigationManager,
     destination: Destination.MediaItem,
     modifier: Modifier = Modifier,
     viewModel: EpisodeViewModel = hiltViewModel(),

@@ -53,6 +53,9 @@ class MainActivity : AppCompatActivity() {
     @Inject
     lateinit var okHttpClient: OkHttpClient
 
+    @Inject
+    lateinit var navigationManager: NavigationManager
+
     @OptIn(ExperimentalTvMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -95,7 +98,7 @@ class MainActivity : AppCompatActivity() {
                                 createDeviceProfile(this@MainActivity, preferences, false)
                             }
                         val backStack = rememberNavBackStack(Destination.Main())
-                        val navigationManager = NavigationManager(backStack)
+                        navigationManager.backStack = backStack
 
                         if (server != null && user != null) {
                             ApplicationContent(
@@ -119,12 +122,10 @@ class MainActivity : AppCompatActivity() {
                         } else if (server != null) {
                             // Have server but no user, go to user selection
                             SwitchUserContent(
-                                navigationManager = navigationManager,
                                 modifier = Modifier.fillMaxSize(),
                             )
                         } else {
                             SwitchServerContent(
-                                navigationManager = navigationManager,
                                 modifier = Modifier.fillMaxSize(),
                             )
                         }

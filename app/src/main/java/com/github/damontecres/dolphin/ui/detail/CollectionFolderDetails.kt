@@ -39,7 +39,6 @@ import com.github.damontecres.dolphin.ui.data.SeriesSortOptions
 import com.github.damontecres.dolphin.ui.data.SortAndDirection
 import com.github.damontecres.dolphin.ui.data.VideoSortOptions
 import com.github.damontecres.dolphin.ui.nav.Destination
-import com.github.damontecres.dolphin.ui.nav.NavigationManager
 import com.github.damontecres.dolphin.ui.tryRequestFocus
 import com.github.damontecres.dolphin.util.ApiRequestPager
 import com.github.damontecres.dolphin.util.GetItemsRequestHandler
@@ -134,8 +133,8 @@ class CollectionFolderViewModel
 @Composable
 fun CollectionFolderDetails(
     preferences: UserPreferences,
-    navigationManager: NavigationManager,
     destination: Destination.MediaItem,
+    onClickItem: (BaseItem) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: CollectionFolderViewModel = hiltViewModel(),
     initialSortAndDirection: SortAndDirection =
@@ -162,12 +161,12 @@ fun CollectionFolderDetails(
             pager?.let { pager ->
                 CollectionDetails(
                     preferences,
-                    navigationManager,
                     library!!,
                     item!!,
                     pager,
                     sortAndDirection = sortAndDirection,
                     modifier = modifier,
+                    onClickItem = onClickItem,
                     onSortChange = {
                         viewModel.loadResults(it)
                     },
@@ -182,11 +181,11 @@ fun CollectionFolderDetails(
 @Composable
 fun CollectionDetails(
     preferences: UserPreferences,
-    navigationManager: NavigationManager,
     library: Library,
     item: BaseItem,
     pager: List<BaseItem?>,
     sortAndDirection: SortAndDirection,
+    onClickItem: (BaseItem) -> Unit,
     onSortChange: (SortAndDirection) -> Unit,
     modifier: Modifier = Modifier,
     showTitle: Boolean = true,
@@ -232,15 +231,7 @@ fun CollectionDetails(
         }
         CardGrid(
             pager = pager,
-            itemOnClick = {
-                navigationManager.navigateTo(
-                    Destination.MediaItem(
-                        it.id,
-                        it.type,
-                        it,
-                    ),
-                )
-            },
+            onClickItem = onClickItem,
             longClicker = {},
             letterPosition = { 0 },
             gridFocusRequester = gridFocusRequester,

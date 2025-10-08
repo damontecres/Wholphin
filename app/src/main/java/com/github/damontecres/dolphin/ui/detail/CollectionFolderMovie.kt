@@ -29,20 +29,19 @@ import androidx.tv.material3.TabDefaults
 import androidx.tv.material3.TabRow
 import androidx.tv.material3.TabRowDefaults
 import androidx.tv.material3.Text
+import com.github.damontecres.dolphin.data.model.BaseItem
 import com.github.damontecres.dolphin.preferences.UserPreferences
 import com.github.damontecres.dolphin.preferences.rememberTab
 import com.github.damontecres.dolphin.ui.components.ErrorMessage
 import com.github.damontecres.dolphin.ui.components.RecommendedMovie
 import com.github.damontecres.dolphin.ui.ifElse
 import com.github.damontecres.dolphin.ui.nav.Destination
-import com.github.damontecres.dolphin.ui.nav.NavigationManager
 import com.github.damontecres.dolphin.ui.preferences.PreferencesViewModel
 import com.github.damontecres.dolphin.ui.tryRequestFocus
 
 @Composable
 fun CollectionFolderMovie(
     preferences: UserPreferences,
-    navigationManager: NavigationManager,
     destination: Destination.MediaItem,
     modifier: Modifier = Modifier,
     preferencesViewModel: PreferencesViewModel = hiltViewModel(),
@@ -71,6 +70,10 @@ fun CollectionFolderMovie(
         }
     }
     var showHeader by rememberSaveable { mutableStateOf(true) }
+
+    val onClickItem = { item: BaseItem ->
+        preferencesViewModel.navigationManager.navigateTo(item.destination())
+    }
 
     LaunchedEffect(Unit) { focusRequester.tryRequestFocus() }
     Column(
@@ -137,7 +140,7 @@ fun CollectionFolderMovie(
             0 -> {
                 RecommendedMovie(
                     preferences = preferences,
-                    navigationManager = navigationManager,
+                    onClickItem = onClickItem,
                     parentId = destination.itemId,
                     modifier =
                         Modifier
@@ -149,7 +152,7 @@ fun CollectionFolderMovie(
             1 -> {
                 CollectionFolderDetails(
                     preferences = preferences,
-                    navigationManager = navigationManager,
+                    onClickItem = onClickItem,
                     destination = destination,
                     showTitle = false,
                     modifier =

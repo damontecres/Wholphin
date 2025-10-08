@@ -29,7 +29,6 @@ import com.github.damontecres.dolphin.ui.data.ItemDetailsDialogInfo
 import com.github.damontecres.dolphin.ui.detail.ItemListAndMapping
 import com.github.damontecres.dolphin.ui.detail.SeriesViewModel
 import com.github.damontecres.dolphin.ui.nav.Destination
-import com.github.damontecres.dolphin.ui.nav.NavigationManager
 import com.github.damontecres.dolphin.ui.tryRequestFocus
 import com.github.damontecres.dolphin.util.LoadingState
 import com.github.damontecres.dolphin.util.seasonEpisode
@@ -55,7 +54,6 @@ data class SeriesOverviewPosition(
 @Composable
 fun SeriesOverview(
     preferences: UserPreferences,
-    navigationManager: NavigationManager,
     destination: Destination.SeriesOverview,
     modifier: Modifier = Modifier,
     viewModel: SeriesViewModel = hiltViewModel(),
@@ -146,7 +144,7 @@ fun SeriesOverview(
                             it.data.userData
                                 ?.playbackPositionTicks
                                 ?.ticks ?: Duration.ZERO
-                        navigationManager.navigateTo(
+                        viewModel.navigateTo(
                             Destination.Playback(
                                 it.id,
                                 resumePosition.inWholeMilliseconds,
@@ -160,7 +158,7 @@ fun SeriesOverview(
                     playOnClick = { resume ->
                         episodes.items.getOrNull(position.episodeRowIndex)?.let {
                             viewModel.release()
-                            navigationManager.navigateTo(
+                            viewModel.navigateTo(
                                 Destination.Playback(
                                     it.id,
                                     resume.inWholeMilliseconds,
@@ -189,7 +187,7 @@ fun SeriesOverview(
                                                 iconColor = Color.Green.copy(alpha = .8f),
                                             ) {
                                                 viewModel.release()
-                                                navigationManager.navigateTo(
+                                                viewModel.navigateTo(
                                                     Destination.Playback(
                                                         ep.id,
                                                         ep.resumeMs ?: 0L,
@@ -203,7 +201,7 @@ fun SeriesOverview(
 //                                            iconColor = Color.Green.copy(alpha = .8f),
                                             ) {
                                                 viewModel.release()
-                                                navigationManager.navigateTo(
+                                                viewModel.navigateTo(
                                                     Destination.MediaItem(
                                                         series.id,
                                                         BaseItemKind.SERIES,

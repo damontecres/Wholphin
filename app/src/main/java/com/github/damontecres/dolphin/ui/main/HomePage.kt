@@ -48,7 +48,6 @@ import com.github.damontecres.dolphin.ui.data.RowColumn
 import com.github.damontecres.dolphin.ui.data.RowColumnSaver
 import com.github.damontecres.dolphin.ui.ifElse
 import com.github.damontecres.dolphin.ui.isNotNullOrBlank
-import com.github.damontecres.dolphin.ui.nav.NavigationManager
 import com.github.damontecres.dolphin.ui.roundMinutes
 import com.github.damontecres.dolphin.ui.timeRemaining
 import com.github.damontecres.dolphin.ui.tryRequestFocus
@@ -66,7 +65,6 @@ data class HomeRow(
 @Composable
 fun HomePage(
     preferences: UserPreferences,
-    navigationManager: NavigationManager,
     modifier: Modifier = Modifier,
     viewModel: HomeViewModel = hiltViewModel(),
 ) {
@@ -81,15 +79,21 @@ fun HomePage(
 
         LoadingState.Success -> {
             val homeRows by viewModel.homeRows.observeAsState(listOf())
-            HomePageContent(navigationManager, homeRows, modifier)
+            HomePageContent(
+                homeRows,
+                onClickItem = {
+                    viewModel.navigationManager.navigateTo(it.destination())
+                },
+                modifier,
+            )
         }
     }
 }
 
 @Composable
 fun HomePageContent(
-    navigationManager: NavigationManager,
     homeRows: List<HomeRow>,
+    onClickItem: (BaseItem) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var position by rememberSaveable(stateSaver = RowColumnSaver) {
@@ -160,9 +164,7 @@ fun HomePageContent(
                         ItemRow(
                             title = row.title ?: stringResource(row.section.nameRes),
                             items = row.items,
-                            onClickItem = {
-                                navigationManager.navigateTo(it.destination())
-                            },
+                            onClickItem = onClickItem,
                             cardOnFocus = { isFocused, index ->
                                 if (isFocused) {
                                     focusedItem = row.items.getOrNull(index)

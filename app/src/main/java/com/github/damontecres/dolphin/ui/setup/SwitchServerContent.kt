@@ -28,11 +28,9 @@ import androidx.tv.material3.surfaceColorAtElevation
 import com.github.damontecres.dolphin.ui.components.BasicDialog
 import com.github.damontecres.dolphin.ui.components.EditTextBox
 import com.github.damontecres.dolphin.ui.nav.Destination
-import com.github.damontecres.dolphin.ui.nav.NavigationManager
 
 @Composable
 fun SwitchServerContent(
-    navigationManager: NavigationManager,
     modifier: Modifier = Modifier,
     viewModel: SwitchUserViewModel = hiltViewModel(),
 ) {
@@ -68,7 +66,7 @@ fun SwitchServerContent(
                 connectionStatus = serverStatus,
                 onSwitchServer = {
                     viewModel.addServer(it.url) {
-                        navigationManager.navigateTo(Destination.UserList)
+                        viewModel.navigationManager.navigateTo(Destination.UserList)
                     }
                 },
                 onAddServer = {
@@ -92,7 +90,7 @@ fun SwitchServerContent(
             val submit = {
                 showAddServer = false
                 viewModel.addServer(url) {
-                    navigationManager.navigateTo(Destination.UserList)
+                    viewModel.navigationManager.navigateTo(Destination.UserList)
                 }
             }
             BasicDialog(

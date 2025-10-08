@@ -41,6 +41,7 @@ class SeasonViewModel
     @Inject
     constructor(
         api: ApiClient,
+        val navigationManager: NavigationManager,
     ) : ItemViewModel<Video>(api) {
         val episodes = MutableLiveData<List<BaseItem?>>(listOf())
 
@@ -75,7 +76,6 @@ class SeasonViewModel
 @Composable
 fun SeasonDetails(
     preferences: UserPreferences,
-    navigationManager: NavigationManager,
     destination: Destination.MediaItem,
     modifier: Modifier = Modifier,
     viewModel: SeasonViewModel = hiltViewModel(),
@@ -100,7 +100,7 @@ fun SeasonDetails(
                     ItemRow(
                         title = "Episodes",
                         items = episodes,
-                        onClickItem = { navigationManager.navigateTo(it.destination()) },
+                        onClickItem = { viewModel.navigationManager.navigateTo(it.destination()) },
                         onLongClickItem = { },
                         cardOnFocus = { isFocused, index ->
                             if (isFocused) focusedChild = index

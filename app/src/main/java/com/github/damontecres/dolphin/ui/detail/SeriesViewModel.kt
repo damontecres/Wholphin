@@ -56,6 +56,7 @@ class SeriesViewModel
         api: ApiClient,
         @param:ApplicationContext val context: Context,
         @param:AuthOkHttpClient private val okHttpClient: OkHttpClient,
+        private val navigationManager: NavigationManager,
     ) : ItemViewModel<Video>(api) {
         private var player: Player? = null
         private lateinit var seriesId: UUID
@@ -275,7 +276,7 @@ class SeriesViewModel
             }
         }
 
-        fun playNextUp(nav: NavigationManager) {
+        fun playNextUp() {
             viewModelScope.launch(ExceptionHandler() + Dispatchers.IO) {
                 val result by api.tvShowsApi.getNextUp(seriesId = seriesId)
                 val nextUp =
@@ -286,13 +287,18 @@ class SeriesViewModel
                         ).content.items
                         .firstOrNull()
                 if (nextUp != null) {
-                    nav.navigateTo(Destination.Playback(nextUp.id, 0L))
+                    navigateTo(Destination.Playback(nextUp.id, 0L))
                 } else {
                     Toast
                         .makeText(context, "Could not find an episode to play", Toast.LENGTH_SHORT)
                         .show()
                 }
             }
+        }
+
+        fun navigateTo(destination: Destination) {
+            release()
+            navigationManager.navigateTo(destination)
         }
     }
 

@@ -61,7 +61,6 @@ import com.github.damontecres.dolphin.preferences.skipBackOnResume
 import com.github.damontecres.dolphin.ui.OneTimeLaunchedEffect
 import com.github.damontecres.dolphin.ui.components.LoadingPage
 import com.github.damontecres.dolphin.ui.nav.Destination
-import com.github.damontecres.dolphin.ui.nav.NavigationManager
 import com.github.damontecres.dolphin.ui.tryRequestFocus
 import com.github.damontecres.dolphin.util.seasonEpisode
 import kotlinx.coroutines.delay
@@ -73,7 +72,6 @@ import kotlin.time.Duration.Companion.seconds
 @Composable
 fun PlaybackContent(
     preferences: UserPreferences,
-    navigationManager: NavigationManager,
     deviceProfile: DeviceProfile,
     destination: Destination.Playback,
     modifier: Modifier = Modifier,

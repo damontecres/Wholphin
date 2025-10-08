@@ -31,11 +31,9 @@ import com.github.damontecres.dolphin.ui.components.BasicDialog
 import com.github.damontecres.dolphin.ui.components.EditTextBox
 import com.github.damontecres.dolphin.ui.isNotNullOrBlank
 import com.github.damontecres.dolphin.ui.nav.Destination
-import com.github.damontecres.dolphin.ui.nav.NavigationManager
 
 @Composable
 fun SwitchUserContent(
-    navigationManager: NavigationManager,
     modifier: Modifier = Modifier,
     viewModel: SwitchUserViewModel = hiltViewModel(),
 ) {
@@ -80,7 +78,7 @@ fun SwitchUserContent(
                     currentUser = currentUser,
                     onSwitchUser = { user ->
                         viewModel.switchUser(server, user) {
-                            navigationManager.goToHome()
+                            viewModel.navigationManager.goToHome()
                         }
                     },
                     onAddUser = { showAddUser = true },
@@ -88,7 +86,7 @@ fun SwitchUserContent(
                         viewModel.removeUser(user)
                     },
                     onSwitchServer = {
-                        navigationManager.navigateTo(Destination.ServerList)
+                        viewModel.navigationManager.navigateTo(Destination.ServerList)
                     },
                     modifier =
                         Modifier
@@ -106,7 +104,7 @@ fun SwitchUserContent(
             LaunchedEffect(Unit) {
                 if (useQuickConnect) {
                     viewModel.initiateQuickConnect(server) {
-                        navigationManager.goToHome()
+                        viewModel.navigationManager.goToHome()
                     }
                 }
             }
@@ -151,7 +149,7 @@ fun SwitchUserContent(
                         val onSubmit = {
                             viewModel.login(server, username, password) {
                                 showAddUser = false
-                                navigationManager.goToHome()
+                                viewModel.navigationManager.goToHome()
                             }
                         }
                         Row(

@@ -5,7 +5,7 @@ import androidx.compose.ui.Modifier
 import androidx.tv.material3.Text
 import com.github.damontecres.dolphin.preferences.UserPreferences
 import com.github.damontecres.dolphin.ui.components.LicenseInfo
-import com.github.damontecres.dolphin.ui.detail.CollectionFolderDetails
+import com.github.damontecres.dolphin.ui.detail.CollectionFolderGeneric
 import com.github.damontecres.dolphin.ui.detail.CollectionFolderMovie
 import com.github.damontecres.dolphin.ui.detail.CollectionFolderTv
 import com.github.damontecres.dolphin.ui.detail.EpisodeDetails
@@ -28,7 +28,6 @@ import org.jellyfin.sdk.model.api.DeviceProfile
 fun DestinationContent(
     destination: Destination,
     preferences: UserPreferences,
-    navigationManager: NavigationManager,
     deviceProfile: DeviceProfile,
     modifier: Modifier = Modifier,
 ) {
@@ -36,25 +35,22 @@ fun DestinationContent(
         is Destination.Main ->
             HomePage(
                 preferences = preferences,
-                navigationManager = navigationManager,
                 modifier = modifier,
             )
 
         is Destination.Playback ->
             PlaybackContent(
                 preferences = preferences,
-                navigationManager = navigationManager,
                 deviceProfile = deviceProfile,
                 destination = destination,
                 modifier = modifier,
             )
 
-        Destination.ServerList -> SwitchServerContent(navigationManager, modifier)
-        Destination.UserList -> SwitchUserContent(navigationManager, modifier)
+        Destination.ServerList -> SwitchServerContent(modifier)
+        Destination.UserList -> SwitchUserContent(modifier)
 
         Destination.Settings ->
             PreferencesPage(
-                navigationManager,
                 preferences.appPreferences,
                 PreferenceScreenOption.BASIC,
                 modifier,
@@ -63,7 +59,6 @@ fun DestinationContent(
         is Destination.SeriesOverview ->
             SeriesOverview(
                 preferences,
-                navigationManager,
                 destination,
                 modifier,
                 initialSeasonEpisode = destination.seasonEpisode,
@@ -74,7 +69,6 @@ fun DestinationContent(
                 BaseItemKind.SERIES ->
                     SeriesDetails(
                         preferences,
-                        navigationManager,
                         destination,
                         modifier,
                     )
@@ -82,7 +76,6 @@ fun DestinationContent(
                 BaseItemKind.SEASON ->
                     SeasonDetails(
                         preferences,
-                        navigationManager,
                         destination,
                         modifier,
                     )
@@ -90,7 +83,6 @@ fun DestinationContent(
                 BaseItemKind.EPISODE ->
                     EpisodeDetails(
                         preferences,
-                        navigationManager,
                         destination,
                         modifier,
                     )
@@ -98,7 +90,6 @@ fun DestinationContent(
                 BaseItemKind.MOVIE ->
                     MovieDetails(
                         preferences,
-                        navigationManager,
                         destination,
                         modifier,
                     )
@@ -107,7 +98,6 @@ fun DestinationContent(
                     // TODO Use VideoDetails
                     MovieDetails(
                         preferences,
-                        navigationManager,
                         destination,
                         modifier,
                     )
@@ -117,7 +107,6 @@ fun DestinationContent(
                         CollectionType.TVSHOWS ->
                             CollectionFolderTv(
                                 preferences,
-                                navigationManager,
                                 destination,
                                 modifier,
                             )
@@ -125,15 +114,13 @@ fun DestinationContent(
                         CollectionType.MOVIES ->
                             CollectionFolderMovie(
                                 preferences,
-                                navigationManager,
                                 destination,
                                 modifier,
                             )
 
                         else ->
-                            CollectionFolderDetails(
+                            CollectionFolderGeneric(
                                 preferences,
-                                navigationManager,
                                 destination,
                                 modifier,
                             )
@@ -149,7 +136,6 @@ fun DestinationContent(
 
         Destination.Search ->
             SearchPage(
-                navigationManager = navigationManager,
                 userPreferences = preferences,
                 modifier = modifier,
             )

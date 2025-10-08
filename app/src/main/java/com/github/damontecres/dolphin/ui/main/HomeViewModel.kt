@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.github.damontecres.dolphin.data.model.BaseItem
 import com.github.damontecres.dolphin.preferences.UserPreferences
 import com.github.damontecres.dolphin.ui.DefaultItemFields
+import com.github.damontecres.dolphin.ui.nav.NavigationManager
 import com.github.damontecres.dolphin.util.LoadingExceptionHandler
 import com.github.damontecres.dolphin.util.LoadingState
 import com.github.damontecres.dolphin.util.supportItemKinds
@@ -33,6 +34,7 @@ class HomeViewModel
     @Inject
     constructor(
         val api: ApiClient,
+        val navigationManager: NavigationManager,
     ) : ViewModel() {
         val loadingState = MutableLiveData<LoadingState>(LoadingState.Loading)
         val homeRows = MutableLiveData<List<HomeRow>>()

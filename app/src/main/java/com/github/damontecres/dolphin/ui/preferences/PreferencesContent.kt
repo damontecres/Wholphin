@@ -45,7 +45,6 @@ import com.github.damontecres.dolphin.preferences.advancedPreferences
 import com.github.damontecres.dolphin.preferences.basicPreferences
 import com.github.damontecres.dolphin.preferences.uiPreferences
 import com.github.damontecres.dolphin.ui.ifElse
-import com.github.damontecres.dolphin.ui.nav.NavigationManager
 import com.github.damontecres.dolphin.ui.playOnClickSound
 import com.github.damontecres.dolphin.ui.playSoundOnFocus
 import com.github.damontecres.dolphin.ui.tryRequestFocus
@@ -58,7 +57,6 @@ data class Release(
 
 @Composable
 fun PreferencesContent(
-    navigationManager: NavigationManager,
     initialPreferences: AppPreferences,
     preferenceScreenOption: PreferenceScreenOption,
     modifier: Modifier = Modifier,
@@ -267,9 +265,9 @@ fun PreferencesContent(
                             else -> {
                                 val value = pref.getter.invoke(preferences)
                                 ComposablePreference(
-                                    navigationManager = navigationManager,
                                     preference = pref,
                                     value = value,
+                                    onNavigate = viewModel.navigationManager::navigateTo,
                                     onValueChange = { newValue ->
                                         val validation = pref.validate(newValue)
                                         when (validation) {
@@ -312,7 +310,6 @@ fun PreferencesContent(
 
 @Composable
 fun PreferencesPage(
-    navigationManager: NavigationManager,
     initialPreferences: AppPreferences,
     preferenceScreenOption: PreferenceScreenOption,
     modifier: Modifier = Modifier,
@@ -321,7 +318,6 @@ fun PreferencesPage(
         modifier = modifier.background(MaterialTheme.colorScheme.background),
     ) {
         PreferencesContent(
-            navigationManager,
             initialPreferences,
             preferenceScreenOption,
             Modifier

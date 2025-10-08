@@ -50,17 +50,17 @@ import com.github.damontecres.dolphin.ui.components.DialogItem
 import com.github.damontecres.dolphin.ui.components.DialogParams
 import com.github.damontecres.dolphin.ui.components.DialogPopup
 import com.github.damontecres.dolphin.ui.components.EditTextBox
-import com.github.damontecres.dolphin.ui.nav.NavigationManager
+import com.github.damontecres.dolphin.ui.nav.Destination
 import com.github.damontecres.dolphin.util.ExceptionHandler
 import kotlinx.coroutines.launch
 
 @Suppress("UNCHECKED_CAST")
 @Composable
 fun <T> ComposablePreference(
-    navigationManager: NavigationManager,
     preference: AppPreference<T>,
     value: T?,
     onValueChange: (T) -> Unit,
+    onNavigate: (Destination) -> Unit,
     modifier: Modifier = Modifier,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
 ) {
@@ -92,7 +92,7 @@ fun <T> ComposablePreference(
             ClickPreference(
                 title = title,
                 onClick = {
-                    navigationManager.navigateTo(preference.destination)
+                    onNavigate.invoke(preference.destination)
                 },
                 summary = preference.summary(context, value),
                 interactionSource = interactionSource,

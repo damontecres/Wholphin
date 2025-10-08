@@ -41,7 +41,6 @@ fun ApplicationContent(
                     DestinationContent(
                         destination = key,
                         preferences = preferences,
-                        navigationManager = navigationManager,
                         deviceProfile = deviceProfile,
                         modifier = modifier.fillMaxSize(),
                     )
@@ -49,7 +48,6 @@ fun ApplicationContent(
                     NavDrawer(
                         destination = key,
                         preferences = preferences,
-                        navigationManager = navigationManager,
                         deviceProfile = deviceProfile,
                         user = user,
                         server = server,

@@ -48,6 +48,7 @@ class SearchViewModel
     @Inject
     constructor(
         val api: ApiClient,
+        val navigationManager: NavigationManager,
     ) : ViewModel() {
         val movies = MutableLiveData<List<BaseItem?>>(listOf())
         val series = MutableLiveData<List<BaseItem?>>(listOf())
@@ -111,7 +112,6 @@ class SearchViewModel
 
 @Composable
 fun SearchPage(
-    navigationManager: NavigationManager,
     userPreferences: UserPreferences,
     modifier: Modifier = Modifier,
     viewModel: SearchViewModel = hiltViewModel(),
@@ -170,7 +170,7 @@ fun SearchPage(
                         },
                     items = items,
                     onClickItem = {
-                        navigationManager.navigateTo(it.destination())
+                        viewModel.navigationManager.navigateTo(it.destination())
                     },
                     onLongClickItem = {},
                     modifier = Modifier.focusRequester(resultsFocusRequester),
