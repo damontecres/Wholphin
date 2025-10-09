@@ -128,6 +128,28 @@ class CollectionFolderViewModel
                 }
             }
         }
+
+        suspend fun positionOfLetter(letter: Char): Int? =
+            item.value?.let { item ->
+                val includeItemTypes =
+                    when (item.data.collectionType) {
+                        CollectionType.MOVIES -> listOf(BaseItemKind.MOVIE)
+                        CollectionType.TVSHOWS -> listOf(BaseItemKind.SERIES)
+                        CollectionType.HOMEVIDEOS -> listOf(BaseItemKind.VIDEO)
+
+                        else -> listOf()
+                    }
+                val request =
+                    GetItemsRequest(
+                        parentId = item.id,
+                        includeItemTypes = includeItemTypes,
+                        nameLessThan = letter.toString(),
+                        limit = 0,
+                        enableTotalRecordCount = true,
+                    )
+                val result by GetItemsRequestHandler.execute(api, request)
+                result.totalRecordCount
+            }
     }
 
 @Composable
@@ -172,6 +194,7 @@ fun CollectionFolderDetails(
                     },
                     showTitle = showTitle,
                     positionCallback = positionCallback,
+                    letterPosition = { viewModel.positionOfLetter(it) ?: -1 },
                 )
             }
         }
@@ -187,6 +210,7 @@ fun CollectionDetails(
     sortAndDirection: SortAndDirection,
     onClickItem: (BaseItem) -> Unit,
     onSortChange: (SortAndDirection) -> Unit,
+    letterPosition: suspend (Char) -> Int,
     modifier: Modifier = Modifier,
     showTitle: Boolean = true,
     positionCallback: ((columns: Int, position: Int) -> Unit)? = null,
@@ -233,9 +257,10 @@ fun CollectionDetails(
             pager = pager,
             onClickItem = onClickItem,
             longClicker = {},
-            letterPosition = { 0 },
+            letterPosition = letterPosition,
             gridFocusRequester = gridFocusRequester,
             showJumpButtons = false, // TODO add preference
+            showLetterButtons = sortAndDirection.sort == ItemSortBy.SORT_NAME,
             modifier = Modifier.fillMaxSize(),
             initialPosition = 0,
             positionCallback = { columns, position ->

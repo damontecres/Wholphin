@@ -3,6 +3,8 @@ package com.github.damontecres.dolphin.ui.detail
 import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusGroup
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -10,11 +12,15 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -37,6 +43,7 @@ import androidx.compose.ui.input.key.type
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.tv.material3.Button
+import androidx.tv.material3.LocalContentColor
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.github.damontecres.dolphin.R
@@ -63,6 +70,7 @@ fun CardGrid(
     letterPosition: suspend (Char) -> Int,
     gridFocusRequester: FocusRequester,
     showJumpButtons: Boolean,
+    showLetterButtons: Boolean,
     modifier: Modifier = Modifier,
     initialPosition: Int = 0,
     positionCallback: ((columns: Int, position: Int) -> Unit)? = null,
@@ -87,12 +95,13 @@ fun CardGrid(
     }
 
     // Wait for a recomposition to focus
-//    LaunchedEffect(alphabetFocus) {
-//        if (alphabetFocus) {
-//            firstFocus.tryRequestFocus()
-//        }
-//        alphabetFocus = false
-//    }
+    val alphabetFocusRequester = remember { FocusRequester() }
+    LaunchedEffect(alphabetFocus) {
+        if (alphabetFocus) {
+            alphabetFocusRequester.tryRequestFocus()
+        }
+        alphabetFocus = false
+    }
 
     val useBackToJump = true // uiConfig.preferences.interfacePreferences.scrollTopOnBack
     val showFooter = true // uiConfig.preferences.interfacePreferences.showPositionFooter
@@ -215,7 +224,7 @@ fun CardGrid(
                         .focusProperties {
                             onExit = {
                                 // Leaving the grid, so "forget" the position
-                                focusedIndex = -1
+//                                focusedIndex = -1
                             }
                             onEnter = {
                                 if (focusedIndex < 0 && gridState.firstVisibleItemIndex <= startPosition) {
@@ -231,6 +240,7 @@ fun CardGrid(
                             Modifier
                                 .focusRequester(firstFocus)
                                 .focusRequester(gridFocusRequester)
+                                .focusRequester(alphabetFocusRequester)
                         } else {
                             Modifier
                         }
@@ -299,18 +309,38 @@ fun CardGrid(
             }
         }
         // Letters
-        if (pager.isNotEmpty() && false) {
-            // TODO
+        val currentLetter =
+            remember(focusedIndex) {
+                pager
+                    .getOrNull(focusedIndex)
+                    ?.data
+                    ?.sortName
+                    ?.first()
+                    ?.uppercaseChar()
+                    ?.let {
+                        if (it >= '0' && it <= '9') {
+                            '#'
+                        } else if (it >= 'A' && it <= 'Z') {
+                            it
+                        } else {
+                            null
+                        }
+                    }
+                    ?: LETTERS[0]
+            }
+        if (showLetterButtons && pager.isNotEmpty()) {
             AlphabetButtons(
+                currentLetter = currentLetter,
                 modifier = Modifier.align(Alignment.CenterVertically),
                 letterClicked = { letter ->
                     scope.launch(ExceptionHandler()) {
                         val jumpPosition = letterPosition.invoke(letter)
                         Timber.d("Alphabet jump to $jumpPosition")
-                        gridState.scrollToItem(jumpPosition)
-                        focusOn(jumpPosition)
-                        alphabetFocus = true
-//                        firstFocus.tryRequestFocus()
+                        if (jumpPosition >= 0) {
+                            gridState.scrollToItem(jumpPosition)
+                            focusOn(jumpPosition)
+                            alphabetFocus = true
+                        }
                     }
                 },
             )
@@ -353,26 +383,68 @@ fun JumpButton(
     }
 }
 
+private const val LETTERS = "#ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
 @Composable
 fun AlphabetButtons(
+    currentLetter: Char,
     letterClicked: (Char) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-//    LazyColumn(modifier = modifier) {
-//        items(
-//            AlphabetSearchUtils.LETTERS.length,
-//            key = { AlphabetSearchUtils.LETTERS[it] },
-//        ) { index ->
-//            Button(
-//                modifier =
-//                    Modifier.size(24.dp),
-//                contentPadding = PaddingValues(2.dp),
-//                onClick = {
-//                    letterClicked.invoke(AlphabetSearchUtils.LETTERS[index])
-//                },
-//            ) {
-//                Text(text = AlphabetSearchUtils.LETTERS[index].toString())
-//            }
-//        }
-//    }
+    val scope = rememberCoroutineScope()
+    val listState = rememberLazyListState()
+
+    val index = LETTERS.indexOf(currentLetter)
+    LaunchedEffect(currentLetter) {
+        scope.launch(ExceptionHandler()) {
+            val firstVisibleItemIndex = listState.firstVisibleItemIndex
+            val lastVisibleItemIndex =
+                listState.layoutInfo.visibleItemsInfo
+                    .lastOrNull()
+                    ?.index ?: -1
+            if (index < firstVisibleItemIndex || index > lastVisibleItemIndex) {
+                listState.animateScrollToItem(index)
+            }
+        }
+    }
+    val focusRequesters = remember { List(LETTERS.length) { FocusRequester() } }
+    LazyColumn(
+        state = listState,
+        modifier =
+            modifier.focusProperties {
+                onEnter = {
+                    focusRequesters[index.coerceIn(0, LETTERS.length - 1)].tryRequestFocus()
+                }
+            },
+    ) {
+        items(
+            LETTERS.length,
+            key = { LETTERS[it] },
+        ) { index ->
+            val interactionSource = remember { MutableInteractionSource() }
+            val focused by interactionSource.collectIsFocusedAsState()
+            Button(
+                modifier =
+                    Modifier
+                        .size(24.dp)
+                        .focusRequester(focusRequesters[index]),
+                contentPadding = PaddingValues(2.dp),
+                interactionSource = interactionSource,
+                onClick = {
+                    letterClicked.invoke(LETTERS[index])
+                },
+            ) {
+                val color =
+                    if (!focused && LETTERS[index] == currentLetter) {
+                        MaterialTheme.colorScheme.tertiary
+                    } else {
+                        LocalContentColor.current
+                    }
+                Text(
+                    text = LETTERS[index].toString(),
+                    color = color,
+                )
+            }
+        }
+    }
 }

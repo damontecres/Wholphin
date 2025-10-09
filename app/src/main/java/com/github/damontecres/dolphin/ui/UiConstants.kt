@@ -27,6 +27,7 @@ val DefaultItemFields =
         ItemFields.CHILD_COUNT,
         ItemFields.OVERVIEW,
         ItemFields.TRICKPLAY,
+        ItemFields.SORT_NAME,
     )
 
 @Preview(
