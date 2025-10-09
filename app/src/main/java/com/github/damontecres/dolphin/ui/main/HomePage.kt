@@ -39,6 +39,7 @@ import androidx.tv.material3.Text
 import coil3.compose.AsyncImage
 import com.github.damontecres.dolphin.data.model.BaseItem
 import com.github.damontecres.dolphin.preferences.UserPreferences
+import com.github.damontecres.dolphin.ui.Cards
 import com.github.damontecres.dolphin.ui.cards.BannerCard
 import com.github.damontecres.dolphin.ui.cards.ItemRow
 import com.github.damontecres.dolphin.ui.components.DotSeparatedRow
@@ -194,7 +195,7 @@ fun HomePageContent(
                                                 Modifier.focusRequester(positionFocusRequester),
                                             ),
                                     interactionSource = null,
-                                    cardHeight = 200.dp,
+                                    cardHeight = Cards.defaultHeight2x3,
                                 )
                             },
                         )

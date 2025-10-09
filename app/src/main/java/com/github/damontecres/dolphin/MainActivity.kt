@@ -13,7 +13,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -39,6 +38,7 @@ import com.github.damontecres.dolphin.ui.theme.DolphinTheme
 import com.github.damontecres.dolphin.util.profile.createDeviceProfile
 import dagger.hilt.android.AndroidEntryPoint
 import okhttp3.OkHttpClient
+import timber.log.Timber
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -59,8 +59,8 @@ class MainActivity : AppCompatActivity() {
     @OptIn(ExperimentalTvMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        Timber.i("MainActivity.onCreate")
         setContent {
-            val scope = rememberCoroutineScope()
             DolphinTheme(true) {
                 Surface(
                     modifier =
@@ -80,6 +80,7 @@ class MainActivity : AppCompatActivity() {
                                     appPreferences.currentServerId,
                                     appPreferences.currentUserId,
                                 )
+                                Timber.d("MainActivity session restored")
                             }
                             isRestoringSession = false
                         }

@@ -36,12 +36,12 @@ fun ItemRow(
         modifier: Modifier,
         onClick: () -> Unit,
         onLongClick: () -> Unit,
-    ) -> Unit = { index, item, modifier, onClick, onLongClick ->
+    ) -> Unit = { index, item, mod, onClick, onLongClick ->
         ItemCard(
             item = item,
             onClick = onClick,
             onLongClick = onLongClick,
-            modifier = modifier,
+            modifier = mod,
         )
     },
     focusPair: FocusPair? = null,

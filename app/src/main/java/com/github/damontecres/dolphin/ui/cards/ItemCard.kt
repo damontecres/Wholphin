@@ -16,7 +16,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.runtime.Composable
@@ -48,6 +48,7 @@ import androidx.tv.material3.Text
 import coil3.compose.AsyncImage
 import com.github.damontecres.dolphin.R
 import com.github.damontecres.dolphin.data.model.BaseItem
+import com.github.damontecres.dolphin.ui.Cards
 import com.github.damontecres.dolphin.ui.FontAwesome
 import com.github.damontecres.dolphin.ui.enableMarquee
 import com.github.damontecres.dolphin.ui.ifElse
@@ -240,7 +241,7 @@ fun ItemCardImage(
                         fontFamily = FontAwesome,
                     )
                 }
-                if (watched && watchedPercent?.let { it <= 0 || it >= 100 } == true) {
+                if (watched && (watchedPercent == null || watchedPercent <= 0.0 || watchedPercent >= 100.0)) {
                     Icon(
                         imageVector = Icons.Default.CheckCircle,
                         contentDescription = null,
@@ -248,27 +249,26 @@ fun ItemCardImage(
                         modifier =
                             Modifier
                                 .align(Alignment.TopEnd)
-                                .size(48.dp)
-                                .padding(8.dp),
+                                .size(36.dp)
+                                .padding(4.dp),
                     )
                 }
                 if (unwatchedCount > 0) {
                     Box(
                         modifier =
                             Modifier
-                                .padding(8.dp)
-                                .align(Alignment.TopEnd),
+                                .padding(4.dp)
+                                .background(
+                                    MaterialTheme.colorScheme.border,
+                                    shape = RoundedCornerShape(25),
+                                ).align(Alignment.TopEnd),
                     ) {
                         Text(
-                            modifier =
-                                Modifier
-                                    .background(
-                                        MaterialTheme.colorScheme.border,
-                                        shape = CircleShape,
-                                    ),
-                            color = MaterialTheme.colorScheme.onSurface,
                             text = unwatchedCount.toString(),
-                            fontSize = 20.sp,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            style = MaterialTheme.typography.bodyMedium,
+//                            fontSize = 16.sp,
+                            modifier = Modifier.padding(4.dp),
                         )
                     }
                 }
@@ -281,7 +281,7 @@ fun ItemCardImage(
                                 .background(
                                     MaterialTheme.colorScheme.tertiary,
                                 ).clip(RectangleShape)
-                                .height(4.dp)
+                                .height(Cards.playedPercentHeight)
                                 .fillMaxWidth((percent / 100.0).toFloat()),
                     )
                 }

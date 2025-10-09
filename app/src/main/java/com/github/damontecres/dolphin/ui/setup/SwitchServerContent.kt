@@ -10,6 +10,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
@@ -17,9 +18,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.tv.material3.Button
 import androidx.tv.material3.MaterialTheme
@@ -27,7 +31,9 @@ import androidx.tv.material3.Text
 import androidx.tv.material3.surfaceColorAtElevation
 import com.github.damontecres.dolphin.ui.components.BasicDialog
 import com.github.damontecres.dolphin.ui.components.EditTextBox
+import com.github.damontecres.dolphin.ui.isNotNullOrBlank
 import com.github.damontecres.dolphin.ui.nav.Destination
+import com.github.damontecres.dolphin.ui.tryRequestFocus
 
 @Composable
 fun SwitchServerContent(
@@ -95,11 +101,17 @@ fun SwitchServerContent(
             }
             BasicDialog(
                 onDismissRequest = { showAddServer = false },
+                properties = DialogProperties(usePlatformDefaultWidth = false),
             ) {
+                val focusRequester = remember { FocusRequester() }
+                LaunchedEffect(Unit) { focusRequester.tryRequestFocus() }
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.padding(16.dp),
+                    modifier =
+                        Modifier
+                            .padding(16.dp)
+                            .fillMaxWidth(.4f),
                 ) {
                     Text(
                         text = "Enter Server URL",
@@ -117,10 +129,14 @@ fun SwitchServerContent(
                             KeyboardActions(
                                 onDone = { submit.invoke() },
                             ),
-                        modifier = Modifier,
+                        modifier =
+                            Modifier
+                                .focusRequester(focusRequester)
+                                .fillMaxWidth(),
                     )
                     Button(
                         onClick = { submit.invoke() },
+                        enabled = url.isNotNullOrBlank(),
                         modifier = Modifier,
                     ) {
                         Text(text = "Submit")

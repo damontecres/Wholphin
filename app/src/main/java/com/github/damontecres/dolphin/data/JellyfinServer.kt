@@ -11,6 +11,7 @@ import androidx.room.PrimaryKey
 import androidx.room.Query
 import androidx.room.Relation
 import androidx.room.Transaction
+import androidx.room.Update
 
 @Entity(tableName = "servers")
 data class JellyfinServer(
@@ -52,10 +53,13 @@ data class JellyfinServerUsers(
 @Dao
 interface JellyfinServerDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
-    fun addServer(vararg servers: JellyfinServer)
+    fun addServer(server: JellyfinServer): Long
+
+    @Update(onConflict = OnConflictStrategy.ABORT)
+    fun updateServer(server: JellyfinServer): Int
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    fun addUser(vararg users: JellyfinUser)
+    fun addUser(user: JellyfinUser)
 
     @Query("DELETE FROM servers WHERE id = :serverId")
     fun deleteServer(serverId: String)

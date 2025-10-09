@@ -1,10 +1,12 @@
 package com.github.damontecres.dolphin.ui
 
 import android.content.res.Configuration.UI_MODE_TYPE_TELEVISION
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import com.github.damontecres.dolphin.R
 import org.jellyfin.sdk.model.api.ItemFields
 
@@ -29,6 +31,19 @@ val DefaultItemFields =
         ItemFields.TRICKPLAY,
         ItemFields.SORT_NAME,
     )
+
+val DefaultButtonPadding =
+    PaddingValues(
+        start = 12.dp / 2,
+        top = 10.dp / 2,
+        end = 16.dp / 2,
+        bottom = 10.dp / 2,
+    )
+
+object Cards {
+    val defaultHeight2x3 = 180.dp
+    val playedPercentHeight = 6.dp
+}
 
 @Preview(
     device = "spec:parent=tv_1080p",

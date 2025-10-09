@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
@@ -20,7 +21,9 @@ import androidx.tv.material3.ButtonDefaults
 import androidx.tv.material3.Icon
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
+import com.github.damontecres.dolphin.ui.DefaultButtonPadding
 import com.github.damontecres.dolphin.ui.FontAwesome
+import com.github.damontecres.dolphin.ui.ifElse
 import kotlin.time.Duration
 
 @Composable
@@ -30,6 +33,7 @@ fun PlayButton(
     icon: ImageVector,
     onClick: (position: Duration) -> Unit,
     modifier: Modifier = Modifier,
+    mirrorIcon: Boolean = false,
 ) {
     Button(
         onClick = { onClick.invoke(resume) },
@@ -39,6 +43,7 @@ fun PlayButton(
         Icon(
             imageVector = icon,
             contentDescription = null,
+            modifier = Modifier.ifElse(mirrorIcon, Modifier.graphicsLayer { scaleX = -1f }),
         )
         Spacer(Modifier.size(8.dp))
         Text(
@@ -56,17 +61,19 @@ fun ExpandablePlayButton(
     onClick: (position: Duration) -> Unit,
     modifier: Modifier = Modifier,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
+    mirrorIcon: Boolean = false,
 ) {
     val isFocused = interactionSource.collectIsFocusedAsState().value
     Button(
         onClick = { onClick.invoke(resume) },
         modifier = modifier,
-        contentPadding = ButtonDefaults.ButtonWithIconContentPadding,
+        contentPadding = DefaultButtonPadding,
         interactionSource = interactionSource,
     ) {
         Icon(
             imageVector = icon,
             contentDescription = null,
+            modifier = Modifier.ifElse(mirrorIcon, Modifier.graphicsLayer { scaleX = -1f }),
         )
         AnimatedVisibility(isFocused) {
             Spacer(Modifier.size(8.dp))
@@ -89,14 +96,14 @@ fun ExpandableFaButton(
     val isFocused = interactionSource.collectIsFocusedAsState().value
     Button(
         onClick = onClick,
-        modifier = modifier.heightIn(min = 44.dp),
-        contentPadding = ButtonDefaults.ButtonWithIconContentPadding,
+        modifier = modifier.heightIn(min = 40.dp),
+        contentPadding = DefaultButtonPadding,
         interactionSource = interactionSource,
     ) {
         Text(
             text = stringResource(iconStringRes),
             style = MaterialTheme.typography.titleSmall,
-            fontSize = 18.sp,
+            fontSize = 16.sp,
             fontFamily = FontAwesome,
             textAlign = TextAlign.Center,
             modifier = Modifier,

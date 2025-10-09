@@ -1,6 +1,7 @@
 package com.github.damontecres.dolphin.ui.detail
 
 import androidx.annotation.StringRes
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -18,6 +19,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+import androidx.compose.foundation.lazy.layout.LazyLayoutCacheWindow
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -62,6 +64,7 @@ import timber.log.Timber
 
 private const val DEBUG = false
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun CardGrid(
     pager: List<BaseItem?>,
@@ -78,7 +81,8 @@ fun CardGrid(
     val startPosition = initialPosition.coerceIn(0, (pager.size - 1).coerceAtLeast(0))
     val columns = 6
 
-    val gridState = rememberLazyGridState()
+    val fractionCacheWindow = LazyLayoutCacheWindow(aheadFraction = 1f, behindFraction = 0.5f)
+    val gridState = rememberLazyGridState(cacheWindow = fractionCacheWindow)
     val scope = rememberCoroutineScope()
     val firstFocus = remember { FocusRequester() }
     val zeroFocus = remember { FocusRequester() }

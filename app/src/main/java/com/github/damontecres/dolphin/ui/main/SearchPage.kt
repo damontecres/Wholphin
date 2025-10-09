@@ -4,8 +4,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -13,6 +13,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -25,9 +26,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.github.damontecres.dolphin.data.model.BaseItem
 import com.github.damontecres.dolphin.preferences.UserPreferences
+import com.github.damontecres.dolphin.ui.Cards
 import com.github.damontecres.dolphin.ui.DefaultItemFields
 import com.github.damontecres.dolphin.ui.cards.EpisodeCard
 import com.github.damontecres.dolphin.ui.cards.ItemRow
+import com.github.damontecres.dolphin.ui.cards.SeasonCard
 import com.github.damontecres.dolphin.ui.components.EditTextBox
 import com.github.damontecres.dolphin.ui.isNotNullOrBlank
 import com.github.damontecres.dolphin.ui.nav.NavigationManager
@@ -125,7 +128,7 @@ fun SearchPage(
     val series by viewModel.series.observeAsState(listOf())
     val episodes by viewModel.episodes.observeAsState(listOf())
 
-    var query by remember { mutableStateOf("") }
+    var query by rememberSaveable { mutableStateOf("") }
     val searchFocusRequester = remember { FocusRequester() }
     val resultsFocusRequester = remember { FocusRequester() }
 
@@ -163,22 +166,47 @@ fun SearchPage(
                 )
             }
         }
-        itemsIndexed(listOf(movies, series)) { index, items ->
-            if (items.isNotEmpty()) {
+        if (movies.isNotEmpty()) {
+            item {
                 ItemRow(
-                    title =
-                        when (index) {
-                            0 -> "Movies"
-                            1 -> "Series"
-                            2 -> "Episodes"
-                            else -> ""
-                        },
-                    items = items,
+                    title = "Movies",
+                    items = movies,
                     onClickItem = {
                         viewModel.navigationManager.navigateTo(it.destination())
                     },
                     onLongClickItem = {},
-                    modifier = Modifier.focusRequester(resultsFocusRequester),
+                    modifier = Modifier,
+                    cardContent = @Composable { index, item, mod, onClick, onLongClick ->
+                        SeasonCard(
+                            item = item,
+                            onClick = onClick,
+                            onLongClick = onLongClick,
+                            imageHeight = Cards.defaultHeight2x3,
+                            modifier = mod,
+                        )
+                    },
+                )
+            }
+        }
+        if (series.isNotEmpty()) {
+            item {
+                ItemRow(
+                    title = "Series",
+                    items = series,
+                    onClickItem = {
+                        viewModel.navigationManager.navigateTo(it.destination())
+                    },
+                    onLongClickItem = {},
+                    modifier = Modifier,
+                    cardContent = @Composable { index, item, mod, onClick, onLongClick ->
+                        SeasonCard(
+                            item = item,
+                            onClick = onClick,
+                            onLongClick = onLongClick,
+                            imageHeight = Cards.defaultHeight2x3,
+                            modifier = mod,
+                        )
+                    },
                 )
             }
         }
@@ -197,8 +225,8 @@ fun SearchPage(
                             item = item,
                             onClick = onClick,
                             onLongClick = onLongClick,
-                            imageHeight = 160.dp,
-                            modifier = mod,
+                            imageHeight = 140.dp,
+                            modifier = mod.padding(horizontal = 8.dp),
                         )
                     },
                 )

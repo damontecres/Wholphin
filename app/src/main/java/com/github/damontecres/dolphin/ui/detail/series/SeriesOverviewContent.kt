@@ -43,6 +43,7 @@ import androidx.tv.material3.TabRowDefaults
 import androidx.tv.material3.Text
 import coil3.compose.AsyncImage
 import com.github.damontecres.dolphin.data.model.BaseItem
+import com.github.damontecres.dolphin.data.model.aspectRatioFloat
 import com.github.damontecres.dolphin.ui.OneTimeLaunchedEffect
 import com.github.damontecres.dolphin.ui.cards.BannerCard
 import com.github.damontecres.dolphin.ui.ifElse
@@ -225,12 +226,17 @@ fun SeriesOverviewContent(
                                     ),
                                 )
                             }
+
                             BannerCard(
                                 name = episode?.name,
                                 imageUrl = episode?.imageUrl,
                                 aspectRatio =
-                                    episode?.data?.primaryImageAspectRatio?.toFloat()
-                                        ?: (16f / 9),
+                                    episode
+                                        ?.data
+                                        ?.primaryImageAspectRatio
+                                        ?.toFloat()
+                                        ?.coerceAtLeast(episode.data.aspectRatioFloat ?: (4f / 3f))
+                                        ?: (16f / 9), // TODO some episode images don't match the file's aspect ratio
                                 cornerText = "E${episode?.data?.indexNumber}",
                                 played = episode?.data?.userData?.played ?: false,
                                 playPercent = episode?.data?.userData?.playedPercentage ?: 0.0,

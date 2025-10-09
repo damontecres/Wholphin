@@ -104,3 +104,5 @@ data class BaseItem(
         }
     }
 }
+
+val BaseItemDto.aspectRatioFloat: Float? get() = width?.let { w -> height?.let { h -> w.toFloat() / h.toFloat() } }

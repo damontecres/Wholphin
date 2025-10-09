@@ -27,8 +27,11 @@ import androidx.tv.material3.Icon
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.github.damontecres.dolphin.R
+import com.github.damontecres.dolphin.ui.PreviewTvSpec
+import com.github.damontecres.dolphin.ui.theme.DolphinTheme
 import com.github.damontecres.dolphin.ui.tryRequestFocus
 import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
 
 @Composable
 fun PlayButtons(
@@ -70,6 +73,7 @@ fun PlayButtons(
                     playOnClick,
                     Modifier
                         .onFocusChanged(buttonOnFocusChanged),
+                    mirrorIcon = true,
                 )
             }
         } else {
@@ -154,6 +158,7 @@ fun ExpandablePlayButtons(
                     Icons.Default.Refresh,
                     playOnClick,
                     Modifier.onFocusChanged(buttonOnFocusChanged),
+                    mirrorIcon = true,
                 )
             }
         } else {
@@ -190,5 +195,21 @@ fun ExpandablePlayButtons(
                 Modifier.onFocusChanged(buttonOnFocusChanged),
             )
         }
+    }
+}
+
+@PreviewTvSpec
+@Composable
+private fun ExpandablePlayButtonsPreview() {
+    DolphinTheme(true) {
+        ExpandablePlayButtons(
+            resumePosition = 10.seconds,
+            watched = false,
+            playOnClick = {},
+            watchOnClick = {},
+            moreOnClick = {},
+            buttonOnFocusChanged = {},
+            modifier = Modifier,
+        )
     }
 }

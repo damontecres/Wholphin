@@ -6,6 +6,7 @@ import coil3.annotation.ExperimentalCoilApi
 import coil3.compose.setSingletonImageLoaderFactory
 import coil3.disk.DiskCache
 import coil3.disk.directory
+import coil3.memory.MemoryCache
 import coil3.network.cachecontrol.CacheControlCacheStrategy
 import coil3.network.okhttp.OkHttpNetworkFetcherFactory
 import coil3.request.crossfade
@@ -22,6 +23,7 @@ fun CoilConfig(
     setSingletonImageLoaderFactory { ctx ->
         ImageLoader
             .Builder(ctx)
+            .memoryCache(MemoryCache.Builder().maxSizePercent(ctx).build())
             .diskCache(
                 DiskCache
                     .Builder()

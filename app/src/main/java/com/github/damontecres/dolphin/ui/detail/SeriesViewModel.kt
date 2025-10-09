@@ -118,11 +118,11 @@ class SeriesViewModel
                     ThemeSongVolume.DISABLED,
                     -> return
 
-                    ThemeSongVolume.LOWEST -> .1f
-                    ThemeSongVolume.LOW -> .25f
-                    ThemeSongVolume.MEDIUM -> .5f
-                    ThemeSongVolume.HIGH -> .75f
-                    ThemeSongVolume.HIGHEST -> 1f
+                    ThemeSongVolume.LOWEST -> .05f
+                    ThemeSongVolume.LOW -> .1f
+                    ThemeSongVolume.MEDIUM -> .25f
+                    ThemeSongVolume.HIGH -> .5f
+                    ThemeSongVolume.HIGHEST -> 75f
                 }
             viewModelScope.launch(ExceptionHandler()) {
                 val themeSongs = api.libraryApi.getThemeSongs(seriesId).content

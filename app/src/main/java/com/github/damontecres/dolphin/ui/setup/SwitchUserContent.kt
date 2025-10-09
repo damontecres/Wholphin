@@ -1,6 +1,7 @@
 package com.github.damontecres.dolphin.ui.setup
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,6 +20,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -31,6 +34,7 @@ import com.github.damontecres.dolphin.ui.components.BasicDialog
 import com.github.damontecres.dolphin.ui.components.EditTextBox
 import com.github.damontecres.dolphin.ui.isNotNullOrBlank
 import com.github.damontecres.dolphin.ui.nav.Destination
+import com.github.damontecres.dolphin.ui.tryRequestFocus
 
 @Composable
 fun SwitchUserContent(
@@ -152,13 +156,20 @@ fun SwitchUserContent(
                                 viewModel.navigationManager.goToHome()
                             }
                         }
+                        val focusRequester = remember { FocusRequester() }
+                        LaunchedEffect(Unit) { focusRequester.tryRequestFocus() }
+                        Text(
+                            text = "Enter username/password to login to ${server.name ?: server.url}",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.onSurface,
+                        )
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier,
+                            modifier = Modifier.focusGroup(),
                         ) {
                             Text(
                                 text = "Username",
-                                modifier = Modifier,
+                                modifier = Modifier.padding(end = 8.dp),
                             )
                             EditTextBox(
                                 value = username,
@@ -169,7 +180,7 @@ fun SwitchUserContent(
                                         autoCorrectEnabled = false,
                                         keyboardType = KeyboardType.Text,
                                     ),
-                                modifier = Modifier,
+                                modifier = Modifier.focusRequester(focusRequester),
                             )
                         }
                         Row(
@@ -178,7 +189,7 @@ fun SwitchUserContent(
                         ) {
                             Text(
                                 text = "Password",
-                                modifier = Modifier,
+                                modifier = Modifier.padding(end = 8.dp),
                             )
                             EditTextBox(
                                 value = password,

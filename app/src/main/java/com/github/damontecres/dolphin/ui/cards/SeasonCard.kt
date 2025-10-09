@@ -1,14 +1,16 @@
 package com.github.damontecres.dolphin.ui.cards
 
 import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -18,22 +20,23 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.tv.material3.Card
 import androidx.tv.material3.CardDefaults
-import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.github.damontecres.dolphin.data.model.BaseItem
 import com.github.damontecres.dolphin.ui.enableMarquee
 import kotlinx.coroutines.delay
 
 @Composable
-fun GridCard(
+fun SeasonCard(
     item: BaseItem?,
     onClick: () -> Unit,
     onLongClick: () -> Unit,
     modifier: Modifier = Modifier,
+    imageHeight: Dp = Dp.Unspecified,
+    imageWidth: Dp = Dp.Unspecified,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
 ) {
     val dto = item?.data
@@ -55,13 +58,18 @@ fun GridCard(
     } else {
         focusedAfterDelay = false
     }
-
+    val aspectRatio = dto?.primaryImageAspectRatio?.toFloat() ?: (2f / 3f)
+    val width = imageHeight * aspectRatio
+    val height = imageWidth * (1f / aspectRatio)
     Column(
         verticalArrangement = Arrangement.spacedBy(spaceBetween),
-        modifier = modifier,
+        modifier = modifier.size(width, height),
     ) {
         Card(
-            modifier = Modifier.fillMaxWidth(),
+            modifier =
+                Modifier
+                    .size(imageWidth, imageHeight)
+                    .aspectRatio(aspectRatio),
             onClick = onClick,
             onLongClick = onLongClick,
             interactionSource = interactionSource,
@@ -70,35 +78,34 @@ fun GridCard(
                     containerColor = Color.Transparent,
                 ),
         ) {
-            ItemCardImage(
-                imageUrl = item?.imageUrl,
-                name = item?.name,
-//                        showOverlay = !focusedAfterDelay,
-                showOverlay = true,
-                favorite = dto?.userData?.isFavorite ?: false,
-                watched = dto?.userData?.played ?: false,
-                unwatchedCount = dto?.userData?.unplayedItemCount ?: -1,
-                watchedPercent = dto?.userData?.playedPercentage,
-                useFallbackText = false,
+            Box(
                 modifier =
                     Modifier
-                        .fillMaxWidth()
-                        .aspectRatio(2f / 3f) // TODO
-                        .background(MaterialTheme.colorScheme.surfaceVariant),
-            )
+                        .fillMaxSize(),
+            ) {
+                ItemCardImage(
+                    imageUrl = item?.imageUrl,
+                    name = item?.name,
+                    showOverlay = false,
+                    favorite = dto?.userData?.isFavorite ?: false,
+                    watched = dto?.userData?.played ?: false,
+                    unwatchedCount = dto?.userData?.unplayedItemCount ?: -1,
+                    watchedPercent = dto?.userData?.playedPercentage,
+                    useFallbackText = false,
+                    modifier =
+                        Modifier
+                            .fillMaxSize(),
+                )
+            }
         }
         Column(
             verticalArrangement = Arrangement.spacedBy(0.dp),
-            modifier =
-                Modifier
-                    .padding(bottom = spaceBelow)
-                    .fillMaxWidth(),
+            modifier = Modifier.padding(bottom = spaceBelow).fillMaxWidth(),
         ) {
             Text(
-                text = item?.name ?: "",
+                text = dto?.name ?: "",
                 maxLines = 1,
                 textAlign = TextAlign.Center,
-                overflow = TextOverflow.Ellipsis,
                 modifier =
                     Modifier
                         .fillMaxWidth()

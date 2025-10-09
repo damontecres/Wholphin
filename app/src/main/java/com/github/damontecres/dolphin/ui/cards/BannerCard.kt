@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.runtime.Composable
@@ -31,6 +32,7 @@ import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import coil3.compose.AsyncImage
 import com.github.damontecres.dolphin.ui.AppColors
+import com.github.damontecres.dolphin.ui.Cards
 import com.github.damontecres.dolphin.ui.isNotNullOrBlank
 
 @Composable
@@ -103,7 +105,10 @@ fun BannerCard(
                         Box(
                             modifier =
                                 Modifier
-                                    .background(AppColors.TransparentBlack50),
+                                    .background(
+                                        AppColors.TransparentBlack50,
+                                        shape = RoundedCornerShape(25),
+                                    ),
                         ) {
                             Text(
                                 text = cornerText,
@@ -123,7 +128,7 @@ fun BannerCard(
                             .background(
                                 MaterialTheme.colorScheme.tertiary,
                             ).clip(RectangleShape)
-                            .height(4.dp)
+                            .height(Cards.playedPercentHeight)
                             .fillMaxWidth((playPercent / 100).toFloat()),
                 )
             }

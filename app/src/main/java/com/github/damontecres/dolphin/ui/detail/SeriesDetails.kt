@@ -39,6 +39,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.tv.material3.MaterialTheme
@@ -48,8 +49,10 @@ import com.github.damontecres.dolphin.R
 import com.github.damontecres.dolphin.data.model.BaseItem
 import com.github.damontecres.dolphin.data.model.Person
 import com.github.damontecres.dolphin.preferences.UserPreferences
+import com.github.damontecres.dolphin.ui.Cards
 import com.github.damontecres.dolphin.ui.cards.ItemRow
 import com.github.damontecres.dolphin.ui.cards.PersonRow
+import com.github.damontecres.dolphin.ui.cards.SeasonCard
 import com.github.damontecres.dolphin.ui.components.ConfirmDialog
 import com.github.damontecres.dolphin.ui.components.DotSeparatedRow
 import com.github.damontecres.dolphin.ui.components.ErrorMessage
@@ -232,6 +235,16 @@ fun SeriesDetailsContent(
                         modifier =
                             Modifier
                                 .fillMaxWidth(),
+                        cardContent = @Composable { index, item, mod, onClick, onLongClick ->
+                            SeasonCard(
+                                item = item,
+                                onClick = onClick,
+                                onLongClick = onLongClick,
+                                modifier = mod,
+                                imageHeight = Cards.defaultHeight2x3,
+                                imageWidth = Dp.Unspecified,
+                            )
+                        },
                     )
                 }
                 if (people.isNotEmpty()) {
