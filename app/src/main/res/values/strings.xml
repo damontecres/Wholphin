@@ -61,5 +61,6 @@
     <string name="confirm">Confirm</string>
     <string name="remember_selected_tab">Remember selected tabs</string>
     <string name="director">Director</string>
+    <string name="max_bitrate">Max bitrate</string>
 
 </resources>

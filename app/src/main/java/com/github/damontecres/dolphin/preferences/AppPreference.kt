@@ -254,6 +254,52 @@ sealed interface AppPreference<T> {
                 },
             )
 
+        private const val MEGA_BIT = 1024 * 1024L
+        const val DEFAULT_BITRATE = 20 * MEGA_BIT
+        private val bitrateValues =
+            listOf(
+                500 * 1024L,
+                750 * 1024L,
+                1 * MEGA_BIT,
+                2 * MEGA_BIT,
+                3 * MEGA_BIT,
+                5 * MEGA_BIT,
+                8 * MEGA_BIT,
+                10 * MEGA_BIT,
+                15 * MEGA_BIT,
+                DEFAULT_BITRATE,
+                *(30..100 step 10).map { it * MEGA_BIT }.toTypedArray(),
+                *(120..200 step 20).map { it * MEGA_BIT }.toTypedArray(),
+            )
+        val MaxBitrate =
+            AppSliderPreference(
+                title = R.string.max_bitrate,
+                defaultValue = bitrateValues.indexOf(DEFAULT_BITRATE).toLong(),
+                min = 0,
+                max = bitrateValues.size - 1L,
+                interval = 1,
+                getter = {
+                    bitrateValues.indexOf(it.playbackPreferences.maxBitrate).toLong()
+                },
+                setter = { prefs, value ->
+                    prefs.updatePlaybackPreferences {
+                        maxBitrate = bitrateValues[value.toInt()]
+                    }
+                },
+                summarizer = { value ->
+                    if (value != null) {
+                        val v = bitrateValues.getOrNull(value.toInt()) ?: DEFAULT_BITRATE
+                        if (v < MEGA_BIT) {
+                            "${v / 1024} kbps"
+                        } else {
+                            "${v / MEGA_BIT} Mbps"
+                        }
+                    } else {
+                        null
+                    }
+                },
+            )
+
         val RememberSelectedTab =
             AppSwitchPreference(
                 title = R.string.remember_selected_tab,
@@ -326,6 +372,7 @@ val basicPreferences =
                     AppPreference.AutoPlayNextUp,
                     AppPreference.AutoPlayNextDelay,
                     AppPreference.SkipBackOnResume,
+                    AppPreference.MaxBitrate,
                     AppPreference.PlaybackDebugInfo,
                 ),
         ),

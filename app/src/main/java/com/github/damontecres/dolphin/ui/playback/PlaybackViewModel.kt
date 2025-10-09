@@ -16,6 +16,7 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import com.github.damontecres.dolphin.data.model.BaseItem
 import com.github.damontecres.dolphin.data.model.Chapter
+import com.github.damontecres.dolphin.preferences.AppPreference
 import com.github.damontecres.dolphin.preferences.UserPreferences
 import com.github.damontecres.dolphin.ui.DefaultItemFields
 import com.github.damontecres.dolphin.ui.indexOfFirstOrNull
@@ -267,6 +268,9 @@ class PlaybackViewModel
                 Timber.i("No change in playback for changeStreams")
                 return
             }
+            val maxBitrate =
+                preferences.appPreferences.playbackPreferences.maxBitrate
+                    .takeIf { it > 0 } ?: AppPreference.DEFAULT_BITRATE
             val response =
                 api.mediaInfoApi
                     .getPostedPlaybackInfo(
@@ -284,6 +288,7 @@ class PlaybackViewModel
                             autoOpenLiveStream = true,
                             mediaSourceId = null,
                             alwaysBurnInSubtitleWhenTranscoding = null,
+                            maxStreamingBitrate = maxBitrate.toInt(),
                         ),
                     ).content
             val source = response.mediaSources.firstOrNull()

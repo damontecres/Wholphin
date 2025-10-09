@@ -33,6 +33,7 @@ class AppPreferencesSerializer
                                     AppPreference.AutoPlayNextDelay.defaultValue
                                 skipBackOnResumeSeconds =
                                     AppPreference.SkipBackOnResume.defaultValue.seconds.inWholeMilliseconds
+                                maxBitrate = AppPreference.DEFAULT_BITRATE
                             }.build()
                     homePagePreferences =
                         HomePagePreferences
