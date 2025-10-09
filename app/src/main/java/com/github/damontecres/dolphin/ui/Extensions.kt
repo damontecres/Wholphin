@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.media3.common.Player
+import coil3.request.ErrorResult
 import kotlinx.coroutines.CoroutineScope
 import org.jellyfin.sdk.model.api.BaseItemDto
 import org.jellyfin.sdk.model.extensions.ticks
@@ -251,5 +252,16 @@ fun Activity.keepScreenOn(keep: Boolean) {
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
     } else {
         window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+    }
+}
+
+fun logCoilError(
+    url: String?,
+    errorResult: ErrorResult,
+) {
+    if (errorResult.throwable is coil3.network.HttpException) {
+        Timber.w("Error loading image: %s for %s", errorResult.throwable.localizedMessage, url)
+    } else {
+        Timber.e(errorResult.throwable, "Error loading image: %s", url)
     }
 }

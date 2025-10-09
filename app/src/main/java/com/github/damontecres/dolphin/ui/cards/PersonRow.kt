@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -52,7 +53,10 @@ fun PersonRow(
                     item = item,
                     onClick = { onClick.invoke(item) },
                     onLongClick = { onLongClick?.invoke(item) },
-                    modifier = Modifier.ifElse(index == 0, Modifier.focusRequester(firstFocus)),
+                    modifier =
+                        Modifier
+                            .width(120.dp)
+                            .ifElse(index == 0, Modifier.focusRequester(firstFocus)),
                 )
             }
         }

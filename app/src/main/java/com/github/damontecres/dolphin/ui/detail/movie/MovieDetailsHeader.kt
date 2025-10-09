@@ -57,6 +57,7 @@ fun MovieDetailsHeader(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     Column(
+        verticalArrangement = Arrangement.spacedBy(8.dp),
         modifier = modifier,
     ) {
         // Title
@@ -64,7 +65,7 @@ fun MovieDetailsHeader(
             text = movie.name ?: "",
             color = MaterialTheme.colorScheme.onSurface,
             style =
-                MaterialTheme.typography.displayMedium.copy(
+                MaterialTheme.typography.displayLarge.copy(
                     shadow =
                         Shadow(
                             color = Color.DarkGray,
@@ -93,12 +94,13 @@ fun MovieDetailsHeader(
                             ?.let {
                                 add(it)
                             }
-                        dto.timeRemaining?.roundMinutes?.let { add("$it left") }
                         dto.officialRating?.let(::add)
+                        dto.timeRemaining?.roundMinutes?.let { add("$it left") }
                     }
                 DotSeparatedRow(
                     texts = details,
-                    textStyle = MaterialTheme.typography.titleLarge,
+                    textStyle = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.padding(start = 8.dp),
                 )
             }
             dto.communityRating?.let {
@@ -109,10 +111,10 @@ fun MovieDetailsHeader(
                         enabled = false,
                         precision = StarRatingPrecision.HALF,
                         playSoundOnFocus = true,
-                        modifier = Modifier.height(40.dp),
+                        modifier = Modifier.height(32.dp),
                     )
                 } else {
-                    Spacer(Modifier.height(40.dp))
+                    Spacer(Modifier.height(32.dp))
                 }
             }
 
@@ -157,7 +159,7 @@ fun MovieDetailsHeader(
             Row(
                 modifier =
                     Modifier
-                        .padding(top = 8.dp, start = 16.dp)
+                        .padding(start = 16.dp)
                         .fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(16.dp),
             ) {

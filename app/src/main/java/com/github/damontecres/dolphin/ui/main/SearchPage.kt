@@ -25,6 +25,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.github.damontecres.dolphin.data.model.BaseItem
 import com.github.damontecres.dolphin.preferences.UserPreferences
+import com.github.damontecres.dolphin.ui.DefaultItemFields
+import com.github.damontecres.dolphin.ui.cards.EpisodeCard
 import com.github.damontecres.dolphin.ui.cards.ItemRow
 import com.github.damontecres.dolphin.ui.components.EditTextBox
 import com.github.damontecres.dolphin.ui.isNotNullOrBlank
@@ -65,6 +67,7 @@ class SearchViewModel
                             searchTerm = query,
                             recursive = true,
                             includeItemTypes = listOf(BaseItemKind.MOVIE),
+                            fields = DefaultItemFields,
                             limit = 25,
                         )
                     val pager = ApiRequestPager(api, request, GetItemsRequestHandler, viewModelScope)
@@ -79,6 +82,7 @@ class SearchViewModel
                             searchTerm = query,
                             recursive = true,
                             includeItemTypes = listOf(BaseItemKind.SERIES),
+                            fields = DefaultItemFields,
                             limit = 25,
                         )
                     val pager = ApiRequestPager(api, request, GetItemsRequestHandler, viewModelScope)
@@ -93,6 +97,7 @@ class SearchViewModel
                             searchTerm = query,
                             recursive = true,
                             includeItemTypes = listOf(BaseItemKind.EPISODE),
+                            fields = DefaultItemFields,
                             limit = 25,
                         )
                     val pager = ApiRequestPager(api, request, GetItemsRequestHandler, viewModelScope)
@@ -134,7 +139,7 @@ fun SearchPage(
     }
 
     LazyColumn(
-        contentPadding = PaddingValues(16.dp),
+        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 44.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
         modifier = modifier,
     ) {
@@ -158,7 +163,7 @@ fun SearchPage(
                 )
             }
         }
-        itemsIndexed(listOf(movies, series, episodes)) { index, items ->
+        itemsIndexed(listOf(movies, series)) { index, items ->
             if (items.isNotEmpty()) {
                 ItemRow(
                     title =
@@ -174,6 +179,28 @@ fun SearchPage(
                     },
                     onLongClickItem = {},
                     modifier = Modifier.focusRequester(resultsFocusRequester),
+                )
+            }
+        }
+        if (episodes.isNotEmpty()) {
+            item {
+                ItemRow(
+                    title = "Episodes",
+                    items = episodes,
+                    onClickItem = {
+                        viewModel.navigationManager.navigateTo(it.destination())
+                    },
+                    onLongClickItem = {},
+                    modifier = Modifier,
+                    cardContent = @Composable { index, item, mod, onClick, onLongClick ->
+                        EpisodeCard(
+                            item = item,
+                            onClick = onClick,
+                            onLongClick = onLongClick,
+                            imageHeight = 160.dp,
+                            modifier = mod,
+                        )
+                    },
                 )
             }
         }

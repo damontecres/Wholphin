@@ -1,13 +1,13 @@
 package com.github.damontecres.dolphin.ui.cards
 
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -17,7 +17,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.tv.material3.Card
 import androidx.tv.material3.CardDefaults
@@ -32,8 +31,6 @@ fun PersonCard(
     onClick: () -> Unit,
     onLongClick: () -> Unit,
     modifier: Modifier = Modifier,
-    cardWidth: Dp = 150.dp * .75f,
-    cardHeight: Dp = 200.dp * .75f,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
 ) {
     val hideOverlayDelay = 1_000L
@@ -53,34 +50,44 @@ fun PersonCard(
     } else {
         focusedAfterDelay = false
     }
-
-    Card(
+    val spaceBetween by animateDpAsState(if (focused) 12.dp else 4.dp)
+    val spaceBelow by animateDpAsState(if (focused) 4.dp else 12.dp)
+    Column(
+        verticalArrangement = Arrangement.spacedBy(spaceBetween),
         modifier = modifier,
-        onClick = onClick,
-        onLongClick = onLongClick,
-        interactionSource = interactionSource,
-        colors =
-            CardDefaults.colors(
-                containerColor = Color.Transparent,
-            ),
     ) {
-        Column(
-            verticalArrangement = Arrangement.spacedBy(4.dp),
-            modifier = Modifier.width(cardWidth),
+        Card(
+            modifier = Modifier,
+            onClick = onClick,
+            onLongClick = onLongClick,
+            interactionSource = interactionSource,
+            colors =
+                CardDefaults.colors(
+                    containerColor = Color.Transparent,
+                ),
         ) {
             ItemCardImage(
                 imageUrl = item.imageUrl,
                 name = item.name,
-                showOverlay = true,
+                showOverlay = false,
                 favorite = false,
                 watched = false,
                 unwatchedCount = -1,
                 watchedPercent = null,
+                useFallbackText = false,
                 modifier =
                     Modifier
                         .fillMaxWidth()
-                        .height(cardHeight),
+                        .aspectRatio(2f / 3f), // TODO,
             )
+        }
+        Column(
+            verticalArrangement = Arrangement.spacedBy(0.dp),
+            modifier =
+                Modifier
+                    .padding(bottom = spaceBelow)
+                    .fillMaxWidth(),
+        ) {
             Text(
                 text = item.name ?: "",
                 maxLines = 1,

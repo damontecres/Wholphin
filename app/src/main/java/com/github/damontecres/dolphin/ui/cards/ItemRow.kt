@@ -4,7 +4,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -63,10 +62,9 @@ fun ItemRow(
         LazyRow(
             state = state,
             horizontalArrangement = Arrangement.spacedBy(16.dp),
-            contentPadding = PaddingValues(8.dp),
+            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
             modifier =
                 Modifier
-                    .padding(start = 16.dp)
                     .fillMaxWidth()
                     .focusRestorer(focusPair?.focusRequester ?: firstFocus),
         ) {

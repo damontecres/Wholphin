@@ -7,6 +7,7 @@ import androidx.datastore.core.DataStore
 import com.github.damontecres.dolphin.preferences.AppPreferences
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import org.jellyfin.sdk.Jellyfin
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.exception.InvalidStatusException
 import org.jellyfin.sdk.api.client.extensions.userApi
@@ -20,6 +21,7 @@ import javax.inject.Singleton
 class ServerRepository
     @Inject
     constructor(
+        val jellyfin: Jellyfin,
         val serverDao: JellyfinServerDao,
         val apiClient: ApiClient,
         val userPreferencesDataStore: DataStore<AppPreferences>,
