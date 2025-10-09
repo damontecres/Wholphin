@@ -312,6 +312,19 @@ sealed interface AppPreference<T> {
                 summaryOff = R.string.disabled,
             )
 
+        val ThemeColors =
+            AppChoicePreference<AppThemeColors>(
+                title = R.string.app_theme,
+                defaultValue = AppThemeColors.PURPLE,
+                getter = { it.interfacePreferences.appThemeColors },
+                setter = { prefs, value ->
+                    prefs.updateInterfacePreferences { appThemeColors = value }
+                },
+                displayValues = R.array.app_theme_colors,
+                indexToValue = { AppThemeColors.forNumber(it) },
+                valueToIndex = { it.number },
+            )
+
         val InstalledVersion =
             AppClickablePreference(
                 title = R.string.installed_version,
@@ -360,6 +373,7 @@ val basicPreferences =
                     AppPreference.RewatchNextUp,
                     AppPreference.PlayThemeMusic,
                     AppPreference.RememberSelectedTab,
+                    AppPreference.ThemeColors,
                 ),
         ),
         PreferenceGroup(

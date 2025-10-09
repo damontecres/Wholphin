@@ -9,4 +9,11 @@
         <item>Full</item>
     </string-array>
 
+    <string-array name="app_theme_colors">
+        <item>Purple</item>
+        <item>Blue</item>
+        <item>Green</item>
+        <item>Orange</item>
+    </string-array>
+
 </resources>

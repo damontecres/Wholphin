@@ -5,130 +5,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.graphics.Color
 import androidx.tv.material3.MaterialTheme
-import androidx.tv.material3.darkColorScheme
-import androidx.tv.material3.lightColorScheme
-
-private val lightSchemeMaterial =
-    androidx.compose.material3.lightColorScheme(
-        primary = primaryLight,
-        onPrimary = onPrimaryLight,
-        primaryContainer = primaryContainerLight,
-        onPrimaryContainer = onPrimaryContainerLight,
-        secondary = secondaryLight,
-        onSecondary = onSecondaryLight,
-        secondaryContainer = secondaryContainerLight,
-        onSecondaryContainer = onSecondaryContainerLight,
-        tertiary = tertiaryLight,
-        onTertiary = onTertiaryLight,
-        tertiaryContainer = tertiaryContainerLight,
-        onTertiaryContainer = onTertiaryContainerLight,
-        error = errorLight,
-        onError = onErrorLight,
-        errorContainer = errorContainerLight,
-        onErrorContainer = onErrorContainerLight,
-        background = backgroundLight,
-        onBackground = onBackgroundLight,
-        surface = surfaceLight,
-        onSurface = onSurfaceLight,
-        surfaceVariant = surfaceVariantLight,
-        onSurfaceVariant = onSurfaceVariantLight,
-        scrim = scrimLight,
-        inverseSurface = inverseSurfaceLight,
-        inverseOnSurface = inverseOnSurfaceLight,
-        inversePrimary = inversePrimaryLight,
-    )
-
-private val lightScheme =
-    lightColorScheme(
-        primary = primaryLight,
-        onPrimary = onPrimaryLight,
-        primaryContainer = primaryContainerLight,
-        onPrimaryContainer = onPrimaryContainerLight,
-        secondary = secondaryLight,
-        onSecondary = onSecondaryLight,
-        secondaryContainer = secondaryContainerLight,
-        onSecondaryContainer = onSecondaryContainerLight,
-        tertiary = tertiaryLight,
-        onTertiary = onTertiaryLight,
-        tertiaryContainer = tertiaryContainerLight,
-        onTertiaryContainer = onTertiaryContainerLight,
-        error = errorLight,
-        onError = onErrorLight,
-        errorContainer = errorContainerLight,
-        onErrorContainer = onErrorContainerLight,
-        background = backgroundLight,
-        onBackground = onBackgroundLight,
-        surface = surfaceLight,
-        onSurface = onSurfaceLight,
-        surfaceVariant = surfaceVariantLight,
-        onSurfaceVariant = onSurfaceVariantLight,
-        scrim = scrimLight,
-        inverseSurface = inverseSurfaceLight,
-        inverseOnSurface = inverseOnSurfaceLight,
-        inversePrimary = inversePrimaryLight,
-        border = inversePrimaryLight,
-    )
-
-private val darkSchemeMaterial =
-    androidx.compose.material3.darkColorScheme(
-        primary = primaryDark,
-        onPrimary = onPrimaryDark,
-        primaryContainer = primaryContainerDark,
-        onPrimaryContainer = onPrimaryContainerDark,
-        secondary = secondaryDark,
-        onSecondary = onSecondaryDark,
-        secondaryContainer = secondaryContainerDark,
-        onSecondaryContainer = onSecondaryContainerDark,
-        tertiary = tertiaryDark,
-        onTertiary = onTertiaryDark,
-        tertiaryContainer = tertiaryContainerDark,
-        onTertiaryContainer = onTertiaryContainerDark,
-        error = errorDark,
-        onError = onErrorDark,
-        errorContainer = errorContainerDark,
-        onErrorContainer = onErrorContainerDark,
-        background = backgroundDark,
-        onBackground = onBackgroundDark,
-        surface = surfaceDark,
-        onSurface = onSurfaceDark,
-        surfaceVariant = surfaceVariantDark,
-        onSurfaceVariant = onSurfaceVariantDark,
-        scrim = scrimDark,
-        inverseSurface = inverseSurfaceDark,
-        inverseOnSurface = inverseOnSurfaceDark,
-        inversePrimary = inversePrimaryDark,
-    )
-
-private val darkScheme =
-    darkColorScheme(
-        primary = primaryDark,
-        onPrimary = onPrimaryDark,
-        primaryContainer = primaryContainerDark,
-        onPrimaryContainer = onPrimaryContainerDark,
-        secondary = secondaryDark,
-        onSecondary = onSecondaryDark,
-        secondaryContainer = secondaryContainerDark,
-        onSecondaryContainer = onSecondaryContainerDark,
-        tertiary = tertiaryDark,
-        onTertiary = onTertiaryDark,
-        tertiaryContainer = tertiaryContainerDark,
-        onTertiaryContainer = onTertiaryContainerDark,
-        error = errorDark,
-        onError = onErrorDark,
-        errorContainer = errorContainerDark,
-        onErrorContainer = onErrorContainerDark,
-        background = backgroundDark,
-        onBackground = onBackgroundDark,
-        surface = surfaceDark,
-        onSurface = onSurfaceDark,
-        surfaceVariant = surfaceVariantDark,
-        onSurfaceVariant = onSurfaceVariantDark,
-        scrim = scrimDark,
-        inverseSurface = inverseSurfaceDark,
-        inverseOnSurface = inverseOnSurfaceDark,
-        inversePrimary = inversePrimaryDark,
-        border = inversePrimaryDark.copy(alpha = .75f),
-    )
+import com.github.damontecres.dolphin.preferences.AppThemeColors
+import com.github.damontecres.dolphin.ui.theme.colors.BlueThemeColors
+import com.github.damontecres.dolphin.ui.theme.colors.GreenThemeColors
+import com.github.damontecres.dolphin.ui.theme.colors.OrangeThemeColors
+import com.github.damontecres.dolphin.ui.theme.colors.PurpleThemeColors
 
 @Immutable
 data class ColorFamily(
@@ -149,15 +30,25 @@ val unspecified_scheme =
 @Composable
 fun DolphinTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
+    appThemeColors: AppThemeColors = AppThemeColors.PURPLE,
     content: @Composable () -> Unit,
 ) {
+    val themeColors =
+        when (appThemeColors) {
+            AppThemeColors.PURPLE -> PurpleThemeColors
+            AppThemeColors.BLUE -> BlueThemeColors
+            AppThemeColors.GREEN -> GreenThemeColors
+            AppThemeColors.ORANGE -> OrangeThemeColors
+            AppThemeColors.UNRECOGNIZED -> PurpleThemeColors
+        }
+
     val colorScheme =
         when {
-            darkTheme -> darkScheme
-            else -> lightScheme
+            darkTheme -> themeColors.darkScheme
+            else -> themeColors.lightScheme
         }
     androidx.compose.material3.MaterialTheme(
-        colorScheme = if (darkTheme) darkSchemeMaterial else lightSchemeMaterial,
+        colorScheme = if (darkTheme) themeColors.darkSchemeMaterial else themeColors.lightSchemeMaterial,
         typography = androidx.compose.material3.Typography(),
     ) {
         MaterialTheme(

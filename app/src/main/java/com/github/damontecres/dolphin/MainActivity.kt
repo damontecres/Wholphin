@@ -61,19 +61,21 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         Timber.i("MainActivity.onCreate")
         setContent {
-            DolphinTheme(true) {
-                Surface(
-                    modifier =
-                        Modifier
-                            .fillMaxSize()
-                            .background(MaterialTheme.colorScheme.background),
-                    shape = RectangleShape,
+            CoilConfig(okHttpClient, false)
+            val appPreferences by userPreferencesDataStore.data.collectAsState(null)
+            appPreferences?.let { appPreferences ->
+                DolphinTheme(
+                    true,
+                    appThemeColors = appPreferences.interfacePreferences.appThemeColors,
                 ) {
-                    CoilConfig(okHttpClient, false)
-
-                    var isRestoringSession by remember { mutableStateOf(true) }
-                    val appPreferences by userPreferencesDataStore.data.collectAsState(null)
-                    appPreferences?.let { appPreferences ->
+                    Surface(
+                        modifier =
+                            Modifier
+                                .fillMaxSize()
+                                .background(MaterialTheme.colorScheme.background),
+                        shape = RectangleShape,
+                    ) {
+                        var isRestoringSession by remember { mutableStateOf(true) }
                         LaunchedEffect(Unit) {
                             if (appPreferences.currentServerId.isNotBlank()) {
                                 serverRepository.restoreSession(

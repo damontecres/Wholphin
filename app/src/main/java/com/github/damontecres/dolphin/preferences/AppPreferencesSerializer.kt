@@ -47,6 +47,7 @@ class AppPreferencesSerializer
                             .newBuilder()
                             .apply {
                                 playThemeSongs = AppPreference.PlayThemeMusic.defaultValue
+                                appThemeColors = AppPreference.ThemeColors.defaultValue
                             }.build()
                 }.build()
 
