@@ -63,5 +63,10 @@
     <string name="director">Director</string>
     <string name="max_bitrate">Max bitrate</string>
     <string name="app_theme">Application Theme</string>
+    <string name="skip_recap_behavior">Skip recap behavior</string>
+    <string name="skip_previews_behavior">Skip previews behavior</string>
+    <string name="skip_comercials_behavior">Skip commercials behavior</string>
+    <string name="skip_outro_behavior">Skip outro behavior</string>
+    <string name="skip_intro_behavior">Skip intro behavior</string>
 
 </resources>

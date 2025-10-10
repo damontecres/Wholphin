@@ -54,7 +54,9 @@ import androidx.media3.ui.compose.state.rememberNextButtonState
 import androidx.media3.ui.compose.state.rememberPlayPauseButtonState
 import androidx.media3.ui.compose.state.rememberPresentationState
 import androidx.media3.ui.compose.state.rememberPreviousButtonState
+import androidx.tv.material3.Button
 import androidx.tv.material3.MaterialTheme
+import androidx.tv.material3.Text
 import androidx.tv.material3.surfaceColorAtElevation
 import com.github.damontecres.dolphin.preferences.UserPreferences
 import com.github.damontecres.dolphin.preferences.skipBackOnResume
@@ -65,6 +67,7 @@ import com.github.damontecres.dolphin.ui.tryRequestFocus
 import com.github.damontecres.dolphin.util.seasonEpisode
 import kotlinx.coroutines.delay
 import org.jellyfin.sdk.model.api.DeviceProfile
+import org.jellyfin.sdk.model.extensions.ticks
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
@@ -94,6 +97,7 @@ fun PlaybackContent(
     val trickplay by viewModel.trickplay.observeAsState(null)
     val chapters by viewModel.chapters.observeAsState(listOf())
     val currentPlayback by viewModel.currentPlayback.observeAsState(null)
+    val currentSegment by viewModel.currentSegment.observeAsState(null)
 
     var cues by remember { mutableStateOf<List<Cue>>(listOf()) }
     var showDebugInfo by remember { mutableStateOf(prefs.showDebugInfo) }
@@ -314,6 +318,29 @@ fun PlaybackContent(
                                     .fillMaxSize()
                                     .background(Color.Transparent),
                         )
+                    }
+
+                    AnimatedVisibility(
+                        currentSegment != null && !controllerViewState.controlsVisible && skipIndicatorDuration == 0L,
+                        modifier =
+                            Modifier
+                                .padding(40.dp)
+                                .align(Alignment.BottomEnd),
+                    ) {
+                        currentSegment?.let { segment ->
+                            val focusRequester = remember { FocusRequester() }
+                            LaunchedEffect(Unit) { focusRequester.tryRequestFocus() }
+                            Button(
+                                onClick = {
+                                    player.seekTo(segment.endTicks.ticks.inWholeMilliseconds)
+                                },
+                                modifier = Modifier.focusRequester(focusRequester),
+                            ) {
+                                Text(
+                                    text = "Skip ${segment.type.serialName}",
+                                )
+                            }
+                        }
                     }
                 }
 

@@ -34,6 +34,11 @@ class AppPreferencesSerializer
                                 skipBackOnResumeSeconds =
                                     AppPreference.SkipBackOnResume.defaultValue.seconds.inWholeMilliseconds
                                 maxBitrate = AppPreference.DEFAULT_BITRATE
+                                skipIntros = AppPreference.SkipIntros.defaultValue
+                                skipOutros = AppPreference.SkipOutros.defaultValue
+                                skipCommercials = AppPreference.SkipCommercials.defaultValue
+                                skipPreviews = AppPreference.SkipPreviews.defaultValue
+                                skipRecaps = AppPreference.SkipRecaps.defaultValue
                             }.build()
                     homePagePreferences =
                         HomePagePreferences

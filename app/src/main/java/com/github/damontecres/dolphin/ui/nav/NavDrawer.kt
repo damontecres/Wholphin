@@ -60,6 +60,7 @@ import com.github.damontecres.dolphin.data.model.BaseItem
 import com.github.damontecres.dolphin.preferences.UserPreferences
 import com.github.damontecres.dolphin.ui.FontAwesome
 import com.github.damontecres.dolphin.ui.ifElse
+import com.github.damontecres.dolphin.ui.preferences.PreferenceScreenOption
 import com.github.damontecres.dolphin.ui.spacedByWithFooter
 import com.github.damontecres.dolphin.ui.tryRequestFocus
 import com.github.damontecres.dolphin.util.ExceptionHandler
@@ -218,7 +219,11 @@ fun NavDrawer(
                             icon = Icons.Default.Settings,
                             selected = false,
                             onClick = {
-                                viewModel.navigationManager.navigateTo(Destination.Settings)
+                                viewModel.navigationManager.navigateTo(
+                                    Destination.Settings(
+                                        PreferenceScreenOption.BASIC,
+                                    ),
+                                )
                             },
                             modifier = Modifier,
                         )

@@ -5,6 +5,7 @@ package com.github.damontecres.dolphin.ui.nav
 import androidx.navigation3.runtime.NavKey
 import com.github.damontecres.dolphin.data.model.BaseItem
 import com.github.damontecres.dolphin.ui.detail.series.SeasonEpisode
+import com.github.damontecres.dolphin.ui.preferences.PreferenceScreenOption
 import com.github.damontecres.dolphin.util.UuidSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
@@ -28,7 +29,9 @@ sealed class Destination(
     ) : Destination()
 
     @Serializable
-    data object Settings : Destination(true)
+    data class Settings(
+        val screen: PreferenceScreenOption,
+    ) : Destination(true)
 
     @Serializable
     data object Search : Destination()

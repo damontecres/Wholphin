@@ -16,7 +16,6 @@ import com.github.damontecres.dolphin.ui.detail.series.SeriesOverview
 import com.github.damontecres.dolphin.ui.main.HomePage
 import com.github.damontecres.dolphin.ui.main.SearchPage
 import com.github.damontecres.dolphin.ui.playback.PlaybackContent
-import com.github.damontecres.dolphin.ui.preferences.PreferenceScreenOption
 import com.github.damontecres.dolphin.ui.preferences.PreferencesPage
 import com.github.damontecres.dolphin.ui.setup.SwitchServerContent
 import com.github.damontecres.dolphin.ui.setup.SwitchUserContent
@@ -49,10 +48,10 @@ fun DestinationContent(
         Destination.ServerList -> SwitchServerContent(modifier)
         Destination.UserList -> SwitchUserContent(modifier)
 
-        Destination.Settings ->
+        is Destination.Settings ->
             PreferencesPage(
                 preferences.appPreferences,
-                PreferenceScreenOption.BASIC,
+                destination.screen,
                 modifier,
             )
 

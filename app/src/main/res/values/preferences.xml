@@ -16,4 +16,10 @@
         <item>Orange</item>
     </string-array>
 
+    <string-array name="skip_behaviors">
+        <item>Ignore</item>
+        <item>Skip automatically</item>
+        <item>Ask to skip</item>
+    </string-array>
+
 </resources>

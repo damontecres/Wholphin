@@ -6,6 +6,7 @@ import androidx.annotation.StringRes
 import com.github.damontecres.dolphin.R
 import com.github.damontecres.dolphin.ui.nav.Destination
 import com.github.damontecres.dolphin.ui.preferences.PreferenceGroup
+import com.github.damontecres.dolphin.ui.preferences.PreferenceScreenOption
 import com.github.damontecres.dolphin.ui.preferences.PreferenceValidation
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
@@ -360,6 +361,77 @@ sealed interface AppPreference<T> {
                 title = R.string.license_info,
                 destination = Destination.License,
             )
+
+        val AdvancedSettings =
+            AppDestinationPreference(
+                title = R.string.advanced_settings,
+                destination = Destination.Settings(PreferenceScreenOption.ADVANCED),
+            )
+
+        val SkipIntros =
+            AppChoicePreference<SkipSegmentBehavior>(
+                title = R.string.skip_intro_behavior,
+                defaultValue = SkipSegmentBehavior.ASK_TO_SKIP,
+                getter = { it.playbackPreferences.skipIntros },
+                setter = { prefs, value ->
+                    prefs.updatePlaybackPreferences { skipIntros = value }
+                },
+                displayValues = R.array.skip_behaviors,
+                indexToValue = { SkipSegmentBehavior.forNumber(it) },
+                valueToIndex = { it.number },
+            )
+
+        val SkipOutros =
+            AppChoicePreference<SkipSegmentBehavior>(
+                title = R.string.skip_outro_behavior,
+                defaultValue = SkipSegmentBehavior.ASK_TO_SKIP,
+                getter = { it.playbackPreferences.skipOutros },
+                setter = { prefs, value ->
+                    prefs.updatePlaybackPreferences { skipOutros = value }
+                },
+                displayValues = R.array.skip_behaviors,
+                indexToValue = { SkipSegmentBehavior.forNumber(it) },
+                valueToIndex = { it.number },
+            )
+
+        val SkipCommercials =
+            AppChoicePreference<SkipSegmentBehavior>(
+                title = R.string.skip_comercials_behavior,
+                defaultValue = SkipSegmentBehavior.ASK_TO_SKIP,
+                getter = { it.playbackPreferences.skipCommercials },
+                setter = { prefs, value ->
+                    prefs.updatePlaybackPreferences { skipCommercials = value }
+                },
+                displayValues = R.array.skip_behaviors,
+                indexToValue = { SkipSegmentBehavior.forNumber(it) },
+                valueToIndex = { it.number },
+            )
+
+        val SkipPreviews =
+            AppChoicePreference<SkipSegmentBehavior>(
+                title = R.string.skip_previews_behavior,
+                defaultValue = SkipSegmentBehavior.IGNORE,
+                getter = { it.playbackPreferences.skipPreviews },
+                setter = { prefs, value ->
+                    prefs.updatePlaybackPreferences { skipPreviews = value }
+                },
+                displayValues = R.array.skip_behaviors,
+                indexToValue = { SkipSegmentBehavior.forNumber(it) },
+                valueToIndex = { it.number },
+            )
+
+        val SkipRecaps =
+            AppChoicePreference<SkipSegmentBehavior>(
+                title = R.string.skip_recap_behavior,
+                defaultValue = SkipSegmentBehavior.IGNORE,
+                getter = { it.playbackPreferences.skipRecaps },
+                setter = { prefs, value ->
+                    prefs.updatePlaybackPreferences { skipRecaps = value }
+                },
+                displayValues = R.array.skip_behaviors,
+                indexToValue = { SkipSegmentBehavior.forNumber(it) },
+                valueToIndex = { it.number },
+            )
     }
 }
 
@@ -386,8 +458,6 @@ val basicPreferences =
                     AppPreference.AutoPlayNextUp,
                     AppPreference.AutoPlayNextDelay,
                     AppPreference.SkipBackOnResume,
-                    AppPreference.MaxBitrate,
-                    AppPreference.PlaybackDebugInfo,
                 ),
         ),
         PreferenceGroup(
@@ -398,11 +468,33 @@ val basicPreferences =
                     AppPreference.OssLicenseInfo,
                 ),
         ),
+        PreferenceGroup(
+            title = R.string.more,
+            preferences =
+                listOf(
+                    AppPreference.AdvancedSettings,
+                ),
+        ),
     )
 
 val uiPreferences = listOf<PreferenceGroup>()
 
-val advancedPreferences = listOf<PreferenceGroup>()
+val advancedPreferences =
+    listOf(
+        PreferenceGroup(
+            title = R.string.playback,
+            preferences =
+                listOf(
+                    AppPreference.SkipIntros,
+                    AppPreference.SkipOutros,
+                    AppPreference.SkipCommercials,
+                    AppPreference.SkipPreviews,
+                    AppPreference.SkipRecaps,
+                    AppPreference.MaxBitrate,
+                    AppPreference.PlaybackDebugInfo,
+                ),
+        ),
+    )
 
 data class AppSwitchPreference(
     @get:StringRes override val title: Int,

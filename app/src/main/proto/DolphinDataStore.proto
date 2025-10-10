@@ -3,6 +3,12 @@ syntax = "proto3";
 option java_package = "com.github.damontecres.dolphin.preferences";
 option java_multiple_files = true;
 
+enum SkipSegmentBehavior{
+  IGNORE = 0;
+  AUTO_SKIP = 1;
+  ASK_TO_SKIP = 2;
+}
+
 message PlaybackPreferences {
   int64 skip_forward_ms = 1;
   int64 skip_back_ms = 2;
@@ -13,6 +19,12 @@ message PlaybackPreferences {
   int64 auto_play_next_delay_seconds = 7;
   int64 skip_back_on_resume_seconds = 8;
   int64 max_bitrate = 9;
+
+  SkipSegmentBehavior skip_intros = 10;
+  SkipSegmentBehavior skip_outros = 11;
+  SkipSegmentBehavior skip_commercials = 12;
+  SkipSegmentBehavior skip_recaps = 13;
+  SkipSegmentBehavior skip_previews = 14;
 }
 
 message HomePagePreferences{

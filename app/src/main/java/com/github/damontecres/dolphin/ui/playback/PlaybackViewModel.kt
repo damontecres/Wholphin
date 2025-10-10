@@ -17,11 +17,13 @@ import androidx.media3.exoplayer.ExoPlayer
 import com.github.damontecres.dolphin.data.model.BaseItem
 import com.github.damontecres.dolphin.data.model.Chapter
 import com.github.damontecres.dolphin.preferences.AppPreference
+import com.github.damontecres.dolphin.preferences.SkipSegmentBehavior
 import com.github.damontecres.dolphin.preferences.UserPreferences
 import com.github.damontecres.dolphin.ui.DefaultItemFields
 import com.github.damontecres.dolphin.ui.indexOfFirstOrNull
 import com.github.damontecres.dolphin.ui.nav.Destination
 import com.github.damontecres.dolphin.util.ApiRequestPager
+import com.github.damontecres.dolphin.util.EqualityMutableLiveData
 import com.github.damontecres.dolphin.util.ExceptionHandler
 import com.github.damontecres.dolphin.util.GetEpisodesRequestHandler
 import com.github.damontecres.dolphin.util.TrackActivityPlaybackListener
@@ -33,28 +35,36 @@ import com.github.damontecres.dolphin.util.subtitleMimeTypes
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.mediaInfoApi
+import org.jellyfin.sdk.api.client.extensions.mediaSegmentsApi
 import org.jellyfin.sdk.api.client.extensions.trickplayApi
 import org.jellyfin.sdk.api.client.extensions.userLibraryApi
 import org.jellyfin.sdk.api.client.extensions.videosApi
 import org.jellyfin.sdk.model.api.BaseItemDto
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.DeviceProfile
+import org.jellyfin.sdk.model.api.MediaSegmentDto
+import org.jellyfin.sdk.model.api.MediaSegmentType
 import org.jellyfin.sdk.model.api.MediaSourceInfo
 import org.jellyfin.sdk.model.api.MediaStreamType
 import org.jellyfin.sdk.model.api.PlaybackInfoDto
 import org.jellyfin.sdk.model.api.SubtitlePlaybackMode
 import org.jellyfin.sdk.model.api.TrickplayInfo
 import org.jellyfin.sdk.model.api.request.GetEpisodesRequest
+import org.jellyfin.sdk.model.extensions.inWholeTicks
 import org.jellyfin.sdk.model.extensions.ticks
 import org.jellyfin.sdk.model.serializer.toUUIDOrNull
 import timber.log.Timber
 import java.util.UUID
 import javax.inject.Inject
 import kotlin.time.Duration
+import kotlin.time.Duration.Companion.milliseconds
 
 enum class TranscodeType {
     DIRECT_PLAY,
@@ -93,17 +103,20 @@ class PlaybackViewModel
         val currentPlayback = MutableLiveData<CurrentPlayback?>(null)
         val trickplay = MutableLiveData<TrickplayInfo?>(null)
         val chapters = MutableLiveData<List<Chapter>>(listOf())
+        val currentSegment = EqualityMutableLiveData<MediaSegmentDto?>(null)
 
         private lateinit var preferences: UserPreferences
         private lateinit var deviceProfile: DeviceProfile
         private lateinit var itemId: UUID
         private lateinit var dto: BaseItemDto
+        private var activityListener: TrackActivityPlaybackListener? = null
 
         private val episodes = MutableLiveData<ApiRequestPager<GetEpisodesRequest>>()
         private var currentEpisodeIndex = Int.MAX_VALUE
         val nextUpEpisode = MutableLiveData<BaseItem?>()
 
         init {
+            addCloseable { this@PlaybackViewModel.activityListener?.release() }
             addCloseable { player.release() }
         }
 
@@ -231,10 +244,15 @@ class PlaybackViewModel
                 withContext(Dispatchers.Main) {
                     this@PlaybackViewModel.audioStreams.value = audioStreams
                     this@PlaybackViewModel.subtitleStreams.value = subtitleStreams
+                    this@PlaybackViewModel.activityListener?.let {
+                        it.release()
+                        player.removeListener(it)
+                    }
                     val activityListener =
                         TrackActivityPlaybackListener(api, itemId, player)
-                    addCloseable { activityListener.release() }
                     player.addListener(activityListener)
+                    this@PlaybackViewModel.activityListener = activityListener
+
                     changeStreams(
                         itemId,
                         audioIndex,
@@ -249,6 +267,7 @@ class PlaybackViewModel
                 if (base.type == BaseItemKind.EPISODE) {
                     base.seriesId?.let(::getEpisodes)
                 }
+                listenForSegments()
             }
         }
 
@@ -483,6 +502,59 @@ class PlaybackViewModel
                     }
                 }
             }
+        }
+
+        private var segmentJob: Job? = null
+
+        private fun listenForSegments() {
+            segmentJob?.cancel()
+            segmentJob =
+                viewModelScope.launch(ExceptionHandler() + Dispatchers.IO) {
+                    val prefs = preferences.appPreferences.playbackPreferences
+                    val segments by api.mediaSegmentsApi.getItemSegments(itemId)
+                    if (segments.items.isNotEmpty()) {
+                        while (isActive) {
+                            delay(500L)
+                            val currentTicks = player.currentPosition.milliseconds.inWholeTicks
+                            val currentSegment =
+                                segments.items
+                                    .firstOrNull {
+                                        it.type != MediaSegmentType.UNKNOWN && currentTicks >= it.startTicks && currentTicks < it.endTicks
+                                    }
+                            if (currentSegment != null) {
+                                val behavior =
+                                    when (currentSegment.type) {
+                                        MediaSegmentType.COMMERCIAL -> prefs.skipCommercials
+                                        MediaSegmentType.PREVIEW -> prefs.skipPreviews
+                                        MediaSegmentType.RECAP -> prefs.skipRecaps
+                                        MediaSegmentType.OUTRO -> prefs.skipIntros
+                                        MediaSegmentType.INTRO -> prefs.skipOutros
+                                        MediaSegmentType.UNKNOWN -> SkipSegmentBehavior.IGNORE
+                                    }
+                                withContext(Dispatchers.Main) {
+                                    when (behavior) {
+                                        SkipSegmentBehavior.AUTO_SKIP -> {
+                                            this@PlaybackViewModel.currentSegment.value = null
+                                            player.seekTo(currentSegment.endTicks.ticks.inWholeMilliseconds + 1)
+                                        }
+
+                                        SkipSegmentBehavior.ASK_TO_SKIP -> {
+                                            this@PlaybackViewModel.currentSegment.value = currentSegment
+                                        }
+
+                                        else -> {
+                                            this@PlaybackViewModel.currentSegment.value = null
+                                        }
+                                    }
+                                }
+                            } else {
+                                withContext(Dispatchers.Main) {
+                                    this@PlaybackViewModel.currentSegment.value = null
+                                }
+                            }
+                        }
+                    }
+                }
         }
 
         fun playUpNextEpisode() {
