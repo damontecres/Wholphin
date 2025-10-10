@@ -1,4 +1,4 @@
-package com.github.damontecres.dolphin.ui.detail
+package com.github.damontecres.dolphin.ui.components
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
@@ -31,13 +31,12 @@ import com.github.damontecres.dolphin.data.model.Library
 import com.github.damontecres.dolphin.preferences.UserPreferences
 import com.github.damontecres.dolphin.ui.DefaultItemFields
 import com.github.damontecres.dolphin.ui.OneTimeLaunchedEffect
-import com.github.damontecres.dolphin.ui.components.ErrorMessage
-import com.github.damontecres.dolphin.ui.components.LoadingPage
-import com.github.damontecres.dolphin.ui.components.SortByButton
 import com.github.damontecres.dolphin.ui.data.MovieSortOptions
 import com.github.damontecres.dolphin.ui.data.SeriesSortOptions
 import com.github.damontecres.dolphin.ui.data.SortAndDirection
 import com.github.damontecres.dolphin.ui.data.VideoSortOptions
+import com.github.damontecres.dolphin.ui.detail.CardGrid
+import com.github.damontecres.dolphin.ui.detail.ItemViewModel
 import com.github.damontecres.dolphin.ui.nav.Destination
 import com.github.damontecres.dolphin.ui.tryRequestFocus
 import com.github.damontecres.dolphin.util.ApiRequestPager
@@ -152,8 +151,13 @@ class CollectionFolderViewModel
             }
     }
 
+/**
+ * Shows a collection folder as a grid
+ *
+ * This is the "Library" tab for Movies or TV shows
+ */
 @Composable
-fun CollectionFolderDetails(
+fun CollectionFolderGrid(
     preferences: UserPreferences,
     destination: Destination.MediaItem,
     onClickItem: (BaseItem) -> Unit,
@@ -181,7 +185,7 @@ fun CollectionFolderDetails(
         LoadingState.Loading -> LoadingPage()
         LoadingState.Success -> {
             pager?.let { pager ->
-                CollectionDetails(
+                CollectionFolderGridContent(
                     preferences,
                     library!!,
                     item!!,
@@ -202,7 +206,7 @@ fun CollectionFolderDetails(
 }
 
 @Composable
-fun CollectionDetails(
+fun CollectionFolderGridContent(
     preferences: UserPreferences,
     library: Library,
     item: BaseItem,

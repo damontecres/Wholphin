@@ -25,6 +25,9 @@ import com.github.damontecres.dolphin.data.model.Person
 import com.github.damontecres.dolphin.ui.enableMarquee
 import kotlinx.coroutines.delay
 
+/**
+ * A Card for a [Person] such as an actor or director
+ */
 @Composable
 fun PersonCard(
     item: Person,

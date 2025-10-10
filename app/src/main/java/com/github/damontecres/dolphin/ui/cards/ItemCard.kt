@@ -48,7 +48,7 @@ import androidx.tv.material3.Text
 import coil3.compose.AsyncImage
 import com.github.damontecres.dolphin.R
 import com.github.damontecres.dolphin.data.model.BaseItem
-import com.github.damontecres.dolphin.ui.Cards
+import com.github.damontecres.dolphin.ui.CardDefaults
 import com.github.damontecres.dolphin.ui.FontAwesome
 import com.github.damontecres.dolphin.ui.enableMarquee
 import com.github.damontecres.dolphin.ui.ifElse
@@ -59,6 +59,7 @@ import kotlinx.coroutines.delay
 import org.jellyfin.sdk.model.api.BaseItemKind
 
 @Composable
+@Deprecated("Old style, prefer SeasonCard or other Card")
 fun ItemCard(
     item: BaseItem?,
     onClick: () -> Unit,
@@ -281,7 +282,7 @@ fun ItemCardImage(
                                 .background(
                                     MaterialTheme.colorScheme.tertiary,
                                 ).clip(RectangleShape)
-                                .height(Cards.playedPercentHeight)
+                                .height(CardDefaults.playedPercentHeight)
                                 .fillMaxWidth((percent / 100.0).toFloat()),
                     )
                 }

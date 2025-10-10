@@ -17,6 +17,9 @@ import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.github.damontecres.dolphin.util.TrackSupport
 
+/**
+ * Debug info about the current playback tracks
+ */
 @Composable
 fun PlaybackTrackInfo(
     trackSupport: List<TrackSupport>,

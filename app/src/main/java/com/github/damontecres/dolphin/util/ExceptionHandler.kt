@@ -8,9 +8,7 @@ import timber.log.Timber
 import kotlin.coroutines.CoroutineContext
 
 /**
- * A general [CoroutineExceptionHandler] which can optionally show [Toast]s when an exception is thrown
- *
- * Note: a toast will be shown for each parameter given, up to three!
+ * A general [CoroutineExceptionHandler] which can optionally show a [Toast] when an exception is thrown
  *
  * @param autoToast automatically show a toast with the exception's message
  */

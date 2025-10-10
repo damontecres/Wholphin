@@ -14,6 +14,11 @@ import com.github.damontecres.dolphin.preferences.UserPreferences
 import org.jellyfin.sdk.model.api.DeviceProfile
 import timber.log.Timber
 
+/**
+ * This is generally the root composable of the of the app
+ *
+ * Here the navigation backstack is used and pages are rendered in the nav drawer or full screen
+ */
 @Composable
 fun ApplicationContent(
     server: JellyfinServer,

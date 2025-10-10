@@ -10,6 +10,9 @@ import androidx.media3.common.util.UnstableApi
 import timber.log.Timber
 import java.util.Locale
 
+/**
+ * Represents a track in a media file along with information about whether the device can handle it natively or not
+ */
 data class TrackSupport(
     val id: String?,
     val type: TrackType,

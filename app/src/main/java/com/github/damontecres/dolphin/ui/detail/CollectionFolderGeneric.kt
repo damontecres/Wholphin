@@ -10,6 +10,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.github.damontecres.dolphin.preferences.UserPreferences
+import com.github.damontecres.dolphin.ui.components.CollectionFolderGrid
 import com.github.damontecres.dolphin.ui.nav.Destination
 import com.github.damontecres.dolphin.ui.preferences.PreferencesViewModel
 
@@ -21,7 +22,7 @@ fun CollectionFolderGeneric(
     preferencesViewModel: PreferencesViewModel = hiltViewModel(),
 ) {
     var showHeader by remember { mutableStateOf(true) }
-    CollectionFolderDetails(
+    CollectionFolderGrid(
         preferences = preferences,
         onClickItem = { preferencesViewModel.navigationManager.navigateTo(it.destination()) },
         destination = destination,

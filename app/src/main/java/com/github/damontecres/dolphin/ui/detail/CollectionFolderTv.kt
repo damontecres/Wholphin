@@ -32,6 +32,7 @@ import androidx.tv.material3.Text
 import com.github.damontecres.dolphin.data.model.BaseItem
 import com.github.damontecres.dolphin.preferences.UserPreferences
 import com.github.damontecres.dolphin.preferences.rememberTab
+import com.github.damontecres.dolphin.ui.components.CollectionFolderGrid
 import com.github.damontecres.dolphin.ui.components.ErrorMessage
 import com.github.damontecres.dolphin.ui.components.RecommendedTvShow
 import com.github.damontecres.dolphin.ui.ifElse
@@ -150,7 +151,7 @@ fun CollectionFolderTv(
                 )
             }
             1 -> {
-                CollectionFolderDetails(
+                CollectionFolderGrid(
                     preferences = preferences,
                     destination = destination,
                     showTitle = false,

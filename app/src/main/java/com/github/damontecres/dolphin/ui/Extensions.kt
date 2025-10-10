@@ -39,6 +39,8 @@ import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 
+// This file is a dumping ground mostly for extensions
+
 @OptIn(ExperimentalContracts::class)
 fun CharSequence?.isNotNullOrBlank(): Boolean {
     contract {
@@ -180,12 +182,21 @@ fun playOnClickSound(
     audioManager.playSoundEffect(effectType)
 }
 
+/**
+ * Rounds a [Duration] to nearest whole minute
+ */
 val Duration.roundMinutes: Duration
     get() = (this + 30.seconds).inWholeMinutes.minutes
 
+/**
+ * Rounds a [Duration] to nearest whole second
+ */
 val Duration.roundSeconds: Duration
     get() = (this + 30.milliseconds).inWholeSeconds.seconds
 
+/**
+ * Gets the user's playback position as a [Duration]
+ */
 val BaseItemDto.timeRemaining: Duration?
     get() =
         userData?.playbackPositionTicks?.let {
@@ -196,10 +207,19 @@ val BaseItemDto.timeRemaining: Duration?
             }
         }
 
+/**
+ * Seek back the current media item by a [Duration]
+ */
 fun Player.seekBack(amount: Duration) = seekTo((currentPosition - amount.inWholeMilliseconds).coerceAtLeast(0L))
 
+/**
+ * Seek forward the current media item by a [Duration]
+ */
 fun Player.seekForward(amount: Duration) = seekTo((currentPosition + amount.inWholeMilliseconds).coerceAtMost(duration))
 
+/**
+ * Like [let] but only if the collection is not empty, otherwise returns null
+ */
 @OptIn(ExperimentalContracts::class)
 inline fun <T : Collection<*>, R> T.letNotEmpty(block: (T) -> R): R? {
     contract {
@@ -234,6 +254,9 @@ fun Arrangement.spacedByWithFooter(space: Dp) =
         }
     }
 
+/**
+ * Tries to find the [Activity] for the given [Context]. Often used for [keepScreenOn].
+ */
 fun Context.findActivity(): Activity? {
     if (this is Activity) {
         return this
@@ -246,6 +269,9 @@ fun Context.findActivity(): Activity? {
     return null
 }
 
+/**
+ * Keep the screen on for an [Activity]. Often used with [findActivity].
+ */
 fun Activity.keepScreenOn(keep: Boolean) {
     Timber.v("Keep screen on: $keep")
     if (keep) {
@@ -255,6 +281,11 @@ fun Activity.keepScreenOn(keep: Boolean) {
     }
 }
 
+/**
+ * Selectively log errors from Coil image loading.
+ *
+ * If an HTTP error occurs, the entire stacktrace is not logged.
+ */
 fun logCoilError(
     url: String?,
     errorResult: ErrorResult,

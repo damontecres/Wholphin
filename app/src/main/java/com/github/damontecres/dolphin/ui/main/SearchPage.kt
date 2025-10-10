@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -26,12 +25,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.github.damontecres.dolphin.data.model.BaseItem
 import com.github.damontecres.dolphin.preferences.UserPreferences
-import com.github.damontecres.dolphin.ui.Cards
+import com.github.damontecres.dolphin.ui.CardDefaults
 import com.github.damontecres.dolphin.ui.DefaultItemFields
 import com.github.damontecres.dolphin.ui.cards.EpisodeCard
 import com.github.damontecres.dolphin.ui.cards.ItemRow
 import com.github.damontecres.dolphin.ui.cards.SeasonCard
-import com.github.damontecres.dolphin.ui.components.EditTextBox
+import com.github.damontecres.dolphin.ui.components.SearchEditTextBox
 import com.github.damontecres.dolphin.ui.isNotNullOrBlank
 import com.github.damontecres.dolphin.ui.nav.NavigationManager
 import com.github.damontecres.dolphin.ui.tryRequestFocus
@@ -151,17 +150,14 @@ fun SearchPage(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                EditTextBox(
+                SearchEditTextBox(
                     value = query,
                     onValueChange = {
                         query = it
                     },
-                    keyboardActions =
-                        KeyboardActions(
-                            onSearch = {
-                                viewModel.search(query)
-                            },
-                        ),
+                    onSearchClick = {
+                        viewModel.search(query)
+                    },
                     modifier = Modifier.focusRequester(searchFocusRequester),
                 )
             }
@@ -181,7 +177,7 @@ fun SearchPage(
                             item = item,
                             onClick = onClick,
                             onLongClick = onLongClick,
-                            imageHeight = Cards.defaultHeight2x3,
+                            imageHeight = CardDefaults.height2x3,
                             modifier = mod,
                         )
                     },
@@ -203,7 +199,7 @@ fun SearchPage(
                             item = item,
                             onClick = onClick,
                             onLongClick = onLongClick,
-                            imageHeight = Cards.defaultHeight2x3,
+                            imageHeight = CardDefaults.height2x3,
                             modifier = mod,
                         )
                     },

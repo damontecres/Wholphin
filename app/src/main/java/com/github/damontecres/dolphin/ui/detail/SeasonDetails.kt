@@ -1,6 +1,5 @@
 package com.github.damontecres.dolphin.ui.detail
 
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.runtime.Composable
@@ -110,14 +109,5 @@ fun SeasonDetails(
                 }
             }
         }
-    }
-}
-
-@Composable
-fun EpisodeHeader(
-    item: BaseItem,
-    modifier: Modifier = Modifier,
-) {
-    Column(modifier = modifier) {
     }
 }

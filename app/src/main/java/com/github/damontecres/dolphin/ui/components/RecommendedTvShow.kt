@@ -135,6 +135,9 @@ class RecommendedTvShowViewModel
         }
     }
 
+/**
+ * The "recommended" tab of a TV show library
+ */
 @Composable
 fun RecommendedTvShow(
     preferences: UserPreferences,

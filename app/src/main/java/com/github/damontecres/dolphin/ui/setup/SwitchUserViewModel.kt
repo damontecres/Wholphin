@@ -165,7 +165,7 @@ class SwitchUserViewModel
                     }
 
                     quickConnectJob =
-                        viewModelScope.launch(ExceptionHandler()) {
+                        viewModelScope.launch(ExceptionHandler() + Dispatchers.IO) {
                             while (!state.authenticated) {
                                 delay(5_000L)
                                 state =

@@ -41,6 +41,9 @@ import androidx.tv.material3.Text
 import com.github.damontecres.dolphin.ui.ifElse
 import com.github.damontecres.dolphin.ui.playOnClickSound
 
+/**
+ * An optionally clickable composable that displays a Key-Value pair vertically
+ */
 @Composable
 fun TitleValueText(
     title: String,

@@ -25,6 +25,11 @@ import com.github.damontecres.dolphin.ui.data.getStringRes
 import org.jellyfin.sdk.model.api.ItemSortBy
 import org.jellyfin.sdk.model.api.SortOrder
 
+/**
+ * Button that displays current sort option and provides ability to choose another
+ *
+ * Long pressing will reverse the current sort as will selecting the current sort option from the list
+ */
 @Composable
 fun SortByButton(
     sortOptions: List<ItemSortBy>,

@@ -2,7 +2,6 @@ package com.github.damontecres.dolphin.ui.components
 
 import android.view.KeyEvent
 import androidx.annotation.StringRes
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.gestures.scrollBy
@@ -58,6 +57,9 @@ import com.github.damontecres.dolphin.util.ExceptionHandler
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
+/**
+ * Parameters for rendering a [DialogPopup]
+ */
 data class DialogParams(
     val fromLongClick: Boolean,
     val title: String,
@@ -138,7 +140,11 @@ data class DialogItem(
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
+/**
+ * Show a dialog with a list of entries.
+ *
+ * @param waitToLoad items start as disabled for about ~1s, which is useful if the dialog spawned from a long press
+ */
 @Composable
 fun DialogPopup(
     showDialog: Boolean,
@@ -230,6 +236,9 @@ fun DialogPopup(
     }
 }
 
+/**
+ * A dialog that can be scrolled, typically for longer text content
+ */
 @Composable
 fun ScrollableDialog(
     onDismissRequest: () -> Unit,
@@ -282,6 +291,9 @@ fun ScrollableDialog(
     }
 }
 
+/**
+ * Shows a basic dialog
+ */
 @Composable
 fun BasicDialog(
     onDismissRequest: () -> Unit,
@@ -306,6 +318,9 @@ fun BasicDialog(
     }
 }
 
+/**
+ * Shows a confirmation dialog
+ */
 @Composable
 fun ConfirmDialog(
     title: String,
@@ -323,6 +338,9 @@ fun ConfirmDialog(
     },
 )
 
+/**
+ * Content for a confirmation dialog
+ */
 @Composable
 fun ConfirmDialogContent(
     title: String,

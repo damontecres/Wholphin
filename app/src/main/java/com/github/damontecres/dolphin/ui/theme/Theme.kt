@@ -1,6 +1,5 @@
 package com.github.damontecres.dolphin.ui.theme
 
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.graphics.Color
@@ -29,7 +28,7 @@ val unspecified_scheme =
 
 @Composable
 fun DolphinTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
+    darkTheme: Boolean = true,
     appThemeColors: AppThemeColors = AppThemeColors.PURPLE,
     content: @Composable () -> Unit,
 ) {

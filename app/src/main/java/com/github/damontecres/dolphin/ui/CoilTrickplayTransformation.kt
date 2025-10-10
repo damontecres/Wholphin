@@ -6,6 +6,9 @@ import coil3.size.Size
 import coil3.size.pxOrElse
 import coil3.transform.Transformation
 
+/**
+ * A Coil [Transformation] that extracts a subimage from a trickplay image
+ */
 class CoilTrickplayTransformation(
     val targetWidth: Int,
     val targetHeight: Int,

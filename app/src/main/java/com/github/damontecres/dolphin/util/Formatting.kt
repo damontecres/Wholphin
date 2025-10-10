@@ -5,6 +5,9 @@ import org.jellyfin.sdk.model.api.BaseItemDto
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
+/**
+ * Format a [LocalDateTime] as `Aug 24, 2000`
+ */
 fun formatDateTime(dateTime: LocalDateTime): String =
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
         val formatter = DateTimeFormatter.ofPattern("MMM d, yyyy")
@@ -15,6 +18,9 @@ fun formatDateTime(dateTime: LocalDateTime): String =
         dateTime.toString()
     }
 
+/**
+ * If the item has season & episode info, format as `S# E#`
+ */
 val BaseItemDto.seasonEpisode: String?
     get() =
         if (parentIndexNumber != null && indexNumber != null && indexNumberEnd != null) {
@@ -25,6 +31,9 @@ val BaseItemDto.seasonEpisode: String?
             null
         }
 
+/**
+ * If the item has season & episode info, format padded as `S## E##`
+ */
 val BaseItemDto.seasonEpisodePadded: String?
     get() =
         if (parentIndexNumber != null && indexNumber != null) {

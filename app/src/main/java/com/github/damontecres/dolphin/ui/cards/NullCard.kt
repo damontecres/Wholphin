@@ -13,6 +13,7 @@ import androidx.tv.material3.Text
 import com.github.damontecres.dolphin.ui.ifElse
 
 @Composable
+@Deprecated("Cards should handle nulls natively")
 fun NullCard(
     modifier: Modifier = Modifier,
     cardWidth: Dp? = null,

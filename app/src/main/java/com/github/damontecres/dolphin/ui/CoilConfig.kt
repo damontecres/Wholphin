@@ -14,6 +14,9 @@ import coil3.util.DebugLogger
 import okhttp3.OkHttpClient
 import kotlin.time.ExperimentalTime
 
+/**
+ * Configure Coil image loading
+ */
 @OptIn(ExperimentalTime::class, ExperimentalCoilApi::class)
 @Composable
 fun CoilConfig(

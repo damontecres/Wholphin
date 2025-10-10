@@ -10,6 +10,11 @@ import kotlinx.coroutines.channels.Channel.Factory.CONFLATED
 import kotlinx.coroutines.flow.consumeAsFlow
 import kotlinx.coroutines.flow.debounce
 
+/**
+ * The visibility state of the playback controls. Can [pulseControls] to show the controls for a specified time.
+ *
+ * A coroutine must call [observe]
+ */
 class ControllerViewState internal constructor(
     @param:IntRange(from = 0)
     private val hideMilliseconds: Long,

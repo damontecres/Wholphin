@@ -6,6 +6,8 @@ import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.type
 
+// This file is various functions for testing KeyEvent types
+
 fun isDirectionalDpad(event: KeyEvent): Boolean =
     event.key == Key.DirectionUp ||
         event.key == Key.DirectionDown ||

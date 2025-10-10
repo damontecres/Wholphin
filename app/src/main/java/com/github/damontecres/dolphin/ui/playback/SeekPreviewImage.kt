@@ -44,6 +44,14 @@ fun Modifier.offsetByPercent(
     },
 )
 
+/**
+ * Offset the composable by a percentage of the available x direction
+ *
+ * This will account for the composable actual width so it won't be pushed off screen.
+ * In other words, 0% means the left edge of the composable will be at the left end of the x-axis.
+ *
+ * @param xPercentage percent offset between 0 inclusive and 1 inclusive
+ */
 fun Modifier.offsetByPercent(xPercentage: Float) =
     this.then(
         Modifier.layout { measurable, constraints ->
@@ -59,6 +67,11 @@ fun Modifier.offsetByPercent(xPercentage: Float) =
         },
     )
 
+/**
+ * Show trickplay preview image. This composable assumes the provided URL is for the correct index.
+ *
+ * If no trickplay image is available, just the timestamp will be shown.
+ */
 @Composable
 fun SeekPreviewImage(
     previewImageUrl: String,

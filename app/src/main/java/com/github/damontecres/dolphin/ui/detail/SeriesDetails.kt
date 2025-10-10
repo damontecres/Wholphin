@@ -49,7 +49,7 @@ import com.github.damontecres.dolphin.R
 import com.github.damontecres.dolphin.data.model.BaseItem
 import com.github.damontecres.dolphin.data.model.Person
 import com.github.damontecres.dolphin.preferences.UserPreferences
-import com.github.damontecres.dolphin.ui.Cards
+import com.github.damontecres.dolphin.ui.CardDefaults
 import com.github.damontecres.dolphin.ui.cards.ItemRow
 import com.github.damontecres.dolphin.ui.cards.PersonRow
 import com.github.damontecres.dolphin.ui.cards.SeasonCard
@@ -241,7 +241,7 @@ fun SeriesDetailsContent(
                                 onClick = onClick,
                                 onLongClick = onLongClick,
                                 modifier = mod,
-                                imageHeight = Cards.defaultHeight2x3,
+                                imageHeight = CardDefaults.height2x3,
                                 imageWidth = Dp.Unspecified,
                             )
                         },

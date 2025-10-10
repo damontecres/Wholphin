@@ -27,7 +27,139 @@ import org.jellyfin.sdk.model.api.request.GetSuggestionsRequest
 import timber.log.Timber
 import java.util.function.Predicate
 
+/**
+ * Handles paging for an API request. You must call [init] prior to use.
+ *
+ * Initially, items returned will be null, but requesting the items triggers API calls in the given [CoroutineScope].
+ * Since the items are stored in [androidx.compose.runtime.MutableState], it will automatically trigger recompositions when the items are ultimately fetched.
+ *
+ * Finally, items are cached allow for backward and forward scrolling.
+ */
+class ApiRequestPager<T>(
+    val api: ApiClient,
+    val request: T,
+    val requestHandler: RequestHandler<T>,
+    private val scope: CoroutineScope,
+    private val pageSize: Int = DEFAULT_PAGE_SIZE,
+    cacheSize: Long = 8,
+    private val useSeriesForPrimary: Boolean = false,
+) : AbstractList<BaseItem?>(),
+    BlockingList<BaseItem?> {
+    private var items by mutableStateOf(ItemList<BaseItem>(0, pageSize, mapOf()))
+    private var totalCount by mutableIntStateOf(-1)
+    private val mutex = Mutex()
+    private val cachedPages =
+        CacheBuilder
+            .newBuilder()
+            .maximumSize(cacheSize)
+            .build<Int, List<BaseItem>>()
+
+    suspend fun init(): ApiRequestPager<T> {
+        if (totalCount < 0) {
+            val newRequest = requestHandler.prepare(request, 0, 1, true)
+            val result = requestHandler.execute(api, newRequest).content
+            totalCount = result.totalRecordCount
+        }
+        return this
+    }
+
+    override operator fun get(index: Int): BaseItem? {
+        if (index in 0..<totalCount) {
+            val item = items[index]
+            if (item == null) {
+                fetchPage(index)
+            }
+            return item
+        } else {
+            throw IndexOutOfBoundsException("$index of $totalCount")
+        }
+    }
+
+    override suspend fun getBlocking(index: Int): BaseItem? {
+        if (index in 0..<totalCount) {
+            val item = items[index]
+            if (item == null) {
+                fetchPage(index).join()
+                return items[index]
+            }
+            return item
+        } else {
+            throw IndexOutOfBoundsException("$index of $totalCount")
+        }
+    }
+
+    override suspend fun indexOfBlocking(predicate: Predicate<BaseItem?>): Int {
+        init()
+        for (i in 0 until totalCount) {
+            val currentItem = getBlocking(i)
+            if (currentItem != null && predicate.test(currentItem)) {
+                return i
+            }
+        }
+        return -1
+    }
+
+    override val size: Int
+        get() = totalCount
+
+    private fun fetchPage(position: Int): Job =
+        scope.launch(ExceptionHandler() + Dispatchers.IO) {
+            mutex.withLock {
+                val pageNumber = position / pageSize
+                if (cachedPages.getIfPresent(pageNumber) == null) {
+                    if (DEBUG) Timber.v("fetchPage: $pageNumber")
+                    val newRequest =
+                        requestHandler.prepare(
+                            request,
+                            pageNumber * pageSize,
+                            pageSize,
+                            false,
+                        )
+                    val result = requestHandler.execute(api, newRequest).content
+                    val data = result.items.map { BaseItem.from(it, api, useSeriesForPrimary) }
+                    cachedPages.put(pageNumber, data)
+                    items = ItemList(totalCount, pageSize, cachedPages.asMap())
+                }
+            }
+        }
+
+    companion object {
+        private const val DEBUG = false
+    }
+
+    class ItemList<T>(
+        val size: Int,
+        val pageSize: Int,
+        val pages: Map<Int, List<T>>,
+    ) {
+        operator fun get(position: Int): T? {
+            val page = position / pageSize
+            val data = pages[page]
+            if (data != null) {
+                val index = position % pageSize
+                if (index in data.indices) {
+                    return data[index]
+                } else {
+                    // This can happen when items are removed while scrolling
+                    Timber.w(
+                        "Index $index not in data: position=$position, data.size=${data.size}",
+                    )
+                    return null
+                }
+            } else {
+                return null
+            }
+        }
+    }
+}
+
+/**
+ * Specifies how the [ApiRequestPager] should prepare and execute API calls
+ */
 interface RequestHandler<T> {
+    /**
+     * Prepare the given request with the specified parameters (eg which page to fetch)
+     */
     fun prepare(
         request: T,
         startIndex: Int,
@@ -35,6 +167,9 @@ interface RequestHandler<T> {
         enableTotalRecordCount: Boolean,
     ): T
 
+    /**
+     * Execute the given request
+     */
     suspend fun execute(
         api: ApiClient,
         request: T,
@@ -136,121 +271,3 @@ val GetSuggestionsRequestHandler =
             request: GetSuggestionsRequest,
         ): Response<BaseItemDtoQueryResult> = api.suggestionsApi.getSuggestions(request)
     }
-
-class ApiRequestPager<T>(
-    val api: ApiClient,
-    val request: T,
-    val requestHandler: RequestHandler<T>,
-    private val scope: CoroutineScope,
-    private val pageSize: Int = DEFAULT_PAGE_SIZE,
-    cacheSize: Long = 8,
-    private val useSeriesForPrimary: Boolean = false,
-) : AbstractList<BaseItem?>(),
-    BlockingList<BaseItem?> {
-    private var items by mutableStateOf(ItemList<BaseItem>(0, pageSize, mapOf()))
-    private var totalCount by mutableIntStateOf(-1)
-    private val mutex = Mutex()
-    private val cachedPages =
-        CacheBuilder
-            .newBuilder()
-            .maximumSize(cacheSize)
-            .build<Int, List<BaseItem>>()
-
-    suspend fun init(): ApiRequestPager<T> {
-        if (totalCount < 0) {
-            val newRequest = requestHandler.prepare(request, 0, 1, true)
-            val result = requestHandler.execute(api, newRequest).content
-            totalCount = result.totalRecordCount
-        }
-        return this
-    }
-
-    override operator fun get(index: Int): BaseItem? {
-        if (index in 0..<totalCount) {
-            val item = items[index]
-            if (item == null) {
-                fetchPage(index)
-            }
-            return item
-        } else {
-            throw IndexOutOfBoundsException("$index of $totalCount")
-        }
-    }
-
-    override suspend fun getBlocking(position: Int): BaseItem? {
-        if (position in 0..<totalCount) {
-            val item = items[position]
-            if (item == null) {
-                fetchPage(position).join()
-                return items[position]
-            }
-            return item
-        } else {
-            throw IndexOutOfBoundsException("$position of $totalCount")
-        }
-    }
-
-    override suspend fun indexOfBlocking(predicate: Predicate<BaseItem?>): Int {
-        init()
-        for (i in 0 until totalCount) {
-            val currentItem = getBlocking(i)
-            if (currentItem != null && predicate.test(currentItem)) {
-                return i
-            }
-        }
-        return -1
-    }
-
-    override val size: Int
-        get() = totalCount
-
-    private fun fetchPage(position: Int): Job =
-        scope.launch(ExceptionHandler() + Dispatchers.IO) {
-            mutex.withLock {
-                val pageNumber = position / pageSize
-                if (cachedPages.getIfPresent(pageNumber) == null) {
-                    if (DEBUG) Timber.v("fetchPage: $pageNumber")
-                    val newRequest =
-                        requestHandler.prepare(
-                            request,
-                            pageNumber * pageSize,
-                            pageSize,
-                            false,
-                        )
-                    val result = requestHandler.execute(api, newRequest).content
-                    val data = result.items.map { BaseItem.from(it, api, useSeriesForPrimary) }
-                    cachedPages.put(pageNumber, data)
-                    items = ItemList(totalCount, pageSize, cachedPages.asMap())
-                }
-            }
-        }
-
-    companion object {
-        private const val DEBUG = false
-    }
-
-    class ItemList<T>(
-        val size: Int,
-        val pageSize: Int,
-        val pages: Map<Int, List<T>>,
-    ) {
-        operator fun get(position: Int): T? {
-            val page = position / pageSize
-            val data = pages[page]
-            if (data != null) {
-                val index = position % pageSize
-                if (index in data.indices) {
-                    return data[index]
-                } else {
-                    // This can happen when items are removed while scrolling
-                    Timber.w(
-                        "Index $index not in data: position=$position, data.size=${data.size}",
-                    )
-                    return null
-                }
-            } else {
-                return null
-            }
-        }
-    }
-}

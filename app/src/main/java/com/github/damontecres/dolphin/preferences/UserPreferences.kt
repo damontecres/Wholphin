@@ -3,6 +3,9 @@ package com.github.damontecres.dolphin.preferences
 import org.jellyfin.sdk.model.api.SubtitlePlaybackMode
 import org.jellyfin.sdk.model.api.UserConfiguration
 
+/**
+ * A combination of the app-specific preferences and server-side user configuration
+ */
 data class UserPreferences(
     val appPreferences: AppPreferences,
     val userConfig: UserConfiguration,

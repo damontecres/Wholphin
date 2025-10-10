@@ -8,6 +8,11 @@ import androidx.media3.common.Player.Listener
 import com.github.damontecres.dolphin.ui.findActivity
 import com.github.damontecres.dolphin.ui.keepScreenOn
 
+/**
+ * Starts a [Player.Listener] that ensures the screen stays on without a screen saber during playback
+ *
+ * This will clean up the listener when disposed
+ */
 @Composable
 fun AmbientPlayerListener(player: Player) {
     val context = LocalContext.current

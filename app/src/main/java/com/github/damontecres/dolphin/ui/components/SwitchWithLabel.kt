@@ -22,6 +22,9 @@ import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Switch
 import androidx.tv.material3.Text
 
+/**
+ * A labeled [Switch], but the entire composable is focusable & clickable
+ */
 @Composable
 fun SwitchWithLabel(
     label: String,

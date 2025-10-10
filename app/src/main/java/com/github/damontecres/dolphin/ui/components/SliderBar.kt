@@ -24,6 +24,9 @@ import androidx.compose.ui.unit.dp
 import androidx.tv.material3.MaterialTheme
 import com.github.damontecres.dolphin.ui.handleDPadKeyEvents
 
+/**
+ * A TV capable control for choosing a value
+ */
 @Composable
 fun SliderBar(
     value: Long,

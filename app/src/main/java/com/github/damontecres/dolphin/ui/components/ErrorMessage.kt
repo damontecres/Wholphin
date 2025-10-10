@@ -10,6 +10,9 @@ import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.github.damontecres.dolphin.util.LoadingState
 
+/**
+ * Displays an error message and/or exception
+ */
 @Composable
 fun ErrorMessage(
     message: String?,

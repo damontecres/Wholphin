@@ -63,6 +63,9 @@ val EmptyStarColor = Color(0x2AFFC700)
 
 val ratingBarHeight: Dp = 32.dp
 
+/**
+ * Shows a rating out of 5 stars
+ */
 @Composable
 fun StarRating(
     rating100: Int,

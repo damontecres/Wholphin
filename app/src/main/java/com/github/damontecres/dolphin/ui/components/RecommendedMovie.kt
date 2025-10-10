@@ -123,6 +123,9 @@ class RecommendedMovieViewModel
         }
     }
 
+/**
+ * The "recommended" tab of a movie library
+ */
 @Composable
 fun RecommendedMovie(
     preferences: UserPreferences,

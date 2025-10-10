@@ -13,7 +13,7 @@ import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 
 /**
- * A preference that can be stored in the shared preferences.
+ * A preference that can be stored in [AppPreferences].
  *
  * @param T The type of the preference value.
  */

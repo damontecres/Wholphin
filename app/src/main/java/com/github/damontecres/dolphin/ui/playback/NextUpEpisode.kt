@@ -41,6 +41,9 @@ import com.github.damontecres.dolphin.ui.tryRequestFocus
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
+/**
+ * Layout for showing the next up episode during playback
+ */
 @Composable
 fun NextUpEpisode(
     title: String?,
@@ -169,7 +172,7 @@ fun NextUpCard(
 
 @PreviewTvSpec
 @Composable
-fun NextUpEpisodePreview() {
+private fun NextUpEpisodePreview() {
     DolphinTheme(true) {
         NextUpEpisode(
             title = "Episode Title",

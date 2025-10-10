@@ -54,6 +54,9 @@ import kotlin.time.Duration
 private val titleTextSize = 28.sp
 private val subtitleTextSize = 18.sp
 
+/**
+ * The overlay during playback showing controls, seek preview image, debug info, etc
+ */
 @Composable
 fun PlaybackOverlay(
     title: String?,
@@ -103,14 +106,14 @@ fun PlaybackOverlay(
 
     // This will be calculated after composition
     var controllerHeight by remember { mutableStateOf(0.dp) }
-    var state by remember { mutableStateOf(ViewState.CONTROLLER) }
+    var state by remember { mutableStateOf(OverlayViewState.CONTROLLER) }
 
     Box(
         modifier = modifier,
         contentAlignment = Alignment.BottomCenter,
     ) {
         AnimatedVisibility(
-            state == ViewState.CONTROLLER,
+            state == OverlayViewState.CONTROLLER,
             enter = slideInVertically() + fadeIn(),
             exit = slideOutVertically() + fadeOut(),
         ) {
@@ -147,7 +150,7 @@ fun PlaybackOverlay(
                                 e.type == KeyEventType.KeyDown && isDown(e) &&
                                 !seekBarFocused
                             ) {
-                                state = ViewState.CHAPTERS
+                                state = OverlayViewState.CHAPTERS
                                 true
                             }
                             false
@@ -157,7 +160,7 @@ fun PlaybackOverlay(
             )
         }
         AnimatedVisibility(
-            state == ViewState.CHAPTERS,
+            state == OverlayViewState.CHAPTERS,
             enter = slideInVertically { it / 2 } + fadeIn(),
             exit = slideOutVertically { it / 2 } + fadeOut(),
         ) {
@@ -172,7 +175,7 @@ fun PlaybackOverlay(
                             .padding(8.dp)
                             .onPreviewKeyEvent { e ->
                                 if (e.type == KeyEventType.KeyUp && isUp(e)) {
-                                    state = ViewState.CONTROLLER
+                                    state = OverlayViewState.CONTROLLER
                                     true
                                 }
                                 false
@@ -220,11 +223,6 @@ fun PlaybackOverlay(
                     }
                 }
             }
-        }
-        when (state) {
-            ViewState.CONTROLLER -> {}
-
-            ViewState.CHAPTERS -> {}
         }
 
         if (seekBarInteractionSource.collectIsFocusedAsState().value) {
@@ -287,11 +285,17 @@ fun PlaybackOverlay(
     }
 }
 
-enum class ViewState {
+/**
+ * The view state of the overlay
+ */
+enum class OverlayViewState {
     CONTROLLER,
     CHAPTERS,
 }
 
+/**
+ * A wrapper for the playback controls to show title and other information, plus the actual controls
+ */
 @Composable
 fun Controller(
     title: String?,

@@ -11,6 +11,9 @@ import kotlinx.coroutines.withContext
 import timber.log.Timber
 import kotlin.coroutines.CoroutineContext
 
+/**
+ * A [CoroutineExceptionHandler] that is aware of a [LoadingState] and will set it to error if an exception occurs in the coroutine.
+ */
 class LoadingExceptionHandler(
     private val loadingState: MutableLiveData<LoadingState>,
     private val errorMessage: String?,

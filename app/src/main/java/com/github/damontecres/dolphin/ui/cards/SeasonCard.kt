@@ -29,6 +29,9 @@ import com.github.damontecres.dolphin.data.model.BaseItem
 import com.github.damontecres.dolphin.ui.enableMarquee
 import kotlinx.coroutines.delay
 
+/**
+ * A Card for a TV Show Season, but can generically show most items
+ */
 @Composable
 fun SeasonCard(
     item: BaseItem?,
@@ -100,7 +103,10 @@ fun SeasonCard(
         }
         Column(
             verticalArrangement = Arrangement.spacedBy(0.dp),
-            modifier = Modifier.padding(bottom = spaceBelow).fillMaxWidth(),
+            modifier =
+                Modifier
+                    .padding(bottom = spaceBelow)
+                    .fillMaxWidth(),
         ) {
             Text(
                 text = dto?.name ?: "",

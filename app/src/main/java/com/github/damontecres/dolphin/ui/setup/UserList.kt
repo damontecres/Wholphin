@@ -26,6 +26,9 @@ import com.github.damontecres.dolphin.ui.FontAwesome
 import com.github.damontecres.dolphin.ui.components.DialogItem
 import com.github.damontecres.dolphin.ui.components.DialogPopup
 
+/**
+ * Display a list of users plus option to add a new one or switch servers
+ */
 @Composable
 fun UserList(
     users: List<JellyfinUser>,

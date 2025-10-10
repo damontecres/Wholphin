@@ -1,5 +1,8 @@
 package com.github.damontecres.dolphin.util
 
+/**
+ * Generic state for loading something from the API
+ */
 sealed interface LoadingState {
     object Loading : LoadingState
 

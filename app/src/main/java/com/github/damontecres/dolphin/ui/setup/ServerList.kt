@@ -37,6 +37,9 @@ sealed interface ServerConnectionStatus {
     ) : ServerConnectionStatus
 }
 
+/**
+ * Display a list of servers plus option to add a new one
+ */
 @Composable
 fun ServerList(
     servers: List<JellyfinServer>,

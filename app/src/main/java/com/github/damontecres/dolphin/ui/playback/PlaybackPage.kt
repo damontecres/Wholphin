@@ -71,9 +71,12 @@ import org.jellyfin.sdk.model.extensions.ticks
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
+/**
+ * The actual playback page which shows media & playback controls
+ */
 @OptIn(UnstableApi::class)
 @Composable
-fun PlaybackContent(
+fun PlaybackPage(
     preferences: UserPreferences,
     deviceProfile: DeviceProfile,
     destination: Destination.Playback,
@@ -207,6 +210,7 @@ fun PlaybackContent(
                         }
                     }
 
+                    // If D-pad skipping, show the amount skipped in an animation
                     if (!controllerViewState.controlsVisible && skipIndicatorDuration != 0L) {
                         SkipIndicator(
                             durationMs = skipIndicatorDuration,
@@ -218,6 +222,7 @@ fun PlaybackContent(
                                     .align(Alignment.BottomCenter)
                                     .padding(bottom = 70.dp),
                         )
+                        // Show a small progress bar along the bottom of the screen
                         val showSkipProgress = true // TODO get from preferences
                         if (showSkipProgress) {
                             duration?.let {
@@ -237,6 +242,7 @@ fun PlaybackContent(
                         }
                     }
 
+                    // The playback controls
                     AnimatedVisibility(
                         controllerViewState.controlsVisible,
                         Modifier,
@@ -299,6 +305,7 @@ fun PlaybackContent(
                         )
                     }
 
+                    // Subtitles
                     if (!controllerViewState.controlsVisible && skipIndicatorDuration == 0L && currentPlayback?.subtitleIndex != null) {
                         AndroidView(
                             factory = { context ->
@@ -320,6 +327,7 @@ fun PlaybackContent(
                         )
                     }
 
+                    // Ask to skip intros, etc button
                     AnimatedVisibility(
                         currentSegment != null && !controllerViewState.controlsVisible && skipIndicatorDuration == 0L,
                         modifier =
@@ -344,6 +352,7 @@ fun PlaybackContent(
                     }
                 }
 
+                // Next up episode
                 BackHandler(nextUp != null) {
                     viewModel.cancelUpNextEpisode()
                 }

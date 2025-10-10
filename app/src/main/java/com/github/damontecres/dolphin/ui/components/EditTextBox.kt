@@ -1,6 +1,7 @@
 package com.github.damontecres.dolphin.ui.components
 
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.height
@@ -30,7 +31,13 @@ import androidx.compose.ui.unit.dp
 import androidx.tv.material3.Icon
 import androidx.tv.material3.MaterialTheme
 import com.github.damontecres.dolphin.R
+import com.github.damontecres.dolphin.ui.PreviewTvSpec
+import com.github.damontecres.dolphin.ui.theme.DolphinTheme
+import com.google.protobuf.value
 
+/**
+ * A modified [BasicTextField] that looks & fits better with TV material controls
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EditTextBox(
@@ -138,6 +145,9 @@ fun EditTextBox(
     }
 }
 
+/**
+ * And [EditTextBox] styles for searches
+ */
 @Composable
 fun SearchEditTextBox(
     value: String,
@@ -175,4 +185,22 @@ fun SearchEditTextBox(
         readOnly,
         height,
     )
+}
+
+@PreviewTvSpec
+@Composable
+private fun EditTextBoxPreview() {
+    DolphinTheme {
+        Column {
+            EditTextBox(
+                value = "string",
+                onValueChange = {},
+            )
+            SearchEditTextBox(
+                value = "search query",
+                onValueChange = {},
+                onSearchClick = { },
+            )
+        }
+    }
 }

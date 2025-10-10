@@ -33,6 +33,9 @@ import com.github.damontecres.dolphin.ui.tryRequestFocus
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
+/**
+ * Standard row of [PlayButton] including Play (or Resume & Restart) & More
+ */
 @Composable
 fun PlayButtons(
     resumePosition: Duration,
@@ -116,6 +119,9 @@ fun PlayButtons(
     }
 }
 
+/**
+ * Standard row of [ExpandablePlayButton] including Play (or Resume & Restart), Mark played, & More
+ */
 @Composable
 fun ExpandablePlayButtons(
     resumePosition: Duration,

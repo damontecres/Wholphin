@@ -13,6 +13,11 @@ import kotlinx.serialization.UseSerializers
 import org.jellyfin.sdk.model.api.BaseItemKind
 import java.util.UUID
 
+/**
+ * Represents a page in the app
+ *
+ * @param fullScreen whether the page should be full page aka not include the nav drawer
+ */
 @Serializable
 sealed class Destination(
     val fullScreen: Boolean = false,
@@ -24,7 +29,7 @@ sealed class Destination(
     data object UserList : Destination(true)
 
     @Serializable
-    data class Main(
+    data class Home(
         val id: Long = 0L,
     ) : Destination()
 

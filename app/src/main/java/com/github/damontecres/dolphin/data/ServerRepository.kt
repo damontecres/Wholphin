@@ -17,6 +17,9 @@ import timber.log.Timber
 import javax.inject.Inject
 import javax.inject.Singleton
 
+/**
+ * Handles managing the current server & user as well as adding & removing new ones
+ */
 @Singleton
 class ServerRepository
     @Inject
@@ -33,6 +36,11 @@ class ServerRepository
         private var _currentUserDto by mutableStateOf<UserDto?>(null)
         val currentUserDto get() = _currentUserDto
 
+        /**
+         * Adds a server to the app database and updated the [ApiClient] to the server's URL
+         *
+         * The current user is removed
+         */
         suspend fun addAndChangeServer(server: JellyfinServer) {
             withContext(Dispatchers.IO) {
                 serverDao.addServer(server)
@@ -40,11 +48,20 @@ class ServerRepository
             changeServer(server)
         }
 
+        /**
+         * Updates the [ApiClient] to the server's URL
+         *
+         * The current user is removed
+         */
         fun changeServer(server: JellyfinServer) {
             apiClient.update(baseUrl = server.url, accessToken = null)
             _currentServer = server
+            _currentUser = null
         }
 
+        /**
+         * Saves the server & User to the app database and updates the [ApiClient] to use this server & user
+         */
         suspend fun changeUser(
             server: JellyfinServer,
             user: JellyfinUser,
@@ -95,6 +112,9 @@ class ServerRepository
             }
         }
 
+        /**
+         * Restores a session for the given server & user such as when the app reopens
+         */
         suspend fun restoreSession(
             serverId: String,
             userId: String,
@@ -114,6 +134,9 @@ class ServerRepository
             return false
         }
 
+        /**
+         * Given a successful [AuthenticationResult], switch to the user that just authenticated
+         */
         suspend fun changeUser(
             serverUrl: String,
             authenticationResult: AuthenticationResult,

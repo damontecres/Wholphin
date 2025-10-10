@@ -1,12 +1,12 @@
 # Dolphin - an OSS Android TV client for Jellyfin
 
-This is an Android TV client for [Jellyfin](https://jellyfin.org/). It aims to provide a more Plex inspired UI/UX experience for users migrating from Plex to Jellyfin.
+This is an Android TV client for [Jellyfin](https://jellyfin.org/). It aims to provide a Plex inspired UI experience for users migrating from Plex to Jellyfin.
 
 This is not a fork of the [official client](https://github.com/jellyfin/jellyfin-androidtv). The user interface and controls have been written completely from scratch.
 
 ## Motivation
 
-After using Plex and its Android TV app for 10+ years, I found the official Jellyfin client UI/UX to be a barrier for me using Jellyfin more, so if you wish the interface and playback controls were more like Plex's Android TV app, then Dolphin might work for you!
+After using Plex and its Android TV app for years, I found the official Jellyfin Android TV client UI/UX to be a barrier to using Jellyfin more, so if you wish the interface and playback controls were a bit more like Plex's Android TV app, then Dolphin might work for you!
 
 That said, Dolphin does not yet implement every feature in Jellyfin. It is a work in progress that will continue to improve over time.
 
@@ -15,13 +15,17 @@ That said, Dolphin does not yet implement every feature in Jellyfin. It is a wor
 - A navigation drawer for quick access to libraries, search, and settings from almost anywhere in the app
 - Show Movie/TV Show titles when browsing libraries
 - Play TV Show theme music, if available
-- Plex inspired playback controls, plus other enhancements, such as:
+- Plex inspired playback controls, such as:
   - Using D-Pad left/right for seeking during playback
-  - Subtly show playback position while seeking w/ D-Pad
   - Quickly access video chapters during playback
-  - Setting to optionally skip back when resuming playback
+  - Optionally skip back a few seconds when resuming playback
+- Other (subjective) enhancements:
+  - Subtly show playback position along the bottom of the screen while seeking w/ D-Pad
+  - Force Continue Watching & Next Up TV episodes to use their Series posters
 
 ## Installation
+
+Downloader Code: `Dolphin CODE`
 
 1. Enable side-loading "unknown" apps
     - https://androidtvnews.com/unknown-sources-chromecast-google-tv/
@@ -37,13 +41,13 @@ That said, Dolphin does not yet implement every feature in Jellyfin. It is a wor
 
 ### Upgrading the app
 
-After the initial install above, the app will automatically check for updates which can then be installed in settings.
+After the initial install above, the app will automatically check for updates. The updates can be installed in settings.
 
 The first time you attempt an update, the OS should guide you through enabling the required additional permissions for the app to install updates.
 
 ## Compatibility
 
-Dolphin requires Android 7.1+ (or Fire TV OS 6+) and Jellyfin server `10.10.x` (tested on primarily `10.10.7`).
+Requires Android 7.1+ (or Fire TV OS 6+) and Jellyfin server `10.10.x` (tested on primarily `10.10.7`).
 
 The app is tested on a variety of Android TV/Fire TV OS devices, but if you encounter issues, please file an issue!
 
@@ -54,6 +58,13 @@ Issues and pull requests are always welcome! UI/UX improvements are especially d
 Please check before submitting that your issue or pull request is not a duplicate.
 
 If you plan to submit a pull request, please read the [contributing guide](CONTRIBUTING.md) before submitting!
+
+## Acknowledgements
+
+- Thanks to the Jellyfin team for creating and maintaining such a great open-source media server
+- Thanks to the official Jellyfin Android TV client developers, some code for creating the device direct play profile is adapted from there
+- Thanks to the Jellyfin Kotlin SDK developers for making it easier to interact with the Jellyfin server API
+- Thanks to numerous other libraries that make app development even possible
 
 ## Additional screenshots
 

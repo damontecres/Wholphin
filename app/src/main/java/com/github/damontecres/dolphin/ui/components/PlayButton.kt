@@ -26,6 +26,9 @@ import com.github.damontecres.dolphin.ui.FontAwesome
 import com.github.damontecres.dolphin.ui.ifElse
 import kotlin.time.Duration
 
+/**
+ * An icon button typically used in a row for playing media
+ */
 @Composable
 fun PlayButton(
     @StringRes title: Int,
@@ -53,6 +56,11 @@ fun PlayButton(
     }
 }
 
+/**
+ * An icon button typically used in a row for playing media
+ *
+ * Only shows the icon until focused when it expands to show the title
+ */
 @Composable
 fun ExpandablePlayButton(
     @StringRes title: Int,
@@ -85,6 +93,9 @@ fun ExpandablePlayButton(
     }
 }
 
+/**
+ * Similar to [ExpandablePlayButton], but uses a [FontAwesome] string instead of an Icon
+ */
 @Composable
 fun ExpandableFaButton(
     @StringRes title: Int,

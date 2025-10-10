@@ -28,6 +28,9 @@ import com.github.damontecres.dolphin.data.model.BaseItem
 import com.github.damontecres.dolphin.ui.enableMarquee
 import kotlinx.coroutines.delay
 
+/**
+ * Card for use in [com.github.damontecres.dolphin.ui.detail.CardGrid]
+ */
 @Composable
 fun GridCard(
     item: BaseItem?,

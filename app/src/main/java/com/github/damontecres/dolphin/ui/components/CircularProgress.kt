@@ -24,11 +24,14 @@ fun CircularProgress(
     }
 }
 
+/**
+ * Fill the space with a loading indicator
+ */
 @Composable
-fun LoadingPage() {
+fun LoadingPage(modifier: Modifier = Modifier) {
     Box(
         contentAlignment = Alignment.Center,
-        modifier = Modifier.fillMaxSize(),
+        modifier = modifier.fillMaxSize(),
     ) {
         CircularProgressIndicator(
             color = MaterialTheme.colorScheme.border,

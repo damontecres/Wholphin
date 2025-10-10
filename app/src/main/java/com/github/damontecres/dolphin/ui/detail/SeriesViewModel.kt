@@ -84,6 +84,8 @@ class SeriesViewModel
                 val item = fetchItem(seriesId, potential)
                 if (item != null) {
                     val seasonsInfo = getSeasons(item)
+
+                    // If a particular season was requested, fetch those episodes, otherwise get the first season
                     val episodeInfo =
                         (season ?: seasonsInfo.items.firstOrNull()?.indexNumber)
                             ?.let { seasonNum ->
@@ -110,6 +112,9 @@ class SeriesViewModel
             }
         }
 
+        /**
+         * If the series has a theme song & app settings allow, play it
+         */
         @OptIn(UnstableApi::class)
         private fun maybePlayThemeSong(playThemeSongs: ThemeSongVolume) {
             val volume =
@@ -276,6 +281,9 @@ class SeriesViewModel
             }
         }
 
+        /**
+         * Play whichever episode is next up for series or else the first episode
+         */
         fun playNextUp() {
             viewModelScope.launch(ExceptionHandler() + Dispatchers.IO) {
                 val result by api.tvShowsApi.getNextUp(seriesId = seriesId)
@@ -312,6 +320,11 @@ data class ItemListAndMapping(
     }
 }
 
+/**
+ * Calculate the index<->season number pairings
+ *
+ * This allows for handling of missing seasons
+ */
 private suspend fun convertPager(pager: ApiRequestPager<*>): ItemListAndMapping {
     val pairs =
         pager.mapIndexed { index, _ ->

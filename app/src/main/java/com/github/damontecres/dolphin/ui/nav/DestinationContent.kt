@@ -15,7 +15,7 @@ import com.github.damontecres.dolphin.ui.detail.movie.MovieDetails
 import com.github.damontecres.dolphin.ui.detail.series.SeriesOverview
 import com.github.damontecres.dolphin.ui.main.HomePage
 import com.github.damontecres.dolphin.ui.main.SearchPage
-import com.github.damontecres.dolphin.ui.playback.PlaybackContent
+import com.github.damontecres.dolphin.ui.playback.PlaybackPage
 import com.github.damontecres.dolphin.ui.preferences.PreferencesPage
 import com.github.damontecres.dolphin.ui.setup.SwitchServerContent
 import com.github.damontecres.dolphin.ui.setup.SwitchUserContent
@@ -23,6 +23,9 @@ import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.CollectionType
 import org.jellyfin.sdk.model.api.DeviceProfile
 
+/**
+ * Chose the page for the [Destination]
+ */
 @Composable
 fun DestinationContent(
     destination: Destination,
@@ -31,14 +34,14 @@ fun DestinationContent(
     modifier: Modifier = Modifier,
 ) {
     when (destination) {
-        is Destination.Main ->
+        is Destination.Home ->
             HomePage(
                 preferences = preferences,
                 modifier = modifier,
             )
 
         is Destination.Playback ->
-            PlaybackContent(
+            PlaybackPage(
                 preferences = preferences,
                 deviceProfile = deviceProfile,
                 destination = destination,

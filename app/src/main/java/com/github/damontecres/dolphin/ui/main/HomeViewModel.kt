@@ -77,6 +77,7 @@ class HomeViewModel
 //                                )
 //                        }
 
+                // TODO data is fetched all together which may be slow for large servers
                 val homeRows =
                     homeSections
                         .mapNotNull { section ->

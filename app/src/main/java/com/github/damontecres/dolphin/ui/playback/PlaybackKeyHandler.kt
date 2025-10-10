@@ -11,6 +11,9 @@ import com.github.damontecres.dolphin.ui.seekBack
 import com.github.damontecres.dolphin.ui.seekForward
 import kotlin.time.Duration
 
+/**
+ * Handles [KeyEvent]s during playback on [PlaybackPage]
+ */
 class PlaybackKeyHandler(
     private val player: Player,
     private val controlsEnabled: Boolean,

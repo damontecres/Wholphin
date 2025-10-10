@@ -102,6 +102,9 @@ class NavDrawerViewModel
         }
     }
 
+/**
+ * Display the left side navigation drawer with [DestinationContent] on the right
+ */
 @Composable
 fun NavDrawer(
     destination: Destination,
@@ -113,7 +116,7 @@ fun NavDrawer(
     viewModel: NavDrawerViewModel =
         hiltViewModel(
             LocalView.current.findViewTreeViewModelStoreOwner()!!,
-            key = "${server?.id}_${user?.id}",
+            key = "${server?.id}_${user?.id}", // Keyed to the server & user to ensure its reset when switching either
         ),
 ) {
     val drawerState = rememberDrawerState(DrawerValue.Closed)
@@ -121,11 +124,15 @@ fun NavDrawer(
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
     val drawerFocusRequester = remember { FocusRequester() }
-    BackHandler(enabled = (drawerState.currentValue == DrawerValue.Closed && destination is Destination.Main)) {
+
+    // If the user presses back while on the home page, open the nav drawer, another back press will quit the app
+    BackHandler(enabled = (drawerState.currentValue == DrawerValue.Closed && destination is Destination.Home)) {
         drawerState.setValue(DrawerValue.Open)
         drawerFocusRequester.requestFocus()
     }
     val libraries by viewModel.libraries.observeAsState(listOf())
+
+    // A negative index is a built in page, >=0 is a library
     val selectedIndex by viewModel.selectedIndex.observeAsState(-1)
     val focusRequester = remember { FocusRequester() }
 
@@ -185,7 +192,7 @@ fun NavDrawer(
                             selected = selectedIndex == -1,
                             onClick = {
                                 viewModel.setIndex(-1)
-                                if (destination is Destination.Main) {
+                                if (destination is Destination.Home) {
                                     viewModel.navigationManager.reloadHome()
                                 } else {
                                     viewModel.navigationManager.goToHome()

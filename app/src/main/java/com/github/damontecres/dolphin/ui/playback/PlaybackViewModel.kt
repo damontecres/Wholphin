@@ -319,6 +319,7 @@ class PlaybackViewModel
                             mediaSourceId = source.id,
                             static = true,
                             tag = source.eTag,
+                            playSessionId = response.playSessionId,
                         )
                     } else if (source.supportsDirectStream) {
                         api.createUrl(source.transcodingUrl!!)
@@ -522,6 +523,12 @@ class PlaybackViewModel
                                         it.type != MediaSegmentType.UNKNOWN && currentTicks >= it.startTicks && currentTicks < it.endTicks
                                     }
                             if (currentSegment != null) {
+                                Timber.d(
+                                    "Found media segment for %s: %s, %s",
+                                    currentSegment.itemId,
+                                    currentSegment.id,
+                                    currentSegment.type,
+                                )
                                 val behavior =
                                     when (currentSegment.type) {
                                         MediaSegmentType.COMMERCIAL -> prefs.skipCommercials

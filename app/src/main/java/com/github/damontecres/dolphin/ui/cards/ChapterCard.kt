@@ -21,6 +21,9 @@ import com.github.damontecres.dolphin.ui.AppColors
 import com.github.damontecres.dolphin.ui.roundSeconds
 import kotlin.time.Duration
 
+/**
+ * Card for a [com.github.damontecres.dolphin.data.model.Chapter]
+ */
 @Composable
 fun ChapterCard(
     name: String?,

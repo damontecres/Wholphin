@@ -19,6 +19,9 @@ import org.jellyfin.sdk.model.api.ImageType
 import timber.log.Timber
 import java.util.UUID
 
+/**
+ * Basic [ViewModel] for a single fetchable item from the API
+ */
 abstract class ItemViewModel<T : DolphinModel>(
     val api: ApiClient,
 ) : ViewModel() {
@@ -57,6 +60,9 @@ abstract class ItemViewModel<T : DolphinModel>(
     ): String? = api.imageApi.getItemImageUrl(itemId, type)
 }
 
+/**
+ * Extends [ItemViewModel] to include a loading state tracking when the item has been fetched or if an error occurred
+ */
 abstract class LoadingItemViewModel<T : DolphinModel>(
     api: ApiClient,
 ) : ItemViewModel<T>(api) {

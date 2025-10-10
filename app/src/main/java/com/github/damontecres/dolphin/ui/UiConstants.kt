@@ -10,8 +10,13 @@ import androidx.compose.ui.unit.dp
 import com.github.damontecres.dolphin.R
 import org.jellyfin.sdk.model.api.ItemFields
 
+// This file is for constants used for the UI
+
 val FontAwesome = FontFamily(Font(resId = R.font.fa_solid_900))
 
+/**
+ * Colors not associated with the theme
+ */
 sealed class AppColors private constructor() {
     companion object {
         val TransparentBlack25 = Color(0x40000000)
@@ -22,6 +27,9 @@ sealed class AppColors private constructor() {
 
 const val DEFAULT_PAGE_SIZE = 100
 
+/**
+ * The default [ItemFields] to fetch for most queries
+ */
 val DefaultItemFields =
     listOf(
         ItemFields.PRIMARY_IMAGE_ASPECT_RATIO,
@@ -40,8 +48,8 @@ val DefaultButtonPadding =
         bottom = 10.dp / 2,
     )
 
-object Cards {
-    val defaultHeight2x3 = 180.dp
+object CardDefaults {
+    val height2x3 = 180.dp
     val playedPercentHeight = 6.dp
 }
 
