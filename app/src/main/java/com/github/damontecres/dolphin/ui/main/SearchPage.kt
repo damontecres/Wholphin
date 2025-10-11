@@ -32,10 +32,10 @@ import com.github.damontecres.dolphin.ui.cards.ItemRow
 import com.github.damontecres.dolphin.ui.cards.SeasonCard
 import com.github.damontecres.dolphin.ui.components.SearchEditTextBox
 import com.github.damontecres.dolphin.ui.data.RowColumn
-import com.github.damontecres.dolphin.ui.data.RowColumnSaver
 import com.github.damontecres.dolphin.ui.ifElse
 import com.github.damontecres.dolphin.ui.isNotNullOrBlank
 import com.github.damontecres.dolphin.ui.nav.NavigationManager
+import com.github.damontecres.dolphin.ui.rememberPosition
 import com.github.damontecres.dolphin.ui.tryRequestFocus
 import com.github.damontecres.dolphin.util.ApiRequestPager
 import com.github.damontecres.dolphin.util.ExceptionHandler
@@ -143,11 +143,7 @@ fun SearchPage(
     var query by rememberSaveable { mutableStateOf("") }
     val focusRequester = remember { FocusRequester() }
 
-    var position by rememberSaveable(stateSaver = RowColumnSaver) {
-        mutableStateOf(
-            RowColumn(-1, -1),
-        )
-    }
+    var position by rememberPosition()
 
     LaunchedEffect(query) {
         delay(750L)

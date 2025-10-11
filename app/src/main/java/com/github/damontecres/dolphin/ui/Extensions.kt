@@ -26,6 +26,8 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.media3.common.Player
 import coil3.request.ErrorResult
+import com.github.damontecres.dolphin.ui.data.RowColumn
+import com.github.damontecres.dolphin.ui.data.RowColumnSaver
 import kotlinx.coroutines.CoroutineScope
 import org.jellyfin.sdk.model.api.BaseItemDto
 import org.jellyfin.sdk.model.extensions.ticks
@@ -296,3 +298,14 @@ fun logCoilError(
         Timber.e(errorResult.throwable, "Error loading image: %s", url)
     }
 }
+
+/**
+ * Convenient way to [rememberSaveable] a [RowColumn]
+ */
+@Composable
+fun rememberPosition(initialPosition: RowColumn = RowColumn(-1, -1)) =
+    rememberSaveable(stateSaver = RowColumnSaver) {
+        mutableStateOf(
+            initialPosition,
+        )
+    }

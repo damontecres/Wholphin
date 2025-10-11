@@ -63,11 +63,14 @@ import com.github.damontecres.dolphin.ui.components.StarRating
 import com.github.damontecres.dolphin.ui.components.StarRatingPrecision
 import com.github.damontecres.dolphin.ui.data.ItemDetailsDialog
 import com.github.damontecres.dolphin.ui.data.ItemDetailsDialogInfo
+import com.github.damontecres.dolphin.ui.data.RowColumn
+import com.github.damontecres.dolphin.ui.ifElse
 import com.github.damontecres.dolphin.ui.isNotNullOrBlank
 import com.github.damontecres.dolphin.ui.letNotEmpty
 import com.github.damontecres.dolphin.ui.nav.Destination
 import com.github.damontecres.dolphin.ui.playOnClickSound
 import com.github.damontecres.dolphin.ui.playSoundOnFocus
+import com.github.damontecres.dolphin.ui.rememberPosition
 import com.github.damontecres.dolphin.ui.roundMinutes
 import com.github.damontecres.dolphin.ui.tryRequestFocus
 import com.github.damontecres.dolphin.util.LoadingState
@@ -159,6 +162,7 @@ fun SeriesDetailsContent(
 ) {
     val bringIntoViewRequester = remember { BringIntoViewRequester() }
 
+    var position by rememberPosition()
     val focusRequester = remember { FocusRequester() }
     LaunchedEffect(Unit) { focusRequester.tryRequestFocus() }
 
@@ -217,8 +221,8 @@ fun SeriesDetailsContent(
                             Modifier
                                 .fillMaxWidth(.6f)
                                 .bringIntoViewRequester(bringIntoViewRequester)
-                                .focusRequester(focusRequester)
-                                .padding(bottom = 80.dp),
+                                .padding(bottom = 80.dp)
+                                .ifElse(position.row < 0, Modifier.focusRequester(focusRequester)),
                     )
                 }
                 item {
@@ -240,11 +244,19 @@ fun SeriesDetailsContent(
                         cardContent = @Composable { index, item, mod, onClick, onLongClick ->
                             SeasonCard(
                                 item = item,
-                                onClick = onClick,
+                                onClick = {
+                                    position = RowColumn(0, index)
+                                    onClick.invoke()
+                                },
                                 onLongClick = onLongClick,
-                                modifier = mod,
                                 imageHeight = Cards.height2x3,
                                 imageWidth = Dp.Unspecified,
+                                modifier =
+                                    mod
+                                        .ifElse(
+                                            position.row == 0 && position.column == index,
+                                            Modifier.focusRequester(focusRequester),
+                                        ),
                             )
                         },
                     )
