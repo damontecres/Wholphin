@@ -31,6 +31,9 @@ import com.github.damontecres.dolphin.ui.cards.EpisodeCard
 import com.github.damontecres.dolphin.ui.cards.ItemRow
 import com.github.damontecres.dolphin.ui.cards.SeasonCard
 import com.github.damontecres.dolphin.ui.components.SearchEditTextBox
+import com.github.damontecres.dolphin.ui.data.RowColumn
+import com.github.damontecres.dolphin.ui.data.RowColumnSaver
+import com.github.damontecres.dolphin.ui.ifElse
 import com.github.damontecres.dolphin.ui.isNotNullOrBlank
 import com.github.damontecres.dolphin.ui.nav.NavigationManager
 import com.github.damontecres.dolphin.ui.tryRequestFocus
@@ -58,7 +61,13 @@ class SearchViewModel
         val series = MutableLiveData<List<BaseItem?>>(listOf())
         val episodes = MutableLiveData<List<BaseItem?>>(listOf())
 
+        private var currentQuery: String? = null
+
         fun search(query: String?) {
+            if (currentQuery == query) {
+                return
+            }
+            currentQuery = query
             movies.value = listOf()
             series.value = listOf()
             episodes.value = listOf()
@@ -117,6 +126,10 @@ class SearchViewModel
         }
     }
 
+private const val MOVIE_ROW = 0
+private const val SERIES_ROW = 1
+private const val EPISODE_ROW = 2
+
 @Composable
 fun SearchPage(
     userPreferences: UserPreferences,
@@ -128,16 +141,20 @@ fun SearchPage(
     val episodes by viewModel.episodes.observeAsState(listOf())
 
     var query by rememberSaveable { mutableStateOf("") }
-    val searchFocusRequester = remember { FocusRequester() }
-    val resultsFocusRequester = remember { FocusRequester() }
+    val focusRequester = remember { FocusRequester() }
+
+    var position by rememberSaveable(stateSaver = RowColumnSaver) {
+        mutableStateOf(
+            RowColumn(-1, -1),
+        )
+    }
 
     LaunchedEffect(query) {
         delay(750L)
         viewModel.search(query)
     }
     LaunchedEffect(Unit) {
-        // TODO focus on back to results when available
-        searchFocusRequester.tryRequestFocus()
+        focusRequester.tryRequestFocus()
     }
 
     LazyColumn(
@@ -158,7 +175,11 @@ fun SearchPage(
                     onSearchClick = {
                         viewModel.search(query)
                     },
-                    modifier = Modifier.focusRequester(searchFocusRequester),
+                    modifier =
+                        Modifier.ifElse(
+                            position.row < MOVIE_ROW,
+                            Modifier.focusRequester(focusRequester),
+                        ),
                 )
             }
         }
@@ -175,10 +196,18 @@ fun SearchPage(
                     cardContent = @Composable { index, item, mod, onClick, onLongClick ->
                         SeasonCard(
                             item = item,
-                            onClick = onClick,
+                            onClick = {
+                                position = RowColumn(MOVIE_ROW, index)
+                                onClick.invoke()
+                            },
                             onLongClick = onLongClick,
                             imageHeight = Cards.height2x3,
-                            modifier = mod,
+                            modifier =
+                                mod
+                                    .ifElse(
+                                        position.row == MOVIE_ROW && position.column == index,
+                                        Modifier.focusRequester(focusRequester),
+                                    ),
                         )
                     },
                 )
@@ -197,10 +226,17 @@ fun SearchPage(
                     cardContent = @Composable { index, item, mod, onClick, onLongClick ->
                         SeasonCard(
                             item = item,
-                            onClick = onClick,
+                            onClick = {
+                                position = RowColumn(SERIES_ROW, index)
+                                onClick.invoke()
+                            },
                             onLongClick = onLongClick,
                             imageHeight = Cards.height2x3,
-                            modifier = mod,
+                            modifier =
+                                mod.ifElse(
+                                    position.row == SERIES_ROW && position.column == index,
+                                    Modifier.focusRequester(focusRequester),
+                                ),
                         )
                     },
                 )
@@ -219,10 +255,19 @@ fun SearchPage(
                     cardContent = @Composable { index, item, mod, onClick, onLongClick ->
                         EpisodeCard(
                             item = item,
-                            onClick = onClick,
+                            onClick = {
+                                position = RowColumn(EPISODE_ROW, index)
+                                onClick.invoke()
+                            },
                             onLongClick = onLongClick,
                             imageHeight = 140.dp,
-                            modifier = mod.padding(horizontal = 8.dp),
+                            modifier =
+                                mod
+                                    .padding(horizontal = 8.dp)
+                                    .ifElse(
+                                        position.row == EPISODE_ROW && position.column == index,
+                                        Modifier.focusRequester(focusRequester),
+                                    ),
                         )
                     },
                 )

@@ -37,13 +37,11 @@ import com.github.damontecres.dolphin.ui.components.StarRating
 import com.github.damontecres.dolphin.ui.components.StarRatingPrecision
 import com.github.damontecres.dolphin.ui.components.TitleValueText
 import com.github.damontecres.dolphin.ui.isNotNullOrBlank
-import com.github.damontecres.dolphin.ui.letNotEmpty
 import com.github.damontecres.dolphin.ui.playOnClickSound
 import com.github.damontecres.dolphin.ui.playSoundOnFocus
 import com.github.damontecres.dolphin.ui.roundMinutes
 import com.github.damontecres.dolphin.ui.timeRemaining
 import org.jellyfin.sdk.model.api.MediaStreamType
-import org.jellyfin.sdk.model.api.PersonKind
 import org.jellyfin.sdk.model.extensions.ticks
 
 @Composable
@@ -167,7 +165,7 @@ fun MovieDetailsHeader(
                     TitleValueText(
                         stringResource(R.string.video),
                         it,
-                        modifier = Modifier,
+                        modifier = Modifier.widthIn(max = 200.dp),
                     )
                 }
                 dto.mediaStreams
@@ -183,6 +181,7 @@ fun MovieDetailsHeader(
                                 TitleValueText(
                                     stringResource(R.string.audio),
                                     it,
+                                    modifier = Modifier.widthIn(max = 200.dp),
                                 )
                             }
                     }
@@ -195,18 +194,18 @@ fun MovieDetailsHeader(
                             TitleValueText(
                                 "Subtitles",
                                 it,
-                                modifier = Modifier.widthIn(max = 64.dp),
+                                modifier = Modifier.widthIn(max = 120.dp),
                             )
                         }
                     }
                 // TODO add writers, studio, etc to overview dialog
-                dto.people?.firstOrNull { it.type == PersonKind.DIRECTOR }?.name?.let {
-                    TitleValueText(
-                        stringResource(R.string.director),
-                        it,
-                        modifier = Modifier.widthIn(max = 80.dp),
-                    )
-                }
+//                dto.people?.firstOrNull { it.type == PersonKind.DIRECTOR }?.name?.let {
+//                    TitleValueText(
+//                        stringResource(R.string.director),
+//                        it,
+//                        modifier = Modifier.widthIn(max = 80.dp),
+//                    )
+//                }
 //                dto.studios?.letNotEmpty {
 //                    TitleValueText(
 //                        stringResource(R.string.studios),
@@ -214,13 +213,13 @@ fun MovieDetailsHeader(
 //                        modifier = Modifier.widthIn(max = 80.dp),
 //                    )
 //                }
-                dto.genres?.letNotEmpty {
-                    TitleValueText(
-                        stringResource(R.string.genres),
-                        it.joinToString(", "),
-                        modifier = Modifier.widthIn(max = 80.dp),
-                    )
-                }
+//                dto.genres?.letNotEmpty {
+//                    TitleValueText(
+//                        stringResource(R.string.genres),
+//                        it.joinToString(", "),
+//                        modifier = Modifier.widthIn(max = 80.dp),
+//                    )
+//                }
             }
         }
     }
