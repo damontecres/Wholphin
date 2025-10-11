@@ -17,6 +17,7 @@ import com.github.damontecres.dolphin.ui.main.HomePage
 import com.github.damontecres.dolphin.ui.main.SearchPage
 import com.github.damontecres.dolphin.ui.playback.PlaybackPage
 import com.github.damontecres.dolphin.ui.preferences.PreferencesPage
+import com.github.damontecres.dolphin.ui.setup.InstallUpdatePage
 import com.github.damontecres.dolphin.ui.setup.SwitchServerContent
 import com.github.damontecres.dolphin.ui.setup.SwitchUserContent
 import org.jellyfin.sdk.model.api.BaseItemKind
@@ -133,6 +134,8 @@ fun DestinationContent(
                     Text("Unsupported item type: ${destination.type}")
                 }
             }
+
+        Destination.UpdateApp -> InstallUpdatePage(preferences, modifier)
 
         Destination.License -> LicenseInfo(modifier)
 

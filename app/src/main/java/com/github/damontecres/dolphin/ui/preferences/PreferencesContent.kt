@@ -20,6 +20,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -45,15 +46,13 @@ import com.github.damontecres.dolphin.preferences.advancedPreferences
 import com.github.damontecres.dolphin.preferences.basicPreferences
 import com.github.damontecres.dolphin.preferences.uiPreferences
 import com.github.damontecres.dolphin.ui.ifElse
+import com.github.damontecres.dolphin.ui.nav.Destination
 import com.github.damontecres.dolphin.ui.playOnClickSound
 import com.github.damontecres.dolphin.ui.playSoundOnFocus
+import com.github.damontecres.dolphin.ui.setup.UpdateViewModel
 import com.github.damontecres.dolphin.ui.tryRequestFocus
 import com.github.damontecres.dolphin.util.ExceptionHandler
 import kotlinx.coroutines.launch
-
-data class Release(
-    val version: String,
-)
 
 @Composable
 fun PreferencesContent(
@@ -61,6 +60,7 @@ fun PreferencesContent(
     preferenceScreenOption: PreferenceScreenOption,
     modifier: Modifier = Modifier,
     viewModel: PreferencesViewModel = hiltViewModel(),
+    updateVM: UpdateViewModel = hiltViewModel(),
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -74,19 +74,16 @@ fun PreferencesContent(
         }
     }
 
-    val movementSounds = true
-    val installedVersion =
-        remember { context.packageManager.getPackageInfo(context.packageName, 0).versionName }
-    var updateVersion by remember { mutableStateOf<Release?>(null) }
-    val updateAvailable = false
-//        remember(updateVersion) { updateVersion?.version?.isGreaterThan(installedVersion) == true }
+    val release by updateVM.release.observeAsState(null)
+    LaunchedEffect(Unit) {
+        if (preferences.autoCheckForUpdates) {
+            updateVM.init(preferences.updateUrl)
+        }
+    }
 
-//    if (preferences.updatePreferences.checkForUpdates) {
-//        LaunchedEffect(Unit) {
-//            updateVersion =
-//                UpdateChecker.getLatestRelease(context, preferences.updatePreferences.updateUrl)
-//        }
-//    }
+    val movementSounds = true
+    val installedVersion = updateVM.currentVersion
+    val updateAvailable = release?.version?.isGreaterThan(installedVersion) ?: false
 
     val prefList =
         when (preferenceScreenOption) {
@@ -135,6 +132,32 @@ fun PreferencesContent(
                             .padding(vertical = 8.dp),
                 )
             }
+            if (preferenceScreenOption == PreferenceScreenOption.BASIC &&
+                preferences.autoCheckForUpdates &&
+                updateAvailable
+            ) {
+                item {
+                    val updateFocusRequester = remember { FocusRequester() }
+                    LaunchedEffect(Unit) {
+                        if (focusedIndex.first == 0 && focusedIndex.second == 0) {
+                            // Only re-focus if the user hasn't moved
+                            updateFocusRequester.tryRequestFocus()
+                        }
+                    }
+                    ClickPreference(
+                        title = stringResource(R.string.install_update),
+                        onClick = {
+                            if (movementSounds) playOnClickSound(context)
+                            viewModel.navigationManager.navigateTo(Destination.UpdateApp)
+                        },
+                        summary = release?.version?.toString(),
+                        modifier =
+                            Modifier
+                                .focusRequester(updateFocusRequester)
+                                .playSoundOnFocus(movementSounds),
+                    )
+                }
+            }
             prefList.forEachIndexed { groupIndex, group ->
                 item {
                     Text(
@@ -147,34 +170,6 @@ fun PreferencesContent(
                                 .fillMaxWidth()
                                 .padding(top = 8.dp, bottom = 4.dp),
                     )
-                }
-                if (updateAvailable &&
-                    groupIndex == 0 &&
-                    preferenceScreenOption == PreferenceScreenOption.BASIC
-                ) {
-                    item {
-                        val updateFocusRequester = remember { FocusRequester() }
-                        LaunchedEffect(Unit) {
-                            if (focusedIndex.first == 0 && focusedIndex.second == 0) {
-                                // Only re-focus if the user hasn't moved
-                                updateFocusRequester.tryRequestFocus()
-                            }
-                        }
-                        ClickPreference(
-                            title = stringResource(R.string.install_update),
-                            onClick = {
-                                if (movementSounds) playOnClickSound(context)
-                                updateVersion?.let {
-//                                    navigationManager.navigateTo(Destination.UpdateApp(it))
-                                }
-                            },
-                            summary = updateVersion?.version?.toString(),
-                            modifier =
-                                Modifier
-                                    .focusRequester(updateFocusRequester)
-                                    .playSoundOnFocus(movementSounds),
-                        )
-                    }
                 }
                 group.preferences.forEachIndexed { prefIndex, pref ->
                     pref as AppPreference<Any>
@@ -196,7 +191,7 @@ fun PreferencesContent(
                                         if (movementSounds) playOnClickSound(context)
                                         if (clickCount++ >= 2) {
                                             clickCount = 0
-                                            //                                            navigationManager.navigateTo(Destination.Debug)
+                                            // navigationManager.navigateTo(Destination.Debug)
                                         }
                                     },
                                     summary = installedVersion.toString(),
@@ -210,57 +205,45 @@ fun PreferencesContent(
                                 )
                             }
 
-//                            AppPreference.Update -> {
-//                                ClickPreference(
-//                                    title =
-//                                        if (updateVersion != null && updateAvailable) {
-//                                            stringResource(R.string.install_update)
-//                                        } else if (!preferences.updatePreferences.checkForUpdates && updateVersion == null) {
-//                                            stringResource(R.string.check_for_updates)
-//                                        } else {
-//                                            stringResource(R.string.no_update_available)
-//                                        },
-//                                    onClick = {
-//                                        if (movementSounds) playOnClickSound(context)
-//                                        if (updateVersion != null && updateAvailable) {
-//                                            updateVersion?.let {
-//                                                navigationManager.navigate(
-//                                                    Destination.UpdateApp(it),
-//                                                )
-//                                            }
-//                                        } else {
-//                                            scope.launch {
-//                                                updateVersion =
-//                                                    UpdateChecker.getLatestRelease(
-//                                                        context,
-//                                                        preferences.updatePreferences.updateUrl,
-//                                                    )
-//                                            }
-//                                        }
-//                                    },
-//                                    onLongClick = {
-//                                        if (movementSounds) playOnClickSound(context)
-//                                        updateVersion?.let {
-//                                            navigationManager.navigate(
-//                                                Destination.UpdateApp(it),
-//                                            )
-//                                        }
-//                                    },
-//                                    summary =
-//                                        if (updateAvailable) {
-//                                            updateVersion?.version?.toString()
-//                                        } else {
-//                                            null
-//                                        },
-//                                    interactionSource = interactionSource,
-//                                    modifier =
-//                                        Modifier
-//                                            .ifElse(
-//                                                groupIndex == focusedIndex.first && prefIndex == focusedIndex.second,
-//                                                Modifier.focusRequester(focusRequester),
-//                                            ),
-//                                )
-//                            }
+                            AppPreference.Update -> {
+                                ClickPreference(
+                                    title =
+                                        if (release != null && updateAvailable) {
+                                            stringResource(R.string.install_update)
+                                        } else if (!preferences.autoCheckForUpdates && release == null) {
+                                            stringResource(R.string.check_for_updates)
+                                        } else {
+                                            stringResource(R.string.no_update_available)
+                                        },
+                                    onClick = {
+                                        if (movementSounds) playOnClickSound(context)
+                                        if (release != null && updateAvailable) {
+                                            release?.let {
+                                                viewModel.navigationManager.navigateTo(Destination.UpdateApp)
+                                            }
+                                        } else {
+                                            updateVM.init(preferences.updateUrl)
+                                        }
+                                    },
+                                    onLongClick = {
+                                        if (movementSounds) playOnClickSound(context)
+                                        viewModel.navigationManager.navigateTo(Destination.UpdateApp)
+                                    },
+                                    summary =
+                                        if (updateAvailable) {
+                                            release?.version?.toString()
+                                        } else {
+                                            null
+                                        },
+                                    interactionSource = interactionSource,
+                                    modifier =
+                                        Modifier
+                                            .ifElse(
+                                                groupIndex == focusedIndex.first && prefIndex == focusedIndex.second,
+                                                Modifier.focusRequester(focusRequester),
+                                            ),
+                                )
+                            }
 
                             else -> {
                                 val value = pref.getter.invoke(preferences)

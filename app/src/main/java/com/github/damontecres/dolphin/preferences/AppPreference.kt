@@ -332,29 +332,36 @@ sealed interface AppPreference<T> {
                 getter = { },
                 setter = { prefs, _ -> prefs },
             )
-//        val AutoCheckForUpdates =
-//            AppSwitchPreference(
-//                title = R.string.check_for_updates,
-//                prefKey = R.string.pref_key_auto_check_updates,
-//                defaultValue = true,
-//                getter = { it.updatePreferences.checkForUpdates },
-//                setter = { prefs, value ->
-//                    prefs.updateUpdatePreferences { checkForUpdates = value }
-//                },
-//                summaryOn = R.string.enabled,
-//                summaryOff = R.string.disabled,
-//            )
 
-//        val UpdateUrl =
-//            AppStringPreference(
-//                title = R.string.update_url,
-//                defaultValue = "",
-//                getter = { it.updatePreferences.updateUrl },
-//                setter = { prefs, value ->
-//                    prefs.updateUpdatePreferences { updateUrl = value }
-//                },
-//                summary = R.string.update_url_summary,
-//            )
+        val Update =
+            AppClickablePreference(
+                title = R.string.check_for_updates,
+                getter = { },
+                setter = { prefs, _ -> prefs },
+            )
+
+        val AutoCheckForUpdates =
+            AppSwitchPreference(
+                title = R.string.auto_check_for_updates,
+                defaultValue = true,
+                getter = { it.autoCheckForUpdates },
+                setter = { prefs, value ->
+                    prefs.update { autoCheckForUpdates = value }
+                },
+                summaryOn = R.string.enabled,
+                summaryOff = R.string.disabled,
+            )
+
+        val UpdateUrl =
+            AppStringPreference(
+                title = R.string.update_url,
+                defaultValue = "", // TODO
+                getter = { it.updateUrl },
+                setter = { prefs, value ->
+                    prefs.update { updateUrl = value }
+                },
+                summary = R.string.update_url_summary,
+            )
 
         val OssLicenseInfo =
             AppDestinationPreference(
@@ -465,7 +472,7 @@ val basicPreferences =
             preferences =
                 listOf(
                     AppPreference.InstalledVersion,
-                    AppPreference.OssLicenseInfo,
+                    AppPreference.Update,
                 ),
         ),
         PreferenceGroup(
@@ -492,6 +499,21 @@ val advancedPreferences =
                     AppPreference.SkipRecaps,
                     AppPreference.MaxBitrate,
                     AppPreference.PlaybackDebugInfo,
+                ),
+        ),
+        PreferenceGroup(
+            title = R.string.updates,
+            preferences =
+                listOf(
+                    AppPreference.AutoCheckForUpdates,
+                    AppPreference.UpdateUrl,
+                ),
+        ),
+        PreferenceGroup(
+            title = R.string.more,
+            preferences =
+                listOf(
+                    AppPreference.OssLicenseInfo,
                 ),
         ),
     )

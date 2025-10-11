@@ -68,5 +68,11 @@
     <string name="skip_comercials_behavior">Skip commercials behavior</string>
     <string name="skip_outro_behavior">Skip outro behavior</string>
     <string name="skip_intro_behavior">Skip intro behavior</string>
+    <string name="check_for_updates">Check for updates</string>
+    <string name="auto_check_for_updates">Automatically check for updates</string>
+    <string name="update_url">Update URL</string>
+    <string name="update_url_summary">URL used to check for app updates</string>
+    <string name="updates">Updates</string>
+    <string name="no_update_available">No update available</string>
 
 </resources>

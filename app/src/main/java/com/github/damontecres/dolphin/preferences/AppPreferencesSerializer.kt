@@ -17,6 +17,9 @@ class AppPreferencesSerializer
             AppPreferences
                 .newBuilder()
                 .apply {
+                    updateUrl = AppPreference.UpdateUrl.defaultValue
+                    autoCheckForUpdates = AppPreference.AutoCheckForUpdates.defaultValue
+
                     playbackPreferences =
                         PlaybackPreferences
                             .newBuilder()

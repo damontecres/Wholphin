@@ -63,4 +63,7 @@ message AppPreferences {
   PlaybackPreferences playback_preferences = 3;
   HomePagePreferences home_page_preferences = 4;
   InterfacePreferences interface_preferences = 5;
+
+  bool auto_check_for_updates = 6;
+  string update_url = 7;
 }

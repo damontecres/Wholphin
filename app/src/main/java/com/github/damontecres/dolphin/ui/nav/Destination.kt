@@ -74,5 +74,8 @@ sealed class Destination(
     }
 
     @Serializable
+    data object UpdateApp : Destination(true)
+
+    @Serializable
     data object License : Destination(true)
 }
