@@ -21,8 +21,8 @@ import timber.log.Timber
  */
 @Composable
 fun ApplicationContent(
-    server: JellyfinServer,
-    user: JellyfinUser,
+    server: JellyfinServer?,
+    user: JellyfinUser?,
     navigationManager: NavigationManager,
     preferences: UserPreferences,
     deviceProfile: DeviceProfile,
@@ -39,7 +39,7 @@ fun ApplicationContent(
             ),
         entryProvider = { key ->
             key as Destination
-            val contentKey = "${key}_${server.id}_${user.id}"
+            val contentKey = "${key}_${server?.id}_${user?.id}"
             Timber.d("Navigate: %s", key)
             NavEntry(key, contentKey = contentKey) {
                 if (key.fullScreen) {

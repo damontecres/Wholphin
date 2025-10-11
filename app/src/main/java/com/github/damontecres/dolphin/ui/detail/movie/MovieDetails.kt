@@ -131,7 +131,9 @@ fun MovieDetails(
 
     when (val state = loading) {
         is LoadingState.Error -> ErrorMessage(state)
-        LoadingState.Loading -> LoadingPage()
+        LoadingState.Loading,
+        LoadingState.Pending,
+        -> LoadingPage()
         LoadingState.Success -> {
             item?.let { movie ->
                 MovieDetailsContent(

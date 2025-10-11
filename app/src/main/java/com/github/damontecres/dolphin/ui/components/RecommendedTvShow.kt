@@ -155,7 +155,9 @@ fun RecommendedTvShow(
     when (val state = loading) {
         is LoadingState.Error -> ErrorMessage(state)
 
-        LoadingState.Loading -> LoadingPage()
+        LoadingState.Loading,
+        LoadingState.Pending,
+        -> LoadingPage()
 
         LoadingState.Success ->
             HomePageContent(

@@ -32,7 +32,7 @@ import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import coil3.compose.AsyncImage
 import com.github.damontecres.dolphin.ui.AppColors
-import com.github.damontecres.dolphin.ui.CardDefaults
+import com.github.damontecres.dolphin.ui.Cards
 import com.github.damontecres.dolphin.ui.isNotNullOrBlank
 
 /**
@@ -131,7 +131,7 @@ fun BannerCard(
                             .background(
                                 MaterialTheme.colorScheme.tertiary,
                             ).clip(RectangleShape)
-                            .height(CardDefaults.playedPercentHeight)
+                            .height(Cards.playedPercentHeight)
                             .fillMaxWidth((playPercent / 100).toFloat()),
                 )
             }

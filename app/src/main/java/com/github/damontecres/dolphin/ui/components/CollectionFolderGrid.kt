@@ -182,7 +182,9 @@ fun CollectionFolderGrid(
 
     when (val state = loading) {
         is LoadingState.Error -> ErrorMessage(state)
-        LoadingState.Loading -> LoadingPage()
+        LoadingState.Loading,
+        LoadingState.Pending,
+        -> LoadingPage()
         LoadingState.Success -> {
             pager?.let { pager ->
                 CollectionFolderGridContent(

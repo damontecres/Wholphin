@@ -25,7 +25,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.github.damontecres.dolphin.data.model.BaseItem
 import com.github.damontecres.dolphin.preferences.UserPreferences
-import com.github.damontecres.dolphin.ui.CardDefaults
+import com.github.damontecres.dolphin.ui.Cards
 import com.github.damontecres.dolphin.ui.DefaultItemFields
 import com.github.damontecres.dolphin.ui.cards.EpisodeCard
 import com.github.damontecres.dolphin.ui.cards.ItemRow
@@ -177,7 +177,7 @@ fun SearchPage(
                             item = item,
                             onClick = onClick,
                             onLongClick = onLongClick,
-                            imageHeight = CardDefaults.height2x3,
+                            imageHeight = Cards.height2x3,
                             modifier = mod,
                         )
                     },
@@ -199,7 +199,7 @@ fun SearchPage(
                             item = item,
                             onClick = onClick,
                             onLongClick = onLongClick,
-                            imageHeight = CardDefaults.height2x3,
+                            imageHeight = Cards.height2x3,
                             modifier = mod,
                         )
                     },

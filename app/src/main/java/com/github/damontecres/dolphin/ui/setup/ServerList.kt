@@ -1,5 +1,6 @@
 package com.github.damontecres.dolphin.ui.setup
 
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -17,6 +18,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 import androidx.tv.material3.Icon
+import androidx.tv.material3.IconButtonDefaults
 import androidx.tv.material3.ListItem
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
@@ -47,6 +49,8 @@ fun ServerList(
     onSwitchServer: (JellyfinServer) -> Unit,
     onAddServer: () -> Unit,
     onRemoveServer: (JellyfinServer) -> Unit,
+    allowAdd: Boolean,
+    allowDelete: Boolean,
     modifier: Modifier = Modifier,
 ) {
     var showDeleteDialog by remember { mutableStateOf<JellyfinServer?>(null) }
@@ -63,7 +67,9 @@ fun ServerList(
                     when (status) {
                         ServerConnectionStatus.Success -> {}
                         ServerConnectionStatus.Pending -> {
-                            CircularProgress()
+                            CircularProgress(
+                                Modifier.size(IconButtonDefaults.MediumIconSize),
+                            )
                         }
                         is ServerConnectionStatus.Error -> {
                             Icon(
@@ -76,32 +82,36 @@ fun ServerList(
                 },
                 onClick = { onSwitchServer.invoke(server) },
                 onLongClick = {
-                    showDeleteDialog = server
+                    if (allowDelete) {
+                        showDeleteDialog = server
+                    }
                 },
                 modifier = Modifier,
             )
         }
-        item {
-            HorizontalDivider()
-            ListItem(
-                enabled = true,
-                selected = false,
-                headlineContent = { Text(text = "Add Server") },
-                leadingContent = {
-                    Icon(
-                        imageVector = Icons.Default.Add,
-                        tint = Color.Green.copy(alpha = .8f),
-                        contentDescription = null,
-                    )
-                },
-                onClick = { onAddServer.invoke() },
-                modifier = Modifier,
-            )
+        if (allowAdd) {
+            item {
+                HorizontalDivider()
+                ListItem(
+                    enabled = true,
+                    selected = false,
+                    headlineContent = { Text(text = "Add Server") },
+                    leadingContent = {
+                        Icon(
+                            imageVector = Icons.Default.Add,
+                            tint = Color.Green.copy(alpha = .8f),
+                            contentDescription = null,
+                        )
+                    },
+                    onClick = { onAddServer.invoke() },
+                    modifier = Modifier,
+                )
+            }
         }
     }
     showDeleteDialog?.let { server ->
         DialogPopup(
-            showDialog = true,
+            showDialog = allowDelete,
             title = server.name ?: server.url,
             dialogItems =
                 listOf(

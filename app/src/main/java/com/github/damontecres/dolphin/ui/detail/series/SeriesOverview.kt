@@ -111,7 +111,9 @@ fun SeriesOverview(
     when (val state = loading) {
         is LoadingState.Error -> ErrorMessage(state)
 
-        LoadingState.Loading -> LoadingPage()
+        LoadingState.Loading,
+        LoadingState.Pending,
+        -> LoadingPage()
 
         LoadingState.Success -> {
             series?.let { series ->

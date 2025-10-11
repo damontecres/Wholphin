@@ -48,7 +48,7 @@ val DefaultButtonPadding =
         bottom = 10.dp / 2,
     )
 
-object CardDefaults {
+object Cards {
     val height2x3 = 180.dp
     val playedPercentHeight = 6.dp
 }

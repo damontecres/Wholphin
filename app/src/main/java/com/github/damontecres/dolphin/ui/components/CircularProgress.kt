@@ -9,14 +9,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.tv.material3.MaterialTheme
-import com.github.damontecres.dolphin.ui.ifElse
 
 @Composable
-fun CircularProgress(
-    modifier: Modifier = Modifier,
-    fillMaxSize: Boolean = true,
-) {
-    Box(modifier = modifier.ifElse(fillMaxSize, Modifier.fillMaxSize())) {
+fun CircularProgress(modifier: Modifier = Modifier) {
+    Box(modifier = modifier) {
         CircularProgressIndicator(
             color = MaterialTheme.colorScheme.border,
             modifier = Modifier.align(Alignment.Center),

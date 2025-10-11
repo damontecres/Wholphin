@@ -49,7 +49,7 @@ import com.github.damontecres.dolphin.R
 import com.github.damontecres.dolphin.data.model.BaseItem
 import com.github.damontecres.dolphin.data.model.Person
 import com.github.damontecres.dolphin.preferences.UserPreferences
-import com.github.damontecres.dolphin.ui.CardDefaults
+import com.github.damontecres.dolphin.ui.Cards
 import com.github.damontecres.dolphin.ui.cards.ItemRow
 import com.github.damontecres.dolphin.ui.cards.PersonRow
 import com.github.damontecres.dolphin.ui.cards.SeasonCard
@@ -95,7 +95,9 @@ fun SeriesDetails(
 
     when (val state = loading) {
         is LoadingState.Error -> ErrorMessage(state)
-        LoadingState.Loading -> LoadingPage()
+        LoadingState.Loading,
+        LoadingState.Pending,
+        -> LoadingPage()
         LoadingState.Success -> {
             item?.let { item ->
                 val played = item.data.userData?.played ?: false
@@ -241,7 +243,7 @@ fun SeriesDetailsContent(
                                 onClick = onClick,
                                 onLongClick = onLongClick,
                                 modifier = mod,
-                                imageHeight = CardDefaults.height2x3,
+                                imageHeight = Cards.height2x3,
                                 imageWidth = Dp.Unspecified,
                             )
                         },

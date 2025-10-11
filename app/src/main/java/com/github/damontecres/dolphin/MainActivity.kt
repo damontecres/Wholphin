@@ -32,8 +32,6 @@ import com.github.damontecres.dolphin.ui.CoilConfig
 import com.github.damontecres.dolphin.ui.nav.ApplicationContent
 import com.github.damontecres.dolphin.ui.nav.Destination
 import com.github.damontecres.dolphin.ui.nav.NavigationManager
-import com.github.damontecres.dolphin.ui.setup.SwitchServerContent
-import com.github.damontecres.dolphin.ui.setup.SwitchUserContent
 import com.github.damontecres.dolphin.ui.theme.DolphinTheme
 import com.github.damontecres.dolphin.util.profile.createDeviceProfile
 import dagger.hilt.android.AndroidEntryPoint
@@ -78,10 +76,14 @@ class MainActivity : AppCompatActivity() {
                         var isRestoringSession by remember { mutableStateOf(true) }
                         LaunchedEffect(Unit) {
                             if (appPreferences.currentServerId.isNotBlank()) {
-                                serverRepository.restoreSession(
-                                    appPreferences.currentServerId,
-                                    appPreferences.currentUserId,
-                                )
+                                try {
+                                    serverRepository.restoreSession(
+                                        appPreferences.currentServerId,
+                                        appPreferences.currentUserId,
+                                    )
+                                } catch (ex: Exception) {
+                                    Timber.e(ex, "Exception restoring session")
+                                }
                                 Timber.d("MainActivity session restored")
                             }
                             isRestoringSession = false
@@ -100,19 +102,8 @@ class MainActivity : AppCompatActivity() {
                             remember(appPreferences) {
                                 createDeviceProfile(this@MainActivity, preferences, false)
                             }
-                        val backStack = rememberNavBackStack(Destination.Home())
-                        navigationManager.backStack = backStack
 
-                        if (server != null && user != null) {
-                            ApplicationContent(
-                                user = user,
-                                server = server,
-                                navigationManager = navigationManager,
-                                preferences = preferences,
-                                deviceProfile = deviceProfile,
-                                modifier = Modifier.fillMaxSize(),
-                            )
-                        } else if (isRestoringSession) {
+                        if (isRestoringSession) {
                             Box(
                                 modifier = Modifier.size(200.dp),
                                 contentAlignment = Alignment.Center,
@@ -122,13 +113,21 @@ class MainActivity : AppCompatActivity() {
                                     modifier = Modifier.align(Alignment.Center),
                                 )
                             }
-                        } else if (server != null) {
-                            // Have server but no user, go to user selection
-                            SwitchUserContent(
-                                modifier = Modifier.fillMaxSize(),
-                            )
                         } else {
-                            SwitchServerContent(
+                            val initialDestination =
+                                if (server != null && user != null) {
+                                    Destination.Home()
+                                } else {
+                                    Destination.ServerList
+                                }
+                            val backStack = rememberNavBackStack(initialDestination)
+                            navigationManager.backStack = backStack
+                            ApplicationContent(
+                                user = user,
+                                server = server,
+                                navigationManager = navigationManager,
+                                preferences = preferences,
+                                deviceProfile = deviceProfile,
                                 modifier = Modifier.fillMaxSize(),
                             )
                         }

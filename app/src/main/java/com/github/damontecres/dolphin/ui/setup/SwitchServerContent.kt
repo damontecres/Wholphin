@@ -4,8 +4,10 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -30,10 +32,11 @@ import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import androidx.tv.material3.surfaceColorAtElevation
 import com.github.damontecres.dolphin.ui.components.BasicDialog
+import com.github.damontecres.dolphin.ui.components.CircularProgress
 import com.github.damontecres.dolphin.ui.components.EditTextBox
 import com.github.damontecres.dolphin.ui.isNotNullOrBlank
-import com.github.damontecres.dolphin.ui.nav.Destination
 import com.github.damontecres.dolphin.ui.tryRequestFocus
+import com.github.damontecres.dolphin.util.LoadingState
 
 @Composable
 fun SwitchServerContent(
@@ -44,64 +47,131 @@ fun SwitchServerContent(
     val servers by viewModel.servers.observeAsState(listOf())
     val serverStatus by viewModel.serverStatus.observeAsState(mapOf())
 
+    val discoveredServers by viewModel.discoveredServers.observeAsState(listOf())
+
     var showAddServer by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        viewModel.discoverServers()
+    }
 
     Box(
         modifier = modifier,
     ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+        Row(
             modifier =
                 Modifier
-                    .fillMaxWidth(.5f)
                     .align(Alignment.Center)
-                    .padding(16.dp)
-                    .background(
-                        MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp),
-                        shape = RoundedCornerShape(16.dp),
-                    ),
+                    .padding(32.dp),
         ) {
-            Text(
-                text = "Select Server",
-                style = MaterialTheme.typography.displaySmall,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
-            ServerList(
-                servers = servers,
-                connectionStatus = serverStatus,
-                onSwitchServer = {
-                    viewModel.addServer(it.url) {
-                        viewModel.navigationManager.navigateTo(Destination.UserList)
-                    }
-                },
-                onAddServer = {
-                    showAddServer = true
-                },
-                onRemoveServer = {
-                    viewModel.removeServer(it)
-                },
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(8.dp),
                 modifier =
                     Modifier
                         .fillMaxWidth()
+                        .weight(1f)
+                        .padding(16.dp)
                         .background(
-                            MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp),
+                            MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp),
                             shape = RoundedCornerShape(16.dp),
                         ),
-            )
+            ) {
+                Text(
+                    text = "Select Server",
+                    style = MaterialTheme.typography.displaySmall,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+                ServerList(
+                    servers = servers,
+                    connectionStatus = serverStatus,
+                    onSwitchServer = {
+                        viewModel.addServer(it.url)
+                    },
+                    onAddServer = {
+                        showAddServer = true
+                    },
+                    onRemoveServer = {
+                        viewModel.removeServer(it)
+                    },
+                    allowAdd = true,
+                    allowDelete = true,
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .background(
+                                MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp),
+                                shape = RoundedCornerShape(16.dp),
+                            ),
+                )
+            }
+            // Discover
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .weight(1f)
+                        .padding(16.dp)
+                        .background(
+                            MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp),
+                            shape = RoundedCornerShape(16.dp),
+                        ),
+            ) {
+                Text(
+                    text = "Discovered Servers",
+                    style = MaterialTheme.typography.displaySmall,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+                if (discoveredServers.isEmpty()) {
+                    Text(
+                        text = "Searching...",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
+                } else {
+                    ServerList(
+                        servers = discoveredServers,
+                        connectionStatus =
+                            discoveredServers
+                                .map { it.id }
+                                .associateWith { ServerConnectionStatus.Success },
+                        onSwitchServer = {
+                            viewModel.addServer(it.url)
+                        },
+                        onAddServer = {},
+                        onRemoveServer = {},
+                        allowAdd = false,
+                        allowDelete = false,
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .background(
+                                    MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp),
+                                    shape = RoundedCornerShape(16.dp),
+                                ),
+                    )
+                }
+            }
         }
 
         if (showAddServer) {
+            LaunchedEffect(Unit) {
+                viewModel.clearAddServerState()
+            }
+            val state by viewModel.addServerState.observeAsState(LoadingState.Pending)
             var url by remember { mutableStateOf("") }
             val submit = {
-                showAddServer = false
-                viewModel.addServer(url) {
-                    viewModel.navigationManager.navigateTo(Destination.UserList)
-                }
+                viewModel.addServer(url)
             }
             BasicDialog(
-                onDismissRequest = { showAddServer = false },
+                onDismissRequest = {
+                    showAddServer = false
+                    viewModel.clearAddServerState()
+                },
                 properties = DialogProperties(usePlatformDefaultWidth = false),
+                elevation = 10.dp,
             ) {
                 val focusRequester = remember { FocusRequester() }
                 LaunchedEffect(Unit) { focusRequester.tryRequestFocus() }
@@ -118,7 +188,10 @@ fun SwitchServerContent(
                     )
                     EditTextBox(
                         value = url,
-                        onValueChange = { url = it },
+                        onValueChange = {
+                            url = it
+                            viewModel.clearAddServerState()
+                        },
                         keyboardOptions =
                             KeyboardOptions(
                                 capitalization = KeyboardCapitalization.None,
@@ -134,12 +207,28 @@ fun SwitchServerContent(
                                 .focusRequester(focusRequester)
                                 .fillMaxWidth(),
                     )
+                    when (val st = state) {
+                        is LoadingState.Error -> {
+                            Text(
+                                text =
+                                    st.message ?: st.exception?.localizedMessage
+                                        ?: "An error occurred",
+                                color = MaterialTheme.colorScheme.error,
+                            )
+                        }
+
+                        else -> {}
+                    }
                     Button(
                         onClick = { submit.invoke() },
-                        enabled = url.isNotNullOrBlank(),
+                        enabled = url.isNotNullOrBlank() && state == LoadingState.Pending,
                         modifier = Modifier,
                     ) {
-                        Text(text = "Submit")
+                        if (state == LoadingState.Loading) {
+                            CircularProgress(Modifier.size(32.dp))
+                        } else {
+                            Text(text = "Submit")
+                        }
                     }
                 }
             }

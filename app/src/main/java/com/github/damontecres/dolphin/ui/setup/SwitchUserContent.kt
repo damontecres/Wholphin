@@ -1,5 +1,6 @@
 package com.github.damontecres.dolphin.ui.setup
 
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.layout.Arrangement
@@ -22,6 +23,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -35,12 +37,15 @@ import com.github.damontecres.dolphin.ui.components.EditTextBox
 import com.github.damontecres.dolphin.ui.isNotNullOrBlank
 import com.github.damontecres.dolphin.ui.nav.Destination
 import com.github.damontecres.dolphin.ui.tryRequestFocus
+import com.github.damontecres.dolphin.util.LoadingState
 
 @Composable
 fun SwitchUserContent(
     modifier: Modifier = Modifier,
     viewModel: SwitchUserViewModel = hiltViewModel(),
 ) {
+    val context = LocalContext.current
+
     val currentServer = viewModel.serverRepository.currentServer
     val currentUser = viewModel.serverRepository.currentUser
     val users by viewModel.users.observeAsState(listOf())
@@ -49,6 +54,20 @@ fun SwitchUserContent(
     val quickConnectEnabled = currentServer?.let { serverQuickConnect[it.id] ?: false } ?: false
     val quickConnect by viewModel.quickConnectState.observeAsState(null)
     var showAddUser by remember { mutableStateOf(false) }
+
+    val userState by viewModel.switchUserState.observeAsState(LoadingState.Pending)
+    LaunchedEffect(userState) {
+        if (!showAddUser) {
+            when (val s = userState) {
+                is LoadingState.Error -> {
+                    val msg = s.message ?: s.exception?.localizedMessage
+                    Toast.makeText(context, "Error: $msg", Toast.LENGTH_LONG).show()
+                }
+
+                else -> {}
+            }
+        }
+    }
 
     currentServer?.let { server ->
         Box(
@@ -81,9 +100,7 @@ fun SwitchUserContent(
                     users = users,
                     currentUser = currentUser,
                     onSwitchUser = { user ->
-                        viewModel.switchUser(server, user) {
-                            viewModel.navigationManager.goToHome()
-                        }
+                        viewModel.switchUser(server, user)
                     },
                     onAddUser = { showAddUser = true },
                     onRemoveUser = { user ->
@@ -106,6 +123,7 @@ fun SwitchUserContent(
         if (showAddUser) {
             var useQuickConnect by remember { mutableStateOf(quickConnectEnabled) }
             LaunchedEffect(Unit) {
+                viewModel.clearSwitchUserState()
                 if (useQuickConnect) {
                     viewModel.initiateQuickConnect(server) {
                         viewModel.navigationManager.goToHome()
@@ -151,10 +169,7 @@ fun SwitchUserContent(
                         var username by remember { mutableStateOf("") }
                         var password by remember { mutableStateOf("") }
                         val onSubmit = {
-                            viewModel.login(server, username, password) {
-                                showAddUser = false
-                                viewModel.navigationManager.goToHome()
-                            }
+                            viewModel.login(server, username, password)
                         }
                         val focusRequester = remember { FocusRequester() }
                         LaunchedEffect(Unit) { focusRequester.tryRequestFocus() }
@@ -173,7 +188,10 @@ fun SwitchUserContent(
                             )
                             EditTextBox(
                                 value = username,
-                                onValueChange = { username = it },
+                                onValueChange = {
+                                    username = it
+                                    viewModel.clearSwitchUserState()
+                                },
                                 keyboardOptions =
                                     KeyboardOptions(
                                         capitalization = KeyboardCapitalization.None,
@@ -193,7 +211,10 @@ fun SwitchUserContent(
                             )
                             EditTextBox(
                                 value = password,
-                                onValueChange = { password = it },
+                                onValueChange = {
+                                    password = it
+                                    viewModel.clearSwitchUserState()
+                                },
                                 keyboardOptions =
                                     KeyboardOptions(
                                         capitalization = KeyboardCapitalization.None,
@@ -214,6 +235,16 @@ fun SwitchUserContent(
                         ) {
                             Text("Login")
                         }
+                    }
+                    when (val s = userState) {
+                        is LoadingState.Error -> {
+                            Text(
+                                text = s.message ?: s.exception?.localizedMessage ?: "Error",
+                                color = MaterialTheme.colorScheme.error,
+                            )
+                        }
+
+                        else -> {}
                     }
                 }
             }

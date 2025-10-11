@@ -42,6 +42,9 @@ class NavigationManager
             while (backStack.size > 1) {
                 backStack.removeLastOrNull()
             }
+            if (backStack[0] !is Destination.Home) {
+                backStack[0] = Destination.Home()
+            }
         }
 
         /**

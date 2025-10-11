@@ -9,7 +9,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.Jellyfin
 import org.jellyfin.sdk.api.client.ApiClient
-import org.jellyfin.sdk.api.client.exception.InvalidStatusException
 import org.jellyfin.sdk.api.client.extensions.userApi
 import org.jellyfin.sdk.model.api.AuthenticationResult
 import org.jellyfin.sdk.model.api.UserDto
@@ -66,49 +65,36 @@ class ServerRepository
             server: JellyfinServer,
             user: JellyfinUser,
         ) = withContext(Dispatchers.IO) {
-            try {
-                if (server.id != user.serverId) {
-                    throw IllegalStateException()
-                }
-                Timber.v("Changing user to ${user.name} on ${server.url}")
-                apiClient.update(baseUrl = server.url, accessToken = user.accessToken)
-                val userDto =
-                    apiClient.userApi
-                        .getCurrentUser()
-                        .content
+            if (server.id != user.serverId) {
+                throw IllegalStateException("User is not part of the server")
+            }
+            Timber.v("Changing user to ${user.name} on ${server.url}")
+            apiClient.update(baseUrl = server.url, accessToken = user.accessToken)
+            val userDto =
+                apiClient.userApi
+                    .getCurrentUser()
+                    .content
 
-                val updatedServer = server.copy(name = userDto.serverName)
-                val updatedUser =
-                    user.copy(
-                        id = userDto.id.toString(),
-                        name = userDto.name,
-                    )
-                serverDao.addServer(updatedServer)
-                serverDao.addUser(updatedUser)
-                userPreferencesDataStore.updateData {
-                    it
-                        .toBuilder()
-                        .apply {
-                            currentServerId = updatedServer.id
-                            currentUserId = updatedUser.id
-                        }.build()
-                }
-                withContext(Dispatchers.Main) {
-                    _currentUserDto = userDto
-                    _currentServer = updatedServer
-                    _currentUser = updatedUser
-                }
-            } catch (e: InvalidStatusException) {
-                // TODO
-                Timber.e(e)
-                withContext(Dispatchers.Main) {
-                    // Unauthorized
-                    _currentServer = null
-                    _currentUser = null
-                }
-                if (e.status == 401) {
-                    return@withContext
-                }
+            val updatedServer = server.copy(name = userDto.serverName)
+            val updatedUser =
+                user.copy(
+                    id = userDto.id.toString(),
+                    name = userDto.name,
+                )
+            serverDao.addServer(updatedServer)
+            serverDao.addUser(updatedUser)
+            userPreferencesDataStore.updateData {
+                it
+                    .toBuilder()
+                    .apply {
+                        currentServerId = updatedServer.id
+                        currentUserId = updatedUser.id
+                    }.build()
+            }
+            withContext(Dispatchers.Main) {
+                _currentUserDto = userDto
+                _currentServer = updatedServer
+                _currentUser = updatedUser
             }
         }
 
