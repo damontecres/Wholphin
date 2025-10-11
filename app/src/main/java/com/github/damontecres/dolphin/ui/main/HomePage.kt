@@ -182,7 +182,9 @@ fun HomePageContent(
                                     name = item?.data?.seriesName ?: item?.name,
                                     imageUrl = item?.imageUrl,
                                     aspectRatio = (2f / 3f),
-                                    cornerText = item?.data?.indexNumber?.let { "E$it" },
+                                    cornerText =
+                                        item?.data?.indexNumber?.let { "E$it" }
+                                            ?: item?.data?.childCount?.let { if (it > 0) it.toString() else null },
                                     played = item?.data?.userData?.played ?: false,
                                     playPercent = item?.data?.userData?.playedPercentage ?: 0.0,
                                     onClick = onClick,

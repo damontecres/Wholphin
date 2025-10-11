@@ -516,7 +516,7 @@ class PlaybackViewModel
                     if (segments.items.isNotEmpty()) {
                         while (isActive) {
                             delay(500L)
-                            val currentTicks = player.currentPosition.milliseconds.inWholeTicks
+                            val currentTicks = withContext(Dispatchers.Main) { player.currentPosition.milliseconds.inWholeTicks }
                             val currentSegment =
                                 segments.items
                                     .firstOrNull {
