@@ -1,14 +1,20 @@
 package com.github.damontecres.dolphin.ui.components
 
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.unit.dp
 import androidx.tv.material3.MaterialTheme
+import com.github.damontecres.dolphin.ui.tryRequestFocus
 
 @Composable
 fun CircularProgress(modifier: Modifier = Modifier) {
@@ -21,13 +27,19 @@ fun CircularProgress(modifier: Modifier = Modifier) {
 }
 
 /**
- * Fill the space with a loading indicator
+ * Fill the space with a loading indicator and take focus
  */
 @Composable
 fun LoadingPage(modifier: Modifier = Modifier) {
+    val focusRequester = remember { FocusRequester() }
+    LaunchedEffect(Unit) { focusRequester.tryRequestFocus() }
     Box(
         contentAlignment = Alignment.Center,
-        modifier = modifier.fillMaxSize(),
+        modifier =
+            modifier
+                .fillMaxSize()
+                .focusRequester(focusRequester)
+                .focusable(),
     ) {
         CircularProgressIndicator(
             color = MaterialTheme.colorScheme.border,

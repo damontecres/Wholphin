@@ -66,11 +66,14 @@ import com.github.damontecres.dolphin.ui.tryRequestFocus
 import com.github.damontecres.dolphin.util.ExceptionHandler
 import com.github.damontecres.dolphin.util.supportedCollectionTypes
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.userViewsApi
 import org.jellyfin.sdk.model.api.CollectionType
 import org.jellyfin.sdk.model.api.DeviceProfile
+import timber.log.Timber
 import javax.inject.Inject
 
 @HiltViewModel
@@ -85,15 +88,19 @@ class NavDrawerViewModel
         val selectedIndex = MutableLiveData<Int>(-1)
 
         init {
-            viewModelScope.launch(ExceptionHandler()) {
+            viewModelScope.launch(Dispatchers.IO + ExceptionHandler(true)) {
                 val userViews =
                     api.userViewsApi
                         .getUserViews()
                         .content.items
-                libraries.value =
+                val libraries =
                     userViews
                         .filter { it.collectionType in supportedCollectionTypes }
                         .map { BaseItem.from(it, api) }
+                Timber.d("Got ${userViews.size} user views filtered to ${libraries.size}")
+                withContext(Dispatchers.Main) {
+                    this@NavDrawerViewModel.libraries.value = libraries
+                }
             }
         }
 

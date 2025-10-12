@@ -41,7 +41,9 @@ import com.github.damontecres.dolphin.ui.playOnClickSound
 import com.github.damontecres.dolphin.ui.playSoundOnFocus
 import com.github.damontecres.dolphin.ui.roundMinutes
 import com.github.damontecres.dolphin.ui.timeRemaining
+import com.github.damontecres.dolphin.util.formatSubtitleLang
 import org.jellyfin.sdk.model.api.MediaStreamType
+import org.jellyfin.sdk.model.api.PersonKind
 import org.jellyfin.sdk.model.extensions.ticks
 
 @Composable
@@ -153,6 +155,14 @@ fun MovieDetailsHeader(
                     )
                 }
             }
+            movie.data.people
+                ?.filter { it.type == PersonKind.DIRECTOR && it.name.isNotNullOrBlank() }
+                ?.joinToString(", ") { it.name!! }
+                ?.let {
+                    Text(
+                        text = "Directed by $it",
+                    )
+                }
             // Key-Values
             Row(
                 modifier =
@@ -185,10 +195,7 @@ fun MovieDetailsHeader(
                                 )
                             }
                     }
-                dto.mediaStreams
-                    ?.filter { it.type == MediaStreamType.SUBTITLE && it.language.isNotNullOrBlank() }
-                    ?.mapNotNull { it.language }
-                    ?.joinToString(", ")
+                formatSubtitleLang(dto.mediaStreams)
                     ?.let {
                         if (it.isNotNullOrBlank()) {
                             TitleValueText(
@@ -199,13 +206,6 @@ fun MovieDetailsHeader(
                         }
                     }
                 // TODO add writers, studio, etc to overview dialog
-//                dto.people?.firstOrNull { it.type == PersonKind.DIRECTOR }?.name?.let {
-//                    TitleValueText(
-//                        stringResource(R.string.director),
-//                        it,
-//                        modifier = Modifier.widthIn(max = 80.dp),
-//                    )
-//                }
 //                dto.studios?.letNotEmpty {
 //                    TitleValueText(
 //                        stringResource(R.string.studios),

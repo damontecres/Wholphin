@@ -3,6 +3,7 @@ package com.github.damontecres.dolphin.util
 import android.widget.Toast
 import androidx.lifecycle.MutableLiveData
 import com.github.damontecres.dolphin.DolphinApplication
+import com.github.damontecres.dolphin.ui.showToast
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.Dispatchers
@@ -39,15 +40,13 @@ class LoadingExceptionHandler(
                         exception = exception,
                     )
             }
-        }
-
-        if (autoToast) {
-            Toast
-                .makeText(
+            if (autoToast) {
+                showToast(
                     DolphinApplication.instance,
                     "Error: ${exception.message}",
                     Toast.LENGTH_LONG,
-                ).show()
+                )
+            }
         }
     }
 }

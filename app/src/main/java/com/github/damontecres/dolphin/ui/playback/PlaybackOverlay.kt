@@ -264,22 +264,22 @@ fun PlaybackOverlay(
                     }
                 }
             }
-            AnimatedVisibility(
-                showDebugInfo && controllerViewState.controlsVisible,
-                modifier =
-                    Modifier
-                        .align(Alignment.TopStart),
-            ) {
-                currentPlayback?.tracks?.letNotEmpty {
-                    PlaybackTrackInfo(
-                        trackSupport = it,
-                        modifier =
-                            Modifier
-                                .align(Alignment.TopStart)
-                                .padding(16.dp)
-                                .background(AppColors.TransparentBlack50),
-                    )
-                }
+        }
+        AnimatedVisibility(
+            showDebugInfo && controllerViewState.controlsVisible,
+            modifier =
+                Modifier
+                    .align(Alignment.TopStart),
+        ) {
+            currentPlayback?.tracks?.letNotEmpty {
+                PlaybackTrackInfo(
+                    trackSupport = it,
+                    modifier =
+                        Modifier
+                            .align(Alignment.TopStart)
+                            .padding(16.dp)
+                            .background(AppColors.TransparentBlack50),
+                )
             }
         }
     }

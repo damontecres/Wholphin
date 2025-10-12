@@ -19,6 +19,7 @@ import com.github.damontecres.dolphin.R
 import com.github.damontecres.dolphin.hilt.StandardOkHttpClient
 import com.github.damontecres.dolphin.ui.findActivity
 import com.github.damontecres.dolphin.ui.isNotNullOrBlank
+import com.github.damontecres.dolphin.ui.showToast
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -87,22 +88,20 @@ class UpdateChecker
                         "Skipping update notification, threshold is $lastUpdateCheckThreshold",
                     )
                 } else {
-                    Toast
-                        .makeText(
-                            context,
-                            "Update available: $installedVersion => ${latestRelease.version}!",
-                            Toast.LENGTH_LONG,
-                        ).show()
+                    showToast(
+                        context,
+                        "Update available: $installedVersion => ${latestRelease.version}!",
+                        Toast.LENGTH_LONG,
+                    )
                 }
             } else {
                 Timber.v("No update available for $installedVersion")
                 if (showNegativeToast) {
-                    Toast
-                        .makeText(
-                            context,
-                            "No updates available, $installedVersion is the latest!",
-                            Toast.LENGTH_LONG,
-                        ).show()
+                    showToast(
+                        context,
+                        "No updates available, $installedVersion is the latest!",
+                        Toast.LENGTH_LONG,
+                    )
                 }
             }
         }

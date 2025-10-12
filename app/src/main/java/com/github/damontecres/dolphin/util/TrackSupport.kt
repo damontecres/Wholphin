@@ -43,7 +43,7 @@ data class TrackSupport(
                         if (split.size > 1) split[1] else codecs
                     }
                 }
-            val language = languageName(context, format.language)
+            val language = languageName(format.language)
             "$language ($type)"
         }
 }
@@ -135,16 +135,14 @@ fun checkForSupport(tracks: Tracks): List<TrackSupport> =
         }
     }
 
-fun languageName(
-    context: Context,
-    code: String?,
-) = if (code != null && code != "00") {
-    try {
-        Locale(code).displayLanguage
-    } catch (ex: Exception) {
-        Timber.w(ex, "Error in locale for '$code'")
-        code.uppercase()
+fun languageName(code: String?): String =
+    if (code != null) {
+        try {
+            Locale(code).displayLanguage
+        } catch (ex: Exception) {
+            Timber.w(ex, "Error in locale for '$code'")
+            code.uppercase()
+        }
+    } else {
+        "Unknown"
     }
-} else {
-    "Unknown"
-}

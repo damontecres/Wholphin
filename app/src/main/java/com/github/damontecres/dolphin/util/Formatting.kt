@@ -1,7 +1,10 @@
 package com.github.damontecres.dolphin.util
 
 import android.os.Build
+import com.github.damontecres.dolphin.ui.isNotNullOrBlank
 import org.jellyfin.sdk.model.api.BaseItemDto
+import org.jellyfin.sdk.model.api.MediaStream
+import org.jellyfin.sdk.model.api.MediaStreamType
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
@@ -48,3 +51,10 @@ val BaseItemDto.seasonEpisodePadded: String?
         } else {
             null
         }
+
+fun formatSubtitleLang(mediaStreams: List<MediaStream>?): String? =
+    mediaStreams
+        ?.filter { it.type == MediaStreamType.SUBTITLE && it.language.isNotNullOrBlank() }
+        ?.mapNotNull { it.language }
+        ?.distinct()
+        ?.joinToString(", ") { languageName(it) }

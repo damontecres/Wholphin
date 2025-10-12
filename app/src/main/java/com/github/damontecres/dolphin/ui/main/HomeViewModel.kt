@@ -193,11 +193,7 @@ class HomeViewModel
                     .filter { it.collectionType in supportedCollectionTypes }
                     .map { view ->
                         val title =
-                            view
-                                ?.name
-                                ?.let {
-                                    "Recently Added in $it"
-                                }
+                            view.name?.let { "Recently Added in $it" }
                         val request =
                             GetLatestMediaRequest(
                                 fields = DefaultItemFields,
@@ -205,6 +201,7 @@ class HomeViewModel
                                 parentId = view.id,
                                 groupItems = true,
                                 limit = limit,
+                                isPlayed = null, // Server will handle user's preference
                             )
                         val latest =
                             api.userLibraryApi

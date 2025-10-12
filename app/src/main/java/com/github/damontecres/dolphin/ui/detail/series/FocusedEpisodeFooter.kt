@@ -15,6 +15,7 @@ import com.github.damontecres.dolphin.data.model.BaseItem
 import com.github.damontecres.dolphin.ui.components.ExpandablePlayButtons
 import com.github.damontecres.dolphin.ui.components.TitleValueText
 import com.github.damontecres.dolphin.ui.isNotNullOrBlank
+import com.github.damontecres.dolphin.util.formatSubtitleLang
 import org.jellyfin.sdk.model.api.MediaStreamType
 import org.jellyfin.sdk.model.extensions.ticks
 import kotlin.time.Duration
@@ -75,10 +76,7 @@ fun FocusedEpisodeFooter(
                         }
                 }
 
-            dto.mediaStreams
-                ?.filter { it.type == MediaStreamType.SUBTITLE && it.language.isNotNullOrBlank() }
-                ?.mapNotNull { it.language }
-                ?.joinToString(", ")
+            formatSubtitleLang(dto.mediaStreams)
                 ?.let {
                     if (it.isNotNullOrBlank()) {
                         TitleValueText(

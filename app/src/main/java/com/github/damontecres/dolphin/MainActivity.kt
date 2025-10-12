@@ -33,6 +33,7 @@ import com.github.damontecres.dolphin.ui.nav.ApplicationContent
 import com.github.damontecres.dolphin.ui.nav.Destination
 import com.github.damontecres.dolphin.ui.nav.NavigationManager
 import com.github.damontecres.dolphin.ui.theme.DolphinTheme
+import com.github.damontecres.dolphin.util.UpdateChecker
 import com.github.damontecres.dolphin.util.profile.createDeviceProfile
 import dagger.hilt.android.AndroidEntryPoint
 import okhttp3.OkHttpClient
@@ -53,6 +54,9 @@ class MainActivity : AppCompatActivity() {
 
     @Inject
     lateinit var navigationManager: NavigationManager
+
+    @Inject
+    lateinit var updateChecker: UpdateChecker
 
     @OptIn(ExperimentalTvMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -122,6 +126,15 @@ class MainActivity : AppCompatActivity() {
                                 }
                             val backStack = rememberNavBackStack(initialDestination)
                             navigationManager.backStack = backStack
+                            if (appPreferences.autoCheckForUpdates) {
+                                LaunchedEffect(Unit) {
+                                    try {
+                                        updateChecker.maybeShowUpdateToast(appPreferences.updateUrl)
+                                    } catch (ex: Exception) {
+                                        Timber.w(ex, "Failed to check for update")
+                                    }
+                                }
+                            }
                             ApplicationContent(
                                 user = user,
                                 server = server,

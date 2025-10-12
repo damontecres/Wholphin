@@ -6,6 +6,7 @@ import android.content.ContextWrapper
 import android.media.AudioManager
 import android.view.KeyEvent
 import android.view.WindowManager
+import android.widget.Toast
 import androidx.compose.foundation.MarqueeAnimationMode
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.layout.Arrangement
@@ -29,6 +30,8 @@ import coil3.request.ErrorResult
 import com.github.damontecres.dolphin.ui.data.RowColumn
 import com.github.damontecres.dolphin.ui.data.RowColumnSaver
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.model.api.BaseItemDto
 import org.jellyfin.sdk.model.extensions.ticks
 import timber.log.Timber
@@ -309,3 +312,21 @@ fun rememberPosition(initialPosition: RowColumn = RowColumn(-1, -1)) =
             initialPosition,
         )
     }
+
+/**
+ * Show a [Toast]. Ensures it runs on the main thread.
+ */
+suspend fun showToast(
+    context: Context,
+    text: CharSequence,
+    duration: Int,
+) = withContext(Dispatchers.Main) {
+    Toast.makeText(context, text, duration).show()
+}
+
+suspend fun showToast(
+    context: Context,
+    text: CharSequence,
+) = withContext(Dispatchers.Main) {
+    Toast.makeText(context, text, Toast.LENGTH_LONG).show()
+}

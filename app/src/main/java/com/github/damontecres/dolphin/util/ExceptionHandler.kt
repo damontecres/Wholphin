@@ -2,8 +2,10 @@ package com.github.damontecres.dolphin.util
 
 import android.widget.Toast
 import com.github.damontecres.dolphin.DolphinApplication
+import com.github.damontecres.dolphin.ui.showToast
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineExceptionHandler
+import kotlinx.coroutines.runBlocking
 import timber.log.Timber
 import kotlin.coroutines.CoroutineContext
 
@@ -29,12 +31,13 @@ class ExceptionHandler(
         Timber.e(exception, "Exception in coroutine")
 
         if (autoToast) {
-            Toast
-                .makeText(
+            runBlocking {
+                showToast(
                     DolphinApplication.instance,
                     "Error: ${exception.message}",
                     Toast.LENGTH_LONG,
-                ).show()
+                )
+            }
         }
     }
 }

@@ -20,6 +20,7 @@ import com.github.damontecres.dolphin.preferences.UserPreferences
 import com.github.damontecres.dolphin.ui.letNotEmpty
 import com.github.damontecres.dolphin.ui.nav.Destination
 import com.github.damontecres.dolphin.ui.nav.NavigationManager
+import com.github.damontecres.dolphin.ui.showToast
 import com.github.damontecres.dolphin.util.ApiRequestPager
 import com.github.damontecres.dolphin.util.ExceptionHandler
 import com.github.damontecres.dolphin.util.GetEpisodesRequestHandler
@@ -297,9 +298,11 @@ class SeriesViewModel
                 if (nextUp != null) {
                     navigateTo(Destination.Playback(nextUp.id, 0L))
                 } else {
-                    Toast
-                        .makeText(context, "Could not find an episode to play", Toast.LENGTH_SHORT)
-                        .show()
+                    showToast(
+                        context,
+                        "Could not find an episode to play",
+                        Toast.LENGTH_SHORT,
+                    )
                 }
             }
         }
