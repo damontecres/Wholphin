@@ -236,6 +236,24 @@ fun DialogPopup(
     }
 }
 
+@Composable
+fun DialogPopup(
+    params: DialogParams,
+    onDismissRequest: () -> Unit,
+    dismissOnClick: Boolean = true,
+    properties: DialogProperties = DialogProperties(),
+    elevation: Dp = 3.dp,
+) = DialogPopup(
+    showDialog = true,
+    waitToLoad = params.fromLongClick,
+    title = params.title,
+    dialogItems = params.items,
+    onDismissRequest = onDismissRequest,
+    dismissOnClick = dismissOnClick,
+    properties = properties,
+    elevation = elevation,
+)
+
 /**
  * A dialog that can be scrolled, typically for longer text content
  */

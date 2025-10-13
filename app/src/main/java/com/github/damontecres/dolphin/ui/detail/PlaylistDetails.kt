@@ -3,6 +3,7 @@ package com.github.damontecres.dolphin.ui.detail
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,11 +18,15 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -36,6 +41,7 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.MutableLiveData
@@ -49,9 +55,13 @@ import com.github.damontecres.dolphin.data.model.BaseItem
 import com.github.damontecres.dolphin.data.model.Library
 import com.github.damontecres.dolphin.ui.DefaultItemFields
 import com.github.damontecres.dolphin.ui.cards.ItemCardImage
+import com.github.damontecres.dolphin.ui.components.DialogItem
+import com.github.damontecres.dolphin.ui.components.DialogParams
+import com.github.damontecres.dolphin.ui.components.DialogPopup
 import com.github.damontecres.dolphin.ui.components.ErrorMessage
 import com.github.damontecres.dolphin.ui.components.LoadingPage
 import com.github.damontecres.dolphin.ui.components.OverviewText
+import com.github.damontecres.dolphin.ui.enableMarquee
 import com.github.damontecres.dolphin.ui.ifElse
 import com.github.damontecres.dolphin.ui.isNotNullOrBlank
 import com.github.damontecres.dolphin.ui.nav.Destination
@@ -116,6 +126,8 @@ fun PlaylistDetails(
     val playlist by viewModel.item.observeAsState(null)
     val items by viewModel.items.observeAsState(listOf())
 
+    var longClickDialog by remember { mutableStateOf<DialogParams?>(null) }
+
     when (val st = loading) {
         is LoadingState.Error -> ErrorMessage(st, modifier)
         LoadingState.Pending, LoadingState.Loading -> LoadingPage(modifier)
@@ -126,7 +138,8 @@ fun PlaylistDetails(
                 PlaylistDetailsContent(
                     playlist = it,
                     items = items,
-                    onClickIndex = { index ->
+                    focusRequester = focusRequester,
+                    onClickIndex = { index, _ ->
                         viewModel.navigationManager.navigateTo(
                             Destination.Playback(
                                 itemId = it.id,
@@ -135,9 +148,49 @@ fun PlaylistDetails(
                             ),
                         )
                     },
-                    modifier = modifier.focusRequester(focusRequester),
+                    onLongClickIndex = { index, item ->
+                        longClickDialog =
+                            DialogParams(
+                                fromLongClick = true,
+                                title = item.name ?: "",
+                                items =
+                                    listOf(
+                                        DialogItem(
+                                            "Go to",
+                                            Icons.Default.ArrowForward,
+                                        ) {
+                                            viewModel.navigationManager.navigateTo(
+                                                Destination.MediaItem(
+                                                    itemId = item.id,
+                                                    type = item.type,
+                                                    item = item,
+                                                ),
+                                            )
+                                        },
+                                        DialogItem(
+                                            "Play from here",
+                                            Icons.Default.PlayArrow,
+                                        ) {
+                                            viewModel.navigationManager.navigateTo(
+                                                Destination.Playback(
+                                                    itemId = it.id,
+                                                    positionMs = 0L,
+                                                    startIndex = index,
+                                                ),
+                                            )
+                                        },
+                                    ),
+                            )
+                    },
+                    modifier = modifier,
                 )
             }
+    }
+    longClickDialog?.let { params ->
+        DialogPopup(
+            params = params,
+            onDismissRequest = { longClickDialog = null },
+        )
     }
 }
 
@@ -145,13 +198,14 @@ fun PlaylistDetails(
 fun PlaylistDetailsContent(
     playlist: BaseItem,
     items: List<BaseItem?>,
-    onClickIndex: (Int) -> Unit,
+    onClickIndex: (Int, BaseItem) -> Unit,
+    onLongClickIndex: (Int, BaseItem) -> Unit,
     modifier: Modifier = Modifier,
+    focusRequester: FocusRequester = remember { FocusRequester() },
 ) {
     var savedIndex by rememberSaveable { mutableIntStateOf(0) }
     var focusedIndex by remember { mutableIntStateOf(savedIndex) }
-    val focusRequester = remember { FocusRequester() }
-
+    val focus = remember { FocusRequester() }
     val focusedItem = items.getOrNull(focusedIndex)
 
     Box(
@@ -190,95 +244,81 @@ fun PlaylistDetailsContent(
             verticalArrangement = Arrangement.spacedBy(16.dp),
             modifier =
                 Modifier
-                    .padding(start = 16.dp, top = 16.dp)
+                    .padding(top = 16.dp)
                     .fillMaxSize(),
         ) {
-            Text(
-                text = playlist.name ?: "Playlist",
-                color = MaterialTheme.colorScheme.onSurface,
-                style = MaterialTheme.typography.displayMedium,
-            )
-            PlaylistDetailsHeader(
-                focusedItem = focusedItem,
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(32.dp),
                 modifier =
                     Modifier
-                        .padding(start = 16.dp)
-                        .fillMaxWidth(.66f),
-            )
-            LazyColumn(
-                contentPadding = PaddingValues(8.dp),
-                modifier =
-                    Modifier
-                        .fillMaxWidth(.8f)
-                        .align(Alignment.CenterHorizontally)
-                        .background(
-                            MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp),
-                            shape = RoundedCornerShape(16.dp),
-                        ).focusGroup()
-                        .focusRestorer(focusRequester),
+                        .padding(horizontal = 16.dp)
+                        .fillMaxWidth(),
             ) {
-                itemsIndexed(items) { index, item ->
-                    val interactionSource = remember { MutableInteractionSource() }
-                    ListItem(
-                        selected = false,
-                        onClick = {
-                            savedIndex = index
-                            onClickIndex.invoke(index)
-                        },
-                        interactionSource = interactionSource,
-                        headlineContent = {
-                            Text(
-                                text = item?.title ?: "",
-                                style = MaterialTheme.typography.titleLarge,
-                            )
-                        },
-                        supportingContent = {
-                            Text(
-                                text = item?.subtitle ?: "",
-                                style = MaterialTheme.typography.titleSmall,
-                            )
-                        },
-                        trailingContent = {
-                            item?.data?.runTimeTicks?.ticks?.roundMinutes?.let {
-                                Text(
-                                    text = it.toString(),
-                                )
-                            }
-                        },
-                        leadingContent = {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(16.dp),
-                            ) {
-                                Text(
-                                    text = "${index + 1}.",
-                                    style = MaterialTheme.typography.labelLarge,
-                                )
-                                ItemCardImage(
-                                    imageUrl = item?.imageUrl,
-                                    name = item?.name,
-                                    showOverlay = true,
-                                    favorite = item?.data?.userData?.isFavorite ?: false,
-                                    watched = item?.data?.userData?.played ?: false,
-                                    unwatchedCount = item?.data?.userData?.unplayedItemCount ?: -1,
-                                    watchedPercent = 0.0,
-                                    modifier = Modifier.width(160.dp),
-                                    useFallbackText = false,
-                                )
-                            }
-                        },
+                PlaylistDetailsHeader(
+                    focusedItem = focusedItem,
+                    modifier =
+                        Modifier
+                            .padding(start = 16.dp)
+                            .fillMaxWidth(.25f),
+                )
+                Column(
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp),
+                ) {
+                    Text(
+                        text = playlist.name ?: "Playlist",
+                        color = MaterialTheme.colorScheme.onSurface,
+                        style = MaterialTheme.typography.displayMedium,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    LazyColumn(
+                        contentPadding = PaddingValues(8.dp),
                         modifier =
                             Modifier
-                                .height(80.dp)
-                                .ifElse(
-                                    index == savedIndex,
-                                    Modifier.focusRequester(focusRequester),
-                                ).onFocusChanged {
-                                    if (it.isFocused) {
-                                        focusedIndex = index
+                                .padding(bottom = 32.dp)
+                                .fillMaxHeight()
+//                            .fillMaxWidth(.8f)
+                                .weight(1f)
+                                .background(
+                                    MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp),
+                                    shape = RoundedCornerShape(16.dp),
+                                ).focusRequester(focusRequester)
+                                .focusGroup()
+                                .focusRestorer(focus),
+                    ) {
+                        itemsIndexed(items) { index, item ->
+                            PlaylistItem(
+                                item = item,
+                                index = index,
+                                onClick = {
+                                    savedIndex = index
+                                    item?.let {
+                                        onClickIndex.invoke(index, item)
                                     }
                                 },
-                    )
+                                onLongClick = {
+                                    savedIndex = index
+                                    item?.let {
+                                        onLongClickIndex.invoke(index, item)
+                                    }
+                                },
+                                modifier =
+                                    Modifier
+                                        .height(80.dp)
+                                        .ifElse(
+                                            index == savedIndex,
+                                            Modifier.focusRequester(focus),
+                                        ).onFocusChanged {
+                                            if (it.isFocused) {
+                                                focusedIndex = index
+                                            }
+                                        },
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -306,9 +346,71 @@ fun PlaylistDetailsHeader(
         )
         OverviewText(
             overview = focusedItem?.data?.overview ?: "",
-            maxLines = 2,
+            maxLines = 10,
             onClick = {},
             enabled = false,
         )
     }
+}
+
+@Composable
+fun PlaylistItem(
+    item: BaseItem?,
+    index: Int,
+    onClick: () -> Unit,
+    onLongClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
+) {
+    val focused by interactionSource.collectIsFocusedAsState()
+    ListItem(
+        selected = false,
+        onClick = onClick,
+        onLongClick = onLongClick,
+        interactionSource = interactionSource,
+        headlineContent = {
+            Text(
+                text = item?.title ?: "",
+                style = MaterialTheme.typography.titleLarge,
+                modifier = Modifier.enableMarquee(focused),
+            )
+        },
+        supportingContent = {
+            Text(
+                text = item?.subtitle ?: "",
+                style = MaterialTheme.typography.titleSmall,
+                modifier = Modifier.enableMarquee(focused),
+            )
+        },
+        trailingContent = {
+            item?.data?.runTimeTicks?.ticks?.roundMinutes?.let {
+                Text(
+                    text = it.toString(),
+                )
+            }
+        },
+        leadingContent = {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+            ) {
+                Text(
+                    text = "${index + 1}.",
+                    style = MaterialTheme.typography.labelLarge,
+                )
+                ItemCardImage(
+                    imageUrl = item?.imageUrl,
+                    name = item?.name,
+                    showOverlay = true,
+                    favorite = item?.data?.userData?.isFavorite ?: false,
+                    watched = item?.data?.userData?.played ?: false,
+                    unwatchedCount = item?.data?.userData?.unplayedItemCount ?: -1,
+                    watchedPercent = 0.0,
+                    modifier = Modifier.width(160.dp),
+                    useFallbackText = false,
+                )
+            }
+        },
+        modifier = modifier,
+    )
 }

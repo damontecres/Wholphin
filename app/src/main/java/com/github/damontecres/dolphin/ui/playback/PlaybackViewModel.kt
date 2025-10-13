@@ -23,6 +23,7 @@ import com.github.damontecres.dolphin.preferences.SkipSegmentBehavior
 import com.github.damontecres.dolphin.preferences.UserPreferences
 import com.github.damontecres.dolphin.ui.nav.Destination
 import com.github.damontecres.dolphin.ui.nav.NavigationManager
+import com.github.damontecres.dolphin.ui.showToast
 import com.github.damontecres.dolphin.util.EqualityMutableLiveData
 import com.github.damontecres.dolphin.util.ExceptionHandler
 import com.github.damontecres.dolphin.util.TrackActivityPlaybackListener
@@ -31,6 +32,7 @@ import com.github.damontecres.dolphin.util.checkForSupport
 import com.github.damontecres.dolphin.util.formatDateTime
 import com.github.damontecres.dolphin.util.seasonEpisodePadded
 import com.github.damontecres.dolphin.util.subtitleMimeTypes
+import com.github.damontecres.dolphin.util.supportItemKinds
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -81,7 +83,7 @@ data class StreamDecision(
 class PlaybackViewModel
     @Inject
     constructor(
-        @ApplicationContext context: Context,
+        @param:ApplicationContext val context: Context,
         val api: ApiClient,
         val playlistCreator: PlaylistCreator,
         val navigationManager: NavigationManager,
@@ -168,133 +170,139 @@ class PlaybackViewModel
         private suspend fun play(
             base: BaseItemDto,
             positionMs: Long,
-        ) = withContext(Dispatchers.IO) {
-            Timber.i("Playing ${base.id}")
-            dto = base
-            val title =
-                if (base.type == BaseItemKind.EPISODE) {
-                    base.seriesName
-                } else {
-                    base.name
+        ): Boolean =
+            withContext(Dispatchers.IO) {
+                Timber.i("Playing ${base.id}")
+                if (base.type !in supportItemKinds) {
+                    showToast(context, "Unsupported type '${base.type}', skipping...")
+                    return@withContext false
                 }
-            val subtitle =
-                if (base.type == BaseItemKind.EPISODE) {
-                    buildList {
-                        add(base.seasonEpisodePadded)
-                        add(base.name)
-                        add(base.premiereDate?.let { formatDateTime(it) })
-                    }.filterNotNull().joinToString(" - ")
-                } else {
-                    base.productionYear?.toString()
+                dto = base
+                val title =
+                    if (base.type == BaseItemKind.EPISODE) {
+                        base.seriesName
+                    } else {
+                        base.name
+                    }
+                val subtitle =
+                    if (base.type == BaseItemKind.EPISODE) {
+                        buildList {
+                            add(base.seasonEpisodePadded)
+                            add(base.name)
+                            add(base.premiereDate?.let { formatDateTime(it) })
+                        }.filterNotNull().joinToString(" - ")
+                    } else {
+                        base.productionYear?.toString()
+                    }
+                withContext(Dispatchers.Main) {
+                    this@PlaybackViewModel.title.value = title
+                    this@PlaybackViewModel.subtitle.value = subtitle
                 }
-            withContext(Dispatchers.Main) {
-                this@PlaybackViewModel.title.value = title
-                this@PlaybackViewModel.subtitle.value = subtitle
-            }
-            base.mediaStreams
-                ?.filter { it.type == MediaStreamType.VIDEO }
-                ?.forEach { Timber.v("${it.videoRangeType}, ${it.videoRange}") }
-            val subtitleStreams =
                 base.mediaStreams
-                    ?.filter { it.type == MediaStreamType.SUBTITLE }
-                    ?.map {
-                        SubtitleStream(
-                            it.index,
-                            it.language,
-                            it.title,
-                            it.codec,
-                            it.codecTag,
-                            it.isExternal,
-                            it.isForced,
-                            it.isDefault,
-                        )
-                    }.orEmpty()
-            val audioStreams =
-                base.mediaStreams
-                    ?.filter { it.type == MediaStreamType.AUDIO }
-                    ?.map {
-                        AudioStream(
-                            it.index,
-                            it.language,
-                            it.title,
-                            it.codec,
-                            it.codecTag,
-                            it.channels,
-                            it.channelLayout,
-                        )
-                    }?.sortedWith(compareBy<AudioStream> { it.language }.thenByDescending { it.channels })
-                    .orEmpty()
+                    ?.filter { it.type == MediaStreamType.VIDEO }
+                    ?.forEach { Timber.v("${it.videoRangeType}, ${it.videoRange}") }
+                val subtitleStreams =
+                    base.mediaStreams
+                        ?.filter { it.type == MediaStreamType.SUBTITLE }
+                        ?.map {
+                            SubtitleStream(
+                                it.index,
+                                it.language,
+                                it.title,
+                                it.codec,
+                                it.codecTag,
+                                it.isExternal,
+                                it.isForced,
+                                it.isDefault,
+                            )
+                        }.orEmpty()
+                val audioStreams =
+                    base.mediaStreams
+                        ?.filter { it.type == MediaStreamType.AUDIO }
+                        ?.map {
+                            AudioStream(
+                                it.index,
+                                it.language,
+                                it.title,
+                                it.codec,
+                                it.codecTag,
+                                it.channels,
+                                it.channelLayout,
+                            )
+                        }?.sortedWith(compareBy<AudioStream> { it.language }.thenByDescending { it.channels })
+                        .orEmpty()
 
-            // TODO audio selection based on channel layout or preferences or default
-            val audioLanguage = preferences.userConfig.audioLanguagePreference
-            val audioIndex =
-                if (audioLanguage != null) {
-                    audioStreams.firstOrNull { it.language == audioLanguage }?.index
-                        ?: audioStreams.firstOrNull()?.index
-                } else {
-                    audioStreams.firstOrNull()?.index
-                }
-            val subtitleMode = preferences.userConfig.subtitleMode
-            val subtitleLanguage = preferences.userConfig.subtitleLanguagePreference
-            val subtitleIndex =
-                when (subtitleMode) {
-                    SubtitlePlaybackMode.ALWAYS -> {
-                        if (subtitleLanguage != null) {
-                            subtitleStreams.firstOrNull { it.language == subtitleLanguage }?.index
-                        } else {
-                            subtitleStreams.firstOrNull()?.index
-                        }
+                // TODO audio selection based on channel layout or preferences or default
+                val audioLanguage = preferences.userConfig.audioLanguagePreference
+                val audioIndex =
+                    if (audioLanguage != null) {
+                        audioStreams.firstOrNull { it.language == audioLanguage }?.index
+                            ?: audioStreams.firstOrNull()?.index
+                    } else {
+                        audioStreams.firstOrNull()?.index
                     }
-
-                    SubtitlePlaybackMode.ONLY_FORCED ->
-                        if (subtitleLanguage != null) {
-                            subtitleStreams.firstOrNull { it.language == subtitleLanguage && it.forced }?.index
-                        } else {
-                            subtitleStreams.firstOrNull { it.forced }?.index
+                val subtitleMode = preferences.userConfig.subtitleMode
+                val subtitleLanguage = preferences.userConfig.subtitleLanguagePreference
+                val subtitleIndex =
+                    when (subtitleMode) {
+                        SubtitlePlaybackMode.ALWAYS -> {
+                            if (subtitleLanguage != null) {
+                                subtitleStreams.firstOrNull { it.language == subtitleLanguage }?.index
+                            } else {
+                                subtitleStreams.firstOrNull()?.index
+                            }
                         }
 
-                    SubtitlePlaybackMode.SMART -> {
-                        if (audioLanguage != null && subtitleLanguage != null && audioLanguage != subtitleLanguage) {
-                            subtitleStreams.firstOrNull { it.language == subtitleLanguage }?.index
-                        } else {
-                            null
+                        SubtitlePlaybackMode.ONLY_FORCED ->
+                            if (subtitleLanguage != null) {
+                                subtitleStreams.firstOrNull { it.language == subtitleLanguage && it.forced }?.index
+                            } else {
+                                subtitleStreams.firstOrNull { it.forced }?.index
+                            }
+
+                        SubtitlePlaybackMode.SMART -> {
+                            if (audioLanguage != null && subtitleLanguage != null && audioLanguage != subtitleLanguage) {
+                                subtitleStreams.firstOrNull { it.language == subtitleLanguage }?.index
+                            } else {
+                                null
+                            }
                         }
-                    }
 
-                    SubtitlePlaybackMode.DEFAULT -> {
-                        // TODO check for language?
-                        (
-                            subtitleStreams.firstOrNull { it.default && it.forced }
-                                ?: subtitleStreams.firstOrNull { it.default }
-                                ?: subtitleStreams.firstOrNull { it.forced }
-                        )?.index
-                    }
+                        SubtitlePlaybackMode.DEFAULT -> {
+                            // TODO check for language?
+                            (
+                                subtitleStreams.firstOrNull { it.default && it.forced }
+                                    ?: subtitleStreams.firstOrNull { it.default }
+                                    ?: subtitleStreams.firstOrNull { it.forced }
+                            )?.index
+                        }
 
-                    SubtitlePlaybackMode.NONE -> null
-                }
+                        SubtitlePlaybackMode.NONE -> null
+                    }
 
 //                Timber.v("base.mediaStreams=${base.mediaStreams}")
 //                Timber.v("subtitleTracks=$subtitleStreams")
 //                Timber.v("audioStreams=$audioStreams")
-            Timber.d("Selected audioIndex=$audioIndex, subtitleIndex=$subtitleIndex")
+                Timber.d("Selected audioIndex=$audioIndex, subtitleIndex=$subtitleIndex")
 
-            withContext(Dispatchers.Main) {
-                this@PlaybackViewModel.audioStreams.value = audioStreams
-                this@PlaybackViewModel.subtitleStreams.value = subtitleStreams
+                withContext(Dispatchers.Main) {
+                    this@PlaybackViewModel.audioStreams.value = audioStreams
+                    this@PlaybackViewModel.subtitleStreams.value = subtitleStreams
 
-                changeStreams(
-                    base,
-                    audioIndex,
-                    subtitleIndex,
-                    if (positionMs > 0) positionMs else C.TIME_UNSET,
-                )
-                player.prepare()
+                    changeStreams(
+                        base,
+                        audioIndex,
+                        subtitleIndex,
+                        if (positionMs > 0) positionMs else C.TIME_UNSET,
+                    )
+                    player.prepare()
 
-                this@PlaybackViewModel.chapters.value = Chapter.fromDto(base, api)
-                Timber.v("chapters=${this@PlaybackViewModel.chapters.value?.size}")
+                    this@PlaybackViewModel.chapters.value = Chapter.fromDto(base, api)
+                    Timber.v("chapters=${this@PlaybackViewModel.chapters.value?.size}")
+                }
+                listenForSegments()
+                return@withContext true
             }
-            listenForSegments()
-        }
 
         @OptIn(UnstableApi::class)
         private suspend fun changeStreams(
@@ -582,7 +590,11 @@ class PlaybackViewModel
                 if (it.hasNext()) {
                     viewModelScope.launch(ExceptionHandler()) {
                         cancelUpNextEpisode()
-                        play(it.getAndAdvance().data, 0)
+                        val item = it.getAndAdvance()
+                        val played = play(item.data, 0)
+                        if (!played) {
+                            playUpNextUp()
+                        }
                     }
                 }
             }
@@ -593,7 +605,11 @@ class PlaybackViewModel
                 if (it.hasPrevious()) {
                     viewModelScope.launch(ExceptionHandler()) {
                         cancelUpNextEpisode()
-                        play(it.getPreviousAndReverse().data, 0)
+                        val item = it.getPreviousAndReverse()
+                        val played = play(item.data, 0)
+                        if (!played) {
+                            playPrevious()
+                        }
                     }
                 }
             }
@@ -601,6 +617,9 @@ class PlaybackViewModel
 
         fun cancelUpNextEpisode() {
             nextUp.value = null
+        }
+
+        private fun toastUnsupported(item: BaseItemDto) {
         }
     }
 
@@ -687,6 +706,3 @@ private fun applyTrackSelections(
         }
     }
 }
-
-private val singlePlays =
-    setOf(BaseItemKind.EPISODE, BaseItemKind.MOVIE, BaseItemKind.VIDEO, BaseItemKind.MUSIC_VIDEO)
