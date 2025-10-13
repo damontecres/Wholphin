@@ -12,7 +12,9 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -375,8 +377,10 @@ fun Controller(
             Text(
                 text = "Chapters",
                 style = MaterialTheme.typography.titleLarge,
-                modifier = Modifier.padding(start = 16.dp),
+                modifier = Modifier.padding(start = 16.dp, top = 16.dp),
             )
+        } else {
+            Spacer(Modifier.height(32.dp))
         }
     }
 }

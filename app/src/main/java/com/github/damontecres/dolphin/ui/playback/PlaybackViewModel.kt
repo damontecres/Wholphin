@@ -53,6 +53,7 @@ import org.jellyfin.sdk.model.api.MediaSegmentDto
 import org.jellyfin.sdk.model.api.MediaSegmentType
 import org.jellyfin.sdk.model.api.MediaSourceInfo
 import org.jellyfin.sdk.model.api.MediaStreamType
+import org.jellyfin.sdk.model.api.PlayMethod
 import org.jellyfin.sdk.model.api.PlaybackInfoDto
 import org.jellyfin.sdk.model.api.SubtitlePlaybackMode
 import org.jellyfin.sdk.model.api.TrickplayInfo
@@ -74,7 +75,7 @@ enum class TranscodeType {
 
 data class StreamDecision(
     val itemId: UUID,
-    val type: TranscodeType,
+    val type: PlayMethod,
     val url: String,
 )
 
@@ -188,7 +189,7 @@ class PlaybackViewModel
                         }?.sortedWith(compareBy<AudioStream> { it.language }.thenByDescending { it.channels })
                         .orEmpty()
 
-                // TODO audio selection based on channel layout, etc
+                // TODO audio selection based on channel layout or preferences or default
                 val audioLanguage = preferences.userConfig.audioLanguagePreference
                 val audioIndex =
                     if (audioLanguage != null) {
@@ -236,22 +237,14 @@ class PlaybackViewModel
                         SubtitlePlaybackMode.NONE -> null
                     }
 
-                Timber.v("base.mediaStreams=${base.mediaStreams}")
-                Timber.v("subtitleTracks=$subtitleStreams")
-                Timber.v("audioStreams=$audioStreams")
+//                Timber.v("base.mediaStreams=${base.mediaStreams}")
+//                Timber.v("subtitleTracks=$subtitleStreams")
+//                Timber.v("audioStreams=$audioStreams")
                 Timber.d("Selected audioIndex=$audioIndex, subtitleIndex=$subtitleIndex")
 
                 withContext(Dispatchers.Main) {
                     this@PlaybackViewModel.audioStreams.value = audioStreams
                     this@PlaybackViewModel.subtitleStreams.value = subtitleStreams
-                    this@PlaybackViewModel.activityListener?.let {
-                        it.release()
-                        player.removeListener(it)
-                    }
-                    val activityListener =
-                        TrackActivityPlaybackListener(api, itemId, player)
-                    player.addListener(activityListener)
-                    this@PlaybackViewModel.activityListener = activityListener
 
                     changeStreams(
                         itemId,
@@ -328,9 +321,9 @@ class PlaybackViewModel
                     }
                 val transcodeType =
                     when {
-                        source.supportsDirectPlay -> TranscodeType.DIRECT_PLAY
-                        source.supportsDirectStream -> TranscodeType.DIRECT_STREAM
-                        source.supportsTranscoding -> TranscodeType.TRANSCODE
+                        source.supportsDirectPlay -> PlayMethod.DIRECT_PLAY
+                        source.supportsDirectStream -> PlayMethod.DIRECT_STREAM
+                        source.supportsTranscoding -> PlayMethod.TRANSCODE
                         else -> throw Exception("No supported playback method")
                     }
                 val decision = StreamDecision(itemId, transcodeType, mediaUrl)
@@ -370,9 +363,24 @@ class PlaybackViewModel
                         subtitleIndex,
                         source.id?.toUUIDOrNull(),
                         listOf(),
+                        playMethod = transcodeType,
+                        playSessionId = response.playSessionId,
                     )
 
                 withContext(Dispatchers.Main) {
+                    this@PlaybackViewModel.activityListener?.let {
+                        it.release()
+                        player.removeListener(it)
+                    }
+                    val activityListener =
+                        TrackActivityPlaybackListener(
+                            api = api,
+                            player = player,
+                            playback = playback,
+                        )
+                    player.addListener(activityListener)
+                    this@PlaybackViewModel.activityListener = activityListener
+
                     duration.value = source.runTimeTicks?.ticks
                     stream.value = decision
                     currentPlayback.value = playback
@@ -581,6 +589,8 @@ data class CurrentPlayback(
     val subtitleIndex: Int?,
     val mediaSourceId: UUID?,
     val tracks: List<TrackSupport>,
+    val playMethod: PlayMethod,
+    val playSessionId: String?,
 )
 
 private val Format.idAsInt: Int?
