@@ -244,14 +244,16 @@ class SeriesViewModel
         fun setWatched(
             itemId: UUID,
             played: Boolean,
-            listIndex: Int,
+            listIndex: Int?,
         ) = viewModelScope.launch(ExceptionHandler()) {
             if (played) {
                 api.playStateApi.markPlayedItem(itemId)
             } else {
                 api.playStateApi.markUnplayedItem(itemId)
             }
-            refreshEpisode(itemId, listIndex)
+            listIndex?.let {
+                refreshEpisode(itemId, listIndex)
+            }
         }
 
         fun setWatchedSeries(played: Boolean) =

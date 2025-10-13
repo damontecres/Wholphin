@@ -41,6 +41,7 @@ fun SeasonCard(
     imageHeight: Dp = Dp.Unspecified,
     imageWidth: Dp = Dp.Unspecified,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
+    showImageOverlay: Boolean = false,
 ) {
     val dto = item?.data
     val focused by interactionSource.collectIsFocusedAsState()
@@ -89,7 +90,7 @@ fun SeasonCard(
                 ItemCardImage(
                     imageUrl = item?.imageUrl,
                     name = item?.name,
-                    showOverlay = false,
+                    showOverlay = showImageOverlay,
                     favorite = dto?.userData?.isFavorite ?: false,
                     watched = dto?.userData?.played ?: false,
                     unwatchedCount = dto?.userData?.unplayedItemCount ?: -1,

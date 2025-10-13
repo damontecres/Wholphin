@@ -54,6 +54,9 @@ import com.github.damontecres.dolphin.ui.cards.ItemRow
 import com.github.damontecres.dolphin.ui.cards.PersonRow
 import com.github.damontecres.dolphin.ui.cards.SeasonCard
 import com.github.damontecres.dolphin.ui.components.ConfirmDialog
+import com.github.damontecres.dolphin.ui.components.DialogItem
+import com.github.damontecres.dolphin.ui.components.DialogParams
+import com.github.damontecres.dolphin.ui.components.DialogPopup
 import com.github.damontecres.dolphin.ui.components.DotSeparatedRow
 import com.github.damontecres.dolphin.ui.components.ErrorMessage
 import com.github.damontecres.dolphin.ui.components.ExpandableFaButton
@@ -95,6 +98,7 @@ fun SeriesDetails(
 
     var overviewDialog by remember { mutableStateOf<ItemDetailsDialogInfo?>(null) }
     var showWatchConfirmation by remember { mutableStateOf(false) }
+    var seasonDialog by remember { mutableStateOf<DialogParams?>(null) }
 
     when (val state = loading) {
         is LoadingState.Error -> ErrorMessage(state)
@@ -112,6 +116,20 @@ fun SeriesDetails(
                     played = played,
                     modifier = modifier,
                     onClickItem = { viewModel.navigateTo(it.destination()) },
+                    onLongClickItem = { season ->
+                        seasonDialog =
+                            buildDialogForSeason(
+                                season,
+                                onClickItem = { viewModel.navigateTo(it.destination()) },
+                                markPlayed = { played ->
+                                    viewModel.setWatched(
+                                        season.id,
+                                        played,
+                                        null,
+                                    )
+                                },
+                            )
+                    },
                     overviewOnClick = {
                         overviewDialog =
                             ItemDetailsDialogInfo(
@@ -145,6 +163,15 @@ fun SeriesDetails(
             onDismissRequest = { overviewDialog = null },
         )
     }
+    seasonDialog?.let { params ->
+        DialogPopup(
+            showDialog = true,
+            title = params.title,
+            dialogItems = params.items,
+            waitToLoad = params.fromLongClick,
+            onDismissRequest = { seasonDialog = null },
+        )
+    }
 }
 
 @Composable
@@ -155,6 +182,7 @@ fun SeriesDetailsContent(
     people: List<Person>,
     played: Boolean,
     onClickItem: (BaseItem) -> Unit,
+    onLongClickItem: (BaseItem) -> Unit,
     overviewOnClick: () -> Unit,
     playOnClick: () -> Unit,
     watchOnClick: () -> Unit,
@@ -230,7 +258,7 @@ fun SeriesDetailsContent(
                         title = "Seasons",
                         items = seasons.items,
                         onClickItem = onClickItem,
-                        onLongClickItem = { },
+                        onLongClickItem = onLongClickItem,
                         cardOnFocus = { isFocused, index ->
 //                            if (isFocused) {
 //                                scope.launch(ExceptionHandler()) {
@@ -251,6 +279,7 @@ fun SeriesDetailsContent(
                                 onLongClick = onLongClick,
                                 imageHeight = Cards.height2x3,
                                 imageWidth = Dp.Unspecified,
+                                showImageOverlay = true,
                                 modifier =
                                     mod
                                         .ifElse(
@@ -387,4 +416,37 @@ fun SeriesDetailsHeader(
             )
         }
     }
+}
+
+fun buildDialogForSeason(
+    s: BaseItem,
+    onClickItem: (BaseItem) -> Unit,
+    markPlayed: (Boolean) -> Unit,
+): DialogParams {
+    val items =
+        buildList {
+            add(
+                DialogItem("Go to", Icons.Default.PlayArrow) {
+                    onClickItem.invoke(s)
+                },
+            )
+            if (s.data.userData?.played == true) {
+                add(
+                    DialogItem("Mark as unplayed", R.string.fa_eye) {
+                        markPlayed.invoke(false)
+                    },
+                )
+            } else {
+                add(
+                    DialogItem("Mark as played", R.string.fa_eye_slash) {
+                        markPlayed.invoke(true)
+                    },
+                )
+            }
+        }
+    return DialogParams(
+        title = s.name ?: "Season",
+        fromLongClick = true,
+        items = items,
+    )
 }
