@@ -64,6 +64,7 @@ class PlaylistCreator
         suspend fun createFromPlaylistId(
             playlistId: UUID,
             startIndex: Int?,
+            shuffled: Boolean,
         ): Playlist {
             val request =
                 GetPlaylistItemsRequest(
@@ -73,6 +74,10 @@ class PlaylistCreator
                     limit = Playlist.MAX_SIZE,
                 )
             val items = GetPlaylistItemsRequestHandler.execute(api, request).content.items
-            return Playlist(items.map { BaseItem.from(it, api) }, 0)
+            var baseItems = items.map { BaseItem.from(it, api) }
+            if (shuffled) {
+                baseItems = baseItems.shuffled()
+            }
+            return Playlist(baseItems, 0)
         }
     }

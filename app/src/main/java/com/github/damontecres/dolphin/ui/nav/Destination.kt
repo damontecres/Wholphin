@@ -68,6 +68,7 @@ sealed class Destination(
         val positionMs: Long,
         @Transient val item: BaseItem? = null,
         val startIndex: Int? = null,
+        val shuffle: Boolean = false,
     ) : Destination(true) {
         override fun toString(): String = "Playback(itemId=$itemId, positionMs=$positionMs)"
 

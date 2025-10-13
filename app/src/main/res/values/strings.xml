@@ -75,5 +75,6 @@
     <string name="updates">Updates</string>
     <string name="no_update_available">No update available</string>
     <string name="clear_image_cache">Clear image cache</string>
+    <string name="shuffle">Shuffle</string>
 
 </resources>

@@ -1,6 +1,7 @@
 package com.github.damontecres.dolphin.ui.playback
 
 import android.content.Context
+import android.widget.Toast
 import androidx.annotation.OptIn
 import androidx.core.net.toUri
 import androidx.lifecycle.MutableLiveData
@@ -144,6 +145,7 @@ class PlaybackViewModel
                             playlistCreator.createFromPlaylistId(
                                 queriedItem.id,
                                 destination.startIndex,
+                                destination.shuffle,
                             )
                         withContext(Dispatchers.Main) {
                             this@PlaybackViewModel.playlist.value = playlist
@@ -154,7 +156,10 @@ class PlaybackViewModel
                         queriedItem
                     }
 
-                play(base, destination.positionMs)
+                val played = play(base, destination.positionMs)
+                if (!played) {
+                    playUpNextUp()
+                }
 
                 if (!isPlaylist && queriedItem.type == BaseItemKind.EPISODE) {
                     val playlist =
@@ -174,7 +179,11 @@ class PlaybackViewModel
             withContext(Dispatchers.IO) {
                 Timber.i("Playing ${base.id}")
                 if (base.type !in supportItemKinds) {
-                    showToast(context, "Unsupported type '${base.type}', skipping...")
+                    showToast(
+                        context,
+                        "Unsupported type '${base.type}', skipping...",
+                        Toast.LENGTH_SHORT,
+                    )
                     return@withContext false
                 }
                 dto = base

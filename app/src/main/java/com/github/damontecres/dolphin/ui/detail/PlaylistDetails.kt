@@ -35,6 +35,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.focus.onFocusChanged
@@ -51,6 +52,7 @@ import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import androidx.tv.material3.surfaceColorAtElevation
 import coil3.compose.AsyncImage
+import com.github.damontecres.dolphin.R
 import com.github.damontecres.dolphin.data.model.BaseItem
 import com.github.damontecres.dolphin.data.model.Library
 import com.github.damontecres.dolphin.ui.DefaultItemFields
@@ -59,6 +61,8 @@ import com.github.damontecres.dolphin.ui.components.DialogItem
 import com.github.damontecres.dolphin.ui.components.DialogParams
 import com.github.damontecres.dolphin.ui.components.DialogPopup
 import com.github.damontecres.dolphin.ui.components.ErrorMessage
+import com.github.damontecres.dolphin.ui.components.ExpandableFaButton
+import com.github.damontecres.dolphin.ui.components.ExpandablePlayButton
 import com.github.damontecres.dolphin.ui.components.LoadingPage
 import com.github.damontecres.dolphin.ui.components.OverviewText
 import com.github.damontecres.dolphin.ui.enableMarquee
@@ -81,6 +85,7 @@ import org.jellyfin.sdk.model.api.request.GetPlaylistItemsRequest
 import org.jellyfin.sdk.model.extensions.ticks
 import java.util.UUID
 import javax.inject.Inject
+import kotlin.time.Duration
 
 @HiltViewModel
 class PlaylistViewModel
@@ -148,6 +153,16 @@ fun PlaylistDetails(
                             ),
                         )
                     },
+                    onClickPlay = { shuffle ->
+                        viewModel.navigationManager.navigateTo(
+                            Destination.Playback(
+                                itemId = it.id,
+                                positionMs = 0L,
+                                startIndex = 0,
+                                shuffle = shuffle,
+                            ),
+                        )
+                    },
                     onLongClickIndex = { index, item ->
                         longClickDialog =
                             DialogParams(
@@ -200,6 +215,7 @@ fun PlaylistDetailsContent(
     items: List<BaseItem?>,
     onClickIndex: (Int, BaseItem) -> Unit,
     onLongClickIndex: (Int, BaseItem) -> Unit,
+    onClickPlay: (shuffle: Boolean) -> Unit,
     modifier: Modifier = Modifier,
     focusRequester: FocusRequester = remember { FocusRequester() },
 ) {
@@ -207,6 +223,8 @@ fun PlaylistDetailsContent(
     var focusedIndex by remember { mutableIntStateOf(savedIndex) }
     val focus = remember { FocusRequester() }
     val focusedItem = items.getOrNull(focusedIndex)
+
+    val playButtonFocusRequester = remember { FocusRequester() }
 
     Box(
         modifier = modifier,
@@ -248,6 +266,7 @@ fun PlaylistDetailsContent(
                     .fillMaxSize(),
         ) {
             Row(
+                verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(32.dp),
                 modifier =
                     Modifier
@@ -256,6 +275,8 @@ fun PlaylistDetailsContent(
             ) {
                 PlaylistDetailsHeader(
                     focusedItem = focusedItem,
+                    onClickPlay = onClickPlay,
+                    playButtonFocusRequester = playButtonFocusRequester,
                     modifier =
                         Modifier
                             .padding(start = 16.dp)
@@ -283,7 +304,9 @@ fun PlaylistDetailsContent(
 //                            .fillMaxWidth(.8f)
                                 .weight(1f)
                                 .background(
-                                    MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp),
+                                    MaterialTheme.colorScheme
+                                        .surfaceColorAtElevation(1.dp)
+                                        .copy(alpha = .75f),
                                     shape = RoundedCornerShape(16.dp),
                                 ).focusRequester(focusRequester)
                                 .focusGroup()
@@ -315,6 +338,9 @@ fun PlaylistDetailsContent(
                                             if (it.isFocused) {
                                                 focusedIndex = index
                                             }
+                                        }.focusProperties {
+                                            left = playButtonFocusRequester
+                                            previous = playButtonFocusRequester
                                         },
                             )
                         }
@@ -328,12 +354,30 @@ fun PlaylistDetailsContent(
 @Composable
 fun PlaylistDetailsHeader(
     focusedItem: BaseItem?,
+    onClickPlay: (shuffle: Boolean) -> Unit,
+    playButtonFocusRequester: FocusRequester,
     modifier: Modifier = Modifier,
 ) {
     Column(
         verticalArrangement = Arrangement.spacedBy(8.dp),
         modifier = modifier,
     ) {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.focusRequester(playButtonFocusRequester),
+        ) {
+            ExpandablePlayButton(
+                title = R.string.play,
+                resume = Duration.ZERO,
+                icon = Icons.Default.PlayArrow,
+                onClick = { onClickPlay.invoke(false) },
+            )
+            ExpandableFaButton(
+                title = R.string.shuffle,
+                iconStringRes = R.string.fa_shuffle,
+                onClick = { onClickPlay.invoke(true) },
+            )
+        }
         Text(
             text = focusedItem?.title ?: "",
             color = MaterialTheme.colorScheme.onSurface,

@@ -31,4 +31,5 @@
     <string name="fa_eye" translatable="false">&#xf06e;</string>
     <string name="fa_eye_slash" translatable="false">&#xf070;</string>
     <string name="fa_arrow_left_arrow_right" translatable="false">&#xf0ec;</string>
+    <string name="fa_shuffle" translatable="false">&#xf074;</string>
 </resources>
