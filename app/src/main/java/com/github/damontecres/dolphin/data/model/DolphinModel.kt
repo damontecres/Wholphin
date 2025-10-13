@@ -18,6 +18,7 @@ fun convertModel(
 ): DolphinModel =
     when (dto.type) {
         BaseItemKind.COLLECTION_FOLDER -> Library.fromDto(dto, api)
+        BaseItemKind.USER_VIEW -> Library.fromDto(dto, api)
 
         // TODO
         BaseItemKind.VIDEO -> Video.fromDto(dto, api)

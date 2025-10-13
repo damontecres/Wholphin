@@ -2,6 +2,7 @@ package com.github.damontecres.dolphin.data.model
 
 import com.github.damontecres.dolphin.ui.detail.series.SeasonEpisode
 import com.github.damontecres.dolphin.ui.nav.Destination
+import com.github.damontecres.dolphin.util.seasonEpisode
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import org.jellyfin.sdk.api.client.ApiClient
@@ -22,6 +23,13 @@ data class BaseItem(
     @Transient val type = data.type
 
     @Transient val name = data.name
+
+    @Transient
+    val title = if (type == BaseItemKind.EPISODE) data.seriesName else name
+
+    @Transient
+    val subtitle =
+        if (type == BaseItemKind.EPISODE) data.seasonEpisode + " - " + name else data.productionYear?.toString()
 
     @Transient
     val indexNumber = data.indexNumber

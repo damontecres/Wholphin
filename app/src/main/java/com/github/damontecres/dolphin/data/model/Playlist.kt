@@ -61,11 +61,15 @@ class PlaylistCreator
             return Playlist(episodes.map { BaseItem.from(it, api) }, startIndex)
         }
 
-        suspend fun createFromPlaylistId(playlistId: UUID): Playlist {
+        suspend fun createFromPlaylistId(
+            playlistId: UUID,
+            startIndex: Int?,
+        ): Playlist {
             val request =
                 GetPlaylistItemsRequest(
                     playlistId = playlistId,
                     fields = DefaultItemFields,
+                    startIndex = startIndex,
                     limit = Playlist.MAX_SIZE,
                 )
             val items = GetPlaylistItemsRequestHandler.execute(api, request).content.items

@@ -9,6 +9,7 @@ import com.github.damontecres.dolphin.ui.detail.CollectionFolderGeneric
 import com.github.damontecres.dolphin.ui.detail.CollectionFolderMovie
 import com.github.damontecres.dolphin.ui.detail.CollectionFolderTv
 import com.github.damontecres.dolphin.ui.detail.EpisodeDetails
+import com.github.damontecres.dolphin.ui.detail.PlaylistDetails
 import com.github.damontecres.dolphin.ui.detail.SeasonDetails
 import com.github.damontecres.dolphin.ui.detail.SeriesDetails
 import com.github.damontecres.dolphin.ui.detail.movie.MovieDetails
@@ -129,6 +130,19 @@ fun DestinationContent(
                             )
                     }
                 }
+
+                BaseItemKind.PLAYLIST ->
+                    PlaylistDetails(
+                        destination = destination,
+                        modifier = modifier,
+                    )
+
+                BaseItemKind.USER_VIEW ->
+                    CollectionFolderGeneric(
+                        preferences,
+                        destination,
+                        modifier,
+                    )
 
                 else -> {
                     Text("Unsupported item type: ${destination.type}")

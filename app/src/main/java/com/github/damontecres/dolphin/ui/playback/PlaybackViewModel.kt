@@ -138,7 +138,11 @@ class PlaybackViewModel
                 val base =
                     if (queriedItem.type == BaseItemKind.PLAYLIST) {
                         isPlaylist = true
-                        val playlist = playlistCreator.createFromPlaylistId(queriedItem.id)
+                        val playlist =
+                            playlistCreator.createFromPlaylistId(
+                                queriedItem.id,
+                                destination.startIndex,
+                            )
                         withContext(Dispatchers.Main) {
                             this@PlaybackViewModel.playlist.value = playlist
                         }

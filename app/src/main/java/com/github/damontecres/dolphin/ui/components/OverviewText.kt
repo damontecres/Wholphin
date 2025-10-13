@@ -31,6 +31,7 @@ fun OverviewText(
     modifier: Modifier = Modifier,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
     textBoxHeight: Dp = maxLines * 20.dp,
+    enabled: Boolean = true,
 ) {
     val context = LocalContext.current
     val isFocused = interactionSource.collectIsFocusedAsState().value
@@ -46,7 +47,7 @@ fun OverviewText(
                 .background(bgColor, shape = RoundedCornerShape(8.dp))
                 .playSoundOnFocus(true)
                 .clickable(
-                    enabled = true,
+                    enabled = enabled,
                     interactionSource = interactionSource,
                     indication = LocalIndication.current,
                 ) {

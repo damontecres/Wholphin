@@ -181,7 +181,6 @@ fun CollectionFolderGrid(
     val sortAndDirection by viewModel.sortAndDirection.observeAsState(initialSortAndDirection)
     val loading by viewModel.loading.observeAsState(LoadingState.Loading)
     val item by viewModel.item.observeAsState()
-    val library by viewModel.model.observeAsState()
     val pager by viewModel.pager.observeAsState()
 
     when (val state = loading) {
@@ -193,7 +192,6 @@ fun CollectionFolderGrid(
             pager?.let { pager ->
                 CollectionFolderGridContent(
                     preferences,
-                    library!!,
                     item!!,
                     pager,
                     sortAndDirection = sortAndDirection,
@@ -214,7 +212,6 @@ fun CollectionFolderGrid(
 @Composable
 fun CollectionFolderGridContent(
     preferences: UserPreferences,
-    library: Library,
     item: BaseItem,
     pager: List<BaseItem?>,
     sortAndDirection: SortAndDirection,
@@ -225,7 +222,7 @@ fun CollectionFolderGridContent(
     showTitle: Boolean = true,
     positionCallback: ((columns: Int, position: Int) -> Unit)? = null,
 ) {
-    val title = library.name ?: item.data.name ?: item.data.collectionType?.name ?: "Collection"
+    val title = item.name ?: item.data.collectionType?.name ?: "Collection"
     val sortOptions =
         when (item.data.collectionType) {
             CollectionType.MOVIES -> MovieSortOptions

@@ -4,8 +4,6 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.github.damontecres.dolphin.data.model.BaseItem
-import com.github.damontecres.dolphin.data.model.DolphinModel
-import com.github.damontecres.dolphin.data.model.convertModel
 import com.github.damontecres.dolphin.util.LoadingExceptionHandler
 import com.github.damontecres.dolphin.util.LoadingState
 import kotlinx.coroutines.Dispatchers
@@ -22,16 +20,15 @@ import java.util.UUID
 /**
  * Basic [ViewModel] for a single fetchable item from the API
  */
-abstract class ItemViewModel<T : DolphinModel>(
+abstract class ItemViewModel<T>(
     val api: ApiClient,
 ) : ViewModel() {
     val item = MutableLiveData<BaseItem?>(null)
-    val model = MutableLiveData<T?>(null)
 
     suspend fun fetchItem(
         itemId: UUID,
         potential: BaseItem?,
-    ): BaseItem? =
+    ): BaseItem =
         withContext(Dispatchers.IO) {
 //            val fetchedItem =
 //                when {
@@ -44,11 +41,9 @@ abstract class ItemViewModel<T : DolphinModel>(
 //                }
             val it = api.userLibraryApi.getItem(itemId).content
             val fetchedItem = BaseItem.from(it, api)
-            return@withContext fetchedItem?.let {
-                val modelInstance = convertModel(fetchedItem.data, api)
+            return@withContext fetchedItem.let {
                 withContext(Dispatchers.Main) {
                     item.value = fetchedItem
-                    model.value = modelInstance as T
                 }
                 fetchedItem
             }
@@ -63,7 +58,7 @@ abstract class ItemViewModel<T : DolphinModel>(
 /**
  * Extends [ItemViewModel] to include a loading state tracking when the item has been fetched or if an error occurred
  */
-abstract class LoadingItemViewModel<T : DolphinModel>(
+abstract class LoadingItemViewModel<T>(
     api: ApiClient,
 ) : ItemViewModel<T>(api) {
     val loading = MutableLiveData<LoadingState>(LoadingState.Loading)
@@ -80,10 +75,8 @@ abstract class LoadingItemViewModel<T : DolphinModel>(
         ) {
             try {
                 val fetchedItem = api.userLibraryApi.getItem(itemId).content
-                val modelInstance = convertModel(fetchedItem, api)
                 withContext(Dispatchers.Main) {
                     item.value = BaseItem.from(fetchedItem, api)
-                    model.value = modelInstance as T
                     loading.value = LoadingState.Success
                 }
             } catch (e: Exception) {
