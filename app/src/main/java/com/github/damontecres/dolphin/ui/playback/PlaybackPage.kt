@@ -183,17 +183,17 @@ fun PlaybackPage(
 
             Box(
                 modifier
-                    .background(Color.Black)
-                    .onKeyEvent(keyHandler::onKeyEvent)
-                    .focusRequester(focusRequester)
-                    .focusable(),
+                    .background(Color.Black),
             ) {
                 val playerSize by animateFloatAsState(if (nextUp == null) 1f else .66f)
                 Box(
                     modifier =
                         Modifier
                             .fillMaxSize(playerSize)
-                            .align(Alignment.TopCenter),
+                            .align(Alignment.TopCenter)
+                            .onKeyEvent(keyHandler::onKeyEvent)
+                            .focusRequester(focusRequester)
+                            .focusable(),
                 ) {
                     PlayerSurface(
                         player = player,
@@ -354,7 +354,7 @@ fun PlaybackPage(
 
                 // Next up episode
                 BackHandler(nextUp != null) {
-                    viewModel.cancelUpNextEpisode()
+                    viewModel.navigationManager.goBack()
                 }
                 AnimatedVisibility(
                     nextUp != null,
@@ -374,7 +374,6 @@ fun PlaybackPage(
                                 preferences.appPreferences.playbackPreferences.autoPlayNextDelaySeconds,
                             )
                         }
-                        // TODO need extra back press for some reason
                         BackHandler(timeLeft > 0 && autoPlayEnabled) {
                             timeLeft = -1
                             autoPlayEnabled = false

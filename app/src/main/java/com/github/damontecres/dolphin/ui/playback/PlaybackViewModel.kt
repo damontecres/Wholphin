@@ -22,6 +22,7 @@ import com.github.damontecres.dolphin.preferences.UserPreferences
 import com.github.damontecres.dolphin.ui.DefaultItemFields
 import com.github.damontecres.dolphin.ui.indexOfFirstOrNull
 import com.github.damontecres.dolphin.ui.nav.Destination
+import com.github.damontecres.dolphin.ui.nav.NavigationManager
 import com.github.damontecres.dolphin.util.ApiRequestPager
 import com.github.damontecres.dolphin.util.EqualityMutableLiveData
 import com.github.damontecres.dolphin.util.ExceptionHandler
@@ -85,6 +86,7 @@ class PlaybackViewModel
     constructor(
         @ApplicationContext context: Context,
         val api: ApiClient,
+        val navigationManager: NavigationManager,
     ) : ViewModel() {
         val player: ExoPlayer =
             ExoPlayer
