@@ -50,6 +50,8 @@ fun FocusedEpisodeHeader(
         Text(
             text = dto.episodeTitle ?: dto.name ?: "",
             style = MaterialTheme.typography.headlineSmall,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
             modifier = Modifier,
         )
         Row(

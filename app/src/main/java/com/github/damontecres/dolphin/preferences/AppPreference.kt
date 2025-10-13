@@ -439,6 +439,13 @@ sealed interface AppPreference<T> {
                 indexToValue = { SkipSegmentBehavior.forNumber(it) },
                 valueToIndex = { it.number },
             )
+
+        val ClearImageCache =
+            AppClickablePreference(
+                title = R.string.clear_image_cache,
+                getter = { },
+                setter = { prefs, _ -> prefs },
+            )
     }
 }
 
@@ -513,6 +520,7 @@ val advancedPreferences =
             title = R.string.more,
             preferences =
                 listOf(
+                    AppPreference.ClearImageCache,
                     AppPreference.OssLicenseInfo,
                 ),
         ),

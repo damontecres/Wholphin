@@ -280,10 +280,11 @@ class PlaybackViewModel
                 Timber.i("No change in playback for changeStreams")
                 return
             }
+            // TODO if the new audio or subtitle index is already in the streams (eg direct play), should toggle in the player instead
             val maxBitrate =
                 preferences.appPreferences.playbackPreferences.maxBitrate
                     .takeIf { it > 0 } ?: AppPreference.DEFAULT_BITRATE
-            val response =
+            val response by
                 api.mediaInfoApi
                     .getPostedPlaybackInfo(
                         itemId,
@@ -302,7 +303,7 @@ class PlaybackViewModel
                             alwaysBurnInSubtitleWhenTranscoding = null,
                             maxStreamingBitrate = maxBitrate.toInt(),
                         ),
-                    ).content
+                    )
             val source = response.mediaSources.firstOrNull()
             source?.let { source ->
                 val mediaUrl =
@@ -335,8 +336,8 @@ class PlaybackViewModel
                         ?.let {
                             it.deliveryUrl?.let { deliveryUrl ->
                                 var flags = 0
-                                if (it.isForced) flags = flags.and(C.SELECTION_FLAG_FORCED)
-                                if (it.isDefault) flags = flags.and(C.SELECTION_FLAG_DEFAULT)
+                                if (it.isForced) flags = flags.or(C.SELECTION_FLAG_FORCED)
+                                if (it.isDefault) flags = flags.or(C.SELECTION_FLAG_DEFAULT)
                                 MediaItem.SubtitleConfiguration
                                     .Builder(
                                         api.createUrl(deliveryUrl).toUri(),
@@ -368,6 +369,7 @@ class PlaybackViewModel
                     )
 
                 withContext(Dispatchers.Main) {
+                    // TODO, don't need to release & recreate when switching streams
                     this@PlaybackViewModel.activityListener?.let {
                         it.release()
                         player.removeListener(it)
@@ -389,7 +391,7 @@ class PlaybackViewModel
                         positionMs,
                     )
                     if (audioIndex != null || subtitleIndex != null) {
-                        val trackActivationListener =
+                        val onTracksChangedListener =
                             object : Player.Listener {
                                 override fun onTracksChanged(tracks: Tracks) {
                                     Timber.v("onTracksChanged: $tracks")
@@ -408,7 +410,7 @@ class PlaybackViewModel
                                     }
                                 }
                             }
-                        player.addListener(trackActivationListener)
+                        player.addListener(onTracksChangedListener)
                     }
                 }
                 val trickPlayInfo =
@@ -416,7 +418,7 @@ class PlaybackViewModel
                         ?.get(source.id)
                         ?.values
                         ?.firstOrNull()
-                Timber.v("Trickplay info: $trickPlayInfo")
+//                Timber.v("Trickplay info: $trickPlayInfo")
                 withContext(Dispatchers.Main) {
                     trickplay.value = trickPlayInfo
                 }

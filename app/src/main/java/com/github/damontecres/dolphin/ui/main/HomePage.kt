@@ -249,12 +249,16 @@ fun MainPageHeader(
                     Text(
                         text = title,
                         style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.SemiBold),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
                     )
                 }
                 subtitle?.let {
                     Text(
                         text = subtitle,
                         style = MaterialTheme.typography.headlineSmall,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
                     )
                 }
                 if (details.isNotEmpty()) {
