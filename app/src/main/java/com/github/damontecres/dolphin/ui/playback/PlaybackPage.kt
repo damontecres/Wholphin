@@ -50,14 +50,13 @@ import androidx.media3.ui.SubtitleView
 import androidx.media3.ui.compose.PlayerSurface
 import androidx.media3.ui.compose.SURFACE_TYPE_SURFACE_VIEW
 import androidx.media3.ui.compose.modifiers.resizeWithContentScale
-import androidx.media3.ui.compose.state.rememberNextButtonState
 import androidx.media3.ui.compose.state.rememberPlayPauseButtonState
 import androidx.media3.ui.compose.state.rememberPresentationState
-import androidx.media3.ui.compose.state.rememberPreviousButtonState
 import androidx.tv.material3.Button
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import androidx.tv.material3.surfaceColorAtElevation
+import com.github.damontecres.dolphin.data.model.Playlist
 import com.github.damontecres.dolphin.preferences.UserPreferences
 import com.github.damontecres.dolphin.preferences.skipBackOnResume
 import com.github.damontecres.dolphin.ui.OneTimeLaunchedEffect
@@ -105,7 +104,8 @@ fun PlaybackPage(
     var cues by remember { mutableStateOf<List<Cue>>(listOf()) }
     var showDebugInfo by remember { mutableStateOf(prefs.showDebugInfo) }
 
-    val nextUp by viewModel.nextUpEpisode.observeAsState(null)
+    val nextUp by viewModel.nextUp.observeAsState(null)
+    val playlist by viewModel.playlist.observeAsState(Playlist(listOf()))
 
     // TODO move to viewmodel?
     val cueListener =
@@ -138,8 +138,6 @@ fun PlaybackPage(
                 Modifier.resizeWithContentScale(contentScale, presentationState.videoSizeDp)
             val focusRequester = remember { FocusRequester() }
             val playPauseState = rememberPlayPauseButtonState(player)
-            val previousState = rememberPreviousButtonState(player)
-            val nextState = rememberNextButtonState(player)
             val seekBarState = rememberSeekBarState(player, scope)
 
             LaunchedEffect(Unit) {
@@ -261,8 +259,8 @@ fun PlaybackPage(
                             playerControls = player,
                             controllerViewState = controllerViewState,
                             showPlay = playPauseState.showPlay,
-                            previousEnabled = previousState.isEnabled,
-                            nextEnabled = nextState.isEnabled,
+                            previousEnabled = true,
+                            nextEnabled = playlist.hasNext(),
                             seekEnabled = true,
                             seekForward = preferences.appPreferences.playbackPreferences.skipForwardMs.milliseconds,
                             seekBack = preferences.appPreferences.playbackPreferences.skipBackMs.milliseconds,
@@ -289,6 +287,20 @@ fun PlaybackPage(
 
                                     is PlaybackAction.ToggleCaptions -> {
                                         viewModel.changeSubtitleStream(it.index)
+                                    }
+
+                                    PlaybackAction.Next -> {
+                                        // TODO focus is lost
+                                        viewModel.playUpNextUp()
+                                    }
+
+                                    PlaybackAction.Previous -> {
+                                        val pos = player.currentPosition
+                                        if (pos < player.maxSeekToPreviousPosition && playlist.hasPrevious()) {
+                                            viewModel.playPrevious()
+                                        } else {
+                                            player.seekToPrevious()
+                                        }
                                     }
                                 }
                             },
@@ -381,14 +393,14 @@ fun PlaybackPage(
                         if (autoPlayEnabled) {
                             LaunchedEffect(Unit) {
                                 if (timeLeft == 0L) {
-                                    viewModel.playUpNextEpisode()
+                                    viewModel.playUpNextUp()
                                 } else {
                                     while (timeLeft > 0) {
                                         delay(1.seconds)
                                         timeLeft--
                                     }
                                     if (timeLeft == 0L && autoPlayEnabled) {
-                                        viewModel.playUpNextEpisode()
+                                        viewModel.playUpNextUp()
                                     }
                                 }
                             }
@@ -402,7 +414,7 @@ fun PlaybackPage(
                             description = it.data.overview,
                             imageUrl = it.imageUrl,
                             aspectRatio = it.data.primaryImageAspectRatio?.toFloat() ?: (16f / 9),
-                            onClick = { viewModel.playUpNextEpisode() },
+                            onClick = { viewModel.playUpNextUp() },
                             timeLeft = if (autoPlayEnabled) timeLeft.seconds else null,
                             modifier =
                                 Modifier

@@ -91,6 +91,10 @@ sealed interface PlaybackAction {
     data class Scale(
         val scale: ContentScale,
     ) : PlaybackAction
+
+    data object Previous : PlaybackAction
+
+    data object Next : PlaybackAction
 }
 
 @OptIn(UnstableApi::class)
@@ -174,6 +178,7 @@ fun PlaybackControls(
                 player = playerControls,
                 initialFocusRequester = initialFocusRequester,
                 onControllerInteraction = onControllerInteraction,
+                onPlaybackActionClick = onPlaybackActionClick,
                 showPlay = showPlay,
                 previousEnabled = previousEnabled,
                 nextEnabled = nextEnabled,
@@ -443,6 +448,7 @@ fun PlaybackButtons(
     player: Player,
     initialFocusRequester: FocusRequester,
     onControllerInteraction: () -> Unit,
+    onPlaybackActionClick: (PlaybackAction) -> Unit,
     showPlay: Boolean,
     previousEnabled: Boolean,
     nextEnabled: Boolean,
@@ -459,7 +465,7 @@ fun PlaybackButtons(
             iconRes = R.drawable.baseline_skip_previous_24,
             onClick = {
                 onControllerInteraction.invoke()
-                player.seekToPrevious()
+                onPlaybackActionClick.invoke(PlaybackAction.Previous)
             },
             enabled = previousEnabled,
             onControllerInteraction = onControllerInteraction,
@@ -500,7 +506,7 @@ fun PlaybackButtons(
             iconRes = R.drawable.baseline_skip_next_24,
             onClick = {
                 onControllerInteraction.invoke()
-                player.seekToNext()
+                onPlaybackActionClick.invoke(PlaybackAction.Next)
             },
             enabled = nextEnabled,
             onControllerInteraction = onControllerInteraction,
