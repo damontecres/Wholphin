@@ -121,7 +121,7 @@ fun HomePageContent(
                     Modifier
                         .fillMaxHeight(.7f)
                         .fillMaxWidth(.7f)
-                        .alpha(.4f)
+                        .alpha(.75f)
                         .align(Alignment.TopEnd)
                         .drawWithContent {
                             drawContent()

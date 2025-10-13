@@ -150,8 +150,8 @@ fun MovieDetailsHeader(
                         overflow = TextOverflow.Ellipsis,
                         modifier =
                             Modifier
-                                .padding(8.dp)
-                                .height(60.dp),
+                                .padding(8.dp),
+//                                .height(60.dp),
                     )
                 }
             }
@@ -161,6 +161,8 @@ fun MovieDetailsHeader(
                 ?.let {
                     Text(
                         text = "Directed by $it",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
                     )
                 }
             // Key-Values

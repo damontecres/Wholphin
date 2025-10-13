@@ -102,18 +102,21 @@ class CollectionFolderViewModel
                     val request =
                         GetItemsRequest(
                             parentId = item.id,
-                            isSeries = true,
-                            mediaTypes = null,
-//                            recursive = true,
                             enableImageTypes = listOf(ImageType.PRIMARY, ImageType.THUMB),
                             includeItemTypes = includeItemTypes,
+                            recursive = true,
                             sortBy =
                                 listOf(
                                     sortAndDirection.sort,
                                     ItemSortBy.SORT_NAME,
                                     ItemSortBy.PRODUCTION_YEAR,
                                 ),
-                            sortOrder = listOf(sortAndDirection.direction),
+                            sortOrder =
+                                listOf(
+                                    sortAndDirection.direction,
+                                    SortOrder.ASCENDING,
+                                    SortOrder.ASCENDING,
+                                ),
                             fields = DefaultItemFields,
                         )
                     val newPager =
@@ -145,6 +148,7 @@ class CollectionFolderViewModel
                         nameLessThan = letter.toString(),
                         limit = 0,
                         enableTotalRecordCount = true,
+                        recursive = true,
                     )
                 val result by GetItemsRequestHandler.execute(api, request)
                 result.totalRecordCount

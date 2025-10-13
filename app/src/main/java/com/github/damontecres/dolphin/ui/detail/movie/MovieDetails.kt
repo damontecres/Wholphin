@@ -13,7 +13,6 @@ import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -177,20 +176,20 @@ fun MovieDetails(
                                                 Destination.Playback(movie),
                                             )
                                         },
-                                        DialogItem(
-                                            "Playback Settings",
-                                            Icons.Default.Settings,
-//                                                iconColor = Color.Green.copy(alpha = .8f),
-                                        ) {
-                                            // TODO choose audio or subtitle tracks?
-                                        },
-                                        DialogItem(
-                                            "Play Version",
-                                            Icons.Default.PlayArrow,
-                                            iconColor = Color.Green.copy(alpha = .8f),
-                                        ) {
-                                            // TODO only show for multiple files
-                                        },
+//                                        DialogItem(
+//                                            "Playback Settings",
+//                                            Icons.Default.Settings,
+// //                                                iconColor = Color.Green.copy(alpha = .8f),
+//                                        ) {
+//                                            // TODO choose audio or subtitle tracks?
+//                                        },
+//                                        DialogItem(
+//                                            "Play Version",
+//                                            Icons.Default.PlayArrow,
+//                                            iconColor = Color.Green.copy(alpha = .8f),
+//                                        ) {
+//                                            // TODO only show for multiple files
+//                                        },
                                     ),
                             )
                     },

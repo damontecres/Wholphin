@@ -311,7 +311,6 @@ fun NavigationDrawerScope.LibraryNavItem(
     modifier: Modifier = Modifier,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
 ) {
-    // TODO
     val icon =
         when (library.data.collectionType) {
             CollectionType.MOVIES -> R.string.fa_film
