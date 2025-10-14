@@ -314,6 +314,10 @@ fun PlaybackPage(
                             trickplayInfo = trickplay,
                             trickplayUrlFor = viewModel::getTrickplayUrl,
                             chapters = chapters,
+                            playlist = playlist,
+                            onClickPlaylist = {
+                                viewModel.playItemInPlaylist(it)
+                            },
                         )
                     }
 

@@ -38,6 +38,7 @@ val DefaultItemFields =
         ItemFields.OVERVIEW,
         ItemFields.TRICKPLAY,
         ItemFields.SORT_NAME,
+        ItemFields.CHAPTERS,
     )
 
 val DefaultButtonPadding =

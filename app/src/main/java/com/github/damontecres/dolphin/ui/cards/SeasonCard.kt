@@ -110,7 +110,7 @@ fun SeasonCard(
                     .fillMaxWidth(),
         ) {
             Text(
-                text = dto?.name ?: "",
+                text = item?.title ?: "",
                 maxLines = 1,
                 textAlign = TextAlign.Center,
                 modifier =
@@ -120,7 +120,7 @@ fun SeasonCard(
                         .enableMarquee(focusedAfterDelay),
             )
             Text(
-                text = item?.data?.productionYear?.toString() ?: "",
+                text = item?.subtitle ?: "",
                 maxLines = 1,
                 textAlign = TextAlign.Center,
                 modifier =

@@ -628,7 +628,20 @@ class PlaybackViewModel
             nextUp.value = null
         }
 
-        private fun toastUnsupported(item: BaseItemDto) {
+        fun playItemInPlaylist(item: BaseItem) {
+            playlist.value?.let { playlist ->
+                viewModelScope.launch(ExceptionHandler()) {
+                    val toPlay = playlist.advanceTo(item.id)
+                    if (toPlay != null) {
+                        val played = play(toPlay.data, 0)
+                        if (!played) {
+                            playUpNextUp()
+                        }
+                    } else {
+                        // TODO
+                    }
+                }
+            }
         }
     }
 

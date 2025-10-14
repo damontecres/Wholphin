@@ -32,6 +32,18 @@ class Playlist(
 
     fun peek(): BaseItem? = items.getOrNull(index + 1)
 
+    fun upcomingItems(): List<BaseItem> = items.subList(index + 1, items.size)
+
+    fun advanceTo(id: UUID): BaseItem? {
+        while (hasNext()) {
+            val potential = getAndAdvance()
+            if (potential.id == id) {
+                return potential
+            }
+        }
+        return null
+    }
+
     companion object {
         const val MAX_SIZE = 100
     }
