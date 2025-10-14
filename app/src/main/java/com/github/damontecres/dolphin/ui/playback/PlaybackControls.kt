@@ -65,6 +65,8 @@ import com.github.damontecres.dolphin.util.ExceptionHandler
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import org.jellyfin.sdk.model.api.MediaSegmentDto
+import org.jellyfin.sdk.model.extensions.ticks
 import timber.log.Timber
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
@@ -120,6 +122,7 @@ fun PlaybackControls(
     seekBack: Duration,
     skipBackOnResume: Duration?,
     seekForward: Duration,
+    currentSegment: MediaSegmentDto?,
     modifier: Modifier = Modifier,
     initialFocusRequester: FocusRequester = remember { FocusRequester() },
     seekBarInteractionSource: MutableInteractionSource = remember { MutableInteractionSource() },
@@ -189,18 +192,37 @@ fun PlaybackControls(
                 skipBackOnResume = skipBackOnResume,
                 modifier = Modifier.align(Alignment.Center),
             )
-            RightPlaybackButtons(
-                subtitleStreams = subtitleStreams,
-                onControllerInteraction = onControllerInteraction,
-                onControllerInteractionForDialog = onControllerInteractionForDialog,
-                onPlaybackActionClick = onPlaybackActionClick,
-                subtitleIndex = subtitleIndex,
-                audioStreams = audioStreams,
-                audioIndex = audioIndex,
-                playbackSpeed = playbackSpeed,
-                scale = scale,
+            Row(
                 modifier = Modifier.align(Alignment.CenterEnd),
-            )
+            ) {
+                currentSegment?.let { segment ->
+                    Button(
+                        onClick = {
+                            playerControls.seekTo(segment.endTicks.ticks.inWholeMilliseconds)
+                        },
+                        modifier =
+                            Modifier
+                                .align(Alignment.CenterVertically)
+                                .padding(end = 32.dp),
+                    ) {
+                        Text(
+                            text = "Skip ${segment.type.serialName}",
+                        )
+                    }
+                }
+                RightPlaybackButtons(
+                    subtitleStreams = subtitleStreams,
+                    onControllerInteraction = onControllerInteraction,
+                    onControllerInteractionForDialog = onControllerInteractionForDialog,
+                    onPlaybackActionClick = onPlaybackActionClick,
+                    subtitleIndex = subtitleIndex,
+                    audioStreams = audioStreams,
+                    audioIndex = audioIndex,
+                    playbackSpeed = playbackSpeed,
+                    scale = scale,
+                    modifier = Modifier,
+                )
+            }
         }
     }
 }

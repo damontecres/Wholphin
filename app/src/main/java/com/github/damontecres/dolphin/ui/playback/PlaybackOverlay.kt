@@ -53,6 +53,7 @@ import com.github.damontecres.dolphin.ui.ifElse
 import com.github.damontecres.dolphin.ui.isNotNullOrBlank
 import com.github.damontecres.dolphin.ui.letNotEmpty
 import com.github.damontecres.dolphin.ui.tryRequestFocus
+import org.jellyfin.sdk.model.api.MediaSegmentDto
 import org.jellyfin.sdk.model.api.TrickplayInfo
 import kotlin.time.Duration
 
@@ -84,6 +85,7 @@ fun PlaybackOverlay(
     moreButtonOptions: MoreButtonOptions,
     currentPlayback: CurrentPlayback?,
     audioStreams: List<AudioStream>,
+    currentSegment: MediaSegmentDto?,
     modifier: Modifier = Modifier,
     subtitle: String? = null,
     trickplayInfo: TrickplayInfo? = null,
@@ -161,6 +163,7 @@ fun PlaybackOverlay(
                 onNextStateFocus = {
                     nextState?.let { state = it }
                 },
+                currentSegment = currentSegment,
                 modifier =
                     Modifier
                         // Don't use key events because this control has vertical items so up/down is tough to manage
@@ -413,6 +416,7 @@ fun Controller(
     currentPlayback: CurrentPlayback?,
     audioStreams: List<AudioStream>,
     nextState: OverlayViewState?,
+    currentSegment: MediaSegmentDto?,
     modifier: Modifier = Modifier,
     subtitle: String? = null,
     seekBarInteractionSource: MutableInteractionSource = remember { MutableInteractionSource() },
@@ -466,6 +470,7 @@ fun Controller(
             seekBack = seekBack,
             seekForward = seekForward,
             skipBackOnResume = skipBackOnResume,
+            currentSegment = currentSegment,
         )
         when (nextState) {
             OverlayViewState.CHAPTERS ->

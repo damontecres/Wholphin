@@ -100,6 +100,7 @@ fun PlaybackPage(
     val chapters by viewModel.chapters.observeAsState(listOf())
     val currentPlayback by viewModel.currentPlayback.observeAsState(null)
     val currentSegment by viewModel.currentSegment.observeAsState(null)
+    var segmentCancelled by remember(currentSegment?.id) { mutableStateOf(false) }
 
     var cues by remember { mutableStateOf<List<Cue>>(listOf()) }
     var showDebugInfo by remember { mutableStateOf(prefs.showDebugInfo) }
@@ -178,6 +179,13 @@ fun PlaybackPage(
                     updateSkipIndicator = updateSkipIndicator,
                     skipBackOnResume = preferences.appPreferences.playbackPreferences.skipBackOnResume,
                 )
+
+            val showSegment =
+                !segmentCancelled && currentSegment != null &&
+                    !controllerViewState.controlsVisible && skipIndicatorDuration == 0L
+            BackHandler(showSegment) {
+                segmentCancelled = true
+            }
 
             Box(
                 modifier
@@ -318,6 +326,7 @@ fun PlaybackPage(
                             onClickPlaylist = {
                                 viewModel.playItemInPlaylist(it)
                             },
+                            currentSegment = currentSegment,
                         )
                     }
 
@@ -345,7 +354,7 @@ fun PlaybackPage(
 
                     // Ask to skip intros, etc button
                     AnimatedVisibility(
-                        currentSegment != null && !controllerViewState.controlsVisible && skipIndicatorDuration == 0L,
+                        showSegment,
                         modifier =
                             Modifier
                                 .padding(40.dp)
@@ -353,7 +362,11 @@ fun PlaybackPage(
                     ) {
                         currentSegment?.let { segment ->
                             val focusRequester = remember { FocusRequester() }
-                            LaunchedEffect(Unit) { focusRequester.tryRequestFocus() }
+                            LaunchedEffect(Unit) {
+                                focusRequester.tryRequestFocus()
+                                delay(10.seconds)
+                                segmentCancelled = false
+                            }
                             Button(
                                 onClick = {
                                     player.seekTo(segment.endTicks.ticks.inWholeMilliseconds)
