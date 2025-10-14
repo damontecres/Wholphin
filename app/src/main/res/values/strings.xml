@@ -76,5 +76,6 @@
     <string name="no_update_available">No update available</string>
     <string name="clear_image_cache">Clear image cache</string>
     <string name="shuffle">Shuffle</string>
+    <string name="combine_continue_next"><![CDATA[Combine Continue Watching & Next Up]]></string>
 
 </resources>

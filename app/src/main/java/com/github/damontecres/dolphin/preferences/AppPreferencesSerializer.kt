@@ -49,6 +49,7 @@ class AppPreferencesSerializer
                             .apply {
                                 maxItemsPerRow = AppPreference.HomePageItems.defaultValue.toInt()
                                 enableRewatchingNextUp = AppPreference.RewatchNextUp.defaultValue
+                                combineContinueNext = AppPreference.CombineContinueNext.defaultValue
                             }.build()
                     interfacePreferences =
                         InterfacePreferences

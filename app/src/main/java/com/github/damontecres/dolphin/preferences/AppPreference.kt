@@ -164,6 +164,18 @@ sealed interface AppPreference<T> {
                 summarizer = { value -> value?.toString() },
             )
 
+        val CombineContinueNext =
+            AppSwitchPreference(
+                title = R.string.combine_continue_next,
+                defaultValue = false,
+                getter = { it.homePagePreferences.combineContinueNext },
+                setter = { prefs, value ->
+                    prefs.updateHomePagePreferences { combineContinueNext = value }
+                },
+                summaryOn = R.string.enabled,
+                summaryOff = R.string.disabled,
+            )
+
         val RewatchNextUp =
             AppSwitchPreference(
                 title = R.string.rewatch_next_up,
@@ -457,6 +469,7 @@ val basicPreferences =
                 listOf(
                     AppPreference.HomePageItems,
                     AppPreference.RewatchNextUp,
+                    AppPreference.CombineContinueNext,
                     AppPreference.PlayThemeMusic,
                     AppPreference.RememberSelectedTab,
                     AppPreference.ThemeColors,
