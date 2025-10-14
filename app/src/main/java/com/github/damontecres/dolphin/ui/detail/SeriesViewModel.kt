@@ -13,7 +13,6 @@ import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import com.github.damontecres.dolphin.data.model.BaseItem
 import com.github.damontecres.dolphin.data.model.Person
-import com.github.damontecres.dolphin.data.model.Video
 import com.github.damontecres.dolphin.hilt.AuthOkHttpClient
 import com.github.damontecres.dolphin.preferences.ThemeSongVolume
 import com.github.damontecres.dolphin.preferences.UserPreferences
@@ -58,7 +57,7 @@ class SeriesViewModel
         @param:ApplicationContext val context: Context,
         @param:AuthOkHttpClient private val okHttpClient: OkHttpClient,
         private val navigationManager: NavigationManager,
-    ) : ItemViewModel<Video>(api) {
+    ) : ItemViewModel(api) {
         private var player: Player? = null
         private lateinit var seriesId: UUID
         private lateinit var prefs: UserPreferences

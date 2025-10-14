@@ -29,21 +29,14 @@ fun ItemRow(
     items: List<BaseItem?>,
     onClickItem: (BaseItem) -> Unit,
     onLongClickItem: (BaseItem) -> Unit,
-    modifier: Modifier = Modifier,
     cardContent: @Composable (
         index: Int,
         item: BaseItem?,
         modifier: Modifier,
         onClick: () -> Unit,
         onLongClick: () -> Unit,
-    ) -> Unit = { index, item, mod, onClick, onLongClick ->
-        ItemCard(
-            item = item,
-            onClick = onClick,
-            onLongClick = onLongClick,
-            modifier = mod,
-        )
-    },
+    ) -> Unit,
+    modifier: Modifier = Modifier,
     focusPair: FocusPair? = null,
     cardOnFocus: ((isFocused: Boolean, index: Int) -> Unit)? = null,
 ) {

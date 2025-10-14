@@ -8,9 +8,7 @@ import com.github.damontecres.dolphin.ui.components.LicenseInfo
 import com.github.damontecres.dolphin.ui.detail.CollectionFolderGeneric
 import com.github.damontecres.dolphin.ui.detail.CollectionFolderMovie
 import com.github.damontecres.dolphin.ui.detail.CollectionFolderTv
-import com.github.damontecres.dolphin.ui.detail.EpisodeDetails
 import com.github.damontecres.dolphin.ui.detail.PlaylistDetails
-import com.github.damontecres.dolphin.ui.detail.SeasonDetails
 import com.github.damontecres.dolphin.ui.detail.SeriesDetails
 import com.github.damontecres.dolphin.ui.detail.movie.MovieDetails
 import com.github.damontecres.dolphin.ui.detail.series.SeriesOverview
@@ -72,20 +70,6 @@ fun DestinationContent(
             when (destination.type) {
                 BaseItemKind.SERIES ->
                     SeriesDetails(
-                        preferences,
-                        destination,
-                        modifier,
-                    )
-
-                BaseItemKind.SEASON ->
-                    SeasonDetails(
-                        preferences,
-                        destination,
-                        modifier,
-                    )
-
-                BaseItemKind.EPISODE ->
-                    EpisodeDetails(
                         preferences,
                         destination,
                         modifier,

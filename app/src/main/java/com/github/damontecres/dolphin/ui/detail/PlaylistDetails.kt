@@ -54,7 +54,6 @@ import androidx.tv.material3.surfaceColorAtElevation
 import coil3.compose.AsyncImage
 import com.github.damontecres.dolphin.R
 import com.github.damontecres.dolphin.data.model.BaseItem
-import com.github.damontecres.dolphin.data.model.Library
 import com.github.damontecres.dolphin.ui.DefaultItemFields
 import com.github.damontecres.dolphin.ui.cards.ItemCardImage
 import com.github.damontecres.dolphin.ui.components.DialogItem
@@ -93,7 +92,7 @@ class PlaylistViewModel
     constructor(
         api: ApiClient,
         val navigationManager: NavigationManager,
-    ) : ItemViewModel<Library>(api) {
+    ) : ItemViewModel(api) {
         val loading = MutableLiveData<LoadingState>(LoadingState.Pending)
         val items = MutableLiveData<List<BaseItem?>>(listOf())
 
@@ -174,13 +173,7 @@ fun PlaylistDetails(
                                             "Go to",
                                             Icons.Default.ArrowForward,
                                         ) {
-                                            viewModel.navigationManager.navigateTo(
-                                                Destination.MediaItem(
-                                                    itemId = item.id,
-                                                    type = item.type,
-                                                    item = item,
-                                                ),
-                                            )
+                                            viewModel.navigationManager.navigateTo(item.destination())
                                         },
                                         DialogItem(
                                             "Play from here",
@@ -189,7 +182,7 @@ fun PlaylistDetails(
                                             viewModel.navigationManager.navigateTo(
                                                 Destination.Playback(
                                                     itemId = it.id,
-                                                    positionMs = 0L,
+                                                    positionMs = it.resumeMs ?: 0L,
                                                     startIndex = index,
                                                 ),
                                             )

@@ -27,7 +27,6 @@ import androidx.lifecycle.viewModelScope
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.github.damontecres.dolphin.data.model.BaseItem
-import com.github.damontecres.dolphin.data.model.Library
 import com.github.damontecres.dolphin.preferences.UserPreferences
 import com.github.damontecres.dolphin.ui.DefaultItemFields
 import com.github.damontecres.dolphin.ui.OneTimeLaunchedEffect
@@ -63,7 +62,7 @@ class CollectionFolderViewModel
     @Inject
     constructor(
         api: ApiClient,
-    ) : ItemViewModel<Library>(api) {
+    ) : ItemViewModel(api) {
         val loading = MutableLiveData<LoadingState>(LoadingState.Loading)
         val pager = MutableLiveData<List<BaseItem?>>(listOf())
         val sortAndDirection = MutableLiveData<SortAndDirection>()

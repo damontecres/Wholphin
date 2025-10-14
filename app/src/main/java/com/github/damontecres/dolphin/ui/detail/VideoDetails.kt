@@ -12,7 +12,6 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.tv.material3.Button
 import androidx.tv.material3.Text
-import com.github.damontecres.dolphin.data.model.Video
 import com.github.damontecres.dolphin.preferences.UserPreferences
 import com.github.damontecres.dolphin.ui.components.ErrorMessage
 import com.github.damontecres.dolphin.ui.components.LoadingPage
@@ -32,7 +31,7 @@ class VideoViewModel
     constructor(
         api: ApiClient,
         val navigationManager: NavigationManager,
-    ) : LoadingItemViewModel<Video>(api)
+    ) : LoadingItemViewModel(api)
 
 @Composable
 fun VideoDetails(

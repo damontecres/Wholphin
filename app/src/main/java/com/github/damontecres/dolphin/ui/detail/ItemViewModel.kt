@@ -20,7 +20,7 @@ import java.util.UUID
 /**
  * Basic [ViewModel] for a single fetchable item from the API
  */
-abstract class ItemViewModel<T>(
+abstract class ItemViewModel(
     val api: ApiClient,
 ) : ViewModel() {
     val item = MutableLiveData<BaseItem?>(null)
@@ -58,9 +58,9 @@ abstract class ItemViewModel<T>(
 /**
  * Extends [ItemViewModel] to include a loading state tracking when the item has been fetched or if an error occurred
  */
-abstract class LoadingItemViewModel<T>(
+abstract class LoadingItemViewModel(
     api: ApiClient,
-) : ItemViewModel<T>(api) {
+) : ItemViewModel(api) {
     val loading = MutableLiveData<LoadingState>(LoadingState.Pending)
 
     open fun init(
