@@ -61,13 +61,14 @@ abstract class ItemViewModel<T>(
 abstract class LoadingItemViewModel<T>(
     api: ApiClient,
 ) : ItemViewModel<T>(api) {
-    val loading = MutableLiveData<LoadingState>(LoadingState.Loading)
+    val loading = MutableLiveData<LoadingState>(LoadingState.Pending)
 
     open fun init(
         itemId: UUID,
         potential: BaseItem?,
-    ): Job? =
-        viewModelScope.launch(
+    ): Job? {
+        loading.value = LoadingState.Loading
+        return viewModelScope.launch(
             LoadingExceptionHandler(
                 loading,
                 "Error loading item $itemId",
@@ -85,4 +86,5 @@ abstract class LoadingItemViewModel<T>(
                 loading.value = LoadingState.Error("Error loading item $itemId", e)
             }
         }
+    }
 }

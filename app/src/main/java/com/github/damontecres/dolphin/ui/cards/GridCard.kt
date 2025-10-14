@@ -98,7 +98,7 @@ fun GridCard(
                     .fillMaxWidth(),
         ) {
             Text(
-                text = item?.name ?: "",
+                text = item?.title ?: "",
                 maxLines = 1,
                 textAlign = TextAlign.Center,
                 overflow = TextOverflow.Ellipsis,
@@ -109,7 +109,7 @@ fun GridCard(
                         .enableMarquee(focusedAfterDelay),
             )
             Text(
-                text = item?.data?.productionYear?.toString() ?: "",
+                text = item?.subtitle ?: "",
                 maxLines = 1,
                 textAlign = TextAlign.Center,
                 modifier =

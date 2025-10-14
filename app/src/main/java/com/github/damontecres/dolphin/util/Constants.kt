@@ -28,4 +28,5 @@ val supportedCollectionTypes =
         CollectionType.TVSHOWS,
         CollectionType.HOMEVIDEOS,
         CollectionType.PLAYLISTS,
+        CollectionType.BOXSETS,
     )

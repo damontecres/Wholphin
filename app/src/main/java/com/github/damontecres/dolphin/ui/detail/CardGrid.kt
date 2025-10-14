@@ -69,7 +69,7 @@ private const val DEBUG = false
 fun CardGrid(
     pager: List<BaseItem?>,
     onClickItem: (BaseItem) -> Unit,
-    longClicker: (BaseItem) -> Unit,
+    onLongClickItem: (BaseItem) -> Unit,
     letterPosition: suspend (Char) -> Int,
     gridFocusRequester: FocusRequester,
     showJumpButtons: Boolean,
@@ -257,7 +257,7 @@ fun CardGrid(
                                 onClickItem.invoke(item)
                             }
                         },
-                        onLongClick = { if (item != null) longClicker.invoke(item) },
+                        onLongClick = { if (item != null) onLongClickItem.invoke(item) },
                         modifier =
                             mod
                                 .ifElse(index == 0, Modifier.focusRequester(zeroFocus))

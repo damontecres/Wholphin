@@ -106,6 +106,14 @@ fun DestinationContent(
                         modifier,
                     )
 
+                BaseItemKind.BOX_SET ->
+                    CollectionFolderGeneric(
+                        preferences,
+                        destination,
+                        false,
+                        modifier,
+                    )
+
                 BaseItemKind.COLLECTION_FOLDER -> {
                     when (destination.item?.data?.collectionType) {
                         CollectionType.TVSHOWS ->
@@ -122,10 +130,19 @@ fun DestinationContent(
                                 modifier,
                             )
 
+                        CollectionType.BOXSETS ->
+                            CollectionFolderGeneric(
+                                preferences,
+                                destination,
+                                true,
+                                modifier,
+                            )
+
                         else ->
                             CollectionFolderGeneric(
                                 preferences,
                                 destination,
+                                false,
                                 modifier,
                             )
                     }
@@ -141,6 +158,7 @@ fun DestinationContent(
                     CollectionFolderGeneric(
                         preferences,
                         destination,
+                        true,
                         modifier,
                     )
 

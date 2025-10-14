@@ -72,6 +72,7 @@ class CollectionFolderViewModel
             itemId: UUID,
             potential: BaseItem?,
             sortAndDirection: SortAndDirection,
+            recursive: Boolean,
         ): Job =
             viewModelScope.launch(
                 LoadingExceptionHandler(
@@ -80,10 +81,13 @@ class CollectionFolderViewModel
                 ) + Dispatchers.IO,
             ) {
                 fetchItem(itemId, potential)
-                loadResults(sortAndDirection)
+                loadResults(sortAndDirection, recursive)
             }
 
-        fun loadResults(sortAndDirection: SortAndDirection) {
+        fun loadResults(
+            sortAndDirection: SortAndDirection,
+            recursive: Boolean,
+        ) {
             item.value?.let { item ->
                 viewModelScope.launch(Dispatchers.IO) {
                     withContext(Dispatchers.Main) {
@@ -96,6 +100,15 @@ class CollectionFolderViewModel
                             CollectionType.MOVIES -> listOf(BaseItemKind.MOVIE)
                             CollectionType.TVSHOWS -> listOf(BaseItemKind.SERIES)
                             CollectionType.HOMEVIDEOS -> listOf(BaseItemKind.VIDEO)
+                            CollectionType.MUSIC ->
+                                listOf(
+                                    BaseItemKind.AUDIO,
+                                    BaseItemKind.MUSIC_ARTIST,
+                                    BaseItemKind.MUSIC_ALBUM,
+                                )
+
+                            CollectionType.BOXSETS -> listOf(BaseItemKind.BOX_SET)
+                            CollectionType.PLAYLISTS -> listOf(BaseItemKind.PLAYLIST)
 
                             else -> listOf()
                         }
@@ -104,7 +117,8 @@ class CollectionFolderViewModel
                             parentId = item.id,
                             enableImageTypes = listOf(ImageType.PRIMARY, ImageType.THUMB),
                             includeItemTypes = includeItemTypes,
-                            recursive = true,
+                            recursive = recursive,
+                            excludeItemIds = listOf(item.id),
                             sortBy =
                                 listOf(
                                     sortAndDirection.sort,
@@ -120,7 +134,13 @@ class CollectionFolderViewModel
                             fields = DefaultItemFields,
                         )
                     val newPager =
-                        ApiRequestPager(api, request, GetItemsRequestHandler, viewModelScope)
+                        ApiRequestPager(
+                            api,
+                            request,
+                            GetItemsRequestHandler,
+                            viewModelScope,
+                            useSeriesForPrimary = true,
+                        )
                     newPager.init()
                     if (newPager.isNotEmpty()) newPager.getBlocking(0)
                     withContext(Dispatchers.Main) {
@@ -164,6 +184,7 @@ class CollectionFolderViewModel
 fun CollectionFolderGrid(
     preferences: UserPreferences,
     destination: Destination.MediaItem,
+    recursive: Boolean,
     onClickItem: (BaseItem) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: CollectionFolderViewModel = hiltViewModel(),
@@ -176,7 +197,7 @@ fun CollectionFolderGrid(
     positionCallback: ((columns: Int, position: Int) -> Unit)? = null,
 ) {
     OneTimeLaunchedEffect {
-        viewModel.init(destination.itemId, destination.item, initialSortAndDirection)
+        viewModel.init(destination.itemId, destination.item, initialSortAndDirection, recursive)
     }
     val sortAndDirection by viewModel.sortAndDirection.observeAsState(initialSortAndDirection)
     val loading by viewModel.loading.observeAsState(LoadingState.Loading)
@@ -198,7 +219,7 @@ fun CollectionFolderGrid(
                     modifier = modifier,
                     onClickItem = onClickItem,
                     onSortChange = {
-                        viewModel.loadResults(it)
+                        viewModel.loadResults(it, recursive)
                     },
                     showTitle = showTitle,
                     positionCallback = positionCallback,
@@ -263,7 +284,7 @@ fun CollectionFolderGridContent(
         CardGrid(
             pager = pager,
             onClickItem = onClickItem,
-            longClicker = {},
+            onLongClickItem = {},
             letterPosition = letterPosition,
             gridFocusRequester = gridFocusRequester,
             showJumpButtons = false, // TODO add preference

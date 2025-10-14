@@ -18,6 +18,7 @@ import com.github.damontecres.dolphin.ui.preferences.PreferencesViewModel
 fun CollectionFolderGeneric(
     preferences: UserPreferences,
     destination: Destination.MediaItem,
+    recursive: Boolean,
     modifier: Modifier = Modifier,
     preferencesViewModel: PreferencesViewModel = hiltViewModel(),
 ) {
@@ -27,6 +28,7 @@ fun CollectionFolderGeneric(
         onClickItem = { preferencesViewModel.navigationManager.navigateTo(it.destination()) },
         destination = destination,
         showTitle = showHeader,
+        recursive = recursive,
         modifier =
             modifier
                 .padding(start = 16.dp),
