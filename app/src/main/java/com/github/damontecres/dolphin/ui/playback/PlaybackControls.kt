@@ -156,6 +156,8 @@ fun PlaybackControls(
             interactionSource = seekBarInteractionSource,
             isEnabled = seekEnabled,
             intervals = seekBarIntervals,
+            seekBack = seekBack,
+            seekForward = seekForward,
             modifier =
                 Modifier
                     .padding(vertical = 0.dp)
@@ -211,6 +213,8 @@ fun SeekBar(
     intervals: Int,
     controllerViewState: ControllerViewState,
     onSeekProgress: (Long) -> Unit,
+    seekBack: Duration,
+    seekForward: Duration,
     modifier: Modifier = Modifier,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
 ) {
@@ -241,6 +245,8 @@ fun SeekBar(
             interactionSource = interactionSource,
             enabled = isEnabled,
             durationMs = player.contentDuration,
+            seekBack = seekBack,
+            seekForward = seekForward,
         )
         Row(
             modifier = Modifier.fillMaxWidth(),
