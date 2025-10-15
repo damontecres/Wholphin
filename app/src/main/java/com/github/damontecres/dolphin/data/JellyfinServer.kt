@@ -55,8 +55,16 @@ interface JellyfinServerDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     fun addServer(server: JellyfinServer): Long
 
-    @Update(onConflict = OnConflictStrategy.ABORT)
+    @Update
     fun updateServer(server: JellyfinServer): Int
+
+    @Transaction
+    fun addOrUpdateServer(server: JellyfinServer) {
+        val result = addServer(server)
+        if (result == -1L) {
+            updateServer(server)
+        }
+    }
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun addUser(user: JellyfinUser)
