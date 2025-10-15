@@ -25,6 +25,7 @@ import com.github.damontecres.dolphin.ui.components.ErrorMessage
 import com.github.damontecres.dolphin.ui.components.LoadingPage
 import com.github.damontecres.dolphin.ui.data.ItemDetailsDialog
 import com.github.damontecres.dolphin.ui.data.ItemDetailsDialogInfo
+import com.github.damontecres.dolphin.ui.detail.EpisodeList
 import com.github.damontecres.dolphin.ui.detail.ItemListAndMapping
 import com.github.damontecres.dolphin.ui.detail.SeriesViewModel
 import com.github.damontecres.dolphin.ui.nav.Destination
@@ -75,7 +76,8 @@ fun SeriesOverview(
 
     val series by viewModel.item.observeAsState(null)
     val seasons by viewModel.seasons.observeAsState(ItemListAndMapping.empty())
-    val episodes by viewModel.episodes.observeAsState(ItemListAndMapping.empty())
+    val episodes by viewModel.episodes.observeAsState(EpisodeList.Loading)
+    val episodeList = (episodes as? EpisodeList.Success)?.episodes?.items
 
     var position by rememberSaveable(
         destination,
@@ -89,7 +91,10 @@ fun SeriesOverview(
         mutableStateOf(
             SeriesOverviewPosition(
                 seasons.numberToIndex[initialSeasonEpisode?.season ?: 0] ?: 0,
-                episodes.numberToIndex[initialSeasonEpisode?.episode ?: 0] ?: 0,
+                (episodes as? EpisodeList.Success)?.episodes?.numberToIndex[
+                    initialSeasonEpisode?.episode
+                        ?: 0,
+                ] ?: 0,
             ),
         )
     }
@@ -97,12 +102,16 @@ fun SeriesOverview(
     var overviewDialog by remember { mutableStateOf<ItemDetailsDialogInfo?>(null) }
     var moreDialog by remember { mutableStateOf<DialogParams?>(null) }
 
-    LaunchedEffect(episodes.items) {
-        if (episodes.items.isNotEmpty()) {
-            // TODO focus on first episode when changing seasons?
+    LaunchedEffect(episodes) {
+        episodes?.let { episodes ->
+            if (episodes is EpisodeList.Success) {
+                if (episodes.episodes.items.isNotEmpty()) {
+                    // TODO focus on first episode when changing seasons?
 //            firstItemFocusRequester.requestFocus()
-            episodes.items.getOrNull(position.episodeRowIndex)?.let {
-                viewModel.refreshEpisode(it.id, position.episodeRowIndex)
+                    episodes.episodes.items.getOrNull(position.episodeRowIndex)?.let {
+                        viewModel.refreshEpisode(it.id, position.episodeRowIndex)
+                    }
+                }
             }
         }
     }
@@ -120,7 +129,7 @@ fun SeriesOverview(
                 SeriesOverviewContent(
                     series = series,
                     seasons = seasons.items,
-                    episodes = episodes.items,
+                    episodes = episodes,
                     position = position,
                     backdropImageUrl =
                         remember {
@@ -140,7 +149,6 @@ fun SeriesOverview(
                         position = it
                     },
                     onClick = {
-                        viewModel.release()
                         val resumePosition =
                             it.data.userData
                                 ?.playbackPositionTicks
@@ -157,7 +165,7 @@ fun SeriesOverview(
                         // TODO
                     },
                     playOnClick = { resume ->
-                        episodes.items.getOrNull(position.episodeRowIndex)?.let {
+                        episodeList?.getOrNull(position.episodeRowIndex)?.let {
                             viewModel.release()
                             viewModel.navigateTo(
                                 Destination.Playback(
@@ -169,13 +177,13 @@ fun SeriesOverview(
                         }
                     },
                     watchOnClick = {
-                        episodes.items.getOrNull(position.episodeRowIndex)?.let {
+                        episodeList?.getOrNull(position.episodeRowIndex)?.let {
                             val played = it.data.userData?.played ?: false
                             viewModel.setWatched(it.id, !played, position.episodeRowIndex)
                         }
                     },
                     moreOnClick = {
-                        episodes.items.getOrNull(position.episodeRowIndex)?.let { ep ->
+                        episodeList?.getOrNull(position.episodeRowIndex)?.let { ep ->
                             moreDialog =
                                 DialogParams(
                                     fromLongClick = false,
@@ -227,7 +235,7 @@ fun SeriesOverview(
                         }
                     },
                     overviewOnClick = {
-                        episodes.items.getOrNull(position.episodeRowIndex)?.let {
+                        episodeList?.getOrNull(position.episodeRowIndex)?.let {
                             overviewDialog =
                                 ItemDetailsDialogInfo(
                                     title = it.name ?: "Unknown",

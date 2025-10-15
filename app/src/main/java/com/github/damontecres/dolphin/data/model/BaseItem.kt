@@ -32,21 +32,29 @@ data class BaseItem(
         if (type == BaseItemKind.EPISODE) data.seasonEpisode + " - " + name else data.productionYear?.toString()
 
     @Transient
-    val indexNumber = data.indexNumber
-
-    @Transient
     val resumeMs =
         data.userData
             ?.playbackPositionTicks
             ?.ticks
             ?.inWholeMilliseconds
 
+    @Transient
+    val indexNumber = data.indexNumber ?: dateAsIndex()
+
+    private fun dateAsIndex(): Int? =
+        data.premiereDate
+            ?.let {
+                it.year.toString() +
+                    it.monthValue.toString().padStart(2, '0') +
+                    it.dayOfMonth.toString().padStart(2, '0')
+            }?.toIntOrNull()
+
     fun destination(): Destination {
         val result =
             // Redirect episodes & seasons to their series if possible
             when (type) {
                 BaseItemKind.EPISODE -> {
-                    data.indexNumber?.let { episode ->
+                    indexNumber?.let { episode ->
                         data.parentIndexNumber?.let { season ->
                             Destination.SeriesOverview(
                                 data.seriesId!!,

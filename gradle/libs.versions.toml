@@ -1,6 +1,7 @@
 [versions]
 aboutLibraries = "12.2.4"
 agp = "8.13.0"
+desugar_jdk_libs = "2.1.5"
 hiltNavigationCompose = "1.3.0"
 kotlin = "2.2.20"
 ksp = "2.2.20-2.0.2" # https://github.com/google/ksp/issues/2596 2.0.3 is broken
@@ -51,6 +52,7 @@ androidx-tv-material = { group = "androidx.tv", name = "tv-material", version.re
 androidx-lifecycle-runtime-ktx = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version.ref = "lifecycleRuntimeKtx" }
 androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }
 androidx-datastore = { module = "androidx.datastore:datastore", version.ref = "datastore" }
+desugar_jdk_libs = { module = "com.android.tools:desugar_jdk_libs", version.ref = "desugar_jdk_libs" }
 hilt-android = { module = "com.google.dagger:hilt-android", version.ref = "hilt" }
 hilt-android-compiler = { module = "com.google.dagger:hilt-android-compiler", version.ref = "hilt" }
 protobuf-kotlin-lite = { module = "com.google.protobuf:protobuf-kotlin-lite", version.ref = "protobuf-javalite" }

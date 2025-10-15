@@ -13,6 +13,8 @@ import java.time.format.DateTimeFormatter
  */
 fun formatDateTime(dateTime: LocalDateTime): String =
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        // TODO server returns in UTC, but sdk converts to local time
+        // eg 2020-02-14T00:00:00.0000000Z => 2020-02-13T17:00:00 PT => Feb 13, 2020
         val formatter = DateTimeFormatter.ofPattern("MMM d, yyyy")
         formatter.format(dateTime)
     } else if (dateTime.toString().length >= 10) {
