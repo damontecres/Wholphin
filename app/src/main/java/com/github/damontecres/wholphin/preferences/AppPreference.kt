@@ -367,7 +367,7 @@ sealed interface AppPreference<T> {
         val UpdateUrl =
             AppStringPreference(
                 title = R.string.update_url,
-                defaultValue = "", // TODO
+                defaultValue = "https://api.github.com/repos/damontecres/Wholphin/releases/latest",
                 getter = { it.updateUrl },
                 setter = { prefs, value ->
                     prefs.update { updateUrl = value }
