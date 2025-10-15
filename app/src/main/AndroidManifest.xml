@@ -28,8 +28,8 @@
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:supportsRtl="true"
-        android:theme="@style/Theme.Dolphin"
-        android:name=".DolphinApplication"
+        android:theme="@style/Theme.Wholphin"
+        android:name=".WholphinApplication"
         android:usesCleartextTraffic="true">
         <activity
             android:name=".MainActivity"

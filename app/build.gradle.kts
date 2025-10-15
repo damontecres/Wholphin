@@ -47,11 +47,11 @@ fun getAppVersion(): String {
 }
 
 android {
-    namespace = "com.github.damontecres.dolphin"
+    namespace = "com.github.damontecres.wholphin"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.github.damontecres.dolphin"
+        applicationId = "com.github.damontecres.wholphin"
         minSdk = 25
         targetSdk = 36
         versionCode = getVersionCode()
@@ -135,7 +135,7 @@ android {
                 .map { it as com.android.build.gradle.internal.api.BaseVariantOutputImpl }
                 .forEach { output ->
                     val outputFileName =
-                        "Dolphin-${variant.baseName}-${variant.versionName}-${variant.versionCode}.apk"
+                        "Wholphin-${variant.baseName}-${variant.versionName}-${variant.versionCode}.apk"
                     output.outputFileName = outputFileName
                 }
         }

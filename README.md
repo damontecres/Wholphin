@@ -1,4 +1,4 @@
-# Dolphin - an OSS Android TV client for Jellyfin
+# Wholphin - an OSS Android TV client for Jellyfin
 
 This is an Android TV client for [Jellyfin](https://jellyfin.org/). It aims to provide a Plex inspired UI experience for users migrating from Plex to Jellyfin.
 
@@ -6,9 +6,9 @@ This is not a fork of the [official client](https://github.com/jellyfin/jellyfin
 
 ## Motivation
 
-After using Plex and its Android TV app for years, I found the official Jellyfin Android TV client UI/UX to be a barrier to using Jellyfin more, so if you wish the interface and playback controls were a bit more like Plex's Android TV app, then Dolphin might work for you!
+After using Plex and its Android TV app for years, I found the official Jellyfin Android TV client UI/UX to be a barrier to using Jellyfin more, so if you wish the interface and playback controls were a bit more like Plex's Android TV app, then Wholphin might work for you!
 
-That said, Dolphin does not yet implement every feature in Jellyfin. It is a work in progress that will continue to improve over time.
+That said, Wholphin does not yet implement every feature in Jellyfin. It is a work in progress that will continue to improve over time.
 
 ## Distinguishing Features
 
@@ -25,7 +25,7 @@ That said, Dolphin does not yet implement every feature in Jellyfin. It is a wor
 
 ## Installation
 
-Downloader Code: `Dolphin CODE`
+Downloader Code: `Wholphin CODE`
 
 1. Enable side-loading "unknown" apps
     - https://androidtvnews.com/unknown-sources-chromecast-google-tv/
@@ -33,8 +33,8 @@ Downloader Code: `Dolphin CODE`
     - https://developer.android.com/distribute/marketing-tools/alternative-distribution#unknown-sources
     - https://www.aftvnews.com/how-to-enable-apps-from-unknown-sources-on-an-amazon-fire-tv-or-fire-tv-stick/
 1. Install the APK on your Android TV device with one of these options:
-    - Install a browser program such as [Downloader](https://www.aftvnews.com/downloader/), use it to get the latest apk with short code `Dolphin ENTER A VALUE HERE` or URL: https://aftv.news/ Dolphin
-    - Download the latest APK release from the [releases page](https://github.com/damontecres/Dolphin/releases/latest) or https://aftv.news/ Dolphin
+    - Install a browser program such as [Downloader](https://www.aftvnews.com/downloader/), use it to get the latest apk with short code `Wholphin ENTER A VALUE HERE` or URL: https://aftv.news/ Wholphin
+    - Download the latest APK release from the [releases page](https://github.com/damontecres/Wholphin/releases/latest) or https://aftv.news/ Wholphin
         - Put the APK on an SD Card/USB stick/network share and use a file manager app from the Google Play Store / Amazon AppStore (e.g. `FX File Explorer`). Android's preinstalled file manager probably will not work!
         - Use `Send files to TV` from the Google Play Store on your phone & TV
         - (Expert) Use [ADB](https://developer.android.com/studio/command-line/adb) to install the APK from your computer ([guide](https://fossbytes.com/side-load-apps-android-tv/#h-how-to-sideload-apps-on-your-android-tv-using-adb))

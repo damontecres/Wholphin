@@ -1,4 +1,4 @@
-# Dolphin developer's guide
+# Wholphin developer's guide
 
 See also the [Contributing](CONTRIBUTING.md) guide for general information on contributing to the project.
 

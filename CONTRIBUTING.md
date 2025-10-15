@@ -1,6 +1,6 @@
-# Contributing to Dolphin
+# Contributing to Wholphin
 
-We appreciate your interest in contributing to Dolphin!
+We appreciate your interest in contributing to Wholphin!
 
 ## Code of Conduct
 

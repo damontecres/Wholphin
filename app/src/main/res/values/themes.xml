@@ -1,6 +1,6 @@
 <resources>
 
-    <style name="Theme.Dolphin" parent="Theme.AppCompat.DayNight.NoActionBar">
+    <style name="Theme.Wholphin" parent="Theme.AppCompat.DayNight.NoActionBar">
         <item name="android:colorBackground">@android:color/background_dark</item>
     </style>
 </resources>

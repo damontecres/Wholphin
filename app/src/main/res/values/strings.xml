@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Dolphin</string>
+    <string name="app_name">Wholphin</string>
 
     <string name="home_section_latest_media">Recently added media</string>
     <string name="home_section_library">My media</string>
@@ -20,7 +20,7 @@
     <string name="mark_watched">Mark as watched</string>
     <string name="cancel">Cancel</string>
     <string name="save">Save</string>
-    <string name="app_name_long">Dolphin</string>
+    <string name="app_name_long">Wholphin</string>
     <string name="basic_interface">Basic Interface</string>
     <string name="playback">Playback</string>
     <string name="about">About</string>

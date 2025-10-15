@@ -1,0 +1,70 @@
+syntax = "proto3";
+
+option java_package = "com.github.damontecres.wholphin.preferences";
+option java_multiple_files = true;
+
+enum SkipSegmentBehavior{
+  IGNORE = 0;
+  AUTO_SKIP = 1;
+  ASK_TO_SKIP = 2;
+}
+
+message PlaybackPreferences {
+  int64 skip_forward_ms = 1;
+  int64 skip_back_ms = 2;
+  int64 controller_timeout_ms = 3;
+  int32 seek_bar_steps = 4;
+  bool show_debug_info = 5;
+  bool auto_play_next = 6;
+  int64 auto_play_next_delay_seconds = 7;
+  int64 skip_back_on_resume_seconds = 8;
+  int64 max_bitrate = 9;
+
+  SkipSegmentBehavior skip_intros = 10;
+  SkipSegmentBehavior skip_outros = 11;
+  SkipSegmentBehavior skip_commercials = 12;
+  SkipSegmentBehavior skip_recaps = 13;
+  SkipSegmentBehavior skip_previews = 14;
+}
+
+message HomePagePreferences{
+  int32 max_items_per_row = 1;
+  bool enable_rewatching_next_up = 2;
+  bool combine_continue_next = 3;
+}
+
+enum ThemeSongVolume {
+  DISABLED = 0;
+  LOWEST = 1;
+  LOW = 2;
+  MEDIUM = 3;
+  HIGH = 4;
+  HIGHEST = 5;
+}
+
+enum AppThemeColors {
+  PURPLE = 0;
+  BLUE = 1;
+  GREEN = 2;
+  ORANGE = 3;
+}
+
+message InterfacePreferences {
+  ThemeSongVolume play_theme_songs = 1;
+  bool remember_selected_tab = 2;
+  map<string, int32> remembered_tabs = 3;
+  AppThemeColors app_theme_colors = 4;
+}
+
+message AppPreferences {
+  // The currently signed in server and user IDs, mostly for restoring a session
+  string current_server_id = 1;
+  string current_user_id = 2;
+
+  PlaybackPreferences playback_preferences = 3;
+  HomePagePreferences home_page_preferences = 4;
+  InterfacePreferences interface_preferences = 5;
+
+  bool auto_check_for_updates = 6;
+  string update_url = 7;
+}
