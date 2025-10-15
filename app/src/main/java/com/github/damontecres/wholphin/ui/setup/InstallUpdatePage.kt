@@ -1,5 +1,8 @@
 package com.github.damontecres.wholphin.ui.setup
 
+import android.Manifest
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.gestures.scrollBy
@@ -19,8 +22,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.key.Key
@@ -96,6 +101,17 @@ fun InstallUpdatePage(
     LaunchedEffect(Unit) {
         viewModel.init(preferences.appPreferences.updateUrl)
     }
+    var permissions by remember { mutableStateOf(viewModel.updater.hasPermissions()) }
+    val launcher =
+        rememberLauncherForActivityResult(
+            ActivityResultContracts.RequestPermission(),
+        ) { isGranted: Boolean ->
+            if (isGranted) {
+                permissions = true
+            } else {
+                // TODO
+            }
+        }
     when (val state = loading) {
         is LoadingState.Error -> ErrorMessage(state, modifier)
         LoadingState.Loading,
@@ -109,7 +125,11 @@ fun InstallUpdatePage(
                         currentVersion = viewModel.currentVersion,
                         release = it,
                         onInstallRelease = {
-                            viewModel.installRelease(it)
+                            if (!permissions) {
+                                launcher.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                            } else {
+                                viewModel.installRelease(it)
+                            }
                         },
                         onCancel = {
                             viewModel.navigationManager.goBack()
@@ -197,8 +217,10 @@ fun InstallUpdatePageContent(
                 Modifier
                     .fillMaxWidth()
                     .align(Alignment.CenterVertically)
-                    .background(MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp), shape = RoundedCornerShape(16.dp))
-                    .padding(16.dp),
+                    .background(
+                        MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp),
+                        shape = RoundedCornerShape(16.dp),
+                    ).padding(16.dp),
         ) {
             Text(
                 text = "Update available",

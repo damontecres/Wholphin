@@ -10,14 +10,12 @@ import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
 import android.widget.Toast
-import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.core.content.edit
 import androidx.preference.PreferenceManager
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.hilt.StandardOkHttpClient
-import com.github.damontecres.wholphin.ui.findActivity
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.showToast
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -173,7 +171,6 @@ class UpdateChecker
         }
 
         suspend fun installRelease(release: Release) {
-            val activity = context.findActivity()!!
             withContext(Dispatchers.IO) {
                 cleanup()
                 val request =
@@ -209,7 +206,7 @@ class UpdateChecker
                                 }
 
                                 val intent = Intent(Intent.ACTION_INSTALL_PACKAGE)
-                                intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
                                 intent.data = uri
                                 context.startActivity(intent)
                             } else {
@@ -217,51 +214,32 @@ class UpdateChecker
 //                                showToast(context, "Unable to download the apk")
                                 val targetFile = fallbackDownload(it)
                                 val intent = Intent(Intent.ACTION_INSTALL_PACKAGE)
+                                intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
+                                intent.data =
+                                    FileProvider.getUriForFile(
+                                        context,
+                                        context.packageName + ".provider",
+                                        targetFile,
+                                    )
+                                context.startActivity(intent)
+                            }
+                        } else {
+                            val targetFile = fallbackDownload(it)
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                                val intent = Intent(Intent.ACTION_INSTALL_PACKAGE)
                                 intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                                 intent.data =
                                     FileProvider.getUriForFile(
-                                        activity,
-                                        activity.packageName + ".provider",
+                                        context,
+                                        context.packageName + ".provider",
                                         targetFile,
                                     )
-                                activity.startActivity(intent)
-                            }
-                        } else {
-                            if (ContextCompat.checkSelfPermission(
-                                    context,
-                                    Manifest.permission.WRITE_EXTERNAL_STORAGE,
-                                ) != PackageManager.PERMISSION_GRANTED ||
-                                ContextCompat.checkSelfPermission(
-                                    context,
-                                    Manifest.permission.READ_EXTERNAL_STORAGE,
-                                ) != PackageManager.PERMISSION_GRANTED
-                            ) {
-                                ActivityCompat.requestPermissions(
-                                    activity,
-                                    arrayOf(
-                                        Manifest.permission.WRITE_EXTERNAL_STORAGE,
-                                        Manifest.permission.READ_EXTERNAL_STORAGE,
-                                    ),
-                                    PERMISSION_REQUEST_CODE,
-                                )
+                                context.startActivity(intent)
                             } else {
-                                val targetFile = fallbackDownload(it)
-                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                                    val intent = Intent(Intent.ACTION_INSTALL_PACKAGE)
-                                    intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                                    intent.data =
-                                        FileProvider.getUriForFile(
-                                            activity,
-                                            activity.packageName + ".provider",
-                                            targetFile,
-                                        )
-                                    activity.startActivity(intent)
-                                } else {
-                                    val intent = Intent(Intent.ACTION_VIEW)
-                                    intent.setDataAndType(Uri.fromFile(targetFile), APK_MIME_TYPE)
-                                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                                    activity.startActivity(intent)
-                                }
+                                val intent = Intent(Intent.ACTION_VIEW)
+                                intent.setDataAndType(Uri.fromFile(targetFile), APK_MIME_TYPE)
+                                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                context.startActivity(intent)
                             }
                         }
                     } else {
@@ -282,6 +260,17 @@ class UpdateChecker
             }
             return targetFile
         }
+
+        fun hasPermissions(): Boolean =
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q ||
+                ContextCompat.checkSelfPermission(
+                    context,
+                    Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                ) == PackageManager.PERMISSION_GRANTED &&
+                ContextCompat.checkSelfPermission(
+                    context,
+                    Manifest.permission.READ_EXTERNAL_STORAGE,
+                ) == PackageManager.PERMISSION_GRANTED
 
         /**
          * Delete previously downloaded APKs
