@@ -1,0 +1,128 @@
+name: Development build
+
+on:
+  push:
+    branches:
+      - main
+      - develop/*
+
+defaults:
+  run:
+    shell: bash
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  APK_SHORT_NAME: Wholphin-release.apk
+  APK_DEBUG_SHORT_NAME: Wholphin-debug.apk
+  BRANCH_NAME: ${{ github.ref_name }}
+  BUILD_TOOLS_VERSION: 36.0.0
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout the code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Need the tags to build
+      # Setup the SDKs
+      - name: Setup JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: zulu
+          java-version: '21'
+          cache: 'gradle'
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          packages: "tools platform-tools build-tools;${{ env.BUILD_TOOLS_VERSION }}"
+
+      - name: Get version names
+        run: |
+          LATEST_TAG=$(git describe --tags --match 'v*' --abbrev=0)
+          VERSION_NAME=$(git describe --tags --match 'v*' --long)
+          if [[ $BRANCH_NAME == "main" ]]; then
+            TAG_NAME="develop"
+          else
+            TAG_NAME="${BRANCH_NAME/\//-}"
+          fi
+
+          echo "LATEST_TAG=$LATEST_TAG" >> "$GITHUB_ENV"
+          echo "VERSION_NAME=$VERSION_NAME" >> "$GITHUB_ENV"
+          echo "TAG_NAME=$TAG_NAME" >> "$GITHUB_ENV"
+      - name: Build release app
+        id: build
+        env:
+          KEY_ALIAS: "${{ secrets.KEY_ALIAS }}"
+          KEY_PASSWORD: "${{ secrets.KEY_PASSWORD }}"
+          KEY_STORE_PASSWORD: "${{ secrets.KEY_STORE_PASSWORD }}"
+          SIGNING_KEY: "${{ secrets.SIGNING_KEY }}"
+        run: |
+          ./gradlew clean assembleRelease assembleDebug
+          echo "apk=$(ls app/build/outputs/apk/release/Wholphin-release*.apk)" >> "$GITHUB_OUTPUT"
+          echo "apk_debug=$(ls app/build/outputs/apk/debug/Wholphin-debug*.apk)" >> "$GITHUB_OUTPUT"
+      - name: Verify signature
+        run: |
+          echo "Verify release APK"
+          ${{env.ANDROID_SDK_ROOT}}/build-tools/${{ env.BUILD_TOOLS_VERSION }}/apksigner verify --verbose --print-certs "${{ steps.build.outputs.apk }}"
+          echo "Verify debug APK"
+          ${{env.ANDROID_SDK_ROOT}}/build-tools/${{ env.BUILD_TOOLS_VERSION }}/apksigner verify --verbose --print-certs "${{ steps.build.outputs.apk_debug }}"
+      - name: Copy APK to ${{ env.APK_SHORT_NAME }}
+        run: |
+          cp "${{ steps.build.outputs.apk }}" "${{ env.APK_SHORT_NAME }}"
+          cp "${{ steps.build.outputs.apk_debug }}" "${{ env.APK_DEBUG_SHORT_NAME }}"
+      - name: Checksums
+        run: |
+          echo "SHA256 checksums:"
+          sha256sum "${{ steps.build.outputs.apk }}" "${{ env.APK_SHORT_NAME }}"
+          sha256sum "${{ steps.build.outputs.apk_debug }}" "${{ env.APK_DEBUG_SHORT_NAME }}"
+      - name: Delete ${{ env.TAG_NAME }} tag and release
+        uses: dev-drprasad/delete-tag-and-release@v1.1
+        with:
+          tag_name: "${{ env.TAG_NAME }}"
+          delete_release: true
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Advance ${{ env.TAG_NAME }} tag
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            await github.rest.git.createRef({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: "refs/tags/${{ env.TAG_NAME }}",
+              sha: context.sha
+            })
+
+      - name: Create GitHub release
+        uses: ncipollo/release-action@v1
+        with:
+          allowUpdates: true
+          artifactErrorsFailBuild: true
+          artifacts: "${{ steps.build.outputs.apk_debug }},${{ steps.build.outputs.apk }},${{ env.APK_DEBUG_SHORT_NAME }},${{ env.APK_SHORT_NAME }}"
+          draft: false
+          generateReleaseNotes: false
+          makeLatest: false
+          name: "${{ env.VERSION_NAME }}"
+          prerelease: true
+          removeArtifacts: true
+          replacesArtifacts: true
+          updateOnlyUnreleased: true
+          tag: "${{ env.TAG_NAME }}"
+
+          body: |
+            ### `${{ env.BRANCH_NAME }}` development build
+
+            This pre-release tracks the development debug build of Wholphin from the `${{ env.BRANCH_NAME }}` branch.
+
+            See https://github.com/damontecres/Wholphin/releases/latest for the latest stable release.
+
+            If you want to update to this version in-app, change Settings->Advanced->Update URL to https://api.github.com/repos/damontecres/Wholphin/releases/tags/${{ env.TAG_NAME }} (replace `latest` with `tags/${{ env.TAG_NAME }}`).
+
+            [See changes since `${{ env.LATEST_TAG }}`](https://github.com/damontecres/Wholphin/compare/${{ env.LATEST_TAG }}...${{ env.TAG_NAME }})

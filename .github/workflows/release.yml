@@ -1,0 +1,66 @@
+name: Create release
+
+on:
+  push:
+    tags:
+      - v*
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  APK_SHORT_NAME: Wholphin.apk
+  BUILD_TOOLS_VERSION: 36.0.0
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout the code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Need the tags to build
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+      - name: Setup JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: zulu
+          java-version: '21'
+          cache: 'gradle'
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          packages: "tools platform-tools build-tools;${{ env.BUILD_TOOLS_VERSION }}"
+      - name: Build app
+        id: buildapp
+        env:
+          KEY_ALIAS: "${{ secrets.KEY_ALIAS }}"
+          KEY_PASSWORD: "${{ secrets.KEY_PASSWORD }}"
+          KEY_STORE_PASSWORD: "${{ secrets.KEY_STORE_PASSWORD }}"
+          SIGNING_KEY: "${{ secrets.SIGNING_KEY }}"
+        run: |
+          ./gradlew clean assembleRelease
+          echo "apk=$(ls app/build/outputs/apk/release/Wholphin-release*.apk)" >> "$GITHUB_OUTPUT"
+      - name: Verify signature
+        run: |
+          ${{env.ANDROID_SDK_ROOT}}/build-tools/${{ env.BUILD_TOOLS_VERSION }}/apksigner verify --verbose --print-certs "${{ steps.buildapp.outputs.apk }}"
+      - name: Copy APK to ${{ env.APK_SHORT_NAME }}
+        run: |
+          cp "${{ steps.buildapp.outputs.apk }}" "${{ env.APK_SHORT_NAME }}"
+      - name: Checksums
+        run: |
+          echo "SHA256 checksums:"
+          sha256sum "${{ steps.buildapp.outputs.apk }}" "${{ env.APK_SHORT_NAME }}"
+      - name: Create GitHub release
+        uses: ncipollo/release-action@v1
+        with:
+          artifacts: "${{ steps.buildapp.outputs.apk }},${{ env.APK_SHORT_NAME }}"
+          makeLatest: true
+          prerelease: false
+          generateReleaseNotes: true

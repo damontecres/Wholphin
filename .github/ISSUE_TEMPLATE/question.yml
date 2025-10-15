@@ -1,0 +1,15 @@
+name: "Question"
+description: Ask a question
+title: "[QST] - <title>"
+labels: [
+  "question"
+]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: "Question"
+      description: Please enter your question
+      placeholder: "How do I...?"
+    validations:
+      required: true

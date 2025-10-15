@@ -1,0 +1,65 @@
+name: PR
+
+on:
+  pull_request:
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  BUILD_TOOLS_VERSION: 36.0.0
+  BUILD_DIRS_ARTIFACT: build-dirs
+
+jobs:
+  pre-commit:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout the code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0 # Need the tags to build
+    - name: Setup Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+    - name: Run pre-commit
+      uses: pre-commit/action@v3.0.1
+
+  build:
+    runs-on: ubuntu-latest
+    needs: pre-commit
+    steps:
+      - name: Checkout the code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Need the tags to build
+      - name: Setup JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: zulu
+          java-version: '21'
+          cache: 'gradle'
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          packages: "tools platform-tools build-tools;${{ env.BUILD_TOOLS_VERSION }}"
+      - name: Build app
+        id: buildapp
+        run: |
+          ./gradlew clean build
+          echo "apk=$(ls app/build/outputs/apk/debug/Wholphin-debug*.apk)" >> "$GITHUB_OUTPUT"
+      - name: Tar build dirs
+        run: |
+          tar -czf build.tgz */build/.
+      - uses: actions/upload-artifact@v4
+        id: upload-build-dirs
+        with:
+          name: "${{ env.BUILD_DIRS_ARTIFACT }}"
+          path: build.tgz
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Wholphin-debug.apk
+          path: "${{ steps.buildapp.outputs.apk }}"
+          compression-level: 0

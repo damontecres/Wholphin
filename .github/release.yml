@@ -1,0 +1,23 @@
+changelog:
+  exclude:
+    labels: []
+    authors: []
+  categories:
+    - title: Breaking Changes
+      labels:
+        - breaking change
+    - title: New Features & Enhancements
+      labels:
+        - enhancement
+    - title: UI/UX Improvements
+      labels:
+        - user interface
+      exclude:
+        labels:
+          - bug
+    - title: Bug Fixes
+      labels:
+        - bug
+    - title: Other changes
+      labels:
+        - "*"

@@ -1,0 +1,58 @@
+name: "Bug Report"
+description: Report a bug
+title: "[BUG] - <title>"
+labels: [
+  "bug"
+]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: "Description"
+      description: Please enter a description of the bug
+    validations:
+      required: true
+  - type: textarea
+    id: reprod
+    attributes:
+      label: "Reproduction steps"
+      description: Please enter the steps to reproduce
+      value: |
+        1. Click on '...'
+        2. Scroll to '....'
+        3. See error
+    validations:
+      required: false
+  - type: input
+    id: app-version
+    attributes:
+      label: "App Version"
+      description: What version of the app?
+      placeholder: "v0.1.0"
+    validations:
+      required: true
+  - type: input
+    id: server
+    attributes:
+      label: "Server Version"
+      description: What version of the server?
+      placeholder: "10.10.7"
+    validations:
+      required: true
+  - type: input
+    id: device
+    attributes:
+      label: "Device"
+      description: What device are you using?
+      placeholder: "NVIDIA Shield TV Pro 2019"
+    validations:
+      required: false
+  - type: textarea
+    id: logs
+    attributes:
+      label: "Logs"
+      description: Please gather any logs or crash reports and include them here.
+      placeholder: Review logs for personal information before sharing them here publicly!
+      render: bash
+    validations:
+      required: false
