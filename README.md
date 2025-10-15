@@ -1,16 +1,12 @@
 # Wholphin - an OSS Android TV client for Jellyfin
 
-This is an Android TV client for [Jellyfin](https://jellyfin.org/). It aims to provide a Plex inspired UI experience for users migrating from Plex to Jellyfin.
+> "Never half-phin two jellies. Always wholphin one jelly."
 
-This is not a fork of the [official client](https://github.com/jellyfin/jellyfin-androidtv). The user interface and controls have been written completely from scratch.
+Wholphin is an open-source Android TV client for Jellyfin. It aims to provide a different app UI that's inspired by Plex for users interested in migrating to Jellyfin.
 
-## Motivation
+This is not a fork of the [official client](https://github.com/jellyfin/jellyfin-androidtv). Wholphin's user interface and controls have been written completely from scratch. Wholphin uses the same media player (media3/ExoPlayer) as the official client.
 
-After using Plex and its Android TV app for years, I found the official Jellyfin Android TV client UI/UX to be a barrier to using Jellyfin more, so if you wish the interface and playback controls were a bit more like Plex's Android TV app, then Wholphin might work for you!
-
-That said, Wholphin does not yet implement every feature in Jellyfin. It is a work in progress that will continue to improve over time.
-
-## Distinguishing Features
+## Features
 
 - A navigation drawer for quick access to libraries, search, and settings from almost anywhere in the app
 - Show Movie/TV Show titles when browsing libraries
@@ -53,11 +49,9 @@ The app is tested on a variety of Android TV/Fire TV OS devices, but if you enco
 
 ## Contributions
 
-Issues and pull requests are always welcome! UI/UX improvements are especially desired!
+Issues and pull requests are always welcome! Please check before submitting that your issue or pull request is not a duplicate.
 
-Please check before submitting that your issue or pull request is not a duplicate.
-
-If you plan to submit a pull request, please read the [contributing guide](CONTRIBUTING.md) before submitting!
+If you plan to contribute, please read the [contributing guide](CONTRIBUTING.md)!
 
 ## Acknowledgements
 
