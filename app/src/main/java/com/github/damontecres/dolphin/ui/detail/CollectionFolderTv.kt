@@ -155,6 +155,7 @@ fun CollectionFolderTv(
                     preferences = preferences,
                     destination = destination,
                     showTitle = false,
+                    recursive = true,
                     modifier =
                         Modifier
                             .padding(start = 16.dp)

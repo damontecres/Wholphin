@@ -40,7 +40,8 @@ class HomeViewModel
         val homeRows = MutableLiveData<List<HomeRow>>()
 
         fun init(preferences: UserPreferences) {
-            val limit = preferences.appPreferences.homePagePreferences.maxItemsPerRow
+            val prefs = preferences.appPreferences.homePagePreferences
+            val limit = prefs.maxItemsPerRow
             viewModelScope.launch(
                 Dispatchers.IO +
                     LoadingExceptionHandler(
@@ -78,53 +79,32 @@ class HomeViewModel
 //                        }
 
                 // TODO data is fetched all together which may be slow for large servers
+                val resume = getResume(user.id, limit)
+                val nextUp = getNextUp(user.id, limit, prefs.enableRewatchingNextUp)
+                val latest = getLatest(user, limit)
+
                 val homeRows =
-                    homeSections
-                        .mapNotNull { section ->
-                            Timber.Forest.v("Loading section: %s", section.name)
-                            when (section) {
-                                HomeSection.LATEST_MEDIA -> {
-                                    getLatest(user, limit)
-                                }
-
-                                HomeSection.RESUME -> {
-                                    val items = getResume(user.id, limit)
-                                    listOf(
-                                        HomeRow(
-                                            section = section,
-                                            items = items,
-                                        ),
-                                    )
-                                }
-
-                                HomeSection.NEXT_UP -> {
-                                    val nextUp =
-                                        getNextUp(
-                                            user.id,
-                                            limit,
-                                            preferences.appPreferences.homePagePreferences.enableRewatchingNextUp,
-                                        )
-                                    listOf(
-                                        HomeRow(
-                                            section = section,
-                                            items = nextUp,
-                                        ),
-                                    )
-                                }
-
-                                // TODO
-                                HomeSection.LIVE_TV -> null
-                                HomeSection.ACTIVE_RECORDINGS -> null
-
-                                // TODO Not supported?
-                                HomeSection.LIBRARY_TILES_SMALL -> null
-                                HomeSection.LIBRARY_BUTTONS -> null
-                                HomeSection.RESUME_AUDIO -> null
-                                HomeSection.RESUME_BOOK -> null
-                                HomeSection.NONE -> null
-                            }
-                        }.flatten()
-                        .filter { it.items.isNotEmpty() }
+                    if (prefs.combineContinueNext) {
+                        listOf(
+                            HomeRow(
+                                section = HomeSection.NEXT_UP,
+                                items = resume + nextUp,
+                            ),
+                            *latest.toTypedArray(),
+                        )
+                    } else {
+                        listOf(
+                            HomeRow(
+                                section = HomeSection.RESUME,
+                                items = resume,
+                            ),
+                            HomeRow(
+                                section = HomeSection.NEXT_UP,
+                                items = nextUp,
+                            ),
+                            *latest.toTypedArray(),
+                        )
+                    }
                 withContext(Dispatchers.Main) {
                     this@HomeViewModel.homeRows.value = homeRows
                     loadingState.value = LoadingState.Success

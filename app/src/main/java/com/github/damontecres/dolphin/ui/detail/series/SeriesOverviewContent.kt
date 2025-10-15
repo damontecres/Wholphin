@@ -16,7 +16,6 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
@@ -34,6 +33,7 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Tab
@@ -46,16 +46,20 @@ import com.github.damontecres.dolphin.data.model.BaseItem
 import com.github.damontecres.dolphin.data.model.aspectRatioFloat
 import com.github.damontecres.dolphin.ui.OneTimeLaunchedEffect
 import com.github.damontecres.dolphin.ui.cards.BannerCard
+import com.github.damontecres.dolphin.ui.components.ErrorMessage
+import com.github.damontecres.dolphin.ui.components.LoadingPage
+import com.github.damontecres.dolphin.ui.detail.EpisodeList
 import com.github.damontecres.dolphin.ui.ifElse
 import com.github.damontecres.dolphin.ui.isNotNullOrBlank
 import com.github.damontecres.dolphin.ui.tryRequestFocus
+import com.github.damontecres.dolphin.util.formatDateTime
 import kotlin.time.Duration
 
 @Composable
 fun SeriesOverviewContent(
     series: BaseItem,
     seasons: List<BaseItem?>,
-    episodes: List<BaseItem?>,
+    episodes: EpisodeList,
     position: SeriesOverviewPosition,
     backdropImageUrl: String?,
     firstItemFocusRequester: FocusRequester,
@@ -76,9 +80,8 @@ fun SeriesOverviewContent(
     var resolvedTabIndex by remember { mutableIntStateOf(selectedTabIndex) }
     val tabRowFocusRequester = remember { FocusRequester() }
 
-    val focusedEpisode = episodes.getOrNull(position.episodeRowIndex)
-    LaunchedEffect(position) {
-    }
+    val focusedEpisode =
+        (episodes as? EpisodeList.Success)?.episodes?.items?.getOrNull(position.episodeRowIndex)
 
     Box(
         modifier =
@@ -184,6 +187,8 @@ fun SeriesOverviewContent(
                     Text(
                         text = it,
                         style = MaterialTheme.typography.headlineMedium,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
                         modifier = Modifier,
                     )
                 }
@@ -200,56 +205,74 @@ fun SeriesOverviewContent(
             }
             item {
                 key(position.seasonTabIndex) {
-                    val state = rememberLazyListState()
-                    OneTimeLaunchedEffect {
-                        if (state.firstVisibleItemIndex != position.episodeRowIndex) {
-                            state.scrollToItem(position.episodeRowIndex)
-                            firstItemFocusRequester.tryRequestFocus()
-                        }
-                    }
-                    LazyRow(
-                        state = state,
-                        horizontalArrangement = Arrangement.spacedBy(16.dp),
-                        contentPadding = PaddingValues(horizontal = 16.dp),
-                        modifier =
-                            Modifier
-                                .focusRestorer(firstItemFocusRequester)
-                                .focusRequester(episodeRowFocusRequester),
-                    ) {
-                        itemsIndexed(episodes) { episodeIndex, episode ->
-                            val interactionSource = remember { MutableInteractionSource() }
-                            if (interactionSource.collectIsFocusedAsState().value) {
-                                onFocus.invoke(
-                                    SeriesOverviewPosition(
-                                        selectedTabIndex,
-                                        episodeIndex,
-                                    ),
-                                )
+                    when (val eps = episodes) {
+                        EpisodeList.Loading -> LoadingPage()
+                        is EpisodeList.Error -> ErrorMessage(eps.message, eps.exception)
+                        is EpisodeList.Success -> {
+                            val state = rememberLazyListState()
+                            OneTimeLaunchedEffect {
+                                if (state.firstVisibleItemIndex != position.episodeRowIndex) {
+                                    state.scrollToItem(position.episodeRowIndex)
+                                }
+                                firstItemFocusRequester.tryRequestFocus()
                             }
-
-                            BannerCard(
-                                name = episode?.name,
-                                imageUrl = episode?.imageUrl,
-                                aspectRatio =
-                                    episode
-                                        ?.data
-                                        ?.primaryImageAspectRatio
-                                        ?.toFloat()
-                                        ?.coerceAtLeast(episode.data.aspectRatioFloat ?: (4f / 3f))
-                                        ?: (16f / 9), // TODO some episode images don't match the file's aspect ratio
-                                cornerText = "E${episode?.data?.indexNumber}",
-                                played = episode?.data?.userData?.played ?: false,
-                                playPercent = episode?.data?.userData?.playedPercentage ?: 0.0,
-                                onClick = { if (episode != null) onClick.invoke(episode) },
-                                onLongClick = { if (episode != null) onLongClick.invoke(episode) },
+                            LazyRow(
+                                state = state,
+                                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                                contentPadding = PaddingValues(horizontal = 16.dp),
                                 modifier =
-                                    Modifier.ifElse(
-                                        episodeIndex == position.episodeRowIndex,
-                                        Modifier.focusRequester(firstItemFocusRequester),
-                                    ),
-                                interactionSource = interactionSource,
-                                cardHeight = 120.dp,
-                            )
+                                    Modifier
+                                        .focusRestorer(firstItemFocusRequester)
+                                        .focusRequester(episodeRowFocusRequester),
+                            ) {
+                                itemsIndexed(eps.episodes.items) { episodeIndex, episode ->
+                                    val interactionSource = remember { MutableInteractionSource() }
+                                    if (interactionSource.collectIsFocusedAsState().value) {
+                                        onFocus.invoke(
+                                            SeriesOverviewPosition(
+                                                selectedTabIndex,
+                                                episodeIndex,
+                                            ),
+                                        )
+                                    }
+                                    val cornerText =
+                                        episode?.data?.indexNumber?.let { "E$it" }
+                                            ?: episode?.data?.premiereDate?.let(::formatDateTime)
+                                    BannerCard(
+                                        name = episode?.name,
+                                        imageUrl = episode?.imageUrl,
+                                        aspectRatio =
+                                            episode
+                                                ?.data
+                                                ?.primaryImageAspectRatio
+                                                ?.toFloat()
+                                                ?.coerceAtLeast(
+                                                    episode.data.aspectRatioFloat ?: (4f / 3f),
+                                                )
+                                                ?: (16f / 9), // TODO some episode images don't match the file's aspect ratio
+                                        cornerText = cornerText,
+                                        played = episode?.data?.userData?.played ?: false,
+                                        playPercent =
+                                            episode?.data?.userData?.playedPercentage
+                                                ?: 0.0,
+                                        onClick = { if (episode != null) onClick.invoke(episode) },
+                                        onLongClick = {
+                                            if (episode != null) {
+                                                onLongClick.invoke(
+                                                    episode,
+                                                )
+                                            }
+                                        },
+                                        modifier =
+                                            Modifier.ifElse(
+                                                episodeIndex == position.episodeRowIndex,
+                                                Modifier.focusRequester(firstItemFocusRequester),
+                                            ),
+                                        interactionSource = interactionSource,
+                                        cardHeight = 120.dp,
+                                    )
+                                }
+                            }
                         }
                     }
                 }

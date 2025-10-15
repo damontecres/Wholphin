@@ -50,14 +50,13 @@ import androidx.media3.ui.SubtitleView
 import androidx.media3.ui.compose.PlayerSurface
 import androidx.media3.ui.compose.SURFACE_TYPE_SURFACE_VIEW
 import androidx.media3.ui.compose.modifiers.resizeWithContentScale
-import androidx.media3.ui.compose.state.rememberNextButtonState
 import androidx.media3.ui.compose.state.rememberPlayPauseButtonState
 import androidx.media3.ui.compose.state.rememberPresentationState
-import androidx.media3.ui.compose.state.rememberPreviousButtonState
 import androidx.tv.material3.Button
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import androidx.tv.material3.surfaceColorAtElevation
+import com.github.damontecres.dolphin.data.model.Playlist
 import com.github.damontecres.dolphin.preferences.UserPreferences
 import com.github.damontecres.dolphin.preferences.skipBackOnResume
 import com.github.damontecres.dolphin.ui.OneTimeLaunchedEffect
@@ -101,11 +100,13 @@ fun PlaybackPage(
     val chapters by viewModel.chapters.observeAsState(listOf())
     val currentPlayback by viewModel.currentPlayback.observeAsState(null)
     val currentSegment by viewModel.currentSegment.observeAsState(null)
+    var segmentCancelled by remember(currentSegment?.id) { mutableStateOf(false) }
 
     var cues by remember { mutableStateOf<List<Cue>>(listOf()) }
     var showDebugInfo by remember { mutableStateOf(prefs.showDebugInfo) }
 
-    val nextUp by viewModel.nextUpEpisode.observeAsState(null)
+    val nextUp by viewModel.nextUp.observeAsState(null)
+    val playlist by viewModel.playlist.observeAsState(Playlist(listOf()))
 
     // TODO move to viewmodel?
     val cueListener =
@@ -138,8 +139,6 @@ fun PlaybackPage(
                 Modifier.resizeWithContentScale(contentScale, presentationState.videoSizeDp)
             val focusRequester = remember { FocusRequester() }
             val playPauseState = rememberPlayPauseButtonState(player)
-            val previousState = rememberPreviousButtonState(player)
-            val nextState = rememberNextButtonState(player)
             val seekBarState = rememberSeekBarState(player, scope)
 
             LaunchedEffect(Unit) {
@@ -181,19 +180,26 @@ fun PlaybackPage(
                     skipBackOnResume = preferences.appPreferences.playbackPreferences.skipBackOnResume,
                 )
 
+            val showSegment =
+                !segmentCancelled && currentSegment != null &&
+                    !controllerViewState.controlsVisible && skipIndicatorDuration == 0L
+            BackHandler(showSegment) {
+                segmentCancelled = true
+            }
+
             Box(
                 modifier
-                    .background(Color.Black)
-                    .onKeyEvent(keyHandler::onKeyEvent)
-                    .focusRequester(focusRequester)
-                    .focusable(),
+                    .background(Color.Black),
             ) {
                 val playerSize by animateFloatAsState(if (nextUp == null) 1f else .66f)
                 Box(
                     modifier =
                         Modifier
                             .fillMaxSize(playerSize)
-                            .align(Alignment.TopCenter),
+                            .align(Alignment.TopCenter)
+                            .onKeyEvent(keyHandler::onKeyEvent)
+                            .focusRequester(focusRequester)
+                            .focusable(),
                 ) {
                     PlayerSurface(
                         player = player,
@@ -261,8 +267,8 @@ fun PlaybackPage(
                             playerControls = player,
                             controllerViewState = controllerViewState,
                             showPlay = playPauseState.showPlay,
-                            previousEnabled = previousState.isEnabled,
-                            nextEnabled = nextState.isEnabled,
+                            previousEnabled = true,
+                            nextEnabled = playlist.hasNext(),
                             seekEnabled = true,
                             seekForward = preferences.appPreferences.playbackPreferences.skipForwardMs.milliseconds,
                             seekBack = preferences.appPreferences.playbackPreferences.skipBackMs.milliseconds,
@@ -290,6 +296,20 @@ fun PlaybackPage(
                                     is PlaybackAction.ToggleCaptions -> {
                                         viewModel.changeSubtitleStream(it.index)
                                     }
+
+                                    PlaybackAction.Next -> {
+                                        // TODO focus is lost
+                                        viewModel.playUpNextUp()
+                                    }
+
+                                    PlaybackAction.Previous -> {
+                                        val pos = player.currentPosition
+                                        if (pos < player.maxSeekToPreviousPosition && playlist.hasPrevious()) {
+                                            viewModel.playPrevious()
+                                        } else {
+                                            player.seekToPrevious()
+                                        }
+                                    }
                                 }
                             },
                             onSeekBarChange = seekBarState::onValueChange,
@@ -302,6 +322,11 @@ fun PlaybackPage(
                             trickplayInfo = trickplay,
                             trickplayUrlFor = viewModel::getTrickplayUrl,
                             chapters = chapters,
+                            playlist = playlist,
+                            onClickPlaylist = {
+                                viewModel.playItemInPlaylist(it)
+                            },
+                            currentSegment = currentSegment,
                         )
                     }
 
@@ -329,7 +354,7 @@ fun PlaybackPage(
 
                     // Ask to skip intros, etc button
                     AnimatedVisibility(
-                        currentSegment != null && !controllerViewState.controlsVisible && skipIndicatorDuration == 0L,
+                        showSegment,
                         modifier =
                             Modifier
                                 .padding(40.dp)
@@ -337,7 +362,11 @@ fun PlaybackPage(
                     ) {
                         currentSegment?.let { segment ->
                             val focusRequester = remember { FocusRequester() }
-                            LaunchedEffect(Unit) { focusRequester.tryRequestFocus() }
+                            LaunchedEffect(Unit) {
+                                focusRequester.tryRequestFocus()
+                                delay(10.seconds)
+                                segmentCancelled = false
+                            }
                             Button(
                                 onClick = {
                                     player.seekTo(segment.endTicks.ticks.inWholeMilliseconds)
@@ -354,7 +383,7 @@ fun PlaybackPage(
 
                 // Next up episode
                 BackHandler(nextUp != null) {
-                    viewModel.cancelUpNextEpisode()
+                    viewModel.navigationManager.goBack()
                 }
                 AnimatedVisibility(
                     nextUp != null,
@@ -374,7 +403,6 @@ fun PlaybackPage(
                                 preferences.appPreferences.playbackPreferences.autoPlayNextDelaySeconds,
                             )
                         }
-                        // TODO need extra back press for some reason
                         BackHandler(timeLeft > 0 && autoPlayEnabled) {
                             timeLeft = -1
                             autoPlayEnabled = false
@@ -382,14 +410,14 @@ fun PlaybackPage(
                         if (autoPlayEnabled) {
                             LaunchedEffect(Unit) {
                                 if (timeLeft == 0L) {
-                                    viewModel.playUpNextEpisode()
+                                    viewModel.playUpNextUp()
                                 } else {
                                     while (timeLeft > 0) {
                                         delay(1.seconds)
                                         timeLeft--
                                     }
                                     if (timeLeft == 0L && autoPlayEnabled) {
-                                        viewModel.playUpNextEpisode()
+                                        viewModel.playUpNextUp()
                                     }
                                 }
                             }
@@ -403,7 +431,7 @@ fun PlaybackPage(
                             description = it.data.overview,
                             imageUrl = it.imageUrl,
                             aspectRatio = it.data.primaryImageAspectRatio?.toFloat() ?: (16f / 9),
-                            onClick = { viewModel.playUpNextEpisode() },
+                            onClick = { viewModel.playUpNextUp() },
                             timeLeft = if (autoPlayEnabled) timeLeft.seconds else null,
                             modifier =
                                 Modifier

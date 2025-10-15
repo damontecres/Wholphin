@@ -54,6 +54,7 @@ import com.github.damontecres.dolphin.ui.timeRemaining
 import com.github.damontecres.dolphin.ui.tryRequestFocus
 import com.github.damontecres.dolphin.util.LoadingState
 import com.github.damontecres.dolphin.util.formatDateTime
+import com.github.damontecres.dolphin.util.seasonEpisode
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.extensions.ticks
 
@@ -121,7 +122,7 @@ fun HomePageContent(
                     Modifier
                         .fillMaxHeight(.7f)
                         .fillMaxWidth(.7f)
-                        .alpha(.4f)
+                        .alpha(.75f)
                         .align(Alignment.TopEnd)
                         .drawWithContent {
                             drawContent()
@@ -231,7 +232,13 @@ fun MainPageHeader(
                 val details =
                     buildList {
                         if (isEpisode) {
-                            add("S${dto.parentIndexNumber} E${dto.indexNumber}")
+                            val se = dto.seasonEpisode
+                            if (se != null) {
+                                add(se)
+                            } else if (dto.parentIndexNumber != null) {
+                                // Maybe a daily episode, so just show season, the date is added below
+                                add("S${dto.parentIndexNumber}")
+                            }
                         }
                         if (isEpisode) {
                             dto.premiereDate?.let { add(formatDateTime(it)) }
@@ -249,12 +256,16 @@ fun MainPageHeader(
                     Text(
                         text = title,
                         style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.SemiBold),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
                     )
                 }
                 subtitle?.let {
                     Text(
                         text = subtitle,
                         style = MaterialTheme.typography.headlineSmall,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
                     )
                 }
                 if (details.isNotEmpty()) {
@@ -267,13 +278,13 @@ fun MainPageHeader(
                 val overviewModifier =
                     Modifier
                         .padding(0.dp)
-                        .height(48.dp)
+                        .height(48.dp + if (!isEpisode) 12.dp else 0.dp)
                 if (overview.isNotNullOrBlank()) {
                     Text(
                         text = overview,
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurface,
-                        maxLines = 2,
+                        maxLines = if (isEpisode) 2 else 3,
                         overflow = TextOverflow.Ellipsis,
                         modifier = overviewModifier,
                     )

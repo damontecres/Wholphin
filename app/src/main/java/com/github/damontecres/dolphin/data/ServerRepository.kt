@@ -9,6 +9,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.Jellyfin
 import org.jellyfin.sdk.api.client.ApiClient
+import org.jellyfin.sdk.api.client.extensions.systemApi
 import org.jellyfin.sdk.api.client.extensions.userApi
 import org.jellyfin.sdk.model.api.AuthenticationResult
 import org.jellyfin.sdk.model.api.UserDto
@@ -42,7 +43,7 @@ class ServerRepository
          */
         suspend fun addAndChangeServer(server: JellyfinServer) {
             withContext(Dispatchers.IO) {
-                serverDao.addServer(server)
+                serverDao.addOrUpdateServer(server)
             }
             changeServer(server)
         }
@@ -74,14 +75,15 @@ class ServerRepository
                 apiClient.userApi
                     .getCurrentUser()
                     .content
+            val sysInfo by apiClient.systemApi.getSystemInfo()
 
-            val updatedServer = server.copy(name = userDto.serverName)
+            val updatedServer = server.copy(name = sysInfo.serverName)
             val updatedUser =
                 user.copy(
                     id = userDto.id.toString(),
                     name = userDto.name,
                 )
-            serverDao.addServer(updatedServer)
+            serverDao.addOrUpdateServer(updatedServer)
             serverDao.addUser(updatedUser)
             userPreferencesDataStore.updateData {
                 it

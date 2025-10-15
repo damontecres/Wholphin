@@ -27,7 +27,6 @@ import androidx.lifecycle.viewModelScope
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.github.damontecres.dolphin.data.model.BaseItem
-import com.github.damontecres.dolphin.data.model.Library
 import com.github.damontecres.dolphin.preferences.UserPreferences
 import com.github.damontecres.dolphin.ui.DefaultItemFields
 import com.github.damontecres.dolphin.ui.OneTimeLaunchedEffect
@@ -63,7 +62,7 @@ class CollectionFolderViewModel
     @Inject
     constructor(
         api: ApiClient,
-    ) : ItemViewModel<Library>(api) {
+    ) : ItemViewModel(api) {
         val loading = MutableLiveData<LoadingState>(LoadingState.Loading)
         val pager = MutableLiveData<List<BaseItem?>>(listOf())
         val sortAndDirection = MutableLiveData<SortAndDirection>()
@@ -72,6 +71,7 @@ class CollectionFolderViewModel
             itemId: UUID,
             potential: BaseItem?,
             sortAndDirection: SortAndDirection,
+            recursive: Boolean,
         ): Job =
             viewModelScope.launch(
                 LoadingExceptionHandler(
@@ -80,10 +80,13 @@ class CollectionFolderViewModel
                 ) + Dispatchers.IO,
             ) {
                 fetchItem(itemId, potential)
-                loadResults(sortAndDirection)
+                loadResults(sortAndDirection, recursive)
             }
 
-        fun loadResults(sortAndDirection: SortAndDirection) {
+        fun loadResults(
+            sortAndDirection: SortAndDirection,
+            recursive: Boolean,
+        ) {
             item.value?.let { item ->
                 viewModelScope.launch(Dispatchers.IO) {
                     withContext(Dispatchers.Main) {
@@ -96,28 +99,47 @@ class CollectionFolderViewModel
                             CollectionType.MOVIES -> listOf(BaseItemKind.MOVIE)
                             CollectionType.TVSHOWS -> listOf(BaseItemKind.SERIES)
                             CollectionType.HOMEVIDEOS -> listOf(BaseItemKind.VIDEO)
+                            CollectionType.MUSIC ->
+                                listOf(
+                                    BaseItemKind.AUDIO,
+                                    BaseItemKind.MUSIC_ARTIST,
+                                    BaseItemKind.MUSIC_ALBUM,
+                                )
+
+                            CollectionType.BOXSETS -> listOf(BaseItemKind.BOX_SET)
+                            CollectionType.PLAYLISTS -> listOf(BaseItemKind.PLAYLIST)
 
                             else -> listOf()
                         }
                     val request =
                         GetItemsRequest(
                             parentId = item.id,
-                            isSeries = true,
-                            mediaTypes = null,
-//                            recursive = true,
                             enableImageTypes = listOf(ImageType.PRIMARY, ImageType.THUMB),
                             includeItemTypes = includeItemTypes,
+                            recursive = recursive,
+                            excludeItemIds = listOf(item.id),
                             sortBy =
                                 listOf(
                                     sortAndDirection.sort,
                                     ItemSortBy.SORT_NAME,
                                     ItemSortBy.PRODUCTION_YEAR,
                                 ),
-                            sortOrder = listOf(sortAndDirection.direction),
+                            sortOrder =
+                                listOf(
+                                    sortAndDirection.direction,
+                                    SortOrder.ASCENDING,
+                                    SortOrder.ASCENDING,
+                                ),
                             fields = DefaultItemFields,
                         )
                     val newPager =
-                        ApiRequestPager(api, request, GetItemsRequestHandler, viewModelScope)
+                        ApiRequestPager(
+                            api,
+                            request,
+                            GetItemsRequestHandler,
+                            viewModelScope,
+                            useSeriesForPrimary = true,
+                        )
                     newPager.init()
                     if (newPager.isNotEmpty()) newPager.getBlocking(0)
                     withContext(Dispatchers.Main) {
@@ -145,6 +167,7 @@ class CollectionFolderViewModel
                         nameLessThan = letter.toString(),
                         limit = 0,
                         enableTotalRecordCount = true,
+                        recursive = true,
                     )
                 val result by GetItemsRequestHandler.execute(api, request)
                 result.totalRecordCount
@@ -160,6 +183,7 @@ class CollectionFolderViewModel
 fun CollectionFolderGrid(
     preferences: UserPreferences,
     destination: Destination.MediaItem,
+    recursive: Boolean,
     onClickItem: (BaseItem) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: CollectionFolderViewModel = hiltViewModel(),
@@ -172,12 +196,11 @@ fun CollectionFolderGrid(
     positionCallback: ((columns: Int, position: Int) -> Unit)? = null,
 ) {
     OneTimeLaunchedEffect {
-        viewModel.init(destination.itemId, destination.item, initialSortAndDirection)
+        viewModel.init(destination.itemId, destination.item, initialSortAndDirection, recursive)
     }
     val sortAndDirection by viewModel.sortAndDirection.observeAsState(initialSortAndDirection)
     val loading by viewModel.loading.observeAsState(LoadingState.Loading)
     val item by viewModel.item.observeAsState()
-    val library by viewModel.model.observeAsState()
     val pager by viewModel.pager.observeAsState()
 
     when (val state = loading) {
@@ -189,14 +212,13 @@ fun CollectionFolderGrid(
             pager?.let { pager ->
                 CollectionFolderGridContent(
                     preferences,
-                    library!!,
                     item!!,
                     pager,
                     sortAndDirection = sortAndDirection,
                     modifier = modifier,
                     onClickItem = onClickItem,
                     onSortChange = {
-                        viewModel.loadResults(it)
+                        viewModel.loadResults(it, recursive)
                     },
                     showTitle = showTitle,
                     positionCallback = positionCallback,
@@ -210,7 +232,6 @@ fun CollectionFolderGrid(
 @Composable
 fun CollectionFolderGridContent(
     preferences: UserPreferences,
-    library: Library,
     item: BaseItem,
     pager: List<BaseItem?>,
     sortAndDirection: SortAndDirection,
@@ -221,7 +242,7 @@ fun CollectionFolderGridContent(
     showTitle: Boolean = true,
     positionCallback: ((columns: Int, position: Int) -> Unit)? = null,
 ) {
-    val title = library.name ?: item.data.name ?: item.data.collectionType?.name ?: "Collection"
+    val title = item.name ?: item.data.collectionType?.name ?: "Collection"
     val sortOptions =
         when (item.data.collectionType) {
             CollectionType.MOVIES -> MovieSortOptions
@@ -262,7 +283,7 @@ fun CollectionFolderGridContent(
         CardGrid(
             pager = pager,
             onClickItem = onClickItem,
-            longClicker = {},
+            onLongClickItem = {},
             letterPosition = letterPosition,
             gridFocusRequester = gridFocusRequester,
             showJumpButtons = false, // TODO add preference

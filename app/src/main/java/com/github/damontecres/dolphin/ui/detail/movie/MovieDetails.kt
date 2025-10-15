@@ -13,7 +13,6 @@ import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -40,7 +39,6 @@ import coil3.compose.AsyncImage
 import com.github.damontecres.dolphin.data.model.BaseItem
 import com.github.damontecres.dolphin.data.model.Chapter
 import com.github.damontecres.dolphin.data.model.Person
-import com.github.damontecres.dolphin.data.model.Video
 import com.github.damontecres.dolphin.preferences.UserPreferences
 import com.github.damontecres.dolphin.ui.cards.ChapterRow
 import com.github.damontecres.dolphin.ui.cards.PersonRow
@@ -77,7 +75,7 @@ class MovieViewModel
     constructor(
         api: ApiClient,
         val navigationManager: NavigationManager,
-    ) : LoadingItemViewModel<Video>(api) {
+    ) : LoadingItemViewModel(api) {
         private lateinit var itemId: UUID
         val people = MutableLiveData<List<Person>>(listOf())
         val chapters = MutableLiveData<List<Chapter>>(listOf())
@@ -177,20 +175,20 @@ fun MovieDetails(
                                                 Destination.Playback(movie),
                                             )
                                         },
-                                        DialogItem(
-                                            "Playback Settings",
-                                            Icons.Default.Settings,
-//                                                iconColor = Color.Green.copy(alpha = .8f),
-                                        ) {
-                                            // TODO choose audio or subtitle tracks?
-                                        },
-                                        DialogItem(
-                                            "Play Version",
-                                            Icons.Default.PlayArrow,
-                                            iconColor = Color.Green.copy(alpha = .8f),
-                                        ) {
-                                            // TODO only show for multiple files
-                                        },
+//                                        DialogItem(
+//                                            "Playback Settings",
+//                                            Icons.Default.Settings,
+// //                                                iconColor = Color.Green.copy(alpha = .8f),
+//                                        ) {
+//                                            // TODO choose audio or subtitle tracks?
+//                                        },
+//                                        DialogItem(
+//                                            "Play Version",
+//                                            Icons.Default.PlayArrow,
+//                                            iconColor = Color.Green.copy(alpha = .8f),
+//                                        ) {
+//                                            // TODO only show for multiple files
+//                                        },
                                     ),
                             )
                     },

@@ -39,6 +39,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import androidx.tv.material3.surfaceColorAtElevation
+import coil3.SingletonImageLoader
 import com.github.damontecres.dolphin.R
 import com.github.damontecres.dolphin.preferences.AppPreference
 import com.github.damontecres.dolphin.preferences.AppPreferences
@@ -242,6 +243,22 @@ fun PreferencesContent(
                                                 groupIndex == focusedIndex.first && prefIndex == focusedIndex.second,
                                                 Modifier.focusRequester(focusRequester),
                                             ),
+                                )
+                            }
+
+                            AppPreference.ClearImageCache -> {
+                                ClickPreference(
+                                    title = stringResource(pref.title),
+                                    onClick = {
+                                        SingletonImageLoader.get(context).let {
+                                            it.memoryCache?.clear()
+                                            it.diskCache?.clear()
+                                        }
+                                    },
+                                    modifier = Modifier,
+                                    summary = null,
+                                    onLongClick = {},
+                                    interactionSource = interactionSource,
                                 )
                             }
 

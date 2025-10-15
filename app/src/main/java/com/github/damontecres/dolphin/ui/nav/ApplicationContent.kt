@@ -5,8 +5,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
 import androidx.navigation3.runtime.NavEntry
-import androidx.navigation3.runtime.rememberSavedStateNavEntryDecorator
-import androidx.navigation3.scene.rememberSceneSetupNavEntryDecorator
+import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import com.github.damontecres.dolphin.data.JellyfinServer
 import com.github.damontecres.dolphin.data.JellyfinUser
@@ -30,11 +29,10 @@ fun ApplicationContent(
 ) {
     NavDisplay(
         backStack = navigationManager.backStack,
-        onBack = { repeat(it) { navigationManager.goBack() } },
+        onBack = { navigationManager.goBack() },
         entryDecorators =
             listOf(
-                rememberSceneSetupNavEntryDecorator(),
-                rememberSavedStateNavEntryDecorator(),
+                rememberSaveableStateHolderNavEntryDecorator(),
                 rememberViewModelStoreNavEntryDecorator(),
             ),
         entryProvider = { key ->

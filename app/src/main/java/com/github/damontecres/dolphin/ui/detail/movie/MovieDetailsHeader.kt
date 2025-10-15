@@ -1,12 +1,6 @@
 package com.github.damontecres.dolphin.ui.detail.movie
 
-import androidx.compose.foundation.LocalIndication
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -15,9 +9,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.relocation.BringIntoViewRequester
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -27,18 +19,18 @@ import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.github.damontecres.dolphin.R
 import com.github.damontecres.dolphin.data.model.BaseItem
 import com.github.damontecres.dolphin.ui.components.DotSeparatedRow
+import com.github.damontecres.dolphin.ui.components.OverviewText
 import com.github.damontecres.dolphin.ui.components.StarRating
 import com.github.damontecres.dolphin.ui.components.StarRatingPrecision
 import com.github.damontecres.dolphin.ui.components.TitleValueText
 import com.github.damontecres.dolphin.ui.isNotNullOrBlank
-import com.github.damontecres.dolphin.ui.playOnClickSound
-import com.github.damontecres.dolphin.ui.playSoundOnFocus
 import com.github.damontecres.dolphin.ui.roundMinutes
 import com.github.damontecres.dolphin.ui.timeRemaining
 import com.github.damontecres.dolphin.util.formatSubtitleLang
@@ -120,40 +112,12 @@ fun MovieDetailsHeader(
 
             // Description
             dto.overview?.let { overview ->
-                val interactionSource = remember { MutableInteractionSource() }
-                val isFocused = interactionSource.collectIsFocusedAsState().value
-                val bgColor =
-                    if (isFocused) {
-                        MaterialTheme.colorScheme.onPrimary.copy(alpha = .4f)
-                    } else {
-                        Color.Unspecified
-                    }
-                Box(
-                    modifier =
-                        Modifier
-                            .background(bgColor, shape = RoundedCornerShape(8.dp))
-                            .playSoundOnFocus(true)
-                            .clickable(
-                                enabled = true,
-                                interactionSource = interactionSource,
-                                indication = LocalIndication.current,
-                            ) {
-                                playOnClickSound(context)
-                                overviewOnClick.invoke()
-                            },
-                ) {
-                    Text(
-                        text = overview,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        maxLines = 3,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier =
-                            Modifier
-                                .padding(8.dp)
-                                .height(60.dp),
-                    )
-                }
+                OverviewText(
+                    overview = overview,
+                    maxLines = 3,
+                    onClick = overviewOnClick,
+                    textBoxHeight = Dp.Unspecified,
+                )
             }
             movie.data.people
                 ?.filter { it.type == PersonKind.DIRECTOR && it.name.isNotNullOrBlank() }
@@ -161,6 +125,8 @@ fun MovieDetailsHeader(
                 ?.let {
                     Text(
                         text = "Directed by $it",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
                     )
                 }
             // Key-Values

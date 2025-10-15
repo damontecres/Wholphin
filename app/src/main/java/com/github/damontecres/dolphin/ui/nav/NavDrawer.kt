@@ -311,7 +311,6 @@ fun NavigationDrawerScope.LibraryNavItem(
     modifier: Modifier = Modifier,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
 ) {
-    // TODO
     val icon =
         when (library.data.collectionType) {
             CollectionType.MOVIES -> R.string.fa_film
@@ -319,6 +318,8 @@ fun NavigationDrawerScope.LibraryNavItem(
             CollectionType.HOMEVIDEOS -> R.string.fa_video
             CollectionType.LIVETV -> R.string.fa_tv
             CollectionType.MUSIC -> R.string.fa_music
+            CollectionType.BOXSETS -> R.string.fa_open_folder
+            CollectionType.PLAYLISTS -> R.string.fa_list_ul
             else -> R.string.fa_film
         }
     val isFocused = interactionSource.collectIsFocusedAsState().value

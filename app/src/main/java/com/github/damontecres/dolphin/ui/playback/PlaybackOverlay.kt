@@ -6,13 +6,16 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -30,7 +33,6 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.input.key.KeyEventType
-import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.layout.ContentScale
@@ -41,13 +43,17 @@ import androidx.compose.ui.unit.sp
 import androidx.media3.common.Player
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
+import com.github.damontecres.dolphin.data.model.BaseItem
 import com.github.damontecres.dolphin.data.model.Chapter
+import com.github.damontecres.dolphin.data.model.Playlist
 import com.github.damontecres.dolphin.ui.AppColors
 import com.github.damontecres.dolphin.ui.cards.ChapterCard
+import com.github.damontecres.dolphin.ui.cards.SeasonCard
 import com.github.damontecres.dolphin.ui.ifElse
 import com.github.damontecres.dolphin.ui.isNotNullOrBlank
 import com.github.damontecres.dolphin.ui.letNotEmpty
 import com.github.damontecres.dolphin.ui.tryRequestFocus
+import org.jellyfin.sdk.model.api.MediaSegmentDto
 import org.jellyfin.sdk.model.api.TrickplayInfo
 import kotlin.time.Duration
 
@@ -79,10 +85,13 @@ fun PlaybackOverlay(
     moreButtonOptions: MoreButtonOptions,
     currentPlayback: CurrentPlayback?,
     audioStreams: List<AudioStream>,
+    currentSegment: MediaSegmentDto?,
     modifier: Modifier = Modifier,
     subtitle: String? = null,
     trickplayInfo: TrickplayInfo? = null,
     trickplayUrlFor: (Int) -> String? = { null },
+    playlist: Playlist = Playlist(listOf(), 0),
+    onClickPlaylist: (BaseItem) -> Unit = {},
     seekBarInteractionSource: MutableInteractionSource = remember { MutableInteractionSource() },
 ) {
     val seekBarFocused by seekBarInteractionSource.collectIsFocusedAsState()
@@ -117,10 +126,17 @@ fun PlaybackOverlay(
             enter = slideInVertically() + fadeIn(),
             exit = slideOutVertically() + fadeOut(),
         ) {
+            val nextState =
+                if (chapters.isNotEmpty()) {
+                    OverlayViewState.CHAPTERS
+                } else if (playlist.hasNext()) {
+                    OverlayViewState.QUEUE
+                } else {
+                    null
+                }
             Controller(
                 title = title,
                 subtitleStreams = subtitleStreams,
-                chapters = chapters,
                 playerControls = playerControls,
                 controllerViewState = controllerViewState,
                 showPlay = showPlay,
@@ -143,18 +159,15 @@ fun PlaybackOverlay(
                 audioStreams = audioStreams,
                 subtitle = subtitle,
                 seekBarInteractionSource = seekBarInteractionSource,
+                nextState = nextState,
+                onNextStateFocus = {
+                    nextState?.let { state = it }
+                },
+                currentSegment = currentSegment,
                 modifier =
                     Modifier
-                        .onKeyEvent { e ->
-                            if (chapters.isNotEmpty() &&
-                                e.type == KeyEventType.KeyDown && isDown(e) &&
-                                !seekBarFocused
-                            ) {
-                                state = OverlayViewState.CHAPTERS
-                                true
-                            }
-                            false
-                        }.onGloballyPositioned {
+                        // Don't use key events because this control has vertical items so up/down is tough to manage
+                        .onGloballyPositioned {
                             controllerHeight = with(density) { it.size.height.toDp() }
                         },
             )
@@ -177,8 +190,9 @@ fun PlaybackOverlay(
                                 if (e.type == KeyEventType.KeyUp && isUp(e)) {
                                     state = OverlayViewState.CONTROLLER
                                     true
+                                } else {
+                                    false
                                 }
-                                false
                             },
                 ) {
                     Text(
@@ -212,6 +226,89 @@ fun PlaybackOverlay(
                                     playerControls.seekTo(chapter.position.inWholeMilliseconds)
                                     controllerViewState.hideControls()
                                 },
+                                interactionSource = interactionSource,
+                                modifier =
+                                    Modifier.ifElse(
+                                        index == 0,
+                                        Modifier.focusRequester(focusRequester),
+                                    ),
+                            )
+                        }
+                    }
+                    if (playlist.hasNext()) {
+                        Text(
+                            text = "Queue",
+                            style = MaterialTheme.typography.titleLarge,
+                            modifier =
+                                Modifier
+                                    .padding(start = 16.dp, top = 16.dp)
+                                    .onFocusChanged {
+                                        if (it.isFocused) state = OverlayViewState.QUEUE
+                                    }.focusable(),
+                        )
+                    }
+                }
+            }
+        }
+        AnimatedVisibility(
+            state == OverlayViewState.QUEUE,
+            enter = slideInVertically { it / 2 } + fadeIn(),
+            exit = slideOutVertically { it / 2 } + fadeOut(),
+        ) {
+            if (playlist.hasNext()) {
+                val items = remember { playlist.upcomingItems() }
+                val focusRequester = remember { FocusRequester() }
+                LaunchedEffect(Unit) { focusRequester.tryRequestFocus() }
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(8.dp)
+                            .onPreviewKeyEvent { e ->
+                                if (e.type == KeyEventType.KeyUp && isUp(e)) {
+                                    if (chapters.isNotEmpty()) {
+                                        state = OverlayViewState.CHAPTERS
+                                    } else {
+                                        state = OverlayViewState.CONTROLLER
+                                    }
+                                    true
+                                } else {
+                                    false
+                                }
+                            },
+                ) {
+                    Text(
+                        text = "Queue",
+                        style = MaterialTheme.typography.titleLarge,
+                    )
+                    LazyRow(
+                        contentPadding = PaddingValues(16.dp),
+                        horizontalArrangement = Arrangement.spacedBy(16.dp),
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .focusRestorer(focusRequester)
+                                .onFocusChanged {
+                                    if (it.hasFocus) {
+                                        controllerViewState.pulseControls()
+                                    }
+                                },
+                    ) {
+                        itemsIndexed(items) { index, item ->
+                            val interactionSource = remember { MutableInteractionSource() }
+                            val isFocused = interactionSource.collectIsFocusedAsState().value
+                            LaunchedEffect(isFocused) {
+                                if (isFocused) controllerViewState.pulseControls()
+                            }
+                            SeasonCard(
+                                item = item,
+                                onClick = {
+                                    onClickPlaylist.invoke(item)
+                                    controllerViewState.hideControls()
+                                },
+                                onLongClick = {},
+                                imageHeight = 140.dp,
                                 interactionSource = interactionSource,
                                 modifier =
                                     Modifier.ifElse(
@@ -291,6 +388,7 @@ fun PlaybackOverlay(
 enum class OverlayViewState {
     CONTROLLER,
     CHAPTERS,
+    QUEUE,
 }
 
 /**
@@ -300,7 +398,6 @@ enum class OverlayViewState {
 fun Controller(
     title: String?,
     subtitleStreams: List<SubtitleStream>,
-    chapters: List<Chapter>,
     playerControls: Player,
     controllerViewState: ControllerViewState,
     showPlay: Boolean,
@@ -318,9 +415,12 @@ fun Controller(
     moreButtonOptions: MoreButtonOptions,
     currentPlayback: CurrentPlayback?,
     audioStreams: List<AudioStream>,
+    nextState: OverlayViewState?,
+    currentSegment: MediaSegmentDto?,
     modifier: Modifier = Modifier,
     subtitle: String? = null,
     seekBarInteractionSource: MutableInteractionSource = remember { MutableInteractionSource() },
+    onNextStateFocus: () -> Unit = {},
 ) {
     Column(
         verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -370,13 +470,34 @@ fun Controller(
             seekBack = seekBack,
             seekForward = seekForward,
             skipBackOnResume = skipBackOnResume,
+            currentSegment = currentSegment,
         )
-        if (chapters.isNotEmpty()) {
-            Text(
-                text = "Chapters",
-                style = MaterialTheme.typography.titleLarge,
-                modifier = Modifier.padding(start = 16.dp),
-            )
+        when (nextState) {
+            OverlayViewState.CHAPTERS ->
+                Text(
+                    text = "Chapters",
+                    style = MaterialTheme.typography.titleLarge,
+                    modifier =
+                        Modifier
+                            .padding(start = 16.dp, top = 16.dp)
+                            .onFocusChanged {
+                                if (it.isFocused) onNextStateFocus.invoke()
+                            }.focusable(),
+                )
+
+            OverlayViewState.QUEUE ->
+                Text(
+                    text = "Queue",
+                    style = MaterialTheme.typography.titleLarge,
+                    modifier =
+                        Modifier
+                            .padding(start = 16.dp, top = 16.dp)
+                            .onFocusChanged {
+                                if (it.isFocused) onNextStateFocus.invoke()
+                            }.focusable(),
+                )
+
+            else -> Spacer(Modifier.height(32.dp))
         }
     }
 }

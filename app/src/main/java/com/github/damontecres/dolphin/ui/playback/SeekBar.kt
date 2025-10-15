@@ -48,7 +48,7 @@ import androidx.compose.ui.unit.dp
 import androidx.tv.material3.MaterialTheme
 import com.github.damontecres.dolphin.ui.handleDPadKeyEvents
 import kotlinx.coroutines.FlowPreview
-import kotlin.time.Duration.Companion.seconds
+import kotlin.time.Duration
 
 @Composable
 fun SteppedSeekBarImpl(
@@ -105,6 +105,8 @@ fun IntervalSeekBarImpl(
     bufferedProgress: Float,
     onSeek: (Long) -> Unit,
     controllerViewState: ControllerViewState,
+    seekBack: Duration,
+    seekForward: Duration,
     modifier: Modifier = Modifier,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
     enabled: Boolean = true,
@@ -120,21 +122,20 @@ fun IntervalSeekBarImpl(
         if (!isFocused) hasSeeked = false
     }
 
-    val offset = 30.seconds.inWholeMilliseconds
-
     SeekBarDisplay(
         enabled = enabled,
         progress = (progressToUse.toDouble() / durationMs).toFloat(),
         bufferedProgress = bufferedProgress,
         onLeft = {
             controllerViewState.pulseControls()
-            seekPositionMs = (progressToUse - offset).coerceAtLeast(0L)
+            seekPositionMs = (progressToUse - seekBack.inWholeMilliseconds).coerceAtLeast(0L)
             hasSeeked = true
             onSeek(seekPositionMs)
         },
         onRight = {
             controllerViewState.pulseControls()
-            seekPositionMs = (progressToUse + offset).coerceAtMost(durationMs)
+            seekPositionMs =
+                (progressToUse + seekForward.inWholeMilliseconds).coerceAtMost(durationMs)
             hasSeeked = true
             onSeek(seekPositionMs)
         },

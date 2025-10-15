@@ -8,8 +8,7 @@ import com.github.damontecres.dolphin.ui.components.LicenseInfo
 import com.github.damontecres.dolphin.ui.detail.CollectionFolderGeneric
 import com.github.damontecres.dolphin.ui.detail.CollectionFolderMovie
 import com.github.damontecres.dolphin.ui.detail.CollectionFolderTv
-import com.github.damontecres.dolphin.ui.detail.EpisodeDetails
-import com.github.damontecres.dolphin.ui.detail.SeasonDetails
+import com.github.damontecres.dolphin.ui.detail.PlaylistDetails
 import com.github.damontecres.dolphin.ui.detail.SeriesDetails
 import com.github.damontecres.dolphin.ui.detail.movie.MovieDetails
 import com.github.damontecres.dolphin.ui.detail.series.SeriesOverview
@@ -76,20 +75,6 @@ fun DestinationContent(
                         modifier,
                     )
 
-                BaseItemKind.SEASON ->
-                    SeasonDetails(
-                        preferences,
-                        destination,
-                        modifier,
-                    )
-
-                BaseItemKind.EPISODE ->
-                    EpisodeDetails(
-                        preferences,
-                        destination,
-                        modifier,
-                    )
-
                 BaseItemKind.MOVIE ->
                     MovieDetails(
                         preferences,
@@ -102,6 +87,14 @@ fun DestinationContent(
                     MovieDetails(
                         preferences,
                         destination,
+                        modifier,
+                    )
+
+                BaseItemKind.BOX_SET ->
+                    CollectionFolderGeneric(
+                        preferences,
+                        destination,
+                        false,
                         modifier,
                     )
 
@@ -121,14 +114,37 @@ fun DestinationContent(
                                 modifier,
                             )
 
+                        CollectionType.BOXSETS ->
+                            CollectionFolderGeneric(
+                                preferences,
+                                destination,
+                                true,
+                                modifier,
+                            )
+
                         else ->
                             CollectionFolderGeneric(
                                 preferences,
                                 destination,
+                                false,
                                 modifier,
                             )
                     }
                 }
+
+                BaseItemKind.PLAYLIST ->
+                    PlaylistDetails(
+                        destination = destination,
+                        modifier = modifier,
+                    )
+
+                BaseItemKind.USER_VIEW ->
+                    CollectionFolderGeneric(
+                        preferences,
+                        destination,
+                        true,
+                        modifier,
+                    )
 
                 else -> {
                     Text("Unsupported item type: ${destination.type}")

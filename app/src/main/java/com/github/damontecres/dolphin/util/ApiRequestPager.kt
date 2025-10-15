@@ -16,12 +16,14 @@ import kotlinx.coroutines.sync.withLock
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.Response
 import org.jellyfin.sdk.api.client.extensions.itemsApi
+import org.jellyfin.sdk.api.client.extensions.playlistsApi
 import org.jellyfin.sdk.api.client.extensions.suggestionsApi
 import org.jellyfin.sdk.api.client.extensions.tvShowsApi
 import org.jellyfin.sdk.model.api.BaseItemDtoQueryResult
 import org.jellyfin.sdk.model.api.request.GetEpisodesRequest
 import org.jellyfin.sdk.model.api.request.GetItemsRequest
 import org.jellyfin.sdk.model.api.request.GetNextUpRequest
+import org.jellyfin.sdk.model.api.request.GetPlaylistItemsRequest
 import org.jellyfin.sdk.model.api.request.GetResumeItemsRequest
 import org.jellyfin.sdk.model.api.request.GetSuggestionsRequest
 import timber.log.Timber
@@ -270,4 +272,23 @@ val GetSuggestionsRequestHandler =
             api: ApiClient,
             request: GetSuggestionsRequest,
         ): Response<BaseItemDtoQueryResult> = api.suggestionsApi.getSuggestions(request)
+    }
+
+val GetPlaylistItemsRequestHandler =
+    object : RequestHandler<GetPlaylistItemsRequest> {
+        override fun prepare(
+            request: GetPlaylistItemsRequest,
+            startIndex: Int,
+            limit: Int,
+            enableTotalRecordCount: Boolean,
+        ): GetPlaylistItemsRequest =
+            request.copy(
+                startIndex = startIndex,
+                limit = limit,
+            )
+
+        override suspend fun execute(
+            api: ApiClient,
+            request: GetPlaylistItemsRequest,
+        ): Response<BaseItemDtoQueryResult> = api.playlistsApi.getPlaylistItems(request)
     }

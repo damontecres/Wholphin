@@ -65,6 +65,8 @@ import com.github.damontecres.dolphin.util.ExceptionHandler
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import org.jellyfin.sdk.model.api.MediaSegmentDto
+import org.jellyfin.sdk.model.extensions.ticks
 import timber.log.Timber
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
@@ -91,6 +93,10 @@ sealed interface PlaybackAction {
     data class Scale(
         val scale: ContentScale,
     ) : PlaybackAction
+
+    data object Previous : PlaybackAction
+
+    data object Next : PlaybackAction
 }
 
 @OptIn(UnstableApi::class)
@@ -116,6 +122,7 @@ fun PlaybackControls(
     seekBack: Duration,
     skipBackOnResume: Duration?,
     seekForward: Duration,
+    currentSegment: MediaSegmentDto?,
     modifier: Modifier = Modifier,
     initialFocusRequester: FocusRequester = remember { FocusRequester() },
     seekBarInteractionSource: MutableInteractionSource = remember { MutableInteractionSource() },
@@ -152,6 +159,8 @@ fun PlaybackControls(
             interactionSource = seekBarInteractionSource,
             isEnabled = seekEnabled,
             intervals = seekBarIntervals,
+            seekBack = seekBack,
+            seekForward = seekForward,
             modifier =
                 Modifier
                     .padding(vertical = 0.dp)
@@ -174,6 +183,7 @@ fun PlaybackControls(
                 player = playerControls,
                 initialFocusRequester = initialFocusRequester,
                 onControllerInteraction = onControllerInteraction,
+                onPlaybackActionClick = onPlaybackActionClick,
                 showPlay = showPlay,
                 previousEnabled = previousEnabled,
                 nextEnabled = nextEnabled,
@@ -182,18 +192,37 @@ fun PlaybackControls(
                 skipBackOnResume = skipBackOnResume,
                 modifier = Modifier.align(Alignment.Center),
             )
-            RightPlaybackButtons(
-                subtitleStreams = subtitleStreams,
-                onControllerInteraction = onControllerInteraction,
-                onControllerInteractionForDialog = onControllerInteractionForDialog,
-                onPlaybackActionClick = onPlaybackActionClick,
-                subtitleIndex = subtitleIndex,
-                audioStreams = audioStreams,
-                audioIndex = audioIndex,
-                playbackSpeed = playbackSpeed,
-                scale = scale,
+            Row(
                 modifier = Modifier.align(Alignment.CenterEnd),
-            )
+            ) {
+                currentSegment?.let { segment ->
+                    Button(
+                        onClick = {
+                            playerControls.seekTo(segment.endTicks.ticks.inWholeMilliseconds)
+                        },
+                        modifier =
+                            Modifier
+                                .align(Alignment.CenterVertically)
+                                .padding(end = 32.dp),
+                    ) {
+                        Text(
+                            text = "Skip ${segment.type.serialName}",
+                        )
+                    }
+                }
+                RightPlaybackButtons(
+                    subtitleStreams = subtitleStreams,
+                    onControllerInteraction = onControllerInteraction,
+                    onControllerInteractionForDialog = onControllerInteractionForDialog,
+                    onPlaybackActionClick = onPlaybackActionClick,
+                    subtitleIndex = subtitleIndex,
+                    audioStreams = audioStreams,
+                    audioIndex = audioIndex,
+                    playbackSpeed = playbackSpeed,
+                    scale = scale,
+                    modifier = Modifier,
+                )
+            }
         }
     }
 }
@@ -206,6 +235,8 @@ fun SeekBar(
     intervals: Int,
     controllerViewState: ControllerViewState,
     onSeekProgress: (Long) -> Unit,
+    seekBack: Duration,
+    seekForward: Duration,
     modifier: Modifier = Modifier,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
 ) {
@@ -236,6 +267,8 @@ fun SeekBar(
             interactionSource = interactionSource,
             enabled = isEnabled,
             durationMs = player.contentDuration,
+            seekBack = seekBack,
+            seekForward = seekForward,
         )
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -443,6 +476,7 @@ fun PlaybackButtons(
     player: Player,
     initialFocusRequester: FocusRequester,
     onControllerInteraction: () -> Unit,
+    onPlaybackActionClick: (PlaybackAction) -> Unit,
     showPlay: Boolean,
     previousEnabled: Boolean,
     nextEnabled: Boolean,
@@ -459,7 +493,7 @@ fun PlaybackButtons(
             iconRes = R.drawable.baseline_skip_previous_24,
             onClick = {
                 onControllerInteraction.invoke()
-                player.seekToPrevious()
+                onPlaybackActionClick.invoke(PlaybackAction.Previous)
             },
             enabled = previousEnabled,
             onControllerInteraction = onControllerInteraction,
@@ -500,7 +534,7 @@ fun PlaybackButtons(
             iconRes = R.drawable.baseline_skip_next_24,
             onClick = {
                 onControllerInteraction.invoke()
-                player.seekToNext()
+                onPlaybackActionClick.invoke(PlaybackAction.Next)
             },
             enabled = nextEnabled,
             onControllerInteraction = onControllerInteraction,

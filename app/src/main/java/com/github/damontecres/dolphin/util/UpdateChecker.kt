@@ -31,6 +31,7 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import okhttp3.Response
 import timber.log.Timber
 import java.io.File
 import java.util.Date
@@ -212,8 +213,18 @@ class UpdateChecker
                                 intent.data = uri
                                 context.startActivity(intent)
                             } else {
-                                Timber.e("Resolver URI is null")
-                                // TODO show error Toast
+                                Timber.e("Resolver URI is null, trying fallback")
+//                                showToast(context, "Unable to download the apk")
+                                val targetFile = fallbackDownload(it)
+                                val intent = Intent(Intent.ACTION_INSTALL_PACKAGE)
+                                intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                intent.data =
+                                    FileProvider.getUriForFile(
+                                        activity,
+                                        activity.packageName + ".provider",
+                                        targetFile,
+                                    )
+                                activity.startActivity(intent)
                             }
                         } else {
                             if (ContextCompat.checkSelfPermission(
@@ -234,13 +245,7 @@ class UpdateChecker
                                     PERMISSION_REQUEST_CODE,
                                 )
                             } else {
-                                val downloadDir =
-                                    Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
-                                downloadDir.mkdirs()
-                                val targetFile = File(downloadDir, ASSET_NAME)
-                                targetFile.outputStream().use { output ->
-                                    it.body!!.byteStream().copyTo(output)
-                                }
+                                val targetFile = fallbackDownload(it)
                                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
                                     val intent = Intent(Intent.ACTION_INSTALL_PACKAGE)
                                     intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
@@ -261,10 +266,21 @@ class UpdateChecker
                         }
                     } else {
                         Timber.v("Request failed for ${release.downloadUrl}: ${it.code}")
-                        // TODO show error toast
+                        showToast(context, "Error downloading the apk: ${it.code}")
                     }
                 }
             }
+        }
+
+        private fun fallbackDownload(response: Response): File {
+            val downloadDir =
+                Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+            downloadDir.mkdirs()
+            val targetFile = File(downloadDir, ASSET_NAME)
+            targetFile.outputStream().use { output ->
+                response.body!!.byteStream().copyTo(output)
+            }
+            return targetFile
         }
 
         /**

@@ -2,6 +2,7 @@ package com.github.damontecres.dolphin.data.model
 
 import com.github.damontecres.dolphin.ui.detail.series.SeasonEpisode
 import com.github.damontecres.dolphin.ui.nav.Destination
+import com.github.damontecres.dolphin.util.seasonEpisode
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import org.jellyfin.sdk.api.client.ApiClient
@@ -24,7 +25,11 @@ data class BaseItem(
     @Transient val name = data.name
 
     @Transient
-    val indexNumber = data.indexNumber
+    val title = if (type == BaseItemKind.EPISODE) data.seriesName else name
+
+    @Transient
+    val subtitle =
+        if (type == BaseItemKind.EPISODE) data.seasonEpisode + " - " + name else data.productionYear?.toString()
 
     @Transient
     val resumeMs =
@@ -33,12 +38,23 @@ data class BaseItem(
             ?.ticks
             ?.inWholeMilliseconds
 
+    @Transient
+    val indexNumber = data.indexNumber ?: dateAsIndex()
+
+    private fun dateAsIndex(): Int? =
+        data.premiereDate
+            ?.let {
+                it.year.toString() +
+                    it.monthValue.toString().padStart(2, '0') +
+                    it.dayOfMonth.toString().padStart(2, '0')
+            }?.toIntOrNull()
+
     fun destination(): Destination {
         val result =
             // Redirect episodes & seasons to their series if possible
             when (type) {
                 BaseItemKind.EPISODE -> {
-                    data.indexNumber?.let { episode ->
+                    indexNumber?.let { episode ->
                         data.parentIndexNumber?.let { season ->
                             Destination.SeriesOverview(
                                 data.seriesId!!,

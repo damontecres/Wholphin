@@ -1,10 +1,5 @@
 package com.github.damontecres.dolphin.ui.detail
 
-import androidx.compose.foundation.LocalIndication
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -18,7 +13,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.relocation.bringIntoViewRequester
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.runtime.Composable
@@ -38,7 +32,6 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -54,11 +47,15 @@ import com.github.damontecres.dolphin.ui.cards.ItemRow
 import com.github.damontecres.dolphin.ui.cards.PersonRow
 import com.github.damontecres.dolphin.ui.cards.SeasonCard
 import com.github.damontecres.dolphin.ui.components.ConfirmDialog
+import com.github.damontecres.dolphin.ui.components.DialogItem
+import com.github.damontecres.dolphin.ui.components.DialogParams
+import com.github.damontecres.dolphin.ui.components.DialogPopup
 import com.github.damontecres.dolphin.ui.components.DotSeparatedRow
 import com.github.damontecres.dolphin.ui.components.ErrorMessage
 import com.github.damontecres.dolphin.ui.components.ExpandableFaButton
 import com.github.damontecres.dolphin.ui.components.ExpandablePlayButton
 import com.github.damontecres.dolphin.ui.components.LoadingPage
+import com.github.damontecres.dolphin.ui.components.OverviewText
 import com.github.damontecres.dolphin.ui.components.StarRating
 import com.github.damontecres.dolphin.ui.components.StarRatingPrecision
 import com.github.damontecres.dolphin.ui.data.ItemDetailsDialog
@@ -68,8 +65,6 @@ import com.github.damontecres.dolphin.ui.ifElse
 import com.github.damontecres.dolphin.ui.isNotNullOrBlank
 import com.github.damontecres.dolphin.ui.letNotEmpty
 import com.github.damontecres.dolphin.ui.nav.Destination
-import com.github.damontecres.dolphin.ui.playOnClickSound
-import com.github.damontecres.dolphin.ui.playSoundOnFocus
 import com.github.damontecres.dolphin.ui.rememberPosition
 import com.github.damontecres.dolphin.ui.roundMinutes
 import com.github.damontecres.dolphin.ui.tryRequestFocus
@@ -95,6 +90,7 @@ fun SeriesDetails(
 
     var overviewDialog by remember { mutableStateOf<ItemDetailsDialogInfo?>(null) }
     var showWatchConfirmation by remember { mutableStateOf(false) }
+    var seasonDialog by remember { mutableStateOf<DialogParams?>(null) }
 
     when (val state = loading) {
         is LoadingState.Error -> ErrorMessage(state)
@@ -112,6 +108,20 @@ fun SeriesDetails(
                     played = played,
                     modifier = modifier,
                     onClickItem = { viewModel.navigateTo(it.destination()) },
+                    onLongClickItem = { season ->
+                        seasonDialog =
+                            buildDialogForSeason(
+                                season,
+                                onClickItem = { viewModel.navigateTo(it.destination()) },
+                                markPlayed = { played ->
+                                    viewModel.setWatched(
+                                        season.id,
+                                        played,
+                                        null,
+                                    )
+                                },
+                            )
+                    },
                     overviewOnClick = {
                         overviewDialog =
                             ItemDetailsDialogInfo(
@@ -145,6 +155,15 @@ fun SeriesDetails(
             onDismissRequest = { overviewDialog = null },
         )
     }
+    seasonDialog?.let { params ->
+        DialogPopup(
+            showDialog = true,
+            title = params.title,
+            dialogItems = params.items,
+            waitToLoad = params.fromLongClick,
+            onDismissRequest = { seasonDialog = null },
+        )
+    }
 }
 
 @Composable
@@ -155,6 +174,7 @@ fun SeriesDetailsContent(
     people: List<Person>,
     played: Boolean,
     onClickItem: (BaseItem) -> Unit,
+    onLongClickItem: (BaseItem) -> Unit,
     overviewOnClick: () -> Unit,
     playOnClick: () -> Unit,
     watchOnClick: () -> Unit,
@@ -230,7 +250,7 @@ fun SeriesDetailsContent(
                         title = "Seasons",
                         items = seasons.items,
                         onClickItem = onClickItem,
-                        onLongClickItem = { },
+                        onLongClickItem = onLongClickItem,
                         cardOnFocus = { isFocused, index ->
 //                            if (isFocused) {
 //                                scope.launch(ExceptionHandler()) {
@@ -251,6 +271,7 @@ fun SeriesDetailsContent(
                                 onLongClick = onLongClick,
                                 imageHeight = Cards.height2x3,
                                 imageWidth = Dp.Unspecified,
+                                showImageOverlay = true,
                                 modifier =
                                     mod
                                         .ifElse(
@@ -333,40 +354,12 @@ fun SeriesDetailsHeader(
         }
 
         dto.overview?.let { overview ->
-            val interactionSource = remember { MutableInteractionSource() }
-            val isFocused = interactionSource.collectIsFocusedAsState().value
-            val bgColor =
-                if (isFocused) {
-                    MaterialTheme.colorScheme.onPrimary.copy(alpha = .4f)
-                } else {
-                    Color.Unspecified
-                }
-            Box(
-                modifier =
-                    Modifier
-                        .background(bgColor, shape = RoundedCornerShape(8.dp))
-                        .playSoundOnFocus(true)
-                        .clickable(
-                            enabled = true,
-                            interactionSource = interactionSource,
-                            indication = LocalIndication.current,
-                        ) {
-                            playOnClickSound(context)
-                            overviewOnClick.invoke()
-                        },
-            ) {
-                Text(
-                    text = overview,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    maxLines = 3,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier =
-                        Modifier
-                            .padding(8.dp)
-                            .height(60.dp),
-                )
-            }
+            OverviewText(
+                overview = overview,
+                maxLines = 3,
+                onClick = overviewOnClick,
+                textBoxHeight = Dp.Unspecified,
+            )
         }
         Row(
             horizontalArrangement = Arrangement.spacedBy(16.dp),
@@ -387,4 +380,37 @@ fun SeriesDetailsHeader(
             )
         }
     }
+}
+
+fun buildDialogForSeason(
+    s: BaseItem,
+    onClickItem: (BaseItem) -> Unit,
+    markPlayed: (Boolean) -> Unit,
+): DialogParams {
+    val items =
+        buildList {
+            add(
+                DialogItem("Go to", Icons.Default.PlayArrow) {
+                    onClickItem.invoke(s)
+                },
+            )
+            if (s.data.userData?.played == true) {
+                add(
+                    DialogItem("Mark as unplayed", R.string.fa_eye) {
+                        markPlayed.invoke(false)
+                    },
+                )
+            } else {
+                add(
+                    DialogItem("Mark as played", R.string.fa_eye_slash) {
+                        markPlayed.invoke(true)
+                    },
+                )
+            }
+        }
+    return DialogParams(
+        title = s.name ?: "Season",
+        fromLongClick = true,
+        items = items,
+    )
 }
