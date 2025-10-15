@@ -23,7 +23,7 @@ This is not a fork of the [official client](https://github.com/jellyfin/jellyfin
 
 ## Installation
 
-Downloader Code: `Wholphin CODE`
+Downloader Code: `8668671`
 
 1. Enable side-loading "unknown" apps
     - https://androidtvnews.com/unknown-sources-chromecast-google-tv/
@@ -31,8 +31,8 @@ Downloader Code: `Wholphin CODE`
     - https://developer.android.com/distribute/marketing-tools/alternative-distribution#unknown-sources
     - https://www.aftvnews.com/how-to-enable-apps-from-unknown-sources-on-an-amazon-fire-tv-or-fire-tv-stick/
 1. Install the APK on your Android TV device with one of these options:
-    - Install a browser program such as [Downloader](https://www.aftvnews.com/downloader/), use it to get the latest apk with short code `Wholphin ENTER A VALUE HERE` or URL: https://aftv.news/ Wholphin
-    - Download the latest APK release from the [releases page](https://github.com/damontecres/Wholphin/releases/latest) or https://aftv.news/ Wholphin
+    - Install a browser program such as [Downloader](https://www.aftvnews.com/downloader/), use it to get the latest apk with short code `8668671` or URL: http://aftv.news/8668671
+    - Download the latest APK release from the [releases page](https://github.com/damontecres/Wholphin/releases/latest) or http://aftv.news/8668671
         - Put the APK on an SD Card/USB stick/network share and use a file manager app from the Google Play Store / Amazon AppStore (e.g. `FX File Explorer`). Android's preinstalled file manager probably will not work!
         - Use `Send files to TV` from the Google Play Store on your phone & TV
         - (Expert) Use [ADB](https://developer.android.com/studio/command-line/adb) to install the APK from your computer ([guide](https://fossbytes.com/side-load-apps-android-tv/#h-how-to-sideload-apps-on-your-android-tv-using-adb))
