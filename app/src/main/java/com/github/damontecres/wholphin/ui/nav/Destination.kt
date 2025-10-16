@@ -4,6 +4,7 @@ package com.github.damontecres.wholphin.ui.nav
 
 import androidx.navigation3.runtime.NavKey
 import com.github.damontecres.wholphin.data.model.BaseItem
+import com.github.damontecres.wholphin.data.model.GetItemsFilter
 import com.github.damontecres.wholphin.ui.detail.series.SeasonEpisode
 import com.github.damontecres.wholphin.ui.preferences.PreferenceScreenOption
 import com.github.damontecres.wholphin.util.UuidSerializer
@@ -74,6 +75,13 @@ sealed class Destination(
 
         constructor(item: BaseItem) : this(item.id, item.resumeMs ?: 0, item)
     }
+
+    @Serializable
+    data class FilteredCollection(
+        val itemId: UUID,
+        val filter: GetItemsFilter,
+        val recursive: Boolean,
+    ) : Destination(false)
 
     @Serializable
     data object UpdateApp : Destination(true)

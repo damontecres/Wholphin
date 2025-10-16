@@ -30,6 +30,7 @@ import androidx.tv.material3.TabRow
 import androidx.tv.material3.TabRowDefaults
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.data.model.BaseItem
+import com.github.damontecres.wholphin.data.model.GetItemsFilter
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.preferences.rememberTab
 import com.github.damontecres.wholphin.ui.components.CollectionFolderGrid
@@ -153,7 +154,9 @@ fun CollectionFolderTv(
             1 -> {
                 CollectionFolderGrid(
                     preferences = preferences,
-                    destination = destination,
+                    itemId = destination.itemId,
+                    item = destination.item,
+                    initialFilter = GetItemsFilter(),
                     showTitle = false,
                     recursive = true,
                     modifier =
