@@ -46,7 +46,7 @@ fun UserList(
             ListItem(
                 enabled = true,
                 selected = user == currentUser,
-                headlineContent = { Text(text = user.name ?: user.id) },
+                headlineContent = { Text(text = user.name ?: user.id.toString()) },
                 leadingContent = {
                     if (user.id == currentUser?.id) {
                         Icon(
@@ -99,7 +99,7 @@ fun UserList(
     showDeleteDialog?.let { user ->
         DialogPopup(
             showDialog = true,
-            title = user.name ?: user.id,
+            title = user.name ?: user.id.toString(),
             dialogItems =
                 listOf(
                     DialogItem("Switch", R.string.fa_arrow_left_arrow_right) {

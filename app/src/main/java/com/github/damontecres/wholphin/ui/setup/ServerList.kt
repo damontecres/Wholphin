@@ -28,6 +28,7 @@ import com.github.damontecres.wholphin.ui.components.CircularProgress
 import com.github.damontecres.wholphin.ui.components.DialogItem
 import com.github.damontecres.wholphin.ui.components.DialogPopup
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
+import java.util.UUID
 
 sealed interface ServerConnectionStatus {
     object Success : ServerConnectionStatus
@@ -45,7 +46,7 @@ sealed interface ServerConnectionStatus {
 @Composable
 fun ServerList(
     servers: List<JellyfinServer>,
-    connectionStatus: Map<String, ServerConnectionStatus>,
+    connectionStatus: Map<UUID, ServerConnectionStatus>,
     onSwitchServer: (JellyfinServer) -> Unit,
     onAddServer: () -> Unit,
     onRemoveServer: (JellyfinServer) -> Unit,

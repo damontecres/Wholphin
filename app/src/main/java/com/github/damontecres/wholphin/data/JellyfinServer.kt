@@ -13,10 +13,11 @@ import androidx.room.Query
 import androidx.room.Relation
 import androidx.room.Transaction
 import androidx.room.Update
+import java.util.UUID
 
 @Entity(tableName = "servers")
 data class JellyfinServer(
-    @PrimaryKey val id: String,
+    @PrimaryKey val id: UUID,
     val name: String?,
     val url: String,
 )
@@ -37,10 +38,10 @@ data class JellyfinUser(
     @PrimaryKey(autoGenerate = true)
     val rowId: Int = 0,
     @ColumnInfo(index = true)
-    val id: String,
+    val id: UUID,
     val name: String?,
     @ColumnInfo(index = true)
-    val serverId: String,
+    val serverId: UUID,
     val accessToken: String?,
 )
 
@@ -73,12 +74,12 @@ interface JellyfinServerDao {
     fun addUser(user: JellyfinUser)
 
     @Query("DELETE FROM servers WHERE id = :serverId")
-    fun deleteServer(serverId: String)
+    fun deleteServer(serverId: UUID)
 
     @Query("DELETE FROM users WHERE serverId = :serverId AND id = :userId")
     fun deleteUser(
-        serverId: String,
-        userId: String,
+        serverId: UUID,
+        userId: UUID,
     )
 
     @Transaction
@@ -87,5 +88,5 @@ interface JellyfinServerDao {
 
     @Transaction
     @Query("SELECT * FROM servers WHERE id = :serverId")
-    fun getServer(serverId: String): JellyfinServerUsers?
+    fun getServer(serverId: UUID): JellyfinServerUsers?
 }

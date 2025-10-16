@@ -2,8 +2,12 @@ package com.github.damontecres.wholphin.data
 
 import androidx.room.Database
 import androidx.room.RoomDatabase
+import androidx.room.TypeConverter
+import androidx.room.TypeConverters
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
+import org.jellyfin.sdk.model.serializer.toUUID
+import java.util.UUID
 
 @Database(
     entities = [JellyfinServer::class, JellyfinUser::class],
@@ -11,8 +15,19 @@ import androidx.sqlite.db.SupportSQLiteDatabase
     exportSchema = true,
     autoMigrations = [],
 )
+@TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun serverDao(): JellyfinServerDao
+
+    abstract fun itemPlaybackDao(): ItemPlaybackDao
+}
+
+class Converters {
+    @TypeConverter
+    fun convertToString(id: UUID): String = id.toString().replace("-", "")
+
+    @TypeConverter
+    fun convertToUUID(str: String): UUID = str.toUUID()
 }
 
 object Migrations {

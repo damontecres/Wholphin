@@ -7,6 +7,7 @@ import androidx.datastore.core.handlers.ReplaceFileCorruptionHandler
 import androidx.datastore.dataStoreFile
 import androidx.room.Room
 import com.github.damontecres.wholphin.data.AppDatabase
+import com.github.damontecres.wholphin.data.ItemPlaybackDao
 import com.github.damontecres.wholphin.data.JellyfinServerDao
 import com.github.damontecres.wholphin.data.Migrations
 import com.github.damontecres.wholphin.preferences.AppPreferences
@@ -37,6 +38,10 @@ object DatabaseModule {
     @Provides
     @Singleton
     fun serverDao(db: AppDatabase): JellyfinServerDao = db.serverDao()
+
+    @Provides
+    @Singleton
+    fun itemPlaybackDao(db: AppDatabase): ItemPlaybackDao = db.itemPlaybackDao()
 
     @Provides
     @Singleton
