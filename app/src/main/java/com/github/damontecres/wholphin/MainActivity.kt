@@ -43,6 +43,7 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import okhttp3.OkHttpClient
+import org.jellyfin.sdk.model.serializer.toUUIDOrNull
 import timber.log.Timber
 import javax.inject.Inject
 
@@ -91,11 +92,11 @@ class MainActivity : AppCompatActivity() {
                     ) {
                         var isRestoringSession by remember { mutableStateOf(true) }
                         LaunchedEffect(Unit) {
-                            if (appPreferences.currentServerId.isNotBlank()) {
+                            if (appPreferences.currentServerId.isNotBlank() && appPreferences.currentUserId.isNotBlank()) {
                                 try {
                                     serverRepository.restoreSession(
-                                        appPreferences.currentServerId,
-                                        appPreferences.currentUserId,
+                                        appPreferences.currentServerId?.toUUIDOrNull(),
+                                        appPreferences.currentUserId?.toUUIDOrNull(),
                                     )
                                 } catch (ex: Exception) {
                                     Timber.e(ex, "Exception restoring session")

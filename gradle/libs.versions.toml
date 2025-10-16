@@ -29,6 +29,7 @@ hilt = "2.57.2"
 room = "2.8.2"
 material3 = "1.4.0"
 preferenceKtx = "1.2.1"
+roomTesting = "2.8.2"
 
 [libraries]
 aboutlibraries-core = { module = "com.mikepenz:aboutlibraries-core", version.ref = "aboutLibraries" }
@@ -89,6 +90,7 @@ androidx-room-compiler = { module = "androidx.room:room-compiler", version.ref =
 
 timber = { module = "com.jakewharton.timber:timber", version.ref = "timber" }
 androidx-preference-ktx = { group = "androidx.preference", name = "preference-ktx", version.ref = "preferenceKtx" }
+androidx-room-testing = { group = "androidx.room", name = "room-testing", version.ref = "roomTesting" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
