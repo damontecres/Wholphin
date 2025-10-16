@@ -35,6 +35,7 @@ import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.preferences.rememberTab
 import com.github.damontecres.wholphin.ui.components.CollectionFolderGrid
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
+import com.github.damontecres.wholphin.ui.components.GenreCardGrid
 import com.github.damontecres.wholphin.ui.components.RecommendedMovie
 import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.nav.Destination
@@ -56,7 +57,7 @@ fun CollectionFolderMovie(
             0
         }
 
-    val tabs = listOf("Recommended", "Library")
+    val tabs = listOf("Recommended", "Library", "Genres")
     var focusTabIndex by rememberSaveable { mutableIntStateOf(rememberedTabIndex) }
     var selectedTabIndex by rememberSaveable { mutableIntStateOf(rememberedTabIndex) }
     val focusRequester = remember { FocusRequester() }
@@ -168,6 +169,16 @@ fun CollectionFolderMovie(
                     positionCallback = { columns, position ->
                         showHeader = position < columns
                     },
+                )
+            }
+            2 -> {
+                GenreCardGrid(
+                    itemId = destination.itemId,
+                    modifier =
+                        Modifier
+                            .padding(start = 16.dp)
+                            .fillMaxSize()
+                            .focusRequester(focusRequester),
                 )
             }
             else -> ErrorMessage("Invalid tab index $selectedTabIndex", null)

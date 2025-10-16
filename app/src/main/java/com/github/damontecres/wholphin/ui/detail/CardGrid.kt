@@ -77,6 +77,19 @@ fun CardGrid(
     modifier: Modifier = Modifier,
     initialPosition: Int = 0,
     positionCallback: ((columns: Int, position: Int) -> Unit)? = null,
+    cardContent: @Composable (
+        item: BaseItem?,
+        onClick: () -> Unit,
+        onLongClick: () -> Unit,
+        mod: Modifier,
+    ) -> Unit = { item, onClick, onLongClick, mod ->
+        GridCard(
+            item = item,
+            onClick = onClick,
+            onLongClick = onLongClick,
+            modifier = mod,
+        )
+    },
 ) {
     val startPosition = initialPosition.coerceIn(0, (pager.size - 1).coerceAtLeast(0))
     val columns = 6
@@ -249,34 +262,33 @@ fun CardGrid(
                             Modifier
                         }
                     val item = pager[index]
-                    GridCard(
-                        item = item,
-                        onClick = {
+                    cardContent(
+                        item,
+                        {
                             if (item != null) {
                                 focusedIndex = index
                                 onClickItem.invoke(item)
                             }
                         },
-                        onLongClick = { if (item != null) onLongClickItem.invoke(item) },
-                        modifier =
-                            mod
-                                .ifElse(index == 0, Modifier.focusRequester(zeroFocus))
-                                .onFocusChanged { focusState ->
-                                    if (DEBUG) {
-                                        Timber.v(
-                                            "$index isFocused=${focusState.isFocused}",
-                                        )
-                                    }
-                                    if (focusState.isFocused) {
-                                        // Focused, so set that up
-                                        focusOn(index)
-                                        positionCallback?.invoke(columns, index)
-                                    } else if (focusedIndex == index) {
+                        { if (item != null) onLongClickItem.invoke(item) },
+                        mod
+                            .ifElse(index == 0, Modifier.focusRequester(zeroFocus))
+                            .onFocusChanged { focusState ->
+                                if (DEBUG) {
+                                    Timber.v(
+                                        "$index isFocused=${focusState.isFocused}",
+                                    )
+                                }
+                                if (focusState.isFocused) {
+                                    // Focused, so set that up
+                                    focusOn(index)
+                                    positionCallback?.invoke(columns, index)
+                                } else if (focusedIndex == index) {
 //                                        savedFocusedIndex = index
 //                                        // Was focused on this, so mark unfocused
 //                                        focusedIndex = -1
-                                    }
-                                },
+                                }
+                            },
                     )
                 }
             }
