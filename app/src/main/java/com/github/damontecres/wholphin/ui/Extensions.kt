@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -312,6 +313,12 @@ fun rememberPosition(initialPosition: RowColumn = RowColumn(-1, -1)) =
             initialPosition,
         )
     }
+
+/**
+ * Convenient way to [rememberSaveable] a Int
+ */
+@Composable
+fun rememberInt(initial: Int = 0) = rememberSaveable { mutableIntStateOf(initial) }
 
 /**
  * Show a [Toast]. Ensures it runs on the main thread.

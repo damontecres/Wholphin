@@ -38,6 +38,7 @@ fun GridCard(
     onLongClick: () -> Unit,
     modifier: Modifier = Modifier,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
+    imageAspectRatio: Float = 2f / 3f,
 ) {
     val dto = item?.data
     val focused by interactionSource.collectIsFocusedAsState()
@@ -86,7 +87,7 @@ fun GridCard(
                 modifier =
                     Modifier
                         .fillMaxWidth()
-                        .aspectRatio(2f / 3f) // TODO
+                        .aspectRatio(imageAspectRatio)
                         .background(MaterialTheme.colorScheme.surfaceVariant),
             )
         }

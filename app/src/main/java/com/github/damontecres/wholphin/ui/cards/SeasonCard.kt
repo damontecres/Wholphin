@@ -42,6 +42,7 @@ fun SeasonCard(
     imageWidth: Dp = Dp.Unspecified,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
     showImageOverlay: Boolean = false,
+    aspectRatio: Float = item?.data?.primaryImageAspectRatio?.toFloat() ?: (2f / 3f),
 ) {
     val dto = item?.data
     val focused by interactionSource.collectIsFocusedAsState()
@@ -62,7 +63,7 @@ fun SeasonCard(
     } else {
         focusedAfterDelay = false
     }
-    val aspectRatio = dto?.primaryImageAspectRatio?.toFloat() ?: (2f / 3f)
+//    val aspectRatio = dto?.primaryImageAspectRatio?.toFloat() ?: (2f / 3f)
     val width = imageHeight * aspectRatio
     val height = imageWidth * (1f / aspectRatio)
     Column(

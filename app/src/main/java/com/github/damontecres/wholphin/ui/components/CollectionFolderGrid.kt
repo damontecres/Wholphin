@@ -27,6 +27,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.data.model.BaseItem
+import com.github.damontecres.wholphin.data.model.GetItemsFilter
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.DefaultItemFields
 import com.github.damontecres.wholphin.ui.OneTimeLaunchedEffect
@@ -36,7 +37,6 @@ import com.github.damontecres.wholphin.ui.data.SortAndDirection
 import com.github.damontecres.wholphin.ui.data.VideoSortOptions
 import com.github.damontecres.wholphin.ui.detail.CardGrid
 import com.github.damontecres.wholphin.ui.detail.ItemViewModel
-import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.ApiRequestPager
 import com.github.damontecres.wholphin.util.GetItemsRequestHandler
@@ -66,12 +66,14 @@ class CollectionFolderViewModel
         val loading = MutableLiveData<LoadingState>(LoadingState.Loading)
         val pager = MutableLiveData<List<BaseItem?>>(listOf())
         val sortAndDirection = MutableLiveData<SortAndDirection>()
+        val filter = MutableLiveData<GetItemsFilter>(GetItemsFilter())
 
         fun init(
             itemId: UUID,
             potential: BaseItem?,
             sortAndDirection: SortAndDirection,
             recursive: Boolean,
+            filter: GetItemsFilter,
         ): Job =
             viewModelScope.launch(
                 LoadingExceptionHandler(
@@ -80,12 +82,13 @@ class CollectionFolderViewModel
                 ) + Dispatchers.IO,
             ) {
                 fetchItem(itemId, potential)
-                loadResults(sortAndDirection, recursive)
+                loadResults(sortAndDirection, recursive, filter)
             }
 
         fun loadResults(
             sortAndDirection: SortAndDirection,
             recursive: Boolean,
+            filter: GetItemsFilter,
         ) {
             item.value?.let { item ->
                 viewModelScope.launch(Dispatchers.IO) {
@@ -93,6 +96,7 @@ class CollectionFolderViewModel
                         pager.value = listOf()
                         loading.value = LoadingState.Loading
                         this@CollectionFolderViewModel.sortAndDirection.value = sortAndDirection
+                        this@CollectionFolderViewModel.filter.value = filter
                     }
                     val includeItemTypes =
                         when (item.data.collectionType) {
@@ -112,25 +116,27 @@ class CollectionFolderViewModel
                             else -> listOf()
                         }
                     val request =
-                        GetItemsRequest(
-                            parentId = item.id,
-                            enableImageTypes = listOf(ImageType.PRIMARY, ImageType.THUMB),
-                            includeItemTypes = includeItemTypes,
-                            recursive = recursive,
-                            excludeItemIds = listOf(item.id),
-                            sortBy =
-                                listOf(
-                                    sortAndDirection.sort,
-                                    ItemSortBy.SORT_NAME,
-                                    ItemSortBy.PRODUCTION_YEAR,
-                                ),
-                            sortOrder =
-                                listOf(
-                                    sortAndDirection.direction,
-                                    SortOrder.ASCENDING,
-                                    SortOrder.ASCENDING,
-                                ),
-                            fields = DefaultItemFields,
+                        filter.applyTo(
+                            GetItemsRequest(
+                                parentId = item.id,
+                                enableImageTypes = listOf(ImageType.PRIMARY, ImageType.THUMB),
+                                includeItemTypes = includeItemTypes,
+                                recursive = recursive,
+                                excludeItemIds = listOf(item.id),
+                                sortBy =
+                                    listOf(
+                                        sortAndDirection.sort,
+                                        ItemSortBy.SORT_NAME,
+                                        ItemSortBy.PRODUCTION_YEAR,
+                                    ),
+                                sortOrder =
+                                    listOf(
+                                        sortAndDirection.direction,
+                                        SortOrder.ASCENDING,
+                                        SortOrder.ASCENDING,
+                                    ),
+                                fields = DefaultItemFields,
+                            ),
                         )
                     val newPager =
                         ApiRequestPager(
@@ -182,7 +188,9 @@ class CollectionFolderViewModel
 @Composable
 fun CollectionFolderGrid(
     preferences: UserPreferences,
-    destination: Destination.MediaItem,
+    itemId: UUID,
+    item: BaseItem?,
+    initialFilter: GetItemsFilter,
     recursive: Boolean,
     onClickItem: (BaseItem) -> Unit,
     modifier: Modifier = Modifier,
@@ -196,9 +204,10 @@ fun CollectionFolderGrid(
     positionCallback: ((columns: Int, position: Int) -> Unit)? = null,
 ) {
     OneTimeLaunchedEffect {
-        viewModel.init(destination.itemId, destination.item, initialSortAndDirection, recursive)
+        viewModel.init(itemId, item, initialSortAndDirection, recursive, initialFilter)
     }
     val sortAndDirection by viewModel.sortAndDirection.observeAsState(initialSortAndDirection)
+    val filter by viewModel.filter.observeAsState(initialFilter)
     val loading by viewModel.loading.observeAsState(LoadingState.Loading)
     val item by viewModel.item.observeAsState()
     val pager by viewModel.pager.observeAsState()
@@ -218,7 +227,7 @@ fun CollectionFolderGrid(
                     modifier = modifier,
                     onClickItem = onClickItem,
                     onSortChange = {
-                        viewModel.loadResults(it, recursive)
+                        viewModel.loadResults(it, recursive, filter)
                     },
                     showTitle = showTitle,
                     positionCallback = positionCallback,

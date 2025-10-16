@@ -93,7 +93,8 @@ fun DestinationContent(
                 BaseItemKind.BOX_SET ->
                     CollectionFolderGeneric(
                         preferences,
-                        destination,
+                        destination.itemId,
+                        destination.item,
                         false,
                         modifier,
                     )
@@ -117,7 +118,8 @@ fun DestinationContent(
                         CollectionType.BOXSETS ->
                             CollectionFolderGeneric(
                                 preferences,
-                                destination,
+                                destination.itemId,
+                                destination.item,
                                 true,
                                 modifier,
                             )
@@ -125,7 +127,8 @@ fun DestinationContent(
                         else ->
                             CollectionFolderGeneric(
                                 preferences,
-                                destination,
+                                destination.itemId,
+                                destination.item,
                                 false,
                                 modifier,
                             )
@@ -141,7 +144,8 @@ fun DestinationContent(
                 BaseItemKind.USER_VIEW ->
                     CollectionFolderGeneric(
                         preferences,
-                        destination,
+                        destination.itemId,
+                        destination.item,
                         true,
                         modifier,
                     )
@@ -150,6 +154,16 @@ fun DestinationContent(
                     Text("Unsupported item type: ${destination.type}")
                 }
             }
+
+        is Destination.FilteredCollection ->
+            CollectionFolderGeneric(
+                preferences = preferences,
+                itemId = destination.itemId,
+                item = null,
+                filter = destination.filter,
+                recursive = destination.recursive,
+                modifier = modifier,
+            )
 
         Destination.UpdateApp -> InstallUpdatePage(preferences, modifier)
 
