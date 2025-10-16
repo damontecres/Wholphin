@@ -17,11 +17,11 @@ import androidx.lifecycle.viewModelScope
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.GetItemsFilter
 import com.github.damontecres.wholphin.ui.DefaultItemFields
+import com.github.damontecres.wholphin.ui.OneTimeLaunchedEffect
 import com.github.damontecres.wholphin.ui.cards.GridCard
 import com.github.damontecres.wholphin.ui.detail.CardGrid
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.nav.NavigationManager
-import com.github.damontecres.wholphin.ui.rememberInt
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.ApiRequestPager
 import com.github.damontecres.wholphin.util.GetGenresRequestHandler
@@ -83,7 +83,7 @@ fun GenreCardGrid(
     modifier: Modifier = Modifier,
     viewModel: GenreViewModel = hiltViewModel(),
 ) {
-    LaunchedEffect(itemId) {
+    OneTimeLaunchedEffect {
         viewModel.init(itemId)
     }
     val loading by viewModel.loading.observeAsState(LoadingState.Pending)
@@ -100,7 +100,6 @@ fun GenreCardGrid(
         LoadingState.Success ->
             Box(modifier = modifier) {
                 LaunchedEffect(Unit) { gridFocusRequester.tryRequestFocus() }
-                val index by rememberInt(0)
                 CardGrid(
                     pager = genres,
                     onClickItem = { genre ->
