@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -306,6 +307,7 @@ fun LeftPlaybackButtons(
     modifier: Modifier = Modifier,
 ) {
     var showMoreOptions by remember { mutableStateOf(false) }
+    val focusRequester = remember { FocusRequester() }
     Row(
         modifier = modifier.focusGroup(),
         horizontalArrangement = Arrangement.spacedBy(buttonSpacing),
@@ -319,6 +321,7 @@ fun LeftPlaybackButtons(
             },
             enabled = true,
             onControllerInteraction = onControllerInteraction,
+            modifier = Modifier.focusRequester(focusRequester),
         )
     }
     if (showMoreOptions) {
@@ -329,7 +332,10 @@ fun LeftPlaybackButtons(
             }
         BottomDialog(
             choices = options,
-            onDismissRequest = { showMoreOptions = false },
+            onDismissRequest = {
+                showMoreOptions = false
+                focusRequester.tryRequestFocus()
+            },
             onSelectChoice = { index, choice ->
                 val action = moreButtonOptions.options[choice] ?: PlaybackAction.ShowDebug
                 onPlaybackActionClick.invoke(action)
@@ -359,6 +365,10 @@ fun RightPlaybackButtons(
     var showAudioDialog by remember { mutableStateOf(false) }
     var showSpeedDialog by remember { mutableStateOf(false) }
     var showScaleDialog by remember { mutableStateOf(false) }
+
+    val captionFocusRequester = remember { FocusRequester() }
+    val settingsFocusRequester = remember { FocusRequester() }
+
     Row(
         modifier = modifier.focusGroup(),
         horizontalArrangement = Arrangement.spacedBy(buttonSpacing),
@@ -372,6 +382,7 @@ fun RightPlaybackButtons(
                 showCaptionDialog = true
             },
             onControllerInteraction = onControllerInteraction,
+            modifier = Modifier.focusRequester(captionFocusRequester),
         )
         // Playback speed, etc
         PlaybackButton(
@@ -382,8 +393,10 @@ fun RightPlaybackButtons(
             },
             enabled = true,
             onControllerInteraction = onControllerInteraction,
+            modifier = Modifier.focusRequester(settingsFocusRequester),
         )
     }
+    val scope = rememberCoroutineScope()
     if (showCaptionDialog) {
         val options = subtitleStreams.map { it.displayName }
         Timber.v("subtitleIndex=$subtitleIndex, options=$options")
@@ -395,6 +408,11 @@ fun RightPlaybackButtons(
             onDismissRequest = {
                 onControllerInteraction.invoke()
                 showCaptionDialog = false
+                scope.launch {
+                    // TODO this is hacky, but playback changes force refocus and this is a workaround
+                    delay(250L)
+                    captionFocusRequester.tryRequestFocus()
+                }
             },
             onSelectChoice = { index, _ ->
                 val send =
@@ -434,6 +452,10 @@ fun RightPlaybackButtons(
             onDismissRequest = {
                 onControllerInteraction.invoke()
                 showAudioDialog = false
+                scope.launch {
+                    delay(250L)
+                    settingsFocusRequester.tryRequestFocus()
+                }
             },
             onSelectChoice = { index, _ ->
                 onPlaybackActionClick.invoke(PlaybackAction.ToggleAudio(audioStreams[index].index))
@@ -448,6 +470,10 @@ fun RightPlaybackButtons(
             onDismissRequest = {
                 onControllerInteraction.invoke()
                 showSpeedDialog = false
+                scope.launch {
+                    delay(250L)
+                    settingsFocusRequester.tryRequestFocus()
+                }
             },
             onSelectChoice = { _, value ->
                 onPlaybackActionClick.invoke(PlaybackAction.PlaybackSpeed(value.toFloat()))
@@ -462,6 +488,10 @@ fun RightPlaybackButtons(
             onDismissRequest = {
                 onControllerInteraction.invoke()
                 showScaleDialog = false
+                scope.launch {
+                    delay(250L)
+                    settingsFocusRequester.tryRequestFocus()
+                }
             },
             onSelectChoice = { index, _ ->
                 onPlaybackActionClick.invoke(PlaybackAction.Scale(playbackScaleOptions.keys.toList()[index]))
@@ -601,7 +631,7 @@ private fun BottomDialog(
                 Modifier
                     .wrapContentSize()
                     .padding(8.dp)
-                    .background(Color.DarkGray),
+                    .background(Color.DarkGray, shape = RoundedCornerShape(16.dp)),
         ) {
             Column(
                 modifier =

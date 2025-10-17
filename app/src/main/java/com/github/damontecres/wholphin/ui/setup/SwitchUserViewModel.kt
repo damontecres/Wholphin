@@ -154,7 +154,7 @@ class SwitchUserViewModel
                     }
                 } catch (ex: Exception) {
                     Timber.e(ex, "Error switching user")
-                    switchUserState.value = LoadingState.Error(exception = ex)
+                    setError(ex)
                 }
             }
         }
@@ -178,7 +178,7 @@ class SwitchUserViewModel
                     }
                 } catch (ex: Exception) {
                     Timber.e(ex, "Error logging in user")
-                    switchUserState.value = LoadingState.Error(ex)
+                    setError(ex)
                 }
             }
         }
@@ -230,7 +230,7 @@ class SwitchUserViewModel
                                 put(server.id, false)
                             }
                     }
-                    switchUserState.value = LoadingState.Error(ex)
+                    setError(ex)
                 }
             }
         }
@@ -328,4 +328,9 @@ class SwitchUserViewModel
                 }
             }
         }
+
+        private suspend fun setError(ex: Exception) =
+            withContext(Dispatchers.Main) {
+                switchUserState.value = LoadingState.Error(ex)
+            }
     }
