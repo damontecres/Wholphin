@@ -5,6 +5,7 @@ import androidx.room.util.useCursor
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.github.damontecres.wholphin.data.AppDatabase
+import com.github.damontecres.wholphin.data.Migrations
 import org.junit.Assert
 import org.junit.Rule
 import org.junit.Test
@@ -49,7 +50,13 @@ class TestDbMigrations {
             close()
         }
 
-        val db = helper.runMigrationsAndValidate(testDbName, 3, true)
+        val db =
+            helper.runMigrationsAndValidate(
+                testDbName,
+                3,
+                true,
+                migrations = arrayOf(Migrations.Migrate2to3),
+            )
 
         db.query("SELECT id FROM servers").useCursor { c ->
             c.moveToFirst()
@@ -88,16 +95,23 @@ class TestDbMigrations {
             close()
         }
 
-        val db = helper.runMigrationsAndValidate(testDbName, 3, true)
+        val db =
+            helper.runMigrationsAndValidate(
+                testDbName,
+                3,
+                true,
+                migrations = arrayOf(Migrations.Migrate2to3),
+            )
 
         db.query("SELECT id FROM servers").useCursor { c ->
             c.moveToFirst()
             Assert.assertEquals(serverId.toString().replace("-", ""), c.getString(0))
         }
-        db.query("SELECT serverId, id FROM users").useCursor { c ->
+        db.query("SELECT rowId, serverId, id FROM users").useCursor { c ->
             c.moveToFirst()
-            Assert.assertEquals(serverId.toString().replace("-", ""), c.getString(0))
-            Assert.assertEquals(userId.toString().replace("-", ""), c.getString(1))
+            Assert.assertTrue(c.getInt(0) > 0)
+            Assert.assertEquals(serverId.toString().replace("-", ""), c.getString(1))
+            Assert.assertEquals(userId.toString().replace("-", ""), c.getString(2))
         }
     }
 }
