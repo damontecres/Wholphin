@@ -21,7 +21,7 @@ import java.util.UUID
             onDelete = ForeignKey.CASCADE,
         ),
     ],
-    indices = [Index("serverId", "userId", "itemId")],
+    indices = [Index("serverId", "userId", "itemId"), Index("userId", "itemId")],
 )
 @Serializable
 data class ItemPlayback(
