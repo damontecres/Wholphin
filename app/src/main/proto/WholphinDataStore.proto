@@ -25,6 +25,8 @@ message PlaybackPreferences {
   SkipSegmentBehavior skip_commercials = 12;
   SkipSegmentBehavior skip_recaps = 13;
   SkipSegmentBehavior skip_previews = 14;
+
+  bool ac3_supported = 15;
 }
 
 message HomePagePreferences{

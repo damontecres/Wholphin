@@ -313,6 +313,18 @@ sealed interface AppPreference<T> {
                 },
             )
 
+        val Ac3Supported =
+            AppSwitchPreference(
+                title = R.string.ac3_supported,
+                defaultValue = true,
+                getter = { it.playbackPreferences.ac3Supported },
+                setter = { prefs, value ->
+                    prefs.updatePlaybackPreferences { ac3Supported = value }
+                },
+                summaryOn = R.string.enabled,
+                summaryOff = R.string.disabled,
+            )
+
         val RememberSelectedTab =
             AppSwitchPreference(
                 title = R.string.remember_selected_tab,
@@ -518,6 +530,7 @@ val advancedPreferences =
                     AppPreference.SkipPreviews,
                     AppPreference.SkipRecaps,
                     AppPreference.MaxBitrate,
+                    AppPreference.Ac3Supported,
                     AppPreference.PlaybackDebugInfo,
                 ),
         ),

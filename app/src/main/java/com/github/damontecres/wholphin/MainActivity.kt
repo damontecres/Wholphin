@@ -19,6 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.unit.dp
 import androidx.datastore.core.DataStore
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.tv.material3.ExperimentalTvMaterial3Api
 import androidx.tv.material3.MaterialTheme
@@ -33,9 +34,13 @@ import com.github.damontecres.wholphin.ui.nav.ApplicationContent
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.nav.NavigationManager
 import com.github.damontecres.wholphin.ui.theme.WholphinTheme
+import com.github.damontecres.wholphin.util.AppUpgradeHandler
+import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.UpdateChecker
 import com.github.damontecres.wholphin.util.profile.createDeviceProfile
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import okhttp3.OkHttpClient
 import timber.log.Timber
 import javax.inject.Inject
@@ -58,10 +63,16 @@ class MainActivity : AppCompatActivity() {
     @Inject
     lateinit var updateChecker: UpdateChecker
 
+    @Inject
+    lateinit var appUpgradeHandler: AppUpgradeHandler
+
     @OptIn(ExperimentalTvMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         Timber.i("MainActivity.onCreate")
+        lifecycleScope.launch(Dispatchers.IO + ExceptionHandler()) {
+            appUpgradeHandler.run()
+        }
         setContent {
             CoilConfig(okHttpClient, false)
             val appPreferences by userPreferencesDataStore.data.collectAsState(null)

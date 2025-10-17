@@ -42,6 +42,7 @@ class AppPreferencesSerializer
                                 skipCommercials = AppPreference.SkipCommercials.defaultValue
                                 skipPreviews = AppPreference.SkipPreviews.defaultValue
                                 skipRecaps = AppPreference.SkipRecaps.defaultValue
+                                ac3Supported = AppPreference.Ac3Supported.defaultValue
                             }.build()
                     homePagePreferences =
                         HomePagePreferences
