@@ -262,6 +262,7 @@ fun PlaybackPage(
 
                     // Subtitles
                     if (skipIndicatorDuration == 0L && currentItemPlayback.subtitleIndexEnabled) {
+                        val maxSize by animateFloatAsState(if (controllerViewState.controlsVisible) .7f else 1f)
                         AndroidView(
                             factory = { context ->
                                 SubtitleView(context).apply {
@@ -277,7 +278,7 @@ fun PlaybackPage(
                             },
                             modifier =
                                 Modifier
-                                    .fillMaxSize(if (controllerViewState.controlsVisible) .7f else 1f)
+                                    .fillMaxSize(maxSize)
                                     .align(Alignment.TopCenter)
                                     .background(Color.Transparent),
                         )
