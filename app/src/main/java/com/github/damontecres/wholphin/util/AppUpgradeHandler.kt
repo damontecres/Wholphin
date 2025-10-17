@@ -8,7 +8,7 @@ import androidx.preference.PreferenceManager
 import com.github.damontecres.wholphin.WholphinApplication
 import com.github.damontecres.wholphin.preferences.AppPreference
 import com.github.damontecres.wholphin.preferences.AppPreferences
-import com.github.damontecres.wholphin.preferences.updatePlaybackPreferences
+import com.github.damontecres.wholphin.preferences.updatePlaybackOverrides
 import dagger.hilt.android.qualifiers.ApplicationContext
 import timber.log.Timber
 import javax.inject.Inject
@@ -71,9 +71,14 @@ suspend fun upgradeApp(
     current: Version,
     appPreferences: DataStore<AppPreferences>,
 ) {
-    if (previous.isEqualOrBefore(Version.fromString("0.1.0-1-g0"))) {
+    if (previous.isEqualOrBefore(Version.fromString("0.1.0-2-g0"))) {
         appPreferences.updateData {
-            it.updatePlaybackPreferences { ac3Supported = AppPreference.Ac3Supported.defaultValue }
+            it.updatePlaybackOverrides {
+                ac3Supported = AppPreference.Ac3Supported.defaultValue
+                downmixStereo = AppPreference.DownMixStereo.defaultValue
+                directPlayAss = AppPreference.DirectPlayAss.defaultValue
+                directPlayPgs = AppPreference.DirectPlayPgs.defaultValue
+            }
         }
     }
 }

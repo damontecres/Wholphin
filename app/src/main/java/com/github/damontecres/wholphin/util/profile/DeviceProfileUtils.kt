@@ -45,20 +45,21 @@ private val supportedAudioCodecs =
         Codec.Audio.VORBIS,
     )
 
-// TODO use preferences
 fun createDeviceProfile(
     context: Context,
     userPreferences: UserPreferences,
     disableDirectPlay: Boolean = false,
-) = createDeviceProfile(
-    mediaTest = MediaCodecCapabilitiesTest(context),
-    maxBitrate = 100_000_000,
-    disableDirectPlay = disableDirectPlay,
-    isAC3Enabled = true,
-    downMixAudio = false,
-    assDirectPlay = true,
-    pgsDirectPlay = true,
-)
+) = userPreferences.appPreferences.playbackPreferences.let { prefs ->
+    createDeviceProfile(
+        mediaTest = MediaCodecCapabilitiesTest(context),
+        maxBitrate = 100_000_000,
+        disableDirectPlay = disableDirectPlay,
+        isAC3Enabled = prefs.overrides.ac3Supported,
+        downMixAudio = prefs.overrides.downmixStereo,
+        assDirectPlay = prefs.overrides.directPlayAss,
+        pgsDirectPlay = prefs.overrides.directPlayPgs,
+    )
+}
 
 fun createDeviceProfile(
     mediaTest: MediaCodecCapabilitiesTest,

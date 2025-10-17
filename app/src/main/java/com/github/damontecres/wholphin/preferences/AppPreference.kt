@@ -317,9 +317,42 @@ sealed interface AppPreference<T> {
             AppSwitchPreference(
                 title = R.string.ac3_supported,
                 defaultValue = true,
-                getter = { it.playbackPreferences.ac3Supported },
+                getter = { it.playbackPreferences.overrides.ac3Supported },
                 setter = { prefs, value ->
-                    prefs.updatePlaybackPreferences { ac3Supported = value }
+                    prefs.updatePlaybackOverrides { ac3Supported = value }
+                },
+                summaryOn = R.string.enabled,
+                summaryOff = R.string.disabled,
+            )
+        val DownMixStereo =
+            AppSwitchPreference(
+                title = R.string.downmix_stereo,
+                defaultValue = false,
+                getter = { it.playbackPreferences.overrides.downmixStereo },
+                setter = { prefs, value ->
+                    prefs.updatePlaybackOverrides { downmixStereo = value }
+                },
+                summaryOn = R.string.enabled,
+                summaryOff = R.string.disabled,
+            )
+        val DirectPlayAss =
+            AppSwitchPreference(
+                title = R.string.direct_play_ass,
+                defaultValue = true,
+                getter = { it.playbackPreferences.overrides.directPlayAss },
+                setter = { prefs, value ->
+                    prefs.updatePlaybackOverrides { directPlayAss = value }
+                },
+                summaryOn = R.string.enabled,
+                summaryOff = R.string.disabled,
+            )
+        val DirectPlayPgs =
+            AppSwitchPreference(
+                title = R.string.direct_play_pgs,
+                defaultValue = true,
+                getter = { it.playbackPreferences.overrides.directPlayPgs },
+                setter = { prefs, value ->
+                    prefs.updatePlaybackOverrides { directPlayPgs = value }
                 },
                 summaryOn = R.string.enabled,
                 summaryOff = R.string.disabled,
@@ -530,8 +563,17 @@ val advancedPreferences =
                     AppPreference.SkipPreviews,
                     AppPreference.SkipRecaps,
                     AppPreference.MaxBitrate,
-                    AppPreference.Ac3Supported,
                     AppPreference.PlaybackDebugInfo,
+                ),
+        ),
+        PreferenceGroup(
+            title = R.string.playback_overrides,
+            preferences =
+                listOf(
+                    AppPreference.DownMixStereo,
+                    AppPreference.Ac3Supported,
+                    AppPreference.DirectPlayAss,
+                    AppPreference.DirectPlayPgs,
                 ),
         ),
         PreferenceGroup(
