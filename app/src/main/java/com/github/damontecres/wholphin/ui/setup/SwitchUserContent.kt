@@ -178,6 +178,16 @@ fun SwitchUserContent(
                             style = MaterialTheme.typography.titleMedium,
                             color = MaterialTheme.colorScheme.onSurface,
                         )
+                        when (val s = userState) {
+                            is LoadingState.Error -> {
+                                Text(
+                                    text = s.message ?: s.exception?.localizedMessage ?: "Error",
+                                    color = MaterialTheme.colorScheme.error,
+                                )
+                            }
+
+                            else -> {}
+                        }
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier.focusGroup(),
@@ -235,16 +245,6 @@ fun SwitchUserContent(
                         ) {
                             Text("Login")
                         }
-                    }
-                    when (val s = userState) {
-                        is LoadingState.Error -> {
-                            Text(
-                                text = s.message ?: s.exception?.localizedMessage ?: "Error",
-                                color = MaterialTheme.colorScheme.error,
-                            )
-                        }
-
-                        else -> {}
                     }
                 }
             }
