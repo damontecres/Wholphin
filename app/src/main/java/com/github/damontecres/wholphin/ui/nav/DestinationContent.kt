@@ -11,6 +11,7 @@ import com.github.damontecres.wholphin.ui.detail.CollectionFolderTv
 import com.github.damontecres.wholphin.ui.detail.DebugPage
 import com.github.damontecres.wholphin.ui.detail.PlaylistDetails
 import com.github.damontecres.wholphin.ui.detail.SeriesDetails
+import com.github.damontecres.wholphin.ui.detail.livetv.TvGrid
 import com.github.damontecres.wholphin.ui.detail.movie.MovieDetails
 import com.github.damontecres.wholphin.ui.detail.series.SeriesOverview
 import com.github.damontecres.wholphin.ui.main.HomePage
@@ -163,6 +164,11 @@ fun DestinationContent(
                 item = null,
                 filter = destination.filter,
                 recursive = destination.recursive,
+                modifier = modifier,
+            )
+
+        Destination.LiveTvGuide ->
+            TvGrid(
                 modifier = modifier,
             )
 
