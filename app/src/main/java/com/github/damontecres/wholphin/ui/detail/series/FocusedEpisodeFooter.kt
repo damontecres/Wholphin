@@ -16,7 +16,8 @@ import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.ui.components.ExpandablePlayButtons
 import com.github.damontecres.wholphin.ui.components.TitleValueText
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
-import com.github.damontecres.wholphin.util.formatSubtitleLang
+import com.github.damontecres.wholphin.util.getAudioDisplay
+import com.github.damontecres.wholphin.util.getSubtitleDisplay
 import org.jellyfin.sdk.model.api.MediaStreamType
 import org.jellyfin.sdk.model.extensions.ticks
 import kotlin.time.Duration
@@ -61,14 +62,7 @@ fun FocusedEpisodeFooter(
                     )
                 }
             val audioDisplay =
-                remember(ep.id, chosenStreams) {
-                    (
-                        chosenStreams?.audioStream
-                            ?: dto.mediaStreams?.firstOrNull { it.type == MediaStreamType.AUDIO }
-                    )?.displayTitle
-                        ?.replace(" - Default", "")
-                        ?.ifBlank { null }
-                }
+                remember(ep.id, chosenStreams) { getAudioDisplay(ep.data, chosenStreams) }
             audioDisplay?.let {
                 TitleValueText(
                     stringResource(R.string.audio),
@@ -76,7 +70,8 @@ fun FocusedEpisodeFooter(
                 )
             }
 
-            formatSubtitleLang(dto.mediaStreams)
+            val subtitleText = getSubtitleDisplay(ep.data, chosenStreams)
+            subtitleText
                 ?.let {
                     if (it.isNotNullOrBlank()) {
                         TitleValueText(

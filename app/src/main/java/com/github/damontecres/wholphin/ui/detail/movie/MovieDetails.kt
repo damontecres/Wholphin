@@ -36,6 +36,8 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import androidx.tv.material3.MaterialTheme
 import coil3.compose.AsyncImage
+import com.github.damontecres.wholphin.data.ChosenStreams
+import com.github.damontecres.wholphin.data.ItemPlaybackRepository
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.Chapter
 import com.github.damontecres.wholphin.data.model.Person
@@ -52,6 +54,7 @@ import com.github.damontecres.wholphin.ui.data.ItemDetailsDialog
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialogInfo
 import com.github.damontecres.wholphin.ui.detail.LoadingItemViewModel
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
+import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.letNotEmpty
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.nav.NavigationManager
@@ -62,6 +65,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.playStateApi
 import org.jellyfin.sdk.model.extensions.ticks
@@ -75,10 +79,12 @@ class MovieViewModel
     constructor(
         api: ApiClient,
         val navigationManager: NavigationManager,
+        val itemPlaybackRepository: ItemPlaybackRepository,
     ) : LoadingItemViewModel(api) {
         private lateinit var itemId: UUID
         val people = MutableLiveData<List<Person>>(listOf())
         val chapters = MutableLiveData<List<Chapter>>(listOf())
+        val chosenStreams = MutableLiveData<ChosenStreams?>(null)
 
         override fun init(
             itemId: UUID,
@@ -88,6 +94,12 @@ class MovieViewModel
             return viewModelScope.launch(ExceptionHandler()) {
                 super.init(itemId, potential)?.join()
                 item.value?.let { item ->
+                    viewModelScope.launchIO {
+                        val result = itemPlaybackRepository.getSelectedTracks(item.id, item)
+                        withContext(Dispatchers.Main) {
+                            chosenStreams.value = result
+                        }
+                    }
                     people.value =
                         item.data.people
                             ?.letNotEmpty { people ->
@@ -123,6 +135,7 @@ fun MovieDetails(
     val people by viewModel.people.observeAsState(listOf())
     val chapters by viewModel.chapters.observeAsState(listOf())
     val loading by viewModel.loading.observeAsState(LoadingState.Loading)
+    val chosenStreams by viewModel.chosenStreams.observeAsState(null)
 
     var overviewDialog by remember { mutableStateOf<ItemDetailsDialogInfo?>(null) }
     var moreDialog by remember { mutableStateOf<DialogParams?>(null) }
@@ -137,6 +150,7 @@ fun MovieDetails(
                 MovieDetailsContent(
                     preferences = preferences,
                     movie = movie,
+                    chosenStreams = chosenStreams,
                     people = people,
                     chapters = chapters,
                     playOnClick = {
@@ -222,6 +236,7 @@ fun MovieDetails(
 fun MovieDetailsContent(
     preferences: UserPreferences,
     movie: BaseItem,
+    chosenStreams: ChosenStreams?,
     people: List<Person>,
     chapters: List<Chapter>,
     playOnClick: (Duration) -> Unit,
@@ -286,6 +301,7 @@ fun MovieDetailsContent(
                 ) {
                     MovieDetailsHeader(
                         movie = movie,
+                        chosenStreams = chosenStreams,
                         bringIntoViewRequester = bringIntoViewRequester,
                         overviewOnClick = overviewOnClick,
                         Modifier

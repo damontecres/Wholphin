@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -24,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.R
+import com.github.damontecres.wholphin.data.ChosenStreams
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.ui.components.DotSeparatedRow
 import com.github.damontecres.wholphin.ui.components.OverviewText
@@ -33,7 +35,8 @@ import com.github.damontecres.wholphin.ui.components.TitleValueText
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.roundMinutes
 import com.github.damontecres.wholphin.ui.timeRemaining
-import com.github.damontecres.wholphin.util.formatSubtitleLang
+import com.github.damontecres.wholphin.util.getAudioDisplay
+import com.github.damontecres.wholphin.util.getSubtitleDisplay
 import org.jellyfin.sdk.model.api.MediaStreamType
 import org.jellyfin.sdk.model.api.PersonKind
 import org.jellyfin.sdk.model.extensions.ticks
@@ -41,6 +44,7 @@ import org.jellyfin.sdk.model.extensions.ticks
 @Composable
 fun MovieDetailsHeader(
     movie: BaseItem,
+    chosenStreams: ChosenStreams?,
     bringIntoViewRequester: BringIntoViewRequester,
     overviewOnClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -144,24 +148,18 @@ fun MovieDetailsHeader(
                         modifier = Modifier.widthIn(max = 200.dp),
                     )
                 }
-                dto.mediaStreams
-                    ?.firstOrNull { it.type == MediaStreamType.AUDIO }
-                    ?.displayTitle
+                val audioDisplay =
+                    remember(movie.id, chosenStreams) { getAudioDisplay(movie.data, chosenStreams) }
+                audioDisplay
                     ?.let {
-                        // TODO probably a cleaner way to do this
-                        // Removes part of "5.1 Surround - English - AAC - Default"
-                        it
-                            .replace(" - Default", "")
-                            .ifBlank { null }
-                            ?.let {
-                                TitleValueText(
-                                    stringResource(R.string.audio),
-                                    it,
-                                    modifier = Modifier.widthIn(max = 200.dp),
-                                )
-                            }
+                        TitleValueText(
+                            stringResource(R.string.audio),
+                            it,
+                            modifier = Modifier.widthIn(max = 200.dp),
+                        )
                     }
-                formatSubtitleLang(dto.mediaStreams)
+
+                getSubtitleDisplay(movie.data, chosenStreams)
                     ?.let {
                         if (it.isNotNullOrBlank()) {
                             TitleValueText(
