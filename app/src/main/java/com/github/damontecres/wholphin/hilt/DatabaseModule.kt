@@ -8,6 +8,7 @@ import androidx.datastore.dataStoreFile
 import androidx.room.Room
 import com.github.damontecres.wholphin.data.AppDatabase
 import com.github.damontecres.wholphin.data.JellyfinServerDao
+import com.github.damontecres.wholphin.data.Migrations
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.AppPreferencesSerializer
 import dagger.Module
@@ -30,7 +31,7 @@ object DatabaseModule {
                 context,
                 AppDatabase::class.java,
                 "wholphin",
-            ).fallbackToDestructiveMigration(false)
+            ).addMigrations(Migrations.Migrate2to3)
             .build()
 
     @Provides

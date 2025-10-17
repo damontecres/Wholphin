@@ -5,6 +5,7 @@ import androidx.room.Dao
 import androidx.room.Embedded
 import androidx.room.Entity
 import androidx.room.ForeignKey
+import androidx.room.Index
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.PrimaryKey
@@ -22,7 +23,6 @@ data class JellyfinServer(
 
 @Entity(
     tableName = "users",
-    primaryKeys = ["id", "serverId"],
     foreignKeys = [
         ForeignKey(
             entity = JellyfinServer::class,
@@ -31,8 +31,11 @@ data class JellyfinServer(
             onDelete = ForeignKey.CASCADE,
         ),
     ],
+    indices = [Index("id", "serverId", unique = true)],
 )
 data class JellyfinUser(
+    @PrimaryKey(autoGenerate = true)
+    val rowId: Int = 0,
     @ColumnInfo(index = true)
     val id: String,
     val name: String?,
