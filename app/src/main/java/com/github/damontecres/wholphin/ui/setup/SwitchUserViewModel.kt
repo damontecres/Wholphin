@@ -149,6 +149,7 @@ class SwitchUserViewModel
                     serverRepository.changeUser(server, user)
                     navigationManager.goToHome()
                 } catch (ex: Exception) {
+                    Timber.e(ex, "Error switching user")
                     switchUserState.value = LoadingState.Error(exception = ex)
                 }
             }
@@ -160,7 +161,7 @@ class SwitchUserViewModel
             password: String,
         ) {
             quickConnectJob?.cancel()
-            viewModelScope.launch(ExceptionHandler()) {
+            viewModelScope.launch(Dispatchers.IO + ExceptionHandler()) {
                 try {
                     val api = jellyfin.createApi(baseUrl = server.url)
                     val authenticationResult by api.userApi.authenticateUserByName(
@@ -172,6 +173,7 @@ class SwitchUserViewModel
                         navigationManager.goToHome()
                     }
                 } catch (ex: Exception) {
+                    Timber.e(ex, "Error logging in user")
                     switchUserState.value = LoadingState.Error(ex)
                 }
             }
@@ -216,6 +218,7 @@ class SwitchUserViewModel
                             }
                         }
                 } catch (ex: Exception) {
+                    Timber.e(ex, "Error during quick connect")
                     if (ex is InvalidStatusException && ex.status == 401) {
                         quickConnectState.value = null
                         serverQuickConnect.value =

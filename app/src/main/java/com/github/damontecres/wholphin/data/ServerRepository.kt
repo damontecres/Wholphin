@@ -57,6 +57,7 @@ class ServerRepository
             apiClient.update(baseUrl = server.url, accessToken = null)
             _currentServer = server
             _currentUser = null
+            _currentUserDto = null
         }
 
         /**
