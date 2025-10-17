@@ -260,6 +260,29 @@ fun PlaybackPage(
                         }
                     }
 
+                    // Subtitles
+                    if (skipIndicatorDuration == 0L && currentItemPlayback.subtitleIndexEnabled) {
+                        AndroidView(
+                            factory = { context ->
+                                SubtitleView(context).apply {
+                                    setUserDefaultStyle()
+                                    setUserDefaultTextSize()
+                                }
+                            },
+                            update = {
+                                it.setCues(cues)
+                            },
+                            onReset = {
+                                it.setCues(null)
+                            },
+                            modifier =
+                                Modifier
+                                    .fillMaxSize(if (controllerViewState.controlsVisible) .7f else 1f)
+                                    .align(Alignment.TopCenter)
+                                    .background(Color.Transparent),
+                        )
+                    }
+
                     // The playback controls
                     AnimatedVisibility(
                         controllerViewState.controlsVisible,
@@ -340,28 +363,6 @@ fun PlaybackPage(
                                 viewModel.playItemInPlaylist(it)
                             },
                             currentSegment = currentSegment,
-                        )
-                    }
-
-                    // Subtitles
-                    if (!controllerViewState.controlsVisible && skipIndicatorDuration == 0L && currentItemPlayback.subtitleIndexEnabled) {
-                        AndroidView(
-                            factory = { context ->
-                                SubtitleView(context).apply {
-                                    setUserDefaultStyle()
-                                    setUserDefaultTextSize()
-                                }
-                            },
-                            update = {
-                                it.setCues(cues)
-                            },
-                            onReset = {
-                                it.setCues(null)
-                            },
-                            modifier =
-                                Modifier
-                                    .fillMaxSize()
-                                    .background(Color.Transparent),
                         )
                     }
 
