@@ -11,6 +11,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -118,31 +119,33 @@ class MainActivity : AppCompatActivity() {
                                 )
                             }
                         } else {
-                            val initialDestination =
-                                if (server != null && user != null) {
-                                    Destination.Home()
-                                } else {
-                                    Destination.ServerList
-                                }
-                            val backStack = rememberNavBackStack(initialDestination)
-                            navigationManager.backStack = backStack
-                            if (appPreferences.autoCheckForUpdates) {
-                                LaunchedEffect(Unit) {
-                                    try {
-                                        updateChecker.maybeShowUpdateToast(appPreferences.updateUrl)
-                                    } catch (ex: Exception) {
-                                        Timber.w(ex, "Failed to check for update")
+                            key(server, user) {
+                                val initialDestination =
+                                    if (server != null && user != null) {
+                                        Destination.Home()
+                                    } else {
+                                        Destination.ServerList
+                                    }
+                                val backStack = rememberNavBackStack(initialDestination)
+                                navigationManager.backStack = backStack
+                                if (appPreferences.autoCheckForUpdates) {
+                                    LaunchedEffect(Unit) {
+                                        try {
+                                            updateChecker.maybeShowUpdateToast(appPreferences.updateUrl)
+                                        } catch (ex: Exception) {
+                                            Timber.w(ex, "Failed to check for update")
+                                        }
                                     }
                                 }
+                                ApplicationContent(
+                                    user = user,
+                                    server = server,
+                                    navigationManager = navigationManager,
+                                    preferences = preferences,
+                                    deviceProfile = deviceProfile,
+                                    modifier = Modifier.fillMaxSize(),
+                                )
                             }
-                            ApplicationContent(
-                                user = user,
-                                server = server,
-                                navigationManager = navigationManager,
-                                preferences = preferences,
-                                deviceProfile = deviceProfile,
-                                modifier = Modifier.fillMaxSize(),
-                            )
                         }
                     }
                 }

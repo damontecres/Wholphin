@@ -160,6 +160,7 @@ class ServerRepository
         suspend fun removeUser(user: JellyfinUser) {
             if (currentUser == user) {
                 _currentUser = null
+                _currentUserDto = null
                 userPreferencesDataStore.updateData {
                     it
                         .toBuilder()
@@ -177,13 +178,17 @@ class ServerRepository
         suspend fun removeServer(server: JellyfinServer) {
             if (currentServer == server) {
                 _currentServer = null
+                _currentUser = null
+                _currentUserDto = null
                 userPreferencesDataStore.updateData {
                     it
                         .toBuilder()
                         .apply {
                             currentServerId = ""
+                            currentUserId = ""
                         }.build()
                 }
+                apiClient.update(baseUrl = null, accessToken = null)
             }
             withContext(Dispatchers.IO) {
                 serverDao.deleteServer(server.id)

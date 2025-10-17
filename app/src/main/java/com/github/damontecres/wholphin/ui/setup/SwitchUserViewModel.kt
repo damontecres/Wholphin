@@ -62,6 +62,10 @@ class SwitchUserViewModel
         }
 
         init {
+            init()
+        }
+
+        fun init() {
             viewModelScope.launch(ExceptionHandler() + Dispatchers.IO) {
                 val allServers =
                     serverDao
@@ -279,14 +283,20 @@ class SwitchUserViewModel
         }
 
         fun removeUser(user: JellyfinUser) {
-            viewModelScope.launch(ExceptionHandler()) {
+            viewModelScope.launch(Dispatchers.IO + ExceptionHandler()) {
                 serverRepository.removeUser(user)
+                val serverUsers =
+                    serverDao.getServer(user.serverId)?.users?.sortedBy { it.name } ?: listOf()
+                withContext(Dispatchers.Main) {
+                    users.value = serverUsers
+                }
             }
         }
 
         fun removeServer(server: JellyfinServer) {
-            viewModelScope.launch(ExceptionHandler()) {
+            viewModelScope.launch(Dispatchers.IO + ExceptionHandler()) {
                 serverRepository.removeServer(server)
+                init()
             }
         }
 
