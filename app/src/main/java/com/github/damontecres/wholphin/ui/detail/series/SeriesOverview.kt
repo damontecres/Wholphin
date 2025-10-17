@@ -116,6 +116,17 @@ fun SeriesOverview(
         }
     }
 
+    LaunchedEffect(position) {
+        (episodes as? EpisodeList.Success)
+            ?.episodes
+            ?.items
+            ?.getOrNull(position.episodeRowIndex)
+            ?.let {
+                viewModel.lookUpChosenTracks(it.id, it)
+            }
+    }
+    val chosenStreams by viewModel.chosenStreams.observeAsState(null)
+
     when (val state = loading) {
         is LoadingState.Error -> ErrorMessage(state)
 
@@ -130,6 +141,7 @@ fun SeriesOverview(
                     series = series,
                     seasons = seasons.items,
                     episodes = episodes,
+                    chosenStreams = chosenStreams,
                     position = position,
                     backdropImageUrl =
                         remember {

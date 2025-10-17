@@ -130,7 +130,7 @@
   "formatVersion": 1,
   "database": {
     "version": 3,
-    "identityHash": "4e33ac6b7a7a55616f58df7443d560a0",
+    "identityHash": "03713f34a89d9a2098a73a90b650be60",
     "entities": [
       {
         "tableName": "servers",
@@ -231,14 +231,8 @@
       },
       {
         "tableName": "ItemPlayback",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `serverId` TEXT NOT NULL, `userId` TEXT NOT NULL, `itemId` TEXT NOT NULL, `sourceId` TEXT, `audioIndex` INTEGER NOT NULL, `subtitleIndex` INTEGER NOT NULL, FOREIGN KEY(`serverId`, `userId`) REFERENCES `users`(`serverId`, `id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`serverId` TEXT NOT NULL, `userId` TEXT NOT NULL, `itemId` TEXT NOT NULL, `sourceId` TEXT, `audioIndex` INTEGER NOT NULL, `subtitleIndex` INTEGER NOT NULL, PRIMARY KEY(`serverId`, `userId`, `itemId`), FOREIGN KEY(`serverId`, `userId`) REFERENCES `users`(`serverId`, `id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
         "fields": [
-          {
-            "fieldPath": "id",
-            "columnName": "id",
-            "affinity": "INTEGER",
-            "notNull": true
-          },
           {
             "fieldPath": "serverId",
             "columnName": "serverId",
@@ -276,22 +270,24 @@
           }
         ],
         "primaryKey": {
-          "autoGenerate": true,
+          "autoGenerate": false,
           "columnNames": [
-            "id"
+            "serverId",
+            "userId",
+            "itemId"
           ]
         },
         "indices": [
           {
             "name": "index_ItemPlayback_serverId_userId_itemId",
-            "unique": true,
+            "unique": false,
             "columnNames": [
               "serverId",
               "userId",
               "itemId"
             ],
             "orders": [],
-            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_ItemPlayback_serverId_userId_itemId` ON `${TABLE_NAME}` (`serverId`, `userId`, `itemId`)"
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_ItemPlayback_serverId_userId_itemId` ON `${TABLE_NAME}` (`serverId`, `userId`, `itemId`)"
           }
         ],
         "foreignKeys": [
@@ -313,7 +309,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '4e33ac6b7a7a55616f58df7443d560a0')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '03713f34a89d9a2098a73a90b650be60')"
     ]
   }
 }
