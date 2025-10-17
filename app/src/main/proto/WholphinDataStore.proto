@@ -9,6 +9,13 @@ enum SkipSegmentBehavior{
   ASK_TO_SKIP = 2;
 }
 
+message PlaybackOverrides{
+  bool ac3_supported = 1;
+  bool downmix_stereo = 2;
+  bool direct_play_ass = 3;
+  bool direct_play_pgs = 4;
+}
+
 message PlaybackPreferences {
   int64 skip_forward_ms = 1;
   int64 skip_back_ms = 2;
@@ -25,6 +32,8 @@ message PlaybackPreferences {
   SkipSegmentBehavior skip_commercials = 12;
   SkipSegmentBehavior skip_recaps = 13;
   SkipSegmentBehavior skip_previews = 14;
+
+  PlaybackOverrides overrides = 15;
 }
 
 message HomePagePreferences{

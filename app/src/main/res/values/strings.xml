@@ -77,5 +77,10 @@
     <string name="clear_image_cache">Clear image cache</string>
     <string name="shuffle">Shuffle</string>
     <string name="combine_continue_next"><![CDATA[Combine Continue Watching & Next Up]]></string>
+    <string name="ac3_supported">Device supports AC3/Dolby Digital</string>
+    <string name="downmix_stereo">Always downmix to stereo</string>
+    <string name="playback_overrides">Playback overrides</string>
+    <string name="direct_play_ass">Direct play ASS subtitles</string>
+    <string name="direct_play_pgs">Direct play PGS subtitles</string>
 
 </resources>

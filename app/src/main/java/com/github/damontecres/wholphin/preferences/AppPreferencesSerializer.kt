@@ -42,6 +42,16 @@ class AppPreferencesSerializer
                                 skipCommercials = AppPreference.SkipCommercials.defaultValue
                                 skipPreviews = AppPreference.SkipPreviews.defaultValue
                                 skipRecaps = AppPreference.SkipRecaps.defaultValue
+
+                                overrides =
+                                    PlaybackOverrides
+                                        .newBuilder()
+                                        .apply {
+                                            ac3Supported = AppPreference.Ac3Supported.defaultValue
+                                            downmixStereo = AppPreference.DownMixStereo.defaultValue
+                                            directPlayAss = AppPreference.DirectPlayAss.defaultValue
+                                            directPlayPgs = AppPreference.DirectPlayPgs.defaultValue
+                                        }.build()
                             }.build()
                     homePagePreferences =
                         HomePagePreferences
@@ -79,6 +89,11 @@ inline fun AppPreferences.update(block: AppPreferences.Builder.() -> Unit): AppP
 inline fun AppPreferences.updatePlaybackPreferences(block: PlaybackPreferences.Builder.() -> Unit): AppPreferences =
     update {
         playbackPreferences = playbackPreferences.toBuilder().apply(block).build()
+    }
+
+inline fun AppPreferences.updatePlaybackOverrides(block: PlaybackOverrides.Builder.() -> Unit): AppPreferences =
+    updatePlaybackPreferences {
+        overrides = overrides.toBuilder().apply(block).build()
     }
 
 inline fun AppPreferences.updateHomePagePreferences(block: HomePagePreferences.Builder.() -> Unit): AppPreferences =

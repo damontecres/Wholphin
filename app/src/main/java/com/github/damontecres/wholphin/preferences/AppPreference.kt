@@ -313,6 +313,51 @@ sealed interface AppPreference<T> {
                 },
             )
 
+        val Ac3Supported =
+            AppSwitchPreference(
+                title = R.string.ac3_supported,
+                defaultValue = true,
+                getter = { it.playbackPreferences.overrides.ac3Supported },
+                setter = { prefs, value ->
+                    prefs.updatePlaybackOverrides { ac3Supported = value }
+                },
+                summaryOn = R.string.enabled,
+                summaryOff = R.string.disabled,
+            )
+        val DownMixStereo =
+            AppSwitchPreference(
+                title = R.string.downmix_stereo,
+                defaultValue = false,
+                getter = { it.playbackPreferences.overrides.downmixStereo },
+                setter = { prefs, value ->
+                    prefs.updatePlaybackOverrides { downmixStereo = value }
+                },
+                summaryOn = R.string.enabled,
+                summaryOff = R.string.disabled,
+            )
+        val DirectPlayAss =
+            AppSwitchPreference(
+                title = R.string.direct_play_ass,
+                defaultValue = true,
+                getter = { it.playbackPreferences.overrides.directPlayAss },
+                setter = { prefs, value ->
+                    prefs.updatePlaybackOverrides { directPlayAss = value }
+                },
+                summaryOn = R.string.enabled,
+                summaryOff = R.string.disabled,
+            )
+        val DirectPlayPgs =
+            AppSwitchPreference(
+                title = R.string.direct_play_pgs,
+                defaultValue = true,
+                getter = { it.playbackPreferences.overrides.directPlayPgs },
+                setter = { prefs, value ->
+                    prefs.updatePlaybackOverrides { directPlayPgs = value }
+                },
+                summaryOn = R.string.enabled,
+                summaryOff = R.string.disabled,
+            )
+
         val RememberSelectedTab =
             AppSwitchPreference(
                 title = R.string.remember_selected_tab,
@@ -519,6 +564,16 @@ val advancedPreferences =
                     AppPreference.SkipRecaps,
                     AppPreference.MaxBitrate,
                     AppPreference.PlaybackDebugInfo,
+                ),
+        ),
+        PreferenceGroup(
+            title = R.string.playback_overrides,
+            preferences =
+                listOf(
+                    AppPreference.DownMixStereo,
+                    AppPreference.Ac3Supported,
+                    AppPreference.DirectPlayAss,
+                    AppPreference.DirectPlayPgs,
                 ),
         ),
         PreferenceGroup(
