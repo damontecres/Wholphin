@@ -38,7 +38,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -61,9 +60,11 @@ import com.github.damontecres.wholphin.data.model.Playlist
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.preferences.skipBackOnResume
 import com.github.damontecres.wholphin.ui.OneTimeLaunchedEffect
+import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.tryRequestFocus
+import com.github.damontecres.wholphin.util.LoadingState
 import com.github.damontecres.wholphin.util.seasonEpisode
 import kotlinx.coroutines.delay
 import org.jellyfin.sdk.model.api.DeviceProfile
@@ -84,60 +85,62 @@ fun PlaybackPage(
     modifier: Modifier = Modifier,
     viewModel: PlaybackViewModel = hiltViewModel(),
 ) {
-    val prefs = preferences.appPreferences.playbackPreferences
-    val context = LocalContext.current
-    val scope = rememberCoroutineScope()
     LaunchedEffect(destination.itemId) {
         viewModel.init(destination, deviceProfile, preferences)
     }
-    val player = viewModel.player
-    val stream by viewModel.stream.observeAsState(null)
 
-    val title by viewModel.title.observeAsState(null)
-    val subtitle by viewModel.subtitle.observeAsState(null)
-    val duration by viewModel.duration.observeAsState(null)
-    val audioStreams by viewModel.audioStreams.observeAsState(listOf())
-    val subtitleStreams by viewModel.subtitleStreams.observeAsState(listOf())
-    val trickplay by viewModel.trickplay.observeAsState(null)
-    val chapters by viewModel.chapters.observeAsState(listOf())
-    val currentPlayback by viewModel.currentPlayback.observeAsState(null)
-    val currentItemPlayback by viewModel.currentItemPlayback.observeAsState(
-        ItemPlayback(
-            userId = -1,
-            itemId = UUID.randomUUID(),
-        ),
-    )
-    val currentSegment by viewModel.currentSegment.observeAsState(null)
-    var segmentCancelled by remember(currentSegment?.id) { mutableStateOf(false) }
+    val loading by viewModel.loading.observeAsState(LoadingState.Loading)
+    when (val st = loading) {
+        is LoadingState.Error -> ErrorMessage(st, modifier)
+        LoadingState.Pending,
+        LoadingState.Loading,
+        -> LoadingPage(modifier)
 
-    var cues by remember { mutableStateOf<List<Cue>>(listOf()) }
-    var showDebugInfo by remember { mutableStateOf(prefs.showDebugInfo) }
+        LoadingState.Success -> {
+            val prefs = preferences.appPreferences.playbackPreferences
+            val scope = rememberCoroutineScope()
 
-    val nextUp by viewModel.nextUp.observeAsState(null)
-    val playlist by viewModel.playlist.observeAsState(Playlist(listOf()))
+            val player = viewModel.player
+            val title by viewModel.title.observeAsState(null)
+            val subtitle by viewModel.subtitle.observeAsState(null)
+            val duration by viewModel.duration.observeAsState(null)
+            val audioStreams by viewModel.audioStreams.observeAsState(listOf())
+            val subtitleStreams by viewModel.subtitleStreams.observeAsState(listOf())
+            val trickplay by viewModel.trickplay.observeAsState(null)
+            val chapters by viewModel.chapters.observeAsState(listOf())
+            val currentPlayback by viewModel.currentPlayback.observeAsState(null)
+            val currentItemPlayback by viewModel.currentItemPlayback.observeAsState(
+                ItemPlayback(
+                    userId = -1,
+                    itemId = UUID.randomUUID(),
+                ),
+            )
+            val currentSegment by viewModel.currentSegment.observeAsState(null)
+            var segmentCancelled by remember(currentSegment?.id) { mutableStateOf(false) }
 
-    // TODO move to viewmodel?
-    val cueListener =
-        remember {
-            object : Player.Listener {
-                override fun onCues(cueGroup: CueGroup) {
-                    cues = cueGroup.cues
+            var cues by remember { mutableStateOf<List<Cue>>(listOf()) }
+            var showDebugInfo by remember { mutableStateOf(prefs.showDebugInfo) }
+
+            val nextUp by viewModel.nextUp.observeAsState(null)
+            val playlist by viewModel.playlist.observeAsState(Playlist(listOf()))
+
+            // TODO move to viewmodel?
+            val cueListener =
+                remember {
+                    object : Player.Listener {
+                        override fun onCues(cueGroup: CueGroup) {
+                            cues = cueGroup.cues
+                        }
+                    }
                 }
+
+            OneTimeLaunchedEffect {
+                player.addListener(cueListener)
             }
-        }
-
-    OneTimeLaunchedEffect {
-        player.addListener(cueListener)
-    }
-    DisposableEffect(Unit) {
-        onDispose { player.removeListener(cueListener) }
-    }
-    AmbientPlayerListener(player)
-
-    if (stream == null) {
-        LoadingPage()
-    } else {
-        stream?.let {
+            DisposableEffect(Unit) {
+                onDispose { player.removeListener(cueListener) }
+            }
+            AmbientPlayerListener(player)
             var contentScale by remember { mutableStateOf(ContentScale.Fit) }
             var playbackSpeed by remember { mutableFloatStateOf(1.0f) }
             LaunchedEffect(playbackSpeed) { player.setPlaybackSpeed(playbackSpeed) }
@@ -146,6 +149,7 @@ fun PlaybackPage(
             val scaledModifier =
                 Modifier.resizeWithContentScale(contentScale, presentationState.videoSizeDp)
             val focusRequester = remember { FocusRequester() }
+            val controllerFocusRequester = remember { FocusRequester() }
             val playPauseState = rememberPlayPauseButtonState(player)
             val seekBarState = rememberSeekBarState(player, scope)
 

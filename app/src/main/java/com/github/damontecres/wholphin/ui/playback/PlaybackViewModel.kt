@@ -10,6 +10,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.media3.common.C
 import androidx.media3.common.Format
 import androidx.media3.common.MediaItem
+import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.common.TrackSelectionOverride
 import androidx.media3.common.Tracks
@@ -32,6 +33,8 @@ import com.github.damontecres.wholphin.ui.showToast
 import com.github.damontecres.wholphin.ui.toServerString
 import com.github.damontecres.wholphin.util.EqualityMutableLiveData
 import com.github.damontecres.wholphin.util.ExceptionHandler
+import com.github.damontecres.wholphin.util.LoadingExceptionHandler
+import com.github.damontecres.wholphin.util.LoadingState
 import com.github.damontecres.wholphin.util.TrackActivityPlaybackListener
 import com.github.damontecres.wholphin.util.TrackSupport
 import com.github.damontecres.wholphin.util.checkForSupport
@@ -105,7 +108,7 @@ class PlaybackViewModel
                     playWhenReady = true
                 }
 
-        val stream = MutableLiveData<StreamDecision?>(null)
+        val loading = MutableLiveData<LoadingState>(LoadingState.Loading)
 
         val title = MutableLiveData<String?>(null)
         val subtitle = MutableLiveData<String?>(null)
@@ -152,7 +155,12 @@ class PlaybackViewModel
             val itemId = destination.itemId
             this.itemId = itemId
             val item = destination.item
-            viewModelScope.launch(ExceptionHandler() + Dispatchers.IO) {
+            viewModelScope.launch(
+                LoadingExceptionHandler(
+                    loading,
+                    "Error preparing for plaback on ${destination.itemId}",
+                ) + Dispatchers.IO,
+            ) {
                 val queriedItem = item?.data ?: api.userLibraryApi.getItem(itemId).content
                 val base =
                     if (queriedItem.type == BaseItemKind.PLAYLIST) {
@@ -493,7 +501,7 @@ class PlaybackViewModel
                     this@PlaybackViewModel.activityListener = activityListener
 
                     duration.value = source.runTimeTicks?.ticks
-                    stream.value = decision
+                    loading.value = LoadingState.Success
                     currentPlayback.value = playback
                     this@PlaybackViewModel.currentItemPlayback.value = itemPlayback
                     player.setMediaItem(
@@ -707,6 +715,13 @@ class PlaybackViewModel
                 currentPlayback.value?.copy(
                     tracks = checkForSupport(tracks),
                 )
+        }
+
+        override fun onPlayerError(error: PlaybackException) {
+            Timber.e(error, "Playback error")
+            viewModelScope.launch(Dispatchers.Main + ExceptionHandler()) {
+                loading.value = LoadingState.Error("Error during playback", error)
+            }
         }
     }
 
