@@ -5,6 +5,7 @@ package com.github.damontecres.wholphin.data.model
 import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
+import androidx.room.PrimaryKey
 import com.github.damontecres.wholphin.data.JellyfinUser
 import com.github.damontecres.wholphin.util.UuidSerializer
 import kotlinx.serialization.Serializable
@@ -12,21 +13,22 @@ import kotlinx.serialization.UseSerializers
 import java.util.UUID
 
 @Entity(
-    primaryKeys = ["serverId", "userId", "itemId"],
     foreignKeys = [
         ForeignKey(
             entity = JellyfinUser::class,
-            parentColumns = ["serverId", "id"],
-            childColumns = ["serverId", "userId"],
+            parentColumns = arrayOf("rowId"),
+            childColumns = arrayOf("userId"),
             onDelete = ForeignKey.CASCADE,
+            onUpdate = ForeignKey.CASCADE,
         ),
     ],
-    indices = [Index("serverId", "userId", "itemId"), Index("userId", "itemId")],
+    indices = [Index("userId", "itemId", unique = true)],
 )
 @Serializable
 data class ItemPlayback(
-    val serverId: UUID,
-    val userId: UUID,
+    @PrimaryKey(autoGenerate = true)
+    val rowId: Long = 0,
+    val userId: Int,
     val itemId: UUID,
     val sourceId: UUID? = null,
     val audioIndex: Int = TrackIndex.UNSPECIFIED,

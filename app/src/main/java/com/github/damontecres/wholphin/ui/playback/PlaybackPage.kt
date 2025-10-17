@@ -103,8 +103,7 @@ fun PlaybackPage(
     val currentPlayback by viewModel.currentPlayback.observeAsState(null)
     val currentItemPlayback by viewModel.currentItemPlayback.observeAsState(
         ItemPlayback(
-            serverId = UUID.randomUUID(),
-            userId = UUID.randomUUID(),
+            userId = -1,
             itemId = UUID.randomUUID(),
         ),
     )

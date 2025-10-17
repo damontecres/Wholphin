@@ -9,13 +9,17 @@ import java.util.UUID
 
 @Dao
 interface ItemPlaybackDao {
-    @Query("SELECT * from ItemPlayback WHERE serverId=:serverId AND userId=:userId AND itemId=:itemId")
     fun getItem(
-        serverId: UUID,
-        userId: UUID,
+        user: JellyfinUser,
+        itemId: UUID,
+    ): ItemPlayback? = getItem(user.rowId, itemId)
+
+    @Query("SELECT * from ItemPlayback WHERE userId=:userId AND itemId=:itemId")
+    fun getItem(
+        userId: Int,
         itemId: UUID,
     ): ItemPlayback?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    fun saveItem(item: ItemPlayback)
+    fun saveItem(item: ItemPlayback): Long
 }

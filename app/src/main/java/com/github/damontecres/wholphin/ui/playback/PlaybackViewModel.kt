@@ -208,9 +208,8 @@ class PlaybackViewModel
                     if (itemPlayback != null) {
                         itemPlayback
                     } else {
-                        val serverId = serverRepository.currentServer!!.id
-                        val userId = serverRepository.currentUser!!.id
-                        itemPlaybackDao.getItem(serverId, userId, base.id)?.let {
+                        val user = serverRepository.currentUser!!
+                        itemPlaybackDao.getItem(user, base.id)?.let {
                             Timber.v("Fetched itemPlayback from DB: %s", it)
                             if (it.sourceId == null) {
                                 it.copy(
@@ -226,8 +225,7 @@ class PlaybackViewModel
                             }
                         }
                             ?: ItemPlayback(
-                                serverId = serverId,
-                                userId = userId,
+                                userId = user.rowId,
                                 itemId = base.id,
                                 sourceId =
                                     base.mediaSources
@@ -340,7 +338,7 @@ class PlaybackViewModel
 
                     changeStreams(
                         base,
-                        playbackConfig.sourceId,
+                        playbackConfig,
                         audioIndex,
                         subtitleIndex,
                         if (positionMs > 0) positionMs else C.TIME_UNSET,
@@ -358,13 +356,12 @@ class PlaybackViewModel
         @OptIn(UnstableApi::class)
         private suspend fun changeStreams(
             item: BaseItemDto,
-            sourceId: UUID?,
+            currentItemPlayback: ItemPlayback = this@PlaybackViewModel.currentItemPlayback.value!!,
             audioIndex: Int?,
             subtitleIndex: Int?,
             positionMs: Long = C.TIME_UNSET,
             userInitiated: Boolean,
         ) = withContext(Dispatchers.IO) {
-            val currentItemPlayback = this@PlaybackViewModel.currentItemPlayback.value!!
             val itemId = item.id
 
             // TODO
@@ -398,7 +395,7 @@ class PlaybackViewModel
                             allowVideoStreamCopy = true,
                             allowAudioStreamCopy = true,
                             autoOpenLiveStream = false,
-                            mediaSourceId = sourceId?.toServerString(),
+                            mediaSourceId = currentItemPlayback.sourceId?.toServerString(),
                             alwaysBurnInSubtitleWhenTranscoding = null,
                             maxStreamingBitrate = maxBitrate.toInt(),
                         ),
@@ -471,7 +468,11 @@ class PlaybackViewModel
                 if (userInitiated) {
                     viewModelScope.launch(Dispatchers.IO + ExceptionHandler()) {
                         Timber.v("Saving user initiated item playback: %s", itemPlayback)
-                        itemPlaybackDao.saveItem(itemPlayback)
+                        val rowId = itemPlaybackDao.saveItem(itemPlayback)
+                        withContext(Dispatchers.Main) {
+                            this@PlaybackViewModel.currentItemPlayback.value =
+                                itemPlayback.copy(rowId = rowId)
+                        }
                     }
                 }
 
@@ -534,7 +535,7 @@ class PlaybackViewModel
             viewModelScope.launch(ExceptionHandler()) {
                 changeStreams(
                     dto,
-                    currentItemPlayback.value?.sourceId,
+                    currentItemPlayback.value!!,
                     index,
                     currentItemPlayback.value?.subtitleIndex,
                     player.currentPosition,
@@ -547,7 +548,7 @@ class PlaybackViewModel
             viewModelScope.launch(ExceptionHandler()) {
                 changeStreams(
                     dto,
-                    currentItemPlayback.value?.sourceId,
+                    currentItemPlayback.value!!,
                     currentItemPlayback.value?.audioIndex,
                     index,
                     player.currentPosition,

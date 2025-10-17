@@ -70,8 +70,19 @@ interface JellyfinServerDao {
         }
     }
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    fun addUser(user: JellyfinUser)
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    fun addUser(user: JellyfinUser): Long
+
+    @Update
+    fun updateUser(user: JellyfinUser): Int
+
+    @Transaction
+    fun addOrUpdateUser(user: JellyfinUser) {
+        val result = addUser(user)
+        if (result == -1L) {
+            updateUser(user)
+        }
+    }
 
     @Query("DELETE FROM servers WHERE id = :serverId")
     fun deleteServer(serverId: UUID)

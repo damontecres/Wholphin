@@ -88,7 +88,7 @@ class ServerRepository
                     name = userDto.name,
                 )
             serverDao.addOrUpdateServer(updatedServer)
-            serverDao.addUser(updatedUser)
+            serverDao.addOrUpdateUser(updatedUser)
             userPreferencesDataStore.updateData {
                 it
                     .toBuilder()

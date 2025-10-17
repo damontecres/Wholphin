@@ -1,19 +1,21 @@
 package com.github.damontecres.wholphin.data
 
+import androidx.room.AutoMigration
 import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverter
 import androidx.room.TypeConverters
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
+import com.github.damontecres.wholphin.data.model.ItemPlayback
 import org.jellyfin.sdk.model.serializer.toUUID
 import java.util.UUID
 
 @Database(
-    entities = [JellyfinServer::class, JellyfinUser::class],
-    version = 3,
+    entities = [JellyfinServer::class, JellyfinUser::class, ItemPlayback::class],
+    version = 4,
     exportSchema = true,
-    autoMigrations = [],
+    autoMigrations = [AutoMigration(3, 4)],
 )
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {

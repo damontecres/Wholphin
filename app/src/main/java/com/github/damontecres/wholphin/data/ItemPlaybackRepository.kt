@@ -20,38 +20,36 @@ class ItemPlaybackRepository
             itemId: UUID,
             item: BaseItem,
         ): ChosenStreams? =
-            serverRepository.currentServer?.let { server ->
-                serverRepository.currentUser?.let { user ->
-                    val itemPlayback = itemPlaybackDao.getItem(serverId = server.id, userId = user.id, itemId = itemId)
-                    if (itemPlayback != null) {
-                        Timber.v("Got itemPlayback for %s", itemId)
-                        val source =
-                            item.data.mediaSources?.firstOrNull { it.id?.toUUIDOrNull() == itemPlayback.sourceId }
-                        if (source != null) {
-                            val audioStream =
-                                if (itemPlayback.audioIndexEnabled) {
-                                    source.mediaStreams?.firstOrNull { it.index == itemPlayback.audioIndex }
-                                } else {
-                                    null
-                                }
-                            val subtitleStream =
-                                if (itemPlayback.subtitleIndexEnabled) {
-                                    source.mediaStreams?.firstOrNull { it.index == itemPlayback.subtitleIndex }
-                                } else {
-                                    null
-                                }
-                            ChosenStreams(
-                                itemId,
-                                audioStream,
-                                subtitleStream,
-                                itemPlayback.subtitleIndex == TrackIndex.DISABLED,
-                            )
-                        } else {
-                            null
-                        }
+            serverRepository.currentUser?.let { user ->
+                val itemPlayback = itemPlaybackDao.getItem(user = user, itemId = itemId)
+                if (itemPlayback != null) {
+                    Timber.v("Got itemPlayback for %s", itemId)
+                    val source =
+                        item.data.mediaSources?.firstOrNull { it.id?.toUUIDOrNull() == itemPlayback.sourceId }
+                    if (source != null) {
+                        val audioStream =
+                            if (itemPlayback.audioIndexEnabled) {
+                                source.mediaStreams?.firstOrNull { it.index == itemPlayback.audioIndex }
+                            } else {
+                                null
+                            }
+                        val subtitleStream =
+                            if (itemPlayback.subtitleIndexEnabled) {
+                                source.mediaStreams?.firstOrNull { it.index == itemPlayback.subtitleIndex }
+                            } else {
+                                null
+                            }
+                        ChosenStreams(
+                            itemId,
+                            audioStream,
+                            subtitleStream,
+                            itemPlayback.subtitleIndex == TrackIndex.DISABLED,
+                        )
                     } else {
                         null
                     }
+                } else {
+                    null
                 }
             }
     }
