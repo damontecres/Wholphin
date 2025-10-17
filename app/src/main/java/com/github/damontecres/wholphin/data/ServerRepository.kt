@@ -5,6 +5,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.datastore.core.DataStore
 import com.github.damontecres.wholphin.preferences.AppPreferences
+import com.github.damontecres.wholphin.ui.toServerString
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.Jellyfin
@@ -13,7 +14,9 @@ import org.jellyfin.sdk.api.client.extensions.systemApi
 import org.jellyfin.sdk.api.client.extensions.userApi
 import org.jellyfin.sdk.model.api.AuthenticationResult
 import org.jellyfin.sdk.model.api.UserDto
+import org.jellyfin.sdk.model.serializer.toUUIDOrNull
 import timber.log.Timber
+import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -81,17 +84,17 @@ class ServerRepository
             val updatedServer = server.copy(name = sysInfo.serverName)
             val updatedUser =
                 user.copy(
-                    id = userDto.id.toString(),
+                    id = userDto.id,
                     name = userDto.name,
                 )
             serverDao.addOrUpdateServer(updatedServer)
-            serverDao.addUser(updatedUser)
+            serverDao.addOrUpdateUser(updatedUser)
             userPreferencesDataStore.updateData {
                 it
                     .toBuilder()
                     .apply {
-                        currentServerId = updatedServer.id
-                        currentUserId = updatedUser.id
+                        currentServerId = updatedServer.id.toServerString()
+                        currentUserId = updatedUser.id.toServerString()
                     }.build()
             }
             withContext(Dispatchers.Main) {
@@ -105,9 +108,12 @@ class ServerRepository
          * Restores a session for the given server & user such as when the app reopens
          */
         suspend fun restoreSession(
-            serverId: String,
-            userId: String,
+            serverId: UUID?,
+            userId: UUID?,
         ): Boolean {
+            if (serverId == null || userId == null) {
+                return false
+            }
             val serverAndUsers =
                 withContext(Dispatchers.IO) {
                     serverDao.getServer(serverId)
@@ -134,7 +140,7 @@ class ServerRepository
             if (accessToken != null) {
                 val authedUser = authenticationResult.user
                 val server =
-                    authenticationResult.serverId?.let {
+                    authenticationResult.serverId?.toUUIDOrNull()?.let {
                         JellyfinServer(
                             id = it,
                             name = authedUser?.serverName,
@@ -145,7 +151,7 @@ class ServerRepository
                     val user =
                         authedUser?.let {
                             JellyfinUser(
-                                id = it.id.toString(),
+                                id = it.id,
                                 name = it.name,
                                 serverId = server.id,
                                 accessToken = accessToken,

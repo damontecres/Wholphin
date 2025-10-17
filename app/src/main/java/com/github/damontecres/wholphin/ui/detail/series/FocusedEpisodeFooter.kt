@@ -11,11 +11,13 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.github.damontecres.wholphin.R
+import com.github.damontecres.wholphin.data.ChosenStreams
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.ui.components.ExpandablePlayButtons
 import com.github.damontecres.wholphin.ui.components.TitleValueText
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
-import com.github.damontecres.wholphin.util.formatSubtitleLang
+import com.github.damontecres.wholphin.util.getAudioDisplay
+import com.github.damontecres.wholphin.util.getSubtitleDisplay
 import org.jellyfin.sdk.model.api.MediaStreamType
 import org.jellyfin.sdk.model.extensions.ticks
 import kotlin.time.Duration
@@ -23,6 +25,7 @@ import kotlin.time.Duration
 @Composable
 fun FocusedEpisodeFooter(
     ep: BaseItem,
+    chosenStreams: ChosenStreams?,
     playOnClick: (Duration) -> Unit,
     moreOnClick: () -> Unit,
     watchOnClick: () -> Unit,
@@ -58,25 +61,17 @@ fun FocusedEpisodeFooter(
                         it,
                     )
                 }
+            val audioDisplay =
+                remember(ep.id, chosenStreams) { getAudioDisplay(ep.data, chosenStreams) }
+            audioDisplay?.let {
+                TitleValueText(
+                    stringResource(R.string.audio),
+                    it,
+                )
+            }
 
-            dto.mediaStreams
-                ?.firstOrNull { it.type == MediaStreamType.AUDIO }
-                ?.displayTitle
-                ?.let {
-                    // TODO probably a cleaner way to do this
-                    // Removes part of "5.1 Surround - English - AAC - Default"
-                    it
-                        .replace(" - Default", "")
-                        .ifBlank { null }
-                        ?.let {
-                            TitleValueText(
-                                stringResource(R.string.audio),
-                                it,
-                            )
-                        }
-                }
-
-            formatSubtitleLang(dto.mediaStreams)
+            val subtitleText = getSubtitleDisplay(ep.data, chosenStreams)
+            subtitleText
                 ?.let {
                     if (it.isNotNullOrBlank()) {
                         TitleValueText(

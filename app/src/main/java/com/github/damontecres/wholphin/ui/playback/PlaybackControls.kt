@@ -56,6 +56,7 @@ import androidx.tv.material3.ListItem
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.R
+import com.github.damontecres.wholphin.data.model.TrackIndex
 import com.github.damontecres.wholphin.ui.AppColors
 import com.github.damontecres.wholphin.ui.indexOfFirstOrNull
 import com.github.damontecres.wholphin.ui.seekBack
@@ -398,7 +399,7 @@ fun RightPlaybackButtons(
             onSelectChoice = { index, _ ->
                 val send =
                     if (index == 0) {
-                        -1
+                        TrackIndex.DISABLED
                     } else {
                         subtitleStreams[index - 1].index
                     }

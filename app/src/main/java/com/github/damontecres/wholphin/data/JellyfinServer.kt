@@ -5,6 +5,7 @@ import androidx.room.Dao
 import androidx.room.Embedded
 import androidx.room.Entity
 import androidx.room.ForeignKey
+import androidx.room.Index
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.PrimaryKey
@@ -12,17 +13,17 @@ import androidx.room.Query
 import androidx.room.Relation
 import androidx.room.Transaction
 import androidx.room.Update
+import java.util.UUID
 
 @Entity(tableName = "servers")
 data class JellyfinServer(
-    @PrimaryKey val id: String,
+    @PrimaryKey val id: UUID,
     val name: String?,
     val url: String,
 )
 
 @Entity(
     tableName = "users",
-    primaryKeys = ["id", "serverId"],
     foreignKeys = [
         ForeignKey(
             entity = JellyfinServer::class,
@@ -31,13 +32,16 @@ data class JellyfinServer(
             onDelete = ForeignKey.CASCADE,
         ),
     ],
+    indices = [Index("id", "serverId", unique = true)],
 )
 data class JellyfinUser(
+    @PrimaryKey(autoGenerate = true)
+    val rowId: Int = 0,
     @ColumnInfo(index = true)
-    val id: String,
+    val id: UUID,
     val name: String?,
     @ColumnInfo(index = true)
-    val serverId: String,
+    val serverId: UUID,
     val accessToken: String?,
 )
 
@@ -66,16 +70,27 @@ interface JellyfinServerDao {
         }
     }
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    fun addUser(user: JellyfinUser)
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    fun addUser(user: JellyfinUser): Long
+
+    @Update
+    fun updateUser(user: JellyfinUser): Int
+
+    @Transaction
+    fun addOrUpdateUser(user: JellyfinUser) {
+        val result = addUser(user)
+        if (result == -1L) {
+            updateUser(user)
+        }
+    }
 
     @Query("DELETE FROM servers WHERE id = :serverId")
-    fun deleteServer(serverId: String)
+    fun deleteServer(serverId: UUID)
 
     @Query("DELETE FROM users WHERE serverId = :serverId AND id = :userId")
     fun deleteUser(
-        serverId: String,
-        userId: String,
+        serverId: UUID,
+        userId: UUID,
     )
 
     @Transaction
@@ -84,5 +99,5 @@ interface JellyfinServerDao {
 
     @Transaction
     @Query("SELECT * FROM servers WHERE id = :serverId")
-    fun getServer(serverId: String): JellyfinServerUsers?
+    fun getServer(serverId: UUID): JellyfinServerUsers?
 }

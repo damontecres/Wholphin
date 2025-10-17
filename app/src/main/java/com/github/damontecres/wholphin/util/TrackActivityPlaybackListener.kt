@@ -3,6 +3,7 @@ package com.github.damontecres.wholphin.util
 import androidx.annotation.OptIn
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
+import com.github.damontecres.wholphin.data.model.ItemPlayback
 import com.github.damontecres.wholphin.ui.playback.CurrentPlayback
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -32,6 +33,7 @@ class TrackActivityPlaybackListener(
     private val api: ApiClient,
     private val player: Player,
     var playback: CurrentPlayback,
+    var itemPlayback: ItemPlayback,
 ) : Player.Listener {
     private val coroutineScope = CoroutineScope(Dispatchers.Main)
     private val task: TimerTask
@@ -46,14 +48,14 @@ class TrackActivityPlaybackListener(
             api.playStateApi.reportPlaybackStart(
                 PlaybackStartInfo(
                     canSeek = true,
-                    itemId = playback.itemId,
+                    itemId = itemPlayback.itemId,
                     isPaused = withContext(Dispatchers.Main) { !player.isPlaying },
                     playMethod = playback.playMethod,
                     repeatMode = RepeatMode.REPEAT_NONE,
                     playbackOrder = PlaybackOrder.DEFAULT,
                     isMuted = false,
-                    audioStreamIndex = playback.audioIndex,
-                    subtitleStreamIndex = playback.subtitleIndex,
+                    audioStreamIndex = itemPlayback.audioIndex.takeIf { itemPlayback.audioIndexEnabled },
+                    subtitleStreamIndex = itemPlayback.subtitleIndex.takeIf { itemPlayback.subtitleIndexEnabled },
                 ),
             )
         }
@@ -93,7 +95,7 @@ class TrackActivityPlaybackListener(
         coroutineScope.launch(Dispatchers.IO + ExceptionHandler()) {
             api.playStateApi.reportPlaybackStopped(
                 PlaybackStopInfo(
-                    itemId = playback.itemId,
+                    itemId = itemPlayback.itemId,
                     positionTicks = withContext(Dispatchers.Main) { player.currentPosition.milliseconds.inWholeTicks },
                     failed = false,
                     playSessionId = playback.playSessionId,
@@ -130,7 +132,7 @@ class TrackActivityPlaybackListener(
 //            Timber.v("saveActivity: itemId=$itemId, pos=$calcPosition")
             api.playStateApi.reportPlaybackProgress(
                 PlaybackProgressInfo(
-                    itemId = playback.itemId,
+                    itemId = itemPlayback.itemId,
                     positionTicks = calcPosition.inWholeTicks,
                     canSeek = true,
                     isPaused = withContext(Dispatchers.Main) { !player.isPlaying },
@@ -139,8 +141,8 @@ class TrackActivityPlaybackListener(
                     repeatMode = RepeatMode.REPEAT_NONE,
                     playbackOrder = PlaybackOrder.DEFAULT,
                     playSessionId = playback.playSessionId,
-                    audioStreamIndex = playback.audioIndex,
-                    subtitleStreamIndex = playback.subtitleIndex,
+                    audioStreamIndex = itemPlayback.audioIndex.takeIf { itemPlayback.audioIndexEnabled },
+                    subtitleStreamIndex = itemPlayback.subtitleIndex.takeIf { itemPlayback.subtitleIndexEnabled },
                 ),
             )
         }

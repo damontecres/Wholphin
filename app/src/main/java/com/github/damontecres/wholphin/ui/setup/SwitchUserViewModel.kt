@@ -25,7 +25,10 @@ import org.jellyfin.sdk.api.client.extensions.systemApi
 import org.jellyfin.sdk.api.client.extensions.userApi
 import org.jellyfin.sdk.model.api.QuickConnectDto
 import org.jellyfin.sdk.model.api.QuickConnectResult
+import org.jellyfin.sdk.model.serializer.toUUID
+import org.jellyfin.sdk.model.serializer.toUUIDOrNull
 import timber.log.Timber
+import java.util.UUID
 import javax.inject.Inject
 import kotlin.time.Duration.Companion.seconds
 
@@ -39,8 +42,8 @@ class SwitchUserViewModel
         val navigationManager: NavigationManager,
     ) : ViewModel() {
         val servers = MutableLiveData<List<JellyfinServer>>(listOf())
-        val serverStatus = MutableLiveData<Map<String, ServerConnectionStatus>>(mapOf())
-        val serverQuickConnect = MutableLiveData<Map<String, Boolean>>(mapOf())
+        val serverStatus = MutableLiveData<Map<UUID, ServerConnectionStatus>>(mapOf())
+        val serverQuickConnect = MutableLiveData<Map<UUID, Boolean>>(mapOf())
 
         val users = MutableLiveData<List<JellyfinUser>>(listOf())
         val quickConnectState = MutableLiveData<QuickConnectResult?>(null)
@@ -245,7 +248,7 @@ class SwitchUserViewModel
                         .createApi(serverUrl)
                         .systemApi
                         .getPublicSystemInfo()
-                    val id = serverInfo.id
+                    val id = serverInfo.id?.toUUIDOrNull()
                     if (id != null && serverInfo.startupWizardCompleted == true) {
                         serverRepository.addAndChangeServer(
                             JellyfinServer(
@@ -310,7 +313,15 @@ class SwitchUserViewModel
                     val newServerList =
                         discoveredServers.value!!
                             .toMutableList()
-                            .apply { add(JellyfinServer(server.id, server.name, server.address)) }
+                            .apply {
+                                add(
+                                    JellyfinServer(
+                                        server.id.toUUID(),
+                                        server.name,
+                                        server.address,
+                                    ),
+                                )
+                            }
                     withContext(Dispatchers.Main) {
                         discoveredServers.value = newServerList
                     }

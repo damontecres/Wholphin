@@ -56,6 +56,7 @@ import androidx.tv.material3.Button
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import androidx.tv.material3.surfaceColorAtElevation
+import com.github.damontecres.wholphin.data.model.ItemPlayback
 import com.github.damontecres.wholphin.data.model.Playlist
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.preferences.skipBackOnResume
@@ -67,6 +68,7 @@ import com.github.damontecres.wholphin.util.seasonEpisode
 import kotlinx.coroutines.delay
 import org.jellyfin.sdk.model.api.DeviceProfile
 import org.jellyfin.sdk.model.extensions.ticks
+import java.util.UUID
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
@@ -99,6 +101,12 @@ fun PlaybackPage(
     val trickplay by viewModel.trickplay.observeAsState(null)
     val chapters by viewModel.chapters.observeAsState(listOf())
     val currentPlayback by viewModel.currentPlayback.observeAsState(null)
+    val currentItemPlayback by viewModel.currentItemPlayback.observeAsState(
+        ItemPlayback(
+            userId = -1,
+            itemId = UUID.randomUUID(),
+        ),
+    )
     val currentSegment by viewModel.currentSegment.observeAsState(null)
     var segmentCancelled by remember(currentSegment?.id) { mutableStateOf(false) }
 
@@ -318,6 +326,7 @@ fun PlaybackPage(
                             playbackSpeed = playbackSpeed,
                             moreButtonOptions = MoreButtonOptions(mapOf()),
                             currentPlayback = currentPlayback,
+                            currentItemPlayback = currentItemPlayback,
                             audioStreams = audioStreams,
                             trickplayInfo = trickplay,
                             trickplayUrlFor = viewModel::getTrickplayUrl,
@@ -331,7 +340,7 @@ fun PlaybackPage(
                     }
 
                     // Subtitles
-                    if (!controllerViewState.controlsVisible && skipIndicatorDuration == 0L && currentPlayback?.subtitleIndex != null) {
+                    if (!controllerViewState.controlsVisible && skipIndicatorDuration == 0L && currentItemPlayback.subtitleIndexEnabled) {
                         AndroidView(
                             factory = { context ->
                                 SubtitleView(context).apply {

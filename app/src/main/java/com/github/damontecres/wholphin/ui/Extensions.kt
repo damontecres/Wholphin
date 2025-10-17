@@ -40,6 +40,7 @@ import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.model.api.BaseItemDto
 import org.jellyfin.sdk.model.extensions.ticks
 import timber.log.Timber
+import java.util.UUID
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
@@ -351,3 +352,11 @@ fun CoroutineScope.launchIO(
     start: CoroutineStart = CoroutineStart.DEFAULT,
     block: suspend CoroutineScope.() -> Unit,
 ): Job = launch(context = Dispatchers.IO + context, start = start, block = block)
+
+/**
+ * Converts a UUID to the format used server-side (ie without hyphens).
+ *
+ * This is the inverse of [org.jellyfin.sdk.model.serializer.toUUID]
+ *
+ */
+fun UUID.toServerString() = this.toString().replace("-", "")

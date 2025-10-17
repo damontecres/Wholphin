@@ -56,6 +56,7 @@ android {
         targetSdk = 36
         versionCode = getVersionCode()
         versionName = getAppVersion()
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildTypes {
@@ -217,6 +218,7 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewmodel.navigation3)
     implementation(libs.androidx.hilt.navigation.compose)
     implementation(libs.androidx.preference.ktx)
+    implementation(libs.androidx.room.testing)
     ksp(libs.androidx.room.compiler)
     ksp(libs.hilt.android.compiler)
 

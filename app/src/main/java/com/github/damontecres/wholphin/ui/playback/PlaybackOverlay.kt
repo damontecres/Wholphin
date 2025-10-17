@@ -45,6 +45,7 @@ import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.Chapter
+import com.github.damontecres.wholphin.data.model.ItemPlayback
 import com.github.damontecres.wholphin.data.model.Playlist
 import com.github.damontecres.wholphin.ui.AppColors
 import com.github.damontecres.wholphin.ui.cards.ChapterCard
@@ -84,6 +85,7 @@ fun PlaybackOverlay(
     playbackSpeed: Float,
     moreButtonOptions: MoreButtonOptions,
     currentPlayback: CurrentPlayback?,
+    currentItemPlayback: ItemPlayback,
     audioStreams: List<AudioStream>,
     currentSegment: MediaSegmentDto?,
     modifier: Modifier = Modifier,
@@ -156,6 +158,7 @@ fun PlaybackOverlay(
                 playbackSpeed = playbackSpeed,
                 moreButtonOptions = moreButtonOptions,
                 currentPlayback = currentPlayback,
+                currentItemPlayback = currentItemPlayback,
                 audioStreams = audioStreams,
                 subtitle = subtitle,
                 seekBarInteractionSource = seekBarInteractionSource,
@@ -414,6 +417,7 @@ fun Controller(
     playbackSpeed: Float,
     moreButtonOptions: MoreButtonOptions,
     currentPlayback: CurrentPlayback?,
+    currentItemPlayback: ItemPlayback,
     audioStreams: List<AudioStream>,
     nextState: OverlayViewState?,
     currentSegment: MediaSegmentDto?,
@@ -461,8 +465,8 @@ fun Controller(
             seekEnabled = seekEnabled,
             seekBarInteractionSource = seekBarInteractionSource,
             moreButtonOptions = moreButtonOptions,
-            subtitleIndex = currentPlayback?.subtitleIndex,
-            audioIndex = currentPlayback?.audioIndex,
+            subtitleIndex = currentItemPlayback.subtitleIndex,
+            audioIndex = currentItemPlayback.audioIndex,
             audioStreams = audioStreams,
             playbackSpeed = playbackSpeed,
             scale = scale,

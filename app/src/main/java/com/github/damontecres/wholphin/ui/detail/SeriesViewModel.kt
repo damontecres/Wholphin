@@ -11,11 +11,14 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.okhttp.OkHttpDataSource
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
+import com.github.damontecres.wholphin.data.ChosenStreams
+import com.github.damontecres.wholphin.data.ItemPlaybackRepository
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.Person
 import com.github.damontecres.wholphin.hilt.AuthOkHttpClient
 import com.github.damontecres.wholphin.preferences.ThemeSongVolume
 import com.github.damontecres.wholphin.preferences.UserPreferences
+import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.letNotEmpty
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.nav.NavigationManager
@@ -29,6 +32,7 @@ import com.github.damontecres.wholphin.util.LoadingState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -57,6 +61,7 @@ class SeriesViewModel
         @param:ApplicationContext val context: Context,
         @param:AuthOkHttpClient private val okHttpClient: OkHttpClient,
         private val navigationManager: NavigationManager,
+        private val itemPlaybackRepository: ItemPlaybackRepository,
     ) : ItemViewModel(api) {
         private var player: Player? = null
         private lateinit var seriesId: UUID
@@ -305,6 +310,23 @@ class SeriesViewModel
         fun navigateTo(destination: Destination) {
             release()
             navigationManager.navigateTo(destination)
+        }
+
+        val chosenStreams = MutableLiveData<ChosenStreams?>(null)
+        private var chosenStreamsJob: Job? = null
+
+        fun lookUpChosenTracks(
+            itemId: UUID,
+            item: BaseItem,
+        ) {
+            chosenStreamsJob?.cancel()
+            chosenStreamsJob =
+                viewModelScope.launchIO {
+                    val result = itemPlaybackRepository.getSelectedTracks(itemId, item)
+                    withContext(Dispatchers.Main) {
+                        chosenStreams.value = result
+                    }
+                }
         }
     }
 

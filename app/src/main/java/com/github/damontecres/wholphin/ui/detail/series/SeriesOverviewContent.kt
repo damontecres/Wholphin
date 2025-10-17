@@ -42,6 +42,7 @@ import androidx.tv.material3.TabRow
 import androidx.tv.material3.TabRowDefaults
 import androidx.tv.material3.Text
 import coil3.compose.AsyncImage
+import com.github.damontecres.wholphin.data.ChosenStreams
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.aspectRatioFloat
 import com.github.damontecres.wholphin.ui.OneTimeLaunchedEffect
@@ -60,6 +61,7 @@ fun SeriesOverviewContent(
     series: BaseItem,
     seasons: List<BaseItem?>,
     episodes: EpisodeList,
+    chosenStreams: ChosenStreams?,
     position: SeriesOverviewPosition,
     backdropImageUrl: String?,
     firstItemFocusRequester: FocusRequester,
@@ -281,6 +283,7 @@ fun SeriesOverviewContent(
                 focusedEpisode?.let { ep ->
                     FocusedEpisodeFooter(
                         ep = ep,
+                        chosenStreams = chosenStreams,
                         playOnClick = playOnClick,
                         moreOnClick = moreOnClick,
                         watchOnClick = watchOnClick,
