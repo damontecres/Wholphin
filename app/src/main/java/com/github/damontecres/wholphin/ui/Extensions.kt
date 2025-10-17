@@ -30,8 +30,12 @@ import androidx.media3.common.Player
 import coil3.request.ErrorResult
 import com.github.damontecres.wholphin.ui.data.RowColumn
 import com.github.damontecres.wholphin.ui.data.RowColumnSaver
+import com.github.damontecres.wholphin.util.ExceptionHandler
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.model.api.BaseItemDto
 import org.jellyfin.sdk.model.extensions.ticks
@@ -39,6 +43,7 @@ import timber.log.Timber
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
+import kotlin.coroutines.CoroutineContext
 import kotlin.math.min
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
@@ -337,3 +342,12 @@ suspend fun showToast(
 ) = withContext(Dispatchers.Main) {
     Toast.makeText(context, text, Toast.LENGTH_LONG).show()
 }
+
+/**
+ * Launches a coroutine with [Dispatchers.IO] plus the provided [CoroutineContext] defaulting to using [ExceptionHandler]
+ */
+fun CoroutineScope.launchIO(
+    context: CoroutineContext = ExceptionHandler(),
+    start: CoroutineStart = CoroutineStart.DEFAULT,
+    block: suspend CoroutineScope.() -> Unit,
+): Job = launch(context = Dispatchers.IO + context, start = start, block = block)

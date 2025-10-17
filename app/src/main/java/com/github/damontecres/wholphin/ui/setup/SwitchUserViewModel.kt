@@ -7,15 +7,14 @@ import com.github.damontecres.wholphin.data.JellyfinServer
 import com.github.damontecres.wholphin.data.JellyfinServerDao
 import com.github.damontecres.wholphin.data.JellyfinUser
 import com.github.damontecres.wholphin.data.ServerRepository
+import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.nav.NavigationManager
-import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.Jellyfin
 import org.jellyfin.sdk.api.client.HttpClientOptions
@@ -62,7 +61,11 @@ class SwitchUserViewModel
         }
 
         init {
-            viewModelScope.launch(ExceptionHandler() + Dispatchers.IO) {
+            init()
+        }
+
+        fun init() {
+            viewModelScope.launchIO {
                 val allServers =
                     serverDao
                         .getServers()
@@ -116,7 +119,7 @@ class SwitchUserViewModel
                     }
                 }
             }
-            viewModelScope.launch(ExceptionHandler() + Dispatchers.IO) {
+            viewModelScope.launchIO {
                 serverRepository.currentServer?.let {
                     val quickConnect =
                         jellyfin
@@ -140,11 +143,14 @@ class SwitchUserViewModel
             server: JellyfinServer,
             user: JellyfinUser,
         ) {
-            viewModelScope.launch(ExceptionHandler()) {
+            viewModelScope.launchIO {
                 try {
                     serverRepository.changeUser(server, user)
-                    navigationManager.goToHome()
+                    withContext(Dispatchers.Main) {
+                        navigationManager.goToHome()
+                    }
                 } catch (ex: Exception) {
+                    Timber.e(ex, "Error switching user")
                     switchUserState.value = LoadingState.Error(exception = ex)
                 }
             }
@@ -156,7 +162,7 @@ class SwitchUserViewModel
             password: String,
         ) {
             quickConnectJob?.cancel()
-            viewModelScope.launch(ExceptionHandler()) {
+            viewModelScope.launchIO {
                 try {
                     val api = jellyfin.createApi(baseUrl = server.url)
                     val authenticationResult by api.userApi.authenticateUserByName(
@@ -168,6 +174,7 @@ class SwitchUserViewModel
                         navigationManager.goToHome()
                     }
                 } catch (ex: Exception) {
+                    Timber.e(ex, "Error logging in user")
                     switchUserState.value = LoadingState.Error(ex)
                 }
             }
@@ -178,7 +185,7 @@ class SwitchUserViewModel
             onAuthenticated: () -> Unit,
         ) {
             quickConnectJob?.cancel()
-            viewModelScope.launch(ExceptionHandler() + Dispatchers.IO) {
+            viewModelScope.launchIO {
                 try {
                     val api = jellyfin.createApi(server.url)
                     var state =
@@ -191,7 +198,7 @@ class SwitchUserViewModel
                     }
 
                     quickConnectJob =
-                        viewModelScope.launch(ExceptionHandler() + Dispatchers.IO) {
+                        viewModelScope.launchIO {
                             while (!state.authenticated) {
                                 delay(5_000L)
                                 state =
@@ -212,6 +219,7 @@ class SwitchUserViewModel
                             }
                         }
                 } catch (ex: Exception) {
+                    Timber.e(ex, "Error during quick connect")
                     if (ex is InvalidStatusException && ex.status == 401) {
                         quickConnectState.value = null
                         serverQuickConnect.value =
@@ -231,7 +239,7 @@ class SwitchUserViewModel
 
         fun addServer(serverUrl: String) {
             addServerState.value = LoadingState.Loading
-            viewModelScope.launch(ExceptionHandler() + Dispatchers.IO) {
+            viewModelScope.launchIO {
                 try {
                     val serverInfo by jellyfin
                         .createApi(serverUrl)
@@ -279,19 +287,25 @@ class SwitchUserViewModel
         }
 
         fun removeUser(user: JellyfinUser) {
-            viewModelScope.launch(ExceptionHandler()) {
+            viewModelScope.launchIO {
                 serverRepository.removeUser(user)
+                val serverUsers =
+                    serverDao.getServer(user.serverId)?.users?.sortedBy { it.name } ?: listOf()
+                withContext(Dispatchers.Main) {
+                    users.value = serverUsers
+                }
             }
         }
 
         fun removeServer(server: JellyfinServer) {
-            viewModelScope.launch(ExceptionHandler()) {
+            viewModelScope.launchIO {
                 serverRepository.removeServer(server)
+                init()
             }
         }
 
         fun discoverServers() {
-            viewModelScope.launch(ExceptionHandler() + Dispatchers.IO) {
+            viewModelScope.launchIO {
                 jellyfin.discovery.discoverLocalServers().collect { server ->
                     val newServerList =
                         discoveredServers.value!!
