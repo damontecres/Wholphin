@@ -26,7 +26,7 @@ import androidx.lifecycle.viewModelScope
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.Cards
-import com.github.damontecres.wholphin.ui.DefaultItemFields
+import com.github.damontecres.wholphin.ui.SlimItemFields
 import com.github.damontecres.wholphin.ui.cards.EpisodeCard
 import com.github.damontecres.wholphin.ui.cards.ItemRow
 import com.github.damontecres.wholphin.ui.cards.SeasonCard
@@ -78,7 +78,7 @@ class SearchViewModel
                             searchTerm = query,
                             recursive = true,
                             includeItemTypes = listOf(BaseItemKind.MOVIE),
-                            fields = DefaultItemFields,
+                            fields = SlimItemFields,
                             limit = 25,
                         )
                     val pager = ApiRequestPager(api, request, GetItemsRequestHandler, viewModelScope)
@@ -93,7 +93,7 @@ class SearchViewModel
                             searchTerm = query,
                             recursive = true,
                             includeItemTypes = listOf(BaseItemKind.SERIES),
-                            fields = DefaultItemFields,
+                            fields = SlimItemFields,
                             limit = 25,
                         )
                     val pager = ApiRequestPager(api, request, GetItemsRequestHandler, viewModelScope)
@@ -108,7 +108,7 @@ class SearchViewModel
                             searchTerm = query,
                             recursive = true,
                             includeItemTypes = listOf(BaseItemKind.EPISODE),
-                            fields = DefaultItemFields,
+                            fields = SlimItemFields,
                             limit = 25,
                         )
                     val pager = ApiRequestPager(api, request, GetItemsRequestHandler, viewModelScope)

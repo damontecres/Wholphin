@@ -39,6 +39,19 @@ val DefaultItemFields =
         ItemFields.TRICKPLAY,
         ItemFields.SORT_NAME,
         ItemFields.CHAPTERS,
+        ItemFields.MEDIA_SOURCES,
+    )
+
+/**
+ * [ItemFields] for higher level displays such as grids or rows
+ */
+val SlimItemFields =
+    listOf(
+        ItemFields.PRIMARY_IMAGE_ASPECT_RATIO,
+        ItemFields.SEASON_USER_DATA,
+        ItemFields.CHILD_COUNT,
+        ItemFields.OVERVIEW,
+        ItemFields.SORT_NAME,
     )
 
 val DefaultButtonPadding =

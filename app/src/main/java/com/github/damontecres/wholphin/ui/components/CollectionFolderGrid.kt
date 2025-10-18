@@ -29,8 +29,8 @@ import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.GetItemsFilter
 import com.github.damontecres.wholphin.preferences.UserPreferences
-import com.github.damontecres.wholphin.ui.DefaultItemFields
 import com.github.damontecres.wholphin.ui.OneTimeLaunchedEffect
+import com.github.damontecres.wholphin.ui.SlimItemFields
 import com.github.damontecres.wholphin.ui.data.MovieSortOptions
 import com.github.damontecres.wholphin.ui.data.SeriesSortOptions
 import com.github.damontecres.wholphin.ui.data.SortAndDirection
@@ -135,7 +135,7 @@ class CollectionFolderViewModel
                                         SortOrder.ASCENDING,
                                         SortOrder.ASCENDING,
                                     ),
-                                fields = DefaultItemFields,
+                                fields = SlimItemFields,
                             ),
                         )
                     val newPager =
