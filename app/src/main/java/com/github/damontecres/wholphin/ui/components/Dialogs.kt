@@ -85,6 +85,25 @@ data class DialogItem(
     val enabled: Boolean = true,
 ) : DialogItemEntry {
     constructor(
+        @StringRes text: Int,
+        @StringRes iconStringRes: Int,
+        onClick: () -> Unit,
+    ) : this(
+        headlineContent = {
+            Text(
+                text = stringResource(text),
+            )
+        },
+        leadingContent = {
+            Text(
+                text = stringResource(id = iconStringRes),
+                fontFamily = FontAwesome,
+            )
+        },
+        onClick = onClick,
+    )
+
+    constructor(
         text: String,
         @StringRes iconStringRes: Int,
         onClick: () -> Unit,

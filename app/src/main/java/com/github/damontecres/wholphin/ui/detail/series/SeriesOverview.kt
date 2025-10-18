@@ -12,6 +12,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.choseSource
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.OneTimeLaunchedEffect
@@ -137,6 +138,66 @@ fun SeriesOverview(
         LoadingState.Success -> {
             series?.let { series ->
                 LaunchedEffect(Unit) { episodeRowFocusRequester.tryRequestFocus() }
+
+                fun buildMoreForEpisode(
+                    ep: BaseItem,
+                    fromLongClick: Boolean,
+                ): DialogParams =
+                    DialogParams(
+                        fromLongClick = fromLongClick,
+                        title = series.name + " - " + ep.data.seasonEpisode,
+                        items =
+                            buildMoreDialogItems(
+                                ep,
+                                watched = ep.data.userData?.played ?: false,
+                                series = series,
+                                sourceId = chosenStreams?.sourceId,
+                                navigateTo = viewModel::navigateTo,
+                                onClickWatch = { played ->
+                                    episodeList
+                                        ?.getOrNull(position.episodeRowIndex)
+                                        ?.let {
+                                            viewModel.setWatched(
+                                                it.id,
+                                                played,
+                                                position.episodeRowIndex,
+                                            )
+                                        }
+                                },
+                                onChooseVersion = {
+                                    chooseVersion =
+                                        chooseVersionParams(ep.data.mediaSources!!) { idx ->
+                                            val source = ep.data.mediaSources!![idx]
+                                            viewModel.savePlayVersion(
+                                                ep,
+                                                source.id!!.toUUID(),
+                                            )
+                                        }
+                                    moreDialog = null
+                                },
+                                onChooseTracks = { type ->
+                                    choseSource(
+                                        ep.data,
+                                        chosenStreams?.itemPlayback,
+                                    )?.let { source ->
+                                        chooseVersion =
+                                            chooseStream(
+                                                streams = source.mediaStreams.orEmpty(),
+                                                type = type,
+                                                onClick = { trackIndex ->
+                                                    viewModel.saveTrackSelection(
+                                                        ep,
+                                                        chosenStreams?.itemPlayback,
+                                                        trackIndex,
+                                                        type,
+                                                    )
+                                                },
+                                            )
+                                    }
+                                },
+                            ),
+                    )
+
                 SeriesOverviewContent(
                     series = series,
                     seasons = seasons.items,
@@ -173,8 +234,8 @@ fun SeriesOverview(
                             ),
                         )
                     },
-                    onLongClick = {
-                        // TODO
+                    onLongClick = { ep ->
+                        moreDialog = buildMoreForEpisode(ep, true)
                     },
                     playOnClick = { resume ->
                         episodeList?.getOrNull(position.episodeRowIndex)?.let {
@@ -196,49 +257,7 @@ fun SeriesOverview(
                     },
                     moreOnClick = {
                         episodeList?.getOrNull(position.episodeRowIndex)?.let { ep ->
-                            moreDialog =
-                                DialogParams(
-                                    fromLongClick = false,
-                                    title = series.name + " - " + ep.data.seasonEpisode,
-                                    items =
-                                        buildMoreDialogItems(
-                                            ep,
-                                            series,
-                                            chosenStreams?.sourceId,
-                                            viewModel::navigateTo,
-                                            onChooseVersion = {
-                                                chooseVersion =
-                                                    chooseVersionParams(ep.data.mediaSources!!) { idx ->
-                                                        val source = ep.data.mediaSources!![idx]
-                                                        viewModel.savePlayVersion(
-                                                            ep,
-                                                            source.id!!.toUUID(),
-                                                        )
-                                                    }
-                                                moreDialog = null
-                                            },
-                                            onChooseTracks = { type ->
-                                                choseSource(
-                                                    ep.data,
-                                                    chosenStreams?.itemPlayback,
-                                                )?.let { source ->
-                                                    chooseVersion =
-                                                        chooseStream(
-                                                            streams = source.mediaStreams.orEmpty(),
-                                                            type = type,
-                                                            onClick = { trackIndex ->
-                                                                viewModel.saveTrackSelection(
-                                                                    ep,
-                                                                    chosenStreams?.itemPlayback,
-                                                                    trackIndex,
-                                                                    type,
-                                                                )
-                                                            },
-                                                        )
-                                                }
-                                            },
-                                        ),
-                                )
+                            moreDialog = buildMoreForEpisode(ep, false)
                         }
                     },
                     overviewOnClick = {

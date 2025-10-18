@@ -6,6 +6,7 @@ import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.ui.graphics.Color
+import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.ui.components.DialogItem
 import com.github.damontecres.wholphin.ui.letNotEmpty
@@ -35,7 +36,9 @@ fun buildMoreDialogItems(
     item: BaseItem,
     series: BaseItem?,
     sourceId: UUID?,
+    watched: Boolean,
     navigateTo: (Destination) -> Unit,
+    onClickWatch: (Boolean) -> Unit,
     onChooseVersion: () -> Unit,
     onChooseTracks: (MediaStreamType) -> Unit,
 ): List<DialogItem> =
@@ -53,6 +56,14 @@ fun buildMoreDialogItems(
                         item,
                     ),
                 )
+            },
+        )
+        add(
+            DialogItem(
+                text = if (watched) R.string.mark_unwatched else R.string.mark_watched,
+                iconStringRes = if (watched) R.string.fa_eye else R.string.fa_eye_slash,
+            ) {
+                onClickWatch.invoke(!watched)
             },
         )
         series?.let {

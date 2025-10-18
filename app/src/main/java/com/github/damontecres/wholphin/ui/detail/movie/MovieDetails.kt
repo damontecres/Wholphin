@@ -226,9 +226,11 @@ fun MovieDetails(
                                 items =
                                     buildMoreDialogItems(
                                         item = movie,
+                                        watched = movie.data.userData?.played ?: false,
                                         series = null,
                                         sourceId = chosenStreams?.sourceId,
                                         navigateTo = viewModel.navigationManager::navigateTo,
+                                        onClickWatch = viewModel::setWatched,
                                         onChooseVersion = {
                                             chooseVersion =
                                                 chooseVersionParams(movie.data.mediaSources!!) { idx ->
