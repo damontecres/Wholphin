@@ -13,6 +13,7 @@ import androidx.room.Query
 import androidx.room.Relation
 import androidx.room.Transaction
 import androidx.room.Update
+import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import java.util.UUID
 
 @Entity(tableName = "servers")
@@ -43,7 +44,10 @@ data class JellyfinUser(
     @ColumnInfo(index = true)
     val serverId: UUID,
     val accessToken: String?,
-)
+) {
+    override fun toString(): String =
+        "JellyfinUser(rowId=$rowId, id=$id, name=$name, serverId=$serverId, accessToken=${accessToken.isNotNullOrBlank()})"
+}
 
 data class JellyfinServerUsers(
     @Embedded val server: JellyfinServer,

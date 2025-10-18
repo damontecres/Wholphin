@@ -90,4 +90,7 @@ sealed class Destination(
 
     @Serializable
     data object License : Destination(true)
+
+    @Serializable
+    data object Debug : Destination(true)
 }

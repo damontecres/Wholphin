@@ -192,7 +192,7 @@ fun PreferencesContent(
                                         if (movementSounds) playOnClickSound(context)
                                         if (clickCount++ >= 2) {
                                             clickCount = 0
-                                            // navigationManager.navigateTo(Destination.Debug)
+                                            viewModel.navigationManager.navigateTo(Destination.Debug)
                                         }
                                     },
                                     summary = installedVersion.toString(),
