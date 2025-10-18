@@ -22,4 +22,7 @@ interface ItemPlaybackDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun saveItem(item: ItemPlayback): Long
+
+    @Query("SELECT * from ItemPlayback WHERE userId=:userId")
+    fun getItems(userId: Int): List<ItemPlayback>
 }
