@@ -6,6 +6,7 @@ import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -57,14 +58,32 @@ fun TvGridBox(
     val startHour = 18f
     var hour by remember { mutableFloatStateOf(startHour) }
     Timber.v("hour=$hour")
-    val hoursToShow = 3f
+    val hoursToShow = 4f
     val widthPerHour = 200.dp
+
+    var focusedProgram by remember { mutableStateOf<TvProgram?>(null) }
 
     Column(modifier = modifier) {
         // Header
         Text(
             text = hour.toString(),
         )
+        focusedProgram?.let {
+            Text(
+                text = it.name + " " + it.channelId,
+            )
+        }
+        Row {
+            Spacer(Modifier.width(220.dp))
+            var start = hour
+            while (start < (hour + hoursToShow)) {
+                Text(
+                    text = start.toString(),
+                    modifier = Modifier.width(widthPerHour),
+                )
+                start += 1f
+            }
+        }
         LazyColumn(
             modifier =
             Modifier,
@@ -144,11 +163,19 @@ fun TvGridBox(
                                                 capturedFocus = false
                                                 return@onKeyEvent false
                                             }
+                                            val delta =
+                                                focusedProgram?.let { p ->
+                                                    if (p.start.hours < hour) {
+                                                        (p.end.hours - hour).coerceAtMost(.5f)
+                                                    } else {
+                                                        .5f
+                                                    }
+                                                } ?: .5f
                                             if (it.type == KeyEventType.KeyUp && it.key == Key.DirectionLeft && hour > startHour) {
-                                                hour -= .5f
+                                                hour = (hour - delta).coerceAtLeast(startHour)
                                                 return@onKeyEvent true
                                             } else if (it.type == KeyEventType.KeyUp && it.key == Key.DirectionRight) {
-                                                hour += .5f
+                                                hour += delta
                                                 return@onKeyEvent true
                                             }
                                         }
@@ -184,9 +211,16 @@ fun TvGridBox(
                         filtered
                             .forEach { p ->
                                 Timber.v("Showing program: $p")
-                                val width = p.duration.inWholeMinutes / 60f * widthPerHour
+                                val width =
+                                    (p.duration.inWholeMinutes) / 60f * widthPerHour *
+                                        if (p.start.hours < hour) {
+                                            (hour - p.start.hours).coerceIn(0f, 1f)
+                                        } else {
+                                            1f
+                                        }
                                 val backgroundColor =
                                     if (rowHasFocus && p.start.hours <= hour && p.end.hours > (hour)) {
+                                        focusedProgram = p
                                         MaterialTheme.colorScheme.error
                                     } else {
                                         Color.Unspecified
@@ -220,6 +254,7 @@ val LocalDateTime.hours get() = hour + minute / 60f
 val channel1Id = UUID.randomUUID()
 val channel2Id = UUID.randomUUID()
 val channel3Id = UUID.randomUUID()
+val channel4Id = UUID.randomUUID()
 
 val channels =
     listOf(
@@ -239,6 +274,12 @@ val channels =
             id = channel3Id,
             number = "4.1",
             name = "AQTV",
+            imageUrl = "",
+        ),
+        TvChannel(
+            id = channel4Id,
+            number = "4.1",
+            name = "4444",
             imageUrl = "",
         ),
     )
@@ -347,6 +388,49 @@ val programs =
                     id = UUID.randomUUID(),
                     channelId = channel3Id,
                     start = LocalDateTime.of(2025, 10, 16, 18, 0, 0),
+                    end = LocalDateTime.of(2025, 10, 16, 18, 15, 0),
+                    duration = 15.minutes,
+                    name = "Program #1",
+                    subtitle = null,
+                    seasonEpisode = null,
+                ),
+                TvProgram(
+                    id = UUID.randomUUID(),
+                    channelId = channel3Id,
+                    start = LocalDateTime.of(2025, 10, 16, 18, 15, 0),
+                    end = LocalDateTime.of(2025, 10, 16, 18, 45, 0),
+                    duration = 30.minutes,
+                    name = "Program #2",
+                    subtitle = null,
+                    seasonEpisode = null,
+                ),
+                TvProgram(
+                    id = UUID.randomUUID(),
+                    channelId = channel3Id,
+                    start = LocalDateTime.of(2025, 10, 16, 18, 45, 0),
+                    end = LocalDateTime.of(2025, 10, 16, 19, 0, 0),
+                    duration = 15.minutes,
+                    name = "Program #3",
+                    subtitle = null,
+                    seasonEpisode = null,
+                ),
+                TvProgram(
+                    id = UUID.randomUUID(),
+                    channelId = channel3Id,
+                    start = LocalDateTime.of(2025, 10, 16, 19, 0, 0),
+                    end = LocalDateTime.of(2025, 10, 16, 20, 0, 0),
+                    duration = 60.minutes,
+                    name = "Program #3",
+                    subtitle = null,
+                    seasonEpisode = null,
+                ),
+            ),
+        channel4Id to
+            listOf(
+                TvProgram(
+                    id = UUID.randomUUID(),
+                    channelId = channel4Id,
+                    start = LocalDateTime.of(2025, 10, 16, 18, 0, 0),
                     end = LocalDateTime.of(2025, 10, 16, 19, 0, 0),
                     duration = 60.minutes,
                     name = "Program #1",
@@ -355,7 +439,7 @@ val programs =
                 ),
                 TvProgram(
                     id = UUID.randomUUID(),
-                    channelId = channel3Id,
+                    channelId = channel4Id,
                     start = LocalDateTime.of(2025, 10, 16, 19, 0, 0),
                     end = LocalDateTime.of(2025, 10, 16, 19, 30, 0),
                     duration = 30.minutes,
@@ -365,7 +449,7 @@ val programs =
                 ),
                 TvProgram(
                     id = UUID.randomUUID(),
-                    channelId = channel3Id,
+                    channelId = channel4Id,
                     start = LocalDateTime.of(2025, 10, 16, 19, 30, 0),
                     end = LocalDateTime.of(2025, 10, 16, 20, 0, 0),
                     duration = 30.minutes,
