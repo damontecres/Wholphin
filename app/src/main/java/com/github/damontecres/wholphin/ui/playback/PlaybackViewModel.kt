@@ -24,6 +24,7 @@ import com.github.damontecres.wholphin.data.model.ItemPlayback
 import com.github.damontecres.wholphin.data.model.Playlist
 import com.github.damontecres.wholphin.data.model.PlaylistCreator
 import com.github.damontecres.wholphin.data.model.TrackIndex
+import com.github.damontecres.wholphin.data.model.chooseSource
 import com.github.damontecres.wholphin.preferences.AppPreference
 import com.github.damontecres.wholphin.preferences.SkipSegmentBehavior
 import com.github.damontecres.wholphin.preferences.UserPreferences
@@ -265,12 +266,8 @@ class PlaybackViewModel
                     this@PlaybackViewModel.subtitle.value = subtitle
                     this@PlaybackViewModel.currentItemPlayback.value = playbackConfig
                 }
-                val mediaSource =
-                    if (playbackConfig.sourceId != null) {
-                        base.mediaSources?.firstOrNull { it.id?.toUUIDOrNull() == playbackConfig.sourceId }
-                    } else {
-                        base.mediaSources?.firstOrNull()
-                    }
+                val mediaSource = chooseSource(base, playbackConfig)
+
                 if (mediaSource == null) {
                     showToast(
                         context,

@@ -118,6 +118,15 @@ fun checkForSupport(tracks: Tracks): List<TrackSupport> =
                             } else {
                                 it.value
                             }
+                        } +
+                        if (type == TrackType.VIDEO) {
+                            listOf("res=${format.width}x${format.height}")
+                        } else if (type == TrackType.AUDIO) {
+                            listOf("channels=${format.channelCount}", "lang=${format.language}")
+                        } else if (type == TrackType.TEXT) {
+                            listOf("lang=${format.language}")
+                        } else {
+                            listOf()
                         }
                 val reason = TrackSupportReason.fromInt(it.getTrackSupport(i))
                 add(

@@ -12,6 +12,7 @@ import com.github.damontecres.wholphin.util.UuidSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.UseSerializers
 import org.jellyfin.sdk.model.api.BaseItemDto
+import org.jellyfin.sdk.model.api.MediaSourceInfo
 import org.jellyfin.sdk.model.api.MediaStream
 import org.jellyfin.sdk.model.api.MediaStreamType
 import org.jellyfin.sdk.model.serializer.toUUIDOrNull
@@ -44,18 +45,35 @@ data class ItemPlayback(
     @Transient val subtitleIndexEnabled = subtitleIndex >= 0
 }
 
-fun choseSource(
+/**
+ * Returns the [MediaSourceInfo] with the highest video resolution
+ */
+fun chooseSource(sources: List<MediaSourceInfo>?) =
+    sources?.letNotEmpty { sources ->
+        val result =
+            sources.maxByOrNull { s ->
+                s.mediaStreams?.firstOrNull { it.type == MediaStreamType.VIDEO }?.let { video ->
+                    (video.width ?: 0) * (video.height ?: 0)
+                } ?: 0
+            }
+        result
+    }
+
+/**
+ * Returns the [MediaSourceInfo] that matched the [ItemPlayback] or else the one with the highest resolution
+ */
+fun chooseSource(
     dto: BaseItemDto,
     itemPlayback: ItemPlayback?,
 ) = itemPlayback?.sourceId?.let { dto.mediaSources?.firstOrNull { it.id?.toUUIDOrNull() == itemPlayback.sourceId } }
-    ?: dto.mediaSources?.firstOrNull()
+    ?: chooseSource(dto.mediaSources) // dto.mediaSources?.firstOrNull()
 
-fun choseStream(
+fun chooseStream(
     dto: BaseItemDto,
     itemPlayback: ItemPlayback?,
     type: MediaStreamType,
 ): MediaStream? {
-    val source = choseSource(dto, itemPlayback)
+    val source = chooseSource(dto, itemPlayback)
     return source?.mediaStreams?.letNotEmpty { streams ->
         val candidates = streams.filter { it.type == type }
         if (type == MediaStreamType.AUDIO && itemPlayback?.audioIndexEnabled == true) {

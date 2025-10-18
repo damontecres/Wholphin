@@ -13,7 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.github.damontecres.wholphin.data.model.BaseItem
-import com.github.damontecres.wholphin.data.model.choseSource
+import com.github.damontecres.wholphin.data.model.chooseSource
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.OneTimeLaunchedEffect
 import com.github.damontecres.wholphin.ui.components.DialogParams
@@ -176,7 +176,7 @@ fun SeriesOverview(
                                     moreDialog = null
                                 },
                                 onChooseTracks = { type ->
-                                    choseSource(
+                                    chooseSource(
                                         ep.data,
                                         chosenStreams?.itemPlayback,
                                     )?.let { source ->

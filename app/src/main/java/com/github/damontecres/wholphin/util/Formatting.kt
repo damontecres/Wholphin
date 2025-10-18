@@ -6,8 +6,8 @@ import androidx.compose.ui.res.stringResource
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.ChosenStreams
 import com.github.damontecres.wholphin.data.model.ItemPlayback
-import com.github.damontecres.wholphin.data.model.choseSource
-import com.github.damontecres.wholphin.data.model.choseStream
+import com.github.damontecres.wholphin.data.model.chooseSource
+import com.github.damontecres.wholphin.data.model.chooseStream
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import org.jellyfin.sdk.model.api.BaseItemDto
 import org.jellyfin.sdk.model.api.MediaStream
@@ -82,7 +82,7 @@ fun getAudioDisplay(
 fun getAudioDisplay(
     item: BaseItemDto,
     itemPlayback: ItemPlayback?,
-) = choseStream(item, itemPlayback, MediaStreamType.AUDIO)
+) = chooseStream(item, itemPlayback, MediaStreamType.AUDIO)
     ?.displayTitle
     ?.replace(" - Default", "")
     ?.ifBlank { null }
@@ -101,7 +101,7 @@ fun getSubtitleDisplay(
 } else if (chosenStreams?.subtitleStream != null) {
     languageName(chosenStreams.subtitleStream.language)
 } else {
-    choseSource(item, chosenStreams?.itemPlayback)?.let {
+    chooseSource(item, chosenStreams?.itemPlayback)?.let {
         formatSubtitleLang(it.mediaStreams)
     }
 }

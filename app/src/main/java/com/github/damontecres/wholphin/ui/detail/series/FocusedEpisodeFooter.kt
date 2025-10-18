@@ -13,7 +13,7 @@ import androidx.compose.ui.unit.dp
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.ChosenStreams
 import com.github.damontecres.wholphin.data.model.BaseItem
-import com.github.damontecres.wholphin.data.model.choseStream
+import com.github.damontecres.wholphin.data.model.chooseStream
 import com.github.damontecres.wholphin.ui.components.ExpandablePlayButtons
 import com.github.damontecres.wholphin.ui.components.TitleValueText
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
@@ -53,7 +53,7 @@ fun FocusedEpisodeFooter(
         Row(
             horizontalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            choseStream(dto, chosenStreams?.itemPlayback, MediaStreamType.VIDEO)
+            chooseStream(dto, chosenStreams?.itemPlayback, MediaStreamType.VIDEO)
                 ?.displayTitle
                 ?.let {
                     TitleValueText(

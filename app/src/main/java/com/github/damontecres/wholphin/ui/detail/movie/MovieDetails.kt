@@ -40,7 +40,7 @@ import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.Chapter
 import com.github.damontecres.wholphin.data.model.ItemPlayback
 import com.github.damontecres.wholphin.data.model.Person
-import com.github.damontecres.wholphin.data.model.choseSource
+import com.github.damontecres.wholphin.data.model.chooseSource
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.cards.ChapterRow
 import com.github.damontecres.wholphin.ui.cards.PersonRow
@@ -243,7 +243,7 @@ fun MovieDetails(
                                             moreDialog = null
                                         },
                                         onChooseTracks = { type ->
-                                            choseSource(
+                                            chooseSource(
                                                 movie.data,
                                                 chosenStreams?.itemPlayback,
                                             )?.let { source ->

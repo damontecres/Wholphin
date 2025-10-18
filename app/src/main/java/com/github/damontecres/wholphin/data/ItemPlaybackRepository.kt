@@ -3,7 +3,7 @@ package com.github.damontecres.wholphin.data
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.ItemPlayback
 import com.github.damontecres.wholphin.data.model.TrackIndex
-import com.github.damontecres.wholphin.data.model.choseSource
+import com.github.damontecres.wholphin.data.model.chooseSource
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.model.api.MediaStream
@@ -94,7 +94,7 @@ class ItemPlaybackRepository
                 itemPlayback ?: ItemPlayback(
                     userId = user.rowId,
                     itemId = item.id,
-                    sourceId = choseSource(item.data, null)?.id?.toUUIDOrNull(),
+                    sourceId = chooseSource(item.data, null)?.id?.toUUIDOrNull(),
                 )
             toSave =
                 when (type) {
