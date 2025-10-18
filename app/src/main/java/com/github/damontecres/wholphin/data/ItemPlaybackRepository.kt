@@ -106,9 +106,21 @@ class ItemPlaybackRepository
             saveItemPlayback(toSave)
         }
 
+        /**
+         * Saves the [ItemPlayback] into the database, returning the same object with the rowId updated if needed
+         */
         suspend fun saveItemPlayback(itemPlayback: ItemPlayback): ItemPlayback {
-            val rowId = itemPlaybackDao.saveItem(itemPlayback)
-            return itemPlayback.copy(rowId = rowId)
+            val toSave =
+                if (itemPlayback.userId < 0) {
+                    val userRowId =
+                        serverRepository.currentUser?.rowId?.takeIf { it >= 0 }
+                            ?: throw IllegalStateException("Trying to save an ItemPlayback without a user, but there is no current user")
+                    itemPlayback.copy(userId = userRowId)
+                } else {
+                    itemPlayback
+                }
+            val id = itemPlaybackDao.saveItem(toSave)
+            return toSave.copy(rowId = id)
         }
     }
 

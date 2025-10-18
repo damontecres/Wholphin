@@ -17,6 +17,7 @@ import androidx.media3.common.Tracks
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import com.github.damontecres.wholphin.data.ItemPlaybackDao
+import com.github.damontecres.wholphin.data.ItemPlaybackRepository
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.Chapter
@@ -100,6 +101,7 @@ class PlaybackViewModel
         val navigationManager: NavigationManager,
         val itemPlaybackDao: ItemPlaybackDao,
         val serverRepository: ServerRepository,
+        val itemPlaybackRepository: ItemPlaybackRepository,
     ) : ViewModel(),
         Player.Listener {
         val player: ExoPlayer =
@@ -461,10 +463,9 @@ class PlaybackViewModel
                 if (userInitiated) {
                     viewModelScope.launch(Dispatchers.IO + ExceptionHandler()) {
                         Timber.v("Saving user initiated item playback: %s", itemPlayback)
-                        val rowId = itemPlaybackDao.saveItem(itemPlayback)
+                        val updated = itemPlaybackRepository.saveItemPlayback(itemPlayback)
                         withContext(Dispatchers.Main) {
-                            this@PlaybackViewModel.currentItemPlayback.value =
-                                itemPlayback.copy(rowId = rowId)
+                            this@PlaybackViewModel.currentItemPlayback.value = updated
                         }
                     }
                 }
