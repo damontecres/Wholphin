@@ -6,6 +6,7 @@ import androidx.compose.ui.res.stringResource
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.ChosenStreams
 import com.github.damontecres.wholphin.data.model.ItemPlayback
+import com.github.damontecres.wholphin.data.model.choseSource
 import com.github.damontecres.wholphin.data.model.choseStream
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import org.jellyfin.sdk.model.api.BaseItemDto
@@ -67,11 +68,17 @@ fun formatSubtitleLang(mediaStreams: List<MediaStream>?): String? =
         ?.distinct()
         ?.joinToString(", ") { languageName(it) }
 
+/**
+ * Gets the selected audio display title for the given item & chosen streams
+ */
 fun getAudioDisplay(
     item: BaseItemDto,
     chosenStreams: ChosenStreams?,
 ) = getAudioDisplay(item, chosenStreams?.itemPlayback)
 
+/**
+ * Gets the selected audio display title for the given item & chosen streams
+ */
 fun getAudioDisplay(
     item: BaseItemDto,
     itemPlayback: ItemPlayback?,
@@ -80,6 +87,11 @@ fun getAudioDisplay(
     ?.replace(" - Default", "")
     ?.ifBlank { null }
 
+/**
+ * Gets the selected subtitle language for the given item & chosen streams
+ *
+ * If none are chosen, returns a concatenated list of languages available
+ */
 @Composable
 fun getSubtitleDisplay(
     item: BaseItemDto,
@@ -89,5 +101,7 @@ fun getSubtitleDisplay(
 } else if (chosenStreams?.subtitleStream != null) {
     languageName(chosenStreams.subtitleStream.language)
 } else {
-    formatSubtitleLang(item.mediaStreams)
+    choseSource(item, chosenStreams?.itemPlayback)?.let {
+        formatSubtitleLang(it.mediaStreams)
+    }
 }

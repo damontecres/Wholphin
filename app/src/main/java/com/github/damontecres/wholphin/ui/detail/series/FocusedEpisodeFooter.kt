@@ -59,6 +59,7 @@ fun FocusedEpisodeFooter(
                     TitleValueText(
                         stringResource(R.string.video),
                         it,
+                        modifier = Modifier.widthIn(max = 160.dp),
                     )
                 }
 
@@ -68,6 +69,7 @@ fun FocusedEpisodeFooter(
                 TitleValueText(
                     stringResource(R.string.audio),
                     it,
+                    modifier = Modifier.widthIn(max = 200.dp),
                 )
             }
 
@@ -78,7 +80,7 @@ fun FocusedEpisodeFooter(
                         TitleValueText(
                             "Subtitles",
                             it,
-                            modifier = Modifier.widthIn(max = 64.dp),
+                            modifier = Modifier.widthIn(max = 160.dp),
                         )
                     }
                 }

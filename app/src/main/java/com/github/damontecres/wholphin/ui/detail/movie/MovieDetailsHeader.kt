@@ -27,6 +27,7 @@ import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.ChosenStreams
 import com.github.damontecres.wholphin.data.model.BaseItem
+import com.github.damontecres.wholphin.data.model.choseStream
 import com.github.damontecres.wholphin.ui.components.DotSeparatedRow
 import com.github.damontecres.wholphin.ui.components.OverviewText
 import com.github.damontecres.wholphin.ui.components.StarRating
@@ -141,13 +142,15 @@ fun MovieDetailsHeader(
                         .fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(16.dp),
             ) {
-                dto.mediaStreams?.firstOrNull { it.type == MediaStreamType.VIDEO }?.displayTitle?.let {
-                    TitleValueText(
-                        stringResource(R.string.video),
-                        it,
-                        modifier = Modifier.widthIn(max = 200.dp),
-                    )
-                }
+                choseStream(dto, chosenStreams?.itemPlayback, MediaStreamType.VIDEO)
+                    ?.displayTitle
+                    ?.let {
+                        TitleValueText(
+                            stringResource(R.string.video),
+                            it,
+                            modifier = Modifier.widthIn(max = 200.dp),
+                        )
+                    }
                 val audioDisplay =
                     remember(movie.id, chosenStreams) { getAudioDisplay(movie.data, chosenStreams) }
                 audioDisplay
@@ -165,7 +168,7 @@ fun MovieDetailsHeader(
                             TitleValueText(
                                 "Subtitles",
                                 it,
-                                modifier = Modifier.widthIn(max = 120.dp),
+                                modifier = Modifier.widthIn(max = 200.dp),
                             )
                         }
                     }

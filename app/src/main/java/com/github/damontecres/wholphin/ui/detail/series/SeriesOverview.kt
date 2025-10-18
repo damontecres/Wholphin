@@ -1,9 +1,5 @@
 package com.github.damontecres.wholphin.ui.detail.series
 
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowForward
-import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -15,13 +11,10 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.graphics.Color
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.choseSource
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.OneTimeLaunchedEffect
-import com.github.damontecres.wholphin.ui.components.DialogItem
 import com.github.damontecres.wholphin.ui.components.DialogParams
 import com.github.damontecres.wholphin.ui.components.DialogPopup
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
@@ -33,19 +26,15 @@ import com.github.damontecres.wholphin.ui.data.ItemDetailsDialogInfo
 import com.github.damontecres.wholphin.ui.detail.EpisodeList
 import com.github.damontecres.wholphin.ui.detail.ItemListAndMapping
 import com.github.damontecres.wholphin.ui.detail.SeriesViewModel
-import com.github.damontecres.wholphin.ui.letNotEmpty
+import com.github.damontecres.wholphin.ui.detail.buildMoreDialogItems
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.LoadingState
 import com.github.damontecres.wholphin.util.seasonEpisode
 import kotlinx.serialization.Serializable
-import org.jellyfin.sdk.model.UUID
-import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.ImageType
-import org.jellyfin.sdk.model.api.MediaStreamType
 import org.jellyfin.sdk.model.extensions.ticks
 import org.jellyfin.sdk.model.serializer.toUUID
-import org.jellyfin.sdk.model.serializer.toUUIDOrNull
 import timber.log.Timber
 import kotlin.time.Duration
 
@@ -212,12 +201,12 @@ fun SeriesOverview(
                                     fromLongClick = false,
                                     title = series.name + " - " + ep.data.seasonEpisode,
                                     items =
-                                        buildMore(
+                                        buildMoreDialogItems(
                                             ep,
                                             series,
                                             chosenStreams?.sourceId,
                                             viewModel::navigateTo,
-                                            onChoseVersion = {
+                                            onChooseVersion = {
                                                 chooseVersion =
                                                     chooseVersionParams(ep.data.mediaSources!!) { idx ->
                                                         val source = ep.data.mediaSources!![idx]
@@ -228,7 +217,7 @@ fun SeriesOverview(
                                                     }
                                                 moreDialog = null
                                             },
-                                            onChoseTracks = { type ->
+                                            onChooseTracks = { type ->
                                                 choseSource(
                                                     ep.data,
                                                     chosenStreams?.itemPlayback,
@@ -298,84 +287,3 @@ fun SeriesOverview(
         )
     }
 }
-
-private fun buildMore(
-    ep: BaseItem,
-    series: BaseItem,
-    sourceId: UUID?,
-    navigateTo: (Destination) -> Unit,
-    onChoseVersion: () -> Unit,
-    onChoseTracks: (MediaStreamType) -> Unit,
-): List<DialogItem> =
-    listOf(
-        DialogItem(
-            "Play",
-            Icons.Default.PlayArrow,
-            iconColor = Color.Green.copy(alpha = .8f),
-        ) {
-            navigateTo(
-                Destination.Playback(
-                    ep.id,
-                    ep.resumeMs ?: 0L,
-                    ep,
-                ),
-            )
-        },
-        DialogItem(
-            "Go to series",
-            Icons.AutoMirrored.Filled.ArrowForward,
-//                                            iconColor = Color.Green.copy(alpha = .8f),
-        ) {
-            navigateTo(
-                Destination.MediaItem(
-                    series.id,
-                    BaseItemKind.SERIES,
-                    series,
-                ),
-            )
-        },
-    ) +
-        buildList {
-            ep.data.mediaSources?.letNotEmpty { sources ->
-                if (sources.size > 1) {
-                    add(
-                        DialogItem(
-                            "Play Version",
-                            Icons.Default.PlayArrow,
-                            iconColor = Color.Green.copy(alpha = .8f),
-                        ) {
-                            onChoseVersion.invoke()
-                        },
-                    )
-                }
-                val source =
-                    sourceId?.let { sources.firstOrNull { it.id?.toUUIDOrNull() == sourceId } }
-                        ?: sources.firstOrNull()
-                source?.mediaStreams?.letNotEmpty { streams ->
-                    val audioCount = streams.count { it.type == MediaStreamType.AUDIO }
-                    val subtitleCount = streams.count { it.type == MediaStreamType.SUBTITLE }
-                    if (audioCount > 1) {
-                        add(
-                            DialogItem(
-                                "Choose audio",
-                                Icons.Default.Settings,
-                                iconColor = Color.Blue.copy(alpha = .8f),
-                            ) {
-                                onChoseTracks.invoke(MediaStreamType.AUDIO)
-                            },
-                        )
-                    }
-                    if (subtitleCount > 1) {
-                        add(
-                            DialogItem(
-                                "Choose subtitles",
-                                Icons.Default.Settings,
-                                iconColor = Color.Blue.copy(alpha = .8f),
-                            ) {
-                                onChoseTracks.invoke(MediaStreamType.SUBTITLE)
-                            },
-                        )
-                    }
-                }
-            }
-        }
