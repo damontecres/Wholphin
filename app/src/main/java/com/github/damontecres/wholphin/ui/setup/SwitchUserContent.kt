@@ -125,9 +125,7 @@ fun SwitchUserContent(
             LaunchedEffect(Unit) {
                 viewModel.clearSwitchUserState()
                 if (useQuickConnect) {
-                    viewModel.initiateQuickConnect(server) {
-                        viewModel.navigationManager.goToHome()
-                    }
+                    viewModel.initiateQuickConnect(server)
                 }
             }
             BasicDialog(

@@ -87,6 +87,8 @@ class ServerRepository
                     id = userDto.id,
                     name = userDto.name,
                 )
+            if (updatedUser.rowId <= 0) {
+            }
             serverDao.addOrUpdateServer(updatedServer)
             serverDao.addOrUpdateUser(updatedUser)
             userPreferencesDataStore.updateData {
@@ -119,7 +121,6 @@ class ServerRepository
                     serverDao.getServer(serverId)
                 }
             if (serverAndUsers != null) {
-                _currentServer = serverAndUsers.server
                 val user = serverAndUsers.users.firstOrNull { it.id == userId }
                 if (user != null) {
                     changeUser(serverAndUsers.server, user)

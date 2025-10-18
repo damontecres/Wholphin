@@ -190,10 +190,7 @@ class SwitchUserViewModel
             }
         }
 
-        fun initiateQuickConnect(
-            server: JellyfinServer,
-            onAuthenticated: () -> Unit,
-        ) {
+        fun initiateQuickConnect(server: JellyfinServer) {
             quickConnectJob?.cancel()
             viewModelScope.launchIO {
                 try {
@@ -225,7 +222,7 @@ class SwitchUserViewModel
                             )
                             serverRepository.changeUser(server.url, authenticationResult)
                             withContext(Dispatchers.Main) {
-                                onAuthenticated.invoke()
+                                navigationManager.goToHome()
                             }
                         }
                 } catch (ex: Exception) {

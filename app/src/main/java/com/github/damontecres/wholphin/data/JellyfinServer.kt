@@ -84,9 +84,22 @@ interface JellyfinServerDao {
     fun addOrUpdateUser(user: JellyfinUser) {
         val result = addUser(user)
         if (result == -1L) {
-            updateUser(user)
+            val toSave =
+                if (user.rowId <= 0) {
+                    val temp = getUser(user.serverId, user.id)!!
+                    user.copy(rowId = temp.rowId)
+                } else {
+                    user
+                }
+            updateUser(toSave)
         }
     }
+
+    @Query("SELECT * FROM users WHERE serverId = :serverId AND id = :userId")
+    fun getUser(
+        serverId: UUID,
+        userId: UUID,
+    ): JellyfinUser?
 
     @Query("DELETE FROM servers WHERE id = :serverId")
     fun deleteServer(serverId: UUID)
