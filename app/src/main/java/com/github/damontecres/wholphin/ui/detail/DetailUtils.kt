@@ -2,9 +2,7 @@ package com.github.damontecres.wholphin.ui.detail
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
-import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.ui.graphics.Color
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.BaseItem
@@ -87,8 +85,7 @@ fun buildMoreDialogItems(
                 add(
                     DialogItem(
                         "Choose Version",
-                        Icons.Default.ArrowForward,
-                        iconColor = Color.Green.copy(alpha = .8f),
+                        R.string.fa_file_video,
                     ) {
                         onChooseVersion.invoke()
                     },
@@ -104,7 +101,7 @@ fun buildMoreDialogItems(
                     add(
                         DialogItem(
                             "Choose audio",
-                            Icons.Default.Settings,
+                            R.string.fa_volume_low,
                         ) {
                             onChooseTracks.invoke(MediaStreamType.AUDIO)
                         },
@@ -114,7 +111,7 @@ fun buildMoreDialogItems(
                     add(
                         DialogItem(
                             "Choose subtitles",
-                            Icons.Default.Settings,
+                            R.string.fa_closed_captioning,
                         ) {
                             onChooseTracks.invoke(MediaStreamType.SUBTITLE)
                         },
