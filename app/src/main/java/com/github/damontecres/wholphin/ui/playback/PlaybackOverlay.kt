@@ -371,15 +371,25 @@ fun PlaybackOverlay(
                 Modifier
                     .align(Alignment.TopStart),
         ) {
-            currentPlayback?.tracks?.letNotEmpty {
-                PlaybackTrackInfo(
-                    trackSupport = it,
-                    modifier =
-                        Modifier
-                            .align(Alignment.TopStart)
-                            .padding(16.dp)
-                            .background(AppColors.TransparentBlack50),
+            Column(
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                modifier =
+                    Modifier
+                        .align(Alignment.TopStart)
+                        .padding(16.dp)
+                        .background(AppColors.TransparentBlack50),
+            ) {
+                Text(
+                    text = "Play method: ${currentPlayback?.playMethod?.serialName}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.padding(start = 8.dp),
                 )
+                currentPlayback?.tracks?.letNotEmpty {
+                    PlaybackTrackInfo(
+                        trackSupport = it,
+                    )
+                }
             }
         }
     }

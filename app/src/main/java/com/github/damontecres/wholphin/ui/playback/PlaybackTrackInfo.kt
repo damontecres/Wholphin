@@ -1,5 +1,6 @@
 package com.github.damontecres.wholphin.ui.playback
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -15,6 +16,7 @@ import androidx.compose.ui.unit.dp
 import androidx.tv.material3.Icon
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
+import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.util.TrackSupport
 
 /**
@@ -28,7 +30,7 @@ fun PlaybackTrackInfo(
     val selectedWeight = .5f
     val weights = listOf(.25f, .4f, .5f, 1f, 1f)
     val textStyle =
-        MaterialTheme.typography.bodySmall.copy(color = MaterialTheme.colorScheme.onBackground)
+        MaterialTheme.typography.bodySmall.copy(color = MaterialTheme.colorScheme.onSurface)
 
     LazyColumn(
         modifier = modifier,
@@ -71,7 +73,11 @@ fun PlaybackTrackInfo(
         items(trackSupport) { track ->
             Row(
                 horizontalArrangement = Arrangement.spacedBy(4.dp),
-                modifier = Modifier,
+                modifier =
+                    Modifier.ifElse(
+                        track.selected,
+                        Modifier.background(MaterialTheme.colorScheme.border.copy(alpha = .25f)),
+                    ),
             ) {
                 val texts =
                     listOf(
