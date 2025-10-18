@@ -7,9 +7,14 @@ import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
 import com.github.damontecres.wholphin.data.JellyfinUser
+import com.github.damontecres.wholphin.ui.letNotEmpty
 import com.github.damontecres.wholphin.util.UuidSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.UseSerializers
+import org.jellyfin.sdk.model.api.BaseItemDto
+import org.jellyfin.sdk.model.api.MediaStream
+import org.jellyfin.sdk.model.api.MediaStreamType
+import org.jellyfin.sdk.model.serializer.toUUIDOrNull
 import java.util.UUID
 
 @Entity(
@@ -37,6 +42,30 @@ data class ItemPlayback(
     @Transient val audioIndexEnabled = audioIndex >= 0
 
     @Transient val subtitleIndexEnabled = subtitleIndex >= 0
+}
+
+fun choseSource(
+    dto: BaseItemDto,
+    itemPlayback: ItemPlayback?,
+) = itemPlayback?.sourceId?.let { dto.mediaSources?.firstOrNull { it.id?.toUUIDOrNull() == itemPlayback.sourceId } }
+    ?: dto.mediaSources?.firstOrNull()
+
+fun choseStream(
+    dto: BaseItemDto,
+    itemPlayback: ItemPlayback?,
+    type: MediaStreamType,
+): MediaStream? {
+    val source = choseSource(dto, itemPlayback)
+    return source?.mediaStreams?.letNotEmpty { streams ->
+        val candidates = streams.filter { it.type == type }
+        if (type == MediaStreamType.AUDIO && itemPlayback?.audioIndexEnabled == true) {
+            candidates.firstOrNull { it.index == itemPlayback.audioIndex }
+        } else if (type == MediaStreamType.SUBTITLE && itemPlayback?.subtitleIndexEnabled == true) {
+            candidates.firstOrNull { it.index == itemPlayback.subtitleIndex }
+        } else {
+            candidates.firstOrNull()
+        }
+    }
 }
 
 object TrackIndex {

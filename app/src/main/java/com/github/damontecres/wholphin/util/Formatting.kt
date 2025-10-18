@@ -5,6 +5,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.ChosenStreams
+import com.github.damontecres.wholphin.data.model.ItemPlayback
+import com.github.damontecres.wholphin.data.model.choseStream
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import org.jellyfin.sdk.model.api.BaseItemDto
 import org.jellyfin.sdk.model.api.MediaStream
@@ -68,10 +70,13 @@ fun formatSubtitleLang(mediaStreams: List<MediaStream>?): String? =
 fun getAudioDisplay(
     item: BaseItemDto,
     chosenStreams: ChosenStreams?,
-) = (
-    chosenStreams?.audioStream
-        ?: item.mediaStreams?.firstOrNull { it.type == MediaStreamType.AUDIO }
-)?.displayTitle
+) = getAudioDisplay(item, chosenStreams?.itemPlayback)
+
+fun getAudioDisplay(
+    item: BaseItemDto,
+    itemPlayback: ItemPlayback?,
+) = choseStream(item, itemPlayback, MediaStreamType.AUDIO)
+    ?.displayTitle
     ?.replace(" - Default", "")
     ?.ifBlank { null }
 
