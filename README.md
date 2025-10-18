@@ -43,6 +43,27 @@ After the initial install above, the app will automatically check for updates. T
 
 The first time you attempt an update, the OS should guide you through enabling the required additional permissions for the app to install updates.
 
+## Roadmap
+
+### Core functionality
+- ✅ Support Movies
+- ✅ Support TV Shows
+- ✅ Play version
+- ✅ Remember chosen audio & subtitle tracks
+- [ ] Pass out protection #7
+- [ ] Support Live TV & DVR #2
+- [ ] Support Music #1
+
+### UI/UX Improvements
+- [ ] Nav drawer customization
+- [ ] Filter libraries #13
+- [ ] Subtitle styling #11
+- [ ] Predictive audio & subtitle track choices
+- [ ] Profile PIN protection
+
+### Other
+- [ ] Alternative player backends, MPV #14
+
 ## Compatibility
 
 Requires Android 7.1+ (or Fire TV OS 6+) and Jellyfin server `10.10.x` (tested on primarily `10.10.7`).
