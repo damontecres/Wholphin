@@ -104,12 +104,14 @@ class MovieViewModel
                             chosenStreams.value = result
                         }
                     }
-                    people.value =
-                        item.data.people
-                            ?.letNotEmpty { people ->
-                                people.map { Person.fromDto(it, api) }
-                            }.orEmpty()
-                    chapters.value = Chapter.fromDto(item.data, api)
+                    withContext(Dispatchers.Main) {
+                        people.value =
+                            item.data.people
+                                ?.letNotEmpty { people ->
+                                    people.map { Person.fromDto(it, api) }
+                                }.orEmpty()
+                        chapters.value = Chapter.fromDto(item.data, api)
+                    }
                 }
             }
         }

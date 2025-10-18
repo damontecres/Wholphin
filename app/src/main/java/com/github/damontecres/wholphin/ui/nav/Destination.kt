@@ -1,4 +1,4 @@
-@file:UseSerializers(UuidSerializer::class)
+@file:UseSerializers(UUIDSerializer::class)
 
 package com.github.damontecres.wholphin.ui.nav
 
@@ -8,11 +8,11 @@ import com.github.damontecres.wholphin.data.model.GetItemsFilter
 import com.github.damontecres.wholphin.data.model.ItemPlayback
 import com.github.damontecres.wholphin.ui.detail.series.SeasonEpisode
 import com.github.damontecres.wholphin.ui.preferences.PreferenceScreenOption
-import com.github.damontecres.wholphin.util.UuidSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import kotlinx.serialization.UseSerializers
 import org.jellyfin.sdk.model.api.BaseItemKind
+import org.jellyfin.sdk.model.serializer.UUIDSerializer
 import java.util.UUID
 
 /**

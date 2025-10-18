@@ -1,4 +1,4 @@
-@file:UseSerializers(UuidSerializer::class)
+@file:UseSerializers(UUIDSerializer::class)
 
 package com.github.damontecres.wholphin.data.model
 
@@ -10,7 +10,6 @@ import com.github.damontecres.wholphin.data.JellyfinUser
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.letNotEmpty
-import com.github.damontecres.wholphin.util.UuidSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.UseSerializers
 import org.jellyfin.sdk.model.api.BaseItemDto
@@ -18,6 +17,7 @@ import org.jellyfin.sdk.model.api.MediaSourceInfo
 import org.jellyfin.sdk.model.api.MediaStream
 import org.jellyfin.sdk.model.api.MediaStreamType
 import org.jellyfin.sdk.model.api.SubtitlePlaybackMode
+import org.jellyfin.sdk.model.serializer.UUIDSerializer
 import org.jellyfin.sdk.model.serializer.toUUIDOrNull
 import java.util.UUID
 

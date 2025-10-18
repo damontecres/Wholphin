@@ -1,11 +1,11 @@
-@file:UseSerializers(UuidSerializer::class)
+@file:UseSerializers(UUIDSerializer::class)
 
 package com.github.damontecres.wholphin.data.model
 
-import com.github.damontecres.wholphin.util.UuidSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.UseSerializers
 import org.jellyfin.sdk.model.api.request.GetItemsRequest
+import org.jellyfin.sdk.model.serializer.UUIDSerializer
 import java.util.UUID
 
 @Serializable

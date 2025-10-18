@@ -82,8 +82,10 @@ abstract class LoadingItemViewModel(
                 }
             } catch (e: Exception) {
                 Timber.e(e, "Failed to load item $itemId")
-                item.value = null
-                loading.value = LoadingState.Error("Error loading item $itemId", e)
+                withContext(Dispatchers.Main) {
+                    item.value = null
+                    loading.value = LoadingState.Error("Error loading item $itemId", e)
+                }
             }
         }
     }
