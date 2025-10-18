@@ -8,6 +8,7 @@ import com.github.damontecres.wholphin.data.ChosenStreams
 import com.github.damontecres.wholphin.data.model.ItemPlayback
 import com.github.damontecres.wholphin.data.model.chooseSource
 import com.github.damontecres.wholphin.data.model.chooseStream
+import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import org.jellyfin.sdk.model.api.BaseItemDto
 import org.jellyfin.sdk.model.api.MediaStream
@@ -74,7 +75,8 @@ fun formatSubtitleLang(mediaStreams: List<MediaStream>?): String? =
 fun getAudioDisplay(
     item: BaseItemDto,
     chosenStreams: ChosenStreams?,
-) = getAudioDisplay(item, chosenStreams?.itemPlayback)
+    preferences: UserPreferences,
+) = getAudioDisplay(item, chosenStreams?.itemPlayback, preferences)
 
 /**
  * Gets the selected audio display title for the given item & chosen streams
@@ -82,7 +84,8 @@ fun getAudioDisplay(
 fun getAudioDisplay(
     item: BaseItemDto,
     itemPlayback: ItemPlayback?,
-) = chooseStream(item, itemPlayback, MediaStreamType.AUDIO)
+    preferences: UserPreferences,
+) = chooseStream(item, itemPlayback, MediaStreamType.AUDIO, preferences)
     ?.displayTitle
     ?.replace(" - Default", "")
     ?.ifBlank { null }

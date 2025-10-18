@@ -45,6 +45,7 @@ import coil3.compose.AsyncImage
 import com.github.damontecres.wholphin.data.ChosenStreams
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.aspectRatioFloat
+import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.OneTimeLaunchedEffect
 import com.github.damontecres.wholphin.ui.cards.BannerCard
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
@@ -58,6 +59,7 @@ import kotlin.time.Duration
 
 @Composable
 fun SeriesOverviewContent(
+    preferences: UserPreferences,
     series: BaseItem,
     seasons: List<BaseItem?>,
     episodes: EpisodeList,
@@ -282,6 +284,7 @@ fun SeriesOverviewContent(
             item {
                 focusedEpisode?.let { ep ->
                     FocusedEpisodeFooter(
+                        preferences = preferences,
                         ep = ep,
                         chosenStreams = chosenStreams,
                         playOnClick = playOnClick,

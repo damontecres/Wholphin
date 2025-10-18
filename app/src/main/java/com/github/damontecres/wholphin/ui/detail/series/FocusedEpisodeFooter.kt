@@ -14,6 +14,7 @@ import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.ChosenStreams
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.chooseStream
+import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.components.ExpandablePlayButtons
 import com.github.damontecres.wholphin.ui.components.TitleValueText
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
@@ -25,6 +26,7 @@ import kotlin.time.Duration
 
 @Composable
 fun FocusedEpisodeFooter(
+    preferences: UserPreferences,
     ep: BaseItem,
     chosenStreams: ChosenStreams?,
     playOnClick: (Duration) -> Unit,
@@ -53,7 +55,7 @@ fun FocusedEpisodeFooter(
         Row(
             horizontalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            chooseStream(dto, chosenStreams?.itemPlayback, MediaStreamType.VIDEO)
+            chooseStream(dto, chosenStreams?.itemPlayback, MediaStreamType.VIDEO, preferences)
                 ?.displayTitle
                 ?.let {
                     TitleValueText(
@@ -63,8 +65,7 @@ fun FocusedEpisodeFooter(
                     )
                 }
 
-            val audioDisplay =
-                remember(ep.id, chosenStreams) { getAudioDisplay(ep.data, chosenStreams) }
+            val audioDisplay = getAudioDisplay(ep.data, chosenStreams, preferences)
             audioDisplay?.let {
                 TitleValueText(
                     stringResource(R.string.audio),

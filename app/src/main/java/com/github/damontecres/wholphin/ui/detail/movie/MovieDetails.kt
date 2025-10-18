@@ -369,6 +369,7 @@ fun MovieDetailsContent(
                             .padding(bottom = 56.dp),
                 ) {
                     MovieDetailsHeader(
+                        preferences = preferences,
                         movie = movie,
                         chosenStreams = chosenStreams,
                         bringIntoViewRequester = bringIntoViewRequester,

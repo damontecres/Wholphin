@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -28,6 +27,7 @@ import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.ChosenStreams
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.chooseStream
+import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.components.DotSeparatedRow
 import com.github.damontecres.wholphin.ui.components.OverviewText
 import com.github.damontecres.wholphin.ui.components.StarRating
@@ -44,6 +44,7 @@ import org.jellyfin.sdk.model.extensions.ticks
 
 @Composable
 fun MovieDetailsHeader(
+    preferences: UserPreferences,
     movie: BaseItem,
     chosenStreams: ChosenStreams?,
     bringIntoViewRequester: BringIntoViewRequester,
@@ -142,7 +143,7 @@ fun MovieDetailsHeader(
                         .fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(16.dp),
             ) {
-                chooseStream(dto, chosenStreams?.itemPlayback, MediaStreamType.VIDEO)
+                chooseStream(dto, chosenStreams?.itemPlayback, MediaStreamType.VIDEO, preferences)
                     ?.displayTitle
                     ?.let {
                         TitleValueText(
@@ -151,8 +152,7 @@ fun MovieDetailsHeader(
                             modifier = Modifier.widthIn(max = 200.dp),
                         )
                     }
-                val audioDisplay =
-                    remember(movie.id, chosenStreams) { getAudioDisplay(movie.data, chosenStreams) }
+                val audioDisplay = getAudioDisplay(movie.data, chosenStreams, preferences)
                 audioDisplay
                     ?.let {
                         TitleValueText(

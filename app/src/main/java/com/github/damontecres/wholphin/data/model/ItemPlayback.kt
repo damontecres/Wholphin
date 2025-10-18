@@ -7,6 +7,8 @@ import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
 import com.github.damontecres.wholphin.data.JellyfinUser
+import com.github.damontecres.wholphin.preferences.UserPreferences
+import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.letNotEmpty
 import com.github.damontecres.wholphin.util.UuidSerializer
 import kotlinx.serialization.Serializable
@@ -15,6 +17,7 @@ import org.jellyfin.sdk.model.api.BaseItemDto
 import org.jellyfin.sdk.model.api.MediaSourceInfo
 import org.jellyfin.sdk.model.api.MediaStream
 import org.jellyfin.sdk.model.api.MediaStreamType
+import org.jellyfin.sdk.model.api.SubtitlePlaybackMode
 import org.jellyfin.sdk.model.serializer.toUUIDOrNull
 import java.util.UUID
 
@@ -72,16 +75,88 @@ fun chooseStream(
     dto: BaseItemDto,
     itemPlayback: ItemPlayback?,
     type: MediaStreamType,
+    prefs: UserPreferences,
 ): MediaStream? {
     val source = chooseSource(dto, itemPlayback)
     return source?.mediaStreams?.letNotEmpty { streams ->
         val candidates = streams.filter { it.type == type }
-        if (type == MediaStreamType.AUDIO && itemPlayback?.audioIndexEnabled == true) {
-            candidates.firstOrNull { it.index == itemPlayback.audioIndex }
-        } else if (type == MediaStreamType.SUBTITLE && itemPlayback?.subtitleIndexEnabled == true) {
-            candidates.firstOrNull { it.index == itemPlayback.subtitleIndex }
+        when (type) {
+            MediaStreamType.AUDIO -> chooseAudioStream(candidates, itemPlayback, prefs)
+            MediaStreamType.SUBTITLE -> chooseSubtitleStream(candidates, itemPlayback, prefs)
+            else -> candidates.firstOrNull()
+        }
+    }
+}
+
+fun chooseAudioStream(
+    candidates: List<MediaStream>,
+    itemPlayback: ItemPlayback?,
+    prefs: UserPreferences,
+): MediaStream? =
+    if (itemPlayback?.audioIndexEnabled == true) {
+        candidates.firstOrNull { it.index == itemPlayback.audioIndex }
+    } else {
+        // TODO audio selection based on channel layout or preferences or default
+        val audioLanguage = prefs.userConfig.audioLanguagePreference
+        if (audioLanguage.isNotNullOrBlank()) {
+            val sorted =
+                candidates.sortedWith(compareBy<MediaStream> { it.language }.thenByDescending { it.channels })
+            sorted.firstOrNull { it.language == audioLanguage && it.isDefault }
+                ?: sorted.firstOrNull { it.language == audioLanguage }
+                ?: sorted.firstOrNull { it.isDefault }
+                ?: sorted.firstOrNull()
         } else {
-            candidates.firstOrNull()
+            candidates.firstOrNull { it.isDefault }
+                ?: candidates.firstOrNull()
+        }
+    }
+
+fun chooseSubtitleStream(
+    candidates: List<MediaStream>,
+    itemPlayback: ItemPlayback?,
+    prefs: UserPreferences,
+): MediaStream? {
+    if (itemPlayback?.subtitleIndex == TrackIndex.DISABLED) {
+        return null
+    } else if (itemPlayback?.subtitleIndexEnabled == true) {
+        return candidates.firstOrNull { it.index == itemPlayback.subtitleIndex }
+    } else {
+        val subtitleLanguage = prefs.userConfig.subtitleLanguagePreference
+        return when (prefs.userConfig.subtitleMode) {
+            SubtitlePlaybackMode.ALWAYS -> {
+                if (subtitleLanguage != null) {
+                    candidates.firstOrNull { it.language == subtitleLanguage }
+                } else {
+                    candidates.firstOrNull()
+                }
+            }
+
+            SubtitlePlaybackMode.ONLY_FORCED ->
+                if (subtitleLanguage != null) {
+                    candidates.firstOrNull { it.language == subtitleLanguage && it.isForced }
+                } else {
+                    candidates.firstOrNull { it.isForced }
+                }
+
+            SubtitlePlaybackMode.SMART -> {
+                val audioLanguage = prefs.userConfig.audioLanguagePreference
+                if (audioLanguage != null && subtitleLanguage != null && audioLanguage != subtitleLanguage) {
+                    candidates.firstOrNull { it.language == subtitleLanguage }
+                } else {
+                    null
+                }
+            }
+
+            SubtitlePlaybackMode.DEFAULT -> {
+                // TODO check for language?
+                (
+                    candidates.firstOrNull { it.isDefault && it.isForced }
+                        ?: candidates.firstOrNull { it.isDefault }
+                        ?: candidates.firstOrNull { it.isForced }
+                )
+            }
+
+            SubtitlePlaybackMode.NONE -> null
         }
     }
 }

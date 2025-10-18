@@ -7,6 +7,7 @@ import androidx.media3.common.Format
 import androidx.media3.common.MimeTypes
 import androidx.media3.common.Tracks
 import androidx.media3.common.util.UnstableApi
+import com.github.damontecres.wholphin.ui.playback.idAsInt
 import timber.log.Timber
 import java.util.Locale
 
@@ -131,7 +132,7 @@ fun checkForSupport(tracks: Tracks): List<TrackSupport> =
                 val reason = TrackSupportReason.fromInt(it.getTrackSupport(i))
                 add(
                     TrackSupport(
-                        format.id,
+                        format.id + " (${format.idAsInt})",
                         type,
                         reason,
                         it.isSelected,

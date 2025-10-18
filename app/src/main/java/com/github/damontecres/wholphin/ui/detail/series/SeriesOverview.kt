@@ -199,6 +199,7 @@ fun SeriesOverview(
                     )
 
                 SeriesOverviewContent(
+                    preferences = preferences,
                     series = series,
                     seasons = seasons.items,
                     episodes = episodes,

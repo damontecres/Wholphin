@@ -25,6 +25,7 @@ import com.github.damontecres.wholphin.data.model.Playlist
 import com.github.damontecres.wholphin.data.model.PlaylistCreator
 import com.github.damontecres.wholphin.data.model.TrackIndex
 import com.github.damontecres.wholphin.data.model.chooseSource
+import com.github.damontecres.wholphin.data.model.chooseStream
 import com.github.damontecres.wholphin.preferences.AppPreference
 import com.github.damontecres.wholphin.preferences.SkipSegmentBehavior
 import com.github.damontecres.wholphin.preferences.UserPreferences
@@ -159,7 +160,7 @@ class PlaybackViewModel
             viewModelScope.launch(
                 LoadingExceptionHandler(
                     loading,
-                    "Error preparing for plaback on ${destination.itemId}",
+                    "Error preparing for playback for ${destination.itemId}",
                 ) + Dispatchers.IO,
             ) {
                 val queriedItem = item?.data ?: api.userLibraryApi.getItem(itemId).content
@@ -213,37 +214,6 @@ class PlaybackViewModel
                     return@withContext false
                 }
 
-                val playbackConfig =
-                    if (itemPlayback != null) {
-                        itemPlayback
-                    } else {
-                        val user = serverRepository.currentUser!!
-                        itemPlaybackDao.getItem(user, base.id)?.let {
-                            Timber.v("Fetched itemPlayback from DB: %s", it)
-                            if (it.sourceId == null) {
-                                it.copy(
-                                    // TODO Better choice than first (which may not be the best resolution), using getPostedPlaybackInfo might be better?
-                                    sourceId =
-                                        base.mediaSources
-                                            ?.firstOrNull()
-                                            ?.id
-                                            ?.toUUIDOrNull(),
-                                )
-                            } else {
-                                it
-                            }
-                        }
-                            ?: ItemPlayback(
-                                userId = user.rowId,
-                                itemId = base.id,
-                                sourceId =
-                                    base.mediaSources
-                                        ?.firstOrNull()
-                                        ?.id
-                                        ?.toUUIDOrNull(),
-                            )
-                    }
-
                 dto = base
                 val title =
                     if (base.type == BaseItemKind.EPISODE) {
@@ -264,8 +234,22 @@ class PlaybackViewModel
                 withContext(Dispatchers.Main) {
                     this@PlaybackViewModel.title.value = title
                     this@PlaybackViewModel.subtitle.value = subtitle
-                    this@PlaybackViewModel.currentItemPlayback.value = playbackConfig
                 }
+
+                val playbackConfig =
+                    if (itemPlayback != null) {
+                        itemPlayback
+                    } else {
+                        val user = serverRepository.currentUser!!
+                        itemPlaybackDao.getItem(user, base.id)?.let {
+                            Timber.v("Fetched itemPlayback from DB: %s", it)
+                            if (it.sourceId != null) {
+                                it
+                            } else {
+                                null
+                            }
+                        }
+                    }
                 val mediaSource = chooseSource(base, playbackConfig)
 
                 if (mediaSource == null) {
@@ -311,31 +295,31 @@ class PlaybackViewModel
                         }?.sortedWith(compareBy<AudioStream> { it.language }.thenByDescending { it.channels })
                         .orEmpty()
 
-                // TODO audio selection based on channel layout or preferences or default
-                val audioLanguage = preferences.userConfig.audioLanguagePreference
                 val audioIndex =
-                    if (playbackConfig.audioIndexEnabled) {
-                        playbackConfig.audioIndex
-                    } else if (audioLanguage != null) {
-                        audioStreams.firstOrNull { it.language == audioLanguage }?.index
-                            ?: audioStreams.firstOrNull()?.index
-                    } else {
-                        audioStreams.firstOrNull()?.index
-                    }
+                    chooseStream(base, playbackConfig, MediaStreamType.AUDIO, preferences)
+                        ?.index
 
                 val subtitleIndex =
-                    determineSubtitleIndex(
-                        subtitleStreams = subtitleStreams,
-                        subtitleMode = preferences.userConfig.subtitleMode,
-                        subtitleLanguage = preferences.userConfig.subtitleLanguagePreference,
-                        audioLanguage = audioLanguage,
-                        playbackConfig = playbackConfig,
-                    )
+                    chooseStream(base, playbackConfig, MediaStreamType.SUBTITLE, preferences)
+                        ?.index
 
 //                Timber.v("base.mediaStreams=${base.mediaStreams}")
 //                Timber.v("subtitleTracks=$subtitleStreams")
 //                Timber.v("audioStreams=$audioStreams")
-                Timber.d("Selected audioIndex=$audioIndex, subtitleIndex=$subtitleIndex")
+                Timber.d("Selected mediaSource=${mediaSource.id}, audioIndex=$audioIndex, subtitleIndex=$subtitleIndex")
+
+                val itemPlaybackToUse =
+                    playbackConfig ?: ItemPlayback(
+                        rowId = -1,
+                        userId = -1,
+                        itemId = base.id,
+                        sourceId = mediaSource.id?.toUUIDOrNull(),
+                        audioIndex = audioIndex ?: TrackIndex.UNSPECIFIED,
+                        subtitleIndex = subtitleIndex ?: TrackIndex.UNSPECIFIED,
+                    )
+                withContext(Dispatchers.Main) {
+                    this@PlaybackViewModel.currentItemPlayback.value = itemPlaybackToUse
+                }
 
                 withContext(Dispatchers.Main) {
                     this@PlaybackViewModel.audioStreams.value = audioStreams
@@ -343,7 +327,7 @@ class PlaybackViewModel
 
                     changeStreams(
                         base,
-                        playbackConfig,
+                        itemPlaybackToUse,
                         audioIndex,
                         subtitleIndex,
                         if (positionMs > 0) positionMs else C.TIME_UNSET,
@@ -431,6 +415,10 @@ class PlaybackViewModel
                 val decision = StreamDecision(itemId, transcodeType, mediaUrl)
                 Timber.v("Playback decision: $decision")
 
+                val externalSubtitleCount =
+                    source.mediaStreams
+                        ?.count { it.type == MediaStreamType.SUBTITLE && it.isExternal } ?: 0
+
                 val externalSubtitle =
                     source.mediaStreams
                         ?.firstOrNull { it.type == MediaStreamType.SUBTITLE && it.index == subtitleIndex && it.isExternal }
@@ -516,6 +504,7 @@ class PlaybackViewModel
                                             source,
                                             audioIndex,
                                             subtitleIndex,
+                                            externalSubtitleCount,
                                         )
                                         player.removeListener(this)
                                     }
@@ -728,7 +717,7 @@ data class CurrentPlayback(
     val playSessionId: String?,
 )
 
-private val Format.idAsInt: Int?
+val Format.idAsInt: Int?
     @OptIn(UnstableApi::class)
     get() =
         id?.let {
@@ -745,6 +734,7 @@ private fun applyTrackSelections(
     source: MediaSourceInfo,
     audioIndex: Int?,
     subtitleIndex: Int?,
+    externalSubtitleCount: Int,
 ) {
     if (source.supportsDirectPlay) {
         if (subtitleIndex != null && subtitleIndex >= 0) {
@@ -783,7 +773,7 @@ private fun applyTrackSelections(
                         (0..<group.mediaTrackGroup.length)
                             .map {
                                 group.getTrackFormat(it).idAsInt
-                            }.contains(audioIndex + 1) // Indexes are 1 based
+                            }.contains(audioIndex - externalSubtitleCount + 1) // Indexes are 1 based
                 }
             Timber.v("Chosen audio track: $chosenTrack")
             chosenTrack?.let {
