@@ -21,6 +21,10 @@ This is not a fork of the [official client](https://github.com/jellyfin/jellyfin
   - Subtly show playback position along the bottom of the screen while seeking w/ D-Pad
   - Force Continue Watching & Next Up TV episodes to use their Series posters
 
+### Roadmap
+
+See [here for the roadmap](https://github.com/damontecres/Wholphin/wiki#roadmap)
+
 ## Installation
 
 Downloader Code: `8668671`
@@ -42,27 +46,6 @@ Downloader Code: `8668671`
 After the initial install above, the app will automatically check for updates. The updates can be installed in settings.
 
 The first time you attempt an update, the OS should guide you through enabling the required additional permissions for the app to install updates.
-
-## Roadmap
-
-### Core functionality
-- ✅ Support Movies
-- ✅ Support TV Shows
-- ✅ Play version
-- ✅ Remember chosen audio & subtitle tracks
-- [ ] Pass out protection #7
-- [ ] Support Live TV & DVR #2
-- [ ] Support Music #1
-
-### UI/UX Improvements
-- [ ] Nav drawer customization
-- [ ] Filter libraries #13
-- [ ] Subtitle styling #11
-- [ ] Predictive audio & subtitle track choices
-- [ ] Profile PIN protection
-
-### Other
-- [ ] Alternative player backends, MPV #14
 
 ## Compatibility
 
