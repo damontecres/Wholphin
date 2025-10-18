@@ -5,6 +5,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.ChosenStreams
+import com.github.damontecres.wholphin.data.model.ItemPlayback
+import com.github.damontecres.wholphin.data.model.chooseSource
+import com.github.damontecres.wholphin.data.model.chooseStream
+import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import org.jellyfin.sdk.model.api.BaseItemDto
 import org.jellyfin.sdk.model.api.MediaStream
@@ -65,16 +69,32 @@ fun formatSubtitleLang(mediaStreams: List<MediaStream>?): String? =
         ?.distinct()
         ?.joinToString(", ") { languageName(it) }
 
+/**
+ * Gets the selected audio display title for the given item & chosen streams
+ */
 fun getAudioDisplay(
     item: BaseItemDto,
     chosenStreams: ChosenStreams?,
-) = (
-    chosenStreams?.audioStream
-        ?: item.mediaStreams?.firstOrNull { it.type == MediaStreamType.AUDIO }
-)?.displayTitle
+    preferences: UserPreferences,
+) = getAudioDisplay(item, chosenStreams?.itemPlayback, preferences)
+
+/**
+ * Gets the selected audio display title for the given item & chosen streams
+ */
+fun getAudioDisplay(
+    item: BaseItemDto,
+    itemPlayback: ItemPlayback?,
+    preferences: UserPreferences,
+) = chooseStream(item, itemPlayback, MediaStreamType.AUDIO, preferences)
+    ?.displayTitle
     ?.replace(" - Default", "")
     ?.ifBlank { null }
 
+/**
+ * Gets the selected subtitle language for the given item & chosen streams
+ *
+ * If none are chosen, returns a concatenated list of languages available
+ */
 @Composable
 fun getSubtitleDisplay(
     item: BaseItemDto,
@@ -84,5 +104,7 @@ fun getSubtitleDisplay(
 } else if (chosenStreams?.subtitleStream != null) {
     languageName(chosenStreams.subtitleStream.language)
 } else {
-    formatSubtitleLang(item.mediaStreams)
+    chooseSource(item, chosenStreams?.itemPlayback)?.let {
+        formatSubtitleLang(it.mediaStreams)
+    }
 }

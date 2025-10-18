@@ -11,8 +11,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.relocation.bringIntoViewRequester
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -40,19 +38,23 @@ import com.github.damontecres.wholphin.data.ChosenStreams
 import com.github.damontecres.wholphin.data.ItemPlaybackRepository
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.Chapter
+import com.github.damontecres.wholphin.data.model.ItemPlayback
 import com.github.damontecres.wholphin.data.model.Person
+import com.github.damontecres.wholphin.data.model.chooseSource
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.cards.ChapterRow
 import com.github.damontecres.wholphin.ui.cards.PersonRow
-import com.github.damontecres.wholphin.ui.components.DialogItem
 import com.github.damontecres.wholphin.ui.components.DialogParams
 import com.github.damontecres.wholphin.ui.components.DialogPopup
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.ExpandablePlayButtons
 import com.github.damontecres.wholphin.ui.components.LoadingPage
+import com.github.damontecres.wholphin.ui.components.chooseStream
+import com.github.damontecres.wholphin.ui.components.chooseVersionParams
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialog
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialogInfo
 import com.github.damontecres.wholphin.ui.detail.LoadingItemViewModel
+import com.github.damontecres.wholphin.ui.detail.buildMoreDialogItems
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.letNotEmpty
@@ -68,7 +70,9 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.playStateApi
+import org.jellyfin.sdk.model.api.MediaStreamType
 import org.jellyfin.sdk.model.extensions.ticks
+import org.jellyfin.sdk.model.serializer.toUUID
 import java.util.UUID
 import javax.inject.Inject
 import kotlin.time.Duration
@@ -119,6 +123,46 @@ class MovieViewModel
                 }
                 init(itemId, null)
             }
+
+        fun savePlayVersion(
+            item: BaseItem,
+            sourceId: UUID,
+        ) {
+            viewModelScope.launchIO {
+                val result = itemPlaybackRepository.savePlayVersion(item.id, sourceId)
+                val chosen =
+                    result?.let {
+                        itemPlaybackRepository.getChosenItemFromPlayback(item, result)
+                    }
+                withContext(Dispatchers.Main) {
+                    chosenStreams.value = chosen
+                }
+            }
+        }
+
+        fun saveTrackSelection(
+            item: BaseItem,
+            itemPlayback: ItemPlayback?,
+            trackIndex: Int,
+            type: MediaStreamType,
+        ) {
+            viewModelScope.launchIO {
+                val result =
+                    itemPlaybackRepository.saveTrackSelection(
+                        item = item,
+                        itemPlayback = itemPlayback,
+                        trackIndex = trackIndex,
+                        type = type,
+                    )
+                val chosen =
+                    result?.let {
+                        itemPlaybackRepository.getChosenItemFromPlayback(item, result)
+                    }
+                withContext(Dispatchers.Main) {
+                    chosenStreams.value = chosen
+                }
+            }
+        }
     }
 
 @Composable
@@ -139,6 +183,7 @@ fun MovieDetails(
 
     var overviewDialog by remember { mutableStateOf<ItemDetailsDialogInfo?>(null) }
     var moreDialog by remember { mutableStateOf<DialogParams?>(null) }
+    var chooseVersion by remember { mutableStateOf<DialogParams?>(null) }
 
     when (val state = loading) {
         is LoadingState.Error -> ErrorMessage(state)
@@ -179,30 +224,44 @@ fun MovieDetails(
                                 fromLongClick = false,
                                 title = movie.name + " (${movie.data.productionYear ?: ""})",
                                 items =
-                                    listOf(
-                                        DialogItem(
-                                            "Play",
-                                            Icons.Default.PlayArrow,
-                                            iconColor = Color.Green.copy(alpha = .8f),
-                                        ) {
-                                            viewModel.navigationManager.navigateTo(
-                                                Destination.Playback(movie),
-                                            )
+                                    buildMoreDialogItems(
+                                        item = movie,
+                                        watched = movie.data.userData?.played ?: false,
+                                        series = null,
+                                        sourceId = chosenStreams?.sourceId,
+                                        navigateTo = viewModel.navigationManager::navigateTo,
+                                        onClickWatch = viewModel::setWatched,
+                                        onChooseVersion = {
+                                            chooseVersion =
+                                                chooseVersionParams(movie.data.mediaSources!!) { idx ->
+                                                    val source = movie.data.mediaSources!![idx]
+                                                    viewModel.savePlayVersion(
+                                                        movie,
+                                                        source.id!!.toUUID(),
+                                                    )
+                                                }
+                                            moreDialog = null
                                         },
-//                                        DialogItem(
-//                                            "Playback Settings",
-//                                            Icons.Default.Settings,
-// //                                                iconColor = Color.Green.copy(alpha = .8f),
-//                                        ) {
-//                                            // TODO choose audio or subtitle tracks?
-//                                        },
-//                                        DialogItem(
-//                                            "Play Version",
-//                                            Icons.Default.PlayArrow,
-//                                            iconColor = Color.Green.copy(alpha = .8f),
-//                                        ) {
-//                                            // TODO only show for multiple files
-//                                        },
+                                        onChooseTracks = { type ->
+                                            chooseSource(
+                                                movie.data,
+                                                chosenStreams?.itemPlayback,
+                                            )?.let { source ->
+                                                chooseVersion =
+                                                    chooseStream(
+                                                        streams = source.mediaStreams.orEmpty(),
+                                                        type = type,
+                                                        onClick = { trackIndex ->
+                                                            viewModel.saveTrackSelection(
+                                                                movie,
+                                                                chosenStreams?.itemPlayback,
+                                                                trackIndex,
+                                                                type,
+                                                            )
+                                                        },
+                                                    )
+                                            }
+                                        },
                                     ),
                             )
                     },
@@ -226,6 +285,16 @@ fun MovieDetails(
             title = params.title,
             dialogItems = params.items,
             onDismissRequest = { moreDialog = null },
+            dismissOnClick = true,
+            waitToLoad = params.fromLongClick,
+        )
+    }
+    chooseVersion?.let { params ->
+        DialogPopup(
+            showDialog = true,
+            title = params.title,
+            dialogItems = params.items,
+            onDismissRequest = { chooseVersion = null },
             dismissOnClick = true,
             waitToLoad = params.fromLongClick,
         )
@@ -300,6 +369,7 @@ fun MovieDetailsContent(
                             .padding(bottom = 56.dp),
                 ) {
                     MovieDetailsHeader(
+                        preferences = preferences,
                         movie = movie,
                         chosenStreams = chosenStreams,
                         bringIntoViewRequester = bringIntoViewRequester,

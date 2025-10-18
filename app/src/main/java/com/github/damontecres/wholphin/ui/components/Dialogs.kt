@@ -52,10 +52,15 @@ import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import androidx.tv.material3.surfaceColorAtElevation
 import com.github.damontecres.wholphin.R
+import com.github.damontecres.wholphin.data.model.TrackIndex
 import com.github.damontecres.wholphin.ui.FontAwesome
+import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import org.jellyfin.sdk.model.api.MediaSourceInfo
+import org.jellyfin.sdk.model.api.MediaStream
+import org.jellyfin.sdk.model.api.MediaStreamType
 
 /**
  * Parameters for rendering a [DialogPopup]
@@ -79,6 +84,25 @@ data class DialogItem(
     val trailingContent: @Composable (() -> Unit)? = null,
     val enabled: Boolean = true,
 ) : DialogItemEntry {
+    constructor(
+        @StringRes text: Int,
+        @StringRes iconStringRes: Int,
+        onClick: () -> Unit,
+    ) : this(
+        headlineContent = {
+            Text(
+                text = stringResource(text),
+            )
+        },
+        leadingContent = {
+            Text(
+                text = stringResource(id = iconStringRes),
+                fontFamily = FontAwesome,
+            )
+        },
+        onClick = onClick,
+    )
+
     constructor(
         text: String,
         @StringRes iconStringRes: Int,
@@ -413,3 +437,65 @@ fun ConfirmDialogContent(
         }
     }
 }
+
+fun chooseVersionParams(
+    sources: List<MediaSourceInfo>,
+    onClick: (Int) -> Unit,
+): DialogParams =
+    DialogParams(
+        fromLongClick = false,
+        title = "Play Version",
+        items =
+            sources.filter { it.id.isNotNullOrBlank() }.mapIndexed { index, source ->
+                val videoStream =
+                    source.mediaStreams?.firstOrNull { it.type == MediaStreamType.VIDEO }
+                val title = source.name ?: source.path ?: source.id ?: ""
+                DialogItem(
+                    headlineContent = {
+                        Text(text = title)
+                    },
+                    supportingContent = {
+                        videoStream?.displayTitle?.let { Text(text = it) }
+                    },
+                    onClick = { onClick.invoke(index) },
+                )
+            },
+    )
+
+fun chooseStream(
+    streams: List<MediaStream>,
+    type: MediaStreamType,
+    onClick: (Int) -> Unit,
+): DialogParams =
+    DialogParams(
+        fromLongClick = false,
+        title = "Choose ${type.serialName}", // TODO
+        items =
+            buildList {
+                if (type == MediaStreamType.SUBTITLE) {
+                    add(
+                        DialogItem(
+                            headlineContent = {
+                                Text(text = "None")
+                            },
+                            supportingContent = {
+                            },
+                            onClick = { onClick.invoke(TrackIndex.DISABLED) },
+                        ),
+                    )
+                }
+                addAll(
+                    streams.filter { it.type == type }.mapIndexed { index, stream ->
+                        val title = stream.displayTitle ?: stream.title ?: ""
+                        DialogItem(
+                            headlineContent = {
+                                Text(text = title)
+                            },
+                            supportingContent = {
+                            },
+                            onClick = { onClick.invoke(stream.index) },
+                        )
+                    },
+                )
+            },
+    )

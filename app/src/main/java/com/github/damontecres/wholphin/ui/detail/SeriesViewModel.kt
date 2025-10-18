@@ -14,6 +14,7 @@ import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import com.github.damontecres.wholphin.data.ChosenStreams
 import com.github.damontecres.wholphin.data.ItemPlaybackRepository
 import com.github.damontecres.wholphin.data.model.BaseItem
+import com.github.damontecres.wholphin.data.model.ItemPlayback
 import com.github.damontecres.wholphin.data.model.Person
 import com.github.damontecres.wholphin.hilt.AuthOkHttpClient
 import com.github.damontecres.wholphin.preferences.ThemeSongVolume
@@ -46,6 +47,7 @@ import org.jellyfin.sdk.api.client.extensions.userLibraryApi
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.ItemFields
 import org.jellyfin.sdk.model.api.ItemSortBy
+import org.jellyfin.sdk.model.api.MediaStreamType
 import org.jellyfin.sdk.model.api.SortOrder
 import org.jellyfin.sdk.model.api.request.GetEpisodesRequest
 import org.jellyfin.sdk.model.api.request.GetItemsRequest
@@ -327,6 +329,46 @@ class SeriesViewModel
                         chosenStreams.value = result
                     }
                 }
+        }
+
+        fun savePlayVersion(
+            item: BaseItem,
+            sourceId: UUID,
+        ) {
+            viewModelScope.launchIO {
+                val result = itemPlaybackRepository.savePlayVersion(item.id, sourceId)
+                val chosen =
+                    result?.let {
+                        itemPlaybackRepository.getChosenItemFromPlayback(item, result)
+                    }
+                withContext(Dispatchers.Main) {
+                    chosenStreams.value = chosen
+                }
+            }
+        }
+
+        fun saveTrackSelection(
+            item: BaseItem,
+            itemPlayback: ItemPlayback?,
+            trackIndex: Int,
+            type: MediaStreamType,
+        ) {
+            viewModelScope.launchIO {
+                val result =
+                    itemPlaybackRepository.saveTrackSelection(
+                        item = item,
+                        itemPlayback = itemPlayback,
+                        trackIndex = trackIndex,
+                        type = type,
+                    )
+                val chosen =
+                    result?.let {
+                        itemPlaybackRepository.getChosenItemFromPlayback(item, result)
+                    }
+                withContext(Dispatchers.Main) {
+                    chosenStreams.value = chosen
+                }
+            }
         }
     }
 
