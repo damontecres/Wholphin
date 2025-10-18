@@ -10,8 +10,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.preferences.UserPreferences
-import com.github.damontecres.wholphin.ui.DefaultItemFields
 import com.github.damontecres.wholphin.ui.OneTimeLaunchedEffect
+import com.github.damontecres.wholphin.ui.SlimItemFields
 import com.github.damontecres.wholphin.ui.main.HomePageContent
 import com.github.damontecres.wholphin.ui.main.HomeRow
 import com.github.damontecres.wholphin.ui.main.HomeSection
@@ -54,7 +54,7 @@ class RecommendedTvShowViewModel
                 val resumeItemsRequest =
                     GetResumeItemsRequest(
                         parentId = parentId,
-                        fields = DefaultItemFields,
+                        fields = SlimItemFields,
                         includeItemTypes = listOf(BaseItemKind.EPISODE),
                         enableUserData = true,
                     )
@@ -64,7 +64,7 @@ class RecommendedTvShowViewModel
                 val nextUpRequest =
                     GetNextUpRequest(
                         parentId = parentId,
-                        fields = DefaultItemFields,
+                        fields = SlimItemFields,
                         enableUserData = true,
                     )
                 val nextUpItems = ApiRequestPager(api, nextUpRequest, GetNextUpRequestHandler, viewModelScope, useSeriesForPrimary = true)
@@ -72,7 +72,7 @@ class RecommendedTvShowViewModel
                 val recentlyReleasedRequest =
                     GetItemsRequest(
                         parentId = parentId,
-                        fields = DefaultItemFields,
+                        fields = SlimItemFields,
                         includeItemTypes = listOf(BaseItemKind.EPISODE),
                         recursive = true,
                         enableUserData = true,
@@ -85,7 +85,7 @@ class RecommendedTvShowViewModel
                 val recentlyAddedRequest =
                     GetItemsRequest(
                         parentId = parentId,
-                        fields = DefaultItemFields,
+                        fields = SlimItemFields,
                         includeItemTypes = listOf(BaseItemKind.EPISODE),
                         recursive = true,
                         enableUserData = true,
@@ -104,7 +104,7 @@ class RecommendedTvShowViewModel
                 val unwatchedTopRatedRequest =
                     GetItemsRequest(
                         parentId = parentId,
-                        fields = DefaultItemFields,
+                        fields = SlimItemFields,
                         includeItemTypes = listOf(BaseItemKind.SERIES),
                         recursive = true,
                         enableUserData = true,

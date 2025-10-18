@@ -10,8 +10,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.preferences.UserPreferences
-import com.github.damontecres.wholphin.ui.DefaultItemFields
 import com.github.damontecres.wholphin.ui.OneTimeLaunchedEffect
+import com.github.damontecres.wholphin.ui.SlimItemFields
 import com.github.damontecres.wholphin.ui.main.HomePageContent
 import com.github.damontecres.wholphin.ui.main.HomeRow
 import com.github.damontecres.wholphin.ui.main.HomeSection
@@ -52,7 +52,7 @@ class RecommendedMovieViewModel
                 val resumeItemsRequest =
                     GetResumeItemsRequest(
                         parentId = parentId,
-                        fields = DefaultItemFields,
+                        fields = SlimItemFields,
                         includeItemTypes = listOf(BaseItemKind.MOVIE),
                         enableUserData = true,
                     )
@@ -62,7 +62,7 @@ class RecommendedMovieViewModel
                 val recentlyReleasedRequest =
                     GetItemsRequest(
                         parentId = parentId,
-                        fields = DefaultItemFields,
+                        fields = SlimItemFields,
                         includeItemTypes = listOf(BaseItemKind.MOVIE),
                         recursive = true,
                         enableUserData = true,
@@ -75,7 +75,7 @@ class RecommendedMovieViewModel
                 val recentlyAddedRequest =
                     GetItemsRequest(
                         parentId = parentId,
-                        fields = DefaultItemFields,
+                        fields = SlimItemFields,
                         includeItemTypes = listOf(BaseItemKind.MOVIE),
                         recursive = true,
                         enableUserData = true,
@@ -94,7 +94,7 @@ class RecommendedMovieViewModel
                 val unwatchedTopRatedRequest =
                     GetItemsRequest(
                         parentId = parentId,
-                        fields = DefaultItemFields,
+                        fields = SlimItemFields,
                         includeItemTypes = listOf(BaseItemKind.MOVIE),
                         recursive = true,
                         enableUserData = true,

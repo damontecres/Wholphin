@@ -30,6 +30,7 @@ import com.github.damontecres.wholphin.util.GetEpisodesRequestHandler
 import com.github.damontecres.wholphin.util.GetItemsRequestHandler
 import com.github.damontecres.wholphin.util.LoadingExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
+import com.github.damontecres.wholphin.util.profile.Codec
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -135,7 +136,13 @@ class SeriesViewModel
                         val url =
                             api.universalAudioApi.getUniversalAudioStreamUrl(
                                 theme.id,
-                                container = listOf("opus", "mp3", "aaa", "flac"),
+                                container =
+                                    listOf(
+                                        Codec.Audio.OPUS,
+                                        Codec.Audio.MP3,
+                                        Codec.Audio.AAC,
+                                        Codec.Audio.FLAC,
+                                    ),
                             )
                         Timber.Forest.v("Found theme song for series $seriesId")
                         withContext(Dispatchers.Main) {

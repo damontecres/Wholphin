@@ -16,8 +16,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.GetItemsFilter
-import com.github.damontecres.wholphin.ui.DefaultItemFields
 import com.github.damontecres.wholphin.ui.OneTimeLaunchedEffect
+import com.github.damontecres.wholphin.ui.SlimItemFields
 import com.github.damontecres.wholphin.ui.cards.GridCard
 import com.github.damontecres.wholphin.ui.detail.CardGrid
 import com.github.damontecres.wholphin.ui.nav.Destination
@@ -54,7 +54,7 @@ class GenreViewModel
                 val request =
                     GetGenresRequest(
                         parentId = itemId,
-                        fields = DefaultItemFields,
+                        fields = SlimItemFields,
                     )
                 val pager = ApiRequestPager(api, request, GetGenresRequestHandler, viewModelScope).init()
                 withContext(Dispatchers.Main) {

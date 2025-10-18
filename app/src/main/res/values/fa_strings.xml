@@ -34,4 +34,6 @@
     <string name="fa_shuffle" translatable="false">&#xf074;</string>
     <string name="fa_open_folder" translatable="false">&#xf07c;</string>
     <string name="fa_list_ul" translatable="false">&#xf0ca;</string>
+    <string name="fa_file_video" translatable="false">&#xf1c8;</string>
+    <string name="fa_volume_low" translatable="false">&#xf027;</string>
 </resources>

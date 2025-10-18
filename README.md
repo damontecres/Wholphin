@@ -21,6 +21,10 @@ This is not a fork of the [official client](https://github.com/jellyfin/jellyfin
   - Subtly show playback position along the bottom of the screen while seeking w/ D-Pad
   - Force Continue Watching & Next Up TV episodes to use their Series posters
 
+### Roadmap
+
+See [here for the roadmap](https://github.com/damontecres/Wholphin/wiki#roadmap)
+
 ## Installation
 
 Downloader Code: `8668671`

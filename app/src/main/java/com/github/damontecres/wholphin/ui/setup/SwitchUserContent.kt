@@ -125,9 +125,7 @@ fun SwitchUserContent(
             LaunchedEffect(Unit) {
                 viewModel.clearSwitchUserState()
                 if (useQuickConnect) {
-                    viewModel.initiateQuickConnect(server) {
-                        viewModel.navigationManager.goToHome()
-                    }
+                    viewModel.initiateQuickConnect(server)
                 }
             }
             BasicDialog(
@@ -180,10 +178,18 @@ fun SwitchUserContent(
                         )
                         when (val s = userState) {
                             is LoadingState.Error -> {
-                                Text(
-                                    text = s.message ?: s.exception?.localizedMessage ?: "Error",
-                                    color = MaterialTheme.colorScheme.error,
-                                )
+                                s.message?.let {
+                                    Text(
+                                        text = it,
+                                        color = MaterialTheme.colorScheme.error,
+                                    )
+                                }
+                                s.exception?.localizedMessage?.let {
+                                    Text(
+                                        text = it,
+                                        color = MaterialTheme.colorScheme.error,
+                                    )
+                                }
                             }
 
                             else -> {}
@@ -208,6 +214,7 @@ fun SwitchUserContent(
                                         autoCorrectEnabled = false,
                                         keyboardType = KeyboardType.Text,
                                     ),
+                                isInputValid = { userState !is LoadingState.Error },
                                 modifier = Modifier.focusRequester(focusRequester),
                             )
                         }
@@ -235,6 +242,7 @@ fun SwitchUserContent(
                                     KeyboardActions(
                                         onDone = { onSubmit.invoke() },
                                     ),
+                                isInputValid = { userState !is LoadingState.Error },
                                 modifier = Modifier,
                             )
                         }

@@ -5,7 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.preferences.UserPreferences
-import com.github.damontecres.wholphin.ui.DefaultItemFields
+import com.github.damontecres.wholphin.ui.SlimItemFields
 import com.github.damontecres.wholphin.ui.nav.NavigationManager
 import com.github.damontecres.wholphin.util.LoadingExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
@@ -119,7 +119,7 @@ class HomeViewModel
             val request =
                 GetResumeItemsRequest(
                     userId = userId,
-                    fields = DefaultItemFields,
+                    fields = SlimItemFields,
                     limit = limit,
                     includeItemTypes = supportItemKinds,
                 )
@@ -140,7 +140,7 @@ class HomeViewModel
             val request =
                 GetNextUpRequest(
                     userId = userId,
-                    fields = DefaultItemFields,
+                    fields = SlimItemFields,
                     imageTypeLimit = 1,
                     parentId = null,
                     limit = limit,
@@ -176,7 +176,7 @@ class HomeViewModel
                             view.name?.let { "Recently Added in $it" }
                         val request =
                             GetLatestMediaRequest(
-                                fields = DefaultItemFields,
+                                fields = SlimItemFields,
                                 imageTypeLimit = 1,
                                 parentId = view.id,
                                 groupItems = true,

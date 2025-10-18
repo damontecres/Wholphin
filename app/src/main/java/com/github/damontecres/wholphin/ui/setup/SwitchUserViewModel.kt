@@ -154,7 +154,7 @@ class SwitchUserViewModel
                     }
                 } catch (ex: Exception) {
                     Timber.e(ex, "Error switching user")
-                    setError(ex)
+                    setError("Error switching user", ex)
                 }
             }
         }
@@ -178,15 +178,19 @@ class SwitchUserViewModel
                     }
                 } catch (ex: Exception) {
                     Timber.e(ex, "Error logging in user")
-                    setError(ex)
+                    if (ex is InvalidStatusException && ex.status == 401) {
+                        withContext(Dispatchers.Main) {
+                            switchUserState.value =
+                                LoadingState.Error("Invalid username or password")
+                        }
+                    } else {
+                        setError("Error during login", ex)
+                    }
                 }
             }
         }
 
-        fun initiateQuickConnect(
-            server: JellyfinServer,
-            onAuthenticated: () -> Unit,
-        ) {
+        fun initiateQuickConnect(server: JellyfinServer) {
             quickConnectJob?.cancel()
             viewModelScope.launchIO {
                 try {
@@ -218,19 +222,21 @@ class SwitchUserViewModel
                             )
                             serverRepository.changeUser(server.url, authenticationResult)
                             withContext(Dispatchers.Main) {
-                                onAuthenticated.invoke()
+                                navigationManager.goToHome()
                             }
                         }
                 } catch (ex: Exception) {
                     Timber.e(ex, "Error during quick connect")
                     if (ex is InvalidStatusException && ex.status == 401) {
-                        quickConnectState.value = null
-                        serverQuickConnect.value =
-                            serverQuickConnect.value!!.toMutableMap().apply {
-                                put(server.id, false)
-                            }
+                        withContext(Dispatchers.Main) {
+                            quickConnectState.value = null
+                            serverQuickConnect.value =
+                                serverQuickConnect.value!!.toMutableMap().apply {
+                                    put(server.id, false)
+                                }
+                        }
                     }
-                    setError(ex)
+                    setError("Error with Quick Connect", ex)
                 }
             }
         }
@@ -329,8 +335,10 @@ class SwitchUserViewModel
             }
         }
 
-        private suspend fun setError(ex: Exception) =
-            withContext(Dispatchers.Main) {
-                switchUserState.value = LoadingState.Error(ex)
-            }
+        private suspend fun setError(
+            msg: String? = null,
+            ex: Exception? = null,
+        ) = withContext(Dispatchers.Main) {
+            switchUserState.value = LoadingState.Error(msg, ex)
+        }
     }
