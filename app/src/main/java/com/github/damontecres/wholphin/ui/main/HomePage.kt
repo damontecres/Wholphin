@@ -26,6 +26,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -99,6 +100,7 @@ fun HomePageContent(
     homeRows: List<HomeRow>,
     onClickItem: (BaseItem) -> Unit,
     modifier: Modifier = Modifier,
+    onFocusPosition: ((RowColumn) -> Unit)? = null,
 ) {
     var position by rememberSaveable(stateSaver = RowColumnSaver) {
         mutableStateOf(RowColumn(0, 0))
@@ -198,7 +200,16 @@ fun HomePageContent(
                                             ).ifElse(
                                                 RowColumn(rowIndex, index) == position,
                                                 Modifier.focusRequester(positionFocusRequester),
-                                            ),
+                                            ).onFocusChanged {
+                                                if (it.isFocused) {
+                                                    onFocusPosition?.invoke(
+                                                        RowColumn(
+                                                            rowIndex,
+                                                            index,
+                                                        ),
+                                                    )
+                                                }
+                                            },
                                     interactionSource = null,
                                     cardHeight = Cards.height2x3,
                                 )

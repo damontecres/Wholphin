@@ -145,6 +145,9 @@ fun CollectionFolderMovie(
                     preferences = preferences,
                     onClickItem = onClickItem,
                     parentId = destination.itemId,
+                    onFocusPosition = { pos ->
+                        showHeader = pos.row < 1
+                    },
                     modifier =
                         Modifier
                             .padding(start = 16.dp)

@@ -12,6 +12,7 @@ import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.OneTimeLaunchedEffect
 import com.github.damontecres.wholphin.ui.SlimItemFields
+import com.github.damontecres.wholphin.ui.data.RowColumn
 import com.github.damontecres.wholphin.ui.main.HomePageContent
 import com.github.damontecres.wholphin.ui.main.HomeRow
 import com.github.damontecres.wholphin.ui.main.HomeSection
@@ -114,7 +115,7 @@ class RecommendedMovieViewModel
                         HomeRow(HomeSection.LATEST_MEDIA, recentlyAddedItems, "Recently Added"),
                         HomeRow(HomeSection.NONE, suggestedItems, "Suggestions"),
                         HomeRow(HomeSection.NONE, unwatchedTopRatedItems, "Top Rated Unwatched"),
-                    )
+                    ).filter { it.items.isNotEmpty() }
                 withContext(Dispatchers.Main) {
                     this@RecommendedMovieViewModel.rows.value = homeRows
                     loading.value = LoadingState.Success
@@ -131,6 +132,7 @@ fun RecommendedMovie(
     preferences: UserPreferences,
     parentId: UUID,
     onClickItem: (BaseItem) -> Unit,
+    onFocusPosition: (RowColumn) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: RecommendedMovieViewModel = hiltViewModel(),
 ) {
@@ -151,6 +153,7 @@ fun RecommendedMovie(
             HomePageContent(
                 homeRows = rows,
                 onClickItem = onClickItem,
+                onFocusPosition = onFocusPosition,
                 modifier = modifier,
             )
     }
