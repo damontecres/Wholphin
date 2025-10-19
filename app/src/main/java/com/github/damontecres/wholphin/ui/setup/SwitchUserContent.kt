@@ -8,7 +8,9 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -26,6 +28,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.tv.material3.Button
@@ -33,6 +36,7 @@ import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import androidx.tv.material3.surfaceColorAtElevation
 import com.github.damontecres.wholphin.ui.components.BasicDialog
+import com.github.damontecres.wholphin.ui.components.CircularProgress
 import com.github.damontecres.wholphin.ui.components.EditTextBox
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.nav.Destination
@@ -142,26 +146,47 @@ fun SwitchUserContent(
                             .fillMaxWidth(),
                 ) {
                     if (useQuickConnect) {
-                        quickConnect?.let { qc ->
+                        if (quickConnect == null && userState !is LoadingState.Error) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                modifier =
+                                    Modifier
+                                        .height(32.dp)
+                                        .align(Alignment.CenterHorizontally),
+                            ) {
+                                CircularProgress(Modifier.size(20.dp))
+                                Text(
+                                    text = "Waiting for Quick Connect code...",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                    textAlign = TextAlign.Center,
+                                    modifier = Modifier,
+                                )
+                            }
+                        } else if (quickConnect != null) {
                             Text(
                                 text = "Use Quick Connect on your device to authenticate to ${server.name ?: server.url}",
                                 style = MaterialTheme.typography.titleMedium,
                                 color = MaterialTheme.colorScheme.onSurface,
                             )
                             Text(
-                                text = qc.code,
+                                text = quickConnect?.code ?: "Failed to get code",
                                 style = MaterialTheme.typography.displayMedium,
                                 color = MaterialTheme.colorScheme.onSurface,
                                 modifier = Modifier.align(Alignment.CenterHorizontally),
                             )
-                            Button(
-                                onClick = {
-                                    useQuickConnect = false
-                                },
-                                modifier = Modifier.align(Alignment.CenterHorizontally),
-                            ) {
-                                Text(text = "Use username/password")
-                            }
+                        }
+                        UserStateError(userState)
+                        Button(
+                            onClick = {
+                                viewModel.cancelQuickConnect()
+                                viewModel.clearSwitchUserState()
+                                useQuickConnect = false
+                            },
+                            modifier = Modifier.align(Alignment.CenterHorizontally),
+                        ) {
+                            Text(text = "Use username/password")
                         }
                     } else {
                         var username by remember { mutableStateOf("") }
@@ -176,24 +201,7 @@ fun SwitchUserContent(
                             style = MaterialTheme.typography.titleMedium,
                             color = MaterialTheme.colorScheme.onSurface,
                         )
-                        when (val s = userState) {
-                            is LoadingState.Error -> {
-                                s.message?.let {
-                                    Text(
-                                        text = it,
-                                        color = MaterialTheme.colorScheme.error,
-                                    )
-                                }
-                                s.exception?.localizedMessage?.let {
-                                    Text(
-                                        text = it,
-                                        color = MaterialTheme.colorScheme.error,
-                                    )
-                                }
-                            }
-
-                            else -> {}
-                        }
+                        UserStateError(userState)
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier.focusGroup(),
@@ -257,5 +265,35 @@ fun SwitchUserContent(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun UserStateError(
+    userState: LoadingState,
+    modifier: Modifier = Modifier,
+) {
+    when (val s = userState) {
+        is LoadingState.Error -> {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+                modifier = modifier,
+            ) {
+                s.message?.let {
+                    Text(
+                        text = it,
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                }
+                s.exception?.localizedMessage?.let {
+                    Text(
+                        text = it,
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                }
+            }
+        }
+
+        else -> {}
     }
 }
