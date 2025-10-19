@@ -123,7 +123,7 @@ class MovieViewModel
                 } else {
                     api.playStateApi.markUnplayedItem(itemId)
                 }
-                init(itemId, null)
+                fetchAndSetItem(itemId)
             }
 
         fun savePlayVersion(

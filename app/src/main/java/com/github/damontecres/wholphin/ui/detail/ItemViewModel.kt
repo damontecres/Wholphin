@@ -75,11 +75,7 @@ abstract class LoadingItemViewModel(
             ) + Dispatchers.IO,
         ) {
             try {
-                val fetchedItem = api.userLibraryApi.getItem(itemId).content
-                withContext(Dispatchers.Main) {
-                    item.value = BaseItem.from(fetchedItem, api)
-                    loading.value = LoadingState.Success
-                }
+                fetchAndSetItem(itemId)
             } catch (e: Exception) {
                 Timber.e(e, "Failed to load item $itemId")
                 withContext(Dispatchers.Main) {
@@ -89,4 +85,13 @@ abstract class LoadingItemViewModel(
             }
         }
     }
+
+    open suspend fun fetchAndSetItem(itemId: UUID) =
+        withContext(Dispatchers.IO) {
+            val fetchedItem = api.userLibraryApi.getItem(itemId).content
+            withContext(Dispatchers.Main) {
+                item.value = BaseItem.from(fetchedItem, api)
+                loading.value = LoadingState.Success
+            }
+        }
 }
