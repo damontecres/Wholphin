@@ -17,6 +17,7 @@ import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.letNotEmpty
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.nav.NavigationManager
+import com.github.damontecres.wholphin.ui.setValueOnMain
 import com.github.damontecres.wholphin.ui.showToast
 import com.github.damontecres.wholphin.util.ApiRequestPager
 import com.github.damontecres.wholphin.util.ExceptionHandler
@@ -141,10 +142,10 @@ class SeriesViewModel
             themeSongPlayer.stop()
         }
 
-        private suspend fun getSeasons(item: BaseItem): ItemListAndMapping {
+        private suspend fun getSeasons(series: BaseItem): ItemListAndMapping {
             val request =
                 GetItemsRequest(
-                    parentId = item.id,
+                    parentId = series.id,
                     recursive = false,
                     includeItemTypes = listOf(BaseItemKind.SEASON),
                     sortBy = listOf(ItemSortBy.INDEX_NUMBER),
@@ -164,7 +165,7 @@ class SeriesViewModel
                     viewModelScope,
                 )
             pager.init()
-            Timber.Forest.v("Loaded ${pager.size} seasons for series ${item.id}")
+            Timber.Forest.v("Loaded ${pager.size} seasons for series ${series.id}")
             val pairs =
                 pager.mapIndexed { index, _ ->
                     val season = pager.getBlocking(index)
@@ -235,7 +236,9 @@ class SeriesViewModel
                 } else {
                     api.playStateApi.markUnplayedItem(seriesId)
                 }
-                fetchItem(seriesId, null)
+                val series = fetchItem(seriesId, null)
+                val seasons = getSeasons(series)
+                this@SeriesViewModel.seasons.setValueOnMain(seasons)
             }
 
         fun refreshEpisode(
