@@ -235,7 +235,7 @@ class SeriesViewModel
                 } else {
                     api.playStateApi.markUnplayedItem(seriesId)
                 }
-                init(prefs, seriesId, null, null, null)
+                fetchItem(seriesId, null)
             }
 
         fun refreshEpisode(

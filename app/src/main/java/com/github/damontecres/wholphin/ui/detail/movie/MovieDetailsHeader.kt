@@ -1,5 +1,7 @@
 package com.github.damontecres.wholphin.ui.detail.movie
 
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -10,6 +12,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -63,7 +67,7 @@ fun MovieDetailsHeader(
             text = movie.name ?: "",
             color = MaterialTheme.colorScheme.onSurface,
             style =
-                MaterialTheme.typography.displayLarge.copy(
+                MaterialTheme.typography.displayMedium.copy(
                     shadow =
                         Shadow(
                             color = Color.DarkGray,
@@ -116,13 +120,26 @@ fun MovieDetailsHeader(
                 }
             }
 
+            dto.taglines?.firstOrNull()?.let { tagline ->
+                Text(
+                    text = tagline,
+                    style = MaterialTheme.typography.bodyLarge,
+                )
+            }
+
             // Description
             dto.overview?.let { overview ->
+                val interactionSource = remember { MutableInteractionSource() }
+                val focused = interactionSource.collectIsFocusedAsState().value
+                LaunchedEffect(focused) {
+                    if (focused) bringIntoViewRequester.bringIntoView()
+                }
                 OverviewText(
                     overview = overview,
                     maxLines = 3,
                     onClick = overviewOnClick,
                     textBoxHeight = Dp.Unspecified,
+                    interactionSource = interactionSource,
                 )
             }
             movie.data.people

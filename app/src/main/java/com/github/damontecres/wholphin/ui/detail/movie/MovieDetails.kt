@@ -123,7 +123,7 @@ class MovieViewModel
                 } else {
                     api.playStateApi.markUnplayedItem(itemId)
                 }
-                init(itemId, null)
+                fetchAndSetItem(itemId)
             }
 
         fun savePlayVersion(
@@ -377,7 +377,7 @@ fun MovieDetailsContent(
                         bringIntoViewRequester = bringIntoViewRequester,
                         overviewOnClick = overviewOnClick,
                         Modifier
-                            .fillMaxWidth(.7f)
+                            .fillMaxWidth(.75f)
                             .padding(bottom = 8.dp),
                     )
                     ExpandablePlayButtons(

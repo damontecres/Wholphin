@@ -145,6 +145,9 @@ fun CollectionFolderTv(
                     preferences = preferences,
                     parentId = destination.itemId,
                     onClickItem = onClickItem,
+                    onFocusPosition = { pos ->
+                        showHeader = pos.row < 1
+                    },
                     modifier =
                         Modifier
                             .padding(start = 16.dp)

@@ -21,6 +21,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -28,10 +29,10 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -68,7 +69,9 @@ import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.rememberPosition
 import com.github.damontecres.wholphin.ui.roundMinutes
 import com.github.damontecres.wholphin.ui.tryRequestFocus
+import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
+import kotlinx.coroutines.launch
 import org.jellyfin.sdk.model.extensions.ticks
 import kotlin.time.Duration
 
@@ -237,6 +240,7 @@ fun SeriesDetailsContent(
                         overviewOnClick = overviewOnClick,
                         playOnClick = playOnClick,
                         watchOnClick = watchOnClick,
+                        bringIntoViewRequester = bringIntoViewRequester,
                         modifier =
                             Modifier
                                 .fillMaxWidth(.6f)
@@ -301,12 +305,13 @@ fun SeriesDetailsContent(
 fun SeriesDetailsHeader(
     series: BaseItem,
     played: Boolean,
+    bringIntoViewRequester: BringIntoViewRequester,
     overviewOnClick: () -> Unit,
     playOnClick: () -> Unit,
     watchOnClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     val dto = series.data
     val details =
         buildList {
@@ -370,13 +375,27 @@ fun SeriesDetailsHeader(
                 resume = Duration.ZERO,
                 icon = Icons.Default.PlayArrow,
                 onClick = { playOnClick.invoke() },
-                modifier = Modifier,
+                modifier =
+                    Modifier.onFocusChanged {
+                        if (it.isFocused) {
+                            scope.launch(ExceptionHandler()) {
+                                bringIntoViewRequester.bringIntoView()
+                            }
+                        }
+                    },
             )
             ExpandableFaButton(
                 title = if (played) R.string.mark_unwatched else R.string.mark_watched,
                 iconStringRes = if (played) R.string.fa_eye else R.string.fa_eye_slash,
                 onClick = watchOnClick,
-                modifier = Modifier,
+                modifier =
+                    Modifier.onFocusChanged {
+                        if (it.isFocused) {
+                            scope.launch(ExceptionHandler()) {
+                                bringIntoViewRequester.bringIntoView()
+                            }
+                        }
+                    },
             )
         }
     }
