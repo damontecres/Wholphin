@@ -36,6 +36,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.LifecycleStartEffect
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import coil3.compose.AsyncImage
@@ -82,6 +83,15 @@ fun SeriesDetails(
     modifier: Modifier = Modifier,
     viewModel: SeriesViewModel = hiltViewModel(),
 ) {
+    LifecycleStartEffect(destination.itemId) {
+        viewModel.maybePlayThemeSong(
+            destination.itemId,
+            preferences.appPreferences.interfacePreferences.playThemeSongs,
+        )
+        onStopOrDispose {
+            viewModel.release()
+        }
+    }
     LaunchedEffect(Unit) {
         viewModel.init(preferences, destination.itemId, destination.item, null, null)
     }

@@ -12,6 +12,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.LifecycleStartEffect
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.chooseSource
 import com.github.damontecres.wholphin.preferences.UserPreferences
@@ -59,6 +60,15 @@ fun SeriesOverview(
     viewModel: SeriesViewModel = hiltViewModel(),
     initialSeasonEpisode: SeasonEpisode? = null,
 ) {
+    LifecycleStartEffect(destination.itemId) {
+        viewModel.maybePlayThemeSong(
+            destination.itemId,
+            preferences.appPreferences.interfacePreferences.playThemeSongs,
+        )
+        onStopOrDispose {
+            viewModel.release()
+        }
+    }
     val firstItemFocusRequester = remember { FocusRequester() }
     val episodeRowFocusRequester = remember { FocusRequester() }
 

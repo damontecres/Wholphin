@@ -41,6 +41,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.LifecycleStartEffect
 import androidx.media3.common.Player
 import androidx.media3.common.text.Cue
 import androidx.media3.common.text.CueGroup
@@ -85,6 +86,11 @@ fun PlaybackPage(
     modifier: Modifier = Modifier,
     viewModel: PlaybackViewModel = hiltViewModel(),
 ) {
+    LifecycleStartEffect(destination.itemId) {
+        onStopOrDispose {
+            viewModel.release()
+        }
+    }
     LaunchedEffect(destination.itemId) {
         viewModel.init(destination, deviceProfile, preferences)
     }

@@ -289,7 +289,10 @@ fun SeriesOverviewContent(
                         chosenStreams = chosenStreams,
                         playOnClick = playOnClick,
                         moreOnClick = moreOnClick,
-                        watchOnClick = watchOnClick,
+                        watchOnClick = {
+                            watchOnClick.invoke()
+                            episodeRowFocusRequester.tryRequestFocus()
+                        },
                         modifier =
                             Modifier
                                 .fillMaxWidth()

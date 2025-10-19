@@ -26,6 +26,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.MutableLiveData
 import androidx.media3.common.Player
 import coil3.request.ErrorResult
 import com.github.damontecres.wholphin.ui.data.RowColumn
@@ -360,3 +361,8 @@ fun CoroutineScope.launchIO(
  *
  */
 fun UUID.toServerString() = this.toString().replace("-", "")
+
+suspend fun <T> MutableLiveData<T>.setValueOnMain(value: T) =
+    withContext(Dispatchers.Main) {
+        this@setValueOnMain.value = value
+    }
