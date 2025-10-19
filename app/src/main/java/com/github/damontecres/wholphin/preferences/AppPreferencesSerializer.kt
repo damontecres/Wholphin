@@ -8,6 +8,7 @@ import java.io.InputStream
 import java.io.OutputStream
 import java.util.UUID
 import javax.inject.Inject
+import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.seconds
 
 class AppPreferencesSerializer
@@ -42,6 +43,8 @@ class AppPreferencesSerializer
                                 skipCommercials = AppPreference.SkipCommercials.defaultValue
                                 skipPreviews = AppPreference.SkipPreviews.defaultValue
                                 skipRecaps = AppPreference.SkipRecaps.defaultValue
+                                passOutProtectionMs =
+                                    AppPreference.PassOutProtection.defaultValue.hours.inWholeMilliseconds
 
                                 overrides =
                                     PlaybackOverrides

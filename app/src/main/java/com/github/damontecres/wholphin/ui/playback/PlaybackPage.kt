@@ -196,6 +196,7 @@ fun PlaybackPage(
                     controllerViewState = controllerViewState,
                     updateSkipIndicator = updateSkipIndicator,
                     skipBackOnResume = preferences.appPreferences.playbackPreferences.skipBackOnResume,
+                    onInteraction = viewModel::reportInteraction,
                 )
 
             val showSegment =
@@ -413,12 +414,7 @@ fun PlaybackPage(
                             .align(Alignment.BottomCenter),
                 ) {
                     nextUp?.let {
-                        var autoPlayEnabled by
-                            remember {
-                                mutableStateOf(
-                                    preferences.appPreferences.playbackPreferences.autoPlayNext,
-                                )
-                            }
+                        var autoPlayEnabled by remember { mutableStateOf(viewModel.shouldAutoPlayNextUp()) }
                         var timeLeft by remember {
                             mutableLongStateOf(
                                 preferences.appPreferences.playbackPreferences.autoPlayNextDelaySeconds,
@@ -452,7 +448,10 @@ fun PlaybackPage(
                             description = it.data.overview,
                             imageUrl = it.imageUrl,
                             aspectRatio = it.data.primaryImageAspectRatio?.toFloat() ?: (16f / 9),
-                            onClick = { viewModel.playUpNextUp() },
+                            onClick = {
+                                viewModel.reportInteraction()
+                                viewModel.playUpNextUp()
+                            },
                             timeLeft = if (autoPlayEnabled) timeLeft.seconds else null,
                             modifier =
                                 Modifier
