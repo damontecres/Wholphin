@@ -192,53 +192,52 @@ class SwitchUserViewModel
 
         fun initiateQuickConnect(server: JellyfinServer) {
             quickConnectJob?.cancel()
-            viewModelScope.launchIO {
-                try {
-                    val api = jellyfin.createApi(server.url)
-                    var state =
-                        api
-                            .quickConnectApi
-                            .initiateQuickConnect()
-                            .content
-                    withContext(Dispatchers.Main) {
-                        quickConnectState.value = state
-                    }
+            quickConnectJob =
+                viewModelScope.launchIO {
+                    try {
+                        val api = jellyfin.createApi(server.url)
+                        var state =
+                            api
+                                .quickConnectApi
+                                .initiateQuickConnect()
+                                .content
 
-                    quickConnectJob =
-                        viewModelScope.launchIO {
-                            while (!state.authenticated) {
-                                delay(5_000L)
-                                state =
-                                    api.quickConnectApi
-                                        .getQuickConnectState(
-                                            secret = state.secret,
-                                        ).content
-                                withContext(Dispatchers.Main) {
-                                    quickConnectState.value = state
-                                }
-                            }
-                            val authenticationResult by api.userApi.authenticateWithQuickConnect(
-                                QuickConnectDto(secret = state.secret),
-                            )
-                            serverRepository.changeUser(server.url, authenticationResult)
-                            withContext(Dispatchers.Main) {
-                                navigationManager.goToHome()
-                            }
-                        }
-                } catch (ex: Exception) {
-                    Timber.e(ex, "Error during quick connect")
-                    if (ex is InvalidStatusException && ex.status == 401) {
                         withContext(Dispatchers.Main) {
-                            quickConnectState.value = null
-                            serverQuickConnect.value =
-                                serverQuickConnect.value!!.toMutableMap().apply {
-                                    put(server.id, false)
-                                }
+                            quickConnectState.value = state
                         }
+
+                        while (!state.authenticated) {
+                            delay(5_000L)
+                            state =
+                                api.quickConnectApi
+                                    .getQuickConnectState(
+                                        secret = state.secret,
+                                    ).content
+                            withContext(Dispatchers.Main) {
+                                quickConnectState.value = state
+                            }
+                        }
+                        val authenticationResult by api.userApi.authenticateWithQuickConnect(
+                            QuickConnectDto(secret = state.secret),
+                        )
+                        serverRepository.changeUser(server.url, authenticationResult)
+                        withContext(Dispatchers.Main) {
+                            navigationManager.goToHome()
+                        }
+                    } catch (ex: Exception) {
+                        Timber.e(ex, "Error during quick connect")
+                        if (ex is InvalidStatusException && ex.status == 401) {
+                            withContext(Dispatchers.Main) {
+                                quickConnectState.value = null
+                                serverQuickConnect.value =
+                                    serverQuickConnect.value!!.toMutableMap().apply {
+                                        put(server.id, false)
+                                    }
+                            }
+                        }
+                        setError("Error with Quick Connect", ex)
                     }
-                    setError("Error with Quick Connect", ex)
                 }
-            }
         }
 
         fun cancelQuickConnect() {
