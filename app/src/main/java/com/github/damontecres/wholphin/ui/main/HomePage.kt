@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.runtime.Composable
@@ -43,6 +44,7 @@ import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.Cards
 import com.github.damontecres.wholphin.ui.cards.BannerCard
 import com.github.damontecres.wholphin.ui.cards.ItemRow
+import com.github.damontecres.wholphin.ui.components.CircularProgress
 import com.github.damontecres.wholphin.ui.components.DotSeparatedRow
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.LoadingPage
@@ -71,11 +73,14 @@ fun HomePage(
     modifier: Modifier = Modifier,
     viewModel: HomeViewModel = hiltViewModel(),
 ) {
+    var firstLoad by rememberSaveable { mutableStateOf(true) }
     LaunchedEffect(Unit) {
-        viewModel.init(preferences)
+        viewModel.init(preferences).join()
+        firstLoad = false
     }
     val loading by viewModel.loadingState.observeAsState(LoadingState.Loading)
-    when (val state = loading) {
+    val homeRows by viewModel.homeRows.observeAsState(listOf())
+    when (val state = if (firstLoad) loading else LoadingState.Success) {
         is LoadingState.Error -> ErrorMessage(state)
 
         LoadingState.Loading,
@@ -83,13 +88,13 @@ fun HomePage(
         -> LoadingPage()
 
         LoadingState.Success -> {
-            val homeRows by viewModel.homeRows.observeAsState(listOf())
             HomePageContent(
                 homeRows,
                 onClickItem = {
                     viewModel.navigationManager.navigateTo(it.destination())
                 },
-                modifier,
+                loadingState = loading,
+                modifier = modifier,
             )
         }
     }
@@ -101,6 +106,7 @@ fun HomePageContent(
     onClickItem: (BaseItem) -> Unit,
     modifier: Modifier = Modifier,
     onFocusPosition: ((RowColumn) -> Unit)? = null,
+    loadingState: LoadingState? = null,
 ) {
     var position by rememberSaveable(stateSaver = RowColumnSaver) {
         mutableStateOf(RowColumn(0, 0))
@@ -217,6 +223,22 @@ fun HomePageContent(
                         )
                     }
                 }
+            }
+        }
+        Box(
+            modifier =
+                Modifier
+                    .padding(8.dp)
+                    .size(24.dp)
+                    .align(Alignment.BottomEnd),
+        ) {
+            when (loadingState) {
+                LoadingState.Pending,
+                LoadingState.Loading,
+                ->
+                    CircularProgress(Modifier.fillMaxSize())
+
+                else -> {}
             }
         }
     }

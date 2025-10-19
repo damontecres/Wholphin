@@ -13,6 +13,7 @@ import com.github.damontecres.wholphin.util.supportItemKinds
 import com.github.damontecres.wholphin.util.supportedCollectionTypes
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
@@ -36,13 +37,14 @@ class HomeViewModel
         val api: ApiClient,
         val navigationManager: NavigationManager,
     ) : ViewModel() {
-        val loadingState = MutableLiveData<LoadingState>(LoadingState.Loading)
+        val loadingState = MutableLiveData<LoadingState>(LoadingState.Pending)
         val homeRows = MutableLiveData<List<HomeRow>>()
 
-        fun init(preferences: UserPreferences) {
+        fun init(preferences: UserPreferences): Job {
+            loadingState.value = LoadingState.Loading
             val prefs = preferences.appPreferences.homePagePreferences
             val limit = prefs.maxItemsPerRow
-            viewModelScope.launch(
+            return viewModelScope.launch(
                 Dispatchers.IO +
                     LoadingExceptionHandler(
                         loadingState,
