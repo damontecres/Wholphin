@@ -102,7 +102,6 @@ class SeriesViewModel
                                 people.map { Person.fromDto(it, api) }
                             }.orEmpty()
                 }
-                maybePlayThemeSong(prefs.appPreferences.interfacePreferences.playThemeSongs)
             }
         }
 
@@ -110,7 +109,10 @@ class SeriesViewModel
          * If the series has a theme song & app settings allow, play it
          */
         @OptIn(UnstableApi::class)
-        private fun maybePlayThemeSong(playThemeSongs: ThemeSongVolume) {
+        fun maybePlayThemeSong(
+            seriesId: UUID,
+            playThemeSongs: ThemeSongVolume,
+        ) {
             viewModelScope.launch(ExceptionHandler()) {
                 val themeSongs = api.libraryApi.getThemeSongs(seriesId).content
                 themeSongs.items.firstOrNull()?.let { theme ->

@@ -105,12 +105,13 @@ class PlaybackViewModel
         val itemPlaybackRepository: ItemPlaybackRepository,
     ) : ViewModel(),
         Player.Listener {
-        val player =
+        val player by lazy {
             playerFactory
                 .create(false)
                 .apply {
                     playWhenReady = true
                 }
+        }
 
         val loading = MutableLiveData<LoadingState>(LoadingState.Loading)
 
@@ -709,6 +710,11 @@ class PlaybackViewModel
             viewModelScope.launch(Dispatchers.Main + ExceptionHandler()) {
                 loading.value = LoadingState.Error("Error during playback", error)
             }
+        }
+
+        fun release() {
+            playerFactory.release()
+            navigationManager.goBack()
         }
     }
 
