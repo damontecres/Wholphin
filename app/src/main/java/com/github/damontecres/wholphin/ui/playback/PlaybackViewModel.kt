@@ -74,6 +74,7 @@ import org.jellyfin.sdk.model.extensions.inWholeTicks
 import org.jellyfin.sdk.model.extensions.ticks
 import org.jellyfin.sdk.model.serializer.toUUIDOrNull
 import timber.log.Timber
+import java.util.Date
 import java.util.UUID
 import javax.inject.Inject
 import kotlin.time.Duration
@@ -647,6 +648,23 @@ class PlaybackViewModel
                     }
                 }
         }
+
+        private var lastInteractionDate: Date = Date()
+
+        fun reportInteraction() {
+            Timber.v("reportInteraction")
+            lastInteractionDate = Date()
+        }
+
+        fun shouldAutoPlayNextUp(): Boolean =
+            preferences.appPreferences.playbackPreferences.let {
+                it.autoPlayNext &&
+                    if (it.passOutProtectionMs > 0) {
+                        (Date().time - lastInteractionDate.time) < it.passOutProtectionMs
+                    } else {
+                        true
+                    }
+            }
 
         fun playUpNextUp() {
             playlist.value?.let {

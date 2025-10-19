@@ -8,6 +8,7 @@ import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.preferences.PreferenceGroup
 import com.github.damontecres.wholphin.ui.preferences.PreferenceScreenOption
 import com.github.damontecres.wholphin.ui.preferences.PreferenceValidation
+import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
@@ -263,6 +264,28 @@ sealed interface AppPreference<T> {
                         "Immediate"
                     } else {
                         "$value seconds"
+                    }
+                },
+            )
+
+        val PassOutProtection =
+            AppSliderPreference(
+                title = R.string.pass_out_protection,
+                defaultValue = 2,
+                min = 0,
+                max = 3,
+                interval = 1,
+                getter = { it.playbackPreferences.passOutProtectionMs.milliseconds.inWholeHours },
+                setter = { prefs, value ->
+                    prefs.updatePlaybackPreferences {
+                        passOutProtectionMs = value.hours.inWholeMilliseconds
+                    }
+                },
+                summarizer = { value ->
+                    if (value == 0L) {
+                        "Disabled"
+                    } else {
+                        "$value hours"
                     }
                 },
             )
@@ -529,6 +552,7 @@ val basicPreferences =
                     AppPreference.ControllerTimeout,
                     AppPreference.AutoPlayNextUp,
                     AppPreference.AutoPlayNextDelay,
+                    AppPreference.PassOutProtection,
                     AppPreference.SkipBackOnResume,
                 ),
         ),
