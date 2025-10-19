@@ -34,6 +34,7 @@ message PlaybackPreferences {
   SkipSegmentBehavior skip_previews = 14;
 
   PlaybackOverrides overrides = 15;
+  int64 pass_out_protection_ms = 16;
 }
 
 message HomePagePreferences{

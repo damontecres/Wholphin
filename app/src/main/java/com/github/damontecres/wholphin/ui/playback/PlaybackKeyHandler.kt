@@ -23,8 +23,11 @@ class PlaybackKeyHandler(
     private val controllerViewState: ControllerViewState,
     private val updateSkipIndicator: (Long) -> Unit,
     private val skipBackOnResume: Duration?,
+    private val onInteraction: () -> Unit,
 ) {
     fun onKeyEvent(it: KeyEvent): Boolean {
+        if (it.type == KeyEventType.KeyUp) onInteraction.invoke()
+
         var result = true
         if (!controlsEnabled) {
             result = false
