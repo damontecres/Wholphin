@@ -35,7 +35,7 @@ fun ChapterRow(
         LazyRow(
             state = rememberLazyListState(),
             horizontalArrangement = Arrangement.spacedBy(16.dp),
-            contentPadding = PaddingValues(16.dp),
+            contentPadding = PaddingValues(vertical = 8.dp, horizontal = 16.dp),
             modifier =
                 Modifier
                     .padding(start = 16.dp)

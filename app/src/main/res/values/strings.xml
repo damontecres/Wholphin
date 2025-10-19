@@ -82,5 +82,6 @@
     <string name="playback_overrides">Playback overrides</string>
     <string name="direct_play_ass">Direct play ASS subtitles</string>
     <string name="direct_play_pgs">Direct play PGS subtitles</string>
+    <string name="trailers">Trailers</string>
 
 </resources>

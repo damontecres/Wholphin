@@ -476,6 +476,7 @@ class PlaybackViewModel
                         it.release()
                         player.removeListener(it)
                     }
+
                     val activityListener =
                         TrackActivityPlaybackListener(
                             api = api,

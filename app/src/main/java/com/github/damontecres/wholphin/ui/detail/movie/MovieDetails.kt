@@ -28,12 +28,15 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import androidx.tv.material3.MaterialTheme
 import coil3.compose.AsyncImage
+import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.ChosenStreams
 import com.github.damontecres.wholphin.data.ItemPlaybackRepository
 import com.github.damontecres.wholphin.data.model.BaseItem
@@ -42,8 +45,11 @@ import com.github.damontecres.wholphin.data.model.ItemPlayback
 import com.github.damontecres.wholphin.data.model.Person
 import com.github.damontecres.wholphin.data.model.chooseSource
 import com.github.damontecres.wholphin.preferences.UserPreferences
+import com.github.damontecres.wholphin.ui.Cards
 import com.github.damontecres.wholphin.ui.cards.ChapterRow
+import com.github.damontecres.wholphin.ui.cards.ItemRow
 import com.github.damontecres.wholphin.ui.cards.PersonRow
+import com.github.damontecres.wholphin.ui.cards.SeasonCard
 import com.github.damontecres.wholphin.ui.components.DialogParams
 import com.github.damontecres.wholphin.ui.components.DialogPopup
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
@@ -70,6 +76,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.playStateApi
+import org.jellyfin.sdk.api.client.extensions.userLibraryApi
 import org.jellyfin.sdk.model.api.MediaStreamType
 import org.jellyfin.sdk.model.extensions.ticks
 import org.jellyfin.sdk.model.serializer.toUUID
@@ -89,6 +96,7 @@ class MovieViewModel
         val people = MutableLiveData<List<Person>>(listOf())
         val chapters = MutableLiveData<List<Chapter>>(listOf())
         val chosenStreams = MutableLiveData<ChosenStreams?>(null)
+        val trailers = MutableLiveData<List<BaseItem>>(listOf())
 
         override fun init(
             itemId: UUID,
@@ -102,6 +110,16 @@ class MovieViewModel
                         val result = itemPlaybackRepository.getSelectedTracks(item.id, item)
                         withContext(Dispatchers.Main) {
                             chosenStreams.value = result
+                        }
+                        val localTrailerCount = item.data.localTrailerCount ?: 0
+                        if (localTrailerCount > 0) {
+                            val trailers =
+                                api.userLibraryApi.getLocalTrailers(itemId).content.map {
+                                    BaseItem.from(it, api)
+                                }
+                            withContext(Dispatchers.Main) {
+                                this@MovieViewModel.trailers.value = trailers
+                            }
                         }
                     }
                     withContext(Dispatchers.Main) {
@@ -180,6 +198,7 @@ fun MovieDetails(
     val item by viewModel.item.observeAsState()
     val people by viewModel.people.observeAsState(listOf())
     val chapters by viewModel.chapters.observeAsState(listOf())
+    val trailers by viewModel.trailers.observeAsState(listOf())
     val loading by viewModel.loading.observeAsState(LoadingState.Loading)
     val chosenStreams by viewModel.chosenStreams.observeAsState(null)
 
@@ -200,6 +219,7 @@ fun MovieDetails(
                     chosenStreams = chosenStreams,
                     people = people,
                     chapters = chapters,
+                    trailers = trailers,
                     playOnClick = {
                         viewModel.navigationManager.navigateTo(
                             Destination.Playback(
@@ -270,6 +290,15 @@ fun MovieDetails(
                     watchOnClick = {
                         viewModel.setWatched((movie.data.userData?.played ?: false).not())
                     },
+                    trailerOnClick = { trailer ->
+                        viewModel.navigationManager.navigateTo(
+                            Destination.Playback(
+                                itemId = trailer.id,
+                                item = trailer,
+                                positionMs = 0L,
+                            ),
+                        )
+                    },
                     modifier = modifier,
                 )
             }
@@ -310,7 +339,9 @@ fun MovieDetailsContent(
     chosenStreams: ChosenStreams?,
     people: List<Person>,
     chapters: List<Chapter>,
+    trailers: List<BaseItem>,
     playOnClick: (Duration) -> Unit,
+    trailerOnClick: (BaseItem) -> Unit,
     overviewOnClick: () -> Unit,
     watchOnClick: () -> Unit,
     moreOnClick: () -> Unit,
@@ -359,7 +390,7 @@ fun MovieDetailsContent(
         }
         LazyColumn(
             verticalArrangement = Arrangement.spacedBy(16.dp),
-            contentPadding = PaddingValues(32.dp),
+            contentPadding = PaddingValues(horizontal = 32.dp, vertical = 8.dp),
             modifier = Modifier.fillMaxSize(),
         ) {
             item {
@@ -404,6 +435,27 @@ fun MovieDetailsContent(
                         onClick = {},
                         onLongClick = {},
                         modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+            }
+            if (trailers.isNotEmpty()) {
+                item {
+                    ItemRow(
+                        title = stringResource(R.string.trailers),
+                        items = trailers,
+                        onClickItem = trailerOnClick,
+                        onLongClickItem = {},
+                        cardContent = @Composable { index, item, mod, onClick, onLongClick ->
+                            SeasonCard(
+                                item = item,
+                                onClick = onClick,
+                                onLongClick = onLongClick,
+                                imageHeight = Cards.height2x3,
+                                imageWidth = Dp.Unspecified,
+                                showImageOverlay = false,
+                                modifier = mod,
+                            )
+                        },
                     )
                 }
             }

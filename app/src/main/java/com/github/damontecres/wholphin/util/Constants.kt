@@ -20,6 +20,7 @@ val supportItemKinds =
         BaseItemKind.SEASON,
         BaseItemKind.COLLECTION_FOLDER,
         BaseItemKind.USER_VIEW,
+        BaseItemKind.TRAILER,
     )
 
 val supportedCollectionTypes =
