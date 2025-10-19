@@ -32,6 +32,7 @@ class ThemeSongPlayer
             volume: ThemeSongVolume,
             url: String,
         ) {
+            stop()
             val volumeLevel =
                 when (volume) {
                     ThemeSongVolume.UNRECOGNIZED,
@@ -64,5 +65,6 @@ class ThemeSongPlayer
         fun stop() {
             player?.stop()
             player?.release()
+            player = null
         }
     }
