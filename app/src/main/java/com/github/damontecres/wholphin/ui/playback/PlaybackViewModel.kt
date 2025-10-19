@@ -15,7 +15,6 @@ import androidx.media3.common.Player
 import androidx.media3.common.TrackSelectionOverride
 import androidx.media3.common.Tracks
 import androidx.media3.common.util.UnstableApi
-import androidx.media3.exoplayer.ExoPlayer
 import com.github.damontecres.wholphin.data.ItemPlaybackDao
 import com.github.damontecres.wholphin.data.ItemPlaybackRepository
 import com.github.damontecres.wholphin.data.ServerRepository
@@ -38,6 +37,7 @@ import com.github.damontecres.wholphin.util.EqualityMutableLiveData
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
+import com.github.damontecres.wholphin.util.PlayerFactory
 import com.github.damontecres.wholphin.util.TrackActivityPlaybackListener
 import com.github.damontecres.wholphin.util.TrackSupport
 import com.github.damontecres.wholphin.util.checkForSupport
@@ -97,6 +97,7 @@ class PlaybackViewModel
     constructor(
         @param:ApplicationContext val context: Context,
         val api: ApiClient,
+        val playerFactory: PlayerFactory,
         val playlistCreator: PlaylistCreator,
         val navigationManager: NavigationManager,
         val itemPlaybackDao: ItemPlaybackDao,
@@ -104,10 +105,9 @@ class PlaybackViewModel
         val itemPlaybackRepository: ItemPlaybackRepository,
     ) : ViewModel(),
         Player.Listener {
-        val player: ExoPlayer =
-            ExoPlayer
-                .Builder(context)
-                .build()
+        val player =
+            playerFactory
+                .create(false)
                 .apply {
                     playWhenReady = true
                 }

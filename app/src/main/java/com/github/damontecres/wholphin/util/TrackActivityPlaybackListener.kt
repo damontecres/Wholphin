@@ -129,7 +129,7 @@ class TrackActivityPlaybackListener(
                 withContext(Dispatchers.Main) {
                     (if (position >= 0) position else player.currentPosition).milliseconds
                 }
-//            Timber.v("saveActivity: itemId=$itemId, pos=$calcPosition")
+            Timber.v("saveActivity: itemId=${itemPlayback.itemId}, pos=$calcPosition")
             api.playStateApi.reportPlaybackProgress(
                 PlaybackProgressInfo(
                     itemId = itemPlayback.itemId,
