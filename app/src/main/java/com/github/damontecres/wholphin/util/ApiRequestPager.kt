@@ -230,6 +230,7 @@ val GetResumeItemsRequestHandler =
             request.copy(
                 startIndex = startIndex,
                 limit = limit,
+                enableTotalRecordCount = enableTotalRecordCount,
             )
 
         override suspend fun execute(
@@ -249,6 +250,7 @@ val GetNextUpRequestHandler =
             request.copy(
                 startIndex = startIndex,
                 limit = limit,
+                enableTotalRecordCount = enableTotalRecordCount,
             )
 
         override suspend fun execute(
@@ -268,6 +270,7 @@ val GetSuggestionsRequestHandler =
             request.copy(
                 startIndex = startIndex,
                 limit = limit,
+                enableTotalRecordCount = enableTotalRecordCount,
             )
 
         override suspend fun execute(
@@ -306,6 +309,7 @@ val GetGenresRequestHandler =
             request.copy(
                 startIndex = startIndex,
                 limit = limit,
+                enableTotalRecordCount = enableTotalRecordCount,
             )
 
         override suspend fun execute(
