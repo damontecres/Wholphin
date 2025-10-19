@@ -37,6 +37,7 @@ import com.github.damontecres.wholphin.ui.nav.NavigationManager
 import com.github.damontecres.wholphin.ui.theme.WholphinTheme
 import com.github.damontecres.wholphin.util.AppUpgradeHandler
 import com.github.damontecres.wholphin.util.ExceptionHandler
+import com.github.damontecres.wholphin.util.ThemeSongPlayer
 import com.github.damontecres.wholphin.util.UpdateChecker
 import com.github.damontecres.wholphin.util.profile.createDeviceProfile
 import dagger.hilt.android.AndroidEntryPoint
@@ -67,6 +68,9 @@ class MainActivity : AppCompatActivity() {
 
     @Inject
     lateinit var appUpgradeHandler: AppUpgradeHandler
+
+    @Inject
+    lateinit var themeSongPlayer: ThemeSongPlayer
 
     @OptIn(ExperimentalTvMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -163,5 +167,10 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
+    }
+
+    override fun onStop() {
+        super.onStop()
+        themeSongPlayer.stop()
     }
 }
