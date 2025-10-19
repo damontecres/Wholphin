@@ -5,18 +5,12 @@ import android.widget.Toast
 import androidx.annotation.OptIn
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
-import androidx.media3.common.MediaItem
-import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
-import androidx.media3.datasource.okhttp.OkHttpDataSource
-import androidx.media3.exoplayer.ExoPlayer
-import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import com.github.damontecres.wholphin.data.ChosenStreams
 import com.github.damontecres.wholphin.data.ItemPlaybackRepository
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.ItemPlayback
 import com.github.damontecres.wholphin.data.model.Person
-import com.github.damontecres.wholphin.hilt.AuthOkHttpClient
 import com.github.damontecres.wholphin.preferences.ThemeSongVolume
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.launchIO
@@ -30,6 +24,7 @@ import com.github.damontecres.wholphin.util.GetEpisodesRequestHandler
 import com.github.damontecres.wholphin.util.GetItemsRequestHandler
 import com.github.damontecres.wholphin.util.LoadingExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
+import com.github.damontecres.wholphin.util.ThemeSongPlayer
 import com.github.damontecres.wholphin.util.profile.Codec
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -38,7 +33,6 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import okhttp3.OkHttpClient
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.libraryApi
 import org.jellyfin.sdk.api.client.extensions.playStateApi
@@ -62,11 +56,10 @@ class SeriesViewModel
     constructor(
         api: ApiClient,
         @param:ApplicationContext val context: Context,
-        @param:AuthOkHttpClient private val okHttpClient: OkHttpClient,
         private val navigationManager: NavigationManager,
         private val itemPlaybackRepository: ItemPlaybackRepository,
+        private val themeSongPlayer: ThemeSongPlayer,
     ) : ItemViewModel(api) {
-        private var player: Player? = null
         private lateinit var seriesId: UUID
         private lateinit var prefs: UserPreferences
         val loading = MutableLiveData<LoadingState>(LoadingState.Loading)
@@ -117,18 +110,6 @@ class SeriesViewModel
          */
         @OptIn(UnstableApi::class)
         private fun maybePlayThemeSong(playThemeSongs: ThemeSongVolume) {
-            val volume =
-                when (playThemeSongs) {
-                    ThemeSongVolume.UNRECOGNIZED,
-                    ThemeSongVolume.DISABLED,
-                    -> return
-
-                    ThemeSongVolume.LOWEST -> .05f
-                    ThemeSongVolume.LOW -> .1f
-                    ThemeSongVolume.MEDIUM -> .25f
-                    ThemeSongVolume.HIGH -> .5f
-                    ThemeSongVolume.HIGHEST -> 75f
-                }
             viewModelScope.launch(ExceptionHandler()) {
                 val themeSongs = api.libraryApi.getThemeSongs(seriesId).content
                 themeSongs.items.firstOrNull()?.let { theme ->
@@ -146,24 +127,10 @@ class SeriesViewModel
                             )
                         Timber.Forest.v("Found theme song for series $seriesId")
                         withContext(Dispatchers.Main) {
-                            val player =
-                                ExoPlayer
-                                    .Builder(context)
-                                    .setMediaSourceFactory(
-                                        DefaultMediaSourceFactory(
-                                            OkHttpDataSource.Factory(okHttpClient),
-                                        ),
-                                    ).build()
-                                    .apply {
-                                        this.volume = volume
-                                        playWhenReady = true
-                                        this@SeriesViewModel.player = this
-                                    }
+                            themeSongPlayer.play(playThemeSongs, url)
                             addCloseable {
-                                player.release()
+                                themeSongPlayer.stop()
                             }
-                            player.setMediaItem(MediaItem.fromUri(url))
-                            player.prepare()
                         }
                     }
                 }
@@ -171,8 +138,7 @@ class SeriesViewModel
         }
 
         fun release() {
-            player?.release()
-            player = null
+            themeSongPlayer.stop()
         }
 
         private suspend fun getSeasons(item: BaseItem): ItemListAndMapping {
