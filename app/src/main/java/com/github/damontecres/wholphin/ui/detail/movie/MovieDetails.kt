@@ -377,7 +377,7 @@ fun MovieDetailsContent(
                         bringIntoViewRequester = bringIntoViewRequester,
                         overviewOnClick = overviewOnClick,
                         Modifier
-                            .fillMaxWidth(.7f)
+                            .fillMaxWidth(.75f)
                             .padding(bottom = 8.dp),
                     )
                     ExpandablePlayButtons(

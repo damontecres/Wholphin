@@ -63,7 +63,7 @@ fun MovieDetailsHeader(
             text = movie.name ?: "",
             color = MaterialTheme.colorScheme.onSurface,
             style =
-                MaterialTheme.typography.displayLarge.copy(
+                MaterialTheme.typography.displayMedium.copy(
                     shadow =
                         Shadow(
                             color = Color.DarkGray,
