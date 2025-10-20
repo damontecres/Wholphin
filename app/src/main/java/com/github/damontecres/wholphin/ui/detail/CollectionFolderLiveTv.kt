@@ -33,6 +33,7 @@ import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.preferences.rememberTab
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
+import com.github.damontecres.wholphin.ui.detail.livetv.DvrSchedule
 import com.github.damontecres.wholphin.ui.detail.livetv.TvGuideGrid
 import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.nav.Destination
@@ -146,8 +147,11 @@ fun CollectionFolderLiveTv(
                 )
             }
             1 -> {
-                Text(
-                    text = "Not yet implemented",
+                DvrSchedule(
+                    true,
+                    Modifier
+                        .fillMaxSize()
+                        .focusRequester(focusRequester),
                 )
             }
 

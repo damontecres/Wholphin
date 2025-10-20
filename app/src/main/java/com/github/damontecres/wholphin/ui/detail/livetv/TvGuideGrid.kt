@@ -468,7 +468,12 @@ fun TvGuideGrid(
                 )
             },
         ) { index ->
-            Box(modifier = Modifier.fillMaxSize()) {
+            Box(
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .background(MaterialTheme.colorScheme.background),
+            ) {
                 val differentDay =
                     start.toLocalDate() !=
                         start
