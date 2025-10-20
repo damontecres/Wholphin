@@ -18,6 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.MutableLiveData
@@ -145,6 +146,17 @@ fun DvrScheduleContent(
                     .fillMaxWidth(.6f)
                     .background(MaterialTheme.colorScheme.surface),
         ) {
+            if (activeRecordings.isEmpty() && scheduledRecordings.isEmpty()) {
+                item {
+                    Text(
+                        text = "No scheduled recordings",
+                        style = MaterialTheme.typography.headlineSmall,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+            }
             if (activeRecordings.isNotEmpty()) {
                 item {
                     Text(
