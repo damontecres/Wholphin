@@ -21,7 +21,6 @@ import org.jellyfin.sdk.model.api.request.GetLiveTvChannelsRequest
 import org.jellyfin.sdk.model.extensions.ticks
 import timber.log.Timber
 import java.time.LocalDateTime
-import java.time.ZoneOffset
 import java.time.temporal.ChronoUnit
 import java.util.UUID
 import javax.inject.Inject
@@ -85,15 +84,6 @@ class LiveTvViewModel
                         .execute(api, request)
                         .content.items
                         .map { dto ->
-                            val utcStart = dto.startDate!!.toEpochSecond(ZoneOffset.UTC)
-                            utcStart
-                            val ttt =
-                                java.time.Duration
-                                    .between(
-                                        start,
-                                        dto.startDate!!,
-                                    )
-                            ttt
                             TvProgram(
                                 id = dto.id,
                                 channelId = dto.channelId!!,
@@ -103,30 +93,19 @@ class LiveTvViewModel
                                     java.time.Duration
                                         .between(start, dto.startDate!!)
                                         .seconds / (60f * 60f),
-//                                    dto.startDate!!.hours +
-//                                        (
-//                                            java.time.Duration
-//                                                .between(
-//                                                    start,
-//                                                    dto.startDate!!,
-//                                                ).toDaysPart() / 24
-//                                        ).coerceAtLeast(0),
                                 endHours =
                                     java.time.Duration
                                         .between(start, dto.endDate!!)
                                         .seconds / (60f * 60f),
-//                                    dto.endDate!!.hours +
-//                                        (
-//                                            java.time.Duration
-//                                                .between(
-//                                                    start,
-//                                                    dto.endDate!!,
-//                                                ).toHours() / 24
-//                                        ).coerceAtLeast(0),
                                 duration = dto.runTimeTicks!!.ticks,
                                 name = dto.seriesName ?: dto.name,
-                                subtitle = dto.name.takeIf { dto.seriesName.isNullOrBlank() },
-                                seasonEpisode = null, // TODO
+                                subtitle = dto.episodeTitle.takeIf { dto.isSeries ?: false },
+                                seasonEpisode =
+                                    if (dto.indexNumber != null && dto.parentIndexNumber != null) {
+                                        SeasonEpisode(dto.parentIndexNumber!!, dto.indexNumber!!)
+                                    } else {
+                                        null
+                                    },
                             )
                         }.filter { it.startHours >= 0 && it.endHours >= 0 } // TODO shouldn't need to filter client side
 
@@ -146,7 +125,7 @@ class LiveTvViewModel
                                         startHours = it.toFloat(),
                                         endHours = (it + 1).toFloat(),
                                         duration = 60.seconds,
-                                        name = "No date",
+                                        name = "No data",
                                         subtitle = null,
                                         seasonEpisode = null,
                                     )
