@@ -220,7 +220,7 @@ class SeriesViewModel
             itemId: UUID,
             played: Boolean,
             listIndex: Int?,
-        ) = viewModelScope.launch(ExceptionHandler()) {
+        ) = viewModelScope.launch(Dispatchers.IO + ExceptionHandler()) {
             if (played) {
                 api.playStateApi.markPlayedItem(itemId)
             } else {
@@ -229,6 +229,16 @@ class SeriesViewModel
             listIndex?.let {
                 refreshEpisode(itemId, listIndex)
             }
+        }
+
+        fun setSeasonWatched(
+            seasonId: UUID,
+            played: Boolean,
+        ) = viewModelScope.launch(Dispatchers.IO + ExceptionHandler()) {
+            setWatched(seasonId, played, null)
+            val series = fetchItem(seriesId, null)
+            val seasons = getSeasons(series)
+            this@SeriesViewModel.seasons.setValueOnMain(seasons)
         }
 
         fun setWatchedSeries(played: Boolean) =

@@ -135,6 +135,8 @@ class MainActivity : AppCompatActivity() {
                                 val initialDestination =
                                     if (server != null && user != null) {
                                         Destination.Home()
+                                    } else if (server != null) {
+                                        Destination.UserList
                                     } else {
                                         Destination.ServerList
                                     }
@@ -163,5 +165,12 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
+    }
+
+    override fun onPause() {
+        if (navigationManager.backStack.lastOrNull() is Destination.Playback) {
+            navigationManager.goBack()
+        }
+        super.onPause()
     }
 }

@@ -127,11 +127,7 @@ fun SeriesDetails(
                                 season,
                                 onClickItem = { viewModel.navigateTo(it.destination()) },
                                 markPlayed = { played ->
-                                    viewModel.setWatched(
-                                        season.id,
-                                        played,
-                                        null,
-                                    )
+                                    viewModel.setSeasonWatched(season.id, played)
                                 },
                             )
                     },
