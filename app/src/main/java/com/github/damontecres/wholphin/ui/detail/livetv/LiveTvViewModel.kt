@@ -34,7 +34,7 @@ import javax.inject.Inject
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
-const val MAX_HOURS = 24L
+const val MAX_HOURS = 48L
 
 @HiltViewModel
 class LiveTvViewModel
@@ -54,8 +54,6 @@ class LiveTvViewModel
 
         val fetchingItem = MutableLiveData<LoadingState>(LoadingState.Pending)
         val fetchedItem = MutableLiveData<BaseItem?>(null)
-
-        private val programMap = mutableMapOf<UUID, MutableLiveData<List<TvProgram?>>>()
 
         fun init() {
             loading.value = LoadingState.Loading
