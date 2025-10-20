@@ -228,6 +228,7 @@ dependencies {
     implementation(libs.timber)
     implementation(libs.aboutlibraries.core)
     implementation(libs.aboutlibraries.compose.m3)
+    implementation(libs.programguide)
 
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)

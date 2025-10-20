@@ -19,7 +19,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusProperties
@@ -30,6 +32,7 @@ import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.times
@@ -38,16 +41,162 @@ import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import androidx.tv.material3.surfaceColorAtElevation
 import coil3.compose.AsyncImage
+import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.playback.isDown
 import com.github.damontecres.wholphin.ui.playback.isUp
+import com.github.damontecres.wholphin.ui.rememberInt
 import com.github.damontecres.wholphin.ui.tryRequestFocus
+import com.github.damontecres.wholphin.util.ExceptionHandler
+import eu.wewox.programguide.ProgramGuide
+import eu.wewox.programguide.ProgramGuideDimensions
+import eu.wewox.programguide.ProgramGuideItem
+import eu.wewox.programguide.rememberSaveableProgramGuideState
+import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.time.LocalDateTime
 import java.util.UUID
 import kotlin.time.Duration.Companion.minutes
 
+fun translate(
+    channelIndex: Int,
+    programIndex: Int,
+) {
+    val before =
+        channels.subList(0, channelIndex + 1).map { it.id }.sumOf { programs[it]?.size ?: 0 }
+    programIndex - before
+}
+
+fun programsBeforeChannel(channelIndex: Int): Int = channels.subList(0, channelIndex).map { it.id }.sumOf { programs[it]?.size ?: 0 }
+
 @Composable
-fun TvGrid(modifier: Modifier = Modifier) = TvGridBox(channels, programs, modifier)
+fun TvGrid(modifier: Modifier = Modifier) {
+    val state = rememberSaveableProgramGuideState()
+    val scope = rememberCoroutineScope()
+    val startHours = 6
+    val timeline = 16..24
+    var focusedProgram by rememberInt(0)
+    var focusedChannel by rememberInt(0)
+
+    val dimensions =
+        ProgramGuideDimensions(
+            timelineHourWidth = 240.dp,
+            timelineHeight = 32.dp,
+            channelWidth = 64.dp,
+            channelHeight = 64.dp,
+            currentTimeWidth = 2.dp,
+        )
+
+    ProgramGuide(
+        state = state,
+        dimensions = dimensions,
+        modifier =
+            modifier
+                .focusable()
+                .onPreviewKeyEvent {
+                    if (it.type == KeyEventType.KeyUp) {
+                        return@onPreviewKeyEvent false
+                    }
+                    val newIndex =
+                        when (it.key) {
+                            Key.DirectionRight -> focusedProgram + 1
+                            Key.DirectionLeft -> focusedProgram - 1
+                            Key.DirectionUp -> {
+                                val start = programList[focusedProgram].start.hours
+                                focusedChannel = (focusedChannel - 1).coerceAtLeast(0)
+                                val channelId = channels[focusedChannel].id
+                                val pIndex =
+                                    programs[channelId]?.indexOfFirst { start in (it.start.hours..<it.end.hours) }
+                                        ?: -1
+                                if (pIndex >= 0) {
+                                    programsBeforeChannel(focusedChannel) + pIndex
+                                } else {
+                                    programsBeforeChannel(focusedChannel) + programs[channelId]!!.size
+                                }
+                            }
+
+                            Key.DirectionDown -> {
+                                val start = programList[focusedProgram].start.hours
+                                focusedChannel =
+                                    (focusedChannel + 1).coerceAtMost(channels.size - 1)
+                                val channelId = channels[focusedChannel].id
+                                val pro = programs[channelId]!!
+                                val pIndex =
+                                    pro.indexOfFirst { start in (it.start.hours..<it.end.hours) }
+                                        ?: -1
+                                if (pIndex >= 0) {
+                                    programsBeforeChannel(focusedChannel) + pIndex
+                                } else {
+                                    programsBeforeChannel(focusedChannel) + programs[channelId]!!.size
+                                }
+                            }
+
+                            else -> {
+                                null
+                            }
+                        }
+                    if (newIndex != null) {
+                        val before = programsBeforeChannel(focusedChannel)
+                        val max =
+                            before + channels[focusedChannel].let { programs[it.id]!!.size } - 1
+                        val index = newIndex.coerceIn(before, max)
+                        scope.launch(ExceptionHandler()) {
+                            state.animateToProgram(index, Alignment.Center)
+                            focusedProgram = index
+                        }
+                        return@onPreviewKeyEvent true
+                    }
+                    return@onPreviewKeyEvent false
+                },
+    ) {
+        guideStartHour = timeline.first.toFloat()
+        timeline(
+            count = timeline.count(),
+            layoutInfo = {
+                val start = timeline.toList()[it].toFloat()
+                ProgramGuideItem.Timeline(
+                    startHour = start,
+                    endHour = start + 1f,
+                )
+            },
+        ) { index ->
+            val start = timeline.toList()[index].toFloat()
+            Text(
+                text = "$start o'clock",
+            )
+        }
+
+        programs(
+            count = programList.size,
+            layoutInfo = { programIndex ->
+                val program = programList[programIndex]
+                val channelIndex = channels.indexOfFirst { it.id == program.channelId }
+                ProgramGuideItem.Program(channelIndex, program.start.hours, program.end.hours)
+            },
+        ) { programIndex ->
+            val program = programList[programIndex]
+            Text(
+                text = program.name ?: program.id.toString(),
+                modifier =
+                    Modifier.ifElse(
+                        programIndex == focusedProgram,
+                        Modifier.background(MaterialTheme.colorScheme.error),
+                    ),
+            )
+        }
+
+        channels(
+            count = channels.size,
+            layoutInfo = { channelIndex ->
+                ProgramGuideItem.Channel(channelIndex)
+            },
+        ) { channelIndex ->
+            Text(
+                text = channels[channelIndex].name ?: channelIndex.toString(),
+                modifier = Modifier.background(MaterialTheme.colorScheme.background),
+            )
+        }
+    }
+}
 
 @Composable
 fun TvGridBox(
@@ -294,7 +443,7 @@ val programs =
                     start = LocalDateTime.of(2025, 10, 16, 18, 0, 0),
                     end = LocalDateTime.of(2025, 10, 16, 19, 0, 0),
                     duration = 60.minutes,
-                    name = "Program #1",
+                    name = "C1 Program #1",
                     subtitle = null,
                     seasonEpisode = null,
                 ),
@@ -304,7 +453,7 @@ val programs =
                     start = LocalDateTime.of(2025, 10, 16, 19, 0, 0),
                     end = LocalDateTime.of(2025, 10, 16, 19, 30, 0),
                     duration = 30.minutes,
-                    name = "Program #2",
+                    name = "C1 Program #2",
                     subtitle = null,
                     seasonEpisode = null,
                 ),
@@ -314,7 +463,7 @@ val programs =
                     start = LocalDateTime.of(2025, 10, 16, 19, 30, 0),
                     end = LocalDateTime.of(2025, 10, 16, 20, 0, 0),
                     duration = 30.minutes,
-                    name = "Program #3",
+                    name = "C1 Program #3",
                     subtitle = null,
                     seasonEpisode = null,
                 ),
@@ -324,7 +473,7 @@ val programs =
                     start = LocalDateTime.of(2025, 10, 16, 20, 0, 0, 0),
                     end = LocalDateTime.of(2025, 10, 16, 21, 0, 0),
                     duration = 60.minutes,
-                    name = "Program #3",
+                    name = "C1 Program #3",
                     subtitle = null,
                     seasonEpisode = null,
                 ),
@@ -334,7 +483,7 @@ val programs =
                     start = LocalDateTime.of(2025, 10, 16, 21, 0, 0, 0),
                     end = LocalDateTime.of(2025, 10, 16, 22, 0, 0),
                     duration = 60.minutes,
-                    name = "Program #3",
+                    name = "C1 Program #3",
                     subtitle = null,
                     seasonEpisode = null,
                 ),
@@ -344,7 +493,7 @@ val programs =
                     start = LocalDateTime.of(2025, 10, 16, 22, 0, 0, 0),
                     end = LocalDateTime.of(2025, 10, 16, 23, 0, 0),
                     duration = 60.minutes,
-                    name = "Program #3",
+                    name = "C1 Program #3",
                     subtitle = null,
                     seasonEpisode = null,
                 ),
@@ -357,7 +506,7 @@ val programs =
                     start = LocalDateTime.of(2025, 10, 16, 18, 0, 0),
                     end = LocalDateTime.of(2025, 10, 16, 18, 30, 0),
                     duration = 30.minutes,
-                    name = "Program #1",
+                    name = "C2 Program #1",
                     subtitle = null,
                     seasonEpisode = null,
                 ),
@@ -367,7 +516,7 @@ val programs =
                     start = LocalDateTime.of(2025, 10, 16, 18, 30, 0),
                     end = LocalDateTime.of(2025, 10, 16, 19, 30, 0),
                     duration = 60.minutes,
-                    name = "Program #2",
+                    name = "C2 Program #2",
                     subtitle = null,
                     seasonEpisode = null,
                 ),
@@ -377,7 +526,17 @@ val programs =
                     start = LocalDateTime.of(2025, 10, 16, 19, 30, 0),
                     end = LocalDateTime.of(2025, 10, 16, 20, 0, 0),
                     duration = 30.minutes,
-                    name = "Program #3",
+                    name = "C2 Program #3",
+                    subtitle = null,
+                    seasonEpisode = null,
+                ),
+                TvProgram(
+                    id = UUID.randomUUID(),
+                    channelId = channel2Id,
+                    start = LocalDateTime.of(2025, 10, 16, 21, 0, 0, 0),
+                    end = LocalDateTime.of(2025, 10, 16, 22, 0, 0),
+                    duration = 60.minutes,
+                    name = "C2 Program #4",
                     subtitle = null,
                     seasonEpisode = null,
                 ),
@@ -390,7 +549,7 @@ val programs =
                     start = LocalDateTime.of(2025, 10, 16, 18, 0, 0),
                     end = LocalDateTime.of(2025, 10, 16, 18, 15, 0),
                     duration = 15.minutes,
-                    name = "Program #1",
+                    name = "C3 Program #1",
                     subtitle = null,
                     seasonEpisode = null,
                 ),
@@ -400,7 +559,7 @@ val programs =
                     start = LocalDateTime.of(2025, 10, 16, 18, 15, 0),
                     end = LocalDateTime.of(2025, 10, 16, 18, 45, 0),
                     duration = 30.minutes,
-                    name = "Program #2",
+                    name = "C3 Program #2",
                     subtitle = null,
                     seasonEpisode = null,
                 ),
@@ -410,7 +569,7 @@ val programs =
                     start = LocalDateTime.of(2025, 10, 16, 18, 45, 0),
                     end = LocalDateTime.of(2025, 10, 16, 19, 0, 0),
                     duration = 15.minutes,
-                    name = "Program #3",
+                    name = "C3 Program #3",
                     subtitle = null,
                     seasonEpisode = null,
                 ),
@@ -420,7 +579,7 @@ val programs =
                     start = LocalDateTime.of(2025, 10, 16, 19, 0, 0),
                     end = LocalDateTime.of(2025, 10, 16, 20, 0, 0),
                     duration = 60.minutes,
-                    name = "Program #3",
+                    name = "C3 Program #3",
                     subtitle = null,
                     seasonEpisode = null,
                 ),
@@ -433,7 +592,7 @@ val programs =
                     start = LocalDateTime.of(2025, 10, 16, 18, 0, 0),
                     end = LocalDateTime.of(2025, 10, 16, 19, 0, 0),
                     duration = 60.minutes,
-                    name = "Program #1",
+                    name = "C4 Program #1",
                     subtitle = null,
                     seasonEpisode = null,
                 ),
@@ -443,7 +602,7 @@ val programs =
                     start = LocalDateTime.of(2025, 10, 16, 19, 0, 0),
                     end = LocalDateTime.of(2025, 10, 16, 19, 30, 0),
                     duration = 30.minutes,
-                    name = "Program #2",
+                    name = "C4 Program #2",
                     subtitle = null,
                     seasonEpisode = null,
                 ),
@@ -453,9 +612,11 @@ val programs =
                     start = LocalDateTime.of(2025, 10, 16, 19, 30, 0),
                     end = LocalDateTime.of(2025, 10, 16, 20, 0, 0),
                     duration = 30.minutes,
-                    name = "Program #3",
+                    name = "C4 Program #3",
                     subtitle = null,
                     seasonEpisode = null,
                 ),
             ),
     )
+
+val programList = programs.values.flatten()
