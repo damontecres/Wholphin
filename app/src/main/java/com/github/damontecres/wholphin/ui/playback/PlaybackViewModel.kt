@@ -32,6 +32,7 @@ import com.github.damontecres.wholphin.preferences.SkipSegmentBehavior
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.nav.NavigationManager
+import com.github.damontecres.wholphin.ui.setValueOnMain
 import com.github.damontecres.wholphin.ui.showToast
 import com.github.damontecres.wholphin.ui.toServerString
 import com.github.damontecres.wholphin.util.EqualityMutableLiveData
@@ -216,6 +217,7 @@ class PlaybackViewModel
                     )
                     return@withContext false
                 }
+                val isLiveTv = base.type == BaseItemKind.TV_CHANNEL
 
                 dto = base
                 val title =
@@ -316,7 +318,7 @@ class PlaybackViewModel
                         rowId = -1,
                         userId = -1,
                         itemId = base.id,
-                        sourceId = mediaSource.id?.toUUIDOrNull(),
+                        sourceId = if (!isLiveTv) mediaSource.id?.toUUIDOrNull() else null,
                         audioIndex = audioIndex ?: TrackIndex.UNSPECIFIED,
                         subtitleIndex = subtitleIndex ?: TrackIndex.UNSPECIFIED,
                     )
@@ -386,12 +388,16 @@ class PlaybackViewModel
                             subtitleStreamIndex = subtitleIndex,
                             allowVideoStreamCopy = true,
                             allowAudioStreamCopy = true,
-                            autoOpenLiveStream = false,
+                            autoOpenLiveStream = true,
                             mediaSourceId = currentItemPlayback.sourceId?.toServerString(),
                             alwaysBurnInSubtitleWhenTranscoding = null,
                             maxStreamingBitrate = maxBitrate.toInt(),
                         ),
                     )
+            if (response.errorCode != null) {
+                loading.setValueOnMain(LoadingState.Error(response.errorCode?.serialName))
+                return@withContext
+            }
             val source = response.mediaSources.firstOrNull()
             source?.let { source ->
                 val mediaUrl =

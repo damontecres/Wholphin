@@ -4,6 +4,7 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.github.damontecres.wholphin.ui.detail.series.SeasonEpisode
+import com.github.damontecres.wholphin.ui.nav.NavigationManager
 import com.github.damontecres.wholphin.util.GetProgramsDtoHandler
 import com.github.damontecres.wholphin.util.LoadingExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
@@ -34,6 +35,7 @@ class LiveTvViewModel
     @Inject
     constructor(
         val api: ApiClient,
+        val navigationManager: NavigationManager,
     ) : ViewModel() {
         val loading = MutableLiveData<LoadingState>(LoadingState.Pending)
 

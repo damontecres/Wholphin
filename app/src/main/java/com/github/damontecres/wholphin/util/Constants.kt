@@ -21,6 +21,11 @@ val supportItemKinds =
         BaseItemKind.COLLECTION_FOLDER,
         BaseItemKind.USER_VIEW,
         BaseItemKind.TRAILER,
+        BaseItemKind.TV_CHANNEL,
+        BaseItemKind.TV_PROGRAM,
+        BaseItemKind.LIVE_TV_CHANNEL,
+        BaseItemKind.LIVE_TV_PROGRAM,
+        BaseItemKind.RECORDING,
     )
 
 val supportedCollectionTypes =

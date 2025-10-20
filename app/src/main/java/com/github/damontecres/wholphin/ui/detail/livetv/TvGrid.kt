@@ -35,6 +35,7 @@ import coil3.compose.AsyncImage
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.enableMarquee
+import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.rememberInt
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
@@ -73,6 +74,14 @@ fun TvGrid(
                     programList = programs,
                     programs = programsByChannel,
                     start = viewModel.start,
+                    onClick = { program ->
+                        viewModel.navigationManager.navigateTo(
+                            Destination.Playback(
+                                itemId = program.channelId,
+                                positionMs = 0L,
+                            ),
+                        )
+                    },
                     modifier =
                         Modifier
                             .fillMaxSize()
@@ -88,6 +97,7 @@ fun TvGrid(
     programList: List<TvProgram>,
     programs: Map<UUID, List<TvProgram>>,
     start: LocalDateTime,
+    onClick: (TvProgram) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val focusManager = LocalFocusManager.current
@@ -188,7 +198,9 @@ fun TvGrid(
                             }
 
                             Key.DirectionCenter, Key.Enter, Key.NumPadEnter -> {
-                                Timber.v("Clicked on ${programList[focusedProgramIndex]}")
+                                val program = programList[focusedProgramIndex]
+                                Timber.v("Clicked on %s", program)
+                                onClick.invoke(program)
                                 null
                             }
 
