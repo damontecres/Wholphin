@@ -373,32 +373,32 @@ fun PlaybackPage(
                             currentSegment = currentSegment,
                         )
                     }
+                }
 
-                    // Ask to skip intros, etc button
-                    AnimatedVisibility(
-                        showSegment,
-                        modifier =
-                            Modifier
-                                .padding(40.dp)
-                                .align(Alignment.BottomEnd),
-                    ) {
-                        currentSegment?.let { segment ->
-                            val focusRequester = remember { FocusRequester() }
-                            LaunchedEffect(Unit) {
-                                focusRequester.tryRequestFocus()
-                                delay(10.seconds)
-                                segmentCancelled = false
-                            }
-                            Button(
-                                onClick = {
-                                    player.seekTo(segment.endTicks.ticks.inWholeMilliseconds)
-                                },
-                                modifier = Modifier.focusRequester(focusRequester),
-                            ) {
-                                Text(
-                                    text = "Skip ${segment.type.serialName}",
-                                )
-                            }
+                // Ask to skip intros, etc button
+                AnimatedVisibility(
+                    showSegment,
+                    modifier =
+                        Modifier
+                            .padding(40.dp)
+                            .align(Alignment.BottomEnd),
+                ) {
+                    currentSegment?.let { segment ->
+                        val focusRequester = remember { FocusRequester() }
+                        LaunchedEffect(Unit) {
+                            focusRequester.tryRequestFocus()
+                            delay(10.seconds)
+                            segmentCancelled = false
+                        }
+                        Button(
+                            onClick = {
+                                player.seekTo(segment.endTicks.ticks.inWholeMilliseconds)
+                            },
+                            modifier = Modifier.focusRequester(focusRequester),
+                        ) {
+                            Text(
+                                text = "Skip ${segment.type.serialName}",
+                            )
                         }
                     }
                 }

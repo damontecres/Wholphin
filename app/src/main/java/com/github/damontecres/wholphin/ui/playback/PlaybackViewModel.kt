@@ -619,8 +619,8 @@ class PlaybackViewModel
                                         MediaSegmentType.COMMERCIAL -> prefs.skipCommercials
                                         MediaSegmentType.PREVIEW -> prefs.skipPreviews
                                         MediaSegmentType.RECAP -> prefs.skipRecaps
-                                        MediaSegmentType.OUTRO -> prefs.skipIntros
-                                        MediaSegmentType.INTRO -> prefs.skipOutros
+                                        MediaSegmentType.OUTRO -> prefs.skipOutros
+                                        MediaSegmentType.INTRO -> prefs.skipIntros
                                         MediaSegmentType.UNKNOWN -> SkipSegmentBehavior.IGNORE
                                     }
                                 withContext(Dispatchers.Main) {
@@ -731,8 +731,8 @@ class PlaybackViewModel
         }
 
         fun release() {
+            activityListener?.release()
             player.release()
-            navigationManager.goBack()
         }
     }
 
