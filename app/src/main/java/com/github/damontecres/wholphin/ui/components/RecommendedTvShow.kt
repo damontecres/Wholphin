@@ -8,6 +8,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.OneTimeLaunchedEffect
@@ -43,6 +44,7 @@ class RecommendedTvShowViewModel
     @Inject
     constructor(
         private val api: ApiClient,
+        private val serverRepository: ServerRepository,
     ) : ViewModel() {
         val loading = MutableLiveData<LoadingState>(LoadingState.Loading)
         val rows = MutableLiveData<List<HomeRow>>()
@@ -98,6 +100,7 @@ class RecommendedTvShowViewModel
 
                 val suggestionsRequest =
                     GetSuggestionsRequest(
+                        userId = serverRepository.currentUser?.id,
                         type = listOf(BaseItemKind.SERIES),
                     )
                 val suggestedItems = ApiRequestPager(api, suggestionsRequest, GetSuggestionsRequestHandler, viewModelScope)
