@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
@@ -16,6 +17,7 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -23,6 +25,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
@@ -34,19 +37,25 @@ import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.times
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.tv.material3.Button
 import androidx.tv.material3.ListItem
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import androidx.tv.material3.surfaceColorAtElevation
 import coil3.compose.AsyncImage
+import com.github.damontecres.wholphin.ui.components.ErrorMessage
+import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.playback.isDown
 import com.github.damontecres.wholphin.ui.playback.isUp
 import com.github.damontecres.wholphin.ui.rememberInt
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.ExceptionHandler
+import com.github.damontecres.wholphin.util.LoadingState
 import eu.wewox.programguide.ProgramGuide
 import eu.wewox.programguide.ProgramGuideDimensions
 import eu.wewox.programguide.ProgramGuideItem
@@ -66,14 +75,57 @@ fun translate(
     programIndex - before
 }
 
-fun programsBeforeChannel(channelIndex: Int): Int = channels.subList(0, channelIndex).map { it.id }.sumOf { programs[it]?.size ?: 0 }
+@Composable
+fun TvGrid(
+    modifier: Modifier = Modifier,
+    viewModel: LiveTvViewModel = hiltViewModel(),
+) {
+    LaunchedEffect(Unit) {
+        viewModel.init()
+    }
+    val loading by viewModel.loading.observeAsState(LoadingState.Pending)
+    val channels by viewModel.channels.observeAsState(listOf())
+    val programs by viewModel.programs.observeAsState(listOf())
+    val programsByChannel by viewModel.programsByChannel.observeAsState(mapOf())
+    when (val state = loading) {
+        is LoadingState.Error -> ErrorMessage(state)
+
+        LoadingState.Loading,
+        LoadingState.Pending,
+        -> LoadingPage()
+
+        LoadingState.Success ->
+            Column(modifier = modifier) {
+                Button(
+                    onClick = {},
+                ) {
+                    Text(
+                        text = "Button",
+                    )
+                }
+                TvGrid(
+                    channels = channels,
+                    programList = programs,
+                    programs = programsByChannel,
+                    start = viewModel.start,
+                    modifier = Modifier.fillMaxSize(),
+                )
+            }
+    }
+}
 
 @Composable
-fun TvGrid(modifier: Modifier = Modifier) {
+fun TvGrid(
+    channels: List<TvChannel>,
+    programList: List<TvProgram>,
+    programs: Map<UUID, List<TvProgram>>,
+    start: LocalDateTime,
+    modifier: Modifier = Modifier,
+) {
+    val focusManager = LocalFocusManager.current
     val state = rememberSaveableProgramGuideState()
     val scope = rememberCoroutineScope()
-    val startHours = 6
-    val timeline = 16..24
+//    val timeline = 0..<24
     var focusedProgram by rememberInt(0)
     var focusedChannel by rememberInt(0)
 
@@ -85,6 +137,8 @@ fun TvGrid(modifier: Modifier = Modifier) {
             channelHeight = 64.dp,
             currentTimeWidth = 2.dp,
         )
+
+    fun programsBeforeChannel(channelIndex: Int): Int = channels.subList(0, channelIndex).map { it.id }.sumOf { programs[it]?.size ?: 0 }
 
     ProgramGuide(
         state = state,
@@ -101,12 +155,32 @@ fun TvGrid(modifier: Modifier = Modifier) {
                             Key.DirectionRight -> focusedProgram + 1
                             Key.DirectionLeft -> focusedProgram - 1
                             Key.DirectionUp -> {
-                                val start = programList[focusedProgram].start.hours
-                                focusedChannel = (focusedChannel - 1).coerceAtLeast(0)
+                                val start = programList[focusedProgram].startHours
+                                focusedChannel = (focusedChannel - 1)
+                                if (focusedChannel < 0) {
+                                    focusManager.moveFocus(FocusDirection.Up)
+                                    null
+                                } else {
+                                    val channelId = channels[focusedChannel].id
+                                    val pIndex =
+                                        programs[channelId]?.indexOfFirst { start in (it.startHours..<it.endHours) }
+                                            ?: -1
+                                    if (pIndex >= 0) {
+                                        programsBeforeChannel(focusedChannel) + pIndex
+                                    } else {
+                                        programsBeforeChannel(focusedChannel) + programs[channelId]!!.size
+                                    }
+                                }
+                            }
+
+                            Key.DirectionDown -> {
+                                val start = programList[focusedProgram].startHours
+                                focusedChannel =
+                                    (focusedChannel + 1).coerceAtMost(channels.size - 1)
                                 val channelId = channels[focusedChannel].id
+                                val pro = programs[channelId].orEmpty()
                                 val pIndex =
-                                    programs[channelId]?.indexOfFirst { start in (it.start.hours..<it.end.hours) }
-                                        ?: -1
+                                    pro.indexOfFirst { start in (it.startHours..<it.endHours) }
                                 if (pIndex >= 0) {
                                     programsBeforeChannel(focusedChannel) + pIndex
                                 } else {
@@ -114,20 +188,9 @@ fun TvGrid(modifier: Modifier = Modifier) {
                                 }
                             }
 
-                            Key.DirectionDown -> {
-                                val start = programList[focusedProgram].start.hours
-                                focusedChannel =
-                                    (focusedChannel + 1).coerceAtMost(channels.size - 1)
-                                val channelId = channels[focusedChannel].id
-                                val pro = programs[channelId]!!
-                                val pIndex =
-                                    pro.indexOfFirst { start in (it.start.hours..<it.end.hours) }
-                                        ?: -1
-                                if (pIndex >= 0) {
-                                    programsBeforeChannel(focusedChannel) + pIndex
-                                } else {
-                                    programsBeforeChannel(focusedChannel) + programs[channelId]!!.size
-                                }
+                            Key.DirectionCenter, Key.Enter, Key.NumPadEnter -> {
+                                Timber.v("Clicked on ${programList[focusedProgram]}")
+                                null
                             }
 
                             else -> {
@@ -148,20 +211,19 @@ fun TvGrid(modifier: Modifier = Modifier) {
                     return@onPreviewKeyEvent false
                 },
     ) {
-        guideStartHour = timeline.first.toFloat()
+        guideStartHour = 0f
         timeline(
-            count = timeline.count(),
-            layoutInfo = {
-                val start = timeline.toList()[it].toFloat()
+            count = MAX_HOURS.toInt(),
+            layoutInfo = { index ->
                 ProgramGuideItem.Timeline(
-                    startHour = start,
-                    endHour = start + 1f,
+                    startHour = index.toFloat(),
+                    endHour = index + 1f,
                 )
             },
         ) { index ->
-            val start = timeline.toList()[index].toFloat()
+            val time = start.plusHours(index.toLong()).toLocalTime()
             Text(
-                text = "$start o'clock",
+                text = time.toString(),
             )
         }
 
@@ -170,7 +232,7 @@ fun TvGrid(modifier: Modifier = Modifier) {
             layoutInfo = { programIndex ->
                 val program = programList[programIndex]
                 val channelIndex = channels.indexOfFirst { it.id == program.channelId }
-                ProgramGuideItem.Program(channelIndex, program.start.hours, program.end.hours)
+                ProgramGuideItem.Program(channelIndex, program.startHours, program.endHours)
             },
         ) { programIndex ->
             val program = programList[programIndex]
@@ -191,7 +253,7 @@ fun TvGrid(modifier: Modifier = Modifier) {
             },
         ) { channelIndex ->
             Text(
-                text = channels[channelIndex].name ?: channelIndex.toString(),
+                text = channels[channelIndex].number ?: channelIndex.toString(),
                 modifier = Modifier.background(MaterialTheme.colorScheme.background),
             )
         }
@@ -442,6 +504,8 @@ val programs =
                     channelId = channel1Id,
                     start = LocalDateTime.of(2025, 10, 16, 18, 0, 0),
                     end = LocalDateTime.of(2025, 10, 16, 19, 0, 0),
+                    startHours = 18f,
+                    endHours = 19f,
                     duration = 60.minutes,
                     name = "C1 Program #1",
                     subtitle = null,
@@ -452,6 +516,8 @@ val programs =
                     channelId = channel1Id,
                     start = LocalDateTime.of(2025, 10, 16, 19, 0, 0),
                     end = LocalDateTime.of(2025, 10, 16, 19, 30, 0),
+                    startHours = 19f,
+                    endHours = 19.5f,
                     duration = 30.minutes,
                     name = "C1 Program #2",
                     subtitle = null,
@@ -462,6 +528,8 @@ val programs =
                     channelId = channel1Id,
                     start = LocalDateTime.of(2025, 10, 16, 19, 30, 0),
                     end = LocalDateTime.of(2025, 10, 16, 20, 0, 0),
+                    startHours = 19.5f,
+                    endHours = 20f,
                     duration = 30.minutes,
                     name = "C1 Program #3",
                     subtitle = null,
@@ -472,6 +540,8 @@ val programs =
                     channelId = channel1Id,
                     start = LocalDateTime.of(2025, 10, 16, 20, 0, 0, 0),
                     end = LocalDateTime.of(2025, 10, 16, 21, 0, 0),
+                    startHours = 20f,
+                    endHours = 21f,
                     duration = 60.minutes,
                     name = "C1 Program #3",
                     subtitle = null,
@@ -482,6 +552,8 @@ val programs =
                     channelId = channel1Id,
                     start = LocalDateTime.of(2025, 10, 16, 21, 0, 0, 0),
                     end = LocalDateTime.of(2025, 10, 16, 22, 0, 0),
+                    startHours = 21f,
+                    endHours = 22f,
                     duration = 60.minutes,
                     name = "C1 Program #3",
                     subtitle = null,
@@ -492,8 +564,22 @@ val programs =
                     channelId = channel1Id,
                     start = LocalDateTime.of(2025, 10, 16, 22, 0, 0, 0),
                     end = LocalDateTime.of(2025, 10, 16, 23, 0, 0),
+                    startHours = 22f,
+                    endHours = 23f,
                     duration = 60.minutes,
                     name = "C1 Program #3",
+                    subtitle = null,
+                    seasonEpisode = null,
+                ),
+                TvProgram(
+                    id = UUID.randomUUID(),
+                    channelId = channel1Id,
+                    start = LocalDateTime.of(2025, 10, 17, 1, 0, 0, 0),
+                    end = LocalDateTime.of(2025, 10, 17, 2, 0, 0),
+                    startHours = 25f,
+                    endHours = 26f,
+                    duration = 60.minutes,
+                    name = "C1 Program #4",
                     subtitle = null,
                     seasonEpisode = null,
                 ),
@@ -505,6 +591,8 @@ val programs =
                     channelId = channel2Id,
                     start = LocalDateTime.of(2025, 10, 16, 18, 0, 0),
                     end = LocalDateTime.of(2025, 10, 16, 18, 30, 0),
+                    startHours = 18f,
+                    endHours = 18.5f,
                     duration = 30.minutes,
                     name = "C2 Program #1",
                     subtitle = null,
@@ -515,6 +603,8 @@ val programs =
                     channelId = channel2Id,
                     start = LocalDateTime.of(2025, 10, 16, 18, 30, 0),
                     end = LocalDateTime.of(2025, 10, 16, 19, 30, 0),
+                    startHours = 18.5f,
+                    endHours = 19f,
                     duration = 60.minutes,
                     name = "C2 Program #2",
                     subtitle = null,
@@ -525,6 +615,8 @@ val programs =
                     channelId = channel2Id,
                     start = LocalDateTime.of(2025, 10, 16, 19, 30, 0),
                     end = LocalDateTime.of(2025, 10, 16, 20, 0, 0),
+                    startHours = 19.5f,
+                    endHours = 20f,
                     duration = 30.minutes,
                     name = "C2 Program #3",
                     subtitle = null,
@@ -535,6 +627,8 @@ val programs =
                     channelId = channel2Id,
                     start = LocalDateTime.of(2025, 10, 16, 21, 0, 0, 0),
                     end = LocalDateTime.of(2025, 10, 16, 22, 0, 0),
+                    startHours = 21f,
+                    endHours = 22f,
                     duration = 60.minutes,
                     name = "C2 Program #4",
                     subtitle = null,
@@ -549,6 +643,8 @@ val programs =
                     start = LocalDateTime.of(2025, 10, 16, 18, 0, 0),
                     end = LocalDateTime.of(2025, 10, 16, 18, 15, 0),
                     duration = 15.minutes,
+                    startHours = 18f,
+                    endHours = 18.25f,
                     name = "C3 Program #1",
                     subtitle = null,
                     seasonEpisode = null,
@@ -558,6 +654,8 @@ val programs =
                     channelId = channel3Id,
                     start = LocalDateTime.of(2025, 10, 16, 18, 15, 0),
                     end = LocalDateTime.of(2025, 10, 16, 18, 45, 0),
+                    startHours = 18.25f,
+                    endHours = 18.75f,
                     duration = 30.minutes,
                     name = "C3 Program #2",
                     subtitle = null,
@@ -568,6 +666,8 @@ val programs =
                     channelId = channel3Id,
                     start = LocalDateTime.of(2025, 10, 16, 18, 45, 0),
                     end = LocalDateTime.of(2025, 10, 16, 19, 0, 0),
+                    startHours = 18.75f,
+                    endHours = 19f,
                     duration = 15.minutes,
                     name = "C3 Program #3",
                     subtitle = null,
@@ -578,6 +678,8 @@ val programs =
                     channelId = channel3Id,
                     start = LocalDateTime.of(2025, 10, 16, 19, 0, 0),
                     end = LocalDateTime.of(2025, 10, 16, 20, 0, 0),
+                    startHours = 19f,
+                    endHours = 20f,
                     duration = 60.minutes,
                     name = "C3 Program #3",
                     subtitle = null,
@@ -591,6 +693,8 @@ val programs =
                     channelId = channel4Id,
                     start = LocalDateTime.of(2025, 10, 16, 18, 0, 0),
                     end = LocalDateTime.of(2025, 10, 16, 19, 0, 0),
+                    startHours = 18f,
+                    endHours = 19f,
                     duration = 60.minutes,
                     name = "C4 Program #1",
                     subtitle = null,
@@ -601,6 +705,8 @@ val programs =
                     channelId = channel4Id,
                     start = LocalDateTime.of(2025, 10, 16, 19, 0, 0),
                     end = LocalDateTime.of(2025, 10, 16, 19, 30, 0),
+                    startHours = 19f,
+                    endHours = 19.5f,
                     duration = 30.minutes,
                     name = "C4 Program #2",
                     subtitle = null,
@@ -611,6 +717,8 @@ val programs =
                     channelId = channel4Id,
                     start = LocalDateTime.of(2025, 10, 16, 19, 30, 0),
                     end = LocalDateTime.of(2025, 10, 16, 20, 0, 0),
+                    startHours = 19.5f,
+                    endHours = 20f,
                     duration = 30.minutes,
                     name = "C4 Program #3",
                     subtitle = null,

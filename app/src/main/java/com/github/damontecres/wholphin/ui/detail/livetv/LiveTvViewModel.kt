@@ -4,10 +4,7 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.github.damontecres.wholphin.ui.detail.series.SeasonEpisode
-import com.github.damontecres.wholphin.util.ApiRequestPager
-import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.GetProgramsDtoHandler
-import com.github.damontecres.wholphin.util.LazyList
 import com.github.damontecres.wholphin.util.LoadingExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -19,14 +16,19 @@ import org.jellyfin.sdk.api.client.extensions.imageApi
 import org.jellyfin.sdk.api.client.extensions.liveTvApi
 import org.jellyfin.sdk.model.api.GetProgramsDto
 import org.jellyfin.sdk.model.api.ImageType
+import org.jellyfin.sdk.model.api.ItemSortBy
 import org.jellyfin.sdk.model.api.request.GetLiveTvChannelsRequest
 import org.jellyfin.sdk.model.extensions.ticks
+import timber.log.Timber
 import java.time.LocalDateTime
-import java.util.AbstractList
+import java.time.ZoneOffset
+import java.time.temporal.ChronoUnit
 import java.util.UUID
 import javax.inject.Inject
 import kotlin.time.Duration
-import kotlin.time.Duration.Companion.minutes
+import kotlin.time.Duration.Companion.seconds
+
+const val MAX_HOURS = 24L
 
 @HiltViewModel
 class LiveTvViewModel
@@ -36,9 +38,12 @@ class LiveTvViewModel
     ) : ViewModel() {
         val loading = MutableLiveData<LoadingState>(LoadingState.Pending)
 
-        val start = LocalDateTime.now()
+        val start =
+            LocalDateTime.now().minusMinutes(30).truncatedTo(ChronoUnit.HOURS)
+
         val channels = MutableLiveData<List<TvChannel>>()
-        val programs = MutableLiveData<List<TvProgram?>>()
+        val programs = MutableLiveData<List<TvProgram>>()
+        val programsByChannel = MutableLiveData<Map<UUID, List<TvProgram>>>(mapOf())
 
         private val programMap = mutableMapOf<UUID, MutableLiveData<List<TvProgram?>>>()
 
@@ -47,101 +52,180 @@ class LiveTvViewModel
             viewModelScope.launch(Dispatchers.IO + LoadingExceptionHandler(loading, "Could not fetch channels")) {
                 val channelData by api.liveTvApi.getLiveTvChannels(
                     GetLiveTvChannelsRequest(
-                        startIndex = 8,
+                        startIndex = 0,
                     ),
                 )
                 val channels =
-                    LazyList(channelData.items) {
-                        TvChannel(
-                            it.id,
-                            it.channelNumber,
-                            it.channelName,
-                            api.imageApi.getItemImageUrl(it.id, ImageType.PRIMARY),
-                        )
-                    }
+                    channelData.items
+                        .map {
+                            TvChannel(
+                                it.id,
+                                it.channelNumber,
+                                it.channelName,
+                                api.imageApi.getItemImageUrl(it.id, ImageType.PRIMARY),
+                            )
+                        }
+                Timber.d("Got ${channels.size} channels")
+                val channelsIdToIndex =
+                    channels.withIndex().associateBy({ it.value.id }, { it.index })
+                val maxStartDate = start.plusHours(MAX_HOURS).minusMinutes(1)
+                val minEndDate = start.plusMinutes(1L)
                 val request =
                     GetProgramsDto(
-                        minStartDate = start,
+                        maxStartDate = maxStartDate,
+                        minEndDate = minEndDate,
+//                        maxEndDate = start.plusHours(25),
                         channelIds = channels.map { it.id },
+                        sortBy = listOf(ItemSortBy.START_DATE),
                     )
-                val pager = ApiRequestPager(api, request, GetProgramsDtoHandler, viewModelScope).init()
-                (0..<pager.size).forEach { pager.getBlocking(it) }
+//                val pager = ApiRequestPager(api, request, GetProgramsDtoHandler, viewModelScope).init()
+//                (0..<pager.size).forEach { pager.getBlocking(it) }
                 val programs =
-                    LazyList(pager) { item ->
-                        item?.data?.let { dto ->
+                    GetProgramsDtoHandler
+                        .execute(api, request)
+                        .content.items
+                        .map { dto ->
+                            val utcStart = dto.startDate!!.toEpochSecond(ZoneOffset.UTC)
+                            utcStart
+                            val ttt =
+                                java.time.Duration
+                                    .between(
+                                        start,
+                                        dto.startDate!!,
+                                    )
+                            ttt
                             TvProgram(
                                 id = dto.id,
                                 channelId = dto.channelId!!,
                                 start = dto.startDate!!,
                                 end = dto.endDate!!,
+                                startHours =
+                                    java.time.Duration
+                                        .between(start, dto.startDate!!)
+                                        .seconds / (60f * 60f),
+//                                    dto.startDate!!.hours +
+//                                        (
+//                                            java.time.Duration
+//                                                .between(
+//                                                    start,
+//                                                    dto.startDate!!,
+//                                                ).toDaysPart() / 24
+//                                        ).coerceAtLeast(0),
+                                endHours =
+                                    java.time.Duration
+                                        .between(start, dto.endDate!!)
+                                        .seconds / (60f * 60f),
+//                                    dto.endDate!!.hours +
+//                                        (
+//                                            java.time.Duration
+//                                                .between(
+//                                                    start,
+//                                                    dto.endDate!!,
+//                                                ).toHours() / 24
+//                                        ).coerceAtLeast(0),
                                 duration = dto.runTimeTicks!!.ticks,
                                 name = dto.seriesName ?: dto.name,
                                 subtitle = dto.name.takeIf { dto.seriesName.isNullOrBlank() },
                                 seasonEpisode = null, // TODO
                             )
+                        }.filter { it.startHours >= 0 && it.endHours >= 0 } // TODO shouldn't need to filter client side
+
+                val programsByChannel = programs.groupBy { it.channelId }
+                val emptyChannels = channels.filter { programsByChannel[it.id].orEmpty().isEmpty() }
+                val fake = mutableListOf<TvProgram>()
+                val finalProgramsByChannel =
+                    programsByChannel.toMutableMap().apply {
+                        emptyChannels.forEach { channel ->
+                            val fakePrograms =
+                                (0..<MAX_HOURS).map {
+                                    TvProgram(
+                                        id = UUID.randomUUID(), // TODO
+                                        channelId = channel.id,
+                                        start = start.plusHours(it),
+                                        end = start.plusHours(it + 1),
+                                        startHours = it.toFloat(),
+                                        endHours = (it + 1).toFloat(),
+                                        duration = 60.seconds,
+                                        name = "No date",
+                                        subtitle = null,
+                                        seasonEpisode = null,
+                                    )
+                                }
+                            put(channel.id, fakePrograms)
+                            fake.addAll(fakePrograms)
                         }
                     }
+                val finalProgramList =
+                    (programs + fake).sortedWith(
+                        compareBy(
+                            { channelsIdToIndex[it.channelId]!! },
+                            { it.start },
+                        ),
+                    )
+
+                Timber.d("Got ${programs.size} programs & ${fake.size} fake programs")
                 withContext(Dispatchers.Main) {
                     this@LiveTvViewModel.channels.value = channels
-                    this@LiveTvViewModel.programs.value = programs
+                    this@LiveTvViewModel.programs.value = finalProgramList
+                    this@LiveTvViewModel.programsByChannel.value = finalProgramsByChannel
                     loading.value = LoadingState.Success
                 }
             }
         }
 
-        fun getPrograms(channelId: UUID): MutableLiveData<List<TvProgram?>> =
-            programMap.getOrPut(channelId) {
-                val data = MutableLiveData<List<TvProgram?>>(listOf())
-                viewModelScope.launch(Dispatchers.IO + ExceptionHandler()) {
-                    val request =
-                        GetProgramsDto(
-                            minStartDate = start,
-                            channelIds = listOf(channelId),
-                        )
-                    val pager = ApiRequestPager(api, request, GetProgramsDtoHandler, viewModelScope).init()
-                    val programList =
-                        if (pager.isEmpty()) {
-                            object : AbstractList<TvProgram?>() {
-                                override fun get(index: Int): TvProgram? {
-                                    val start = start.plusHours(index.toLong())
-                                    val end = start.plusHours(1L)
-                                    return TvProgram(
-                                        id = UUID.randomUUID(),
-                                        channelId = channelId,
-                                        start = start,
-                                        end = start,
-                                        duration = 60.minutes,
-                                        name = "Unknown",
-                                        subtitle = null,
-                                        seasonEpisode = null, // TODO
-                                    )
-                                }
-
-                                override val size: Int
-                                    get() = Int.MAX_VALUE
-                            }
-                        } else {
-                            LazyList(pager) { item ->
-                                item?.data?.let { dto ->
-                                    TvProgram(
-                                        id = dto.id,
-                                        channelId = channelId,
-                                        start = dto.startDate!!,
-                                        end = dto.endDate!!,
-                                        duration = dto.runTimeTicks!!.ticks,
-                                        name = dto.seriesName ?: dto.name,
-                                        subtitle = dto.name.takeIf { dto.seriesName.isNullOrBlank() },
-                                        seasonEpisode = null, // TODO
-                                    )
-                                }
-                            }
-                        }
-                    withContext(Dispatchers.Main) {
-                        data.value = programList
-                    }
-                }
-                data
-            }
+//        fun getPrograms(channelId: UUID): MutableLiveData<List<TvProgram?>> =
+//            programMap.getOrPut(channelId) {
+//                val data = MutableLiveData<List<TvProgram?>>(listOf())
+//                viewModelScope.launch(Dispatchers.IO + ExceptionHandler()) {
+//                    val request =
+//                        GetProgramsDto(
+//                            minStartDate = start,
+//                            channelIds = listOf(channelId),
+//                        )
+//                    val pager = ApiRequestPager(api, request, GetProgramsDtoHandler, viewModelScope).init()
+//                    val programList =
+//                        if (pager.isEmpty()) {
+//                            object : AbstractList<TvProgram?>() {
+//                                override fun get(index: Int): TvProgram? {
+//                                    val start = start.plusHours(index.toLong())
+//                                    val end = start.plusHours(1L)
+//                                    return TvProgram(
+//                                        id = UUID.randomUUID(),
+//                                        channelId = channelId,
+//                                        start = start,
+//                                        end = start,
+//                                        duration = 60.minutes,
+//                                        name = "Unknown",
+//                                        subtitle = null,
+//                                        seasonEpisode = null, // TODO
+//                                    )
+//                                }
+//
+//                                override val size: Int
+//                                    get() = Int.MAX_VALUE
+//                            }
+//                        } else {
+//                            LazyList(pager) { item ->
+//                                item?.data?.let { dto ->
+//                                    TvProgram(
+//                                        id = dto.id,
+//                                        channelId = channelId,
+//                                        start = dto.startDate!!,
+//                                        end = dto.endDate!!,
+//                                        duration = dto.runTimeTicks!!.ticks,
+//                                        name = dto.seriesName ?: dto.name,
+//                                        subtitle = dto.name.takeIf { dto.seriesName.isNullOrBlank() },
+//                                        seasonEpisode = null, // TODO
+//                                    )
+//                                }
+//                            }
+//                        }
+//                    withContext(Dispatchers.Main) {
+//                        data.value = programList
+//                    }
+//                }
+//                data
+//            }
     }
 
 data class TvChannel(
@@ -156,6 +240,8 @@ data class TvProgram(
     val channelId: UUID,
     val start: LocalDateTime,
     val end: LocalDateTime,
+    val startHours: Float,
+    val endHours: Float,
     val duration: Duration,
     val name: String?,
     val subtitle: String?,
