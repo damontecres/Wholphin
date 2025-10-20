@@ -1,5 +1,6 @@
 package com.github.damontecres.wholphin.ui.detail.livetv
 
+import android.text.format.DateUtils
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
@@ -32,6 +33,7 @@ import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -66,6 +68,7 @@ import eu.wewox.programguide.rememberSaveableProgramGuideState
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.time.LocalDateTime
+import java.time.OffsetDateTime
 import java.util.UUID
 
 @Composable
@@ -271,6 +274,7 @@ fun TvGuideGrid(
     onClick: (Int, TvProgram) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val context = LocalContext.current
     val focusManager = LocalFocusManager.current
     val state = rememberSaveableProgramGuideState()
     val scope = rememberCoroutineScope()
@@ -465,7 +469,20 @@ fun TvGuideGrid(
             },
         ) { index ->
             Box(modifier = Modifier.fillMaxSize()) {
-                val time = start.plusHours(index.toLong()).toLocalTime()
+                val differentDay =
+                    start.toLocalDate() !=
+                        start
+                            .plusHours(index.toLong())
+                            .toLocalDate()
+                val time =
+                    DateUtils.formatDateTime(
+                        context,
+                        start
+                            .plusHours(index.toLong())
+                            .toInstant(OffsetDateTime.now().offset)
+                            .epochSecond * 1000,
+                        DateUtils.FORMAT_SHOW_TIME or if (differentDay) DateUtils.FORMAT_SHOW_WEEKDAY else 0,
+                    )
                 Text(
                     text = time.toString(),
                     modifier = Modifier.background(MaterialTheme.colorScheme.background),
