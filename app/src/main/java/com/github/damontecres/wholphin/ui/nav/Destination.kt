@@ -86,9 +86,6 @@ sealed class Destination(
     ) : Destination(false)
 
     @Serializable
-    data object LiveTvGuide : Destination(false)
-
-    @Serializable
     data object UpdateApp : Destination(true)
 
     @Serializable

@@ -16,12 +16,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
@@ -29,8 +32,11 @@ import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.tv.material3.Button
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Surface
 import androidx.tv.material3.SurfaceDefaults
@@ -38,13 +44,18 @@ import androidx.tv.material3.Text
 import androidx.tv.material3.contentColorFor
 import androidx.tv.material3.surfaceColorAtElevation
 import coil3.compose.AsyncImage
+import com.github.damontecres.wholphin.data.model.BaseItem
+import com.github.damontecres.wholphin.ui.components.CircularProgress
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.enableMarquee
+import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.rememberInt
+import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
+import com.github.damontecres.wholphin.util.seasonEpisode
 import com.google.common.cache.CacheBuilder
 import com.google.common.cache.CacheLoader
 import eu.wewox.programguide.ProgramGuide
@@ -57,7 +68,8 @@ import java.time.LocalDateTime
 import java.util.UUID
 
 @Composable
-fun TvGrid(
+fun TvGuideGrid(
+    requestFocusAfterLoading: Boolean,
     modifier: Modifier = Modifier,
     viewModel: LiveTvViewModel = hiltViewModel(),
 ) {
@@ -69,43 +81,193 @@ fun TvGrid(
     val programs by viewModel.programs.observeAsState(listOf())
     val programsByChannel by viewModel.programsByChannel.observeAsState(mapOf())
     when (val state = loading) {
-        is LoadingState.Error -> ErrorMessage(state)
+        is LoadingState.Error -> ErrorMessage(state, modifier)
 
         LoadingState.Loading,
         LoadingState.Pending,
-        -> LoadingPage()
+        -> LoadingPage(modifier)
 
-        LoadingState.Success ->
+        LoadingState.Success -> {
+            val fetchedItem by viewModel.fetchedItem.observeAsState(null)
+            val loadingItem by viewModel.fetchingItem.observeAsState(LoadingState.Pending)
+            var showItemDialog by remember { mutableStateOf<Int?>(null) }
+            val focusRequester = remember { FocusRequester() }
+            if (requestFocusAfterLoading) {
+                LaunchedEffect(Unit) {
+                    focusRequester.tryRequestFocus()
+                }
+            }
             Column(modifier = modifier) {
-                TvGrid(
+                TvGuideGrid(
                     channels = channels,
                     programList = programs,
                     programs = programsByChannel,
                     start = viewModel.start,
-                    onClick = { program ->
-                        viewModel.navigationManager.navigateTo(
-                            Destination.Playback(
-                                itemId = program.channelId,
-                                positionMs = 0L,
-                            ),
-                        )
+                    onClick = { index, program ->
+                        viewModel.getItem(program.id)
+                        showItemDialog = index
                     },
                     modifier =
                         Modifier
                             .fillMaxSize()
-                            .background(MaterialTheme.colorScheme.surface),
+                            .background(MaterialTheme.colorScheme.surface)
+                            .focusRequester(focusRequester),
                 )
             }
+            if (showItemDialog != null) {
+                val onDismissRequest = { showItemDialog = null }
+                ProgramDialog(
+                    item = fetchedItem,
+                    loading = loadingItem,
+                    onDismissRequest = onDismissRequest,
+                    onWatch = {
+                        onDismissRequest.invoke()
+                        fetchedItem?.data?.channelId?.let {
+                            viewModel.navigationManager.navigateTo(
+                                Destination.Playback(
+                                    itemId = it,
+                                    positionMs = 0L,
+                                ),
+                            )
+                        }
+                    },
+                    onRecord = { series ->
+                        onDismissRequest.invoke()
+                    },
+                    onCancelRecord = { series ->
+                        onDismissRequest.invoke()
+                        fetchedItem?.data?.let {
+                            viewModel.cancelRecording(
+                                series,
+                                if (series) it.seriesTimerId else it.timerId,
+                            )
+                        }
+                    },
+                )
+            }
+        }
     }
 }
 
 @Composable
-fun TvGrid(
+fun ProgramDialog(
+    item: BaseItem?,
+    loading: LoadingState,
+    onDismissRequest: () -> Unit,
+    onWatch: () -> Unit,
+    onRecord: (series: Boolean) -> Unit,
+    onCancelRecord: (series: Boolean) -> Unit,
+) {
+    Dialog(
+        onDismissRequest = onDismissRequest,
+    ) {
+        Box(
+            modifier =
+                Modifier.background(
+                    MaterialTheme.colorScheme.surfaceColorAtElevation(10.dp),
+                    shape = RoundedCornerShape(16.dp),
+                ),
+        ) {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                modifier =
+                    Modifier
+                        .padding(16.dp),
+            ) {
+                when (val st = loading) {
+                    is LoadingState.Error -> ErrorMessage(st)
+                    LoadingState.Loading,
+                    LoadingState.Pending,
+                    ->
+                        CircularProgress(
+                            Modifier
+                                .padding(8.dp)
+                                .size(48.dp),
+                        )
+
+                    LoadingState.Success ->
+                        item?.let { item ->
+                            val now = LocalDateTime.now()
+                            val dto = item.data
+                            val isRecording = dto.timerId.isNotNullOrBlank()
+                            val isSeriesRecording = dto.seriesTimerId.isNotNullOrBlank()
+                            Text(
+                                text = item.name ?: "",
+                                color = MaterialTheme.colorScheme.onSurface,
+                                style = MaterialTheme.typography.titleLarge,
+                            )
+                            if (dto.isSeries ?: false) {
+                                listOfNotNull(dto.seasonEpisode, dto.episodeTitle)
+                                    .joinToString(" - ")
+                                    .ifBlank { null }
+                                    ?.let {
+                                        Text(
+                                            text = it,
+                                            color = MaterialTheme.colorScheme.onSurface,
+                                            style = MaterialTheme.typography.titleMedium,
+                                        )
+                                    }
+                            }
+                            dto.overview?.let { overview ->
+                                Text(
+                                    text = overview,
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    overflow = TextOverflow.Ellipsis,
+                                    maxLines = 3,
+                                )
+                            }
+                            if (dto.isSeries ?: false) {
+                                Button(
+                                    onClick = {
+                                        if (isSeriesRecording) {
+                                            onCancelRecord.invoke(true)
+                                        } else {
+                                            onRecord.invoke(true)
+                                        }
+                                    },
+                                ) {
+                                    Text(
+                                        text = if (isSeriesRecording) "Cancel Series Recording" else "Record Series",
+                                    )
+                                }
+                            }
+                            Button(
+                                onClick = {
+                                    if (isRecording) {
+                                        onCancelRecord.invoke(false)
+                                    } else {
+                                        onRecord.invoke(false)
+                                    }
+                                },
+                            ) {
+                                Text(
+                                    text = if (isRecording) "Cancel Recording" else "Record Program",
+                                )
+                            }
+                            if (now.isAfter(dto.startDate!!) && now.isBefore(dto.endDate!!)) {
+                                Button(
+                                    onClick = onWatch,
+                                ) {
+                                    Text(
+                                        text = "Watch live",
+                                    )
+                                }
+                            }
+                        }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun TvGuideGrid(
     channels: List<TvChannel>,
     programList: List<TvProgram>,
     programs: Map<UUID, List<TvProgram>>,
     start: LocalDateTime,
-    onClick: (TvProgram) -> Unit,
+    onClick: (Int, TvProgram) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val focusManager = LocalFocusManager.current
@@ -224,7 +386,7 @@ fun TvGrid(
                             Key.DirectionCenter, Key.Enter, Key.NumPadEnter -> {
                                 val program = programList[focusedProgramIndex]
                                 Timber.v("Clicked on %s", program)
-                                onClick.invoke(program)
+                                onClick.invoke(focusedProgramIndex, program)
                                 null
                             }
 
@@ -255,7 +417,7 @@ fun TvGrid(
             },
         ) {
             Surface(
-                colors = SurfaceDefaults.colors(MaterialTheme.colorScheme.tertiary),
+                colors = SurfaceDefaults.colors(MaterialTheme.colorScheme.tertiary.copy(alpha = .5f)),
                 modifier = Modifier,
             ) {
                 // Empty
@@ -293,7 +455,7 @@ fun TvGrid(
                 if (focused) {
                     MaterialTheme.colorScheme.inverseSurface
                 } else {
-                    MaterialTheme.colorScheme.surfaceColorAtElevation(2.dp)
+                    MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp)
                 }
             val textColor = MaterialTheme.colorScheme.contentColorFor(background)
             Box(

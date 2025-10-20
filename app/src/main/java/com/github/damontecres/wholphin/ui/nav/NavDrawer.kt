@@ -15,7 +15,6 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
-import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
@@ -209,24 +208,6 @@ fun NavDrawer(
                             modifier =
                                 Modifier.ifElse(
                                     selectedIndex == -1,
-                                    Modifier.focusRequester(focusRequester),
-                                ),
-                        )
-                    }
-
-                    // TODO placeholder
-                    item {
-                        IconNavItem(
-                            text = "Live TV",
-                            icon = Icons.Default.Build,
-                            selected = selectedIndex == -3,
-                            onClick = {
-                                viewModel.setIndex(-3)
-                                viewModel.navigationManager.navigateToFromDrawer(Destination.LiveTvGuide)
-                            },
-                            modifier =
-                                Modifier.ifElse(
-                                    selectedIndex == -2,
                                     Modifier.focusRequester(focusRequester),
                                 ),
                         )

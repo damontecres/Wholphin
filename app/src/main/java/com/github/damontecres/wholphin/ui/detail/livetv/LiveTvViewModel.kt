@@ -3,9 +3,13 @@ package com.github.damontecres.wholphin.ui.detail.livetv
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.ui.detail.series.SeasonEpisode
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
+import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.nav.NavigationManager
+import com.github.damontecres.wholphin.ui.setValueOnMain
+import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.GetProgramsDtoHandler
 import com.github.damontecres.wholphin.util.LoadingExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
@@ -16,6 +20,7 @@ import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.imageApi
 import org.jellyfin.sdk.api.client.extensions.liveTvApi
+import org.jellyfin.sdk.api.client.extensions.userLibraryApi
 import org.jellyfin.sdk.model.api.GetProgramsDto
 import org.jellyfin.sdk.model.api.ImageType
 import org.jellyfin.sdk.model.api.ItemSortBy
@@ -46,6 +51,9 @@ class LiveTvViewModel
         val channels = MutableLiveData<List<TvChannel>>()
         val programs = MutableLiveData<List<TvProgram>>()
         val programsByChannel = MutableLiveData<Map<UUID, List<TvProgram>>>(mapOf())
+
+        val fetchingItem = MutableLiveData<LoadingState>(LoadingState.Pending)
+        val fetchedItem = MutableLiveData<BaseItem?>(null)
 
         private val programMap = mutableMapOf<UUID, MutableLiveData<List<TvProgram?>>>()
 
@@ -153,59 +161,55 @@ class LiveTvViewModel
             }
         }
 
-//        fun getPrograms(channelId: UUID): MutableLiveData<List<TvProgram?>> =
-//            programMap.getOrPut(channelId) {
-//                val data = MutableLiveData<List<TvProgram?>>(listOf())
-//                viewModelScope.launch(Dispatchers.IO + ExceptionHandler()) {
-//                    val request =
-//                        GetProgramsDto(
-//                            minStartDate = start,
-//                            channelIds = listOf(channelId),
-//                        )
-//                    val pager = ApiRequestPager(api, request, GetProgramsDtoHandler, viewModelScope).init()
-//                    val programList =
-//                        if (pager.isEmpty()) {
-//                            object : AbstractList<TvProgram?>() {
-//                                override fun get(index: Int): TvProgram? {
-//                                    val start = start.plusHours(index.toLong())
-//                                    val end = start.plusHours(1L)
-//                                    return TvProgram(
-//                                        id = UUID.randomUUID(),
-//                                        channelId = channelId,
-//                                        start = start,
-//                                        end = start,
-//                                        duration = 60.minutes,
-//                                        name = "Unknown",
-//                                        subtitle = null,
-//                                        seasonEpisode = null, // TODO
-//                                    )
-//                                }
-//
-//                                override val size: Int
-//                                    get() = Int.MAX_VALUE
-//                            }
-//                        } else {
-//                            LazyList(pager) { item ->
-//                                item?.data?.let { dto ->
-//                                    TvProgram(
-//                                        id = dto.id,
-//                                        channelId = channelId,
-//                                        start = dto.startDate!!,
-//                                        end = dto.endDate!!,
-//                                        duration = dto.runTimeTicks!!.ticks,
-//                                        name = dto.seriesName ?: dto.name,
-//                                        subtitle = dto.name.takeIf { dto.seriesName.isNullOrBlank() },
-//                                        seasonEpisode = null, // TODO
-//                                    )
-//                                }
-//                            }
-//                        }
-//                    withContext(Dispatchers.Main) {
-//                        data.value = programList
-//                    }
-//                }
-//                data
-//            }
+        fun getItem(itemId: UUID) {
+            fetchingItem.value = LoadingState.Loading
+            viewModelScope.launchIO(LoadingExceptionHandler(fetchingItem, "Error")) {
+                val result =
+                    api.userLibraryApi
+                        .getItem(itemId = itemId)
+                        .content
+                        .let { BaseItem.from(it, api) }
+                withContext(Dispatchers.Main) {
+                    fetchedItem.value = result
+                    fetchingItem.value = LoadingState.Success
+                }
+            }
+        }
+
+        fun cancelRecording(
+            series: Boolean,
+            timerId: String?,
+        ) {
+            if (timerId != null) {
+                viewModelScope.launch(ExceptionHandler(autoToast = true)) {
+                    if (series) {
+                        api.liveTvApi.cancelSeriesTimer(timerId)
+                    } else {
+                        api.liveTvApi.cancelTimer(timerId)
+                    }
+                }
+            }
+        }
+
+        suspend fun refreshProgram(
+            index: Int,
+            timerId: String?,
+            seriesTimerId: String?,
+        ) {
+            val newProgram =
+                programs.value?.getOrNull(index)?.copy(
+                    isRecording = timerId.isNotNullOrBlank(),
+                    isSeriesRecording = seriesTimerId.isNotNullOrBlank(),
+                )
+            if (newProgram != null) {
+                programs.value
+                    ?.toMutableList()
+                    ?.apply { set(index, newProgram) }
+                    ?.let {
+                        programs.setValueOnMain(it)
+                    }
+            }
+        }
     }
 
 /**

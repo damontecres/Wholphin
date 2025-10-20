@@ -6,12 +6,12 @@ import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.components.LicenseInfo
 import com.github.damontecres.wholphin.ui.detail.CollectionFolderGeneric
+import com.github.damontecres.wholphin.ui.detail.CollectionFolderLiveTv
 import com.github.damontecres.wholphin.ui.detail.CollectionFolderMovie
 import com.github.damontecres.wholphin.ui.detail.CollectionFolderTv
 import com.github.damontecres.wholphin.ui.detail.DebugPage
 import com.github.damontecres.wholphin.ui.detail.PlaylistDetails
 import com.github.damontecres.wholphin.ui.detail.SeriesDetails
-import com.github.damontecres.wholphin.ui.detail.livetv.TvGrid
 import com.github.damontecres.wholphin.ui.detail.movie.MovieDetails
 import com.github.damontecres.wholphin.ui.detail.series.SeriesOverview
 import com.github.damontecres.wholphin.ui.main.HomePage
@@ -144,13 +144,23 @@ fun DestinationContent(
                     )
 
                 BaseItemKind.USER_VIEW ->
-                    CollectionFolderGeneric(
-                        preferences,
-                        destination.itemId,
-                        destination.item,
-                        true,
-                        modifier,
-                    )
+                    when (destination.item?.data?.collectionType) {
+                        CollectionType.LIVETV ->
+                            CollectionFolderLiveTv(
+                                preferences,
+                                destination,
+                                modifier,
+                            )
+
+                        else ->
+                            CollectionFolderGeneric(
+                                preferences,
+                                destination.itemId,
+                                destination.item,
+                                true,
+                                modifier,
+                            )
+                    }
 
                 else -> {
                     Text("Unsupported item type: ${destination.type}")
@@ -164,11 +174,6 @@ fun DestinationContent(
                 item = null,
                 filter = destination.filter,
                 recursive = destination.recursive,
-                modifier = modifier,
-            )
-
-        Destination.LiveTvGuide ->
-            TvGrid(
                 modifier = modifier,
             )
 

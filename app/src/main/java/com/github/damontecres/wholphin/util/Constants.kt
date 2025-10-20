@@ -35,4 +35,5 @@ val supportedCollectionTypes =
         CollectionType.HOMEVIDEOS,
         CollectionType.PLAYLISTS,
         CollectionType.BOXSETS,
+        CollectionType.LIVETV,
     )
