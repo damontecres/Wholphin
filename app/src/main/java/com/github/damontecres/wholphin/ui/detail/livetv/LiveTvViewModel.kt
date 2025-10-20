@@ -4,6 +4,7 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.github.damontecres.wholphin.ui.detail.series.SeasonEpisode
+import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.nav.NavigationManager
 import com.github.damontecres.wholphin.util.GetProgramsDtoHandler
 import com.github.damontecres.wholphin.util.LoadingExceptionHandler
@@ -40,7 +41,7 @@ class LiveTvViewModel
         val loading = MutableLiveData<LoadingState>(LoadingState.Pending)
 
         val start =
-            LocalDateTime.now().minusMinutes(30).truncatedTo(ChronoUnit.HOURS)
+            LocalDateTime.now().truncatedTo(ChronoUnit.HOURS)
 
         val channels = MutableLiveData<List<TvChannel>>()
         val programs = MutableLiveData<List<TvProgram>>()
@@ -91,14 +92,8 @@ class LiveTvViewModel
                                 channelId = dto.channelId!!,
                                 start = dto.startDate!!,
                                 end = dto.endDate!!,
-                                startHours =
-                                    java.time.Duration
-                                        .between(start, dto.startDate!!)
-                                        .seconds / (60f * 60f),
-                                endHours =
-                                    java.time.Duration
-                                        .between(start, dto.endDate!!)
-                                        .seconds / (60f * 60f),
+                                startHours = hoursBetween(start, dto.startDate!!),
+                                endHours = hoursBetween(start, dto.endDate!!),
                                 duration = dto.runTimeTicks!!.ticks,
                                 name = dto.seriesName ?: dto.name,
                                 subtitle = dto.episodeTitle.takeIf { dto.isSeries ?: false },
@@ -108,6 +103,8 @@ class LiveTvViewModel
                                     } else {
                                         null
                                     },
+                                isRecording = dto.timerId.isNotNullOrBlank(),
+                                isSeriesRecording = dto.seriesTimerId.isNotNullOrBlank(),
                             )
                         }.filter { it.startHours >= 0 && it.endHours >= 0 } // TODO shouldn't need to filter client side
 
@@ -130,6 +127,8 @@ class LiveTvViewModel
                                         name = "No data",
                                         subtitle = null,
                                         seasonEpisode = null,
+                                        isRecording = false,
+                                        isSeriesRecording = false,
                                     )
                                 }
                             put(channel.id, fakePrograms)
@@ -209,6 +208,17 @@ class LiveTvViewModel
 //            }
     }
 
+/**
+ * Returns the number of hours between two [LocalDateTime]
+ */
+fun hoursBetween(
+    start: LocalDateTime,
+    target: LocalDateTime,
+): Float =
+    java.time.Duration
+        .between(start, target)
+        .seconds / (60f * 60f)
+
 data class TvChannel(
     val id: UUID,
     val number: String?,
@@ -227,4 +237,6 @@ data class TvProgram(
     val name: String?,
     val subtitle: String?,
     val seasonEpisode: SeasonEpisode?,
+    val isRecording: Boolean,
+    val isSeriesRecording: Boolean,
 )

@@ -9,16 +9,20 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
@@ -28,6 +32,8 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.tv.material3.MaterialTheme
+import androidx.tv.material3.Surface
+import androidx.tv.material3.SurfaceDefaults
 import androidx.tv.material3.Text
 import androidx.tv.material3.contentColorFor
 import androidx.tv.material3.surfaceColorAtElevation
@@ -39,6 +45,8 @@ import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.rememberInt
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
+import com.google.common.cache.CacheBuilder
+import com.google.common.cache.CacheLoader
 import eu.wewox.programguide.ProgramGuide
 import eu.wewox.programguide.ProgramGuideDimensions
 import eu.wewox.programguide.ProgramGuideItem
@@ -103,7 +111,6 @@ fun TvGrid(
     val focusManager = LocalFocusManager.current
     val state = rememberSaveableProgramGuideState()
     val scope = rememberCoroutineScope()
-//    val timeline = 0..<24
     var focusedProgramIndex by rememberInt(0)
     var focusedChannelIndex by rememberInt(0)
 
@@ -116,7 +123,23 @@ fun TvGrid(
             currentTimeWidth = 2.dp,
         )
 
-    fun programsBeforeChannel(channelIndex: Int): Int = channels.subList(0, channelIndex).map { it.id }.sumOf { programs[it]?.size ?: 0 }
+    val programsBeforeChannel =
+        remember {
+            CacheBuilder
+                .newBuilder()
+                .maximumSize(200)
+                .build<Int, Int>(
+                    object : CacheLoader<Int, Int>() {
+                        override fun load(key: Int): Int =
+                            channels
+                                .subList(0, key)
+                                .map { it.id }
+                                .sumOf { programs[it]?.size ?: 0 }
+                    },
+                )
+        }
+
+//    fun programsBeforeChannel(channelIndex: Int): Int = channels.subList(0, channelIndex).map { it.id }.sumOf { programs[it]?.size ?: 0 }
 
     ProgramGuide(
         state = state,
@@ -132,7 +155,7 @@ fun TvGrid(
                         when (it.key) {
                             Key.DirectionRight -> {
                                 val nextProgramIndex = focusedProgramIndex + 1
-                                val programsBefore = programsBeforeChannel(focusedChannelIndex)
+                                val programsBefore = programsBeforeChannel.get(focusedChannelIndex)
                                 val relativePosition = nextProgramIndex - programsBefore
                                 val channelPrograms =
                                     programs[channels[focusedChannelIndex].id].orEmpty()
@@ -147,7 +170,8 @@ fun TvGrid(
                             Key.DirectionLeft -> {
                                 val nextProgramIndex = focusedProgramIndex - 1
                                 if (nextProgramIndex >= 0) {
-                                    val programsBefore = programsBeforeChannel(focusedChannelIndex)
+                                    val programsBefore =
+                                        programsBeforeChannel.get(focusedChannelIndex)
                                     val relativePosition = nextProgramIndex - programsBefore
 //                                val channelPrograms =
 //                                    programs[channels[focusedChannel].id].orEmpty()
@@ -175,9 +199,9 @@ fun TvGrid(
                                         programs[channelId]?.indexOfFirst { start in (it.startHours..<it.endHours) }
                                             ?: -1
                                     if (pIndex >= 0) {
-                                        programsBeforeChannel(focusedChannelIndex) + pIndex
+                                        programsBeforeChannel.get(focusedChannelIndex) + pIndex
                                     } else {
-                                        programsBeforeChannel(focusedChannelIndex) + programs[channelId]!!.size
+                                        programsBeforeChannel.get(focusedChannelIndex) + programs[channelId]!!.size
                                     }
                                 }
                             }
@@ -191,9 +215,9 @@ fun TvGrid(
                                 val pIndex =
                                     pro.indexOfFirst { start in (it.startHours..<it.endHours) }
                                 if (pIndex >= 0) {
-                                    programsBeforeChannel(focusedChannelIndex) + pIndex
+                                    programsBeforeChannel.get(focusedChannelIndex) + pIndex
                                 } else {
-                                    programsBeforeChannel(focusedChannelIndex) + programs[channelId]!!.size
+                                    programsBeforeChannel.get(focusedChannelIndex) + programs[channelId]!!.size
                                 }
                             }
 
@@ -209,13 +233,13 @@ fun TvGrid(
                             }
                         }
                     if (newIndex != null) {
-                        val before = programsBeforeChannel(focusedChannelIndex)
+                        val before = programsBeforeChannel.get(focusedChannelIndex)
                         val max =
                             before + channels[focusedChannelIndex].let { programs[it.id]!!.size } - 1
                         val index = newIndex.coerceIn(before, max)
                         scope.launch(ExceptionHandler()) {
-                            state.animateToProgram(index, Alignment.Center)
                             focusedProgramIndex = index
+                            state.animateToProgram(index, Alignment.Center)
                         }
                         return@onPreviewKeyEvent true
                     }
@@ -223,6 +247,20 @@ fun TvGrid(
                 },
     ) {
         guideStartHour = 0f
+        currentTime(
+            layoutInfo = {
+                ProgramGuideItem.CurrentTime(
+                    hoursBetween(start, LocalDateTime.now()),
+                )
+            },
+        ) {
+            Surface(
+                colors = SurfaceDefaults.colors(MaterialTheme.colorScheme.tertiary),
+                modifier = Modifier,
+            ) {
+                // Empty
+            }
+        }
         timeline(
             count = MAX_HOURS.toInt(),
             layoutInfo = { index ->
@@ -294,6 +332,33 @@ fun TvGrid(
                                 modifier = Modifier,
                             )
                         }
+                }
+                if (program.isSeriesRecording) {
+                    Box(
+                        modifier =
+                            Modifier
+                                .padding(4.dp)
+                                .size(16.dp)
+                                .background(Color.Red.copy(alpha = .5f), shape = CircleShape)
+                                .align(Alignment.BottomEnd),
+                    )
+                    Box(
+                        modifier =
+                            Modifier
+                                .padding(start = 4.dp, top = 4.dp, bottom = 4.dp, end = 10.dp)
+                                .size(16.dp)
+                                .background(Color.Red, shape = CircleShape)
+                                .align(Alignment.BottomEnd),
+                    )
+                } else if (program.isRecording) {
+                    Box(
+                        modifier =
+                            Modifier
+                                .padding(4.dp)
+                                .size(16.dp)
+                                .background(Color.Red, shape = CircleShape)
+                                .align(Alignment.BottomEnd),
+                    )
                 }
             }
         }
