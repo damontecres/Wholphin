@@ -559,12 +559,13 @@ fun TvGuideGrid(
                         }
                 }
                 if (program.isSeriesRecording) {
+                    val color = if (program.isRecording) Color.Red else Color.Gray
                     Box(
                         modifier =
                             Modifier
                                 .padding(4.dp)
                                 .size(16.dp)
-                                .background(Color.Red.copy(alpha = .5f), shape = CircleShape)
+                                .background(color.copy(alpha = .5f), shape = CircleShape)
                                 .align(Alignment.BottomEnd),
                     )
                     Box(
@@ -572,7 +573,7 @@ fun TvGuideGrid(
                             Modifier
                                 .padding(start = 4.dp, top = 4.dp, bottom = 4.dp, end = 10.dp)
                                 .size(16.dp)
-                                .background(Color.Red, shape = CircleShape)
+                                .background(color, shape = CircleShape)
                                 .align(Alignment.BottomEnd),
                     )
                 } else if (program.isRecording) {

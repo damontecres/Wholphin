@@ -48,6 +48,7 @@ class LiveTvViewModel
 
         val start =
             LocalDateTime.now().truncatedTo(ChronoUnit.HOURS)
+        private lateinit var channelsIdToIndex: Map<UUID, Int>
 
         val channels = MutableLiveData<List<TvChannel>>()
         val programs = MutableLiveData<List<TvProgram>>()
@@ -75,88 +76,91 @@ class LiveTvViewModel
                             )
                         }
                 Timber.d("Got ${channels.size} channels")
-                val channelsIdToIndex =
+                channelsIdToIndex =
                     channels.withIndex().associateBy({ it.value.id }, { it.index })
-                val maxStartDate = start.plusHours(MAX_HOURS).minusMinutes(1)
-                val minEndDate = start.plusMinutes(1L)
-                val request =
-                    GetProgramsDto(
-                        maxStartDate = maxStartDate,
-                        minEndDate = minEndDate,
-//                        maxEndDate = start.plusHours(25),
-                        channelIds = channels.map { it.id },
-                        sortBy = listOf(ItemSortBy.START_DATE),
-                    )
-//                val pager = ApiRequestPager(api, request, GetProgramsDtoHandler, viewModelScope).init()
-//                (0..<pager.size).forEach { pager.getBlocking(it) }
-                val programs =
-                    GetProgramsDtoHandler
-                        .execute(api, request)
-                        .content.items
-                        .map { dto ->
-                            TvProgram(
-                                id = dto.id,
-                                channelId = dto.channelId!!,
-                                start = dto.startDate!!,
-                                end = dto.endDate!!,
-                                startHours = hoursBetween(start, dto.startDate!!),
-                                endHours = hoursBetween(start, dto.endDate!!),
-                                duration = dto.runTimeTicks!!.ticks,
-                                name = dto.seriesName ?: dto.name,
-                                subtitle = dto.episodeTitle.takeIf { dto.isSeries ?: false },
-                                seasonEpisode =
-                                    if (dto.indexNumber != null && dto.parentIndexNumber != null) {
-                                        SeasonEpisode(dto.parentIndexNumber!!, dto.indexNumber!!)
-                                    } else {
-                                        null
-                                    },
-                                isRecording = dto.timerId.isNotNullOrBlank(),
-                                isSeriesRecording = dto.seriesTimerId.isNotNullOrBlank(),
-                            )
-                        }.filter { it.startHours >= 0 && it.endHours >= 0 } // TODO shouldn't need to filter client side
+                fetchPrograms(channels)
 
-                val programsByChannel = programs.groupBy { it.channelId }
-                val emptyChannels = channels.filter { programsByChannel[it.id].orEmpty().isEmpty() }
-                val fake = mutableListOf<TvProgram>()
-                val finalProgramsByChannel =
-                    programsByChannel.toMutableMap().apply {
-                        emptyChannels.forEach { channel ->
-                            val fakePrograms =
-                                (0..<MAX_HOURS).map {
-                                    TvProgram(
-                                        id = UUID.randomUUID(), // TODO
-                                        channelId = channel.id,
-                                        start = start.plusHours(it),
-                                        end = start.plusHours(it + 1),
-                                        startHours = it.toFloat(),
-                                        endHours = (it + 1).toFloat(),
-                                        duration = 60.seconds,
-                                        name = "No data",
-                                        subtitle = null,
-                                        seasonEpisode = null,
-                                        isRecording = false,
-                                        isSeriesRecording = false,
-                                    )
-                                }
-                            put(channel.id, fakePrograms)
-                            fake.addAll(fakePrograms)
-                        }
-                    }
-                val finalProgramList =
-                    (programs + fake).sortedWith(
-                        compareBy(
-                            { channelsIdToIndex[it.channelId]!! },
-                            { it.start },
-                        ),
-                    )
-
-                Timber.d("Got ${programs.size} programs & ${fake.size} fake programs")
                 withContext(Dispatchers.Main) {
                     this@LiveTvViewModel.channels.value = channels
-                    this@LiveTvViewModel.programs.value = finalProgramList
-                    this@LiveTvViewModel.programsByChannel.value = finalProgramsByChannel
                     loading.value = LoadingState.Success
                 }
+            }
+        }
+
+        private suspend fun fetchPrograms(channels: List<TvChannel>) {
+            val maxStartDate = start.plusHours(MAX_HOURS).minusMinutes(1)
+            val minEndDate = start.plusMinutes(1L)
+            val request =
+                GetProgramsDto(
+                    maxStartDate = maxStartDate,
+                    minEndDate = minEndDate,
+                    channelIds = channels.map { it.id },
+                    sortBy = listOf(ItemSortBy.START_DATE),
+                )
+            val programs =
+                GetProgramsDtoHandler
+                    .execute(api, request)
+                    .content.items
+                    .map { dto ->
+                        TvProgram(
+                            id = dto.id,
+                            channelId = dto.channelId!!,
+                            start = dto.startDate!!,
+                            end = dto.endDate!!,
+                            startHours = hoursBetween(start, dto.startDate!!),
+                            endHours = hoursBetween(start, dto.endDate!!),
+                            duration = dto.runTimeTicks!!.ticks,
+                            name = dto.seriesName ?: dto.name,
+                            subtitle = dto.episodeTitle.takeIf { dto.isSeries ?: false },
+                            seasonEpisode =
+                                if (dto.indexNumber != null && dto.parentIndexNumber != null) {
+                                    SeasonEpisode(dto.parentIndexNumber!!, dto.indexNumber!!)
+                                } else {
+                                    null
+                                },
+                            isRecording = dto.timerId.isNotNullOrBlank(),
+                            isSeriesRecording = dto.seriesTimerId.isNotNullOrBlank(),
+                        )
+                    }.filter { it.startHours >= 0 && it.endHours >= 0 } // TODO shouldn't need to filter client side
+
+            val programsByChannel = programs.groupBy { it.channelId }
+            val emptyChannels = channels.filter { programsByChannel[it.id].orEmpty().isEmpty() }
+            val fake = mutableListOf<TvProgram>()
+            val finalProgramsByChannel =
+                programsByChannel.toMutableMap().apply {
+                    emptyChannels.forEach { channel ->
+                        val fakePrograms =
+                            (0..<MAX_HOURS).map {
+                                TvProgram(
+                                    id = UUID.randomUUID(), // TODO
+                                    channelId = channel.id,
+                                    start = start.plusHours(it),
+                                    end = start.plusHours(it + 1),
+                                    startHours = it.toFloat(),
+                                    endHours = (it + 1).toFloat(),
+                                    duration = 60.seconds,
+                                    name = "No data",
+                                    subtitle = null,
+                                    seasonEpisode = null,
+                                    isRecording = false,
+                                    isSeriesRecording = false,
+                                )
+                            }
+                        put(channel.id, fakePrograms)
+                        fake.addAll(fakePrograms)
+                    }
+                }
+            val finalProgramList =
+                (programs + fake).sortedWith(
+                    compareBy(
+                        { channelsIdToIndex[it.channelId]!! },
+                        { it.start },
+                    ),
+                )
+            Timber.d("Got ${programs.size} programs & ${fake.size} fake programs")
+            withContext(Dispatchers.Main) {
+                this@LiveTvViewModel.programs.value = finalProgramList
+                this@LiveTvViewModel.programsByChannel.value = finalProgramsByChannel
             }
         }
 
@@ -172,6 +176,13 @@ class LiveTvViewModel
                     fetchedItem.value = result
                     fetchingItem.value = LoadingState.Success
                 }
+                if (result.data.seriesTimerId != null) {
+                    val items =
+                        api.liveTvApi
+                            .getPrograms(GetProgramsDto(seriesTimerId = result.data.seriesTimerId))
+                            .content.items
+                    Timber.v("items=$items")
+                }
             }
         }
 
@@ -185,10 +196,11 @@ class LiveTvViewModel
                 viewModelScope.launch(ExceptionHandler(autoToast = true)) {
                     if (series) {
                         api.liveTvApi.cancelSeriesTimer(timerId)
+                        fetchPrograms(channels.value.orEmpty())
                     } else {
                         api.liveTvApi.cancelTimer(timerId)
+                        refreshProgram(programIndex, programId)
                     }
-                    refreshProgram(programIndex, programId)
                 }
             }
         }
@@ -202,6 +214,7 @@ class LiveTvViewModel
                 val d by api.liveTvApi.getDefaultTimer(programId.toServerString())
                 if (series) {
                     api.liveTvApi.createSeriesTimer(d)
+                    fetchPrograms(channels.value.orEmpty())
                 } else {
                     val payload =
                         TimerInfoDto(
@@ -227,8 +240,8 @@ class LiveTvViewModel
                             keepUntil = d.keepUntil,
                         )
                     api.liveTvApi.createTimer(payload)
+                    refreshProgram(programIndex, programId)
                 }
-                refreshProgram(programIndex, programId)
             }
         }
 
