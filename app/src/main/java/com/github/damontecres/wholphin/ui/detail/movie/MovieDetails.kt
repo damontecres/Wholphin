@@ -1,5 +1,6 @@
 package com.github.damontecres.wholphin.ui.detail.movie
 
+import android.content.Intent
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -9,6 +10,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.runtime.Composable
@@ -25,16 +29,20 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.core.net.toUri
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import androidx.tv.material3.MaterialTheme
+import androidx.tv.material3.Text
 import coil3.compose.AsyncImage
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.ChosenStreams
@@ -47,7 +55,6 @@ import com.github.damontecres.wholphin.data.model.chooseSource
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.Cards
 import com.github.damontecres.wholphin.ui.cards.ChapterRow
-import com.github.damontecres.wholphin.ui.cards.ItemRow
 import com.github.damontecres.wholphin.ui.cards.PersonRow
 import com.github.damontecres.wholphin.ui.cards.SeasonCard
 import com.github.damontecres.wholphin.ui.components.DialogParams
@@ -59,6 +66,9 @@ import com.github.damontecres.wholphin.ui.components.chooseStream
 import com.github.damontecres.wholphin.ui.components.chooseVersionParams
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialog
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialogInfo
+import com.github.damontecres.wholphin.ui.data.LocalTrailer
+import com.github.damontecres.wholphin.ui.data.RemoteTrailer
+import com.github.damontecres.wholphin.ui.data.Trailer
 import com.github.damontecres.wholphin.ui.detail.LoadingItemViewModel
 import com.github.damontecres.wholphin.ui.detail.buildMoreDialogItems
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
@@ -96,7 +106,7 @@ class MovieViewModel
         val people = MutableLiveData<List<Person>>(listOf())
         val chapters = MutableLiveData<List<Chapter>>(listOf())
         val chosenStreams = MutableLiveData<ChosenStreams?>(null)
-        val trailers = MutableLiveData<List<BaseItem>>(listOf())
+        val trailers = MutableLiveData<List<Trailer>>(listOf())
 
         override fun init(
             itemId: UUID,
@@ -111,15 +121,26 @@ class MovieViewModel
                         withContext(Dispatchers.Main) {
                             chosenStreams.value = result
                         }
+                        val remoteTrailers =
+                            item.data.remoteTrailers
+                                ?.mapNotNull { t ->
+                                    t.name?.let { name ->
+                                        t.url?.let { url ->
+                                            RemoteTrailer(name, url)
+                                        }
+                                    }
+                                }.orEmpty()
                         val localTrailerCount = item.data.localTrailerCount ?: 0
-                        if (localTrailerCount > 0) {
-                            val trailers =
+                        val localTrailers =
+                            if (localTrailerCount > 0) {
                                 api.userLibraryApi.getLocalTrailers(itemId).content.map {
-                                    BaseItem.from(it, api)
+                                    LocalTrailer(BaseItem.from(it, api))
                                 }
-                            withContext(Dispatchers.Main) {
-                                this@MovieViewModel.trailers.value = trailers
+                            } else {
+                                listOf()
                             }
+                        withContext(Dispatchers.Main) {
+                            this@MovieViewModel.trailers.value = localTrailers + remoteTrailers
                         }
                     }
                     withContext(Dispatchers.Main) {
@@ -192,6 +213,7 @@ fun MovieDetails(
     modifier: Modifier = Modifier,
     viewModel: MovieViewModel = hiltViewModel(),
 ) {
+    val context = LocalContext.current
     LaunchedEffect(Unit) {
         viewModel.init(destination.itemId, destination.item)
     }
@@ -291,13 +313,21 @@ fun MovieDetails(
                         viewModel.setWatched((movie.data.userData?.played ?: false).not())
                     },
                     trailerOnClick = { trailer ->
-                        viewModel.navigationManager.navigateTo(
-                            Destination.Playback(
-                                itemId = trailer.id,
-                                item = trailer,
-                                positionMs = 0L,
-                            ),
-                        )
+                        when (trailer) {
+                            is LocalTrailer ->
+                                viewModel.navigationManager.navigateTo(
+                                    Destination.Playback(
+                                        itemId = trailer.baseItem.id,
+                                        item = trailer.baseItem,
+                                        positionMs = 0L,
+                                    ),
+                                )
+
+                            is RemoteTrailer -> {
+                                val intent = Intent(Intent.ACTION_VIEW, trailer.url.toUri())
+                                context.startActivity(intent)
+                            }
+                        }
                     },
                     modifier = modifier,
                 )
@@ -339,9 +369,9 @@ fun MovieDetailsContent(
     chosenStreams: ChosenStreams?,
     people: List<Person>,
     chapters: List<Chapter>,
-    trailers: List<BaseItem>,
+    trailers: List<Trailer>,
     playOnClick: (Duration) -> Unit,
-    trailerOnClick: (BaseItem) -> Unit,
+    trailerOnClick: (Trailer) -> Unit,
     overviewOnClick: () -> Unit,
     watchOnClick: () -> Unit,
     moreOnClick: () -> Unit,
@@ -440,22 +470,10 @@ fun MovieDetailsContent(
             }
             if (trailers.isNotEmpty()) {
                 item {
-                    ItemRow(
-                        title = stringResource(R.string.trailers),
-                        items = trailers,
-                        onClickItem = trailerOnClick,
-                        onLongClickItem = {},
-                        cardContent = @Composable { index, item, mod, onClick, onLongClick ->
-                            SeasonCard(
-                                item = item,
-                                onClick = onClick,
-                                onLongClick = onLongClick,
-                                imageHeight = Cards.height2x3,
-                                imageWidth = Dp.Unspecified,
-                                showImageOverlay = false,
-                                modifier = mod,
-                            )
-                        },
+                    TrailerRow(
+                        trailers = trailers,
+                        onClickTrailer = trailerOnClick,
+                        modifier = Modifier.fillMaxWidth(),
                     )
                 }
             }
@@ -467,6 +485,80 @@ fun MovieDetailsContent(
                         onLongClick = {},
                         modifier = Modifier.fillMaxWidth(),
                     )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun TrailerRow(
+    trailers: List<Trailer>,
+    onClickTrailer: (Trailer) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val state = rememberLazyListState()
+    val firstFocus = remember { FocusRequester() }
+    Column(
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = modifier,
+    ) {
+        Text(
+            text = stringResource(R.string.trailers),
+            style = MaterialTheme.typography.titleLarge,
+            color = MaterialTheme.colorScheme.onBackground,
+        )
+        LazyRow(
+            state = state,
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .focusRestorer(firstFocus),
+        ) {
+            itemsIndexed(trailers) { index, item ->
+                val cardModifier =
+                    if (index == 0) {
+                        Modifier.focusRequester(firstFocus)
+                    } else {
+                        Modifier
+                    }
+                when (item) {
+                    is LocalTrailer ->
+                        SeasonCard(
+                            item = item.baseItem,
+                            onClick = { onClickTrailer.invoke(item) },
+                            onLongClick = {},
+                            imageHeight = Cards.height2x3,
+                            imageWidth = Dp.Unspecified,
+                            showImageOverlay = false,
+                            modifier = cardModifier,
+                        )
+
+                    is RemoteTrailer -> {
+                        val subtitle =
+                            when (item.url.toUri().host) {
+                                "youtube.com", "www.youtube.com" -> "YouTube"
+                                else -> null
+                            }
+                        SeasonCard(
+                            title = item.name,
+                            subtitle = subtitle,
+                            name = item.name,
+                            imageUrl = null,
+                            isFavorite = false,
+                            isPlayed = false,
+                            unplayedItemCount = 0,
+                            playedPercentage = 0.0,
+                            onClick = { onClickTrailer.invoke(item) },
+                            onLongClick = {},
+                            modifier = cardModifier,
+                            showImageOverlay = false,
+                            imageHeight = Cards.height2x3,
+                            imageWidth = Dp.Unspecified,
+                        )
+                    }
                 }
             }
         }

@@ -43,8 +43,47 @@ fun SeasonCard(
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
     showImageOverlay: Boolean = false,
     aspectRatio: Float = item?.data?.primaryImageAspectRatio?.toFloat() ?: (2f / 3f),
+) = SeasonCard(
+    title = item?.title,
+    subtitle = item?.subtitle,
+    name = item?.name,
+    imageUrl = item?.imageUrl,
+    isFavorite = item?.data?.userData?.isFavorite ?: false,
+    isPlayed = item?.data?.userData?.played ?: false,
+    unplayedItemCount = item?.data?.userData?.unplayedItemCount ?: 0,
+    playedPercentage = item?.data?.userData?.playedPercentage ?: 0.0,
+    onClick = onClick,
+    onLongClick = onLongClick,
+    modifier = modifier,
+    imageHeight = imageHeight,
+    imageWidth = imageWidth,
+    interactionSource = interactionSource,
+    showImageOverlay = showImageOverlay,
+    aspectRatio = aspectRatio,
+)
+
+/**
+ * A Card for a TV Show Season, but can generically show most items
+ */
+@Composable
+fun SeasonCard(
+    title: String?,
+    subtitle: String?,
+    name: String?,
+    imageUrl: String?,
+    isFavorite: Boolean,
+    isPlayed: Boolean,
+    unplayedItemCount: Int,
+    playedPercentage: Double,
+    onClick: () -> Unit,
+    onLongClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    imageHeight: Dp = Dp.Unspecified,
+    imageWidth: Dp = Dp.Unspecified,
+    interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
+    showImageOverlay: Boolean = false,
+    aspectRatio: Float = (2f / 3f),
 ) {
-    val dto = item?.data
     val focused by interactionSource.collectIsFocusedAsState()
     val spaceBetween by animateDpAsState(if (focused) 12.dp else 4.dp)
     val spaceBelow by animateDpAsState(if (focused) 4.dp else 12.dp)
@@ -89,13 +128,13 @@ fun SeasonCard(
                         .fillMaxSize(),
             ) {
                 ItemCardImage(
-                    imageUrl = item?.imageUrl,
-                    name = item?.name,
+                    imageUrl = imageUrl,
+                    name = name,
                     showOverlay = showImageOverlay,
-                    favorite = dto?.userData?.isFavorite ?: false,
-                    watched = dto?.userData?.played ?: false,
-                    unwatchedCount = dto?.userData?.unplayedItemCount ?: -1,
-                    watchedPercent = dto?.userData?.playedPercentage,
+                    favorite = isFavorite,
+                    watched = isPlayed,
+                    unwatchedCount = unplayedItemCount,
+                    watchedPercent = playedPercentage,
                     useFallbackText = false,
                     modifier =
                         Modifier
@@ -111,7 +150,7 @@ fun SeasonCard(
                     .fillMaxWidth(),
         ) {
             Text(
-                text = item?.title ?: "",
+                text = title ?: "",
                 maxLines = 1,
                 textAlign = TextAlign.Center,
                 modifier =
@@ -121,7 +160,7 @@ fun SeasonCard(
                         .enableMarquee(focusedAfterDelay),
             )
             Text(
-                text = item?.subtitle ?: "",
+                text = subtitle ?: "",
                 maxLines = 1,
                 textAlign = TextAlign.Center,
                 modifier =
