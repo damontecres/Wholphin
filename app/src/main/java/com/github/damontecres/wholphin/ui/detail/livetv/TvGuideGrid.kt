@@ -11,8 +11,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -28,7 +26,6 @@ import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
@@ -36,11 +33,8 @@ import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.tv.material3.Button
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Surface
 import androidx.tv.material3.SurfaceDefaults
@@ -48,18 +42,14 @@ import androidx.tv.material3.Text
 import androidx.tv.material3.contentColorFor
 import androidx.tv.material3.surfaceColorAtElevation
 import coil3.compose.AsyncImage
-import com.github.damontecres.wholphin.data.model.BaseItem
-import com.github.damontecres.wholphin.ui.components.CircularProgress
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.enableMarquee
-import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.rememberInt
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
-import com.github.damontecres.wholphin.util.seasonEpisode
 import com.google.common.cache.CacheBuilder
 import com.google.common.cache.CacheLoader
 import eu.wewox.programguide.ProgramGuide
@@ -175,121 +165,6 @@ fun TvGuideGrid(
                         onDismissRequest.invoke()
                     },
                 )
-            }
-        }
-    }
-}
-
-@Composable
-fun ProgramDialog(
-    item: BaseItem?,
-    loading: LoadingState,
-    onDismissRequest: () -> Unit,
-    onWatch: () -> Unit,
-    onRecord: (series: Boolean) -> Unit,
-    onCancelRecord: (series: Boolean) -> Unit,
-) {
-    Dialog(
-        onDismissRequest = onDismissRequest,
-    ) {
-        val focusRequester = remember { FocusRequester() }
-        Box(
-            modifier =
-                Modifier
-                    .background(
-                        MaterialTheme.colorScheme.surfaceColorAtElevation(10.dp),
-                        shape = RoundedCornerShape(16.dp),
-                    ).focusRequester(focusRequester),
-        ) {
-            Column(
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                modifier =
-                    Modifier
-                        .padding(16.dp),
-            ) {
-                when (val st = loading) {
-                    is LoadingState.Error -> ErrorMessage(st)
-                    LoadingState.Loading,
-                    LoadingState.Pending,
-                    ->
-                        CircularProgress(
-                            Modifier
-                                .padding(8.dp)
-                                .size(48.dp),
-                        )
-
-                    LoadingState.Success ->
-                        item?.let { item ->
-                            val now = LocalDateTime.now()
-                            val dto = item.data
-                            val isRecording = dto.timerId.isNotNullOrBlank()
-                            val isSeriesRecording = dto.seriesTimerId.isNotNullOrBlank()
-                            LaunchedEffect(Unit) { focusRequester.tryRequestFocus() }
-                            Text(
-                                text = item.name ?: "",
-                                color = MaterialTheme.colorScheme.onSurface,
-                                style = MaterialTheme.typography.titleLarge,
-                            )
-                            if (dto.isSeries ?: false) {
-                                listOfNotNull(dto.seasonEpisode, dto.episodeTitle)
-                                    .joinToString(" - ")
-                                    .ifBlank { null }
-                                    ?.let {
-                                        Text(
-                                            text = it,
-                                            color = MaterialTheme.colorScheme.onSurface,
-                                            style = MaterialTheme.typography.titleMedium,
-                                        )
-                                    }
-                            }
-                            dto.overview?.let { overview ->
-                                Text(
-                                    text = overview,
-                                    color = MaterialTheme.colorScheme.onSurface,
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    overflow = TextOverflow.Ellipsis,
-                                    maxLines = 3,
-                                )
-                            }
-                            if (dto.isSeries ?: false) {
-                                Button(
-                                    onClick = {
-                                        if (isSeriesRecording) {
-                                            onCancelRecord.invoke(true)
-                                        } else {
-                                            onRecord.invoke(true)
-                                        }
-                                    },
-                                ) {
-                                    Text(
-                                        text = if (isSeriesRecording) "Cancel Series Recording" else "Record Series",
-                                    )
-                                }
-                            }
-                            Button(
-                                onClick = {
-                                    if (isRecording) {
-                                        onCancelRecord.invoke(false)
-                                    } else {
-                                        onRecord.invoke(false)
-                                    }
-                                },
-                            ) {
-                                Text(
-                                    text = if (isRecording) "Cancel Recording" else "Record Program",
-                                )
-                            }
-                            if (now.isAfter(dto.startDate!!) && now.isBefore(dto.endDate!!)) {
-                                Button(
-                                    onClick = onWatch,
-                                ) {
-                                    Text(
-                                        text = "Watch live",
-                                    )
-                                }
-                            }
-                        }
-                }
             }
         }
     }
@@ -579,34 +454,11 @@ fun TvGuideGrid(
                             )
                         }
                 }
-                if (program.isSeriesRecording) {
-                    val color = if (program.isRecording) Color.Red else Color.Gray
-                    Box(
-                        modifier =
-                            Modifier
-                                .padding(4.dp)
-                                .size(16.dp)
-                                .background(color.copy(alpha = .5f), shape = CircleShape)
-                                .align(Alignment.BottomEnd),
-                    )
-                    Box(
-                        modifier =
-                            Modifier
-                                .padding(start = 4.dp, top = 4.dp, bottom = 4.dp, end = 10.dp)
-                                .size(16.dp)
-                                .background(color, shape = CircleShape)
-                                .align(Alignment.BottomEnd),
-                    )
-                } else if (program.isRecording) {
-                    Box(
-                        modifier =
-                            Modifier
-                                .padding(4.dp)
-                                .size(16.dp)
-                                .background(Color.Red, shape = CircleShape)
-                                .align(Alignment.BottomEnd),
-                    )
-                }
+                RecordingMarker(
+                    isRecording = program.isRecording,
+                    isSeriesRecording = program.isSeriesRecording,
+                    modifier = Modifier.align(Alignment.BottomEnd),
+                )
             }
         }
 
