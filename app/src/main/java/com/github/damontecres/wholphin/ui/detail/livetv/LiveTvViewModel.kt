@@ -17,6 +17,8 @@ import com.github.damontecres.wholphin.util.LoadingState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.imageApi
@@ -49,6 +51,7 @@ class LiveTvViewModel
         val start =
             LocalDateTime.now().truncatedTo(ChronoUnit.HOURS)
         private lateinit var channelsIdToIndex: Map<UUID, Int>
+        private val mutex = Mutex()
 
         val channels = MutableLiveData<List<TvChannel>>()
         val programs = MutableLiveData<List<TvProgram>>()
@@ -87,82 +90,83 @@ class LiveTvViewModel
             }
         }
 
-        private suspend fun fetchPrograms(channels: List<TvChannel>) {
-            val maxStartDate = start.plusHours(MAX_HOURS).minusMinutes(1)
-            val minEndDate = start.plusMinutes(1L)
-            val request =
-                GetProgramsDto(
-                    maxStartDate = maxStartDate,
-                    minEndDate = minEndDate,
-                    channelIds = channels.map { it.id },
-                    sortBy = listOf(ItemSortBy.START_DATE),
-                )
-            val programs =
-                GetProgramsDtoHandler
-                    .execute(api, request)
-                    .content.items
-                    .map { dto ->
-                        TvProgram(
-                            id = dto.id,
-                            channelId = dto.channelId!!,
-                            start = dto.startDate!!,
-                            end = dto.endDate!!,
-                            startHours = hoursBetween(start, dto.startDate!!),
-                            endHours = hoursBetween(start, dto.endDate!!),
-                            duration = dto.runTimeTicks!!.ticks,
-                            name = dto.seriesName ?: dto.name,
-                            subtitle = dto.episodeTitle.takeIf { dto.isSeries ?: false },
-                            seasonEpisode =
-                                if (dto.indexNumber != null && dto.parentIndexNumber != null) {
-                                    SeasonEpisode(dto.parentIndexNumber!!, dto.indexNumber!!)
-                                } else {
-                                    null
-                                },
-                            isRecording = dto.timerId.isNotNullOrBlank(),
-                            isSeriesRecording = dto.seriesTimerId.isNotNullOrBlank(),
-                        )
-                    }.filter { it.startHours >= 0 && it.endHours >= 0 } // TODO shouldn't need to filter client side
+        private suspend fun fetchPrograms(channels: List<TvChannel>) =
+            mutex.withLock {
+                val maxStartDate = start.plusHours(MAX_HOURS).minusMinutes(1)
+                val minEndDate = start.plusMinutes(1L)
+                val request =
+                    GetProgramsDto(
+                        maxStartDate = maxStartDate,
+                        minEndDate = minEndDate,
+                        channelIds = channels.map { it.id },
+                        sortBy = listOf(ItemSortBy.START_DATE),
+                    )
+                val programs =
+                    GetProgramsDtoHandler
+                        .execute(api, request)
+                        .content.items
+                        .map { dto ->
+                            TvProgram(
+                                id = dto.id,
+                                channelId = dto.channelId!!,
+                                start = dto.startDate!!,
+                                end = dto.endDate!!,
+                                startHours = hoursBetween(start, dto.startDate!!),
+                                endHours = hoursBetween(start, dto.endDate!!),
+                                duration = dto.runTimeTicks!!.ticks,
+                                name = dto.seriesName ?: dto.name,
+                                subtitle = dto.episodeTitle.takeIf { dto.isSeries ?: false },
+                                seasonEpisode =
+                                    if (dto.indexNumber != null && dto.parentIndexNumber != null) {
+                                        SeasonEpisode(dto.parentIndexNumber!!, dto.indexNumber!!)
+                                    } else {
+                                        null
+                                    },
+                                isRecording = dto.timerId.isNotNullOrBlank(),
+                                isSeriesRecording = dto.seriesTimerId.isNotNullOrBlank(),
+                            )
+                        }.filter { it.startHours >= 0 && it.endHours >= 0 } // TODO shouldn't need to filter client side
 
-            val programsByChannel = programs.groupBy { it.channelId }
-            val emptyChannels = channels.filter { programsByChannel[it.id].orEmpty().isEmpty() }
-            val fake = mutableListOf<TvProgram>()
-            val finalProgramsByChannel =
-                programsByChannel.toMutableMap().apply {
-                    emptyChannels.forEach { channel ->
-                        val fakePrograms =
-                            (0..<MAX_HOURS).map {
-                                TvProgram(
-                                    id = UUID.randomUUID(), // TODO
-                                    channelId = channel.id,
-                                    start = start.plusHours(it),
-                                    end = start.plusHours(it + 1),
-                                    startHours = it.toFloat(),
-                                    endHours = (it + 1).toFloat(),
-                                    duration = 60.seconds,
-                                    name = "No data",
-                                    subtitle = null,
-                                    seasonEpisode = null,
-                                    isRecording = false,
-                                    isSeriesRecording = false,
-                                )
-                            }
-                        put(channel.id, fakePrograms)
-                        fake.addAll(fakePrograms)
+                val programsByChannel = programs.groupBy { it.channelId }
+                val emptyChannels = channels.filter { programsByChannel[it.id].orEmpty().isEmpty() }
+                val fake = mutableListOf<TvProgram>()
+                val finalProgramsByChannel =
+                    programsByChannel.toMutableMap().apply {
+                        emptyChannels.forEach { channel ->
+                            val fakePrograms =
+                                (0..<MAX_HOURS).map {
+                                    TvProgram(
+                                        id = UUID.randomUUID(), // TODO
+                                        channelId = channel.id,
+                                        start = start.plusHours(it),
+                                        end = start.plusHours(it + 1),
+                                        startHours = it.toFloat(),
+                                        endHours = (it + 1).toFloat(),
+                                        duration = 60.seconds,
+                                        name = "No data",
+                                        subtitle = null,
+                                        seasonEpisode = null,
+                                        isRecording = false,
+                                        isSeriesRecording = false,
+                                    )
+                                }
+                            put(channel.id, fakePrograms)
+                            fake.addAll(fakePrograms)
+                        }
                     }
+                val finalProgramList =
+                    (programs + fake).sortedWith(
+                        compareBy(
+                            { channelsIdToIndex[it.channelId]!! },
+                            { it.start },
+                        ),
+                    )
+                Timber.d("Got ${programs.size} programs & ${fake.size} fake programs")
+                withContext(Dispatchers.Main) {
+                    this@LiveTvViewModel.programs.value = finalProgramList
+                    this@LiveTvViewModel.programsByChannel.value = finalProgramsByChannel
                 }
-            val finalProgramList =
-                (programs + fake).sortedWith(
-                    compareBy(
-                        { channelsIdToIndex[it.channelId]!! },
-                        { it.start },
-                    ),
-                )
-            Timber.d("Got ${programs.size} programs & ${fake.size} fake programs")
-            withContext(Dispatchers.Main) {
-                this@LiveTvViewModel.programs.value = finalProgramList
-                this@LiveTvViewModel.programsByChannel.value = finalProgramsByChannel
             }
-        }
 
         fun getItem(programId: UUID) {
             fetchingItem.value = LoadingState.Loading
@@ -248,7 +252,7 @@ class LiveTvViewModel
         suspend fun refreshProgram(
             programIndex: Int,
             programId: UUID,
-        ) {
+        ) = mutex.withLock {
             val program by api.liveTvApi.getProgram(programId.toServerString())
             val newProgram =
                 programs.value?.getOrNull(programIndex)?.copy(
