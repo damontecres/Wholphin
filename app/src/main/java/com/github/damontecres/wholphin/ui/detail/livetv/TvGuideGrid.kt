@@ -227,6 +227,17 @@ fun TvGuideGrid(
                     }
                     val newIndex =
                         when (it.key) {
+                            Key.Back -> {
+                                val pos = programsBeforeChannel.get(focusedChannelIndex)
+                                if (focusedProgramIndex - pos > 0) {
+                                    // Not at beginning of row, so move to beginning
+                                    pos
+                                } else {
+                                    // At beginning, so allow normal back button behavior
+                                    return@onPreviewKeyEvent false
+                                }
+                            }
+
                             Key.DirectionRight -> {
                                 val nextProgramIndex = focusedProgramIndex + 1
                                 val programsBefore = programsBeforeChannel.get(focusedChannelIndex)
@@ -358,7 +369,7 @@ fun TvGuideGrid(
             },
         ) {
             Surface(
-                colors = SurfaceDefaults.colors(MaterialTheme.colorScheme.tertiary.copy(alpha = .5f)),
+                colors = SurfaceDefaults.colors(MaterialTheme.colorScheme.tertiary.copy(alpha = .25f)),
                 modifier = Modifier,
             ) {
                 // Empty
@@ -377,7 +388,7 @@ fun TvGuideGrid(
                 modifier =
                     Modifier
                         .fillMaxSize()
-                        .background(MaterialTheme.colorScheme.background),
+                        .background(MaterialTheme.colorScheme.surface),
             ) {
                 val differentDay =
                     start.toLocalDate() !=
@@ -474,7 +485,7 @@ fun TvGuideGrid(
                     Modifier
                         .fillMaxSize()
                         .background(
-                            MaterialTheme.colorScheme.background,
+                            MaterialTheme.colorScheme.surface,
                             shape = RoundedCornerShape(4.dp),
                         ),
             ) {
