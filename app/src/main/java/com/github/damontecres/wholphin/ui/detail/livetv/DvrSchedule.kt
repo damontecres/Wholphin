@@ -12,7 +12,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -34,7 +36,10 @@ import com.github.damontecres.wholphin.ui.SlimItemFields
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.launchIO
+import com.github.damontecres.wholphin.ui.nav.Destination
+import com.github.damontecres.wholphin.ui.nav.NavigationManager
 import com.github.damontecres.wholphin.ui.tryRequestFocus
+import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
 import com.github.damontecres.wholphin.util.seasonEpisode
@@ -53,13 +58,14 @@ class DvrScheduleViewModel
     @Inject
     constructor(
         private val api: ApiClient,
+        val navigationManager: NavigationManager,
     ) : ViewModel() {
-        val loading = MutableLiveData<LoadingState>(LoadingState.Pending)
+        val loading = MutableLiveData<LoadingState>(LoadingState.Loading)
         val active = MutableLiveData<List<BaseItem>>()
         val scheduled = MutableLiveData<Map<LocalDate, List<BaseItem>>>()
 
         fun init() {
-            loading.value = LoadingState.Loading
+//            loading.value = LoadingState.Loading
             viewModelScope.launchIO(LoadingExceptionHandler(loading, "Error fetching DVR Schedule")) {
                 val active =
                     api.liveTvApi
@@ -87,6 +93,20 @@ class DvrScheduleViewModel
                 }
             }
         }
+
+        fun cancelRecording(
+            timerId: String,
+            series: Boolean,
+        ) {
+            viewModelScope.launchIO(ExceptionHandler(autoToast = true)) {
+                if (series) {
+                    api.liveTvApi.cancelSeriesTimer(timerId)
+                } else {
+                    api.liveTvApi.cancelTimer(timerId)
+                }
+                init()
+            }
+        }
     }
 
 @Composable
@@ -109,6 +129,7 @@ fun DvrSchedule(
         -> LoadingPage(modifier)
 
         LoadingState.Success -> {
+            var showDialog by remember { mutableStateOf<BaseItem?>(null) }
             val focusRequester = remember { FocusRequester() }
             if (requestFocusAfterLoading) {
                 LaunchedEffect(Unit) { focusRequester.tryRequestFocus() }
@@ -116,11 +137,42 @@ fun DvrSchedule(
             DvrScheduleContent(
                 activeRecordings = active,
                 scheduledRecordings = recordings,
-                onClickItem = {},
+                onClickItem = {
+                    showDialog = it
+                },
                 modifier =
                     modifier
                         .focusRequester(focusRequester),
             )
+            showDialog?.let { item ->
+                ProgramDialog(
+                    item = item,
+                    loading = LoadingState.Success,
+                    onDismissRequest = {
+                        showDialog = null
+                    },
+                    onWatch = {
+                        item.data.channelId?.let {
+                            viewModel.navigationManager.navigateTo(
+                                Destination.Playback(
+                                    itemId = it,
+                                    positionMs = 0L,
+                                ),
+                            )
+                        }
+                    },
+                    onRecord = {
+                        // no-op
+                    },
+                    onCancelRecord = { series ->
+                        showDialog = null
+                        val timerId = if (series) item.data.seriesTimerId else item.data.timerId
+                        if (timerId != null) {
+                            viewModel.cancelRecording(timerId, series)
+                        }
+                    },
+                )
+            }
         }
     }
 }

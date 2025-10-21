@@ -197,7 +197,7 @@ class LiveTvViewModel
             timerId: String?,
         ) {
             if (timerId != null) {
-                viewModelScope.launch(ExceptionHandler(autoToast = true)) {
+                viewModelScope.launchIO(ExceptionHandler(autoToast = true)) {
                     if (series) {
                         api.liveTvApi.cancelSeriesTimer(timerId)
                         fetchPrograms(channels.value.orEmpty())
