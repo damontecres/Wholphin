@@ -19,6 +19,7 @@ val supportItemKinds =
         BaseItemKind.VIDEO,
         BaseItemKind.SEASON,
         BaseItemKind.COLLECTION_FOLDER,
+        BaseItemKind.FOLDER,
         BaseItemKind.USER_VIEW,
         BaseItemKind.TRAILER,
         BaseItemKind.TV_CHANNEL,

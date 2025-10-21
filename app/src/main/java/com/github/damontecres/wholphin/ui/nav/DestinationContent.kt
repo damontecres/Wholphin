@@ -24,6 +24,7 @@ import com.github.damontecres.wholphin.ui.setup.SwitchUserContent
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.CollectionType
 import org.jellyfin.sdk.model.api.DeviceProfile
+import timber.log.Timber
 
 /**
  * Chose the page for the [Destination]
@@ -162,7 +163,17 @@ fun DestinationContent(
                             )
                     }
 
+                BaseItemKind.FOLDER ->
+                    CollectionFolderGeneric(
+                        preferences,
+                        destination.itemId,
+                        destination.item,
+                        false,
+                        modifier,
+                    )
+
                 else -> {
+                    Timber.w("Unsupported item type: ${destination.type}")
                     Text("Unsupported item type: ${destination.type}")
                 }
             }

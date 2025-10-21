@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -22,30 +23,73 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.unit.dp
+import androidx.datastore.core.DataStore
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Tab
 import androidx.tv.material3.TabDefaults
 import androidx.tv.material3.TabRow
 import androidx.tv.material3.TabRowDefaults
 import androidx.tv.material3.Text
+import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.BaseItem
+import com.github.damontecres.wholphin.data.model.GetItemsFilter
+import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.preferences.rememberTab
+import com.github.damontecres.wholphin.ui.components.CollectionFolderGrid
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.detail.livetv.DvrSchedule
 import com.github.damontecres.wholphin.ui.detail.livetv.TvGuideGrid
 import com.github.damontecres.wholphin.ui.ifElse
+import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.nav.Destination
-import com.github.damontecres.wholphin.ui.preferences.PreferencesViewModel
+import com.github.damontecres.wholphin.ui.nav.NavigationManager
+import com.github.damontecres.wholphin.ui.setValueOnMain
 import com.github.damontecres.wholphin.ui.tryRequestFocus
+import dagger.hilt.android.lifecycle.HiltViewModel
+import org.jellyfin.sdk.api.client.ApiClient
+import org.jellyfin.sdk.api.client.extensions.liveTvApi
+import java.util.UUID
+import javax.inject.Inject
+
+@HiltViewModel
+class LiveTvCollectionViewModel
+    @Inject
+    constructor(
+        val api: ApiClient,
+        val serverRepository: ServerRepository,
+        val navigationManager: NavigationManager,
+        val preferenceDataStore: DataStore<AppPreferences>,
+    ) : ViewModel() {
+        val recordingFolders = MutableLiveData<List<TabId>>()
+
+        init {
+            viewModelScope.launchIO {
+                val folders =
+                    api.liveTvApi
+                        .getRecordingFolders(userId = serverRepository.currentUser?.id)
+                        .content.items
+                        .map { TabId(it.name ?: "Recordings", it.id) }
+                this@LiveTvCollectionViewModel.recordingFolders.setValueOnMain(folders)
+            }
+        }
+    }
+
+data class TabId(
+    val title: String,
+    val id: UUID,
+)
 
 @Composable
 fun CollectionFolderLiveTv(
     preferences: UserPreferences,
     destination: Destination.MediaItem,
     modifier: Modifier = Modifier,
-    preferencesViewModel: PreferencesViewModel = hiltViewModel(),
+    viewModel: LiveTvCollectionViewModel = hiltViewModel(),
 ) {
     val uiPrefs = preferences.appPreferences.interfacePreferences
     val rememberedTabIndex =
@@ -54,8 +98,14 @@ fun CollectionFolderLiveTv(
         } else {
             0
         }
+    val folders by viewModel.recordingFolders.observeAsState(listOf())
 
-    val tabs = listOf("Guide", "DVR Schedule")
+    val tabs =
+        listOf(
+            TabId("Guide", UUID.randomUUID()),
+            TabId("DVR Schedule", UUID.randomUUID()),
+        ) + folders
+
     var focusTabIndex by rememberSaveable { mutableIntStateOf(rememberedTabIndex) }
     var selectedTabIndex by rememberSaveable { mutableIntStateOf(rememberedTabIndex) }
     val focusRequester = remember { FocusRequester() }
@@ -65,13 +115,13 @@ fun CollectionFolderLiveTv(
 
     if (uiPrefs.rememberSelectedTab) {
         LaunchedEffect(selectedTabIndex) {
-            preferencesViewModel.preferenceDataStore.updateData {
+            viewModel.preferenceDataStore.updateData {
                 preferences.appPreferences.rememberTab(destination.itemId, selectedTabIndex)
             }
         }
     }
     val onClickItem = { item: BaseItem ->
-        preferencesViewModel.navigationManager.navigateTo(item.destination())
+        viewModel.navigationManager.navigateTo(item.destination())
     }
 
     var showHeader by rememberSaveable { mutableStateOf(true) }
@@ -111,7 +161,7 @@ fun CollectionFolderLiveTv(
                         }
                     },
                 tabs = {
-                    tabs.forEachIndexed { index, title ->
+                    tabs.forEachIndexed { index, tabId ->
                         Tab(
                             selected = focusTabIndex == index,
                             onClick = { selectedTabIndex = index },
@@ -122,7 +172,7 @@ fun CollectionFolderLiveTv(
                                 ),
                         ) {
                             Text(
-                                text = title,
+                                text = tabId.title,
                                 style = MaterialTheme.typography.titleMedium,
                                 modifier =
                                     Modifier
@@ -155,7 +205,28 @@ fun CollectionFolderLiveTv(
                 )
             }
 
-            else -> ErrorMessage("Invalid tab index $selectedTabIndex", null)
+            else -> {
+                val folderIndex = selectedTabIndex - 2
+                if (folderIndex in folders.indices) {
+                    CollectionFolderGrid(
+                        preferences = preferences,
+                        onClickItem = { viewModel.navigationManager.navigateTo(it.destination()) },
+                        itemId = folders[folderIndex].id,
+                        item = null,
+                        initialFilter = GetItemsFilter(),
+                        showTitle = showHeader,
+                        recursive = false,
+                        modifier =
+                            Modifier
+                                .padding(start = 16.dp),
+                        positionCallback = { columns, position ->
+                            showHeader = position < columns
+                        },
+                    )
+                } else {
+                    ErrorMessage("Invalid tab index $selectedTabIndex", null)
+                }
+            }
         }
     }
 }
