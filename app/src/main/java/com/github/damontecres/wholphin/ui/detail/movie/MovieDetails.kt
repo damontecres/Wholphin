@@ -124,12 +124,17 @@ class MovieViewModel
                         val remoteTrailers =
                             item.data.remoteTrailers
                                 ?.mapNotNull { t ->
-                                    t.name?.let { name ->
-                                        t.url?.let { url ->
-                                            RemoteTrailer(name, url)
-                                        }
+                                    t.url?.let { url ->
+                                        val name =
+                                            t.name
+                                                // TODO would be nice to clean up the trailer name
+//                                                ?.replace(item.name ?: "", "")
+//                                                ?.removePrefix(" - ")
+                                                ?: "Trailer"
+                                        RemoteTrailer(name, url)
                                     }
                                 }.orEmpty()
+                                .sortedBy { it.name }
                         val localTrailerCount = item.data.localTrailerCount ?: 0
                         val localTrailers =
                             if (localTrailerCount > 0) {
