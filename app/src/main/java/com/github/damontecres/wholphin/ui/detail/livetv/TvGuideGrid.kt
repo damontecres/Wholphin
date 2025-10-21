@@ -1,6 +1,7 @@
 package com.github.damontecres.wholphin.ui.detail.livetv
 
 import android.text.format.DateUtils
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
@@ -92,6 +93,7 @@ fun TvGuideGrid(
         -> LoadingPage(modifier)
 
         LoadingState.Success -> {
+            val context = LocalContext.current
             val fetchedItem by viewModel.fetchedItem.observeAsState(null)
             val loadingItem by viewModel.fetchingItem.observeAsState(LoadingState.Pending)
             var showItemDialog by remember { mutableStateOf<Int?>(null) }
@@ -108,8 +110,24 @@ fun TvGuideGrid(
                     programs = programsByChannel,
                     start = viewModel.start,
                     onClick = { index, program ->
-                        viewModel.getItem(program.id)
-                        showItemDialog = index
+                        if (program.isFake) {
+                            val now = LocalDateTime.now()
+                            if (now.isAfter(program.start) && now.isBefore(program.end)) {
+                                viewModel.navigationManager.navigateTo(
+                                    Destination.Playback(
+                                        itemId = program.channelId,
+                                        positionMs = 0L,
+                                    ),
+                                )
+                            } else {
+                                Toast
+                                    .makeText(context, "No guide data found!", Toast.LENGTH_SHORT)
+                                    .show()
+                            }
+                        } else {
+                            viewModel.getItem(program.id)
+                            showItemDialog = index
+                        }
                     },
                     modifier =
                         Modifier
@@ -174,12 +192,14 @@ fun ProgramDialog(
     Dialog(
         onDismissRequest = onDismissRequest,
     ) {
+        val focusRequester = remember { FocusRequester() }
         Box(
             modifier =
-                Modifier.background(
-                    MaterialTheme.colorScheme.surfaceColorAtElevation(10.dp),
-                    shape = RoundedCornerShape(16.dp),
-                ),
+                Modifier
+                    .background(
+                        MaterialTheme.colorScheme.surfaceColorAtElevation(10.dp),
+                        shape = RoundedCornerShape(16.dp),
+                    ).focusRequester(focusRequester),
         ) {
             Column(
                 verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -204,6 +224,7 @@ fun ProgramDialog(
                             val dto = item.data
                             val isRecording = dto.timerId.isNotNullOrBlank()
                             val isSeriesRecording = dto.seriesTimerId.isNotNullOrBlank()
+                            LaunchedEffect(Unit) { focusRequester.tryRequestFocus() }
                             Text(
                                 text = item.name ?: "",
                                 color = MaterialTheme.colorScheme.onSurface,

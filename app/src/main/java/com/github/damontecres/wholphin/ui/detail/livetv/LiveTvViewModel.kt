@@ -124,6 +124,7 @@ class LiveTvViewModel
                                     },
                                 isRecording = dto.timerId.isNotNullOrBlank(),
                                 isSeriesRecording = dto.seriesTimerId.isNotNullOrBlank(),
+                                isFake = false,
                             )
                         }.filter { it.startHours >= 0 && it.endHours >= 0 } // TODO shouldn't need to filter client side
 
@@ -148,6 +149,7 @@ class LiveTvViewModel
                                         seasonEpisode = null,
                                         isRecording = false,
                                         isSeriesRecording = false,
+                                        isFake = true,
                                     )
                                 }
                             put(channel.id, fakePrograms)
@@ -303,4 +305,5 @@ data class TvProgram(
     val seasonEpisode: SeasonEpisode?,
     val isRecording: Boolean,
     val isSeriesRecording: Boolean,
+    val isFake: Boolean,
 )
