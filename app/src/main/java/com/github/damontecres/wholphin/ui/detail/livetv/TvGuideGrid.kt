@@ -136,16 +136,25 @@ fun TvGuideGrid(
                         }
                     },
                     onRecord = { series ->
+                        fetchedItem?.let {
+                            viewModel.record(
+                                programIndex = showItemDialog!!,
+                                programId = it.id,
+                                series = series,
+                            )
+                        }
                         onDismissRequest.invoke()
                     },
                     onCancelRecord = { series ->
-                        onDismissRequest.invoke()
                         fetchedItem?.data?.let {
                             viewModel.cancelRecording(
-                                series,
-                                if (series) it.seriesTimerId else it.timerId,
+                                programIndex = showItemDialog!!,
+                                programId = it.id,
+                                series = series,
+                                timerId = if (series) it.seriesTimerId else it.timerId,
                             )
                         }
+                        onDismissRequest.invoke()
                     },
                 )
             }

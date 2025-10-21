@@ -9,6 +9,7 @@ import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.nav.NavigationManager
 import com.github.damontecres.wholphin.ui.setValueOnMain
+import com.github.damontecres.wholphin.ui.toServerString
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.GetProgramsDtoHandler
 import com.github.damontecres.wholphin.util.LoadingExceptionHandler
@@ -20,10 +21,10 @@ import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.imageApi
 import org.jellyfin.sdk.api.client.extensions.liveTvApi
-import org.jellyfin.sdk.api.client.extensions.userLibraryApi
 import org.jellyfin.sdk.model.api.GetProgramsDto
 import org.jellyfin.sdk.model.api.ImageType
 import org.jellyfin.sdk.model.api.ItemSortBy
+import org.jellyfin.sdk.model.api.TimerInfoDto
 import org.jellyfin.sdk.model.api.request.GetLiveTvChannelsRequest
 import org.jellyfin.sdk.model.extensions.ticks
 import timber.log.Timber
@@ -159,12 +160,12 @@ class LiveTvViewModel
             }
         }
 
-        fun getItem(itemId: UUID) {
+        fun getItem(programId: UUID) {
             fetchingItem.value = LoadingState.Loading
             viewModelScope.launchIO(LoadingExceptionHandler(fetchingItem, "Error")) {
                 val result =
-                    api.userLibraryApi
-                        .getItem(itemId = itemId)
+                    api.liveTvApi
+                        .getProgram(programId.toServerString())
                         .content
                         .let { BaseItem.from(it, api) }
                 withContext(Dispatchers.Main) {
@@ -175,6 +176,8 @@ class LiveTvViewModel
         }
 
         fun cancelRecording(
+            programIndex: Int,
+            programId: UUID,
             series: Boolean,
             timerId: String?,
         ) {
@@ -185,26 +188,68 @@ class LiveTvViewModel
                     } else {
                         api.liveTvApi.cancelTimer(timerId)
                     }
+                    refreshProgram(programIndex, programId)
                 }
             }
         }
 
-        suspend fun refreshProgram(
-            index: Int,
-            timerId: String?,
-            seriesTimerId: String?,
+        fun record(
+            programIndex: Int,
+            programId: UUID,
+            series: Boolean,
         ) {
+            viewModelScope.launchIO {
+                val d by api.liveTvApi.getDefaultTimer(programId.toServerString())
+                if (series) {
+                    api.liveTvApi.createSeriesTimer(d)
+                } else {
+                    val payload =
+                        TimerInfoDto(
+                            id = d.id,
+                            type = d.type,
+                            serverId = d.serverId,
+                            externalId = d.externalId,
+                            channelId = d.channelId,
+                            externalChannelId = d.externalChannelId,
+                            channelName = d.channelName,
+                            programId = d.programId,
+                            externalProgramId = d.externalProgramId,
+                            name = d.name,
+                            overview = d.overview,
+                            startDate = d.startDate,
+                            endDate = d.endDate,
+                            serviceName = d.serviceName,
+                            priority = d.priority,
+                            prePaddingSeconds = d.prePaddingSeconds,
+                            postPaddingSeconds = d.postPaddingSeconds,
+                            isPrePaddingRequired = d.isPrePaddingRequired,
+                            isPostPaddingRequired = d.isPostPaddingRequired,
+                            keepUntil = d.keepUntil,
+                        )
+                    api.liveTvApi.createTimer(payload)
+                }
+                refreshProgram(programIndex, programId)
+            }
+        }
+
+        suspend fun refreshProgram(
+            programIndex: Int,
+            programId: UUID,
+        ) {
+            val program by api.liveTvApi.getProgram(programId.toServerString())
             val newProgram =
-                programs.value?.getOrNull(index)?.copy(
-                    isRecording = timerId.isNotNullOrBlank(),
-                    isSeriesRecording = seriesTimerId.isNotNullOrBlank(),
+                programs.value?.getOrNull(programIndex)?.copy(
+                    isRecording = program.timerId.isNotNullOrBlank(),
+                    isSeriesRecording = program.seriesTimerId.isNotNullOrBlank(),
                 )
+            Timber.v("new program %s", newProgram)
             if (newProgram != null) {
                 programs.value
                     ?.toMutableList()
-                    ?.apply { set(index, newProgram) }
-                    ?.let {
-                        programs.setValueOnMain(it)
+                    ?.apply {
+                        this[programIndex] = newProgram
+                    }?.let {
+                        this@LiveTvViewModel.programs.setValueOnMain(it)
                     }
             }
         }
