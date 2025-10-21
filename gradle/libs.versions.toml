@@ -9,6 +9,7 @@ coreKtx = "1.17.0"
 appcompat = "1.7.1"
 composeBom = "2025.10.00"
 compose-runtime = "1.9.3"
+multiplatformMarkdownRenderer = "0.37.0"
 programguide = "1.6.0"
 timber = "5.0.1"
 tvFoundation = "1.0.0-alpha12"
@@ -57,6 +58,8 @@ androidx-datastore = { module = "androidx.datastore:datastore", version.ref = "d
 desugar_jdk_libs = { module = "com.android.tools:desugar_jdk_libs", version.ref = "desugar_jdk_libs" }
 hilt-android = { module = "com.google.dagger:hilt-android", version.ref = "hilt" }
 hilt-android-compiler = { module = "com.google.dagger:hilt-android-compiler", version.ref = "hilt" }
+multiplatform-markdown-renderer = { module = "com.mikepenz:multiplatform-markdown-renderer", version.ref = "multiplatformMarkdownRenderer" }
+multiplatform-markdown-renderer-m3 = { module = "com.mikepenz:multiplatform-markdown-renderer-m3", version.ref = "multiplatformMarkdownRenderer" }
 programguide = { module = "io.github.oleksandrbalan:programguide", version.ref = "programguide" }
 protobuf-kotlin-lite = { module = "com.google.protobuf:protobuf-kotlin-lite", version.ref = "protobuf-javalite" }
 kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "kotlinx-coroutines-android" }

@@ -54,6 +54,7 @@ import com.github.damontecres.wholphin.util.LoadingState
 import com.github.damontecres.wholphin.util.Release
 import com.github.damontecres.wholphin.util.UpdateChecker
 import com.github.damontecres.wholphin.util.Version
+import com.mikepenz.markdown.m3.Markdown
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -120,27 +121,21 @@ fun InstallUpdatePage(
 
         LoadingState.Success ->
             release?.let {
-                if (it.version.isGreaterThan(viewModel.currentVersion)) {
-                    InstallUpdatePageContent(
-                        currentVersion = viewModel.currentVersion,
-                        release = it,
-                        onInstallRelease = {
-                            if (!permissions) {
-                                launcher.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE)
-                            } else {
-                                viewModel.installRelease(it)
-                            }
-                        },
-                        onCancel = {
-                            viewModel.navigationManager.goBack()
-                        },
-                        modifier = modifier,
-                    )
-                } else {
-                    Text(
-                        text = "No update available",
-                    )
-                }
+                InstallUpdatePageContent(
+                    currentVersion = viewModel.currentVersion,
+                    release = it,
+                    onInstallRelease = {
+                        if (!permissions) {
+                            launcher.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                        } else {
+                            viewModel.installRelease(it)
+                        }
+                    },
+                    onCancel = {
+                        viewModel.navigationManager.goBack()
+                    },
+                    modifier = modifier,
+                )
             }
     }
 }
@@ -202,11 +197,14 @@ fun InstallUpdatePageContent(
                     },
         ) {
             item {
-                Text(
-                    // TODO render markdown
-                    text = release.notes.joinToString("\n\n") + (release.body ?: ""),
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurface,
+                Markdown(
+                    (release.notes.joinToString("\n\n") + (release.body ?: ""))
+                        .replace(
+                            Regex("https://github.com/damontecres/\\w+/pull/(\\d+)"),
+                            "#$1",
+                        )
+                        // Remove the last line for full changelog since its just a link
+                        .replace(Regex("\\*\\*Full Changelog\\*\\*.*"), ""),
                 )
             }
         }
