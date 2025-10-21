@@ -61,7 +61,7 @@ class LiveTvViewModel
         val fetchedItem = MutableLiveData<BaseItem?>(null)
 
         fun init() {
-            loading.value = LoadingState.Loading
+//            loading.value = LoadingState.Loading
             viewModelScope.launch(Dispatchers.IO + LoadingExceptionHandler(loading, "Could not fetch channels")) {
                 val channelData by api.liveTvApi.getLiveTvChannels(
                     GetLiveTvChannelsRequest(
