@@ -388,7 +388,7 @@ fun PlaybackPage(
                         LaunchedEffect(Unit) {
                             focusRequester.tryRequestFocus()
                             delay(10.seconds)
-                            segmentCancelled = false
+                            segmentCancelled = true
                         }
                         Button(
                             onClick = {
