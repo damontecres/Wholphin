@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -129,74 +130,87 @@ fun ProgramDialog(
                                     maxLines = 3,
                                 )
                             }
-                            if (dto.isSeries ?: false) {
-                                Button(
-                                    onClick = {
-                                        if (isSeriesRecording) {
-                                            onCancelRecord.invoke(true)
-                                        } else {
-                                            onRecord.invoke(true)
-                                        }
-                                    },
-                                ) {
-                                    Row(
-                                        horizontalArrangement = Arrangement.spacedBy(4.dp),
-                                        verticalAlignment = Alignment.CenterVertically,
-                                    ) {
-                                        if (isSeriesRecording) {
-                                            Icon(
-                                                imageVector = Icons.Default.Close,
-                                                contentDescription = null,
-                                                tint = Color.Red,
-                                            )
-                                        }
-                                        Text(
-                                            text = if (isSeriesRecording) "Cancel Series Recording" else "Record Series",
-                                        )
-                                    }
-                                }
-                            }
-                            Button(
-                                onClick = {
-                                    if (isRecording) {
-                                        onCancelRecord.invoke(false)
-                                    } else {
-                                        onRecord.invoke(false)
-                                    }
-                                },
+                            Column(
+                                verticalArrangement = Arrangement.spacedBy(16.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                modifier =
+                                    Modifier
+                                        .padding(top = 8.dp)
+                                        .fillMaxWidth(),
                             ) {
                                 Row(
-                                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(16.dp),
                                 ) {
-                                    if (isRecording) {
-                                        Icon(
-                                            imageVector = Icons.Default.Close,
-                                            contentDescription = null,
-                                            tint = Color.Red,
-                                        )
+                                    if (dto.isSeries ?: false) {
+                                        Button(
+                                            onClick = {
+                                                if (isSeriesRecording) {
+                                                    onCancelRecord.invoke(true)
+                                                } else {
+                                                    onRecord.invoke(true)
+                                                }
+                                            },
+                                        ) {
+                                            Row(
+                                                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                                verticalAlignment = Alignment.CenterVertically,
+                                            ) {
+                                                if (isSeriesRecording) {
+                                                    Icon(
+                                                        imageVector = Icons.Default.Close,
+                                                        contentDescription = null,
+                                                        tint = Color.Red,
+                                                    )
+                                                }
+                                                Text(
+                                                    text = if (isSeriesRecording) "Cancel Series Recording" else "Record Series",
+                                                )
+                                            }
+                                        }
                                     }
-                                    Text(
-                                        text = if (isRecording) "Cancel Recording" else "Record Program",
-                                    )
-                                }
-                            }
-                            if (now.isAfter(dto.startDate!!) && now.isBefore(dto.endDate!!)) {
-                                Button(
-                                    onClick = onWatch,
-                                ) {
-                                    Row(
-                                        horizontalArrangement = Arrangement.spacedBy(4.dp),
-                                        verticalAlignment = Alignment.CenterVertically,
+                                    Button(
+                                        onClick = {
+                                            if (isRecording) {
+                                                onCancelRecord.invoke(false)
+                                            } else {
+                                                onRecord.invoke(false)
+                                            }
+                                        },
                                     ) {
-                                        Icon(
-                                            imageVector = Icons.Default.PlayArrow,
-                                            contentDescription = "Delete",
-                                            tint = Color.Green.copy(alpha = .75f),
-                                        )
-                                        Text(
-                                            text = "Watch live",
-                                        )
+                                        Row(
+                                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                        ) {
+                                            if (isRecording) {
+                                                Icon(
+                                                    imageVector = Icons.Default.Close,
+                                                    contentDescription = null,
+                                                    tint = Color.Red,
+                                                )
+                                            }
+                                            Text(
+                                                text = if (isRecording) "Cancel Recording" else "Record Program",
+                                            )
+                                        }
+                                    }
+                                }
+                                if (now.isAfter(dto.startDate!!) && now.isBefore(dto.endDate!!)) {
+                                    Button(
+                                        onClick = onWatch,
+                                    ) {
+                                        Row(
+                                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.PlayArrow,
+                                                contentDescription = "Delete",
+                                                tint = Color.Green.copy(alpha = .75f),
+                                            )
+                                            Text(
+                                                text = "Watch live",
+                                            )
+                                        }
                                     }
                                 }
                             }

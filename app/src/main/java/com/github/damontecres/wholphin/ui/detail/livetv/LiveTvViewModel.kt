@@ -90,6 +90,12 @@ class LiveTvViewModel
             }
         }
 
+        private suspend fun fetchProgramsWithLoading(channels: List<TvChannel>) {
+            loading.setValueOnMain(LoadingState.Loading)
+            fetchPrograms(channels)
+            loading.setValueOnMain(LoadingState.Success)
+        }
+
         private suspend fun fetchPrograms(channels: List<TvChannel>) =
             mutex.withLock {
                 val maxStartDate = start.plusHours(MAX_HOURS).minusMinutes(1)
@@ -203,7 +209,7 @@ class LiveTvViewModel
                 viewModelScope.launchIO(ExceptionHandler(autoToast = true)) {
                     if (series) {
                         api.liveTvApi.cancelSeriesTimer(timerId)
-                        fetchPrograms(channels.value.orEmpty())
+                        fetchProgramsWithLoading(channels.value.orEmpty())
                     } else {
                         api.liveTvApi.cancelTimer(timerId)
                         refreshProgram(programIndex, programId)
@@ -221,7 +227,7 @@ class LiveTvViewModel
                 val d by api.liveTvApi.getDefaultTimer(programId.toServerString())
                 if (series) {
                     api.liveTvApi.createSeriesTimer(d)
-                    fetchPrograms(channels.value.orEmpty())
+                    fetchProgramsWithLoading(channels.value.orEmpty())
                 } else {
                     val payload =
                         TimerInfoDto(
@@ -256,6 +262,7 @@ class LiveTvViewModel
             programIndex: Int,
             programId: UUID,
         ) = mutex.withLock {
+            loading.setValueOnMain(LoadingState.Loading)
             val program by api.liveTvApi.getProgram(programId.toServerString())
             val newProgram =
                 programs.value?.getOrNull(programIndex)?.copy(
@@ -272,6 +279,7 @@ class LiveTvViewModel
                         this@LiveTvViewModel.programs.setValueOnMain(it)
                     }
             }
+            loading.setValueOnMain(LoadingState.Success)
         }
     }
 
