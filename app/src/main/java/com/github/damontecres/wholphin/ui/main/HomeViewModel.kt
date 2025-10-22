@@ -10,7 +10,6 @@ import com.github.damontecres.wholphin.ui.nav.NavigationManager
 import com.github.damontecres.wholphin.util.LoadingExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
 import com.github.damontecres.wholphin.util.supportItemKinds
-import com.github.damontecres.wholphin.util.supportedCollectionTypes
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -18,10 +17,12 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.itemsApi
+import org.jellyfin.sdk.api.client.extensions.liveTvApi
 import org.jellyfin.sdk.api.client.extensions.tvShowsApi
 import org.jellyfin.sdk.api.client.extensions.userApi
 import org.jellyfin.sdk.api.client.extensions.userLibraryApi
 import org.jellyfin.sdk.api.client.extensions.userViewsApi
+import org.jellyfin.sdk.model.api.CollectionType
 import org.jellyfin.sdk.model.api.UserDto
 import org.jellyfin.sdk.model.api.request.GetLatestMediaRequest
 import org.jellyfin.sdk.model.api.request.GetNextUpRequest
@@ -172,15 +173,30 @@ class HomeViewModel
             val rows =
                 latestMediaIncludes
                     .mapNotNull { viewId -> views.items.firstOrNull { it.id == viewId } }
-                    .filter { it.collectionType in supportedCollectionTypes }
+                    .filter { it.collectionType in supportedLatestCollectionTypes }
                     .map { view ->
                         val title =
-                            view.name?.let { "Recently Added in $it" }
+                            if (view.collectionType == CollectionType.LIVETV) {
+                                "Recently Recorded"
+                            } else {
+                                view.name?.let { "Recently Added in $it" }
+                            }
+                        val viewId =
+                            if (view.collectionType == CollectionType.LIVETV) {
+                                api.liveTvApi
+                                    .getRecordingFolders(
+                                        userId = user.id,
+                                    ).content.items
+                                    .firstOrNull()
+                                    ?.id
+                            } else {
+                                view.id
+                            }
                         val request =
                             GetLatestMediaRequest(
                                 fields = SlimItemFields,
                                 imageTypeLimit = 1,
-                                parentId = view.id,
+                                parentId = viewId,
                                 groupItems = true,
                                 limit = limit,
                                 isPlayed = null, // Server will handle user's preference
@@ -199,3 +215,10 @@ class HomeViewModel
             return rows
         }
     }
+
+val supportedLatestCollectionTypes =
+    setOf(
+        CollectionType.MOVIES,
+        CollectionType.TVSHOWS,
+        CollectionType.LIVETV,
+    )
