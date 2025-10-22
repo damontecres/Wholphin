@@ -1,5 +1,6 @@
 package com.github.damontecres.wholphin.ui.detail.livetv
 
+import android.text.format.DateUtils
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -19,6 +20,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
@@ -35,6 +37,7 @@ import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.LoadingState
 import com.github.damontecres.wholphin.util.seasonEpisode
 import java.time.LocalDateTime
+import java.time.ZoneId
 
 @Composable
 fun ProgramDialog(
@@ -45,6 +48,7 @@ fun ProgramDialog(
     onRecord: (series: Boolean) -> Unit,
     onCancelRecord: (series: Boolean) -> Unit,
 ) {
+    val context = LocalContext.current
     Dialog(
         onDismissRequest = onDismissRequest,
     ) {
@@ -98,6 +102,24 @@ fun ProgramDialog(
                                         )
                                     }
                             }
+                            val time =
+                                DateUtils.formatDateRange(
+                                    context,
+                                    dto.startDate!!
+                                        .atZone(ZoneId.systemDefault())
+                                        .toInstant()
+                                        .epochSecond * 1000,
+                                    dto.endDate!!
+                                        .atZone(ZoneId.systemDefault())
+                                        .toInstant()
+                                        .epochSecond * 1000,
+                                    DateUtils.FORMAT_SHOW_TIME,
+                                )
+                            Text(
+                                text = time,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                style = MaterialTheme.typography.titleSmall,
+                            )
                             dto.overview?.let { overview ->
                                 Text(
                                     text = overview,

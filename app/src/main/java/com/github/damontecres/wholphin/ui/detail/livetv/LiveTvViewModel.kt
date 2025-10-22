@@ -11,7 +11,6 @@ import com.github.damontecres.wholphin.ui.nav.NavigationManager
 import com.github.damontecres.wholphin.ui.setValueOnMain
 import com.github.damontecres.wholphin.ui.toServerString
 import com.github.damontecres.wholphin.util.ExceptionHandler
-import com.github.damontecres.wholphin.util.GetProgramsDtoHandler
 import com.github.damontecres.wholphin.util.LoadingExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -28,6 +27,7 @@ import org.jellyfin.sdk.model.api.ImageType
 import org.jellyfin.sdk.model.api.ItemSortBy
 import org.jellyfin.sdk.model.api.TimerInfoDto
 import org.jellyfin.sdk.model.api.request.GetLiveTvChannelsRequest
+import org.jellyfin.sdk.model.api.request.GetLiveTvProgramsRequest
 import org.jellyfin.sdk.model.extensions.ticks
 import timber.log.Timber
 import java.time.LocalDateTime
@@ -94,16 +94,17 @@ class LiveTvViewModel
             mutex.withLock {
                 val maxStartDate = start.plusHours(MAX_HOURS).minusMinutes(1)
                 val minEndDate = start.plusMinutes(1L)
+
                 val request =
-                    GetProgramsDto(
+                    GetLiveTvProgramsRequest(
                         maxStartDate = maxStartDate,
                         minEndDate = minEndDate,
                         channelIds = channels.map { it.id },
                         sortBy = listOf(ItemSortBy.START_DATE),
                     )
                 val programs =
-                    GetProgramsDtoHandler
-                        .execute(api, request)
+                    api.liveTvApi
+                        .getLiveTvPrograms(request)
                         .content.items
                         .map { dto ->
                             TvProgram(
@@ -126,7 +127,7 @@ class LiveTvViewModel
                                 isSeriesRecording = dto.seriesTimerId.isNotNullOrBlank(),
                                 isFake = false,
                             )
-                        }.filter { it.startHours >= 0 && it.endHours >= 0 } // TODO shouldn't need to filter client side
+                        }
 
                 val programsByChannel = programs.groupBy { it.channelId }
                 val emptyChannels = channels.filter { programsByChannel[it.id].orEmpty().isEmpty() }
