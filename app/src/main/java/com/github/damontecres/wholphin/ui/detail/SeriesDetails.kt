@@ -33,6 +33,7 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -100,6 +101,7 @@ fun SeriesDetails(
     val item by viewModel.item.observeAsState()
     val seasons by viewModel.seasons.observeAsState(ItemListAndMapping.empty())
     val people by viewModel.people.observeAsState(listOf())
+    val similar by viewModel.similar.observeAsState(listOf())
 
     var overviewDialog by remember { mutableStateOf<ItemDetailsDialogInfo?>(null) }
     var showWatchConfirmation by remember { mutableStateOf(false) }
@@ -118,6 +120,7 @@ fun SeriesDetails(
                     series = item,
                     seasons = seasons,
                     people = people,
+                    similar = similar,
                     played = played,
                     modifier = modifier,
                     onClickItem = { viewModel.navigateTo(it.destination()) },
@@ -180,6 +183,7 @@ fun SeriesDetailsContent(
     preferences: UserPreferences,
     series: BaseItem,
     seasons: ItemListAndMapping,
+    similar: List<BaseItem>,
     people: List<Person>,
     played: Boolean,
     onClickItem: (BaseItem) -> Unit,
@@ -298,6 +302,28 @@ fun SeriesDetailsContent(
                             people = people,
                             onClick = {},
                             onLongClick = {},
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    }
+                }
+                if (similar.isNotEmpty()) {
+                    item {
+                        ItemRow(
+                            title = stringResource(R.string.more_like_this),
+                            items = similar,
+                            onClickItem = onClickItem,
+                            onLongClickItem = {},
+                            cardContent = { index, item, mod, onClick, onLongClick ->
+                                SeasonCard(
+                                    item = item,
+                                    onClick = onClick,
+                                    onLongClick = onLongClick,
+                                    modifier = mod,
+                                    showImageOverlay = true,
+                                    imageHeight = Cards.height2x3,
+                                    imageWidth = Dp.Unspecified,
+                                )
+                            },
                             modifier = Modifier.fillMaxWidth(),
                         )
                     }
