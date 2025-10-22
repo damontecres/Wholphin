@@ -43,6 +43,7 @@ import java.time.ZoneId
 @Composable
 fun ProgramDialog(
     item: BaseItem?,
+    canRecord: Boolean,
     loading: LoadingState,
     onDismissRequest: () -> Unit,
     onWatch: () -> Unit,
@@ -138,59 +139,64 @@ fun ProgramDialog(
                                         .padding(top = 8.dp)
                                         .fillMaxWidth(),
                             ) {
-                                Row(
-                                    horizontalArrangement = Arrangement.spacedBy(16.dp),
-                                ) {
-                                    if (dto.isSeries ?: false) {
-                                        Button(
-                                            onClick = {
-                                                if (isSeriesRecording) {
-                                                    onCancelRecord.invoke(true)
-                                                } else {
-                                                    onRecord.invoke(true)
-                                                }
-                                            },
-                                        ) {
-                                            Row(
-                                                horizontalArrangement = Arrangement.spacedBy(4.dp),
-                                                verticalAlignment = Alignment.CenterVertically,
+                                if (canRecord) {
+                                    Row(
+                                        horizontalArrangement = Arrangement.spacedBy(16.dp),
+                                    ) {
+                                        if (dto.isSeries ?: false) {
+                                            Button(
+                                                onClick = {
+                                                    if (isSeriesRecording) {
+                                                        onCancelRecord.invoke(true)
+                                                    } else {
+                                                        onRecord.invoke(true)
+                                                    }
+                                                },
                                             ) {
-                                                if (isSeriesRecording) {
-                                                    Icon(
-                                                        imageVector = Icons.Default.Close,
-                                                        contentDescription = null,
-                                                        tint = Color.Red,
+                                                Row(
+                                                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                                    verticalAlignment = Alignment.CenterVertically,
+                                                ) {
+                                                    if (isSeriesRecording) {
+                                                        Icon(
+                                                            imageVector = Icons.Default.Close,
+                                                            contentDescription = null,
+                                                            tint = Color.Red,
+                                                        )
+                                                    }
+                                                    Text(
+                                                        text = if (isSeriesRecording) "Cancel Series Recording" else "Record Series",
                                                     )
                                                 }
-                                                Text(
-                                                    text = if (isSeriesRecording) "Cancel Series Recording" else "Record Series",
-                                                )
                                             }
                                         }
-                                    }
-                                    Button(
-                                        onClick = {
-                                            if (isRecording) {
-                                                onCancelRecord.invoke(false)
-                                            } else {
-                                                onRecord.invoke(false)
+                                        if (dto.endDate?.isAfter(LocalDateTime.now()) ?: true) {
+                                            // Only show program specific recording button if it hasn't finished yet
+                                            Button(
+                                                onClick = {
+                                                    if (isRecording) {
+                                                        onCancelRecord.invoke(false)
+                                                    } else {
+                                                        onRecord.invoke(false)
+                                                    }
+                                                },
+                                            ) {
+                                                Row(
+                                                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                                    verticalAlignment = Alignment.CenterVertically,
+                                                ) {
+                                                    if (isRecording) {
+                                                        Icon(
+                                                            imageVector = Icons.Default.Close,
+                                                            contentDescription = null,
+                                                            tint = Color.Red,
+                                                        )
+                                                    }
+                                                    Text(
+                                                        text = if (isRecording) "Cancel Recording" else "Record Program",
+                                                    )
+                                                }
                                             }
-                                        },
-                                    ) {
-                                        Row(
-                                            horizontalArrangement = Arrangement.spacedBy(4.dp),
-                                            verticalAlignment = Alignment.CenterVertically,
-                                        ) {
-                                            if (isRecording) {
-                                                Icon(
-                                                    imageVector = Icons.Default.Close,
-                                                    contentDescription = null,
-                                                    tint = Color.Red,
-                                                )
-                                            }
-                                            Text(
-                                                text = if (isRecording) "Cancel Recording" else "Record Program",
-                                            )
                                         }
                                     }
                                 }

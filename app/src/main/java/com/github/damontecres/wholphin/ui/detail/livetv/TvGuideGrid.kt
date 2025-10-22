@@ -143,6 +143,7 @@ fun TvGuideGrid(
                 val onDismissRequest = { showItemDialog = null }
                 ProgramDialog(
                     item = fetchedItem,
+                    canRecord = true,
                     loading = loadingItem,
                     onDismissRequest = onDismissRequest,
                     onWatch = {

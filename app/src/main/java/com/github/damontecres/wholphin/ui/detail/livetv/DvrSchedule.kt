@@ -147,6 +147,7 @@ fun DvrSchedule(
             showDialog?.let { item ->
                 ProgramDialog(
                     item = item,
+                    canRecord = true,
                     loading = LoadingState.Success,
                     onDismissRequest = {
                         showDialog = null
