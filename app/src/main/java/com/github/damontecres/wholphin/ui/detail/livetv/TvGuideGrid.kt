@@ -478,7 +478,8 @@ fun TvGuideGrid(
                     if (focused) {
                         MaterialTheme.colorScheme.inverseSurface
                     } else {
-                        MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp)
+                        program.category?.color
+                            ?: MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp)
                     }
                 val textColor = MaterialTheme.colorScheme.contentColorFor(background)
                 Box(

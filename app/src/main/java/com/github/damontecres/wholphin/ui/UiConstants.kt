@@ -22,6 +22,11 @@ sealed class AppColors private constructor() {
         val TransparentBlack25 = Color(0x40000000)
         val TransparentBlack50 = Color(0x80000000)
         val TransparentBlack75 = Color(0xBF000000)
+
+        val DarkGreen = Color(0xFF114000)
+        val DarkRed = Color(0xFF400000)
+        val DarkCyan = Color(0xFF21556E)
+        val DarkPurple = Color(0xFF261370)
     }
 }
 

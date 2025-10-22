@@ -1,9 +1,11 @@
 package com.github.damontecres.wholphin.ui.detail.livetv
 
+import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.github.damontecres.wholphin.data.model.BaseItem
+import com.github.damontecres.wholphin.ui.AppColors
 import com.github.damontecres.wholphin.ui.detail.series.SeasonEpisode
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.launchIO
@@ -113,6 +115,18 @@ class LiveTvViewModel
                         .getLiveTvPrograms(request)
                         .content.items
                         .map { dto ->
+                            val category =
+                                if (dto.isKids ?: false) {
+                                    ProgramCategory.KIDS
+                                } else if (dto.isMovie ?: false) {
+                                    ProgramCategory.MOVIE
+                                } else if (dto.isNews ?: false) {
+                                    ProgramCategory.NEWS
+                                } else if (dto.isSports ?: false) {
+                                    ProgramCategory.SPORTS
+                                } else {
+                                    null
+                                }
                             TvProgram(
                                 id = dto.id,
                                 channelId = dto.channelId!!,
@@ -131,7 +145,8 @@ class LiveTvViewModel
                                     },
                                 isRecording = dto.timerId.isNotNullOrBlank(),
                                 isSeriesRecording = dto.seriesTimerId.isNotNullOrBlank(),
-                                isFake = false,
+                                isRepeat = dto.isRepeat ?: false,
+                                category = category,
                             )
                         }
 
@@ -156,7 +171,8 @@ class LiveTvViewModel
                                         seasonEpisode = null,
                                         isRecording = false,
                                         isSeriesRecording = false,
-                                        isFake = true,
+                                        isRepeat = false,
+                                        category = ProgramCategory.FAKE,
                                     )
                                 }
                             put(channel.id, fakePrograms)
@@ -314,5 +330,18 @@ data class TvProgram(
     val seasonEpisode: SeasonEpisode?,
     val isRecording: Boolean,
     val isSeriesRecording: Boolean,
-    val isFake: Boolean,
-)
+    val isRepeat: Boolean,
+    val category: ProgramCategory?,
+) {
+    val isFake = category == ProgramCategory.FAKE
+}
+
+enum class ProgramCategory(
+    val color: Color?,
+) {
+    KIDS(AppColors.DarkCyan),
+    NEWS(AppColors.DarkGreen),
+    MOVIE(AppColors.DarkPurple),
+    SPORTS(AppColors.DarkRed),
+    FAKE(null),
+}
