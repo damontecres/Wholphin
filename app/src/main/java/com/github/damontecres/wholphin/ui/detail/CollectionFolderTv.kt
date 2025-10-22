@@ -32,7 +32,6 @@ import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.GetItemsFilter
 import com.github.damontecres.wholphin.preferences.UserPreferences
-import com.github.damontecres.wholphin.preferences.rememberTab
 import com.github.damontecres.wholphin.ui.components.CollectionFolderGrid
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.GenreCardGrid
@@ -50,13 +49,8 @@ fun CollectionFolderTv(
     modifier: Modifier = Modifier,
     preferencesViewModel: PreferencesViewModel = hiltViewModel(),
 ) {
-    val uiPrefs = preferences.appPreferences.interfacePreferences
     val rememberedTabIndex =
-        if (uiPrefs.rememberSelectedTab) {
-            uiPrefs.getRememberedTabsOrDefault(destination.itemId.toString(), 0)
-        } else {
-            0
-        }
+        remember { preferencesViewModel.getRememberedTab(preferences, destination.itemId, 0) }
 
     val tabs = listOf("Recommended", "Library", "Genres")
     var focusTabIndex by rememberSaveable { mutableIntStateOf(rememberedTabIndex) }
@@ -66,13 +60,10 @@ fun CollectionFolderTv(
     val firstTabFocusRequester = remember { FocusRequester() }
     LaunchedEffect(Unit) { firstTabFocusRequester.tryRequestFocus() }
 
-    if (uiPrefs.rememberSelectedTab) {
-        LaunchedEffect(selectedTabIndex) {
-            preferencesViewModel.preferenceDataStore.updateData {
-                preferences.appPreferences.rememberTab(destination.itemId, selectedTabIndex)
-            }
-        }
+    LaunchedEffect(selectedTabIndex) {
+        preferencesViewModel.saveRememberedTab(preferences, destination.itemId, selectedTabIndex)
     }
+
     val onClickItem = { item: BaseItem ->
         preferencesViewModel.navigationManager.navigateTo(item.destination())
     }

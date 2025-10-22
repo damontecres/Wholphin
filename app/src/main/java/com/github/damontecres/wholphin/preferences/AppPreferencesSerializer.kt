@@ -3,10 +3,8 @@ package com.github.damontecres.wholphin.preferences
 import androidx.datastore.core.CorruptionException
 import androidx.datastore.core.Serializer
 import com.google.protobuf.InvalidProtocolBufferException
-import timber.log.Timber
 import java.io.InputStream
 import java.io.OutputStream
-import java.util.UUID
 import javax.inject.Inject
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.seconds
@@ -108,13 +106,3 @@ inline fun AppPreferences.updateInterfacePreferences(block: InterfacePreferences
     update {
         interfacePreferences = interfacePreferences.toBuilder().apply(block).build()
     }
-
-fun AppPreferences.rememberTab(
-    itemId: UUID,
-    index: Int,
-): AppPreferences {
-    Timber.v("Updating $itemId tab to $index")
-    return updateInterfacePreferences {
-        putRememberedTabs(itemId.toString(), index)
-    }
-}
