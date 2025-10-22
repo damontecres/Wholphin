@@ -1,6 +1,8 @@
 package com.github.damontecres.wholphin.ui.nav
 
+import android.content.Context
 import androidx.activity.compose.BackHandler
+import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -66,6 +68,7 @@ import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.supportedCollectionTypes
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -74,17 +77,19 @@ import org.jellyfin.sdk.api.client.extensions.userViewsApi
 import org.jellyfin.sdk.model.api.CollectionType
 import org.jellyfin.sdk.model.api.DeviceProfile
 import timber.log.Timber
+import java.util.UUID
 import javax.inject.Inject
 
 @HiltViewModel
 class NavDrawerViewModel
     @Inject
     constructor(
+        @param:ApplicationContext val context: Context,
         val serverRepository: ServerRepository,
         val api: ApiClient,
         val navigationManager: NavigationManager,
     ) : ViewModel() {
-        val libraries = MutableLiveData<List<BaseItem>>(listOf())
+        val libraries = MutableLiveData<List<NavDrawerItem>>(listOf())
         val selectedIndex = MutableLiveData<Int>(-1)
 
         init {
@@ -96,10 +101,28 @@ class NavDrawerViewModel
                 val libraries =
                     userViews
                         .filter { it.collectionType in supportedCollectionTypes }
-                        .map { BaseItem.from(it, api) }
+                        .map {
+                            NavDrawerItem(
+                                id = it.id,
+                                name = it.name ?: it.id.toString(),
+                                destination = BaseItem.from(it, api).destination(),
+                                type = it.collectionType ?: CollectionType.UNKNOWN,
+                                iconStringRes = null,
+                            )
+                        }
+                val extra =
+                    listOf(
+                        NavDrawerItem(
+                            id = UUID.randomUUID(),
+                            name = context.getString(R.string.favorites),
+                            destination = Destination.Favorites,
+                            type = CollectionType.UNKNOWN,
+                            iconStringRes = R.string.fa_heart,
+                        ),
+                    )
                 Timber.d("Got ${userViews.size} user views filtered to ${libraries.size}")
                 withContext(Dispatchers.Main) {
-                    this@NavDrawerViewModel.libraries.value = libraries
+                    this@NavDrawerViewModel.libraries.value = extra + libraries
                 }
             }
         }
@@ -108,6 +131,14 @@ class NavDrawerViewModel
             selectedIndex.value = index
         }
     }
+
+data class NavDrawerItem(
+    val id: UUID,
+    val name: String,
+    val destination: Destination,
+    val type: CollectionType,
+    @param:StringRes val iconStringRes: Int?,
+)
 
 /**
  * Display the left side navigation drawer with [DestinationContent] on the right
@@ -213,12 +244,12 @@ fun NavDrawer(
                         )
                     }
                     itemsIndexed(libraries) { index, it ->
-                        LibraryNavItem(
+                        NavItem(
                             library = it,
                             selected = selectedIndex == index,
                             onClick = {
                                 viewModel.setIndex(index)
-                                viewModel.navigationManager.navigateToFromDrawer(it.destination())
+                                viewModel.navigationManager.navigateToFromDrawer(it.destination)
                             },
                             modifier =
                                 Modifier.ifElse(
@@ -304,15 +335,15 @@ fun NavigationDrawerScope.IconNavItem(
 }
 
 @Composable
-fun NavigationDrawerScope.LibraryNavItem(
-    library: BaseItem,
+fun NavigationDrawerScope.NavItem(
+    library: NavDrawerItem,
     onClick: () -> Unit,
     selected: Boolean,
     modifier: Modifier = Modifier,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
 ) {
     val icon =
-        when (library.data.collectionType) {
+        when (library.type) {
             CollectionType.MOVIES -> R.string.fa_film
             CollectionType.TVSHOWS -> R.string.fa_tv
             CollectionType.HOMEVIDEOS -> R.string.fa_video
@@ -320,8 +351,8 @@ fun NavigationDrawerScope.LibraryNavItem(
             CollectionType.MUSIC -> R.string.fa_music
             CollectionType.BOXSETS -> R.string.fa_open_folder
             CollectionType.PLAYLISTS -> R.string.fa_list_ul
-            else -> R.string.fa_film
-        }
+            else -> library.iconStringRes
+        } ?: R.string.fa_film
     val isFocused = interactionSource.collectIsFocusedAsState().value
     val color =
         when {
