@@ -47,6 +47,7 @@ import coil3.compose.AsyncImage
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.ChosenStreams
 import com.github.damontecres.wholphin.data.ItemPlaybackRepository
+import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.Chapter
 import com.github.damontecres.wholphin.data.model.ItemPlayback
@@ -54,7 +55,9 @@ import com.github.damontecres.wholphin.data.model.Person
 import com.github.damontecres.wholphin.data.model.chooseSource
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.Cards
+import com.github.damontecres.wholphin.ui.SlimItemFields
 import com.github.damontecres.wholphin.ui.cards.ChapterRow
+import com.github.damontecres.wholphin.ui.cards.ItemRow
 import com.github.damontecres.wholphin.ui.cards.PersonRow
 import com.github.damontecres.wholphin.ui.cards.SeasonCard
 import com.github.damontecres.wholphin.ui.components.DialogParams
@@ -76,6 +79,7 @@ import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.letNotEmpty
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.nav.NavigationManager
+import com.github.damontecres.wholphin.ui.setValueOnMain
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
@@ -85,9 +89,11 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
+import org.jellyfin.sdk.api.client.extensions.libraryApi
 import org.jellyfin.sdk.api.client.extensions.playStateApi
 import org.jellyfin.sdk.api.client.extensions.userLibraryApi
 import org.jellyfin.sdk.model.api.MediaStreamType
+import org.jellyfin.sdk.model.api.request.GetSimilarItemsRequest
 import org.jellyfin.sdk.model.extensions.ticks
 import org.jellyfin.sdk.model.serializer.toUUID
 import java.util.UUID
@@ -100,13 +106,16 @@ class MovieViewModel
     constructor(
         api: ApiClient,
         val navigationManager: NavigationManager,
+        val serverRepository: ServerRepository,
         val itemPlaybackRepository: ItemPlaybackRepository,
     ) : LoadingItemViewModel(api) {
         private lateinit var itemId: UUID
+
+        val trailers = MutableLiveData<List<Trailer>>(listOf())
         val people = MutableLiveData<List<Person>>(listOf())
         val chapters = MutableLiveData<List<Chapter>>(listOf())
+        val similar = MutableLiveData<List<BaseItem>>(listOf())
         val chosenStreams = MutableLiveData<ChosenStreams?>(null)
-        val trailers = MutableLiveData<List<Trailer>>(listOf())
 
         override fun init(
             itemId: UUID,
@@ -156,6 +165,19 @@ class MovieViewModel
                                 }.orEmpty()
                         chapters.value = Chapter.fromDto(item.data, api)
                     }
+
+                    val similar =
+                        api.libraryApi
+                            .getSimilarItems(
+                                GetSimilarItemsRequest(
+                                    userId = serverRepository.currentUser?.id,
+                                    itemId = itemId,
+                                    fields = SlimItemFields,
+                                    limit = 25,
+                                ),
+                            ).content.items
+                            .map { BaseItem.from(it, api) }
+                    this@MovieViewModel.similar.setValueOnMain(similar)
                 }
             }
         }
@@ -226,6 +248,7 @@ fun MovieDetails(
     val people by viewModel.people.observeAsState(listOf())
     val chapters by viewModel.chapters.observeAsState(listOf())
     val trailers by viewModel.trailers.observeAsState(listOf())
+    val similar by viewModel.similar.observeAsState(listOf())
     val loading by viewModel.loading.observeAsState(LoadingState.Loading)
     val chosenStreams by viewModel.chosenStreams.observeAsState(null)
 
@@ -247,6 +270,10 @@ fun MovieDetails(
                     people = people,
                     chapters = chapters,
                     trailers = trailers,
+                    similar = similar,
+                    onClickItem = {
+                        viewModel.navigationManager.navigateTo(it.destination())
+                    },
                     playOnClick = {
                         viewModel.navigationManager.navigateTo(
                             Destination.Playback(
@@ -375,11 +402,13 @@ fun MovieDetailsContent(
     people: List<Person>,
     chapters: List<Chapter>,
     trailers: List<Trailer>,
+    similar: List<BaseItem>,
     playOnClick: (Duration) -> Unit,
     trailerOnClick: (Trailer) -> Unit,
     overviewOnClick: () -> Unit,
     watchOnClick: () -> Unit,
     moreOnClick: () -> Unit,
+    onClickItem: (BaseItem) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val scope = rememberCoroutineScope()
@@ -488,6 +517,28 @@ fun MovieDetailsContent(
                         chapters = chapters,
                         onClick = { playOnClick.invoke(it.position) },
                         onLongClick = {},
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+            }
+            if (similar.isNotEmpty()) {
+                item {
+                    ItemRow(
+                        title = stringResource(R.string.more_like_this),
+                        items = similar,
+                        onClickItem = onClickItem,
+                        onLongClickItem = {},
+                        cardContent = { index, item, mod, onClick, onLongClick ->
+                            SeasonCard(
+                                item = item,
+                                onClick = onClick,
+                                onLongClick = onLongClick,
+                                modifier = mod,
+                                showImageOverlay = true,
+                                imageHeight = Cards.height2x3,
+                                imageWidth = Dp.Unspecified,
+                            )
+                        },
                         modifier = Modifier.fillMaxWidth(),
                     )
                 }

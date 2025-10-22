@@ -84,5 +84,6 @@
     <string name="direct_play_pgs">Direct play PGS subtitles</string>
     <string name="trailers">Trailers</string>
     <string name="pass_out_protection">Passout Protection</string>
+    <string name="more_like_this">More like this</string>
 
 </resources>

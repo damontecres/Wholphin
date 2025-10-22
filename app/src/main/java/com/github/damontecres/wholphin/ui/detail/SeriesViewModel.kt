@@ -8,11 +8,13 @@ import androidx.lifecycle.viewModelScope
 import androidx.media3.common.util.UnstableApi
 import com.github.damontecres.wholphin.data.ChosenStreams
 import com.github.damontecres.wholphin.data.ItemPlaybackRepository
+import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.ItemPlayback
 import com.github.damontecres.wholphin.data.model.Person
 import com.github.damontecres.wholphin.preferences.ThemeSongVolume
 import com.github.damontecres.wholphin.preferences.UserPreferences
+import com.github.damontecres.wholphin.ui.SlimItemFields
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.letNotEmpty
 import com.github.damontecres.wholphin.ui.nav.Destination
@@ -47,6 +49,7 @@ import org.jellyfin.sdk.model.api.MediaStreamType
 import org.jellyfin.sdk.model.api.SortOrder
 import org.jellyfin.sdk.model.api.request.GetEpisodesRequest
 import org.jellyfin.sdk.model.api.request.GetItemsRequest
+import org.jellyfin.sdk.model.api.request.GetSimilarItemsRequest
 import timber.log.Timber
 import java.util.UUID
 import javax.inject.Inject
@@ -57,6 +60,7 @@ class SeriesViewModel
     constructor(
         api: ApiClient,
         @param:ApplicationContext val context: Context,
+        private val serverRepository: ServerRepository,
         private val navigationManager: NavigationManager,
         private val itemPlaybackRepository: ItemPlaybackRepository,
         private val themeSongPlayer: ThemeSongPlayer,
@@ -67,6 +71,7 @@ class SeriesViewModel
         val seasons = MutableLiveData<ItemListAndMapping>(ItemListAndMapping.empty())
         val episodes = MutableLiveData<EpisodeList>(EpisodeList.Loading)
         val people = MutableLiveData<List<Person>>(listOf())
+        val similar = MutableLiveData<List<BaseItem>>(listOf())
 
         fun init(
             prefs: UserPreferences,
@@ -102,6 +107,18 @@ class SeriesViewModel
                                 people.map { Person.fromDto(it, api) }
                             }.orEmpty()
                 }
+                val similar =
+                    api.libraryApi
+                        .getSimilarItems(
+                            GetSimilarItemsRequest(
+                                userId = serverRepository.currentUser?.id,
+                                itemId = itemId,
+                                fields = SlimItemFields,
+                                limit = 25,
+                            ),
+                        ).content.items
+                        .map { BaseItem.from(it, api, true) }
+                this@SeriesViewModel.similar.setValueOnMain(similar)
             }
         }
 
