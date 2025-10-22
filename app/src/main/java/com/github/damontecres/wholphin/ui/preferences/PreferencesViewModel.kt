@@ -4,6 +4,7 @@ import androidx.datastore.core.DataStore
 import androidx.lifecycle.ViewModel
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.ui.nav.NavigationManager
+import com.github.damontecres.wholphin.util.RememberTabManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 
@@ -13,4 +14,6 @@ class PreferencesViewModel
     constructor(
         val preferenceDataStore: DataStore<AppPreferences>,
         val navigationManager: NavigationManager,
-    ) : ViewModel()
+        val rememberTabManager: RememberTabManager,
+    ) : ViewModel(),
+        RememberTabManager by rememberTabManager
