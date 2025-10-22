@@ -72,8 +72,10 @@ fun TvGuideGrid(
     modifier: Modifier = Modifier,
     viewModel: LiveTvViewModel = hiltViewModel(),
 ) {
+    var firstLoad by rememberSaveable { mutableStateOf(true) }
     LaunchedEffect(Unit) {
-        viewModel.init()
+        viewModel.init(firstLoad)
+        firstLoad = false
     }
     val loading by viewModel.loading.observeAsState(LoadingState.Pending)
     val channels by viewModel.channels.observeAsState(listOf())

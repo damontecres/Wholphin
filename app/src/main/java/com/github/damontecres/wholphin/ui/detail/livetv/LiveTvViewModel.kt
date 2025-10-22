@@ -50,8 +50,8 @@ class LiveTvViewModel
     ) : ViewModel() {
         val loading = MutableLiveData<LoadingState>(LoadingState.Pending)
 
-        val start =
-            LocalDateTime.now().truncatedTo(ChronoUnit.HOURS)
+        lateinit var start: LocalDateTime
+            private set
         private lateinit var channelsIdToIndex: Map<UUID, Int>
         private val mutex = Mutex()
 
@@ -62,8 +62,11 @@ class LiveTvViewModel
         val fetchingItem = MutableLiveData<LoadingState>(LoadingState.Pending)
         val fetchedItem = MutableLiveData<BaseItem?>(null)
 
-        fun init() {
-//            loading.value = LoadingState.Loading
+        fun init(firstLoad: Boolean) {
+            start = LocalDateTime.now().truncatedTo(ChronoUnit.HOURS)
+            if (!firstLoad) {
+                loading.value = LoadingState.Loading
+            }
             viewModelScope.launch(Dispatchers.IO + LoadingExceptionHandler(loading, "Could not fetch channels")) {
                 val channelData by api.liveTvApi.getLiveTvChannels(
                     GetLiveTvChannelsRequest(
