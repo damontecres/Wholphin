@@ -87,6 +87,7 @@ data class DialogItem(
     constructor(
         @StringRes text: Int,
         @StringRes iconStringRes: Int,
+        iconColor: Color = Color.Unspecified,
         onClick: () -> Unit,
     ) : this(
         headlineContent = {
@@ -98,6 +99,7 @@ data class DialogItem(
             Text(
                 text = stringResource(id = iconStringRes),
                 fontFamily = FontAwesome,
+                color = iconColor,
             )
         },
         onClick = onClick,
