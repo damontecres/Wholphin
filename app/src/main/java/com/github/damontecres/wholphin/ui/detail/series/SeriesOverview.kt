@@ -160,6 +160,7 @@ fun SeriesOverview(
                             buildMoreDialogItems(
                                 ep,
                                 watched = ep.data.userData?.played ?: false,
+                                favorite = ep.data.userData?.isFavorite ?: false,
                                 series = series,
                                 sourceId = chosenStreams?.sourceId,
                                 navigateTo = viewModel::navigateTo,
@@ -170,6 +171,17 @@ fun SeriesOverview(
                                             viewModel.setWatched(
                                                 it.id,
                                                 played,
+                                                position.episodeRowIndex,
+                                            )
+                                        }
+                                },
+                                onClickFavorite = { favorite ->
+                                    episodeList
+                                        ?.getOrNull(position.episodeRowIndex)
+                                        ?.let {
+                                            viewModel.setFavorite(
+                                                it.id,
+                                                favorite,
                                                 position.episodeRowIndex,
                                             )
                                         }

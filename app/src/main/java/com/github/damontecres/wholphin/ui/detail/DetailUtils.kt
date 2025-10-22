@@ -35,8 +35,10 @@ fun buildMoreDialogItems(
     series: BaseItem?,
     sourceId: UUID?,
     watched: Boolean,
+    favorite: Boolean,
     navigateTo: (Destination) -> Unit,
     onClickWatch: (Boolean) -> Unit,
+    onClickFavorite: (Boolean) -> Unit,
     onChooseVersion: () -> Unit,
     onChooseTracks: (MediaStreamType) -> Unit,
 ): List<DialogItem> =
@@ -62,6 +64,15 @@ fun buildMoreDialogItems(
                 iconStringRes = if (watched) R.string.fa_eye else R.string.fa_eye_slash,
             ) {
                 onClickWatch.invoke(!watched)
+            },
+        )
+        add(
+            DialogItem(
+                text = if (favorite) R.string.remove_favorite else R.string.add_favorite,
+                iconStringRes = R.string.fa_heart,
+                iconColor = if (favorite) Color.Red else Color.Unspecified,
+            ) {
+                onClickFavorite.invoke(!favorite)
             },
         )
         series?.let {
