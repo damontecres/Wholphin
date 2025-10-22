@@ -192,6 +192,16 @@ class MovieViewModel
                 fetchAndSetItem(itemId)
             }
 
+        fun setFavorite(favorite: Boolean) =
+            viewModelScope.launch(ExceptionHandler() + Dispatchers.IO) {
+                if (favorite) {
+                    api.userLibraryApi.markFavoriteItem(itemId)
+                } else {
+                    api.userLibraryApi.unmarkFavoriteItem(itemId)
+                }
+                fetchAndSetItem(itemId)
+            }
+
         fun savePlayVersion(
             item: BaseItem,
             sourceId: UUID,
@@ -344,6 +354,9 @@ fun MovieDetails(
                     watchOnClick = {
                         viewModel.setWatched((movie.data.userData?.played ?: false).not())
                     },
+                    favoriteOnClick = {
+                        viewModel.setFavorite((movie.data.userData?.isFavorite ?: false).not())
+                    },
                     trailerOnClick = { trailer ->
                         when (trailer) {
                             is LocalTrailer ->
@@ -407,6 +420,7 @@ fun MovieDetailsContent(
     trailerOnClick: (Trailer) -> Unit,
     overviewOnClick: () -> Unit,
     watchOnClick: () -> Unit,
+    favoriteOnClick: () -> Unit,
     moreOnClick: () -> Unit,
     onClickItem: (BaseItem) -> Unit,
     modifier: Modifier = Modifier,
@@ -478,9 +492,11 @@ fun MovieDetailsContent(
                     ExpandablePlayButtons(
                         resumePosition = resumePosition,
                         watched = dto.userData?.played ?: false,
+                        favorite = dto.userData?.isFavorite ?: false,
                         playOnClick = playOnClick,
                         moreOnClick = moreOnClick,
                         watchOnClick = watchOnClick,
+                        favoriteOnClick = favoriteOnClick,
                         buttonOnFocusChanged = {
                             if (it.isFocused) {
                                 scope.launch(ExceptionHandler()) {

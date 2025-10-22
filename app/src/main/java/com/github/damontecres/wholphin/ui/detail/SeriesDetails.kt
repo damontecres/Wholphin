@@ -122,6 +122,7 @@ fun SeriesDetails(
                     people = people,
                     similar = similar,
                     played = played,
+                    favorite = item.data.userData?.isFavorite ?: false,
                     modifier = modifier,
                     onClickItem = { viewModel.navigateTo(it.destination()) },
                     onLongClickItem = { season ->
@@ -144,6 +145,10 @@ fun SeriesDetails(
                     },
                     playOnClick = { viewModel.playNextUp() },
                     watchOnClick = { showWatchConfirmation = true },
+                    favoriteOnClick = {
+                        val favorite = item.data.userData?.isFavorite ?: false
+                        viewModel.setFavorite(item.id, !favorite, null)
+                    },
                 )
                 if (showWatchConfirmation) {
                     ConfirmDialog(
@@ -186,11 +191,13 @@ fun SeriesDetailsContent(
     similar: List<BaseItem>,
     people: List<Person>,
     played: Boolean,
+    favorite: Boolean,
     onClickItem: (BaseItem) -> Unit,
     onLongClickItem: (BaseItem) -> Unit,
     overviewOnClick: () -> Unit,
     playOnClick: () -> Unit,
     watchOnClick: () -> Unit,
+    favoriteOnClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val bringIntoViewRequester = remember { BringIntoViewRequester() }
@@ -247,9 +254,11 @@ fun SeriesDetailsContent(
                     SeriesDetailsHeader(
                         series = series,
                         played = played,
+                        favorite = favorite,
                         overviewOnClick = overviewOnClick,
                         playOnClick = playOnClick,
                         watchOnClick = watchOnClick,
+                        favoriteOnClick = favoriteOnClick,
                         bringIntoViewRequester = bringIntoViewRequester,
                         modifier =
                             Modifier
@@ -337,10 +346,12 @@ fun SeriesDetailsContent(
 fun SeriesDetailsHeader(
     series: BaseItem,
     played: Boolean,
+    favorite: Boolean,
     bringIntoViewRequester: BringIntoViewRequester,
     overviewOnClick: () -> Unit,
     playOnClick: () -> Unit,
     watchOnClick: () -> Unit,
+    favoriteOnClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val scope = rememberCoroutineScope()
@@ -420,6 +431,20 @@ fun SeriesDetailsHeader(
                 title = if (played) R.string.mark_unwatched else R.string.mark_watched,
                 iconStringRes = if (played) R.string.fa_eye else R.string.fa_eye_slash,
                 onClick = watchOnClick,
+                modifier =
+                    Modifier.onFocusChanged {
+                        if (it.isFocused) {
+                            scope.launch(ExceptionHandler()) {
+                                bringIntoViewRequester.bringIntoView()
+                            }
+                        }
+                    },
+            )
+            ExpandableFaButton(
+                title = if (favorite) R.string.remove_favorite else R.string.add_favorite,
+                iconStringRes = R.string.fa_heart,
+                onClick = favoriteOnClick,
+                iconColor = if (favorite) Color.Red else Color.Unspecified,
                 modifier =
                     Modifier.onFocusChanged {
                         if (it.isFocused) {

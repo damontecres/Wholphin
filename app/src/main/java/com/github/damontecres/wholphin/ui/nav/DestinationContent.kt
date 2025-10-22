@@ -166,6 +166,9 @@ fun DestinationContent(
                 modifier = modifier,
             )
 
+        Destination.Favorites -> {
+        }
+
         Destination.UpdateApp -> InstallUpdatePage(preferences, modifier)
 
         Destination.License -> LicenseInfo(modifier)

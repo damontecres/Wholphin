@@ -86,6 +86,9 @@ sealed class Destination(
     ) : Destination(false)
 
     @Serializable
+    data object Favorites : Destination(false)
+
+    @Serializable
     data object UpdateApp : Destination(true)
 
     @Serializable

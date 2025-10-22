@@ -73,6 +73,7 @@ fun SeriesOverviewContent(
     onLongClick: (BaseItem) -> Unit,
     playOnClick: (Duration) -> Unit,
     watchOnClick: () -> Unit,
+    favoriteOnClick: () -> Unit,
     moreOnClick: () -> Unit,
     overviewOnClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -293,6 +294,7 @@ fun SeriesOverviewContent(
                             watchOnClick.invoke()
                             episodeRowFocusRequester.tryRequestFocus()
                         },
+                        favoriteOnClick = favoriteOnClick,
                         modifier =
                             Modifier
                                 .fillMaxWidth()
