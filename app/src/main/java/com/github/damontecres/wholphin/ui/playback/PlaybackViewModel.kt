@@ -460,6 +460,7 @@ class PlaybackViewModel
                         listOf(),
                         playMethod = transcodeType,
                         playSessionId = response.playSessionId,
+                        liveStreamId = source.liveStreamId,
                     )
                 val itemPlayback =
                     currentItemPlayback.copy(
@@ -746,6 +747,7 @@ data class CurrentPlayback(
     val tracks: List<TrackSupport>,
     val playMethod: PlayMethod,
     val playSessionId: String?,
+    val liveStreamId: String?,
 )
 
 val Format.idAsInt: Int?

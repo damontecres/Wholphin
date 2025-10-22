@@ -56,6 +56,7 @@ class TrackActivityPlaybackListener(
                     isMuted = false,
                     audioStreamIndex = itemPlayback.audioIndex.takeIf { itemPlayback.audioIndexEnabled },
                     subtitleStreamIndex = itemPlayback.subtitleIndex.takeIf { itemPlayback.subtitleIndexEnabled },
+                    liveStreamId = playback.liveStreamId,
                 ),
             )
         }
@@ -100,6 +101,7 @@ class TrackActivityPlaybackListener(
                     positionTicks = position,
                     failed = false,
                     playSessionId = playback.playSessionId,
+                    liveStreamId = playback.liveStreamId,
                 ),
             )
         }
@@ -144,6 +146,7 @@ class TrackActivityPlaybackListener(
                     playSessionId = playback.playSessionId,
                     audioStreamIndex = itemPlayback.audioIndex.takeIf { itemPlayback.audioIndexEnabled },
                     subtitleStreamIndex = itemPlayback.subtitleIndex.takeIf { itemPlayback.subtitleIndexEnabled },
+                    liveStreamId = playback.liveStreamId,
                 ),
             )
         }
