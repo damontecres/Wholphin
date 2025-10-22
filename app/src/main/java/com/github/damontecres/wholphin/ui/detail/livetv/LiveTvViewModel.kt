@@ -112,7 +112,7 @@ class LiveTvViewModel
                                 channelId = dto.channelId!!,
                                 start = dto.startDate!!,
                                 end = dto.endDate!!,
-                                startHours = hoursBetween(start, dto.startDate!!),
+                                startHours = hoursBetween(start, dto.startDate!!).coerceAtLeast(0f),
                                 endHours = hoursBetween(start, dto.endDate!!),
                                 duration = dto.runTimeTicks!!.ticks,
                                 name = dto.seriesName ?: dto.name,

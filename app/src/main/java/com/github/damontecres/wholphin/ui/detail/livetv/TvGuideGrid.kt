@@ -19,6 +19,7 @@ import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -99,7 +100,15 @@ fun TvGuideGrid(
                     programList = programs,
                     programs = programsByChannel,
                     start = viewModel.start,
-                    onClick = { index, program ->
+                    onClickChannel = { index, channel ->
+                        viewModel.navigationManager.navigateTo(
+                            Destination.Playback(
+                                itemId = channel.id,
+                                positionMs = 0L,
+                            ),
+                        )
+                    },
+                    onClickProgram = { index, program ->
                         if (program.isFake) {
                             val now = LocalDateTime.now()
                             if (now.isAfter(program.start) && now.isBefore(program.end)) {
@@ -170,13 +179,16 @@ fun TvGuideGrid(
     }
 }
 
+const val CHANNEL_COLUMN = -1
+
 @Composable
 fun TvGuideGrid(
     channels: List<TvChannel>,
     programList: List<TvProgram>,
     programs: Map<UUID, List<TvProgram>>,
     start: LocalDateTime,
-    onClick: (Int, TvProgram) -> Unit,
+    onClickChannel: (Int, TvChannel) -> Unit,
+    onClickProgram: (Int, TvProgram) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -211,7 +223,8 @@ fun TvGuideGrid(
                 )
         }
 
-    var gridHasFocus by remember { mutableStateOf(false) }
+    var gridHasFocus by rememberSaveable { mutableStateOf(false) }
+    var channelColumnFocused by rememberSaveable { mutableStateOf(false) }
 
     ProgramGuide(
         state = state,
@@ -239,47 +252,62 @@ fun TvGuideGrid(
                             }
 
                             Key.DirectionRight -> {
-                                val nextProgramIndex = focusedProgramIndex + 1
-                                val programsBefore = programsBeforeChannel.get(focusedChannelIndex)
-                                val relativePosition = nextProgramIndex - programsBefore
-                                val channelPrograms =
-                                    programs[channels[focusedChannelIndex].id].orEmpty()
-                                if (relativePosition >= channelPrograms.size) {
-                                    focusManager.moveFocus(FocusDirection.Right)
-                                    null
+                                if (channelColumnFocused) {
+                                    channelColumnFocused = false
+                                    focusedProgramIndex
                                 } else {
-                                    nextProgramIndex
+                                    val nextProgramIndex = focusedProgramIndex + 1
+                                    val programsBefore =
+                                        programsBeforeChannel.get(focusedChannelIndex)
+                                    val relativePosition = nextProgramIndex - programsBefore
+                                    val channelPrograms =
+                                        programs[channels[focusedChannelIndex].id].orEmpty()
+                                    if (relativePosition >= channelPrograms.size) {
+                                        focusManager.moveFocus(FocusDirection.Right)
+                                        null
+                                    } else {
+                                        nextProgramIndex
+                                    }
                                 }
                             }
 
                             Key.DirectionLeft -> {
-                                val nextProgramIndex = focusedProgramIndex - 1
-                                if (nextProgramIndex >= 0) {
+                                if (channelColumnFocused) {
+                                    focusManager.moveFocus(FocusDirection.Left)
+                                    null
+                                } else {
+                                    val nextProgramIndex = focusedProgramIndex - 1
                                     val programsBefore =
                                         programsBeforeChannel.get(focusedChannelIndex)
                                     val relativePosition = nextProgramIndex - programsBefore
 //                                val channelPrograms =
 //                                    programs[channels[focusedChannel].id].orEmpty()
-                                    if (relativePosition < 0) {
+                                    if (relativePosition >= 0) {
+                                        nextProgramIndex
+                                    } else if (relativePosition == CHANNEL_COLUMN) {
+                                        channelColumnFocused = true
+                                        focusedProgramIndex
+                                    } else {
+                                        Timber.w("Move left to relativePosition=$relativePosition should not occur")
                                         focusManager.moveFocus(FocusDirection.Left)
                                         null
-                                    } else {
-                                        nextProgramIndex
                                     }
-                                } else {
-                                    focusManager.moveFocus(FocusDirection.Left)
-                                    null
                                 }
                             }
 
                             Key.DirectionUp -> {
-                                val start = programList[focusedProgramIndex].startHours
                                 val newFocusedChannelIndex = (focusedChannelIndex - 1)
+//                                Timber.v("newFocusedChannelIndex=$newFocusedChannelIndex")
                                 if (newFocusedChannelIndex < 0) {
                                     focusManager.moveFocus(FocusDirection.Up)
                                     null
+                                } else if (channelColumnFocused) {
+                                    focusedChannelIndex = newFocusedChannelIndex
+                                    programsBeforeChannel.get(focusedChannelIndex)
                                 } else {
-                                    focusedChannelIndex = newFocusedChannelIndex.coerceAtLeast(0)
+                                    val start = programList[focusedProgramIndex].startHours
+                                    focusedChannelIndex =
+                                        newFocusedChannelIndex.coerceAtLeast(0)
                                     val channelId = channels[focusedChannelIndex].id
                                     val pro = programs[channelId].orEmpty()
                                     val pIndex =
@@ -298,14 +326,17 @@ fun TvGuideGrid(
                             }
 
                             Key.DirectionDown -> {
-                                // When the currently focused program starts
-                                val start = programList[focusedProgramIndex].startHours
                                 // Move channel focus down
                                 val newFocusedChannelIndex = (focusedChannelIndex + 1)
                                 if (newFocusedChannelIndex >= channels.size) {
                                     // If trying to move below the final channel, then move focus out of the grid
                                     focusManager.moveFocus(FocusDirection.Down)
                                     null
+                                } else if (channelColumnFocused) {
+                                    // If focused on the channel column, move down a channel
+                                    focusedChannelIndex =
+                                        newFocusedChannelIndex.coerceAtMost(channels.size - 1)
+                                    programsBeforeChannel.get(focusedChannelIndex)
                                 } else {
                                     // Otherwise, moving to a new row
                                     focusedChannelIndex =
@@ -313,6 +344,8 @@ fun TvGuideGrid(
                                     // Get the new row/channel's programs
                                     val channelId = channels[focusedChannelIndex].id
                                     val pro = programs[channelId].orEmpty()
+                                    // When the currently focused program starts
+                                    val start = programList[focusedProgramIndex].startHours
                                     // Find the first program where the start time (of the previously focused program) is in the middle of a program
                                     val pIndex =
                                         pro.indexOfFirst { start in (it.startHours..<it.endHours) }
@@ -336,9 +369,15 @@ fun TvGuideGrid(
                             }
 
                             Key.DirectionCenter, Key.Enter, Key.NumPadEnter -> {
-                                val program = programList[focusedProgramIndex]
-                                Timber.v("Clicked on %s", program)
-                                onClick.invoke(focusedProgramIndex, program)
+                                if (channelColumnFocused) {
+                                    val channel = channels[focusedChannelIndex]
+                                    Timber.v("Clicked on %s", channel)
+                                    onClickChannel.invoke(focusedChannelIndex, channel)
+                                } else {
+                                    val program = programList[focusedProgramIndex]
+                                    Timber.v("Clicked on %s", program)
+                                    onClickProgram.invoke(focusedProgramIndex, program)
+                                }
                                 null
                             }
 
@@ -347,15 +386,21 @@ fun TvGuideGrid(
                             }
                         }
                     if (newIndex != null) {
-                        val before = programsBeforeChannel.get(focusedChannelIndex)
-                        val max =
-                            before + channels[focusedChannelIndex].let { programs[it.id]!!.size } - 1
-                        val index = newIndex.coerceIn(before, max)
-                        scope.launch(ExceptionHandler()) {
-                            focusedProgramIndex = index
-                            state.animateToProgram(index, Alignment.Center)
+//                        Timber.v("newIndex=$newIndex")
+                        if (newIndex >= 0) {
+                            val before = programsBeforeChannel.get(focusedChannelIndex)
+                            val max =
+                                before + channels[focusedChannelIndex].let { programs[it.id]!!.size } - 1
+                            val index = newIndex.coerceIn(before, max)
+                            scope.launch(ExceptionHandler()) {
+                                focusedProgramIndex = index
+                                state.animateToProgram(index, Alignment.Center)
+                            }
+                            return@onPreviewKeyEvent true
+                        } else {
+                            Timber.w("newIndex is <0: $newIndex")
+                            return@onPreviewKeyEvent true
                         }
-                        return@onPreviewKeyEvent true
                     }
                     return@onPreviewKeyEvent false
                 },
@@ -420,7 +465,8 @@ fun TvGuideGrid(
             },
         ) { programIndex ->
             val program = programList[programIndex]
-            val focused = gridHasFocus && programIndex == focusedProgramIndex
+            val focused =
+                gridHasFocus && !channelColumnFocused && programIndex == focusedProgramIndex
             val background =
                 if (focused) {
                     MaterialTheme.colorScheme.inverseSurface
@@ -480,12 +526,21 @@ fun TvGuideGrid(
             },
         ) { channelIndex ->
             val channel = channels[channelIndex]
+            val focused =
+                gridHasFocus && channelColumnFocused && focusedChannelIndex == channelIndex
+            val background =
+                if (focused) {
+                    MaterialTheme.colorScheme.inverseSurface
+                } else {
+                    MaterialTheme.colorScheme.surface
+                }
+            val textColor = MaterialTheme.colorScheme.contentColorFor(background)
             Box(
                 modifier =
                     Modifier
                         .fillMaxSize()
                         .background(
-                            MaterialTheme.colorScheme.surface,
+                            background,
                             shape = RoundedCornerShape(4.dp),
                         ),
             ) {
@@ -499,6 +554,7 @@ fun TvGuideGrid(
                 ) {
                     Text(
                         text = channel.number ?: channel.name ?: channelIndex.toString(),
+                        color = textColor,
                         modifier = Modifier,
                     )
                     AsyncImage(
@@ -508,6 +564,14 @@ fun TvGuideGrid(
                     )
                 }
             }
+        }
+
+        topCorner {
+            Box(
+                Modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.surface),
+            )
         }
     }
 }
