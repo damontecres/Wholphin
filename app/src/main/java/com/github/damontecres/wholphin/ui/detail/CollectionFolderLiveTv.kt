@@ -23,7 +23,6 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.unit.dp
-import androidx.datastore.core.DataStore
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -37,9 +36,7 @@ import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.GetItemsFilter
-import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.UserPreferences
-import com.github.damontecres.wholphin.preferences.rememberTab
 import com.github.damontecres.wholphin.ui.components.CollectionFolderGrid
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.detail.livetv.DvrSchedule
@@ -50,6 +47,7 @@ import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.nav.NavigationManager
 import com.github.damontecres.wholphin.ui.setValueOnMain
 import com.github.damontecres.wholphin.ui.tryRequestFocus
+import com.github.damontecres.wholphin.util.RememberTabManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.liveTvApi
@@ -63,8 +61,9 @@ class LiveTvCollectionViewModel
         val api: ApiClient,
         val serverRepository: ServerRepository,
         val navigationManager: NavigationManager,
-        val preferenceDataStore: DataStore<AppPreferences>,
-    ) : ViewModel() {
+        val rememberTabManager: RememberTabManager,
+    ) : ViewModel(),
+        RememberTabManager by rememberTabManager {
         val recordingFolders = MutableLiveData<List<TabId>>()
 
         init {
@@ -91,13 +90,8 @@ fun CollectionFolderLiveTv(
     modifier: Modifier = Modifier,
     viewModel: LiveTvCollectionViewModel = hiltViewModel(),
 ) {
-    val uiPrefs = preferences.appPreferences.interfacePreferences
     val rememberedTabIndex =
-        if (uiPrefs.rememberSelectedTab) {
-            uiPrefs.getRememberedTabsOrDefault(destination.itemId.toString(), 0)
-        } else {
-            0
-        }
+        remember { viewModel.getRememberedTab(preferences, destination.itemId, 0) }
     val folders by viewModel.recordingFolders.observeAsState(listOf())
 
     val tabs =
@@ -113,12 +107,8 @@ fun CollectionFolderLiveTv(
     val firstTabFocusRequester = remember { FocusRequester() }
     LaunchedEffect(Unit) { firstTabFocusRequester.tryRequestFocus() }
 
-    if (uiPrefs.rememberSelectedTab) {
-        LaunchedEffect(selectedTabIndex) {
-            viewModel.preferenceDataStore.updateData {
-                preferences.appPreferences.rememberTab(destination.itemId, selectedTabIndex)
-            }
-        }
+    LaunchedEffect(selectedTabIndex) {
+        viewModel.saveRememberedTab(preferences, destination.itemId, selectedTabIndex)
     }
     val onClickItem = { item: BaseItem ->
         viewModel.navigationManager.navigateTo(item.destination())
@@ -210,7 +200,7 @@ fun CollectionFolderLiveTv(
                 if (folderIndex in folders.indices) {
                     CollectionFolderGrid(
                         preferences = preferences,
-                        onClickItem = { viewModel.navigationManager.navigateTo(it.destination()) },
+                        onClickItem = onClickItem,
                         itemId = folders[folderIndex].id,
                         item = null,
                         initialFilter = GetItemsFilter(),
