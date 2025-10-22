@@ -41,6 +41,7 @@ import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.preferences.PreferencesViewModel
 import com.github.damontecres.wholphin.ui.tryRequestFocus
+import org.jellyfin.sdk.model.api.BaseItemKind
 
 @Composable
 fun CollectionFolderTv(
@@ -160,7 +161,10 @@ fun CollectionFolderTv(
                     preferences = preferences,
                     itemId = destination.itemId,
                     item = destination.item,
-                    initialFilter = GetItemsFilter(),
+                    initialFilter =
+                        GetItemsFilter(
+                            includeItemTypes = listOf(BaseItemKind.SERIES),
+                        ),
                     showTitle = false,
                     recursive = true,
                     modifier =

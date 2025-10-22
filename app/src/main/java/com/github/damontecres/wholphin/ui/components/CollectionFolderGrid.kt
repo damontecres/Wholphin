@@ -69,7 +69,7 @@ class CollectionFolderViewModel
         val filter = MutableLiveData<GetItemsFilter>(GetItemsFilter())
 
         fun init(
-            itemId: UUID,
+            itemId: UUID?,
             potential: BaseItem?,
             sortAndDirection: SortAndDirection,
             recursive: Boolean,
@@ -81,7 +81,9 @@ class CollectionFolderViewModel
                     "Error loading collection $itemId",
                 ) + Dispatchers.IO,
             ) {
-                fetchItem(itemId, potential)
+                if (itemId != null) {
+                    fetchItem(itemId, potential)
+                }
                 loadResults(sortAndDirection, recursive, filter)
             }
 
@@ -90,68 +92,67 @@ class CollectionFolderViewModel
             recursive: Boolean,
             filter: GetItemsFilter,
         ) {
-            item.value?.let { item ->
-                viewModelScope.launch(Dispatchers.IO) {
-                    withContext(Dispatchers.Main) {
-                        pager.value = listOf()
-                        loading.value = LoadingState.Loading
-                        this@CollectionFolderViewModel.sortAndDirection.value = sortAndDirection
-                        this@CollectionFolderViewModel.filter.value = filter
+            val item = item.value
+            viewModelScope.launch(Dispatchers.IO) {
+                withContext(Dispatchers.Main) {
+                    pager.value = listOf()
+                    loading.value = LoadingState.Loading
+                    this@CollectionFolderViewModel.sortAndDirection.value = sortAndDirection
+                    this@CollectionFolderViewModel.filter.value = filter
+                }
+                val includeItemTypes =
+                    when (item?.data?.collectionType) {
+                        CollectionType.MOVIES -> listOf(BaseItemKind.MOVIE)
+                        CollectionType.TVSHOWS -> listOf(BaseItemKind.SERIES)
+                        CollectionType.HOMEVIDEOS -> listOf(BaseItemKind.VIDEO)
+                        CollectionType.MUSIC ->
+                            listOf(
+                                BaseItemKind.AUDIO,
+                                BaseItemKind.MUSIC_ARTIST,
+                                BaseItemKind.MUSIC_ALBUM,
+                            )
+
+                        CollectionType.BOXSETS -> listOf(BaseItemKind.BOX_SET)
+                        CollectionType.PLAYLISTS -> listOf(BaseItemKind.PLAYLIST)
+
+                        else -> listOf()
                     }
-                    val includeItemTypes =
-                        when (item.data.collectionType) {
-                            CollectionType.MOVIES -> listOf(BaseItemKind.MOVIE)
-                            CollectionType.TVSHOWS -> listOf(BaseItemKind.SERIES)
-                            CollectionType.HOMEVIDEOS -> listOf(BaseItemKind.VIDEO)
-                            CollectionType.MUSIC ->
+                val request =
+                    filter.applyTo(
+                        GetItemsRequest(
+                            parentId = item?.id,
+                            enableImageTypes = listOf(ImageType.PRIMARY, ImageType.THUMB),
+                            includeItemTypes = includeItemTypes,
+                            recursive = recursive,
+                            excludeItemIds = item?.let { listOf(item.id) },
+                            sortBy =
                                 listOf(
-                                    BaseItemKind.AUDIO,
-                                    BaseItemKind.MUSIC_ARTIST,
-                                    BaseItemKind.MUSIC_ALBUM,
-                                )
-
-                            CollectionType.BOXSETS -> listOf(BaseItemKind.BOX_SET)
-                            CollectionType.PLAYLISTS -> listOf(BaseItemKind.PLAYLIST)
-
-                            else -> listOf()
-                        }
-                    val request =
-                        filter.applyTo(
-                            GetItemsRequest(
-                                parentId = item.id,
-                                enableImageTypes = listOf(ImageType.PRIMARY, ImageType.THUMB),
-                                includeItemTypes = includeItemTypes,
-                                recursive = recursive,
-                                excludeItemIds = listOf(item.id),
-                                sortBy =
-                                    listOf(
-                                        sortAndDirection.sort,
-                                        ItemSortBy.SORT_NAME,
-                                        ItemSortBy.PRODUCTION_YEAR,
-                                    ),
-                                sortOrder =
-                                    listOf(
-                                        sortAndDirection.direction,
-                                        SortOrder.ASCENDING,
-                                        SortOrder.ASCENDING,
-                                    ),
-                                fields = SlimItemFields,
-                            ),
-                        )
-                    val newPager =
-                        ApiRequestPager(
-                            api,
-                            request,
-                            GetItemsRequestHandler,
-                            viewModelScope,
-                            useSeriesForPrimary = true,
-                        )
-                    newPager.init()
-                    if (newPager.isNotEmpty()) newPager.getBlocking(0)
-                    withContext(Dispatchers.Main) {
-                        pager.value = newPager
-                        loading.value = LoadingState.Success
-                    }
+                                    sortAndDirection.sort,
+                                    ItemSortBy.SORT_NAME,
+                                    ItemSortBy.PRODUCTION_YEAR,
+                                ),
+                            sortOrder =
+                                listOf(
+                                    sortAndDirection.direction,
+                                    SortOrder.ASCENDING,
+                                    SortOrder.ASCENDING,
+                                ),
+                            fields = SlimItemFields,
+                        ),
+                    )
+                val newPager =
+                    ApiRequestPager(
+                        api,
+                        request,
+                        GetItemsRequestHandler,
+                        viewModelScope,
+                        useSeriesForPrimary = true,
+                    )
+                newPager.init()
+                if (newPager.isNotEmpty()) newPager.getBlocking(0)
+                withContext(Dispatchers.Main) {
+                    pager.value = newPager
+                    loading.value = LoadingState.Success
                 }
             }
         }
@@ -188,7 +189,7 @@ class CollectionFolderViewModel
 @Composable
 fun CollectionFolderGrid(
     preferences: UserPreferences,
-    itemId: UUID,
+    itemId: UUID?,
     item: BaseItem?,
     initialFilter: GetItemsFilter,
     recursive: Boolean,
@@ -221,7 +222,7 @@ fun CollectionFolderGrid(
             pager?.let { pager ->
                 CollectionFolderGridContent(
                     preferences,
-                    item!!,
+                    item,
                     pager,
                     sortAndDirection = sortAndDirection,
                     modifier = modifier,
@@ -241,7 +242,7 @@ fun CollectionFolderGrid(
 @Composable
 fun CollectionFolderGridContent(
     preferences: UserPreferences,
-    item: BaseItem,
+    item: BaseItem?,
     pager: List<BaseItem?>,
     sortAndDirection: SortAndDirection,
     onClickItem: (BaseItem) -> Unit,
@@ -251,9 +252,9 @@ fun CollectionFolderGridContent(
     showTitle: Boolean = true,
     positionCallback: ((columns: Int, position: Int) -> Unit)? = null,
 ) {
-    val title = item.name ?: item.data.collectionType?.name ?: "Collection"
+    val title = item?.name ?: item?.data?.collectionType?.name ?: "Collection"
     val sortOptions =
-        when (item.data.collectionType) {
+        when (item?.data?.collectionType) {
             CollectionType.MOVIES -> MovieSortOptions
             CollectionType.TVSHOWS -> SeriesSortOptions
             CollectionType.HOMEVIDEOS -> VideoSortOptions

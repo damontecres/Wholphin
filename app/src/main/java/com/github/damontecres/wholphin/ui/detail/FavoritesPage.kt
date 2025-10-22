@@ -6,6 +6,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -29,11 +30,14 @@ import androidx.tv.material3.TabRow
 import androidx.tv.material3.TabRowDefaults
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.data.model.BaseItem
+import com.github.damontecres.wholphin.data.model.GetItemsFilter
 import com.github.damontecres.wholphin.preferences.UserPreferences
+import com.github.damontecres.wholphin.ui.components.CollectionFolderGrid
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.preferences.PreferencesViewModel
 import com.github.damontecres.wholphin.ui.tryRequestFocus
+import org.jellyfin.sdk.model.api.BaseItemKind
 
 @Composable
 fun FavoritesPage(
@@ -134,73 +138,73 @@ fun FavoritesPage(
         }
         when (selectedTabIndex) {
             0 -> {
-//                CollectionFolderGrid(
-//                    preferences = preferences,
-//                    onClickItem = onClickItem,
-//                    parentItemId = null,
-//                    parentItem = null,
-//                    initialFilter =
-//                        GetItemsFilter(
-//                            favorite = true,
-//                            includeItemTypes = listOf(BaseItemKind.MOVIE),
-//                        ),
-//                    showTitle = false,
-//                    recursive = true,
-//                    modifier =
-//                        Modifier
-//                            .padding(start = 16.dp)
-//                            .fillMaxSize()
-//                            .focusRequester(focusRequester),
-//                    positionCallback = { columns, position ->
-//                        showHeader = position < columns
-//                    },
-//                )
+                CollectionFolderGrid(
+                    preferences = preferences,
+                    onClickItem = onClickItem,
+                    itemId = null,
+                    item = null,
+                    initialFilter =
+                        GetItemsFilter(
+                            favorite = true,
+                            includeItemTypes = listOf(BaseItemKind.MOVIE),
+                        ),
+                    showTitle = false,
+                    recursive = true,
+                    modifier =
+                        Modifier
+                            .padding(start = 16.dp)
+                            .fillMaxSize()
+                            .focusRequester(focusRequester),
+                    positionCallback = { columns, position ->
+                        showHeader = position < columns
+                    },
+                )
             }
             1 -> {
-//                CollectionFolderGrid(
-//                    preferences = preferences,
-//                    onClickItem = onClickItem,
-//                    parentItemId = null,
-//                    parentItem = null,
-//                    initialFilter =
-//                        GetItemsFilter(
-//                            favorite = true,
-//                            includeItemTypes = listOf(BaseItemKind.SERIES),
-//                        ),
-//                    showTitle = false,
-//                    recursive = true,
-//                    modifier =
-//                        Modifier
-//                            .padding(start = 16.dp)
-//                            .fillMaxSize()
-//                            .focusRequester(focusRequester),
-//                    positionCallback = { columns, position ->
-//                        showHeader = position < columns
-//                    },
-//                )
+                CollectionFolderGrid(
+                    preferences = preferences,
+                    onClickItem = onClickItem,
+                    itemId = null,
+                    item = null,
+                    initialFilter =
+                        GetItemsFilter(
+                            favorite = true,
+                            includeItemTypes = listOf(BaseItemKind.SERIES),
+                        ),
+                    showTitle = false,
+                    recursive = true,
+                    modifier =
+                        Modifier
+                            .padding(start = 16.dp)
+                            .fillMaxSize()
+                            .focusRequester(focusRequester),
+                    positionCallback = { columns, position ->
+                        showHeader = position < columns
+                    },
+                )
             }
             2 -> {
-//                CollectionFolderGrid(
-//                    preferences = preferences,
-//                    onClickItem = onClickItem,
-//                    parentItemId = null,
-//                    parentItem = null,
-//                    initialFilter =
-//                        GetItemsFilter(
-//                            favorite = true,
-//                            includeItemTypes = listOf(BaseItemKind.EPISODE),
-//                        ),
-//                    showTitle = false,
-//                    recursive = true,
-//                    modifier =
-//                        Modifier
-//                            .padding(start = 16.dp)
-//                            .fillMaxSize()
-//                            .focusRequester(focusRequester),
-//                    positionCallback = { columns, position ->
-//                        showHeader = position < columns
-//                    },
-//                )
+                CollectionFolderGrid(
+                    preferences = preferences,
+                    onClickItem = onClickItem,
+                    itemId = null,
+                    item = null,
+                    initialFilter =
+                        GetItemsFilter(
+                            favorite = true,
+                            includeItemTypes = listOf(BaseItemKind.EPISODE),
+                        ),
+                    showTitle = false,
+                    recursive = true,
+                    modifier =
+                        Modifier
+                            .padding(start = 16.dp)
+                            .fillMaxSize()
+                            .focusRequester(focusRequester),
+                    positionCallback = { columns, position ->
+                        showHeader = position < columns
+                    },
+                )
             }
             else -> ErrorMessage("Invalid tab index $selectedTabIndex", null)
         }

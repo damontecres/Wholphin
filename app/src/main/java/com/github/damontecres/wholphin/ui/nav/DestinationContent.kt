@@ -9,6 +9,7 @@ import com.github.damontecres.wholphin.ui.detail.CollectionFolderGeneric
 import com.github.damontecres.wholphin.ui.detail.CollectionFolderMovie
 import com.github.damontecres.wholphin.ui.detail.CollectionFolderTv
 import com.github.damontecres.wholphin.ui.detail.DebugPage
+import com.github.damontecres.wholphin.ui.detail.FavoritesPage
 import com.github.damontecres.wholphin.ui.detail.PlaylistDetails
 import com.github.damontecres.wholphin.ui.detail.SeriesDetails
 import com.github.damontecres.wholphin.ui.detail.movie.MovieDetails
@@ -166,8 +167,11 @@ fun DestinationContent(
                 modifier = modifier,
             )
 
-        Destination.Favorites -> {
-        }
+        Destination.Favorites ->
+            FavoritesPage(
+                preferences = preferences,
+                modifier = modifier,
+            )
 
         Destination.UpdateApp -> InstallUpdatePage(preferences, modifier)
 

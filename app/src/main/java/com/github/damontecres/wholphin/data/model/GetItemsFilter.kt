@@ -22,7 +22,7 @@ data class GetItemsFilter(
 ) {
     fun applyTo(req: GetItemsRequest) =
         req.copy(
-//            includeItemTypes = includeItemTypes,
+            includeItemTypes = includeItemTypes,
             isFavorite = favorite,
             genreIds = genres,
             minCriticRating = minCriticRating,
