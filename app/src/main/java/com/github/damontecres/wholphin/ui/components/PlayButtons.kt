@@ -18,6 +18,7 @@ import androidx.compose.ui.focus.FocusState
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.tv.material3.Button
@@ -124,8 +125,10 @@ fun PlayButtons(
 fun ExpandablePlayButtons(
     resumePosition: Duration,
     watched: Boolean,
+    favorite: Boolean,
     playOnClick: (position: Duration) -> Unit,
     watchOnClick: () -> Unit,
+    favoriteOnClick: () -> Unit,
     moreOnClick: () -> Unit,
     buttonOnFocusChanged: (FocusState) -> Unit,
     modifier: Modifier = Modifier,
@@ -185,6 +188,17 @@ fun ExpandablePlayButtons(
             )
         }
 
+        // Favorite button
+        item("favorite") {
+            ExpandableFaButton(
+                title = if (favorite) R.string.remove_favorite else R.string.add_favorite,
+                iconStringRes = R.string.fa_heart,
+                onClick = favoriteOnClick,
+                iconColor = if (favorite) Color.Red else Color.Unspecified,
+                modifier = Modifier.onFocusChanged(buttonOnFocusChanged),
+            )
+        }
+
         // More button
         item("more") {
             ExpandablePlayButton(
@@ -205,8 +219,10 @@ private fun ExpandablePlayButtonsPreview() {
         ExpandablePlayButtons(
             resumePosition = 10.seconds,
             watched = false,
+            favorite = false,
             playOnClick = {},
             watchOnClick = {},
+            favoriteOnClick = {},
             moreOnClick = {},
             buttonOnFocusChanged = {},
             modifier = Modifier,

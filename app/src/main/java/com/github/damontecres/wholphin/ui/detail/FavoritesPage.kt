@@ -32,33 +32,29 @@ import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.GetItemsFilter
 import com.github.damontecres.wholphin.preferences.UserPreferences
-import com.github.damontecres.wholphin.preferences.rememberTab
 import com.github.damontecres.wholphin.ui.components.CollectionFolderGrid
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
-import com.github.damontecres.wholphin.ui.components.GenreCardGrid
-import com.github.damontecres.wholphin.ui.components.RecommendedTvShow
 import com.github.damontecres.wholphin.ui.ifElse
-import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.preferences.PreferencesViewModel
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import org.jellyfin.sdk.model.api.BaseItemKind
 
 @Composable
-fun CollectionFolderTv(
+fun FavoritesPage(
     preferences: UserPreferences,
-    destination: Destination.MediaItem,
     modifier: Modifier = Modifier,
     preferencesViewModel: PreferencesViewModel = hiltViewModel(),
 ) {
     val uiPrefs = preferences.appPreferences.interfacePreferences
-    val rememberedTabIndex =
-        if (uiPrefs.rememberSelectedTab) {
-            uiPrefs.getRememberedTabsOrDefault(destination.itemId.toString(), 0)
-        } else {
-            0
-        }
+    val rememberedTabIndex = 0
+    // TODO remember tab
+//        if (uiPrefs.rememberSelectedTab) {
+//            uiPrefs.getRememberedTabsOrDefault(destination.itemId.toString(), 0)
+//        } else {
+//            0
+//        }
 
-    val tabs = listOf("Recommended", "Library", "Genres")
+    val tabs = listOf("Movies", "TV Shows", "Episodes")
     var focusTabIndex by rememberSaveable { mutableIntStateOf(rememberedTabIndex) }
     var selectedTabIndex by rememberSaveable { mutableIntStateOf(rememberedTabIndex) }
     val focusRequester = remember { FocusRequester() }
@@ -66,18 +62,18 @@ fun CollectionFolderTv(
     val firstTabFocusRequester = remember { FocusRequester() }
     LaunchedEffect(Unit) { firstTabFocusRequester.tryRequestFocus() }
 
-    if (uiPrefs.rememberSelectedTab) {
-        LaunchedEffect(selectedTabIndex) {
-            preferencesViewModel.preferenceDataStore.updateData {
-                preferences.appPreferences.rememberTab(destination.itemId, selectedTabIndex)
-            }
-        }
-    }
+//    if (uiPrefs.rememberSelectedTab) {
+//        LaunchedEffect(selectedTabIndex) {
+//            preferencesViewModel.preferenceDataStore.updateData {
+//                preferences.appPreferences.rememberTab(destination.itemId, selectedTabIndex)
+//            }
+//        }
+//    }
+    var showHeader by rememberSaveable { mutableStateOf(true) }
+
     val onClickItem = { item: BaseItem ->
         preferencesViewModel.navigationManager.navigateTo(item.destination())
     }
-
-    var showHeader by rememberSaveable { mutableStateOf(true) }
 
     LaunchedEffect(Unit) { focusRequester.tryRequestFocus() }
     Column(
@@ -142,27 +138,37 @@ fun CollectionFolderTv(
         }
         when (selectedTabIndex) {
             0 -> {
-                RecommendedTvShow(
+                CollectionFolderGrid(
                     preferences = preferences,
-                    parentId = destination.itemId,
                     onClickItem = onClickItem,
-                    onFocusPosition = { pos ->
-                        showHeader = pos.row < 1
-                    },
+                    itemId = null,
+                    item = null,
+                    initialFilter =
+                        GetItemsFilter(
+                            favorite = true,
+                            includeItemTypes = listOf(BaseItemKind.MOVIE),
+                        ),
+                    showTitle = false,
+                    recursive = true,
                     modifier =
                         Modifier
                             .padding(start = 16.dp)
                             .fillMaxSize()
                             .focusRequester(focusRequester),
+                    positionCallback = { columns, position ->
+                        showHeader = position < columns
+                    },
                 )
             }
             1 -> {
                 CollectionFolderGrid(
                     preferences = preferences,
-                    itemId = destination.itemId,
-                    item = destination.item,
+                    onClickItem = onClickItem,
+                    itemId = null,
+                    item = null,
                     initialFilter =
                         GetItemsFilter(
+                            favorite = true,
                             includeItemTypes = listOf(BaseItemKind.SERIES),
                         ),
                     showTitle = false,
@@ -175,17 +181,29 @@ fun CollectionFolderTv(
                     positionCallback = { columns, position ->
                         showHeader = position < columns
                     },
-                    onClickItem = onClickItem,
                 )
             }
             2 -> {
-                GenreCardGrid(
-                    itemId = destination.itemId,
+                CollectionFolderGrid(
+                    preferences = preferences,
+                    onClickItem = onClickItem,
+                    itemId = null,
+                    item = null,
+                    initialFilter =
+                        GetItemsFilter(
+                            favorite = true,
+                            includeItemTypes = listOf(BaseItemKind.EPISODE),
+                        ),
+                    showTitle = false,
+                    recursive = true,
                     modifier =
                         Modifier
                             .padding(start = 16.dp)
                             .fillMaxSize()
                             .focusRequester(focusRequester),
+                    positionCallback = { columns, position ->
+                        showHeader = position < columns
+                    },
                 )
             }
             else -> ErrorMessage("Invalid tab index $selectedTabIndex", null)

@@ -248,6 +248,23 @@ class SeriesViewModel
             }
         }
 
+        fun setFavorite(
+            itemId: UUID,
+            favorite: Boolean,
+            listIndex: Int?,
+        ) = viewModelScope.launch(ExceptionHandler() + Dispatchers.IO) {
+            if (favorite) {
+                api.userLibraryApi.markFavoriteItem(itemId)
+            } else {
+                api.userLibraryApi.unmarkFavoriteItem(itemId)
+            }
+            if (listIndex != null) {
+                refreshEpisode(itemId, listIndex)
+            } else {
+                fetchItem(seriesId, null)
+            }
+        }
+
         fun setSeasonWatched(
             seasonId: UUID,
             played: Boolean,

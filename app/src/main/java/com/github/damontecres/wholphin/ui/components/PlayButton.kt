@@ -6,10 +6,12 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
@@ -103,6 +105,7 @@ fun ExpandableFaButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
+    iconColor: Color = Color.Unspecified,
 ) {
     val isFocused = interactionSource.collectIsFocusedAsState().value
     Button(
@@ -114,16 +117,17 @@ fun ExpandableFaButton(
         Text(
             text = stringResource(iconStringRes),
             style = MaterialTheme.typography.titleSmall,
+            color = iconColor,
             fontSize = 16.sp,
             fontFamily = FontAwesome,
             textAlign = TextAlign.Center,
             modifier = Modifier,
         )
         AnimatedVisibility(isFocused) {
-            Spacer(Modifier.size(8.dp))
             Text(
                 text = stringResource(title),
                 style = MaterialTheme.typography.titleSmall,
+                modifier = Modifier.padding(start = 4.dp),
             )
         }
     }

@@ -32,6 +32,7 @@ fun FocusedEpisodeFooter(
     playOnClick: (Duration) -> Unit,
     moreOnClick: () -> Unit,
     watchOnClick: () -> Unit,
+    favoriteOnClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val dto = ep.data
@@ -45,9 +46,11 @@ fun FocusedEpisodeFooter(
         ExpandablePlayButtons(
             resumePosition = resumePosition,
             watched = dto.userData?.played ?: false,
+            favorite = dto.userData?.isFavorite ?: false,
             playOnClick = playOnClick,
             moreOnClick = moreOnClick,
             watchOnClick = watchOnClick,
+            favoriteOnClick = favoriteOnClick,
             buttonOnFocusChanged = {},
             modifier = Modifier,
         )

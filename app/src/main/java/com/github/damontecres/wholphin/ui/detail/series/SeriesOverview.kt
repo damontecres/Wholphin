@@ -266,6 +266,12 @@ fun SeriesOverview(
                             viewModel.setWatched(it.id, !played, position.episodeRowIndex)
                         }
                     },
+                    favoriteOnClick = {
+                        episodeList?.getOrNull(position.episodeRowIndex)?.let {
+                            val favorite = it.data.userData?.isFavorite ?: false
+                            viewModel.setFavorite(it.id, !favorite, position.episodeRowIndex)
+                        }
+                    },
                     moreOnClick = {
                         episodeList?.getOrNull(position.episodeRowIndex)?.let { ep ->
                             moreDialog = buildMoreForEpisode(ep, false)

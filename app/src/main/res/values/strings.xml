@@ -85,5 +85,8 @@
     <string name="trailers">Trailers</string>
     <string name="pass_out_protection">Passout Protection</string>
     <string name="more_like_this">More like this</string>
+    <string name="remove_favorite">Unfavorite</string>
+    <string name="add_favorite">Favorite</string>
+    <string name="favorites">Favorites</string>
 
 </resources>
