@@ -201,7 +201,7 @@ fun PlaybackPage(
 
             val showSegment =
                 !segmentCancelled && currentSegment != null &&
-                    !controllerViewState.controlsVisible && skipIndicatorDuration == 0L
+                    nextUp == null && !controllerViewState.controlsVisible && skipIndicatorDuration == 0L
             BackHandler(showSegment) {
                 segmentCancelled = true
             }
