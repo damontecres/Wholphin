@@ -67,8 +67,10 @@ import com.github.damontecres.wholphin.ui.preferences.PreferenceScreenOption
 import com.github.damontecres.wholphin.ui.spacedByWithFooter
 import com.github.damontecres.wholphin.ui.toServerString
 import com.github.damontecres.wholphin.ui.tryRequestFocus
+import com.github.damontecres.wholphin.util.ExceptionHandler
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.model.api.CollectionType
 import org.jellyfin.sdk.model.api.DeviceProfile
@@ -161,6 +163,7 @@ fun NavDrawer(
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
     val drawerFocusRequester = remember { FocusRequester() }
+    val focusRequester = remember { FocusRequester() }
 
     // If the user presses back while on the home page, open the nav drawer, another back press will quit the app
     BackHandler(enabled = (drawerState.currentValue == DrawerValue.Closed && destination is Destination.Home)) {
@@ -173,14 +176,20 @@ fun NavDrawer(
 
     val showPinnedOnly by viewModel.showPinnedOnly.observeAsState(true)
     val libraries = if (showPinnedOnly) pinnedLibraries else allLibraries
-
-    BackHandler(enabled = !showPinnedOnly) {
-        viewModel.setPinnedOnly(true)
-    }
-
     // A negative index is a built in page, >=0 is a library
     val selectedIndex by viewModel.selectedIndex.observeAsState(-1)
-    val focusRequester = remember { FocusRequester() }
+
+    fun setPinnedOnly(value: Boolean) {
+        viewModel.setPinnedOnly(value)
+        scope.launch(ExceptionHandler()) {
+            listState.scrollToItem(0)
+            focusRequester.tryRequestFocus()
+        }
+    }
+
+    BackHandler(enabled = !showPinnedOnly) {
+        setPinnedOnly(true)
+    }
 
     NavigationDrawer(
         modifier =
@@ -268,9 +277,14 @@ fun NavDrawer(
                                 icon = Icons.Default.ArrowBack,
                                 selected = false,
                                 onClick = {
-                                    viewModel.setPinnedOnly(true)
+                                    setPinnedOnly(true)
                                 },
-                                modifier = Modifier.animateItem(),
+                                modifier =
+                                    Modifier
+                                        .ifElse(
+                                            selectedIndex == -1,
+                                            Modifier.focusRequester(focusRequester),
+                                        ).animateItem(),
                             )
                         }
                     }
@@ -279,17 +293,19 @@ fun NavDrawer(
                             library = it,
                             selected = selectedIndex == index,
                             onClick = {
-                                viewModel.setIndex(index)
                                 when (it) {
-                                    NavDrawerItem.Favorites ->
+                                    NavDrawerItem.Favorites -> {
+                                        viewModel.setIndex(index)
                                         viewModel.navigationManager.navigateToFromDrawer(
                                             Destination.Favorites,
                                         )
+                                    }
                                     NavDrawerItem.More -> {
-                                        viewModel.setPinnedOnly(false)
+                                        setPinnedOnly(false)
                                     }
 
                                     is ServerNavDrawerItem -> {
+                                        viewModel.setIndex(index)
                                         viewModel.navigationManager.navigateToFromDrawer(it.destination)
                                     }
                                 }
