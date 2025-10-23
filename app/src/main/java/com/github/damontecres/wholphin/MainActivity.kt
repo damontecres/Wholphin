@@ -37,6 +37,7 @@ import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.nav.NavigationManager
 import com.github.damontecres.wholphin.ui.theme.WholphinTheme
 import com.github.damontecres.wholphin.util.AppUpgradeHandler
+import com.github.damontecres.wholphin.util.ServerEventListener
 import com.github.damontecres.wholphin.util.UpdateChecker
 import com.github.damontecres.wholphin.util.profile.createDeviceProfile
 import dagger.hilt.android.AndroidEntryPoint
@@ -65,6 +66,9 @@ class MainActivity : AppCompatActivity() {
 
     @Inject
     lateinit var appUpgradeHandler: AppUpgradeHandler
+
+    @Inject
+    lateinit var serverEventListener: ServerEventListener
 
     @OptIn(ExperimentalTvMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -145,6 +149,9 @@ class MainActivity : AppCompatActivity() {
                                             Timber.w(ex, "Failed to check for update")
                                         }
                                     }
+                                }
+                                LaunchedEffect(server) {
+                                    serverEventListener.init()
                                 }
                                 ApplicationContent(
                                     user = user,
