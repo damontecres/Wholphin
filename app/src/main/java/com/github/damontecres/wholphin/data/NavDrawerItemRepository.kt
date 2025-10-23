@@ -54,6 +54,8 @@ class NavDrawerItemRepository
                     }.orEmpty()
             return items.filter { navDrawerPins.isPinned(it.id) }
         }
+
+        suspend fun getFilteredNavDrawerItems() = filterNavItems(getNavDrawerItems())
     }
 
 fun List<NavDrawerPinnedItem>.isPinned(id: String) = (firstOrNull { it.itemId == id }?.type ?: NavPinType.PINNED) == NavPinType.PINNED
