@@ -1,7 +1,7 @@
 package com.github.damontecres.wholphin.ui.nav
 
+import android.content.Context
 import androidx.activity.compose.BackHandler
-import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -57,11 +57,13 @@ import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.JellyfinServer
 import com.github.damontecres.wholphin.data.JellyfinUser
 import com.github.damontecres.wholphin.data.NavDrawerItemRepository
+import com.github.damontecres.wholphin.data.model.NavDrawerPinnedItem
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.FontAwesome
 import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.preferences.PreferenceScreenOption
 import com.github.damontecres.wholphin.ui.spacedByWithFooter
+import com.github.damontecres.wholphin.ui.toServerString
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -97,13 +99,29 @@ class NavDrawerViewModel
         }
     }
 
-data class NavDrawerItem(
-    val id: UUID,
+sealed interface NavDrawerItem {
+    val id: String
+
+    fun name(context: Context): String
+
+    object Favorites : NavDrawerItem {
+        override val id: String
+            get() = NavDrawerPinnedItem.FAVORITES_ID
+
+        override fun name(context: Context): String = context.getString(R.string.favorites)
+    }
+}
+
+data class ServerNavDrawerItem(
+    val itemId: UUID,
     val name: String,
     val destination: Destination,
     val type: CollectionType,
-    @param:StringRes val iconStringRes: Int?,
-)
+) : NavDrawerItem {
+    override val id: String = itemId.toServerString()
+
+    override fun name(context: Context): String = name
+}
 
 /**
  * Display the left side navigation drawer with [DestinationContent] on the right
@@ -214,7 +232,16 @@ fun NavDrawer(
                             selected = selectedIndex == index,
                             onClick = {
                                 viewModel.setIndex(index)
-                                viewModel.navigationManager.navigateToFromDrawer(it.destination)
+                                when (it) {
+                                    NavDrawerItem.Favorites ->
+                                        viewModel.navigationManager.navigateToFromDrawer(
+                                            Destination.Favorites,
+                                        )
+
+                                    is ServerNavDrawerItem -> {
+                                        viewModel.navigationManager.navigateToFromDrawer(it.destination)
+                                    }
+                                }
                             },
                             modifier =
                                 Modifier.ifElse(
@@ -307,17 +334,23 @@ fun NavigationDrawerScope.NavItem(
     modifier: Modifier = Modifier,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
 ) {
+    val context = LocalContext.current
     val icon =
-        when (library.type) {
-            CollectionType.MOVIES -> R.string.fa_film
-            CollectionType.TVSHOWS -> R.string.fa_tv
-            CollectionType.HOMEVIDEOS -> R.string.fa_video
-            CollectionType.LIVETV -> R.string.fa_tv
-            CollectionType.MUSIC -> R.string.fa_music
-            CollectionType.BOXSETS -> R.string.fa_open_folder
-            CollectionType.PLAYLISTS -> R.string.fa_list_ul
-            else -> library.iconStringRes
-        } ?: R.string.fa_film
+        when (library) {
+            NavDrawerItem.Favorites -> R.string.fa_heart
+
+            is ServerNavDrawerItem ->
+                when (library.type) {
+                    CollectionType.MOVIES -> R.string.fa_film
+                    CollectionType.TVSHOWS -> R.string.fa_tv
+                    CollectionType.HOMEVIDEOS -> R.string.fa_video
+                    CollectionType.LIVETV -> R.string.fa_tv
+                    CollectionType.MUSIC -> R.string.fa_music
+                    CollectionType.BOXSETS -> R.string.fa_open_folder
+                    CollectionType.PLAYLISTS -> R.string.fa_list_ul
+                    else -> R.string.fa_film
+                }
+        }
     val isFocused = interactionSource.collectIsFocusedAsState().value
     val color =
         when {
@@ -344,7 +377,7 @@ fun NavigationDrawerScope.NavItem(
     ) {
         Text(
             modifier = Modifier,
-            text = library.name ?: library.id.toString(),
+            text = library.name(context),
             maxLines = 1,
         )
     }
