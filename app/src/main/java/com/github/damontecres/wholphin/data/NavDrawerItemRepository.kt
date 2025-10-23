@@ -45,14 +45,14 @@ class NavDrawerItemRepository
             return builtins + libraries
         }
 
-        suspend fun getFilteredNavDrawerItems(): List<NavDrawerItem> {
+        suspend fun filterNavItems(items: List<NavDrawerItem>): List<NavDrawerItem> {
             val user = serverRepository.currentUser
             val navDrawerPins =
                 user
                     ?.let {
                         serverPreferencesDao.getNavDrawerPinnedItems(it)
                     }.orEmpty()
-            return getNavDrawerItems().filter { navDrawerPins.isPinned(it.id) }
+            return items.filter { navDrawerPins.isPinned(it.id) }
         }
     }
 

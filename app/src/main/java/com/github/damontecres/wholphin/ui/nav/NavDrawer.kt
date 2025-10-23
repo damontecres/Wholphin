@@ -20,6 +20,7 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.remember
@@ -61,14 +62,13 @@ import com.github.damontecres.wholphin.data.model.NavDrawerPinnedItem
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.FontAwesome
 import com.github.damontecres.wholphin.ui.ifElse
+import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.preferences.PreferenceScreenOption
 import com.github.damontecres.wholphin.ui.spacedByWithFooter
 import com.github.damontecres.wholphin.ui.toServerString
 import com.github.damontecres.wholphin.ui.tryRequestFocus
-import com.github.damontecres.wholphin.util.ExceptionHandler
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.model.api.CollectionType
 import org.jellyfin.sdk.model.api.DeviceProfile
@@ -82,12 +82,16 @@ class NavDrawerViewModel
         private val navDrawerItemRepository: NavDrawerItemRepository,
         val navigationManager: NavigationManager,
     ) : ViewModel() {
+        private lateinit var allNavDrawerItems: List<NavDrawerItem>
         val libraries = MutableLiveData<List<NavDrawerItem>>(listOf())
         val selectedIndex = MutableLiveData<Int>(-1)
 
-        init {
-            viewModelScope.launch(Dispatchers.IO + ExceptionHandler(true)) {
-                val libraries = navDrawerItemRepository.getFilteredNavDrawerItems()
+        fun init() {
+            viewModelScope.launchIO {
+                if (!this@NavDrawerViewModel::allNavDrawerItems.isInitialized) {
+                    allNavDrawerItems = navDrawerItemRepository.getNavDrawerItems()
+                }
+                val libraries = navDrawerItemRepository.filterNavItems(allNavDrawerItems)
                 withContext(Dispatchers.Main) {
                     this@NavDrawerViewModel.libraries.value = libraries
                 }
@@ -152,6 +156,7 @@ fun NavDrawer(
         drawerFocusRequester.requestFocus()
     }
     val libraries by viewModel.libraries.observeAsState(listOf())
+    LaunchedEffect(Unit) { viewModel.init() }
 
     // A negative index is a built in page, >=0 is a library
     val selectedIndex by viewModel.selectedIndex.observeAsState(-1)
