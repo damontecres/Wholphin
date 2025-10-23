@@ -139,7 +139,7 @@ class HomeViewModel
                     .getNextUp(request)
                     .content
                     .items
-                    .map { BaseItem.Companion.from(it, api, true) }
+                    .map { BaseItem.from(it, api, true) }
             return nextUp
         }
 
