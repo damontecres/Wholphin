@@ -60,7 +60,7 @@ class HomeViewModel
                 serverRepository.currentUserDto?.let { userDto ->
                     val includedIds =
                         navDrawerItemRepository
-                            .getFilteredNavDrawerItems()
+                            .getFilteredNavDrawerItems(navDrawerItemRepository.getNavDrawerItems())
                             .filter { it is ServerNavDrawerItem }
                             .map { (it as ServerNavDrawerItem).itemId }
                     // TODO data is fetched all together which may be slow for large servers

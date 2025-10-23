@@ -3,8 +3,6 @@ package com.github.damontecres.wholphin.data.model
 import androidx.room.Entity
 import androidx.room.ForeignKey
 import com.github.damontecres.wholphin.data.JellyfinUser
-import com.github.damontecres.wholphin.ui.toServerString
-import org.jellyfin.sdk.model.api.BaseItemDto
 
 enum class NavPinType {
     PINNED,
@@ -27,10 +25,4 @@ data class NavDrawerPinnedItem(
     val userId: Int,
     val itemId: String,
     val type: NavPinType,
-) {
-    companion object {
-        fun idFor(dto: BaseItemDto) = "s_${dto.id.toServerString()}"
-
-        const val FAVORITES_ID = "a_favorites"
-    }
-}
+)

@@ -16,6 +16,7 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
@@ -58,7 +59,6 @@ import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.JellyfinServer
 import com.github.damontecres.wholphin.data.JellyfinUser
 import com.github.damontecres.wholphin.data.NavDrawerItemRepository
-import com.github.damontecres.wholphin.data.model.NavDrawerPinnedItem
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.FontAwesome
 import com.github.damontecres.wholphin.ui.ifElse
@@ -82,17 +82,17 @@ class NavDrawerViewModel
         private val navDrawerItemRepository: NavDrawerItemRepository,
         val navigationManager: NavigationManager,
     ) : ViewModel() {
-        private lateinit var allNavDrawerItems: List<NavDrawerItem>
+        val allLibraries = MutableLiveData<List<NavDrawerItem>>(null)
         val libraries = MutableLiveData<List<NavDrawerItem>>(listOf())
-        val selectedIndex = MutableLiveData<Int>(-1)
+        val selectedIndex = MutableLiveData(-1)
+        val showPinnedOnly = MutableLiveData(true)
 
         fun init() {
             viewModelScope.launchIO {
-                if (!this@NavDrawerViewModel::allNavDrawerItems.isInitialized) {
-                    allNavDrawerItems = navDrawerItemRepository.getNavDrawerItems()
-                }
-                val libraries = navDrawerItemRepository.filterNavItems(allNavDrawerItems)
+                val all = allLibraries.value ?: navDrawerItemRepository.getNavDrawerItems()
+                val libraries = navDrawerItemRepository.getFilteredNavDrawerItems(all)
                 withContext(Dispatchers.Main) {
+                    this@NavDrawerViewModel.allLibraries.value = all
                     this@NavDrawerViewModel.libraries.value = libraries
                 }
             }
@@ -100,6 +100,11 @@ class NavDrawerViewModel
 
         fun setIndex(index: Int) {
             selectedIndex.value = index
+        }
+
+        fun setPinnedOnly(value: Boolean) {
+            setIndex(-1)
+            showPinnedOnly.value = value
         }
     }
 
@@ -110,9 +115,16 @@ sealed interface NavDrawerItem {
 
     object Favorites : NavDrawerItem {
         override val id: String
-            get() = NavDrawerPinnedItem.FAVORITES_ID
+            get() = "a_favorites"
 
         override fun name(context: Context): String = context.getString(R.string.favorites)
+    }
+
+    object More : NavDrawerItem {
+        override val id: String
+            get() = "a_more"
+
+        override fun name(context: Context): String = context.getString(R.string.more)
     }
 }
 
@@ -155,8 +167,16 @@ fun NavDrawer(
         drawerState.setValue(DrawerValue.Open)
         drawerFocusRequester.requestFocus()
     }
-    val libraries by viewModel.libraries.observeAsState(listOf())
+    val allLibraries by viewModel.allLibraries.observeAsState(listOf())
+    val pinnedLibraries by viewModel.libraries.observeAsState(listOf())
     LaunchedEffect(Unit) { viewModel.init() }
+
+    val showPinnedOnly by viewModel.showPinnedOnly.observeAsState(true)
+    val libraries = if (showPinnedOnly) pinnedLibraries else allLibraries
+
+    BackHandler(enabled = !showPinnedOnly) {
+        viewModel.setPinnedOnly(true)
+    }
 
     // A negative index is a built in page, >=0 is a library
     val selectedIndex by viewModel.selectedIndex.observeAsState(-1)
@@ -173,7 +193,12 @@ fun NavDrawer(
                     state = listState,
                     contentPadding = PaddingValues(0.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedByWithFooter(8.dp),
+                    verticalArrangement =
+                        if (showPinnedOnly) {
+                            Arrangement.spacedByWithFooter(8.dp)
+                        } else {
+                            Arrangement.spacedBy(8.dp)
+                        },
                     modifier =
                         Modifier
                             .focusGroup()
@@ -184,52 +209,70 @@ fun NavDrawer(
                             }.fillMaxHeight()
                             .background(MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp)),
                 ) {
-                    item {
-                        IconNavItem(
-                            text = user?.name ?: "",
-                            subtext = server?.name ?: server?.url,
-                            icon = Icons.Default.AccountCircle,
-                            selected = false,
-                            onClick = {
-                                viewModel.navigationManager.navigateTo(Destination.UserList)
-                            },
-                        )
-                    }
-                    item {
-                        IconNavItem(
-                            text = "Search",
-                            icon = Icons.Default.Search,
-                            selected = selectedIndex == -2,
-                            onClick = {
-                                viewModel.setIndex(-2)
-                                viewModel.navigationManager.navigateToFromDrawer(Destination.Search)
-                            },
-                            modifier =
-                                Modifier.ifElse(
-                                    selectedIndex == -2,
-                                    Modifier.focusRequester(focusRequester),
-                                ),
-                        )
-                    }
-                    item {
-                        IconNavItem(
-                            text = "Home",
-                            icon = Icons.Default.Home,
-                            selected = selectedIndex == -1,
-                            onClick = {
-                                viewModel.setIndex(-1)
-                                if (destination is Destination.Home) {
-                                    viewModel.navigationManager.reloadHome()
-                                } else {
-                                    viewModel.navigationManager.goToHome()
-                                }
-                            },
-                            modifier =
-                                Modifier.ifElse(
-                                    selectedIndex == -1,
-                                    Modifier.focusRequester(focusRequester),
-                                ),
-                        )
+                    if (showPinnedOnly) {
+                        item {
+                            IconNavItem(
+                                text = user?.name ?: "",
+                                subtext = server?.name ?: server?.url,
+                                icon = Icons.Default.AccountCircle,
+                                selected = false,
+                                onClick = {
+                                    viewModel.navigationManager.navigateTo(Destination.UserList)
+                                },
+                                modifier = Modifier.animateItem(),
+                            )
+                        }
+                        item {
+                            IconNavItem(
+                                text = "Search",
+                                icon = Icons.Default.Search,
+                                selected = selectedIndex == -2,
+                                onClick = {
+                                    viewModel.setIndex(-2)
+                                    viewModel.navigationManager.navigateToFromDrawer(Destination.Search)
+                                },
+                                modifier =
+                                    Modifier
+                                        .ifElse(
+                                            selectedIndex == -2,
+                                            Modifier.focusRequester(focusRequester),
+                                        ).animateItem(),
+                            )
+                        }
+                        item {
+                            IconNavItem(
+                                text = "Home",
+                                icon = Icons.Default.Home,
+                                selected = selectedIndex == -1,
+                                onClick = {
+                                    viewModel.setIndex(-1)
+                                    if (destination is Destination.Home) {
+                                        viewModel.navigationManager.reloadHome()
+                                    } else {
+                                        viewModel.navigationManager.goToHome()
+                                    }
+                                },
+                                modifier =
+                                    Modifier
+                                        .ifElse(
+                                            selectedIndex == -1,
+                                            Modifier.focusRequester(focusRequester),
+                                        ).animateItem(),
+                            )
+                        }
+                    } else {
+                        item {
+                            IconNavItem(
+                                text = "Back",
+                                subtext = null,
+                                icon = Icons.Default.ArrowBack,
+                                selected = false,
+                                onClick = {
+                                    viewModel.setPinnedOnly(true)
+                                },
+                                modifier = Modifier.animateItem(),
+                            )
+                        }
                     }
                     itemsIndexed(libraries) { index, it ->
                         NavItem(
@@ -242,6 +285,9 @@ fun NavDrawer(
                                         viewModel.navigationManager.navigateToFromDrawer(
                                             Destination.Favorites,
                                         )
+                                    NavDrawerItem.More -> {
+                                        viewModel.setPinnedOnly(false)
+                                    }
 
                                     is ServerNavDrawerItem -> {
                                         viewModel.navigationManager.navigateToFromDrawer(it.destination)
@@ -249,26 +295,29 @@ fun NavDrawer(
                                 }
                             },
                             modifier =
-                                Modifier.ifElse(
-                                    selectedIndex == index,
-                                    Modifier.focusRequester(focusRequester),
-                                ),
+                                Modifier
+                                    .ifElse(
+                                        selectedIndex == index,
+                                        Modifier.focusRequester(focusRequester),
+                                    ).animateItem(),
                         )
                     }
-                    item {
-                        IconNavItem(
-                            text = "Settings",
-                            icon = Icons.Default.Settings,
-                            selected = false,
-                            onClick = {
-                                viewModel.navigationManager.navigateTo(
-                                    Destination.Settings(
-                                        PreferenceScreenOption.BASIC,
-                                    ),
-                                )
-                            },
-                            modifier = Modifier,
-                        )
+                    if (showPinnedOnly) {
+                        item {
+                            IconNavItem(
+                                text = "Settings",
+                                icon = Icons.Default.Settings,
+                                selected = false,
+                                onClick = {
+                                    viewModel.navigationManager.navigateTo(
+                                        Destination.Settings(
+                                            PreferenceScreenOption.BASIC,
+                                        ),
+                                    )
+                                },
+                                modifier = Modifier.animateItem(),
+                            )
+                        }
                     }
                 }
             }
@@ -343,6 +392,7 @@ fun NavigationDrawerScope.NavItem(
     val icon =
         when (library) {
             NavDrawerItem.Favorites -> R.string.fa_heart
+            NavDrawerItem.More -> R.string.fa_ellipsis
 
             is ServerNavDrawerItem ->
                 when (library.type) {
