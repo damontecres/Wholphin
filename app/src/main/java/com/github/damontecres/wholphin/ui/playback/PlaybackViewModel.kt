@@ -32,6 +32,8 @@ import com.github.damontecres.wholphin.preferences.SkipSegmentBehavior
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.nav.NavigationManager
+import com.github.damontecres.wholphin.ui.seekBack
+import com.github.damontecres.wholphin.ui.seekForward
 import com.github.damontecres.wholphin.ui.setValueOnMain
 import com.github.damontecres.wholphin.ui.showToast
 import com.github.damontecres.wholphin.ui.toServerString
@@ -51,6 +53,8 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -60,6 +64,7 @@ import org.jellyfin.sdk.api.client.extensions.mediaSegmentsApi
 import org.jellyfin.sdk.api.client.extensions.trickplayApi
 import org.jellyfin.sdk.api.client.extensions.userLibraryApi
 import org.jellyfin.sdk.api.client.extensions.videosApi
+import org.jellyfin.sdk.api.sockets.subscribe
 import org.jellyfin.sdk.model.api.BaseItemDto
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.DeviceProfile
@@ -69,6 +74,8 @@ import org.jellyfin.sdk.model.api.MediaSourceInfo
 import org.jellyfin.sdk.model.api.MediaStreamType
 import org.jellyfin.sdk.model.api.PlayMethod
 import org.jellyfin.sdk.model.api.PlaybackInfoDto
+import org.jellyfin.sdk.model.api.PlaystateCommand
+import org.jellyfin.sdk.model.api.PlaystateMessage
 import org.jellyfin.sdk.model.api.SubtitlePlaybackMode
 import org.jellyfin.sdk.model.api.TrickplayInfo
 import org.jellyfin.sdk.model.extensions.inWholeTicks
@@ -148,6 +155,7 @@ class PlaybackViewModel
                 }
             }
             addCloseable { player.release() }
+            subscribe()
         }
 
         fun init(
@@ -740,6 +748,38 @@ class PlaybackViewModel
         fun release() {
             activityListener?.release()
             player.release()
+        }
+
+        fun subscribe() {
+            api.webSocket
+                .subscribe<PlaystateMessage>()
+                .onEach { message ->
+                    message.data?.let {
+                        when (it.command) {
+                            PlaystateCommand.STOP -> {
+                                release()
+                                navigationManager.goBack()
+                            }
+
+                            PlaystateCommand.PAUSE -> player.pause()
+                            PlaystateCommand.UNPAUSE -> player.play()
+                            PlaystateCommand.NEXT_TRACK -> playUpNextUp()
+                            PlaystateCommand.PREVIOUS_TRACK -> playPrevious()
+                            PlaystateCommand.SEEK -> it.seekPositionTicks?.ticks?.let { player.seekTo(it.inWholeMilliseconds) }
+                            PlaystateCommand.REWIND ->
+                                player.seekBack(
+                                    preferences.appPreferences.playbackPreferences.skipBackMs.milliseconds,
+                                )
+
+                            PlaystateCommand.FAST_FORWARD ->
+                                player.seekForward(
+                                    preferences.appPreferences.playbackPreferences.skipForwardMs.milliseconds,
+                                )
+
+                            PlaystateCommand.PLAY_PAUSE -> if (player.isPlaying) player.pause() else player.play()
+                        }
+                    }
+                }.launchIn(viewModelScope)
         }
     }
 
