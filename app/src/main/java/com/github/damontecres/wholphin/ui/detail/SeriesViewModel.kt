@@ -33,7 +33,6 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
@@ -219,7 +218,7 @@ class SeriesViewModel
 
         fun loadEpisodes(season: Int) {
             this@SeriesViewModel.episodes.value = EpisodeList.Loading
-            viewModelScope.async(ExceptionHandler(true)) {
+            viewModelScope.launch(ExceptionHandler(true)) {
                 val episodes =
                     try {
                         loadEpisodesInternal(season)
