@@ -94,7 +94,7 @@ interface JellyfinServerDao {
             updateUser(toSave)
             return toSave
         }
-        return user
+        return user.copy(rowId = result.toInt())
     }
 
     @Query("SELECT * FROM users WHERE serverId = :serverId AND id = :userId")
