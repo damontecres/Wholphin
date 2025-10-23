@@ -20,8 +20,6 @@ import org.jellyfin.sdk.model.extensions.inWholeTicks
 import timber.log.Timber
 import java.util.Timer
 import java.util.TimerTask
-import java.util.concurrent.atomic.AtomicBoolean
-import java.util.concurrent.atomic.AtomicLong
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
@@ -37,11 +35,6 @@ class TrackActivityPlaybackListener(
 ) : Player.Listener {
     private val coroutineScope = CoroutineScope(Dispatchers.Main)
     private val task: TimerTask
-
-    private var totalPlayDurationMilliseconds = AtomicLong(0)
-    private var currentDurationMilliseconds = AtomicLong(0)
-    private var isPlaying = AtomicBoolean(false)
-    private var incrementedPlayCount = AtomicBoolean(false)
 
     init {
         coroutineScope.launch(Dispatchers.IO + ExceptionHandler()) {
@@ -59,28 +52,13 @@ class TrackActivityPlaybackListener(
                 ),
             )
         }
-        val saveActivityInterval = 10.seconds.inWholeMilliseconds
-        val delay = 1.seconds.inWholeMilliseconds
+        val delay = 5.seconds.inWholeMilliseconds
         // Every x seconds, check if the video is playing
         task =
             object : TimerTask() {
-                private var timestamp = System.currentTimeMillis()
-
                 override fun run() {
                     try {
-                        val now = System.currentTimeMillis()
-                        if (isPlaying.get()) {
-                            val diffTime = now - timestamp
-                            // If it is playing, add the interval to currently tracked duration
-                            val current = currentDurationMilliseconds.addAndGet(diffTime)
-                            // TODO currentDuration.getAndUpdate would be better, but requires API 24+
-                            if (current >= saveActivityInterval) {
-                                // If the accumulated currently tracked duration > threshold, reset it and save activity
-                                totalPlayDurationMilliseconds.addAndGet(current)
-                                saveActivity(-1L)
-                            }
-                        }
-                        timestamp = now
+                        saveActivity(-1L)
                     } catch (ex: Exception) {
                         Timber.Forest.w(ex, "Exception during track activity timer")
                     }
@@ -106,14 +84,7 @@ class TrackActivityPlaybackListener(
     }
 
     override fun onIsPlayingChanged(isPlaying: Boolean) {
-        this.isPlaying.set(isPlaying)
-        if (!isPlaying) {
-            val diff = currentDurationMilliseconds.getAndSet(0)
-            if (diff > 0) {
-                totalPlayDurationMilliseconds.addAndGet(diff)
-                saveActivity(-1)
-            }
-        }
+        saveActivity(-1)
     }
 
     override fun onPlaybackStateChanged(playbackState: Int) {
@@ -125,12 +96,11 @@ class TrackActivityPlaybackListener(
 
     private fun saveActivity(position: Long) {
         coroutineScope.launch(Dispatchers.IO + ExceptionHandler()) {
-//            val totalDuration = totalPlayDurationMilliseconds.get()
             val calcPosition =
                 withContext(Dispatchers.Main) {
                     (if (position >= 0) position else player.currentPosition).milliseconds
                 }
-            Timber.v("saveActivity: itemId=${itemPlayback.itemId}, pos=$calcPosition")
+//            Timber.v("saveActivity: itemId=${itemPlayback.itemId}, pos=$calcPosition")
             api.playStateApi.reportPlaybackProgress(
                 PlaybackProgressInfo(
                     itemId = itemPlayback.itemId,
