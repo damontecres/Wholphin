@@ -11,7 +11,6 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.userViewsApi
 import org.jellyfin.sdk.model.api.CollectionType
-import timber.log.Timber
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -26,23 +25,16 @@ class NavDrawerItemRepository
     ) {
         suspend fun getNavDrawerItems(): List<NavDrawerItem> {
             val user = serverRepository.currentUser
-            val navDrawerPins =
-                user
-                    ?.let {
-                        serverPreferencesDao.getNavDrawerPinnedItems(it)
-                    }.orEmpty()
             val userViews =
                 api.userViewsApi
                     .getUserViews(userId = user?.id)
                     .content.items
 
+            val builtins = listOf(NavDrawerItem.Favorites)
             val libraries =
                 userViews
                     .filter { it.collectionType in supportedCollectionTypes }
-                    .filter {
-                        val id = NavDrawerPinnedItem.idFor(it)
-                        navDrawerPins.isPinned(id)
-                    }.map {
+                    .map {
                         ServerNavDrawerItem(
                             itemId = it.id,
                             name = it.name ?: it.id.toString(),
@@ -50,16 +42,17 @@ class NavDrawerItemRepository
                             type = it.collectionType ?: CollectionType.UNKNOWN,
                         )
                     }
-            val extra =
-                buildList {
-                    if (navDrawerPins.isPinned(NavDrawerPinnedItem.FAVORITES_ID)) {
-                        add(
-                            NavDrawerItem.Favorites,
-                        )
-                    }
-                }
-            Timber.d("Got ${userViews.size} user views filtered to ${libraries.size}")
-            return extra + libraries
+            return builtins + libraries
+        }
+
+        suspend fun getFilteredNavDrawerItems(): List<NavDrawerItem> {
+            val user = serverRepository.currentUser
+            val navDrawerPins =
+                user
+                    ?.let {
+                        serverPreferencesDao.getNavDrawerPinnedItems(it)
+                    }.orEmpty()
+            return getNavDrawerItems().filter { navDrawerPins.isPinned(it.id) }
         }
     }
 

@@ -69,6 +69,9 @@ fun PreferencesContent(
     var focusedIndex by rememberSaveable { mutableStateOf(Pair(0, 0)) }
     val state = rememberLazyListState()
     var preferences by remember { mutableStateOf(initialPreferences) }
+
+    val navDrawerPins by viewModel.navDrawerPins.observeAsState(mapOf())
+
     LaunchedEffect(Unit) {
         viewModel.preferenceDataStore.data.collect {
             preferences = it
@@ -260,6 +263,24 @@ fun PreferencesContent(
                                     onLongClick = {},
                                     interactionSource = interactionSource,
                                 )
+                            }
+
+                            AppPreference.UserPinnedNavDrawerItems -> {
+                                val selectedItems =
+                                    navDrawerPins.keys.mapNotNull {
+                                        if (navDrawerPins[it] ?: false) it else null
+                                    }
+                                MultiChoicePreference(
+                                    title = stringResource(pref.title),
+                                    summary = pref.summary(context, null),
+                                    possibleValues = navDrawerPins.keys,
+                                    selectedValues = selectedItems.toSet(),
+                                    onValueChange = { newSelectedItems ->
+                                        viewModel.updatePins(newSelectedItems)
+                                    },
+                                ) {
+                                    Text(it.name(context))
+                                }
                             }
 
                             else -> {

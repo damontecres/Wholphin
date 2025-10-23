@@ -81,7 +81,7 @@ interface JellyfinServerDao {
     fun updateUser(user: JellyfinUser): Int
 
     @Transaction
-    fun addOrUpdateUser(user: JellyfinUser) {
+    fun addOrUpdateUser(user: JellyfinUser): JellyfinUser {
         val result = addUser(user)
         if (result == -1L) {
             val toSave =
@@ -92,7 +92,9 @@ interface JellyfinServerDao {
                     user
                 }
             updateUser(toSave)
+            return toSave
         }
+        return user
     }
 
     @Query("SELECT * FROM users WHERE serverId = :serverId AND id = :userId")

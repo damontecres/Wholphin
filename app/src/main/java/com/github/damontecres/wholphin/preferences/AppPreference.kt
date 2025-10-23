@@ -526,6 +526,13 @@ sealed interface AppPreference<T> {
                 getter = { },
                 setter = { prefs, _ -> prefs },
             )
+
+        val UserPinnedNavDrawerItems =
+            AppClickablePreference(
+                title = R.string.nav_drawer_pins,
+                getter = { },
+                setter = { prefs, _ -> prefs },
+            )
     }
 }
 
@@ -554,6 +561,13 @@ val basicPreferences =
                     AppPreference.AutoPlayNextDelay,
                     AppPreference.PassOutProtection,
                     AppPreference.SkipBackOnResume,
+                ),
+        ),
+        PreferenceGroup(
+            title = R.string.profile_specific_settings,
+            preferences =
+                listOf(
+                    AppPreference.UserPinnedNavDrawerItems,
                 ),
         ),
         PreferenceGroup(

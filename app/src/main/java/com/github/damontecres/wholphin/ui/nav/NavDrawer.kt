@@ -87,7 +87,7 @@ class NavDrawerViewModel
 
         init {
             viewModelScope.launch(Dispatchers.IO + ExceptionHandler(true)) {
-                val libraries = navDrawerItemRepository.getNavDrawerItems()
+                val libraries = navDrawerItemRepository.getFilteredNavDrawerItems()
                 withContext(Dispatchers.Main) {
                     this@NavDrawerViewModel.libraries.value = libraries
                 }
@@ -118,7 +118,7 @@ data class ServerNavDrawerItem(
     val destination: Destination,
     val type: CollectionType,
 ) : NavDrawerItem {
-    override val id: String = itemId.toServerString()
+    override val id: String = "s_" + itemId.toServerString()
 
     override fun name(context: Context): String = name
 }

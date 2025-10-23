@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 5,
-    "identityHash": "0c4843f342f6702ea95da3bf69827762",
+    "identityHash": "59351f2b9819f90fab82ff0f353c79a5",
     "entities": [
       {
         "tableName": "servers",
@@ -190,14 +190,8 @@
       },
       {
         "tableName": "NavDrawerPinnedItem",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`rowId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `userId` INTEGER NOT NULL, `itemId` TEXT NOT NULL, `type` TEXT NOT NULL, FOREIGN KEY(`userId`) REFERENCES `users`(`rowId`) ON UPDATE CASCADE ON DELETE CASCADE )",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`userId` INTEGER NOT NULL, `itemId` TEXT NOT NULL, `type` TEXT NOT NULL, PRIMARY KEY(`userId`, `itemId`), FOREIGN KEY(`userId`) REFERENCES `users`(`rowId`) ON UPDATE CASCADE ON DELETE CASCADE )",
         "fields": [
-          {
-            "fieldPath": "rowId",
-            "columnName": "rowId",
-            "affinity": "INTEGER",
-            "notNull": true
-          },
           {
             "fieldPath": "userId",
             "columnName": "userId",
@@ -218,23 +212,12 @@
           }
         ],
         "primaryKey": {
-          "autoGenerate": true,
+          "autoGenerate": false,
           "columnNames": [
-            "rowId"
+            "userId",
+            "itemId"
           ]
         },
-        "indices": [
-          {
-            "name": "index_NavDrawerPinnedItem_userId_itemId",
-            "unique": true,
-            "columnNames": [
-              "userId",
-              "itemId"
-            ],
-            "orders": [],
-            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_NavDrawerPinnedItem_userId_itemId` ON `${TABLE_NAME}` (`userId`, `itemId`)"
-          }
-        ],
         "foreignKeys": [
           {
             "table": "users",
@@ -252,7 +235,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '0c4843f342f6702ea95da3bf69827762')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '59351f2b9819f90fab82ff0f353c79a5')"
     ]
   }
 }
