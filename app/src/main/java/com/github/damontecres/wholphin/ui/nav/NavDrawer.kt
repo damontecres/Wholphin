@@ -1,6 +1,5 @@
 package com.github.damontecres.wholphin.ui.nav
 
-import android.content.Context
 import androidx.activity.compose.BackHandler
 import androidx.annotation.StringRes
 import androidx.compose.foundation.background
@@ -57,8 +56,7 @@ import androidx.tv.material3.surfaceColorAtElevation
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.JellyfinServer
 import com.github.damontecres.wholphin.data.JellyfinUser
-import com.github.damontecres.wholphin.data.ServerRepository
-import com.github.damontecres.wholphin.data.model.BaseItem
+import com.github.damontecres.wholphin.data.NavDrawerItemRepository
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.FontAwesome
 import com.github.damontecres.wholphin.ui.ifElse
@@ -66,17 +64,12 @@ import com.github.damontecres.wholphin.ui.preferences.PreferenceScreenOption
 import com.github.damontecres.wholphin.ui.spacedByWithFooter
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.ExceptionHandler
-import com.github.damontecres.wholphin.util.supportedCollectionTypes
 import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import org.jellyfin.sdk.api.client.ApiClient
-import org.jellyfin.sdk.api.client.extensions.userViewsApi
 import org.jellyfin.sdk.model.api.CollectionType
 import org.jellyfin.sdk.model.api.DeviceProfile
-import timber.log.Timber
 import java.util.UUID
 import javax.inject.Inject
 
@@ -84,9 +77,7 @@ import javax.inject.Inject
 class NavDrawerViewModel
     @Inject
     constructor(
-        @param:ApplicationContext val context: Context,
-        val serverRepository: ServerRepository,
-        val api: ApiClient,
+        private val navDrawerItemRepository: NavDrawerItemRepository,
         val navigationManager: NavigationManager,
     ) : ViewModel() {
         val libraries = MutableLiveData<List<NavDrawerItem>>(listOf())
@@ -94,35 +85,9 @@ class NavDrawerViewModel
 
         init {
             viewModelScope.launch(Dispatchers.IO + ExceptionHandler(true)) {
-                val userViews =
-                    api.userViewsApi
-                        .getUserViews()
-                        .content.items
-                val libraries =
-                    userViews
-                        .filter { it.collectionType in supportedCollectionTypes }
-                        .map {
-                            NavDrawerItem(
-                                id = it.id,
-                                name = it.name ?: it.id.toString(),
-                                destination = BaseItem.from(it, api).destination(),
-                                type = it.collectionType ?: CollectionType.UNKNOWN,
-                                iconStringRes = null,
-                            )
-                        }
-                val extra =
-                    listOf(
-                        NavDrawerItem(
-                            id = UUID.randomUUID(),
-                            name = context.getString(R.string.favorites),
-                            destination = Destination.Favorites,
-                            type = CollectionType.UNKNOWN,
-                            iconStringRes = R.string.fa_heart,
-                        ),
-                    )
-                Timber.d("Got ${userViews.size} user views filtered to ${libraries.size}")
+                val libraries = navDrawerItemRepository.getNavDrawerItems()
                 withContext(Dispatchers.Main) {
-                    this@NavDrawerViewModel.libraries.value = extra + libraries
+                    this@NavDrawerViewModel.libraries.value = libraries
                 }
             }
         }

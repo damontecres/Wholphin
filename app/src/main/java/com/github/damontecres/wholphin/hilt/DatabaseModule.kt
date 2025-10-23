@@ -10,6 +10,7 @@ import com.github.damontecres.wholphin.data.AppDatabase
 import com.github.damontecres.wholphin.data.ItemPlaybackDao
 import com.github.damontecres.wholphin.data.JellyfinServerDao
 import com.github.damontecres.wholphin.data.Migrations
+import com.github.damontecres.wholphin.data.ServerPreferencesDao
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.AppPreferencesSerializer
 import dagger.Module
@@ -45,6 +46,10 @@ object DatabaseModule {
     @Provides
     @Singleton
     fun itemPlaybackDao(db: AppDatabase): ItemPlaybackDao = db.itemPlaybackDao()
+
+    @Provides
+    @Singleton
+    fun serverPreferencesDao(db: AppDatabase): ServerPreferencesDao = db.serverPreferencesDao()
 
     @Provides
     @Singleton
