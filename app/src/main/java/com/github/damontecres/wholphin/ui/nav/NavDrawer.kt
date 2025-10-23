@@ -186,7 +186,7 @@ fun NavDrawer(
         viewModel.setShowMore(value)
     }
 
-    BackHandler(enabled = showMore) {
+    BackHandler(enabled = showMore && drawerState.currentValue == DrawerValue.Open) {
         setShowMore(false)
     }
 
@@ -286,7 +286,7 @@ fun NavDrawer(
                         NavItem(
                             library = it,
                             selected = selectedIndex == index,
-                            moreExpanded = !showMore,
+                            moreExpanded = showMore,
                             onClick = { onClick.invoke(index, it) },
                             modifier =
                                 Modifier
