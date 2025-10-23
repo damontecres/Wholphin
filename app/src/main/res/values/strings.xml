@@ -88,5 +88,8 @@
     <string name="remove_favorite">Unfavorite</string>
     <string name="add_favorite">Favorite</string>
     <string name="favorites">Favorites</string>
+    <string name="nav_drawer_pins">Customize Navigation Drawer Items</string>
+    <string name="profile_specific_settings">User Profile Settings</string>
+    <string name="nav_drawer_pins_summary">Choose the default items to show, others will be hidden</string>
 
 </resources>
