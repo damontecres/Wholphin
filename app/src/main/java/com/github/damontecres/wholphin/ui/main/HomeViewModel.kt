@@ -3,10 +3,13 @@ package com.github.damontecres.wholphin.ui.main
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.github.damontecres.wholphin.data.NavDrawerItemRepository
+import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.SlimItemFields
 import com.github.damontecres.wholphin.ui.nav.NavigationManager
+import com.github.damontecres.wholphin.ui.nav.ServerNavDrawerItem
 import com.github.damontecres.wholphin.util.LoadingExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
 import com.github.damontecres.wholphin.util.supportItemKinds
@@ -19,7 +22,6 @@ import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.itemsApi
 import org.jellyfin.sdk.api.client.extensions.liveTvApi
 import org.jellyfin.sdk.api.client.extensions.tvShowsApi
-import org.jellyfin.sdk.api.client.extensions.userApi
 import org.jellyfin.sdk.api.client.extensions.userLibraryApi
 import org.jellyfin.sdk.api.client.extensions.userViewsApi
 import org.jellyfin.sdk.model.api.CollectionType
@@ -37,6 +39,8 @@ class HomeViewModel
     constructor(
         val api: ApiClient,
         val navigationManager: NavigationManager,
+        val serverRepository: ServerRepository,
+        val navDrawerItemRepository: NavDrawerItemRepository,
     ) : ViewModel() {
         val loadingState = MutableLiveData<LoadingState>(LoadingState.Pending)
         val homeRows = MutableLiveData<List<HomeRow>>()
@@ -53,64 +57,44 @@ class HomeViewModel
                     ),
             ) {
                 Timber.d("init HomeViewModel")
-                val user by api.userApi.getCurrentUser()
-//                val displayPrefs =
-//                    api.displayPreferencesApi
-//                        .getDisplayPreferences(
-//                            displayPreferencesId = "usersettings",
-//                            client = "emby",
-//                        ).content
-                val homeSections =
-                    listOf(
-                        HomeSection.RESUME,
-                        HomeSection.NEXT_UP,
-                        HomeSection.LATEST_MEDIA,
-                    )
-                // TODO use display preferences?
 
-//                    displayPrefs.customPrefs.entries
-//                        .filter { it.key.startsWith("homesection") && it.value.isNotNullOrBlank() }
-//                        .sortedBy { it.key }
-//                        .map { HomeSection.fromKey(it.value ?: "") }
-//                        .filter {
-//                            it in
-//                                setOf(
-//                                    HomeSection.LATEST_MEDIA,
-//                                    HomeSection.NEXT_UP,
-//                                    HomeSection.RESUME,
-//                                )
-//                        }
+                serverRepository.currentUserDto?.let { userDto ->
+                    val includedIds =
+                        navDrawerItemRepository
+                            .getFilteredNavDrawerItems(navDrawerItemRepository.getNavDrawerItems())
+                            .filter { it is ServerNavDrawerItem }
+                            .map { (it as ServerNavDrawerItem).itemId }
+                    // TODO data is fetched all together which may be slow for large servers
+                    val resume = getResume(userDto.id, limit)
+                    val nextUp = getNextUp(userDto.id, limit, prefs.enableRewatchingNextUp)
+                    val latest = getLatest(userDto, limit, includedIds)
 
-                // TODO data is fetched all together which may be slow for large servers
-                val resume = getResume(user.id, limit)
-                val nextUp = getNextUp(user.id, limit, prefs.enableRewatchingNextUp)
-                val latest = getLatest(user, limit)
-
-                val homeRows =
-                    if (prefs.combineContinueNext) {
-                        listOf(
-                            HomeRow(
-                                section = HomeSection.NEXT_UP,
-                                items = resume + nextUp,
-                            ),
-                            *latest.toTypedArray(),
-                        )
-                    } else {
-                        listOf(
-                            HomeRow(
-                                section = HomeSection.RESUME,
-                                items = resume,
-                            ),
-                            HomeRow(
-                                section = HomeSection.NEXT_UP,
-                                items = nextUp,
-                            ),
-                            *latest.toTypedArray(),
-                        )
+                    val homeRows =
+                        if (prefs.combineContinueNext) {
+                            listOf(
+                                HomeRow(
+                                    section = HomeSection.NEXT_UP,
+                                    items = resume + nextUp,
+                                ),
+                                *latest.toTypedArray(),
+                            )
+                        } else {
+                            listOf(
+                                HomeRow(
+                                    section = HomeSection.RESUME,
+                                    items = resume,
+                                ),
+                                HomeRow(
+                                    section = HomeSection.NEXT_UP,
+                                    items = nextUp,
+                                ),
+                                *latest.toTypedArray(),
+                            )
+                        }
+                    withContext(Dispatchers.Main) {
+                        this@HomeViewModel.homeRows.value = homeRows
+                        loadingState.value = LoadingState.Success
                     }
-                withContext(Dispatchers.Main) {
-                    this@HomeViewModel.homeRows.value = homeRows
-                    loadingState.value = LoadingState.Success
                 }
             }
         }
@@ -163,11 +147,16 @@ class HomeViewModel
         private suspend fun getLatest(
             user: UserDto,
             limit: Int,
+            includedIds: List<UUID>,
         ): List<HomeRow> {
             val latestMediaIncludes =
-                user.configuration?.orderedViews.orEmpty().toMutableList().apply {
-                    removeAll(user.configuration?.latestItemsExcludes.orEmpty())
-                }
+                user.configuration
+                    ?.orderedViews
+                    .orEmpty()
+                    .toMutableList()
+                    .apply {
+                        removeAll(user.configuration?.latestItemsExcludes.orEmpty())
+                    }.filter { includedIds.contains(it) }
 
             val views by api.userViewsApi.getUserViews()
             val rows =

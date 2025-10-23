@@ -82,15 +82,13 @@ class ServerRepository
             val sysInfo by apiClient.systemApi.getSystemInfo()
 
             val updatedServer = server.copy(name = sysInfo.serverName)
-            val updatedUser =
+            var updatedUser =
                 user.copy(
                     id = userDto.id,
                     name = userDto.name,
                 )
-            if (updatedUser.rowId <= 0) {
-            }
             serverDao.addOrUpdateServer(updatedServer)
-            serverDao.addOrUpdateUser(updatedUser)
+            updatedUser = serverDao.addOrUpdateUser(updatedUser)
             userPreferencesDataStore.updateData {
                 it
                     .toBuilder()

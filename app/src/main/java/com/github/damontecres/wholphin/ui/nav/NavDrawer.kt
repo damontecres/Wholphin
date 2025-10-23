@@ -2,7 +2,6 @@ package com.github.damontecres.wholphin.ui.nav
 
 import android.content.Context
 import androidx.activity.compose.BackHandler
-import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -17,10 +16,13 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.remember
@@ -49,6 +51,7 @@ import androidx.tv.material3.LocalContentColor
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.NavigationDrawer
 import androidx.tv.material3.NavigationDrawerItem
+import androidx.tv.material3.NavigationDrawerItemDefaults
 import androidx.tv.material3.NavigationDrawerScope
 import androidx.tv.material3.ProvideTextStyle
 import androidx.tv.material3.Text
@@ -57,26 +60,20 @@ import androidx.tv.material3.surfaceColorAtElevation
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.JellyfinServer
 import com.github.damontecres.wholphin.data.JellyfinUser
-import com.github.damontecres.wholphin.data.ServerRepository
-import com.github.damontecres.wholphin.data.model.BaseItem
+import com.github.damontecres.wholphin.data.NavDrawerItemRepository
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.FontAwesome
 import com.github.damontecres.wholphin.ui.ifElse
+import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.preferences.PreferenceScreenOption
 import com.github.damontecres.wholphin.ui.spacedByWithFooter
+import com.github.damontecres.wholphin.ui.toServerString
 import com.github.damontecres.wholphin.ui.tryRequestFocus
-import com.github.damontecres.wholphin.util.ExceptionHandler
-import com.github.damontecres.wholphin.util.supportedCollectionTypes
 import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import org.jellyfin.sdk.api.client.ApiClient
-import org.jellyfin.sdk.api.client.extensions.userViewsApi
 import org.jellyfin.sdk.model.api.CollectionType
 import org.jellyfin.sdk.model.api.DeviceProfile
-import timber.log.Timber
 import java.util.UUID
 import javax.inject.Inject
 
@@ -84,45 +81,25 @@ import javax.inject.Inject
 class NavDrawerViewModel
     @Inject
     constructor(
-        @param:ApplicationContext val context: Context,
-        val serverRepository: ServerRepository,
-        val api: ApiClient,
+        private val navDrawerItemRepository: NavDrawerItemRepository,
         val navigationManager: NavigationManager,
     ) : ViewModel() {
+        private var all: List<NavDrawerItem>? = null
+        val moreLibraries = MutableLiveData<List<NavDrawerItem>>(null)
         val libraries = MutableLiveData<List<NavDrawerItem>>(listOf())
-        val selectedIndex = MutableLiveData<Int>(-1)
+        val selectedIndex = MutableLiveData(-1)
+        val showMore = MutableLiveData(false)
 
-        init {
-            viewModelScope.launch(Dispatchers.IO + ExceptionHandler(true)) {
-                val userViews =
-                    api.userViewsApi
-                        .getUserViews()
-                        .content.items
-                val libraries =
-                    userViews
-                        .filter { it.collectionType in supportedCollectionTypes }
-                        .map {
-                            NavDrawerItem(
-                                id = it.id,
-                                name = it.name ?: it.id.toString(),
-                                destination = BaseItem.from(it, api).destination(),
-                                type = it.collectionType ?: CollectionType.UNKNOWN,
-                                iconStringRes = null,
-                            )
-                        }
-                val extra =
-                    listOf(
-                        NavDrawerItem(
-                            id = UUID.randomUUID(),
-                            name = context.getString(R.string.favorites),
-                            destination = Destination.Favorites,
-                            type = CollectionType.UNKNOWN,
-                            iconStringRes = R.string.fa_heart,
-                        ),
-                    )
-                Timber.d("Got ${userViews.size} user views filtered to ${libraries.size}")
+        fun init() {
+            viewModelScope.launchIO {
+                val all = all ?: navDrawerItemRepository.getNavDrawerItems()
+                this@NavDrawerViewModel.all = all
+                val libraries = navDrawerItemRepository.getFilteredNavDrawerItems(all)
+
                 withContext(Dispatchers.Main) {
-                    this@NavDrawerViewModel.libraries.value = extra + libraries
+                    this@NavDrawerViewModel.moreLibraries.value =
+                        all.toMutableList().apply { removeAll(libraries) }
+                    this@NavDrawerViewModel.libraries.value = libraries
                 }
             }
         }
@@ -130,15 +107,42 @@ class NavDrawerViewModel
         fun setIndex(index: Int) {
             selectedIndex.value = index
         }
+
+        fun setShowMore(value: Boolean) {
+            showMore.value = value
+        }
     }
 
-data class NavDrawerItem(
-    val id: UUID,
+sealed interface NavDrawerItem {
+    val id: String
+
+    fun name(context: Context): String
+
+    object Favorites : NavDrawerItem {
+        override val id: String
+            get() = "a_favorites"
+
+        override fun name(context: Context): String = context.getString(R.string.favorites)
+    }
+
+    object More : NavDrawerItem {
+        override val id: String
+            get() = "a_more"
+
+        override fun name(context: Context): String = context.getString(R.string.more)
+    }
+}
+
+data class ServerNavDrawerItem(
+    val itemId: UUID,
     val name: String,
     val destination: Destination,
     val type: CollectionType,
-    @param:StringRes val iconStringRes: Int?,
-)
+) : NavDrawerItem {
+    override val id: String = "s_" + itemId.toServerString()
+
+    override fun name(context: Context): String = name
+}
 
 /**
  * Display the left side navigation drawer with [DestinationContent] on the right
@@ -162,17 +166,49 @@ fun NavDrawer(
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
     val drawerFocusRequester = remember { FocusRequester() }
+    val focusRequester = remember { FocusRequester() }
 
     // If the user presses back while on the home page, open the nav drawer, another back press will quit the app
     BackHandler(enabled = (drawerState.currentValue == DrawerValue.Closed && destination is Destination.Home)) {
         drawerState.setValue(DrawerValue.Open)
         drawerFocusRequester.requestFocus()
     }
+    val moreLibraries by viewModel.moreLibraries.observeAsState(listOf())
     val libraries by viewModel.libraries.observeAsState(listOf())
+    LaunchedEffect(Unit) { viewModel.init() }
 
+    val showMore by viewModel.showMore.observeAsState(false)
+//    val libraries = if (showPinnedOnly) pinnedLibraries else allLibraries
     // A negative index is a built in page, >=0 is a library
     val selectedIndex by viewModel.selectedIndex.observeAsState(-1)
-    val focusRequester = remember { FocusRequester() }
+
+    fun setShowMore(value: Boolean) {
+        viewModel.setShowMore(value)
+    }
+
+    BackHandler(enabled = showMore && drawerState.currentValue == DrawerValue.Open) {
+        setShowMore(false)
+    }
+
+    val onClick = { index: Int, item: NavDrawerItem ->
+        when (item) {
+            NavDrawerItem.Favorites -> {
+                viewModel.setIndex(index)
+                viewModel.navigationManager.navigateToFromDrawer(
+                    Destination.Favorites,
+                )
+            }
+
+            NavDrawerItem.More -> {
+                setShowMore(!showMore)
+            }
+
+            is ServerNavDrawerItem -> {
+                viewModel.setIndex(index)
+                viewModel.navigationManager.navigateToFromDrawer(item.destination)
+            }
+        }
+    }
 
     NavigationDrawer(
         modifier =
@@ -205,6 +241,7 @@ fun NavDrawer(
                             onClick = {
                                 viewModel.navigationManager.navigateTo(Destination.UserList)
                             },
+                            modifier = Modifier.animateItem(),
                         )
                     }
                     item {
@@ -217,10 +254,11 @@ fun NavDrawer(
                                 viewModel.navigationManager.navigateToFromDrawer(Destination.Search)
                             },
                             modifier =
-                                Modifier.ifElse(
-                                    selectedIndex == -2,
-                                    Modifier.focusRequester(focusRequester),
-                                ),
+                                Modifier
+                                    .ifElse(
+                                        selectedIndex == -2,
+                                        Modifier.focusRequester(focusRequester),
+                                    ).animateItem(),
                         )
                     }
                     item {
@@ -237,26 +275,43 @@ fun NavDrawer(
                                 }
                             },
                             modifier =
-                                Modifier.ifElse(
-                                    selectedIndex == -1,
-                                    Modifier.focusRequester(focusRequester),
-                                ),
+                                Modifier
+                                    .ifElse(
+                                        selectedIndex == -1,
+                                        Modifier.focusRequester(focusRequester),
+                                    ).animateItem(),
                         )
                     }
                     itemsIndexed(libraries) { index, it ->
                         NavItem(
                             library = it,
                             selected = selectedIndex == index,
-                            onClick = {
-                                viewModel.setIndex(index)
-                                viewModel.navigationManager.navigateToFromDrawer(it.destination)
-                            },
+                            moreExpanded = showMore,
+                            onClick = { onClick.invoke(index, it) },
                             modifier =
-                                Modifier.ifElse(
-                                    selectedIndex == index,
-                                    Modifier.focusRequester(focusRequester),
-                                ),
+                                Modifier
+                                    .ifElse(
+                                        selectedIndex == index,
+                                        Modifier.focusRequester(focusRequester),
+                                    ).animateItem(),
                         )
+                    }
+                    if (showMore) {
+                        itemsIndexed(moreLibraries) { index, it ->
+                            NavItem(
+                                library = it,
+                                selected = selectedIndex == (index + libraries.size),
+                                moreExpanded = showMore,
+                                onClick = { onClick.invoke(index + libraries.size, it) },
+                                containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp),
+                                modifier =
+                                    Modifier
+                                        .ifElse(
+                                            selectedIndex == (index + libraries.size),
+                                            Modifier.focusRequester(focusRequester),
+                                        ).animateItem(),
+                            )
+                        }
                     }
                     item {
                         IconNavItem(
@@ -270,7 +325,7 @@ fun NavDrawer(
                                     ),
                                 )
                             },
-                            modifier = Modifier,
+                            modifier = Modifier.animateItem(),
                         )
                     }
                 }
@@ -339,20 +394,29 @@ fun NavigationDrawerScope.NavItem(
     library: NavDrawerItem,
     onClick: () -> Unit,
     selected: Boolean,
+    moreExpanded: Boolean,
     modifier: Modifier = Modifier,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
+    containerColor: Color = Color.Unspecified,
 ) {
+    val context = LocalContext.current
     val icon =
-        when (library.type) {
-            CollectionType.MOVIES -> R.string.fa_film
-            CollectionType.TVSHOWS -> R.string.fa_tv
-            CollectionType.HOMEVIDEOS -> R.string.fa_video
-            CollectionType.LIVETV -> R.string.fa_tv
-            CollectionType.MUSIC -> R.string.fa_music
-            CollectionType.BOXSETS -> R.string.fa_open_folder
-            CollectionType.PLAYLISTS -> R.string.fa_list_ul
-            else -> library.iconStringRes
-        } ?: R.string.fa_film
+        when (library) {
+            NavDrawerItem.Favorites -> R.string.fa_heart
+            NavDrawerItem.More -> R.string.fa_ellipsis
+
+            is ServerNavDrawerItem ->
+                when (library.type) {
+                    CollectionType.MOVIES -> R.string.fa_film
+                    CollectionType.TVSHOWS -> R.string.fa_tv
+                    CollectionType.HOMEVIDEOS -> R.string.fa_video
+                    CollectionType.LIVETV -> R.string.fa_tv
+                    CollectionType.MUSIC -> R.string.fa_music
+                    CollectionType.BOXSETS -> R.string.fa_open_folder
+                    CollectionType.PLAYLISTS -> R.string.fa_list_ul
+                    else -> R.string.fa_film
+                }
+        }
     val isFocused = interactionSource.collectIsFocusedAsState().value
     val color =
         when {
@@ -364,6 +428,10 @@ fun NavigationDrawerScope.NavItem(
         modifier = modifier,
         selected = false,
         onClick = onClick,
+        colors =
+            NavigationDrawerItemDefaults.colors(
+                containerColor = containerColor,
+            ),
         leadingContent = {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Text(
@@ -375,11 +443,19 @@ fun NavigationDrawerScope.NavItem(
                 )
             }
         },
+        trailingContent = {
+            if (library is NavDrawerItem.More) {
+                Icon(
+                    imageVector = if (moreExpanded) Icons.Default.ArrowDropDown else Icons.Default.KeyboardArrowLeft,
+                    contentDescription = null,
+                )
+            }
+        },
         interactionSource = null,
     ) {
         Text(
             modifier = Modifier,
-            text = library.name ?: library.id.toString(),
+            text = library.name(context),
             maxLines = 1,
         )
     }

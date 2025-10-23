@@ -8,20 +8,26 @@ import androidx.room.TypeConverters
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.github.damontecres.wholphin.data.model.ItemPlayback
+import com.github.damontecres.wholphin.data.model.NavDrawerPinnedItem
 import org.jellyfin.sdk.model.serializer.toUUID
 import java.util.UUID
 
 @Database(
-    entities = [JellyfinServer::class, JellyfinUser::class, ItemPlayback::class],
-    version = 4,
+    entities = [JellyfinServer::class, JellyfinUser::class, ItemPlayback::class, NavDrawerPinnedItem::class],
+    version = 5,
     exportSchema = true,
-    autoMigrations = [AutoMigration(3, 4)],
+    autoMigrations = [
+        AutoMigration(3, 4),
+        AutoMigration(4, 5),
+    ],
 )
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun serverDao(): JellyfinServerDao
 
     abstract fun itemPlaybackDao(): ItemPlaybackDao
+
+    abstract fun serverPreferencesDao(): ServerPreferencesDao
 }
 
 class Converters {

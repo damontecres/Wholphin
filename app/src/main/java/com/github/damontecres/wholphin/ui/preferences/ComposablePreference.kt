@@ -34,7 +34,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.tv.material3.Button
 import androidx.tv.material3.MaterialTheme
-import androidx.tv.material3.Switch
 import androidx.tv.material3.Text
 import androidx.tv.material3.surfaceColorAtElevation
 import com.github.damontecres.wholphin.R
@@ -53,6 +52,7 @@ import com.github.damontecres.wholphin.ui.components.EditTextBox
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import kotlinx.coroutines.launch
+import java.util.SortedSet
 
 @Suppress("UNCHECKED_CAST")
 @Composable
@@ -197,7 +197,7 @@ fun <T> ComposablePreference(
         }
 
         is AppMultiChoicePreference<*> -> {
-            val values = stringArrayResource(preference.displayValues).toList()
+            val values = stringArrayResource(preference.displayValues).toSortedSet()
             val summary =
                 preference.summary?.let { stringResource(it) }
                     ?: preference.summary(context, value)
@@ -207,46 +207,14 @@ fun <T> ComposablePreference(
                     list.addAll(value as List<Any>)
                     list
                 }
-
-            val onClick = { item: Any ->
-                if (selectedValues.contains(item)) {
-                    selectedValues.remove(item)
-                } else {
-                    selectedValues.add(item)
-                }
-                onValueChange.invoke(selectedValues.toList() as T)
-            }
-
-            ClickPreference(
+            MultiChoicePreference(
+                possibleValues = values as SortedSet<Any>,
+                selectedValues = selectedValues,
                 title = title,
                 summary = summary,
-                onClick = {
-                    dialogParams =
-                        DialogParams(
-                            title = title,
-                            fromLongClick = false,
-                            items =
-                                values.mapIndexed { index, it ->
-                                    val item = preference.allValues[index]!!
-                                    DialogItem(
-                                        headlineContent = { Text(it) },
-                                        trailingContent = {
-                                            Switch(
-                                                checked = selectedValues.contains(item),
-                                                onCheckedChange = {
-                                                    onClick.invoke(item)
-                                                },
-                                            )
-                                        },
-                                        onClick = {
-                                            onClick.invoke(item)
-                                        },
-                                    )
-                                },
-                        )
+                onValueChange = {
+                    onValueChange.invoke(selectedValues.toList() as T)
                 },
-                interactionSource = interactionSource,
-                modifier = modifier,
             )
         }
 
