@@ -530,6 +530,7 @@ sealed interface AppPreference<T> {
         val UserPinnedNavDrawerItems =
             AppClickablePreference(
                 title = R.string.nav_drawer_pins,
+                summary = R.string.nav_drawer_pins_summary,
                 getter = { },
                 setter = { prefs, _ -> prefs },
             )
