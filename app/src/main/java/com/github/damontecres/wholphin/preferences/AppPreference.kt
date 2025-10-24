@@ -173,8 +173,7 @@ sealed interface AppPreference<T> {
                 setter = { prefs, value ->
                     prefs.updateHomePagePreferences { combineContinueNext = value }
                 },
-                summaryOn = R.string.enabled,
-                summaryOff = R.string.disabled,
+                summary = R.string.combine_continue_next_summary,
             )
 
         val RewatchNextUp =
