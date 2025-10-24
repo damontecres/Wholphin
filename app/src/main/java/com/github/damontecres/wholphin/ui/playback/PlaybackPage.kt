@@ -100,7 +100,7 @@ fun PlaybackPage(
         is LoadingState.Error -> ErrorMessage(st, modifier)
         LoadingState.Pending,
         LoadingState.Loading,
-        -> LoadingPage(modifier)
+        -> LoadingPage(modifier.background(Color.Black))
 
         LoadingState.Success -> {
             val prefs = preferences.appPreferences.playbackPreferences
@@ -201,7 +201,7 @@ fun PlaybackPage(
 
             val showSegment =
                 !segmentCancelled && currentSegment != null &&
-                    !controllerViewState.controlsVisible && skipIndicatorDuration == 0L
+                    nextUp == null && !controllerViewState.controlsVisible && skipIndicatorDuration == 0L
             BackHandler(showSegment) {
                 segmentCancelled = true
             }

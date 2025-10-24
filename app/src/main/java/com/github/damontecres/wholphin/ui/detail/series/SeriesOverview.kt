@@ -72,6 +72,7 @@ fun SeriesOverview(
     val firstItemFocusRequester = remember { FocusRequester() }
     val episodeRowFocusRequester = remember { FocusRequester() }
 
+    var initialLoadDone by rememberSaveable { mutableStateOf(false) }
     OneTimeLaunchedEffect {
         Timber.v("SeriesDetailParent: itemId=${destination.itemId}, initialSeasonEpisode=$initialSeasonEpisode")
         viewModel.init(
@@ -81,7 +82,9 @@ fun SeriesOverview(
             initialSeasonEpisode?.season,
             initialSeasonEpisode?.episode,
         )
+        initialLoadDone = true
     }
+
     val loading by viewModel.loading.observeAsState(LoadingState.Loading)
 
     val series by viewModel.item.observeAsState(null)
@@ -107,6 +110,13 @@ fun SeriesOverview(
                 ] ?: 0,
             ),
         )
+    }
+    if (initialLoadDone) {
+        LaunchedEffect(Unit) {
+            seasons.indexToNumber[position.seasonTabIndex]?.let {
+                viewModel.loadEpisodes(it)
+            }
+        }
     }
 
     var overviewDialog by remember { mutableStateOf<ItemDetailsDialogInfo?>(null) }
