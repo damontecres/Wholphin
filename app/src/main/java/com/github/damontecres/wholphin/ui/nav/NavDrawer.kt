@@ -288,7 +288,10 @@ fun NavDrawer(
                             library = it,
                             selected = selectedIndex == index,
                             moreExpanded = showMore,
-                            onClick = { onClick.invoke(index, it) },
+                            onClick = {
+                                onClick.invoke(index, it)
+                                if (it !is NavDrawerItem.More) setShowMore(false)
+                            },
                             modifier =
                                 Modifier
                                     .ifElse(

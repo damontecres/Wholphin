@@ -24,6 +24,7 @@ import org.jellyfin.sdk.api.client.extensions.liveTvApi
 import org.jellyfin.sdk.api.client.extensions.tvShowsApi
 import org.jellyfin.sdk.api.client.extensions.userLibraryApi
 import org.jellyfin.sdk.api.client.extensions.userViewsApi
+import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.CollectionType
 import org.jellyfin.sdk.model.api.UserDto
 import org.jellyfin.sdk.model.api.request.GetLatestMediaRequest
@@ -65,32 +66,28 @@ class HomeViewModel
                             .filter { it is ServerNavDrawerItem }
                             .map { (it as ServerNavDrawerItem).itemId }
                     // TODO data is fetched all together which may be slow for large servers
-                    val resume = getResume(userDto.id, limit)
-                    val nextUp = getNextUp(userDto.id, limit, prefs.enableRewatchingNextUp)
+                    val resume = getResume(userDto.id, limit, !prefs.combineContinueNext)
+                    val nextUp =
+                        getNextUp(
+                            userDto.id,
+                            limit,
+                            prefs.enableRewatchingNextUp,
+                            prefs.combineContinueNext,
+                        )
                     val latest = getLatest(userDto, limit, includedIds)
 
                     val homeRows =
-                        if (prefs.combineContinueNext) {
-                            listOf(
-                                HomeRow(
-                                    section = HomeSection.NEXT_UP,
-                                    items = resume + nextUp,
-                                ),
-                                *latest.toTypedArray(),
-                            )
-                        } else {
-                            listOf(
-                                HomeRow(
-                                    section = HomeSection.RESUME,
-                                    items = resume,
-                                ),
-                                HomeRow(
-                                    section = HomeSection.NEXT_UP,
-                                    items = nextUp,
-                                ),
-                                *latest.toTypedArray(),
-                            )
-                        }
+                        listOf(
+                            HomeRow(
+                                section = HomeSection.RESUME,
+                                items = resume,
+                            ),
+                            HomeRow(
+                                section = HomeSection.NEXT_UP,
+                                items = nextUp,
+                            ),
+                            *latest.toTypedArray(),
+                        )
                     withContext(Dispatchers.Main) {
                         this@HomeViewModel.homeRows.value = homeRows
                         loadingState.value = LoadingState.Success
@@ -102,13 +99,23 @@ class HomeViewModel
         private suspend fun getResume(
             userId: UUID,
             limit: Int,
+            includeEpisodes: Boolean,
         ): List<BaseItem> {
             val request =
                 GetResumeItemsRequest(
                     userId = userId,
                     fields = SlimItemFields,
                     limit = limit,
-                    includeItemTypes = supportItemKinds,
+                    includeItemTypes =
+                        if (includeEpisodes) {
+                            supportItemKinds
+                        } else {
+                            supportItemKinds
+                                .toMutableSet()
+                                .apply {
+                                    remove(BaseItemKind.EPISODE)
+                                }
+                        },
                 )
             val items =
                 api.itemsApi
@@ -123,6 +130,7 @@ class HomeViewModel
             userId: UUID,
             limit: Int,
             enableRewatching: Boolean,
+            enableResumable: Boolean,
         ): List<BaseItem> {
             val request =
                 GetNextUpRequest(
@@ -131,7 +139,7 @@ class HomeViewModel
                     imageTypeLimit = 1,
                     parentId = null,
                     limit = limit,
-                    enableResumable = false,
+                    enableResumable = enableResumable,
                     enableUserData = true,
                     enableRewatching = enableRewatching,
                 )
@@ -140,7 +148,7 @@ class HomeViewModel
                     .getNextUp(request)
                     .content
                     .items
-                    .map { BaseItem.Companion.from(it, api, true) }
+                    .map { BaseItem.from(it, api, true) }
             return nextUp
         }
 

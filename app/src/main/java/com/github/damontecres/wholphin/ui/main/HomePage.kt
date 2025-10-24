@@ -225,21 +225,21 @@ fun HomePageContent(
                 }
             }
         }
-        Box(
-            modifier =
-                Modifier
-                    .padding(8.dp)
-                    .size(24.dp)
-                    .align(Alignment.BottomEnd),
-        ) {
-            when (loadingState) {
-                LoadingState.Pending,
-                LoadingState.Loading,
-                ->
+        when (loadingState) {
+            LoadingState.Pending,
+            LoadingState.Loading,
+            ->
+                Box(
+                    modifier =
+                        Modifier
+                            .padding(16.dp)
+                            .size(40.dp)
+                            .align(Alignment.TopEnd),
+                ) {
                     CircularProgress(Modifier.fillMaxSize())
+                }
 
-                else -> {}
-            }
+            else -> {}
         }
     }
 }

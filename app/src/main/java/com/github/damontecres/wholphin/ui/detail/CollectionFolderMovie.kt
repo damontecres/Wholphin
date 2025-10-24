@@ -52,7 +52,7 @@ fun CollectionFolderMovie(
     val rememberedTabIndex =
         remember { preferencesViewModel.getRememberedTab(preferences, destination.itemId, 0) }
 
-    val tabs = listOf("Recommended", "Library", "Genres")
+    val tabs = listOf("Recommended", "Library", "Collections", "Genres")
     var focusTabIndex by rememberSaveable { mutableIntStateOf(rememberedTabIndex) }
     var selectedTabIndex by rememberSaveable { mutableIntStateOf(rememberedTabIndex) }
     val focusRequester = remember { FocusRequester() }
@@ -170,6 +170,29 @@ fun CollectionFolderMovie(
                 )
             }
             2 -> {
+                CollectionFolderGrid(
+                    preferences = preferences,
+                    onClickItem = onClickItem,
+                    itemId = destination.itemId,
+                    item = destination.item,
+                    initialFilter =
+                        GetItemsFilter(
+                            includeItemTypes = listOf(BaseItemKind.BOX_SET),
+                        ),
+                    showTitle = false,
+                    recursive = true,
+                    modifier =
+                        Modifier
+                            .padding(start = 16.dp)
+                            .fillMaxSize()
+                            .focusRequester(focusRequester),
+                    positionCallback = { columns, position ->
+                        showHeader = position < columns
+                    },
+                )
+            }
+
+            3 -> {
                 GenreCardGrid(
                     itemId = destination.itemId,
                     modifier =
