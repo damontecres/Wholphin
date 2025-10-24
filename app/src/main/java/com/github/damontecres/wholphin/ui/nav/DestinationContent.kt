@@ -6,6 +6,7 @@ import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.components.LicenseInfo
 import com.github.damontecres.wholphin.ui.detail.CollectionFolderGeneric
+import com.github.damontecres.wholphin.ui.detail.CollectionFolderLiveTv
 import com.github.damontecres.wholphin.ui.detail.CollectionFolderMovie
 import com.github.damontecres.wholphin.ui.detail.CollectionFolderTv
 import com.github.damontecres.wholphin.ui.detail.DebugPage
@@ -24,6 +25,7 @@ import com.github.damontecres.wholphin.ui.setup.SwitchUserContent
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.CollectionType
 import org.jellyfin.sdk.model.api.DeviceProfile
+import timber.log.Timber
 
 /**
  * Chose the page for the [Destination]
@@ -144,15 +146,35 @@ fun DestinationContent(
                     )
 
                 BaseItemKind.USER_VIEW ->
+                    when (destination.item?.data?.collectionType) {
+                        CollectionType.LIVETV ->
+                            CollectionFolderLiveTv(
+                                preferences,
+                                destination,
+                                modifier,
+                            )
+
+                        else ->
+                            CollectionFolderGeneric(
+                                preferences,
+                                destination.itemId,
+                                destination.item,
+                                true,
+                                modifier,
+                            )
+                    }
+
+                BaseItemKind.FOLDER ->
                     CollectionFolderGeneric(
                         preferences,
                         destination.itemId,
                         destination.item,
-                        true,
+                        false,
                         modifier,
                     )
 
                 else -> {
+                    Timber.w("Unsupported item type: ${destination.type}")
                     Text("Unsupported item type: ${destination.type}")
                 }
             }

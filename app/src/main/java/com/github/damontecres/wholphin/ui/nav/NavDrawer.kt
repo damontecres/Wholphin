@@ -36,6 +36,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -403,6 +404,7 @@ fun NavigationDrawerScope.NavItem(
     containerColor: Color = Color.Unspecified,
 ) {
     val context = LocalContext.current
+    val useFont = library !is ServerNavDrawerItem || library.type != CollectionType.LIVETV
     val icon =
         when (library) {
             NavDrawerItem.Favorites -> R.string.fa_heart
@@ -413,7 +415,7 @@ fun NavigationDrawerScope.NavItem(
                     CollectionType.MOVIES -> R.string.fa_film
                     CollectionType.TVSHOWS -> R.string.fa_tv
                     CollectionType.HOMEVIDEOS -> R.string.fa_video
-                    CollectionType.LIVETV -> R.string.fa_tv
+                    CollectionType.LIVETV -> R.drawable.gf_dvr
                     CollectionType.MUSIC -> R.string.fa_music
                     CollectionType.BOXSETS -> R.string.fa_open_folder
                     CollectionType.PLAYLISTS -> R.string.fa_list_ul
@@ -437,13 +439,20 @@ fun NavigationDrawerScope.NavItem(
             ),
         leadingContent = {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text(
-                    text = stringResource(icon),
-                    textAlign = TextAlign.Center,
-                    fontSize = 16.sp,
-                    fontFamily = FontAwesome,
-                    color = color,
-                )
+                if (useFont) {
+                    Text(
+                        text = stringResource(icon),
+                        textAlign = TextAlign.Center,
+                        fontSize = 16.sp,
+                        fontFamily = FontAwesome,
+                        color = color,
+                    )
+                } else {
+                    Icon(
+                        painter = painterResource(icon),
+                        contentDescription = null,
+                    )
+                }
             }
         },
         trailingContent = {

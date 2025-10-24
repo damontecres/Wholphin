@@ -17,10 +17,12 @@ import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.Response
 import org.jellyfin.sdk.api.client.extensions.genresApi
 import org.jellyfin.sdk.api.client.extensions.itemsApi
+import org.jellyfin.sdk.api.client.extensions.liveTvApi
 import org.jellyfin.sdk.api.client.extensions.playlistsApi
 import org.jellyfin.sdk.api.client.extensions.suggestionsApi
 import org.jellyfin.sdk.api.client.extensions.tvShowsApi
 import org.jellyfin.sdk.model.api.BaseItemDtoQueryResult
+import org.jellyfin.sdk.model.api.GetProgramsDto
 import org.jellyfin.sdk.model.api.request.GetEpisodesRequest
 import org.jellyfin.sdk.model.api.request.GetGenresRequest
 import org.jellyfin.sdk.model.api.request.GetItemsRequest
@@ -316,4 +318,23 @@ val GetGenresRequestHandler =
             api: ApiClient,
             request: GetGenresRequest,
         ): Response<BaseItemDtoQueryResult> = api.genresApi.getGenres(request)
+    }
+
+val GetProgramsDtoHandler =
+    object : RequestHandler<GetProgramsDto> {
+        override fun prepare(
+            request: GetProgramsDto,
+            startIndex: Int,
+            limit: Int,
+            enableTotalRecordCount: Boolean,
+        ): GetProgramsDto =
+            request.copy(
+                startIndex = startIndex,
+                limit = limit,
+            )
+
+        override suspend fun execute(
+            api: ApiClient,
+            request: GetProgramsDto,
+        ): Response<BaseItemDtoQueryResult> = api.liveTvApi.getPrograms(request)
     }
