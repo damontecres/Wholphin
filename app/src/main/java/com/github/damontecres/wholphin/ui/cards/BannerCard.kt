@@ -21,12 +21,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.tv.material3.Card
+import androidx.tv.material3.CardDefaults
 import androidx.tv.material3.Icon
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
@@ -58,18 +60,22 @@ fun BannerCard(
         onClick = onClick,
         onLongClick = onLongClick,
         interactionSource = interactionSource,
+        colors =
+            CardDefaults.colors(
+                containerColor = Color.Transparent,
+            ),
     ) {
         Box(
             modifier =
                 Modifier
-                    .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.surfaceVariant),
+                    .fillMaxSize(),
+//                    .background(MaterialTheme.colorScheme.surfaceVariant),
         ) {
             if (!imageError && imageUrl.isNotNullOrBlank()) {
                 AsyncImage(
                     model = imageUrl,
                     contentDescription = null,
-                    contentScale = ContentScale.Fit,
+                    contentScale = ContentScale.FillBounds,
                     onError = { imageError = true },
                     modifier = Modifier.fillMaxSize(),
                 )
