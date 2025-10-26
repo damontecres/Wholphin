@@ -7,6 +7,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.core.content.edit
 import androidx.datastore.core.DataStore
+import com.github.damontecres.wholphin.data.model.JellyfinServer
+import com.github.damontecres.wholphin.data.model.JellyfinUser
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.ui.toServerString
 import dagger.hilt.android.qualifiers.ApplicationContext

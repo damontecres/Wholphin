@@ -59,9 +59,9 @@ import androidx.tv.material3.Text
 import androidx.tv.material3.rememberDrawerState
 import androidx.tv.material3.surfaceColorAtElevation
 import com.github.damontecres.wholphin.R
-import com.github.damontecres.wholphin.data.JellyfinServer
-import com.github.damontecres.wholphin.data.JellyfinUser
 import com.github.damontecres.wholphin.data.NavDrawerItemRepository
+import com.github.damontecres.wholphin.data.model.JellyfinServer
+import com.github.damontecres.wholphin.data.model.JellyfinUser
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.FontAwesome
 import com.github.damontecres.wholphin.ui.ifElse

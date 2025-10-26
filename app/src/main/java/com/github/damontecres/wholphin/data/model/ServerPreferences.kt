@@ -2,7 +2,6 @@ package com.github.damontecres.wholphin.data.model
 
 import androidx.room.Entity
 import androidx.room.ForeignKey
-import com.github.damontecres.wholphin.data.JellyfinUser
 
 enum class NavPinType {
     PINNED,

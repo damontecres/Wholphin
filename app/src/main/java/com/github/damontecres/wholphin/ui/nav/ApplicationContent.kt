@@ -7,8 +7,8 @@ import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDe
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
-import com.github.damontecres.wholphin.data.JellyfinServer
-import com.github.damontecres.wholphin.data.JellyfinUser
+import com.github.damontecres.wholphin.data.model.JellyfinServer
+import com.github.damontecres.wholphin.data.model.JellyfinUser
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import org.jellyfin.sdk.model.api.DeviceProfile
 import timber.log.Timber
