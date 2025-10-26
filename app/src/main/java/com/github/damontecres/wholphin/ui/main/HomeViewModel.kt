@@ -10,6 +10,7 @@ import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.SlimItemFields
 import com.github.damontecres.wholphin.ui.nav.NavigationManager
 import com.github.damontecres.wholphin.ui.nav.ServerNavDrawerItem
+import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
 import com.github.damontecres.wholphin.util.supportItemKinds
@@ -21,6 +22,7 @@ import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.itemsApi
 import org.jellyfin.sdk.api.client.extensions.liveTvApi
+import org.jellyfin.sdk.api.client.extensions.playStateApi
 import org.jellyfin.sdk.api.client.extensions.tvShowsApi
 import org.jellyfin.sdk.api.client.extensions.userLibraryApi
 import org.jellyfin.sdk.api.client.extensions.userViewsApi
@@ -46,8 +48,11 @@ class HomeViewModel
         val loadingState = MutableLiveData<LoadingState>(LoadingState.Pending)
         val homeRows = MutableLiveData<List<HomeRow>>()
 
+        private lateinit var preferences: UserPreferences
+
         fun init(preferences: UserPreferences): Job {
             loadingState.value = LoadingState.Loading
+            this.preferences = preferences
             val prefs = preferences.appPreferences.homePagePreferences
             val limit = prefs.maxItemsPerRow
             return viewModelScope.launch(
@@ -210,6 +215,34 @@ class HomeViewModel
                         )
                     }
             return rows
+        }
+
+        fun setWatched(
+            itemId: UUID,
+            played: Boolean,
+        ) = viewModelScope.launch(ExceptionHandler() + Dispatchers.IO) {
+            if (played) {
+                api.playStateApi.markPlayedItem(itemId)
+            } else {
+                api.playStateApi.markUnplayedItem(itemId)
+            }
+            withContext(Dispatchers.Main) {
+                init(preferences)
+            }
+        }
+
+        fun setFavorite(
+            itemId: UUID,
+            favorite: Boolean,
+        ) = viewModelScope.launch(ExceptionHandler() + Dispatchers.IO) {
+            if (favorite) {
+                api.userLibraryApi.markFavoriteItem(itemId)
+            } else {
+                api.userLibraryApi.unmarkFavoriteItem(itemId)
+            }
+            withContext(Dispatchers.Main) {
+                init(preferences)
+            }
         }
     }
 

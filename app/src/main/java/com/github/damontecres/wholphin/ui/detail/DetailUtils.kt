@@ -3,6 +3,7 @@ package com.github.damontecres.wholphin.ui.detail
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.ui.graphics.Color
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.BaseItem
@@ -13,6 +14,8 @@ import org.jellyfin.sdk.model.UUID
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.MediaStreamType
 import org.jellyfin.sdk.model.serializer.toUUIDOrNull
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
 
 /**
  * Build the [DialogItem]s when clicking "More"
@@ -129,5 +132,95 @@ fun buildMoreDialogItems(
                     )
                 }
             }
+        }
+    }
+
+fun buildMoreDialogItemsForHome(
+    itemId: UUID,
+    seriesId: UUID?,
+    playbackPosition: Duration,
+    watched: Boolean,
+    favorite: Boolean,
+    navigateTo: (Destination) -> Unit,
+    onClickWatch: (UUID, Boolean) -> Unit,
+    onClickFavorite: (UUID, Boolean) -> Unit,
+): List<DialogItem> =
+    buildList {
+        if (playbackPosition >= 10.seconds) {
+            add(
+                DialogItem(
+                    "Resume",
+                    Icons.Default.PlayArrow,
+                    iconColor = Color.Green.copy(alpha = .8f),
+                ) {
+                    navigateTo(
+                        Destination.Playback(
+                            itemId,
+                            playbackPosition.inWholeMilliseconds,
+                        ),
+                    )
+                },
+            )
+            add(
+                DialogItem(
+                    "Restart",
+                    Icons.Default.Refresh,
+//                    iconColor = Color.Green.copy(alpha = .8f),
+                ) {
+                    navigateTo(
+                        Destination.Playback(
+                            itemId,
+                            0L,
+                        ),
+                    )
+                },
+            )
+        } else {
+            add(
+                DialogItem(
+                    "Play",
+                    Icons.Default.PlayArrow,
+                    iconColor = Color.Green.copy(alpha = .8f),
+                ) {
+                    navigateTo(
+                        Destination.Playback(
+                            itemId,
+                            0L,
+                        ),
+                    )
+                },
+            )
+        }
+        add(
+            DialogItem(
+                text = if (watched) R.string.mark_unwatched else R.string.mark_watched,
+                iconStringRes = if (watched) R.string.fa_eye else R.string.fa_eye_slash,
+            ) {
+                onClickWatch.invoke(itemId, !watched)
+            },
+        )
+        add(
+            DialogItem(
+                text = if (favorite) R.string.remove_favorite else R.string.add_favorite,
+                iconStringRes = R.string.fa_heart,
+                iconColor = if (favorite) Color.Red else Color.Unspecified,
+            ) {
+                onClickFavorite.invoke(itemId, !favorite)
+            },
+        )
+        seriesId?.let {
+            add(
+                DialogItem(
+                    "Go to series",
+                    Icons.AutoMirrored.Filled.ArrowForward,
+                ) {
+                    navigateTo(
+                        Destination.MediaItem(
+                            it,
+                            BaseItemKind.SERIES,
+                        ),
+                    )
+                },
+            )
         }
     }
