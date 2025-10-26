@@ -1,4 +1,4 @@
-package com.github.damontecres.wholphin.ui.detail
+package com.github.damontecres.wholphin.ui.detail.series
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box

@@ -4,13 +4,14 @@ package com.github.damontecres.wholphin.data.model
 
 import androidx.room.Entity
 import androidx.room.ForeignKey
+import androidx.room.Ignore
 import androidx.room.Index
 import androidx.room.PrimaryKey
-import com.github.damontecres.wholphin.data.JellyfinUser
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.letNotEmpty
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 import kotlinx.serialization.UseSerializers
 import org.jellyfin.sdk.model.api.BaseItemDto
 import org.jellyfin.sdk.model.api.MediaSourceInfo
@@ -43,9 +44,13 @@ data class ItemPlayback(
     val audioIndex: Int = TrackIndex.UNSPECIFIED,
     val subtitleIndex: Int = TrackIndex.UNSPECIFIED,
 ) {
-    @Transient val audioIndexEnabled = audioIndex >= 0
+    @Transient
+    @Ignore
+    val audioIndexEnabled = audioIndex >= 0
 
-    @Transient val subtitleIndexEnabled = subtitleIndex >= 0
+    @Transient
+    @Ignore
+    val subtitleIndexEnabled = subtitleIndex >= 0
 }
 
 /**

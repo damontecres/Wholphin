@@ -1,6 +1,4 @@
-package com.github.damontecres.wholphin.ui.data
-
-import com.github.damontecres.wholphin.data.model.BaseItem
+package com.github.damontecres.wholphin.data.model
 
 sealed interface Trailer {
     val name: String

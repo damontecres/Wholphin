@@ -5,7 +5,6 @@ import android.os.Build
 import android.util.Log
 import androidx.compose.runtime.Composer
 import androidx.compose.runtime.ExperimentalComposeRuntimeApi
-import androidx.compose.runtime.tooling.ComposeStackTraceMode
 import dagger.hilt.android.HiltAndroidApp
 import org.acra.ACRA
 import org.acra.ReportField
@@ -42,9 +41,7 @@ class WholphinApplication : Application() {
             )
         }
 
-        Composer.setDiagnosticStackTraceMode(
-            if (BuildConfig.DEBUG) ComposeStackTraceMode.SourceInformation else ComposeStackTraceMode.GroupKeys,
-        )
+        Composer.setDiagnosticStackTraceEnabled(BuildConfig.DEBUG)
     }
 
     override fun onCreate() {

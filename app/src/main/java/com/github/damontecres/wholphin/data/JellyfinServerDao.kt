@@ -1,66 +1,19 @@
 package com.github.damontecres.wholphin.data
 
-import androidx.room.ColumnInfo
 import androidx.room.Dao
-import androidx.room.Embedded
-import androidx.room.Entity
-import androidx.room.ForeignKey
-import androidx.room.Index
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
-import androidx.room.PrimaryKey
 import androidx.room.Query
-import androidx.room.Relation
 import androidx.room.Transaction
 import androidx.room.Update
-import com.github.damontecres.wholphin.ui.isNotNullOrBlank
+import com.github.damontecres.wholphin.data.model.JellyfinServer
+import com.github.damontecres.wholphin.data.model.JellyfinServerUsers
+import com.github.damontecres.wholphin.data.model.JellyfinUser
 import java.util.UUID
-
-@Entity(tableName = "servers")
-data class JellyfinServer(
-    @PrimaryKey val id: UUID,
-    val name: String?,
-    val url: String,
-)
-
-@Entity(
-    tableName = "users",
-    foreignKeys = [
-        ForeignKey(
-            entity = JellyfinServer::class,
-            parentColumns = arrayOf("id"),
-            childColumns = arrayOf("serverId"),
-            onDelete = ForeignKey.CASCADE,
-        ),
-    ],
-    indices = [Index("id", "serverId", unique = true)],
-)
-data class JellyfinUser(
-    @PrimaryKey(autoGenerate = true)
-    val rowId: Int = 0,
-    @ColumnInfo(index = true)
-    val id: UUID,
-    val name: String?,
-    @ColumnInfo(index = true)
-    val serverId: UUID,
-    val accessToken: String?,
-) {
-    override fun toString(): String =
-        "JellyfinUser(rowId=$rowId, id=$id, name=$name, serverId=$serverId, accessToken=${accessToken.isNotNullOrBlank()})"
-}
-
-data class JellyfinServerUsers(
-    @Embedded val server: JellyfinServer,
-    @Relation(
-        parentColumn = "id",
-        entityColumn = "serverId",
-    )
-    val users: List<JellyfinUser>,
-)
 
 @Dao
 interface JellyfinServerDao {
-    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    @Insert(onConflict = OnConflictStrategy.Companion.IGNORE)
     fun addServer(server: JellyfinServer): Long
 
     @Update
@@ -74,7 +27,7 @@ interface JellyfinServerDao {
         }
     }
 
-    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    @Insert(onConflict = OnConflictStrategy.Companion.IGNORE)
     fun addUser(user: JellyfinUser): Long
 
     @Update

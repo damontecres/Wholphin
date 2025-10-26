@@ -1,9 +1,15 @@
 package com.github.damontecres.wholphin.ui.components
 
+import androidx.annotation.StringRes
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.focusGroup
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.material.icons.Icons
@@ -19,104 +25,24 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.tv.material3.Button
-import androidx.tv.material3.ButtonDefaults
 import androidx.tv.material3.Icon
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.R
+import com.github.damontecres.wholphin.ui.DefaultButtonPadding
+import com.github.damontecres.wholphin.ui.FontAwesome
 import com.github.damontecres.wholphin.ui.PreviewTvSpec
+import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.theme.WholphinTheme
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
-
-/**
- * Standard row of [PlayButton] including Play (or Resume & Restart) & More
- */
-@Composable
-fun PlayButtons(
-    resumePosition: Duration,
-    playOnClick: (position: Duration) -> Unit,
-    moreOnClick: () -> Unit,
-    buttonOnFocusChanged: (FocusState) -> Unit,
-    focusRequester: FocusRequester,
-    modifier: Modifier = Modifier,
-) {
-    val firstFocus = remember { FocusRequester() }
-    LazyRow(
-        horizontalArrangement = Arrangement.spacedBy(16.dp),
-        contentPadding = PaddingValues(8.dp),
-        modifier =
-            modifier
-                .focusGroup()
-                .focusRestorer(firstFocus),
-    ) {
-        if (resumePosition > Duration.ZERO) {
-            item {
-//                LaunchedEffect(Unit) { firstFocus.tryRequestFocus() }
-                PlayButton(
-                    R.string.resume,
-                    resumePosition,
-                    Icons.Default.PlayArrow,
-                    playOnClick,
-                    Modifier
-                        .onFocusChanged(buttonOnFocusChanged)
-                        .focusRequester(firstFocus)
-                        .focusRequester(focusRequester),
-                )
-            }
-            item {
-                PlayButton(
-                    R.string.restart,
-                    Duration.ZERO,
-                    Icons.Default.Refresh,
-                    playOnClick,
-                    Modifier
-                        .onFocusChanged(buttonOnFocusChanged),
-                    mirrorIcon = true,
-                )
-            }
-        } else {
-            item {
-//                LaunchedEffect(Unit) { firstFocus.tryRequestFocus() }
-                PlayButton(
-                    R.string.play,
-                    Duration.ZERO,
-                    Icons.Default.PlayArrow,
-                    playOnClick,
-                    Modifier
-                        .onFocusChanged(buttonOnFocusChanged)
-                        .focusRequester(firstFocus)
-                        .focusRequester(focusRequester),
-                )
-            }
-        }
-
-        // More button
-        item {
-            Button(
-                onClick = moreOnClick,
-                onLongClick = {},
-                modifier =
-                    Modifier
-                        .onFocusChanged(buttonOnFocusChanged),
-                contentPadding = ButtonDefaults.ButtonWithIconContentPadding,
-            ) {
-                Icon(
-                    imageVector = Icons.Default.MoreVert,
-                    contentDescription = null,
-                )
-                Spacer(Modifier.size(8.dp))
-                Text(
-                    text = stringResource(R.string.more),
-                    style = MaterialTheme.typography.titleSmall,
-                )
-            }
-        }
-    }
-}
 
 /**
  * Standard row of [ExpandablePlayButton] including Play (or Resume & Restart), Mark played, & More
@@ -207,6 +133,81 @@ fun ExpandablePlayButtons(
                 Icons.Default.MoreVert,
                 { moreOnClick.invoke() },
                 Modifier.onFocusChanged(buttonOnFocusChanged),
+            )
+        }
+    }
+}
+
+/**
+ * An icon button typically used in a row for playing media
+ *
+ * Only shows the icon until focused when it expands to show the title
+ */
+@Composable
+fun ExpandablePlayButton(
+    @StringRes title: Int,
+    resume: Duration,
+    icon: ImageVector,
+    onClick: (position: Duration) -> Unit,
+    modifier: Modifier = Modifier,
+    interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
+    mirrorIcon: Boolean = false,
+) {
+    val isFocused = interactionSource.collectIsFocusedAsState().value
+    Button(
+        onClick = { onClick.invoke(resume) },
+        modifier = modifier,
+        contentPadding = DefaultButtonPadding,
+        interactionSource = interactionSource,
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            modifier = Modifier.ifElse(mirrorIcon, Modifier.graphicsLayer { scaleX = -1f }),
+        )
+        AnimatedVisibility(isFocused) {
+            Spacer(Modifier.size(8.dp))
+            Text(
+                text = stringResource(title),
+                style = MaterialTheme.typography.titleSmall,
+            )
+        }
+    }
+}
+
+/**
+ * Similar to [ExpandablePlayButton], but uses a [FontAwesome] string instead of an Icon
+ */
+@Composable
+fun ExpandableFaButton(
+    @StringRes title: Int,
+    @StringRes iconStringRes: Int,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
+    iconColor: Color = Color.Unspecified,
+) {
+    val isFocused = interactionSource.collectIsFocusedAsState().value
+    Button(
+        onClick = onClick,
+        modifier = modifier.heightIn(min = 40.dp),
+        contentPadding = DefaultButtonPadding,
+        interactionSource = interactionSource,
+    ) {
+        Text(
+            text = stringResource(iconStringRes),
+            style = MaterialTheme.typography.titleSmall,
+            color = iconColor,
+            fontSize = 16.sp,
+            fontFamily = FontAwesome,
+            textAlign = TextAlign.Center,
+            modifier = Modifier,
+        )
+        AnimatedVisibility(isFocused) {
+            Text(
+                text = stringResource(title),
+                style = MaterialTheme.typography.titleSmall,
+                modifier = Modifier.padding(start = 4.dp),
             )
         }
     }
