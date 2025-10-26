@@ -176,7 +176,7 @@ class HomeViewModel
                 latestMediaIncludes
                     .mapNotNull { viewId -> views.items.firstOrNull { it.id == viewId } }
                     .filter { it.collectionType in supportedLatestCollectionTypes }
-                    .map { view ->
+                    .mapNotNull { view ->
                         val title =
                             if (view.collectionType == CollectionType.LIVETV) {
                                 "Recently Recorded"
@@ -194,25 +194,27 @@ class HomeViewModel
                             } else {
                                 view.id
                             }
-                        val request =
-                            GetLatestMediaRequest(
-                                fields = SlimItemFields,
-                                imageTypeLimit = 1,
-                                parentId = viewId,
-                                groupItems = true,
-                                limit = limit,
-                                isPlayed = null, // Server will handle user's preference
+                        viewId?.let {
+                            val request =
+                                GetLatestMediaRequest(
+                                    fields = SlimItemFields,
+                                    imageTypeLimit = 1,
+                                    parentId = viewId,
+                                    groupItems = true,
+                                    limit = limit,
+                                    isPlayed = null, // Server will handle user's preference
+                                )
+                            val latest =
+                                api.userLibraryApi
+                                    .getLatestMedia(request)
+                                    .content
+                                    .map { BaseItem.from(it, api, true) }
+                            HomeRow(
+                                section = HomeSection.LATEST_MEDIA,
+                                items = latest,
+                                title = title,
                             )
-                        val latest =
-                            api.userLibraryApi
-                                .getLatestMedia(request)
-                                .content
-                                .map { BaseItem.from(it, api, true) }
-                        HomeRow(
-                            section = HomeSection.LATEST_MEDIA,
-                            items = latest,
-                            title = title,
-                        )
+                        }
                     }
             return rows
         }
