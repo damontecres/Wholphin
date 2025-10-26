@@ -68,46 +68,48 @@ class DebugViewModel
             }
         }
 
-        fun getLogCatLines(): List<LogcatLine> {
-            val lineCount = 500
-            val args =
-                buildList {
-                    add("logcat")
-                    add("-d")
-                    add("-t")
-                    add(lineCount.toString())
-                    addAll(THIRD_PARTY_TAGS)
-                    add("*:V")
-                }
-            val process = ProcessBuilder().command(args).redirectErrorStream(true).start()
-            val logLines = mutableListOf<LogcatLine>()
-            try {
-                val reader = BufferedReader(InputStreamReader(process.inputStream))
-                var count = 0
-
-                while (count < lineCount) {
-                    val line = reader.readLine()
-                    if (line != null) {
-                        val level = line.split(" ").getOrNull(4)
-                        val logLevel =
-                            when (level?.uppercase()) {
-                                "V" -> Log.VERBOSE
-                                "D" -> Log.DEBUG
-                                "I" -> Log.INFO
-                                "W" -> Log.WARN
-                                "E" -> Log.ERROR
-                                else -> Log.VERBOSE
-                            }
-                        logLines.add(LogcatLine(logLevel, line))
-                    } else {
-                        break
+        companion object {
+            fun getLogCatLines(): List<LogcatLine> {
+                val lineCount = 500
+                val args =
+                    buildList {
+                        add("logcat")
+                        add("-d")
+                        add("-t")
+                        add(lineCount.toString())
+                        addAll(THIRD_PARTY_TAGS)
+                        add("*:V")
                     }
-                    count++
+                val process = ProcessBuilder().command(args).redirectErrorStream(true).start()
+                val logLines = mutableListOf<LogcatLine>()
+                try {
+                    val reader = BufferedReader(InputStreamReader(process.inputStream))
+                    var count = 0
+
+                    while (count < lineCount) {
+                        val line = reader.readLine()
+                        if (line != null) {
+                            val level = line.split(" ").getOrNull(4)
+                            val logLevel =
+                                when (level?.uppercase()) {
+                                    "V" -> Log.VERBOSE
+                                    "D" -> Log.DEBUG
+                                    "I" -> Log.INFO
+                                    "W" -> Log.WARN
+                                    "E" -> Log.ERROR
+                                    else -> Log.VERBOSE
+                                }
+                            logLines.add(LogcatLine(logLevel, line))
+                        } else {
+                            break
+                        }
+                        count++
+                    }
+                } finally {
+                    process.destroy()
                 }
-            } finally {
-                process.destroy()
+                return logLines
             }
-            return logLines
         }
     }
 

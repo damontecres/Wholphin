@@ -1,5 +1,6 @@
 package com.github.damontecres.wholphin.ui.preferences
 
+import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -11,25 +12,36 @@ import com.github.damontecres.wholphin.data.isPinned
 import com.github.damontecres.wholphin.data.model.NavDrawerPinnedItem
 import com.github.damontecres.wholphin.data.model.NavPinType
 import com.github.damontecres.wholphin.preferences.AppPreferences
+import com.github.damontecres.wholphin.ui.detail.DebugViewModel
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.nav.NavDrawerItem
 import com.github.damontecres.wholphin.ui.nav.NavigationManager
 import com.github.damontecres.wholphin.ui.setValueOnMain
+import com.github.damontecres.wholphin.ui.showToast
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.RememberTabManager
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
+import org.jellyfin.sdk.api.client.ApiClient
+import org.jellyfin.sdk.api.client.extensions.clientLogApi
+import org.jellyfin.sdk.model.ClientInfo
+import org.jellyfin.sdk.model.DeviceInfo
 import javax.inject.Inject
 
 @HiltViewModel
 class PreferencesViewModel
     @Inject
     constructor(
+        @param:ApplicationContext private val context: Context,
+        private val api: ApiClient,
         val preferenceDataStore: DataStore<AppPreferences>,
         val navigationManager: NavigationManager,
-        val rememberTabManager: RememberTabManager,
-        val serverRepository: ServerRepository,
-        val navDrawerItemRepository: NavDrawerItemRepository,
-        val serverPreferencesDao: ServerPreferencesDao,
+        private val rememberTabManager: RememberTabManager,
+        private val serverRepository: ServerRepository,
+        private val navDrawerItemRepository: NavDrawerItemRepository,
+        private val serverPreferencesDao: ServerPreferencesDao,
+        private val deviceInfo: DeviceInfo,
+        private val clientInfo: ClientInfo,
     ) : ViewModel(),
         RememberTabManager by rememberTabManager {
         private lateinit var allNavDrawerItems: List<NavDrawerItem>
@@ -75,6 +87,21 @@ class PreferencesViewModel
                     val navDrawerPins = allNavDrawerItems.associateWith { pins.isPinned(it.id) }
                     this@PreferencesViewModel.navDrawerPins.setValueOnMain(navDrawerPins)
                 }
+            }
+        }
+
+        fun sendAppLogs() {
+            viewModelScope.launchIO(ExceptionHandler(true)) {
+                val logcat = DebugViewModel.getLogCatLines().joinToString("\n") { it.text }
+                val body =
+                    """
+                    Send App Logs
+                    $clientInfo
+                    $deviceInfo
+
+                    """.trimIndent() + logcat
+                val response by api.clientLogApi.logFile(body)
+                showToast(context, "Sent! Filename=${response.fileName}")
             }
         }
     }
