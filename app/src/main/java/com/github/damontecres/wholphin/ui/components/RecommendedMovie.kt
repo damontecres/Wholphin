@@ -156,6 +156,7 @@ fun RecommendedMovie(
             HomePageContent(
                 homeRows = rows,
                 onClickItem = onClickItem,
+                onLongClickItem = {},
                 onFocusPosition = onFocusPosition,
                 modifier = modifier,
             )

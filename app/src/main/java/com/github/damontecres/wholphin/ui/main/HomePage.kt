@@ -45,11 +45,14 @@ import com.github.damontecres.wholphin.ui.Cards
 import com.github.damontecres.wholphin.ui.cards.BannerCard
 import com.github.damontecres.wholphin.ui.cards.ItemRow
 import com.github.damontecres.wholphin.ui.components.CircularProgress
+import com.github.damontecres.wholphin.ui.components.DialogParams
+import com.github.damontecres.wholphin.ui.components.DialogPopup
 import com.github.damontecres.wholphin.ui.components.DotSeparatedRow
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.data.RowColumn
 import com.github.damontecres.wholphin.ui.data.RowColumnSaver
+import com.github.damontecres.wholphin.ui.detail.buildMoreDialogItemsForHome
 import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.roundMinutes
@@ -60,6 +63,7 @@ import com.github.damontecres.wholphin.util.formatDateTime
 import com.github.damontecres.wholphin.util.seasonEpisode
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.extensions.ticks
+import kotlin.time.Duration
 
 data class HomeRow(
     val section: HomeSection,
@@ -88,14 +92,48 @@ fun HomePage(
         -> LoadingPage()
 
         LoadingState.Success -> {
+            var dialog by remember { mutableStateOf<DialogParams?>(null) }
             HomePageContent(
                 homeRows,
                 onClickItem = {
                     viewModel.navigationManager.navigateTo(it.destination())
                 },
+                onLongClickItem = {
+                    val dialogItems =
+                        buildMoreDialogItemsForHome(
+                            item = it,
+                            seriesId = it.data.seriesId,
+                            playbackPosition =
+                                it.data.userData
+                                    ?.playbackPositionTicks
+                                    ?.ticks
+                                    ?: Duration.ZERO,
+                            watched = it.data.userData?.played ?: false,
+                            favorite = it.data.userData?.isFavorite ?: false,
+                            navigateTo = viewModel.navigationManager::navigateTo,
+                            onClickWatch = { itemId, played ->
+                                viewModel.setWatched(itemId, played)
+                            },
+                            onClickFavorite = { itemId, favorite ->
+                                viewModel.setFavorite(itemId, favorite)
+                            },
+                        )
+                    dialog =
+                        DialogParams(
+                            title = it.title ?: "",
+                            fromLongClick = true,
+                            items = dialogItems,
+                        )
+                },
                 loadingState = loading,
                 modifier = modifier,
             )
+            dialog?.let { params ->
+                DialogPopup(
+                    params = params,
+                    onDismissRequest = { dialog = null },
+                )
+            }
         }
     }
 }
@@ -104,6 +142,7 @@ fun HomePage(
 fun HomePageContent(
     homeRows: List<HomeRow>,
     onClickItem: (BaseItem) -> Unit,
+    onLongClickItem: (BaseItem) -> Unit,
     modifier: Modifier = Modifier,
     onFocusPosition: ((RowColumn) -> Unit)? = null,
     loadingState: LoadingState? = null,
@@ -183,7 +222,7 @@ fun HomePageContent(
                                     position = RowColumn(rowIndex, index)
                                 }
                             },
-                            onLongClickItem = {},
+                            onLongClickItem = onLongClickItem,
                             modifier = Modifier.fillMaxWidth(),
                             cardContent = { index, item, cardModifier, onClick, onLongClick ->
                                 // TODO better aspect ration handling?
