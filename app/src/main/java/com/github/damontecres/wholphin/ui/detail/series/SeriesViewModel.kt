@@ -1,4 +1,4 @@
-package com.github.damontecres.wholphin.ui.detail
+package com.github.damontecres.wholphin.ui.detail.series
 
 import android.content.Context
 import android.widget.Toast
@@ -15,6 +15,7 @@ import com.github.damontecres.wholphin.data.model.Person
 import com.github.damontecres.wholphin.preferences.ThemeSongVolume
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.SlimItemFields
+import com.github.damontecres.wholphin.ui.detail.ItemViewModel
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.letNotEmpty
 import com.github.damontecres.wholphin.ui.nav.Destination

@@ -25,9 +25,6 @@ import com.github.damontecres.wholphin.ui.components.chooseStream
 import com.github.damontecres.wholphin.ui.components.chooseVersionParams
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialog
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialogInfo
-import com.github.damontecres.wholphin.ui.detail.EpisodeList
-import com.github.damontecres.wholphin.ui.detail.ItemListAndMapping
-import com.github.damontecres.wholphin.ui.detail.SeriesViewModel
 import com.github.damontecres.wholphin.ui.detail.buildMoreDialogItems
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.tryRequestFocus

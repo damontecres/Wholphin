@@ -39,23 +39,20 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.viewModelScope
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import coil3.compose.AsyncImage
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.ChosenStreams
-import com.github.damontecres.wholphin.data.ItemPlaybackRepository
-import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.Chapter
-import com.github.damontecres.wholphin.data.model.ItemPlayback
+import com.github.damontecres.wholphin.data.model.LocalTrailer
 import com.github.damontecres.wholphin.data.model.Person
+import com.github.damontecres.wholphin.data.model.RemoteTrailer
+import com.github.damontecres.wholphin.data.model.Trailer
 import com.github.damontecres.wholphin.data.model.chooseSource
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.Cards
-import com.github.damontecres.wholphin.ui.SlimItemFields
 import com.github.damontecres.wholphin.ui.cards.ChapterRow
 import com.github.damontecres.wholphin.ui.cards.ItemRow
 import com.github.damontecres.wholphin.ui.cards.PersonRow
@@ -69,179 +66,16 @@ import com.github.damontecres.wholphin.ui.components.chooseStream
 import com.github.damontecres.wholphin.ui.components.chooseVersionParams
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialog
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialogInfo
-import com.github.damontecres.wholphin.ui.data.LocalTrailer
-import com.github.damontecres.wholphin.ui.data.RemoteTrailer
-import com.github.damontecres.wholphin.ui.data.Trailer
-import com.github.damontecres.wholphin.ui.detail.LoadingItemViewModel
 import com.github.damontecres.wholphin.ui.detail.buildMoreDialogItems
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
-import com.github.damontecres.wholphin.ui.launchIO
-import com.github.damontecres.wholphin.ui.letNotEmpty
 import com.github.damontecres.wholphin.ui.nav.Destination
-import com.github.damontecres.wholphin.ui.nav.NavigationManager
-import com.github.damontecres.wholphin.ui.setValueOnMain
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
-import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import org.jellyfin.sdk.api.client.ApiClient
-import org.jellyfin.sdk.api.client.extensions.libraryApi
-import org.jellyfin.sdk.api.client.extensions.playStateApi
-import org.jellyfin.sdk.api.client.extensions.userLibraryApi
-import org.jellyfin.sdk.model.api.MediaStreamType
-import org.jellyfin.sdk.model.api.request.GetSimilarItemsRequest
 import org.jellyfin.sdk.model.extensions.ticks
 import org.jellyfin.sdk.model.serializer.toUUID
-import java.util.UUID
-import javax.inject.Inject
 import kotlin.time.Duration
-
-@HiltViewModel
-class MovieViewModel
-    @Inject
-    constructor(
-        api: ApiClient,
-        val navigationManager: NavigationManager,
-        val serverRepository: ServerRepository,
-        val itemPlaybackRepository: ItemPlaybackRepository,
-    ) : LoadingItemViewModel(api) {
-        private lateinit var itemId: UUID
-
-        val trailers = MutableLiveData<List<Trailer>>(listOf())
-        val people = MutableLiveData<List<Person>>(listOf())
-        val chapters = MutableLiveData<List<Chapter>>(listOf())
-        val similar = MutableLiveData<List<BaseItem>>(listOf())
-        val chosenStreams = MutableLiveData<ChosenStreams?>(null)
-
-        override fun init(
-            itemId: UUID,
-            potential: BaseItem?,
-        ): Job? {
-            this.itemId = itemId
-            return viewModelScope.launch(ExceptionHandler()) {
-                super.init(itemId, potential)?.join()
-                item.value?.let { item ->
-                    viewModelScope.launchIO {
-                        val result = itemPlaybackRepository.getSelectedTracks(item.id, item)
-                        withContext(Dispatchers.Main) {
-                            chosenStreams.value = result
-                        }
-                        val remoteTrailers =
-                            item.data.remoteTrailers
-                                ?.mapNotNull { t ->
-                                    t.url?.let { url ->
-                                        val name =
-                                            t.name
-                                                // TODO would be nice to clean up the trailer name
-//                                                ?.replace(item.name ?: "", "")
-//                                                ?.removePrefix(" - ")
-                                                ?: "Trailer"
-                                        RemoteTrailer(name, url)
-                                    }
-                                }.orEmpty()
-                                .sortedBy { it.name }
-                        val localTrailerCount = item.data.localTrailerCount ?: 0
-                        val localTrailers =
-                            if (localTrailerCount > 0) {
-                                api.userLibraryApi.getLocalTrailers(itemId).content.map {
-                                    LocalTrailer(BaseItem.from(it, api))
-                                }
-                            } else {
-                                listOf()
-                            }
-                        withContext(Dispatchers.Main) {
-                            this@MovieViewModel.trailers.value = localTrailers + remoteTrailers
-                        }
-                    }
-                    withContext(Dispatchers.Main) {
-                        people.value =
-                            item.data.people
-                                ?.letNotEmpty { people ->
-                                    people.map { Person.fromDto(it, api) }
-                                }.orEmpty()
-                        chapters.value = Chapter.fromDto(item.data, api)
-                    }
-
-                    val similar =
-                        api.libraryApi
-                            .getSimilarItems(
-                                GetSimilarItemsRequest(
-                                    userId = serverRepository.currentUser?.id,
-                                    itemId = itemId,
-                                    fields = SlimItemFields,
-                                    limit = 25,
-                                ),
-                            ).content.items
-                            .map { BaseItem.from(it, api) }
-                    this@MovieViewModel.similar.setValueOnMain(similar)
-                }
-            }
-        }
-
-        fun setWatched(played: Boolean) =
-            viewModelScope.launch(ExceptionHandler() + Dispatchers.IO) {
-                if (played) {
-                    api.playStateApi.markPlayedItem(itemId)
-                } else {
-                    api.playStateApi.markUnplayedItem(itemId)
-                }
-                fetchAndSetItem(itemId)
-            }
-
-        fun setFavorite(favorite: Boolean) =
-            viewModelScope.launch(ExceptionHandler() + Dispatchers.IO) {
-                if (favorite) {
-                    api.userLibraryApi.markFavoriteItem(itemId)
-                } else {
-                    api.userLibraryApi.unmarkFavoriteItem(itemId)
-                }
-                fetchAndSetItem(itemId)
-            }
-
-        fun savePlayVersion(
-            item: BaseItem,
-            sourceId: UUID,
-        ) {
-            viewModelScope.launchIO {
-                val result = itemPlaybackRepository.savePlayVersion(item.id, sourceId)
-                val chosen =
-                    result?.let {
-                        itemPlaybackRepository.getChosenItemFromPlayback(item, result)
-                    }
-                withContext(Dispatchers.Main) {
-                    chosenStreams.value = chosen
-                }
-            }
-        }
-
-        fun saveTrackSelection(
-            item: BaseItem,
-            itemPlayback: ItemPlayback?,
-            trackIndex: Int,
-            type: MediaStreamType,
-        ) {
-            viewModelScope.launchIO {
-                val result =
-                    itemPlaybackRepository.saveTrackSelection(
-                        item = item,
-                        itemPlayback = itemPlayback,
-                        trackIndex = trackIndex,
-                        type = type,
-                    )
-                val chosen =
-                    result?.let {
-                        itemPlaybackRepository.getChosenItemFromPlayback(item, result)
-                    }
-                withContext(Dispatchers.Main) {
-                    chosenStreams.value = chosen
-                }
-            }
-        }
-    }
 
 @Composable
 fun MovieDetails(
