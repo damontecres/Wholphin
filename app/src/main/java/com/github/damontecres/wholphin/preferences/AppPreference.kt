@@ -3,7 +3,10 @@ package com.github.damontecres.wholphin.preferences
 import android.content.Context
 import androidx.annotation.ArrayRes
 import androidx.annotation.StringRes
+import androidx.core.content.edit
+import androidx.preference.PreferenceManager
 import com.github.damontecres.wholphin.R
+import com.github.damontecres.wholphin.WholphinApplication
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.preferences.PreferenceGroup
 import com.github.damontecres.wholphin.ui.preferences.PreferenceScreenOption
@@ -533,6 +536,34 @@ sealed interface AppPreference<T> {
                 getter = { },
                 setter = { prefs, _ -> prefs },
             )
+
+        val SendCrashReports =
+            AppSwitchPreference(
+                title = R.string.send_crash_reports,
+                defaultValue = true,
+                getter = {
+                    PreferenceManager
+                        .getDefaultSharedPreferences(WholphinApplication.instance)
+                        .getBoolean("acra.enable", true)
+                },
+                setter = { prefs, value ->
+                    PreferenceManager
+                        .getDefaultSharedPreferences(WholphinApplication.instance)
+                        .edit {
+                            putBoolean("acra.enable", value)
+                        }
+                    prefs.update { sendCrashReports = value }
+                },
+                summary = R.string.send_crash_reports_summary,
+            )
+
+        val SendAppLogs =
+            AppClickablePreference(
+                title = R.string.send_app_logs,
+                summary = R.string.send_app_logs_summary,
+                getter = { },
+                setter = { prefs, _ -> prefs },
+            )
     }
 }
 
@@ -626,6 +657,8 @@ val advancedPreferences =
             title = R.string.more,
             preferences =
                 listOf(
+                    AppPreference.SendAppLogs,
+                    AppPreference.SendCrashReports,
                     AppPreference.ClearImageCache,
                     AppPreference.OssLicenseInfo,
                 ),

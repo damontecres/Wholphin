@@ -283,6 +283,19 @@ fun PreferencesContent(
                                 }
                             }
 
+                            AppPreference.SendAppLogs -> {
+                                ClickPreference(
+                                    title = stringResource(pref.title),
+                                    onClick = {
+                                        viewModel.sendAppLogs()
+                                    },
+                                    modifier = Modifier,
+                                    summary = pref.summary(context, null),
+                                    onLongClick = {},
+                                    interactionSource = interactionSource,
+                                )
+                            }
+
                             else -> {
                                 val value = pref.getter.invoke(preferences)
                                 ComposablePreference(

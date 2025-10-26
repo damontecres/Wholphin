@@ -92,5 +92,9 @@
     <string name="profile_specific_settings">User Profile Settings</string>
     <string name="nav_drawer_pins_summary">Choose the default items to show, others will be hidden</string>
     <string name="combine_continue_next_summary">Applies to TV Series only</string>
+    <string name="send_crash_reports">Send Crash Reports</string>
+    <string name="send_crash_reports_summary">Will try to send to last connected server</string>
+    <string name="send_app_logs">Send app logs to current server</string>
+    <string name="send_app_logs_summary">Useful for debugging</string>
 
 </resources>

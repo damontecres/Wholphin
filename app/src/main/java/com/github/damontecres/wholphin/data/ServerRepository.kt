@@ -1,11 +1,15 @@
 package com.github.damontecres.wholphin.data
 
+import android.content.Context
+import android.content.SharedPreferences
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.core.content.edit
 import androidx.datastore.core.DataStore
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.ui.toServerString
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.Jellyfin
@@ -27,11 +31,14 @@ import javax.inject.Singleton
 class ServerRepository
     @Inject
     constructor(
+        @param:ApplicationContext private val context: Context,
         val jellyfin: Jellyfin,
         val serverDao: JellyfinServerDao,
         val apiClient: ApiClient,
         val userPreferencesDataStore: DataStore<AppPreferences>,
     ) {
+        private val sharedPreferences = getServerSharedPreferences(context)
+
         private var _currentServer by mutableStateOf<JellyfinServer?>(null)
         val currentServer get() = _currentServer
         private var _currentUser by mutableStateOf<JellyfinUser?>(null)
@@ -101,6 +108,10 @@ class ServerRepository
                 _currentUserDto = userDto
                 _currentServer = updatedServer
                 _currentUser = updatedUser
+            }
+            sharedPreferences.edit(true) {
+                putString(SERVER_URL_KEY, updatedServer.url)
+                putString(ACCESS_TOKEN_KEY, updatedUser.accessToken)
             }
         }
 
@@ -199,5 +210,16 @@ class ServerRepository
             withContext(Dispatchers.IO) {
                 serverDao.deleteServer(server.id)
             }
+        }
+
+        companion object {
+            fun getServerSharedPreferences(context: Context): SharedPreferences =
+                context.getSharedPreferences(
+                    "${context.packageName}_server",
+                    Context.MODE_PRIVATE,
+                )
+
+            const val SERVER_URL_KEY = "current.server"
+            const val ACCESS_TOKEN_KEY = "current.accessToken"
         }
     }
