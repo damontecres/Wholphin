@@ -2,6 +2,7 @@ package com.github.damontecres.wholphin.ui.detail
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.ui.graphics.Color
@@ -10,6 +11,7 @@ import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.ui.components.DialogItem
 import com.github.damontecres.wholphin.ui.letNotEmpty
 import com.github.damontecres.wholphin.ui.nav.Destination
+import com.github.damontecres.wholphin.util.supportedPlayableTypes
 import org.jellyfin.sdk.model.UUID
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.MediaStreamType
@@ -136,7 +138,7 @@ fun buildMoreDialogItems(
     }
 
 fun buildMoreDialogItemsForHome(
-    itemId: UUID,
+    item: BaseItem,
     seriesId: UUID?,
     playbackPosition: Duration,
     watched: Boolean,
@@ -146,50 +148,61 @@ fun buildMoreDialogItemsForHome(
     onClickFavorite: (UUID, Boolean) -> Unit,
 ): List<DialogItem> =
     buildList {
-        if (playbackPosition >= 10.seconds) {
-            add(
-                DialogItem(
-                    "Resume",
-                    Icons.Default.PlayArrow,
-                    iconColor = Color.Green.copy(alpha = .8f),
-                ) {
-                    navigateTo(
-                        Destination.Playback(
-                            itemId,
-                            playbackPosition.inWholeMilliseconds,
-                        ),
-                    )
-                },
-            )
-            add(
-                DialogItem(
-                    "Restart",
-                    Icons.Default.Refresh,
+        val itemId = item.id
+        add(
+            DialogItem(
+                "Go To",
+                Icons.Default.ArrowForward,
+            ) {
+                navigateTo(item.destination())
+            },
+        )
+        if (item.type in supportedPlayableTypes) {
+            if (playbackPosition >= 1.seconds) {
+                add(
+                    DialogItem(
+                        "Resume",
+                        Icons.Default.PlayArrow,
+                        iconColor = Color.Green.copy(alpha = .8f),
+                    ) {
+                        navigateTo(
+                            Destination.Playback(
+                                itemId,
+                                playbackPosition.inWholeMilliseconds,
+                            ),
+                        )
+                    },
+                )
+                add(
+                    DialogItem(
+                        "Restart",
+                        Icons.Default.Refresh,
 //                    iconColor = Color.Green.copy(alpha = .8f),
-                ) {
-                    navigateTo(
-                        Destination.Playback(
-                            itemId,
-                            0L,
-                        ),
-                    )
-                },
-            )
-        } else {
-            add(
-                DialogItem(
-                    "Play",
-                    Icons.Default.PlayArrow,
-                    iconColor = Color.Green.copy(alpha = .8f),
-                ) {
-                    navigateTo(
-                        Destination.Playback(
-                            itemId,
-                            0L,
-                        ),
-                    )
-                },
-            )
+                    ) {
+                        navigateTo(
+                            Destination.Playback(
+                                itemId,
+                                0L,
+                            ),
+                        )
+                    },
+                )
+            } else {
+                add(
+                    DialogItem(
+                        "Play",
+                        Icons.Default.PlayArrow,
+                        iconColor = Color.Green.copy(alpha = .8f),
+                    ) {
+                        navigateTo(
+                            Destination.Playback(
+                                itemId,
+                                0L,
+                            ),
+                        )
+                    },
+                )
+            }
         }
         add(
             DialogItem(

@@ -101,7 +101,7 @@ fun HomePage(
                 onLongClickItem = {
                     val dialogItems =
                         buildMoreDialogItemsForHome(
-                            itemId = it.id,
+                            item = it,
                             seriesId = it.data.seriesId,
                             playbackPosition =
                                 it.data.userData

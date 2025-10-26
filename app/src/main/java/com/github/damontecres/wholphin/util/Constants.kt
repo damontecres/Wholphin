@@ -38,3 +38,13 @@ val supportedCollectionTypes =
         CollectionType.BOXSETS,
         CollectionType.LIVETV,
     )
+
+val supportedPlayableTypes =
+    setOf(
+        BaseItemKind.MOVIE,
+        BaseItemKind.EPISODE,
+        BaseItemKind.VIDEO,
+        BaseItemKind.TV_CHANNEL,
+        BaseItemKind.TV_PROGRAM,
+        BaseItemKind.RECORDING,
+    )
