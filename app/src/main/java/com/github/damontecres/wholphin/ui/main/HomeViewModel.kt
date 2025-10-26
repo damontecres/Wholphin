@@ -82,17 +82,29 @@ class HomeViewModel
                     val latest = getLatest(userDto, limit, includedIds)
 
                     val homeRows =
-                        listOf(
-                            HomeRow(
-                                section = HomeSection.RESUME,
-                                items = resume,
-                            ),
-                            HomeRow(
-                                section = HomeSection.NEXT_UP,
-                                items = nextUp,
-                            ),
-                            *latest.toTypedArray(),
-                        )
+                        buildList {
+                            if (resume.isNotEmpty()) {
+                                add(
+                                    HomeRow(
+                                        section = HomeSection.RESUME,
+                                        items = resume,
+                                    ),
+                                )
+                            }
+                            if (nextUp.isNotEmpty()) {
+                                add(
+                                    HomeRow(
+                                        section = HomeSection.NEXT_UP,
+                                        items = nextUp,
+                                    ),
+                                )
+                            }
+                            latest.forEach {
+                                if (it.items.isNotEmpty()) {
+                                    add(it)
+                                }
+                            }
+                        }
                     withContext(Dispatchers.Main) {
                         this@HomeViewModel.homeRows.value = homeRows
                         loadingState.value = LoadingState.Success
