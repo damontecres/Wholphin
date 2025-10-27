@@ -787,9 +787,11 @@ class PlaybackViewModel
         }
 
         val subtitleSearch = MutableLiveData<SubtitleSearch?>(null)
+        val subtitleSearchLanguage = MutableLiveData<String>(Locale.current.language)
 
         fun searchForSubtitles(language: String = Locale.current.language) {
             subtitleSearch.value = SubtitleSearch.Searching
+            subtitleSearchLanguage.value = language
             viewModelScope.launchIO {
                 try {
                     currentItemPlayback.value?.itemId?.let {

@@ -40,6 +40,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.Dialog
@@ -135,6 +136,7 @@ fun PlaybackPage(
             val playlist by viewModel.playlist.observeAsState(Playlist(listOf()))
 
             val subtitleSearch by viewModel.subtitleSearch.observeAsState(null)
+            val subtitleSearchLanguage by viewModel.subtitleSearchLanguage.observeAsState(Locale.current.language)
 
             // TODO move to viewmodel?
             val cueListener =
@@ -500,6 +502,10 @@ fun PlaybackPage(
                 ) {
                     DownloadSubtitlesContent(
                         state = state,
+                        language = subtitleSearchLanguage,
+                        onSearch = { lang ->
+                            viewModel.searchForSubtitles(lang)
+                        },
                         onClickDownload = {
                             viewModel.downloadAndSwitchSubtitles(it.id, wasPlaying)
                         },
