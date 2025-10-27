@@ -1,6 +1,7 @@
 package com.github.damontecres.wholphin.ui.playback
 
 import androidx.compose.ui.layout.ContentScale
+import com.github.damontecres.wholphin.preferences.PrefContentScale
 
 val playbackScaleOptions =
     mapOf(
@@ -12,3 +13,15 @@ val playbackScaleOptions =
         ContentScale.FillWidth to "Fill Width",
         ContentScale.FillHeight to "Fill Height",
     )
+
+val PrefContentScale.scale: ContentScale
+    get() =
+        when (this) {
+            PrefContentScale.FIT -> ContentScale.Fit
+            PrefContentScale.NONE -> ContentScale.None
+            PrefContentScale.CROP -> ContentScale.Crop
+            PrefContentScale.FILL -> ContentScale.FillBounds
+            PrefContentScale.Fill_WIDTH -> ContentScale.FillWidth
+            PrefContentScale.FILL_HEIGHT -> ContentScale.FillHeight
+            PrefContentScale.UNRECOGNIZED -> ContentScale.Fit
+        }

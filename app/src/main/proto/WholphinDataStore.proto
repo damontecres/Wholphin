@@ -9,6 +9,15 @@ enum SkipSegmentBehavior{
   ASK_TO_SKIP = 2;
 }
 
+enum PrefContentScale{
+  FIT = 0;
+  NONE = 1;
+  CROP = 2;
+  FILL = 3;
+  Fill_WIDTH = 4;
+  FILL_HEIGHT = 5;
+}
+
 message PlaybackOverrides{
   bool ac3_supported = 1;
   bool downmix_stereo = 2;
@@ -35,6 +44,7 @@ message PlaybackPreferences {
 
   PlaybackOverrides overrides = 15;
   int64 pass_out_protection_ms = 16;
+  PrefContentScale global_content_scale = 17;
 }
 
 message HomePagePreferences{

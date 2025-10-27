@@ -22,4 +22,13 @@
         <item>Ask to skip</item>
     </string-array>
 
+    <string-array name="content_scale">
+        <item>Fit</item>
+        <item>None</item>
+        <item>Crop</item>
+        <item>Fill</item>
+        <item>Fill Width</item>
+        <item>Fill Height</item>
+    </string-array>
+
 </resources>
