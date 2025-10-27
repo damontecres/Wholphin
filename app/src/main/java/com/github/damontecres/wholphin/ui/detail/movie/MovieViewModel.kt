@@ -19,6 +19,8 @@ import com.github.damontecres.wholphin.ui.letNotEmpty
 import com.github.damontecres.wholphin.ui.nav.NavigationManager
 import com.github.damontecres.wholphin.ui.setValueOnMain
 import com.github.damontecres.wholphin.util.ExceptionHandler
+import com.github.damontecres.wholphin.util.LoadingExceptionHandler
+import com.github.damontecres.wholphin.util.LoadingState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -55,14 +57,21 @@ class MovieViewModel
             potential: BaseItem?,
         ): Job? {
             this.itemId = itemId
-            return viewModelScope.launch(ExceptionHandler()) {
-                super.init(itemId, potential)?.join()
+            return viewModelScope.launch(
+                Dispatchers.IO +
+                    LoadingExceptionHandler(
+                        loading,
+                        "Error fetching movie",
+                    ),
+            ) {
+                fetchAndSetItem(itemId)
                 item.value?.let { item ->
+                    val result = itemPlaybackRepository.getSelectedTracks(item.id, item)
+                    withContext(Dispatchers.Main) {
+                        chosenStreams.value = result
+                        loading.value = LoadingState.Success
+                    }
                     viewModelScope.launchIO {
-                        val result = itemPlaybackRepository.getSelectedTracks(item.id, item)
-                        withContext(Dispatchers.Main) {
-                            chosenStreams.value = result
-                        }
                         val remoteTrailers =
                             item.data.remoteTrailers
                                 ?.mapNotNull { t ->

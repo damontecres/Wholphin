@@ -322,6 +322,15 @@ fun rememberPosition(initialPosition: RowColumn = RowColumn(-1, -1)) =
     }
 
 /**
+ * Convenient way to [rememberSaveable] a [RowColumn]
+ */
+@Composable
+fun rememberPosition(
+    row: Int,
+    column: Int,
+) = rememberPosition(RowColumn(row, column))
+
+/**
  * Convenient way to [rememberSaveable] a Int
  */
 @Composable
