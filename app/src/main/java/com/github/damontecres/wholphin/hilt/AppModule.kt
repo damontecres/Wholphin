@@ -27,7 +27,6 @@ import org.jellyfin.sdk.api.okhttp.OkHttpFactory
 import org.jellyfin.sdk.createJellyfin
 import org.jellyfin.sdk.model.ClientInfo
 import org.jellyfin.sdk.model.DeviceInfo
-import java.util.UUID
 import javax.inject.Qualifier
 import javax.inject.Singleton
 
@@ -144,11 +143,11 @@ object AppModule {
         appPreference: DataStore<AppPreferences>,
         @IoCoroutineScope scope: CoroutineScope,
     ) = object : RememberTabManager {
-        fun key(itemId: UUID) = "${serverRepository.currentServer?.id}_${serverRepository.currentUser?.id}_$itemId"
+        fun key(itemId: String) = "${serverRepository.currentServer?.id}_${serverRepository.currentUser?.id}_$itemId"
 
         override fun getRememberedTab(
             preferences: UserPreferences,
-            itemId: UUID,
+            itemId: String,
             defaultTab: Int,
         ): Int {
             if (preferences.appPreferences.interfacePreferences.rememberSelectedTab) {
@@ -161,7 +160,7 @@ object AppModule {
 
         override fun saveRememberedTab(
             preferences: UserPreferences,
-            itemId: UUID,
+            itemId: String,
             tabIndex: Int,
         ) {
             if (preferences.appPreferences.interfacePreferences.rememberSelectedTab) {

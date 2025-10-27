@@ -11,6 +11,15 @@ interface RememberTabManager {
         preferences: UserPreferences,
         itemId: UUID,
         defaultTab: Int,
+    ): Int = getRememberedTab(preferences, itemId.toString(), defaultTab)
+
+    /**
+     * If enabled, get the remembered tab index for the given item
+     */
+    fun getRememberedTab(
+        preferences: UserPreferences,
+        itemId: String,
+        defaultTab: Int,
     ): Int
 
     /**
@@ -19,6 +28,15 @@ interface RememberTabManager {
     fun saveRememberedTab(
         preferences: UserPreferences,
         itemId: UUID,
+        tabIndex: Int,
+    ) = saveRememberedTab(preferences, itemId.toString(), tabIndex)
+
+    /**
+     * If enabled, save the remembered tab index for the given item
+     */
+    fun saveRememberedTab(
+        preferences: UserPreferences,
+        itemId: String,
         tabIndex: Int,
     )
 }
