@@ -21,7 +21,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextAlign
@@ -62,7 +61,7 @@ fun BannerCard(
         interactionSource = interactionSource,
         colors =
             CardDefaults.colors(
-                containerColor = Color.Transparent,
+//                containerColor = Color.Transparent,
             ),
     ) {
         Box(

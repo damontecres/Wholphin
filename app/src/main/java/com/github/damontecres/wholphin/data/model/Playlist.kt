@@ -24,7 +24,7 @@ class Playlist(
 
     fun hasPrevious(): Boolean = index > 0
 
-    fun hasNext(): Boolean = index < items.size
+    fun hasNext(): Boolean = (index + 1) < items.size
 
     fun getPreviousAndReverse(): BaseItem = items[--index]
 

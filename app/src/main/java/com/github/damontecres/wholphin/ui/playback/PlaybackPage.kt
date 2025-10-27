@@ -392,6 +392,7 @@ fun PlaybackPage(
                         }
                         Button(
                             onClick = {
+                                segmentCancelled = true
                                 player.seekTo(segment.endTicks.ticks.inWholeMilliseconds)
                             },
                             modifier = Modifier.focusRequester(focusRequester),
