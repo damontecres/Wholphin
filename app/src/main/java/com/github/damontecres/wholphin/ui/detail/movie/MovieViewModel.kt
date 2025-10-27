@@ -47,7 +47,7 @@ class MovieViewModel
         val trailers = MutableLiveData<List<Trailer>>(listOf())
         val people = MutableLiveData<List<Person>>(listOf())
         val chapters = MutableLiveData<List<Chapter>>(listOf())
-        val similar = MutableLiveData<List<BaseItem>>(listOf())
+        val similar = MutableLiveData<List<BaseItem>>()
         val chosenStreams = MutableLiveData<ChosenStreams?>(null)
 
         override fun init(
@@ -98,19 +98,20 @@ class MovieViewModel
                                 }.orEmpty()
                         chapters.value = Chapter.Companion.fromDto(item.data, api)
                     }
-
-                    val similar =
-                        api.libraryApi
-                            .getSimilarItems(
-                                GetSimilarItemsRequest(
-                                    userId = serverRepository.currentUser?.id,
-                                    itemId = itemId,
-                                    fields = SlimItemFields,
-                                    limit = 25,
-                                ),
-                            ).content.items
-                            .map { BaseItem.Companion.from(it, api) }
-                    this@MovieViewModel.similar.setValueOnMain(similar)
+                    if (!similar.isInitialized) {
+                        val similar =
+                            api.libraryApi
+                                .getSimilarItems(
+                                    GetSimilarItemsRequest(
+                                        userId = serverRepository.currentUser?.id,
+                                        itemId = itemId,
+                                        fields = SlimItemFields,
+                                        limit = 25,
+                                    ),
+                                ).content.items
+                                .map { BaseItem.Companion.from(it, api) }
+                        this@MovieViewModel.similar.setValueOnMain(similar)
+                    }
                 }
             }
         }
