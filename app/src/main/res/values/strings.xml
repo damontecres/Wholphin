@@ -96,5 +96,6 @@
     <string name="send_crash_reports_summary">Will try to send to last connected server</string>
     <string name="send_app_logs">Send app logs to current server</string>
     <string name="send_app_logs_summary">Useful for debugging</string>
+    <string name="global_content_scale">Default content scale</string>
 
 </resources>

@@ -522,6 +522,19 @@ sealed interface AppPreference<T> {
                 valueToIndex = { it.number },
             )
 
+        val GlobalContentScale =
+            AppChoicePreference<PrefContentScale>(
+                title = R.string.global_content_scale,
+                defaultValue = PrefContentScale.FIT,
+                getter = { it.playbackPreferences.globalContentScale },
+                setter = { prefs, value ->
+                    prefs.updatePlaybackPreferences { globalContentScale = value }
+                },
+                displayValues = R.array.content_scale,
+                indexToValue = { PrefContentScale.forNumber(it) },
+                valueToIndex = { it.number },
+            )
+
         val ClearImageCache =
             AppClickablePreference(
                 title = R.string.clear_image_cache,
@@ -639,6 +652,7 @@ val advancedPreferences =
             title = R.string.playback_overrides,
             preferences =
                 listOf(
+                    AppPreference.GlobalContentScale,
                     AppPreference.DownMixStereo,
                     AppPreference.Ac3Supported,
                     AppPreference.DirectPlayAss,

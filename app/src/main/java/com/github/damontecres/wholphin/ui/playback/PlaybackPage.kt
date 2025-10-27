@@ -39,7 +39,6 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.input.key.onKeyEvent
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -155,7 +154,7 @@ fun PlaybackPage(
                 onDispose { player.removeListener(cueListener) }
             }
             AmbientPlayerListener(player)
-            var contentScale by remember { mutableStateOf(ContentScale.Fit) }
+            var contentScale by remember { mutableStateOf(prefs.globalContentScale.scale) }
             var playbackSpeed by remember { mutableFloatStateOf(1.0f) }
             LaunchedEffect(playbackSpeed) { player.setPlaybackSpeed(playbackSpeed) }
 
