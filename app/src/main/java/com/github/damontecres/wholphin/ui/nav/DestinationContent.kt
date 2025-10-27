@@ -124,7 +124,7 @@ fun DestinationContent(
                                 preferences,
                                 destination.itemId,
                                 destination.item,
-                                true,
+                                false,
                                 modifier,
                             )
 
