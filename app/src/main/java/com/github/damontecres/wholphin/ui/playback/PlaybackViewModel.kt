@@ -76,7 +76,6 @@ import org.jellyfin.sdk.model.api.PlayMethod
 import org.jellyfin.sdk.model.api.PlaybackInfoDto
 import org.jellyfin.sdk.model.api.PlaystateCommand
 import org.jellyfin.sdk.model.api.PlaystateMessage
-import org.jellyfin.sdk.model.api.SubtitlePlaybackMode
 import org.jellyfin.sdk.model.api.TrickplayInfo
 import org.jellyfin.sdk.model.extensions.inWholeTicks
 import org.jellyfin.sdk.model.extensions.ticks
@@ -363,6 +362,8 @@ class PlaybackViewModel
             subtitleIndex: Int?,
             positionMs: Long = C.TIME_UNSET,
             userInitiated: Boolean,
+            enableDirectPlay: Boolean = true,
+            enableDirectStream: Boolean = true,
         ) = withContext(Dispatchers.IO) {
             val itemId = item.id
 
@@ -376,7 +377,10 @@ class PlaybackViewModel
 //                Timber.i("No change in playback for changeStreams")
 //                return@withContext
 //            }
-            Timber.d("changeStreams: userInitiated=$userInitiated, audioIndex=$audioIndex, subtitleIndex=$subtitleIndex")
+            Timber.d(
+                "changeStreams: userInitiated=$userInitiated, audioIndex=$audioIndex, subtitleIndex=$subtitleIndex, " +
+                    "enableDirectPlay=$enableDirectPlay, enableDirectStream=$enableDirectStream",
+            )
 
             // TODO if the new audio or subtitle index is already in the streams (eg direct play), should toggle in the player instead
             val maxBitrate =
@@ -389,17 +393,18 @@ class PlaybackViewModel
                         PlaybackInfoDto(
                             startTimeTicks = null,
                             deviceProfile = deviceProfile,
-                            enableDirectPlay = true,
-                            enableDirectStream = true,
                             maxAudioChannels = null,
                             audioStreamIndex = audioIndex,
                             subtitleStreamIndex = subtitleIndex,
-                            allowVideoStreamCopy = true,
-                            allowAudioStreamCopy = true,
-                            autoOpenLiveStream = true,
                             mediaSourceId = currentItemPlayback.sourceId?.toServerString(),
                             alwaysBurnInSubtitleWhenTranscoding = null,
                             maxStreamingBitrate = maxBitrate.toInt(),
+                            enableDirectPlay = enableDirectPlay,
+                            enableDirectStream = enableDirectStream,
+                            allowVideoStreamCopy = enableDirectStream,
+                            allowAudioStreamCopy = enableDirectStream,
+                            enableTranscoding = true,
+                            autoOpenLiveStream = true,
                         ),
                     )
             if (response.errorCode != null) {
@@ -741,7 +746,35 @@ class PlaybackViewModel
         override fun onPlayerError(error: PlaybackException) {
             Timber.e(error, "Playback error")
             viewModelScope.launch(Dispatchers.Main + ExceptionHandler()) {
-                loading.value = LoadingState.Error("Error during playback", error)
+                currentPlayback.value?.let {
+                    when (it.playMethod) {
+                        PlayMethod.TRANSCODE ->
+                            loading.setValueOnMain(
+                                LoadingState.Error(
+                                    "Error during playback",
+                                    error,
+                                ),
+                            )
+
+                        PlayMethod.DIRECT_STREAM, PlayMethod.DIRECT_PLAY -> {
+                            Timber.w("Playback error during ${it.playMethod}, falling back to transcoding")
+                            changeStreams(
+                                dto,
+                                currentItemPlayback.value!!,
+                                currentItemPlayback.value?.audioIndex,
+                                currentItemPlayback.value?.subtitleIndex,
+                                player.currentPosition,
+                                false,
+                                enableDirectPlay = false,
+                                enableDirectStream = false,
+                            )
+                            withContext(Dispatchers.Main) {
+                                player.prepare()
+                                player.play()
+                            }
+                        }
+                    }
+                }
             }
         }
 

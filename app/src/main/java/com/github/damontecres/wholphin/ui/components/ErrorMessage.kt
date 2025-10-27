@@ -42,6 +42,19 @@ fun ErrorMessage(
                 )
             }
         }
+        var cause = exception?.cause
+        while (cause != null) {
+            cause.localizedMessage?.let {
+                item {
+                    Text(
+                        text = "Caused by: $it",
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.titleSmall,
+                    )
+                }
+            }
+            cause = cause.cause
+        }
     }
 }
 
