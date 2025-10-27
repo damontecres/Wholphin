@@ -3,6 +3,7 @@ package com.github.damontecres.wholphin.ui.playback
 import android.content.Context
 import android.widget.Toast
 import androidx.annotation.OptIn
+import androidx.compose.ui.text.intl.Locale
 import androidx.core.net.toUri
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -30,6 +31,7 @@ import com.github.damontecres.wholphin.data.model.chooseStream
 import com.github.damontecres.wholphin.preferences.AppPreference
 import com.github.damontecres.wholphin.preferences.SkipSegmentBehavior
 import com.github.damontecres.wholphin.preferences.UserPreferences
+import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.nav.NavigationManager
 import com.github.damontecres.wholphin.ui.seekBack
@@ -61,6 +63,7 @@ import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.mediaInfoApi
 import org.jellyfin.sdk.api.client.extensions.mediaSegmentsApi
+import org.jellyfin.sdk.api.client.extensions.subtitleApi
 import org.jellyfin.sdk.api.client.extensions.trickplayApi
 import org.jellyfin.sdk.api.client.extensions.userLibraryApi
 import org.jellyfin.sdk.api.client.extensions.videosApi
@@ -76,7 +79,7 @@ import org.jellyfin.sdk.model.api.PlayMethod
 import org.jellyfin.sdk.model.api.PlaybackInfoDto
 import org.jellyfin.sdk.model.api.PlaystateCommand
 import org.jellyfin.sdk.model.api.PlaystateMessage
-import org.jellyfin.sdk.model.api.SubtitlePlaybackMode
+import org.jellyfin.sdk.model.api.RemoteSubtitleInfo
 import org.jellyfin.sdk.model.api.TrickplayInfo
 import org.jellyfin.sdk.model.extensions.inWholeTicks
 import org.jellyfin.sdk.model.extensions.ticks
@@ -290,6 +293,7 @@ class PlaybackViewModel
                                 it.isExternal,
                                 it.isForced,
                                 it.isDefault,
+                                it.displayTitle,
                             )
                         }.orEmpty()
                 val audioStreams =
@@ -556,7 +560,7 @@ class PlaybackViewModel
             }
         }
 
-        fun changeSubtitleStream(index: Int?) {
+        fun changeSubtitleStream(index: Int?): Job =
             viewModelScope.launch(ExceptionHandler()) {
                 changeStreams(
                     dto,
@@ -567,7 +571,6 @@ class PlaybackViewModel
                     true,
                 )
             }
-        }
 
         fun getTrickplayUrl(index: Int): String? {
             val itemId = dto.id
@@ -616,7 +619,8 @@ class PlaybackViewModel
                     if (segments.items.isNotEmpty()) {
                         while (isActive) {
                             delay(500L)
-                            val currentTicks = withContext(Dispatchers.Main) { player.currentPosition.milliseconds.inWholeTicks }
+                            val currentTicks =
+                                withContext(Dispatchers.Main) { player.currentPosition.milliseconds.inWholeTicks }
                             val currentSegment =
                                 segments.items
                                     .firstOrNull {
@@ -667,7 +671,7 @@ class PlaybackViewModel
         private var lastInteractionDate: Date = Date()
 
         fun reportInteraction() {
-            Timber.v("reportInteraction")
+//            Timber.v("reportInteraction")
             lastInteractionDate = Date()
         }
 
@@ -781,6 +785,71 @@ class PlaybackViewModel
                     }
                 }.launchIn(viewModelScope)
         }
+
+        val subtitleSearch = MutableLiveData<SubtitleSearch?>(null)
+        val subtitleSearchLanguage = MutableLiveData<String>(Locale.current.language)
+
+        fun searchForSubtitles(language: String = Locale.current.language) {
+            subtitleSearch.value = SubtitleSearch.Searching
+            subtitleSearchLanguage.value = language
+            viewModelScope.launchIO {
+                try {
+                    currentItemPlayback.value?.itemId?.let {
+                        Timber.v("Searching for remote subtitles for %s", it)
+                        val results by api.subtitleApi.searchRemoteSubtitles(
+                            itemId = it,
+                            language = language,
+                        )
+                        subtitleSearch.setValueOnMain(SubtitleSearch.Success(results))
+                    }
+                } catch (ex: Exception) {
+                    Timber.e(ex, "Exception while searching for subtitles")
+                    subtitleSearch.setValueOnMain(SubtitleSearch.Error(null, ex))
+                }
+            }
+        }
+
+        fun downloadAndSwitchSubtitles(
+            subtitleId: String?,
+            wasPlaying: Boolean,
+        ) {
+            if (subtitleId == null) {
+                subtitleSearch.value = SubtitleSearch.Error("Subtitle has no ID", null)
+            } else {
+                subtitleSearch.value = SubtitleSearch.Downloading
+                viewModelScope.launchIO {
+                    try {
+                        currentItemPlayback.value?.let {
+                            Timber.v(
+                                "Downloading remote subtitles for itemId=%s, sourceId=%s: %s",
+                                it.itemId,
+                                it.sourceId,
+                                subtitleId,
+                            )
+                            api.subtitleApi.downloadRemoteSubtitles(
+                                itemId = it.sourceId ?: it.itemId,
+                                subtitleId = subtitleId,
+                            )
+
+                            subtitleSearch.setValueOnMain(null)
+                            changeSubtitleStream(0).join()
+                            withContext(Dispatchers.Main) {
+                                if (wasPlaying) {
+                                    player.play()
+                                }
+                            }
+                        }
+                    } catch (ex: Exception) {
+                        Timber.e(ex, "Exception while downloading subtitles: $subtitleId")
+                        subtitleSearch.setValueOnMain(SubtitleSearch.Error(null, ex))
+                    }
+                }
+            }
+        }
+
+        fun cancelSubtitleSearch() {
+            subtitleSearch.value = null
+        }
     }
 
 data class CurrentPlayback(
@@ -789,6 +858,21 @@ data class CurrentPlayback(
     val playSessionId: String?,
     val liveStreamId: String?,
 )
+
+sealed interface SubtitleSearch {
+    data object Searching : SubtitleSearch
+
+    data object Downloading : SubtitleSearch
+
+    data class Success(
+        val options: List<RemoteSubtitleInfo>,
+    ) : SubtitleSearch
+
+    data class Error(
+        val message: String?,
+        val ex: Exception?,
+    ) : SubtitleSearch
+}
 
 val Format.idAsInt: Int?
     @OptIn(UnstableApi::class)

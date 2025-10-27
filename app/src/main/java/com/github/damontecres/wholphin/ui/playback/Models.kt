@@ -9,10 +9,11 @@ data class SubtitleStream(
     val external: Boolean,
     val forced: Boolean,
     val default: Boolean,
+    val displayTitle: String?,
 ) {
     val displayName: String
         get() =
-            listOfNotNull(
+            displayTitle ?: listOfNotNull(
                 language,
                 title,
                 codec,

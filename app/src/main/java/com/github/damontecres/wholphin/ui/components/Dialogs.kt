@@ -200,63 +200,84 @@ fun DialogPopup(
             onDismissRequest = onDismissRequest,
             properties = properties,
         ) {
-            val elevatedContainerColor =
-                MaterialTheme.colorScheme.surfaceColorAtElevation(elevation)
-            LazyColumn(
+            DialogPopupContent(
+                title = title,
+                dialogItems = dialogItems,
+                waiting = waiting,
+                onDismissRequest = onDismissRequest,
+                dismissOnClick = dismissOnClick,
+                elevation = elevation,
                 modifier =
-                    Modifier
+                    Modifier.onKeyEvent { event ->
+                        val code = event.nativeKeyEvent.keyCode
+                        if (event.nativeKeyEvent.action == KeyEvent.ACTION_UP &&
+                            code in
+                            setOf(
+                                KeyEvent.KEYCODE_ENTER,
+                                KeyEvent.KEYCODE_DPAD_CENTER,
+                                KeyEvent.KEYCODE_NUMPAD_ENTER,
+                            )
+                        ) {
+                            waiting = false
+                        }
+                        false
+                    },
+            )
+        }
+    }
+}
+
+@Composable
+fun DialogPopupContent(
+    title: String,
+    dialogItems: List<DialogItemEntry>,
+    waiting: Boolean,
+    onDismissRequest: () -> Unit,
+    modifier: Modifier = Modifier,
+    dismissOnClick: Boolean = true,
+    elevation: Dp = 3.dp,
+) {
+    val elevatedContainerColor =
+        MaterialTheme.colorScheme.surfaceColorAtElevation(elevation)
+    LazyColumn(
+        modifier =
+            modifier
 //                        .widthIn(min = 520.dp, max = 300.dp)
 //                        .dialogFocusable()
-                        .graphicsLayer {
-                            this.clip = true
-                            this.shape = RoundedCornerShape(28.0.dp)
-                        }.drawBehind { drawRect(color = elevatedContainerColor) }
-                        .padding(PaddingValues(24.dp))
-                        .onKeyEvent { event ->
-                            val code = event.nativeKeyEvent.keyCode
-                            if (event.nativeKeyEvent.action == KeyEvent.ACTION_UP &&
-                                code in
-                                setOf(
-                                    KeyEvent.KEYCODE_ENTER,
-                                    KeyEvent.KEYCODE_DPAD_CENTER,
-                                    KeyEvent.KEYCODE_NUMPAD_ENTER,
-                                )
-                            ) {
-                                waiting = false
-                            }
-                            false
-                        },
-            ) {
-                stickyHeader {
-                    Text(
-                        text = title,
-                        style = MaterialTheme.typography.titleLarge,
-                        color = MaterialTheme.colorScheme.onSurface,
-                    )
-                }
-                items(dialogItems) {
-                    when (it) {
-                        is DialogItemDivider -> HorizontalDivider(Modifier.height(16.dp))
+                .graphicsLayer {
+                    this.clip = true
+                    this.shape = RoundedCornerShape(28.0.dp)
+                }.drawBehind { drawRect(color = elevatedContainerColor) }
+                .padding(PaddingValues(24.dp)),
+    ) {
+        stickyHeader {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleLarge,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+        }
+        items(dialogItems) {
+            when (it) {
+                is DialogItemDivider -> HorizontalDivider(Modifier.height(16.dp))
 
-                        is DialogItem ->
-                            ListItem(
-                                selected = false,
-                                enabled = !waiting && it.enabled,
-                                onClick = {
-                                    if (dismissOnClick) {
-                                        onDismissRequest.invoke()
-                                    }
-                                    it.onClick.invoke()
-                                },
-                                headlineContent = it.headlineContent,
-                                overlineContent = it.overlineContent,
-                                supportingContent = it.supportingContent,
-                                leadingContent = it.leadingContent,
-                                trailingContent = it.trailingContent,
-                                modifier = Modifier,
-                            )
-                    }
-                }
+                is DialogItem ->
+                    ListItem(
+                        selected = false,
+                        enabled = !waiting && it.enabled,
+                        onClick = {
+                            if (dismissOnClick) {
+                                onDismissRequest.invoke()
+                            }
+                            it.onClick.invoke()
+                        },
+                        headlineContent = it.headlineContent,
+                        overlineContent = it.overlineContent,
+                        supportingContent = it.supportingContent,
+                        leadingContent = it.leadingContent,
+                        trailingContent = it.trailingContent,
+                        modifier = Modifier,
+                    )
             }
         }
     }
