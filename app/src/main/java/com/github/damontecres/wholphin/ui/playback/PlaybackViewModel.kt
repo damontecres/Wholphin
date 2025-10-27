@@ -423,10 +423,16 @@ class PlaybackViewModel
                             playSessionId = response.playSessionId,
                         )
                     } else if (source.supportsDirectStream) {
-                        api.createUrl(source.transcodingUrl!!)
+                        source.transcodingUrl?.let(api::createUrl)
                     } else {
-                        api.createUrl(source.transcodingUrl!!)
+                        source.transcodingUrl?.let(api::createUrl)
                     }
+                if (mediaUrl.isNullOrBlank()) {
+                    loading.setValueOnMain(
+                        LoadingState.Error("Unable to get media URL from the server. Do you have permission to view and/or transcode?"),
+                    )
+                    return@withContext
+                }
                 val transcodeType =
                     when {
                         source.supportsDirectPlay -> PlayMethod.DIRECT_PLAY
