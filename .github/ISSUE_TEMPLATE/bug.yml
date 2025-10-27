@@ -51,7 +51,7 @@ body:
     id: logs
     attributes:
       label: "Logs"
-      description: Please gather any logs or crash reports and include them here.
+      description: Please [gather any logs or crash reports](https://github.com/damontecres/Wholphin/wiki/Gathering-app-logs) and include them here.
       placeholder: Review logs for personal information before sharing them here publicly!
       render: bash
     validations:
