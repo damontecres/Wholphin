@@ -15,8 +15,10 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -37,8 +39,11 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.LifecycleStartEffect
 import androidx.media3.common.Player
@@ -128,6 +133,9 @@ fun PlaybackPage(
 
             val nextUp by viewModel.nextUp.observeAsState(null)
             val playlist by viewModel.playlist.observeAsState(Playlist(listOf()))
+
+            val subtitleSearch by viewModel.subtitleSearch.observeAsState(null)
+            val subtitleSearchLanguage by viewModel.subtitleSearchLanguage.observeAsState(Locale.current.language)
 
             // TODO move to viewmodel?
             val cueListener =
@@ -339,6 +347,10 @@ fun PlaybackPage(
                                         viewModel.changeSubtitleStream(it.index)
                                     }
 
+                                    PlaybackAction.SearchCaptions -> {
+                                        viewModel.searchForSubtitles()
+                                    }
+
                                     PlaybackAction.Next -> {
                                         // TODO focus is lost
                                         viewModel.playUpNextUp()
@@ -466,6 +478,42 @@ fun PlaybackPage(
                                     ),
                         )
                     }
+                }
+            }
+
+            subtitleSearch?.let { state ->
+                val wasPlaying = remember { player.isPlaying }
+                LaunchedEffect(Unit) {
+                    player.pause()
+                }
+                val onDismissRequest = {
+                    if (wasPlaying) {
+                        player.play()
+                    }
+                    viewModel.cancelSubtitleSearch()
+                }
+                Dialog(
+                    onDismissRequest = onDismissRequest,
+                    properties =
+                        DialogProperties(
+                            usePlatformDefaultWidth = false,
+                        ),
+                ) {
+                    DownloadSubtitlesContent(
+                        state = state,
+                        language = subtitleSearchLanguage,
+                        onSearch = { lang ->
+                            viewModel.searchForSubtitles(lang)
+                        },
+                        onClickDownload = {
+                            viewModel.downloadAndSwitchSubtitles(it.id, wasPlaying)
+                        },
+                        onDismissRequest = onDismissRequest,
+                        modifier =
+                            Modifier
+                                .widthIn(max = 640.dp)
+                                .heightIn(max = 400.dp),
+                    )
                 }
             }
         }

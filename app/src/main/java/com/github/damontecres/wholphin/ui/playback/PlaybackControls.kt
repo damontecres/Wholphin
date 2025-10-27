@@ -80,6 +80,8 @@ sealed interface PlaybackAction {
 
     data object ShowVideoFilterDialog : PlaybackAction
 
+    data object SearchCaptions : PlaybackAction
+
     data class ToggleCaptions(
         val index: Int,
     ) : PlaybackAction
@@ -401,9 +403,9 @@ fun RightPlaybackButtons(
         val options = subtitleStreams.map { it.displayName }
         Timber.v("subtitleIndex=$subtitleIndex, options=$options")
         val currentChoice =
-            subtitleStreams.indexOfFirstOrNull { it.index == subtitleIndex }?.plus(1) ?: 0
+            subtitleStreams.indexOfFirstOrNull { it.index == subtitleIndex } ?: subtitleStreams.size
         BottomDialog(
-            choices = listOf("None") + options,
+            choices = options + listOf("None", "Search & Download"),
             currentChoice = currentChoice,
             onDismissRequest = {
                 onControllerInteraction.invoke()
@@ -415,13 +417,16 @@ fun RightPlaybackButtons(
                 }
             },
             onSelectChoice = { index, _ ->
-                val send =
-                    if (index == 0) {
-                        TrackIndex.DISABLED
+                if (index in subtitleStreams.indices) {
+                    onPlaybackActionClick.invoke(PlaybackAction.ToggleCaptions(subtitleStreams[index].index))
+                } else {
+                    val idx = index - subtitleStreams.size
+                    if (idx == 0) {
+                        onPlaybackActionClick.invoke(PlaybackAction.ToggleCaptions(TrackIndex.DISABLED))
                     } else {
-                        subtitleStreams[index - 1].index
+                        onPlaybackActionClick.invoke(PlaybackAction.SearchCaptions)
                     }
-                onPlaybackActionClick.invoke(PlaybackAction.ToggleCaptions(send))
+                }
             },
             gravity = Gravity.END,
         )
