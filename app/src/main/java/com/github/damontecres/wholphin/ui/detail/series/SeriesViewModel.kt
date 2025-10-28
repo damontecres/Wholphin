@@ -215,7 +215,7 @@ class SeriesViewModel
                 )
             val pager = ApiRequestPager(api, request, GetEpisodesRequestHandler, viewModelScope)
             pager.init()
-            Timber.Forest.v("Loaded ${pager.size} episodes for season $season")
+            Timber.v("Loaded ${pager.size} episodes for season $season")
             return EpisodeList.Success(convertPager(pager))
         }
 

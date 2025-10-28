@@ -1,5 +1,6 @@
 package com.github.damontecres.wholphin.ui.detail
 
+import android.content.Context
 import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusable
@@ -34,11 +35,16 @@ import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.ItemPlayback
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.launchIO
+import com.github.damontecres.wholphin.ui.showToast
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.jellyfin.sdk.api.client.ApiClient
+import org.jellyfin.sdk.api.client.extensions.clientLogApi
+import org.jellyfin.sdk.model.ClientInfo
+import org.jellyfin.sdk.model.DeviceInfo
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import javax.inject.Inject
@@ -109,6 +115,26 @@ class DebugViewModel
                     process.destroy()
                 }
                 return logLines
+            }
+
+            fun ViewModel.sendAppLogs(
+                context: Context,
+                api: ApiClient,
+                clientInfo: ClientInfo?,
+                deviceInfo: DeviceInfo?,
+            ) {
+                viewModelScope.launchIO(ExceptionHandler(true)) {
+                    val logcat = getLogCatLines().joinToString("\n") { it.text }
+                    val body =
+                        """
+                        Send App Logs
+                        clientInfo=$clientInfo
+                        deviceInfo=$deviceInfo
+
+                        """.trimIndent() + logcat
+                    val response by api.clientLogApi.logFile(body)
+                    showToast(context, "Sent! Filename=${response.fileName}")
+                }
             }
         }
     }

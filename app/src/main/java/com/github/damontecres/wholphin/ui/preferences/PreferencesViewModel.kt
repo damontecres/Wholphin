@@ -12,18 +12,16 @@ import com.github.damontecres.wholphin.data.isPinned
 import com.github.damontecres.wholphin.data.model.NavDrawerPinnedItem
 import com.github.damontecres.wholphin.data.model.NavPinType
 import com.github.damontecres.wholphin.preferences.AppPreferences
-import com.github.damontecres.wholphin.ui.detail.DebugViewModel
+import com.github.damontecres.wholphin.ui.detail.DebugViewModel.Companion.sendAppLogs
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.nav.NavDrawerItem
 import com.github.damontecres.wholphin.ui.nav.NavigationManager
 import com.github.damontecres.wholphin.ui.setValueOnMain
-import com.github.damontecres.wholphin.ui.showToast
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.RememberTabManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import org.jellyfin.sdk.api.client.ApiClient
-import org.jellyfin.sdk.api.client.extensions.clientLogApi
 import org.jellyfin.sdk.model.ClientInfo
 import org.jellyfin.sdk.model.DeviceInfo
 import javax.inject.Inject
@@ -91,17 +89,6 @@ class PreferencesViewModel
         }
 
         fun sendAppLogs() {
-            viewModelScope.launchIO(ExceptionHandler(true)) {
-                val logcat = DebugViewModel.getLogCatLines().joinToString("\n") { it.text }
-                val body =
-                    """
-                    Send App Logs
-                    $clientInfo
-                    $deviceInfo
-
-                    """.trimIndent() + logcat
-                val response by api.clientLogApi.logFile(body)
-                showToast(context, "Sent! Filename=${response.fileName}")
-            }
+            sendAppLogs(context, api, clientInfo, deviceInfo)
         }
     }
