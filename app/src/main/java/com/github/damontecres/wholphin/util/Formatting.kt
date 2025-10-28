@@ -15,6 +15,7 @@ import org.jellyfin.sdk.model.api.MediaStream
 import org.jellyfin.sdk.model.api.MediaStreamType
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 /**
  * Format a [LocalDateTime] as `Aug 24, 2000`
@@ -107,4 +108,22 @@ fun getSubtitleDisplay(
     chooseSource(item, chosenStreams?.itemPlayback)?.let {
         formatSubtitleLang(it.mediaStreams)
     }
+}
+
+private val abbrevSuffixes = listOf("", "K", "M", "B")
+
+/**
+ * Format a number by abbreviation, eg 5533 => 5.5K
+ */
+fun abbreviateNumber(number: Int): String {
+    if (number < 1000) {
+        return number.toString()
+    }
+    var unit = 0
+    var count = number.toDouble()
+    while (count >= 1000 && unit + 1 < abbrevSuffixes.size) {
+        count /= 1000
+        unit++
+    }
+    return String.format(Locale.getDefault(), "%.1f%s", count, abbrevSuffixes[unit])
 }

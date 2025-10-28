@@ -836,10 +836,17 @@ class PlaybackViewModel
                 try {
                     currentItemPlayback.value?.itemId?.let {
                         Timber.v("Searching for remote subtitles for %s", it)
-                        val results by api.subtitleApi.searchRemoteSubtitles(
-                            itemId = it,
-                            language = language,
-                        )
+                        val results =
+                            api.subtitleApi
+                                .searchRemoteSubtitles(
+                                    itemId = it,
+                                    language = language,
+                                ).content
+                                .sortedWith(
+                                    compareByDescending<RemoteSubtitleInfo> { it.communityRating }
+                                        .thenByDescending { it.downloadCount },
+                                )
+
                         subtitleSearch.setValueOnMain(SubtitleSearch.Success(results))
                     }
                 } catch (ex: Exception) {
