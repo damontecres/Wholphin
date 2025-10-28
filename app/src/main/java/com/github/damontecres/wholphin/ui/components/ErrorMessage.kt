@@ -1,14 +1,39 @@
 package com.github.damontecres.wholphin.ui.components
 
+import android.content.Context
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.ViewModel
+import androidx.tv.material3.Button
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
+import com.github.damontecres.wholphin.ui.detail.DebugViewModel.Companion.sendAppLogs
 import com.github.damontecres.wholphin.util.LoadingState
+import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
+import org.jellyfin.sdk.api.client.ApiClient
+import org.jellyfin.sdk.model.ClientInfo
+import org.jellyfin.sdk.model.DeviceInfo
+import javax.inject.Inject
+
+@HiltViewModel
+class ErrorViewModel
+    @Inject
+    constructor(
+        @param:ApplicationContext private val context: Context,
+        private val api: ApiClient,
+        private val clientInfo: ClientInfo,
+        private val deviceInfo: DeviceInfo,
+    ) : ViewModel() {
+        fun sendLogs() {
+            sendAppLogs(context, api, clientInfo, deviceInfo)
+        }
+    }
 
 /**
  * Displays an error message and/or exception
@@ -18,40 +43,48 @@ fun ErrorMessage(
     message: String?,
     exception: Throwable?,
     modifier: Modifier = Modifier,
+    viewModel: ErrorViewModel = hiltViewModel(),
 ) {
-    LazyColumn(
-        contentPadding = PaddingValues(16.dp),
+    Column(
         verticalArrangement = Arrangement.spacedBy(16.dp),
-        modifier = modifier,
+        modifier = modifier.padding(16.dp),
     ) {
+        Text(
+            text = "An error occurred! Press the button to send logs to your server.",
+            color = MaterialTheme.colorScheme.error,
+            style = MaterialTheme.typography.titleMedium,
+        )
+        Button(
+            onClick = {
+                viewModel.sendLogs()
+            },
+        ) {
+            Text(
+                text = "Send Logs",
+            )
+        }
         message?.let {
-            item {
-                Text(
-                    text = it,
-                    color = MaterialTheme.colorScheme.error,
-                    style = MaterialTheme.typography.titleLarge,
-                )
-            }
+            Text(
+                text = it,
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.titleLarge,
+            )
         }
         exception?.localizedMessage?.let {
-            item {
-                Text(
-                    text = it,
-                    color = MaterialTheme.colorScheme.error,
-                    style = MaterialTheme.typography.titleMedium,
-                )
-            }
+            Text(
+                text = it,
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.titleMedium,
+            )
         }
         var cause = exception?.cause
         while (cause != null) {
             cause.localizedMessage?.let {
-                item {
-                    Text(
-                        text = "Caused by: $it",
-                        color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.titleSmall,
-                    )
-                }
+                Text(
+                    text = "Caused by: $it",
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.titleSmall,
+                )
             }
             cause = cause.cause
         }
