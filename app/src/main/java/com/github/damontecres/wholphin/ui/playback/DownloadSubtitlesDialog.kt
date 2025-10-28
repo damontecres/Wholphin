@@ -42,6 +42,7 @@ import com.github.damontecres.wholphin.ui.components.EditTextBox
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.tryRequestFocus
+import com.github.damontecres.wholphin.util.abbreviateNumber
 import org.jellyfin.sdk.model.api.RemoteSubtitleInfo
 
 @Composable
@@ -200,7 +201,7 @@ fun convertRemoteSubtitles(
                     if (op.forced == true) {
                         add("Forced")
                     }
-                    add("${op.downloadCount ?: 0} downloads")
+                    add("${abbreviateNumber(op.downloadCount ?: 0)} downloads")
                 }
             Text(
                 text = strings.joinToString(" - "),
