@@ -19,6 +19,8 @@ import com.github.damontecres.wholphin.ui.letNotEmpty
 import com.github.damontecres.wholphin.ui.nav.NavigationManager
 import com.github.damontecres.wholphin.ui.setValueOnMain
 import com.github.damontecres.wholphin.util.ExceptionHandler
+import com.github.damontecres.wholphin.util.LoadingExceptionHandler
+import com.github.damontecres.wholphin.util.LoadingState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -47,7 +49,7 @@ class MovieViewModel
         val trailers = MutableLiveData<List<Trailer>>(listOf())
         val people = MutableLiveData<List<Person>>(listOf())
         val chapters = MutableLiveData<List<Chapter>>(listOf())
-        val similar = MutableLiveData<List<BaseItem>>(listOf())
+        val similar = MutableLiveData<List<BaseItem>>()
         val chosenStreams = MutableLiveData<ChosenStreams?>(null)
 
         override fun init(
@@ -55,14 +57,21 @@ class MovieViewModel
             potential: BaseItem?,
         ): Job? {
             this.itemId = itemId
-            return viewModelScope.launch(ExceptionHandler()) {
-                super.init(itemId, potential)?.join()
+            return viewModelScope.launch(
+                Dispatchers.IO +
+                    LoadingExceptionHandler(
+                        loading,
+                        "Error fetching movie",
+                    ),
+            ) {
+                fetchAndSetItem(itemId)
                 item.value?.let { item ->
+                    val result = itemPlaybackRepository.getSelectedTracks(item.id, item)
+                    withContext(Dispatchers.Main) {
+                        chosenStreams.value = result
+                        loading.value = LoadingState.Success
+                    }
                     viewModelScope.launchIO {
-                        val result = itemPlaybackRepository.getSelectedTracks(item.id, item)
-                        withContext(Dispatchers.Main) {
-                            chosenStreams.value = result
-                        }
                         val remoteTrailers =
                             item.data.remoteTrailers
                                 ?.mapNotNull { t ->
@@ -98,19 +107,20 @@ class MovieViewModel
                                 }.orEmpty()
                         chapters.value = Chapter.Companion.fromDto(item.data, api)
                     }
-
-                    val similar =
-                        api.libraryApi
-                            .getSimilarItems(
-                                GetSimilarItemsRequest(
-                                    userId = serverRepository.currentUser?.id,
-                                    itemId = itemId,
-                                    fields = SlimItemFields,
-                                    limit = 25,
-                                ),
-                            ).content.items
-                            .map { BaseItem.Companion.from(it, api) }
-                    this@MovieViewModel.similar.setValueOnMain(similar)
+                    if (!similar.isInitialized) {
+                        val similar =
+                            api.libraryApi
+                                .getSimilarItems(
+                                    GetSimilarItemsRequest(
+                                        userId = serverRepository.currentUser?.id,
+                                        itemId = itemId,
+                                        fields = SlimItemFields,
+                                        limit = 25,
+                                    ),
+                                ).content.items
+                                .map { BaseItem.Companion.from(it, api) }
+                        this@MovieViewModel.similar.setValueOnMain(similar)
+                    }
                 }
             }
         }

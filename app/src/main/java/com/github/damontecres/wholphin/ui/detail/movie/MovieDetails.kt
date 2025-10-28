@@ -69,6 +69,7 @@ import com.github.damontecres.wholphin.ui.data.ItemDetailsDialogInfo
 import com.github.damontecres.wholphin.ui.detail.buildMoreDialogItems
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.nav.Destination
+import com.github.damontecres.wholphin.ui.rememberInt
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
@@ -243,6 +244,12 @@ fun MovieDetails(
     }
 }
 
+private const val HEADER_ROW = 0
+private const val PEOPLE_ROW = HEADER_ROW + 1
+private const val TRAILER_ROW = PEOPLE_ROW + 1
+private const val CHAPTER_ROW = TRAILER_ROW + 1
+private const val SIMILAR_ROW = CHAPTER_ROW + 1
+
 @Composable
 fun MovieDetailsContent(
     preferences: UserPreferences,
@@ -262,15 +269,15 @@ fun MovieDetailsContent(
     modifier: Modifier = Modifier,
 ) {
     val scope = rememberCoroutineScope()
-    val focusRequester = remember { FocusRequester() }
+    var position by rememberInt(0)
+    val focusRequesters = remember { List(SIMILAR_ROW + 1) { FocusRequester() } }
     val dto = movie.data
     val backdropImageUrl = movie.backdropImageUrl
     val resumePosition = dto.userData?.playbackPositionTicks?.ticks ?: Duration.ZERO
 
     val bringIntoViewRequester = remember { BringIntoViewRequester() }
     LaunchedEffect(Unit) {
-//        bringIntoViewRequester.bringIntoView()
-        focusRequester.tryRequestFocus()
+        focusRequesters.getOrNull(position)?.tryRequestFocus()
     }
     Box(modifier = modifier) {
         if (backdropImageUrl.isNotNullOrBlank()) {
@@ -329,18 +336,22 @@ fun MovieDetailsContent(
                         resumePosition = resumePosition,
                         watched = dto.userData?.played ?: false,
                         favorite = dto.userData?.isFavorite ?: false,
-                        playOnClick = playOnClick,
+                        playOnClick = {
+                            position = HEADER_ROW
+                            playOnClick.invoke(it)
+                        },
                         moreOnClick = moreOnClick,
                         watchOnClick = watchOnClick,
                         favoriteOnClick = favoriteOnClick,
                         buttonOnFocusChanged = {
                             if (it.isFocused) {
+                                position = HEADER_ROW
                                 scope.launch(ExceptionHandler()) {
                                     bringIntoViewRequester.bringIntoView()
                                 }
                             }
                         },
-                        modifier = Modifier.focusRequester(focusRequester),
+                        modifier = Modifier.focusRequester(focusRequesters[HEADER_ROW]),
                     )
                 }
             }
@@ -348,9 +359,14 @@ fun MovieDetailsContent(
                 item {
                     PersonRow(
                         people = people,
-                        onClick = {},
+                        onClick = {
+                            position = PEOPLE_ROW
+                        },
                         onLongClick = {},
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .focusRequester(focusRequesters[PEOPLE_ROW]),
                     )
                 }
             }
@@ -358,8 +374,14 @@ fun MovieDetailsContent(
                 item {
                     TrailerRow(
                         trailers = trailers,
-                        onClickTrailer = trailerOnClick,
-                        modifier = Modifier.fillMaxWidth(),
+                        onClickTrailer = {
+                            position = TRAILER_ROW
+                            trailerOnClick.invoke(it)
+                        },
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .focusRequester(focusRequesters[TRAILER_ROW]),
                     )
                 }
             }
@@ -367,9 +389,15 @@ fun MovieDetailsContent(
                 item {
                     ChapterRow(
                         chapters = chapters,
-                        onClick = { playOnClick.invoke(it.position) },
+                        onClick = {
+                            position = CHAPTER_ROW
+                            playOnClick.invoke(it.position)
+                        },
                         onLongClick = {},
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .focusRequester(focusRequesters[CHAPTER_ROW]),
                     )
                 }
             }
@@ -378,7 +406,10 @@ fun MovieDetailsContent(
                     ItemRow(
                         title = stringResource(R.string.more_like_this),
                         items = similar,
-                        onClickItem = onClickItem,
+                        onClickItem = {
+                            position = SIMILAR_ROW
+                            onClickItem.invoke(it)
+                        },
                         onLongClickItem = {},
                         cardContent = { index, item, mod, onClick, onLongClick ->
                             SeasonCard(
@@ -391,7 +422,10 @@ fun MovieDetailsContent(
                                 imageWidth = Dp.Unspecified,
                             )
                         },
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .focusRequester(focusRequesters[SIMILAR_ROW]),
                     )
                 }
             }

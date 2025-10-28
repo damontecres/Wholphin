@@ -71,7 +71,7 @@ class SeriesViewModel
         val seasons = MutableLiveData<ItemListAndMapping>(ItemListAndMapping.empty())
         val episodes = MutableLiveData<EpisodeList>(EpisodeList.Loading)
         val people = MutableLiveData<List<Person>>(listOf())
-        val similar = MutableLiveData<List<BaseItem>>(listOf())
+        val similar = MutableLiveData<List<BaseItem>>()
 
         fun init(
             prefs: UserPreferences,
@@ -107,18 +107,20 @@ class SeriesViewModel
                                 people.map { Person.fromDto(it, api) }
                             }.orEmpty()
                 }
-                val similar =
-                    api.libraryApi
-                        .getSimilarItems(
-                            GetSimilarItemsRequest(
-                                userId = serverRepository.currentUser?.id,
-                                itemId = itemId,
-                                fields = SlimItemFields,
-                                limit = 25,
-                            ),
-                        ).content.items
-                        .map { BaseItem.from(it, api, true) }
-                this@SeriesViewModel.similar.setValueOnMain(similar)
+                if (!similar.isInitialized) {
+                    val similar =
+                        api.libraryApi
+                            .getSimilarItems(
+                                GetSimilarItemsRequest(
+                                    userId = serverRepository.currentUser?.id,
+                                    itemId = itemId,
+                                    fields = SlimItemFields,
+                                    limit = 25,
+                                ),
+                            ).content.items
+                            .map { BaseItem.from(it, api, true) }
+                    this@SeriesViewModel.similar.setValueOnMain(similar)
+                }
             }
         }
 
@@ -320,7 +322,9 @@ class SeriesViewModel
                         ).content.items
                         .firstOrNull()
                 if (nextUp != null) {
-                    navigateTo(Destination.Playback(nextUp.id, 0L))
+                    withContext(Dispatchers.Main) {
+                        navigateTo(Destination.Playback(nextUp.id, 0L))
+                    }
                 } else {
                     showToast(
                         context,

@@ -34,7 +34,7 @@ import com.github.damontecres.wholphin.data.model.GetItemsFilter
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.components.CollectionFolderGrid
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
-import com.github.damontecres.wholphin.ui.ifElse
+import com.github.damontecres.wholphin.ui.nav.NavDrawerItem
 import com.github.damontecres.wholphin.ui.preferences.PreferencesViewModel
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import org.jellyfin.sdk.model.api.BaseItemKind
@@ -46,29 +46,31 @@ fun FavoritesPage(
     preferencesViewModel: PreferencesViewModel = hiltViewModel(),
 ) {
     val uiPrefs = preferences.appPreferences.interfacePreferences
-    val rememberedTabIndex = 0
-    // TODO remember tab
-//        if (uiPrefs.rememberSelectedTab) {
-//            uiPrefs.getRememberedTabsOrDefault(destination.itemId.toString(), 0)
-//        } else {
-//            0
-//        }
+    val rememberedTabIndex =
+        remember {
+            preferencesViewModel.getRememberedTab(
+                preferences,
+                NavDrawerItem.Favorites.id,
+                0,
+            )
+        }
 
     val tabs = listOf("Movies", "TV Shows", "Episodes")
+    val tabFocusRequesters = remember { List(tabs.size) { FocusRequester() } }
     var focusTabIndex by rememberSaveable { mutableIntStateOf(rememberedTabIndex) }
     var selectedTabIndex by rememberSaveable { mutableIntStateOf(rememberedTabIndex) }
     val focusRequester = remember { FocusRequester() }
 
-    val firstTabFocusRequester = remember { FocusRequester() }
-    LaunchedEffect(Unit) { firstTabFocusRequester.tryRequestFocus() }
-
-//    if (uiPrefs.rememberSelectedTab) {
-//        LaunchedEffect(selectedTabIndex) {
-//            preferencesViewModel.preferenceDataStore.updateData {
-//                preferences.appPreferences.rememberTab(destination.itemId, selectedTabIndex)
-//            }
-//        }
-//    }
+    LaunchedEffect(Unit) {
+        tabFocusRequesters.getOrNull(selectedTabIndex)?.tryRequestFocus()
+    }
+    LaunchedEffect(selectedTabIndex) {
+        preferencesViewModel.saveRememberedTab(
+            preferences,
+            NavDrawerItem.Favorites.id,
+            selectedTabIndex,
+        )
+    }
     var showHeader by rememberSaveable { mutableStateOf(true) }
 
     val onClickItem = { item: BaseItem ->
@@ -89,7 +91,7 @@ fun FavoritesPage(
                 modifier =
                     Modifier
                         .padding(start = 32.dp, top = 16.dp, bottom = 16.dp)
-                        .focusRestorer(firstTabFocusRequester)
+                        .focusRestorer(tabFocusRequesters[0])
                         .onFocusChanged {
                             if (!it.isFocused) {
                                 focusTabIndex = selectedTabIndex
@@ -126,10 +128,7 @@ fun FavoritesPage(
                                 modifier =
                                     Modifier
                                         .padding(8.dp)
-                                        .ifElse(
-                                            index == selectedTabIndex,
-                                            Modifier.focusRequester(firstTabFocusRequester),
-                                        ),
+                                        .focusRequester(tabFocusRequesters[index]),
                             )
                         }
                     }
