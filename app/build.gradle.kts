@@ -226,6 +226,7 @@ dependencies {
     ksp(libs.hilt.android.compiler)
 
     implementation(libs.timber)
+    implementation(libs.slf4j.simple)
     implementation(libs.aboutlibraries.core)
     implementation(libs.aboutlibraries.compose.m3)
     implementation(libs.multiplatform.markdown.renderer)
