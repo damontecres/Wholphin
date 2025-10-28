@@ -15,7 +15,9 @@ import org.jellyfin.sdk.Jellyfin
 import org.jellyfin.sdk.api.client.extensions.clientLogApi
 import org.jellyfin.sdk.api.okhttp.OkHttpFactory
 import org.jellyfin.sdk.createJellyfin
+import org.json.JSONObject
 import timber.log.Timber
+import java.util.Date
 
 @AutoService(ReportSenderFactory::class)
 class CrashReportSenderFactory : ReportSenderFactory {
@@ -53,11 +55,22 @@ class CrashReportSender : ReportSender {
                         minimumServerVersion = Jellyfin.minimumVersion
                     }.createApi(baseUrl = serverUrl, accessToken = accessToken)
 
+                val obj = JSONObject()
+                for ((key, value) in errorContent.toMap()) {
+                    obj.put(key, value)
+                }
+                val jsonStr = obj.toString(2)
                 runBlocking {
                     val filename =
                         api.clientLogApi
-                            .logFile(errorContent.toJSON())
-                            .content.fileName
+                            .logFile(
+                                """
+                                ---
+                                Date: ${Date()}
+                                ---
+
+                                """.trimIndent() + jsonStr,
+                            ).content.fileName
                     Timber.i("Sent report to $serverUrl, filename=$filename")
                 }
             } catch (ex: Exception) {
