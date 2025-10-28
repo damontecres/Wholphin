@@ -26,6 +26,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
@@ -142,6 +143,7 @@ fun SwitchUserContent(
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                     modifier =
                         Modifier
+                            .focusGroup()
                             .padding(16.dp)
                             .fillMaxWidth(),
                 ) {
@@ -221,6 +223,7 @@ fun SwitchUserContent(
                                         capitalization = KeyboardCapitalization.None,
                                         autoCorrectEnabled = false,
                                         keyboardType = KeyboardType.Text,
+                                        imeAction = ImeAction.Next,
                                     ),
                                 isInputValid = { userState !is LoadingState.Error },
                                 modifier = Modifier.focusRequester(focusRequester),
