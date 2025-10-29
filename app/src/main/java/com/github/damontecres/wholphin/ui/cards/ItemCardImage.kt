@@ -5,15 +5,15 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -31,11 +31,11 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.tv.material3.Icon
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import coil3.compose.AsyncImage
 import com.github.damontecres.wholphin.R
+import com.github.damontecres.wholphin.ui.AppColors
 import com.github.damontecres.wholphin.ui.Cards
 import com.github.damontecres.wholphin.ui.FontAwesome
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
@@ -125,35 +125,34 @@ fun ItemCardImage(
                         fontFamily = FontAwesome,
                     )
                 }
-                if (watched && (watchedPercent == null || watchedPercent <= 0.0 || watchedPercent >= 100.0)) {
-                    Icon(
-                        imageVector = Icons.Default.CheckCircle,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.border.copy(alpha = 1f),
-                        modifier =
-                            Modifier
-                                .align(Alignment.TopEnd)
-                                .size(36.dp)
-                                .padding(4.dp),
-                    )
-                }
-                if (unwatchedCount > 0) {
-                    Box(
-                        modifier =
-                            Modifier
-                                .padding(4.dp)
-                                .background(
-                                    MaterialTheme.colorScheme.border,
-                                    shape = RoundedCornerShape(25),
-                                ).align(Alignment.TopEnd),
-                    ) {
-                        Text(
-                            text = unwatchedCount.toString(),
-                            color = MaterialTheme.colorScheme.onSurface,
-                            style = MaterialTheme.typography.bodyMedium,
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier =
+                        Modifier
+                            .padding(4.dp)
+                            .align(Alignment.TopEnd),
+                ) {
+                    if (watched && (watchedPercent == null || watchedPercent <= 0.0 || watchedPercent >= 100.0)) {
+                        WatchedIcon(Modifier.size(24.dp))
+                    }
+                    if (unwatchedCount > 0) {
+                        Box(
+                            modifier =
+                                Modifier
+                                    .background(
+                                        AppColors.TransparentBlack50,
+                                        shape = RoundedCornerShape(25),
+                                    ),
+                        ) {
+                            Text(
+                                text = unwatchedCount.toString(),
+                                color = MaterialTheme.colorScheme.onSurface,
+                                style = MaterialTheme.typography.bodyMedium,
 //                            fontSize = 16.sp,
-                            modifier = Modifier.padding(4.dp),
-                        )
+                                modifier = Modifier.padding(4.dp),
+                            )
+                        }
                     }
                 }
 
