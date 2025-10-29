@@ -19,6 +19,7 @@ env:
   APK_DEBUG_SHORT_NAME: Wholphin-debug.apk
   BRANCH_NAME: ${{ github.ref_name }}
   BUILD_TOOLS_VERSION: 36.0.0
+  NDK_VERSION: "29.0.14206865"
 
 jobs:
   build:
@@ -40,7 +41,7 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
         with:
-          packages: "tools platform-tools build-tools;${{ env.BUILD_TOOLS_VERSION }}"
+          packages: "tools platform-tools build-tools;${{ env.BUILD_TOOLS_VERSION }} ndk;${{ env.NDK_VERSION }}"
 
       - name: Get version names
         run: |
@@ -55,6 +56,10 @@ jobs:
           echo "LATEST_TAG=$LATEST_TAG" >> "$GITHUB_ENV"
           echo "VERSION_NAME=$VERSION_NAME" >> "$GITHUB_ENV"
           echo "TAG_NAME=$TAG_NAME" >> "$GITHUB_ENV"
+      - name: Build ffmpeg decoder
+        id: ffmpeg-decoder
+        run: |
+          ./build_ffmpeg_decoder.sh "${{ env.ANDROID_SDK_ROOT }}/ndk/${{ env.NDK_VERSION }}"
       - name: Build release app
         id: build
         env:
