@@ -7,6 +7,7 @@ import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.GetItemsFilter
 import com.github.damontecres.wholphin.data.model.ItemPlayback
 import com.github.damontecres.wholphin.ui.detail.series.SeasonEpisode
+import com.github.damontecres.wholphin.ui.detail.series.SeasonEpisodeIds
 import com.github.damontecres.wholphin.ui.preferences.PreferenceScreenOption
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
@@ -48,7 +49,7 @@ sealed class Destination(
         val itemId: UUID,
         val type: BaseItemKind,
         @Transient val item: BaseItem? = null,
-        val seasonEpisode: SeasonEpisode? = null,
+        val seasonEpisode: SeasonEpisodeIds? = null,
     ) : Destination() {
         override fun toString(): String = "SeriesOverview(itemId=$itemId, type=$type, seasonEpisode=$seasonEpisode)"
     }

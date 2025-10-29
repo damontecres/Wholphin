@@ -85,7 +85,7 @@ fun SeriesOverviewContent(
     val tabRowFocusRequester = remember { FocusRequester() }
 
     val focusedEpisode =
-        (episodes as? EpisodeList.Success)?.episodes?.items?.getOrNull(position.episodeRowIndex)
+        (episodes as? EpisodeList.Success)?.episodes?.getOrNull(position.episodeRowIndex)
 
     Box(
         modifier =
@@ -229,7 +229,7 @@ fun SeriesOverviewContent(
                                         .focusRestorer(firstItemFocusRequester)
                                         .focusRequester(episodeRowFocusRequester),
                             ) {
-                                itemsIndexed(eps.episodes.items) { episodeIndex, episode ->
+                                itemsIndexed(eps.episodes) { episodeIndex, episode ->
                                     val interactionSource = remember { MutableInteractionSource() }
                                     if (interactionSource.collectIsFocusedAsState().value) {
                                         onFocus.invoke(

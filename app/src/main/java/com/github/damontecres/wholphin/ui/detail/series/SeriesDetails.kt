@@ -92,12 +92,12 @@ fun SeriesDetails(
         }
     }
     LaunchedEffect(Unit) {
-        viewModel.init(preferences, destination.itemId, destination.item, null, null)
+        viewModel.init(preferences, destination.itemId, destination.item, null)
     }
     val loading by viewModel.loading.observeAsState(LoadingState.Loading)
 
     val item by viewModel.item.observeAsState()
-    val seasons by viewModel.seasons.observeAsState(ItemListAndMapping.empty())
+    val seasons by viewModel.seasons.observeAsState(listOf())
     val people by viewModel.people.observeAsState(listOf())
     val similar by viewModel.similar.observeAsState(listOf())
 
@@ -190,7 +190,7 @@ private const val SIMILAR_ROW = PEOPLE_ROW + 1
 fun SeriesDetailsContent(
     preferences: UserPreferences,
     series: BaseItem,
-    seasons: ItemListAndMapping,
+    seasons: List<BaseItem>,
     similar: List<BaseItem>,
     people: List<Person>,
     played: Boolean,
@@ -332,7 +332,7 @@ fun SeriesDetailsContent(
                 item {
                     ItemRow(
                         title = "Seasons",
-                        items = seasons.items,
+                        items = seasons,
                         onClickItem = {
                             position = SEASONS_ROW
                             onClickItem.invoke(it)
