@@ -16,6 +16,7 @@ import androidx.media3.common.Player
 import androidx.media3.common.TrackSelectionOverride
 import androidx.media3.common.Tracks
 import androidx.media3.common.util.UnstableApi
+import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.ExoPlayer
 import com.github.damontecres.wholphin.data.ItemPlaybackDao
 import com.github.damontecres.wholphin.data.ItemPlaybackRepository
@@ -104,6 +105,7 @@ data class StreamDecision(
 )
 
 @HiltViewModel
+@OptIn(markerClass = [UnstableApi::class])
 class PlaybackViewModel
     @Inject
     constructor(
@@ -119,7 +121,11 @@ class PlaybackViewModel
         val player =
             ExoPlayer
                 .Builder(context)
-                .build()
+                .setRenderersFactory(
+                    DefaultRenderersFactory(context)
+                        .setEnableDecoderFallback(true)
+                        .setExtensionRendererMode(DefaultRenderersFactory.EXTENSION_RENDERER_MODE_PREFER),
+                ).build()
                 .apply {
                     playWhenReady = true
                 }
