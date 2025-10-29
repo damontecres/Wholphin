@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -152,10 +153,14 @@ fun HomePageContent(
     }
     var focusedItem = position.let { homeRows.getOrNull(it.row)?.items?.getOrNull(it.column) }
 
+    val listState = rememberLazyListState()
     val focusRequester = remember { FocusRequester() }
     val positionFocusRequester = remember { FocusRequester() }
     LaunchedEffect(Unit) {
         positionFocusRequester.tryRequestFocus()
+    }
+    LaunchedEffect(position) {
+        listState.animateScrollToItem(position.row)
     }
     Box(modifier = modifier) {
         if (focusedItem?.backdropImageUrl.isNotNullOrBlank()) {
@@ -200,13 +205,14 @@ fun HomePageContent(
                         .padding(16.dp),
             )
             LazyColumn(
+                state = listState,
                 verticalArrangement = Arrangement.spacedBy(8.dp),
                 contentPadding =
                     PaddingValues(
                         start = 16.dp,
                         end = 16.dp,
                         top = 0.dp,
-                        bottom = 48.dp,
+                        bottom = Cards.height2x3,
                     ),
                 modifier = Modifier,
             ) {
