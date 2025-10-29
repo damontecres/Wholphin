@@ -97,5 +97,6 @@
     <string name="send_app_logs">Send app logs to current server</string>
     <string name="send_app_logs_summary">Useful for debugging</string>
     <string name="global_content_scale">Default content scale</string>
+    <string name="ffmpeg_extension_pref">Use FFmpeg decoder module</string>
 
 </resources>

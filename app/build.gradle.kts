@@ -19,6 +19,7 @@ plugins {
 
 val isCI = if (System.getenv("CI") != null) System.getenv("CI").toBoolean() else false
 val shouldSign = isCI && System.getenv("KEY_ALIAS") != null
+val ffmpegModuleExists = project.file("libs/lib-decoder-ffmpeg-release.aar").exists()
 
 fun getVersionCode(): Int {
     val stdout = ByteArrayOutputStream()
@@ -243,7 +244,7 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     coreLibraryDesugaring(libs.desugar.jdk.libs)
-    if (File("libs/lib-decoder-ffmpeg-release.aar").exists()) {
+    if (ffmpegModuleExists) {
         implementation(files("libs/lib-decoder-ffmpeg-release.aar"))
     }
 }

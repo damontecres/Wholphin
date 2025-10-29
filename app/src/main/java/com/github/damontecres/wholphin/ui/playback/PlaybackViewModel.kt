@@ -5,6 +5,7 @@ import android.widget.Toast
 import androidx.annotation.OptIn
 import androidx.compose.ui.text.intl.Locale
 import androidx.core.net.toUri
+import androidx.datastore.core.DataStore
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -30,6 +31,8 @@ import com.github.damontecres.wholphin.data.model.TrackIndex
 import com.github.damontecres.wholphin.data.model.chooseSource
 import com.github.damontecres.wholphin.data.model.chooseStream
 import com.github.damontecres.wholphin.preferences.AppPreference
+import com.github.damontecres.wholphin.preferences.AppPreferences
+import com.github.damontecres.wholphin.preferences.MediaExtensionStatus
 import com.github.damontecres.wholphin.preferences.SkipSegmentBehavior
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.launchIO
@@ -56,10 +59,12 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.mediaInfoApi
@@ -116,19 +121,31 @@ class PlaybackViewModel
         val itemPlaybackDao: ItemPlaybackDao,
         val serverRepository: ServerRepository,
         val itemPlaybackRepository: ItemPlaybackRepository,
+        val appPreferences: DataStore<AppPreferences>,
     ) : ViewModel(),
         Player.Listener {
-        val player =
+        val player by lazy {
+            val extensions =
+                runBlocking { appPreferences.data.firstOrNull() }?.playbackPreferences?.overrides?.mediaExtensionsEnabled
+            Timber.v("extensions=$extensions")
+            val rendererMode =
+                when (extensions) {
+                    MediaExtensionStatus.MES_FALLBACK -> DefaultRenderersFactory.EXTENSION_RENDERER_MODE_ON
+                    MediaExtensionStatus.MES_PREFERRED -> DefaultRenderersFactory.EXTENSION_RENDERER_MODE_PREFER
+                    MediaExtensionStatus.MES_DISABLED -> DefaultRenderersFactory.EXTENSION_RENDERER_MODE_OFF
+                    else -> DefaultRenderersFactory.EXTENSION_RENDERER_MODE_ON
+                }
             ExoPlayer
                 .Builder(context)
                 .setRenderersFactory(
                     DefaultRenderersFactory(context)
                         .setEnableDecoderFallback(true)
-                        .setExtensionRendererMode(DefaultRenderersFactory.EXTENSION_RENDERER_MODE_PREFER),
+                        .setExtensionRendererMode(rendererMode),
                 ).build()
                 .apply {
                     playWhenReady = true
                 }
+        }
 
         val loading = MutableLiveData<LoadingState>(LoadingState.Loading)
 
