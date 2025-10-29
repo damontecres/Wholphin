@@ -293,7 +293,7 @@ sealed interface AppPreference<T> {
             )
 
         private const val MEGA_BIT = 1024 * 1024L
-        const val DEFAULT_BITRATE = 20 * MEGA_BIT
+        const val DEFAULT_BITRATE = 100 * MEGA_BIT
         private val bitrateValues =
             listOf(
                 500 * 1024L,
@@ -305,7 +305,7 @@ sealed interface AppPreference<T> {
                 8 * MEGA_BIT,
                 10 * MEGA_BIT,
                 15 * MEGA_BIT,
-                DEFAULT_BITRATE,
+                20 * MEGA_BIT,
                 *(30..100 step 10).map { it * MEGA_BIT }.toTypedArray(),
                 *(120..200 step 20).map { it * MEGA_BIT }.toTypedArray(),
             )

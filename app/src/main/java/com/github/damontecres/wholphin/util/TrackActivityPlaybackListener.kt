@@ -30,14 +30,26 @@ import kotlin.time.Duration.Companion.seconds
 class TrackActivityPlaybackListener(
     private val api: ApiClient,
     private val player: Player,
-    var playback: CurrentPlayback,
-    var itemPlayback: ItemPlayback,
+    val playback: CurrentPlayback,
+    val itemPlayback: ItemPlayback,
 ) : Player.Listener {
     private val coroutineScope = CoroutineScope(Dispatchers.Main)
-    private val task: TimerTask
+    private val task: TimerTask =
+        object : TimerTask() {
+            override fun run() {
+                try {
+                    saveActivity(-1L)
+                } catch (ex: Exception) {
+                    Timber.w(ex, "Exception during track activity timer")
+                }
+            }
+        }
 
-    init {
+    private var initialized = false
+
+    fun init() {
         coroutineScope.launch(Dispatchers.IO + ExceptionHandler()) {
+            Timber.v("reportPlaybackStart for ${itemPlayback.itemId}")
             api.playStateApi.reportPlaybackStart(
                 PlaybackStartInfo(
                     canSeek = true,
@@ -49,23 +61,15 @@ class TrackActivityPlaybackListener(
                     isMuted = false,
                     audioStreamIndex = itemPlayback.audioIndex.takeIf { itemPlayback.audioIndexEnabled },
                     subtitleStreamIndex = itemPlayback.subtitleIndex.takeIf { itemPlayback.subtitleIndexEnabled },
+                    playSessionId = playback.playSessionId,
                     liveStreamId = playback.liveStreamId,
                 ),
             )
+            val delay = 5.seconds.inWholeMilliseconds
+            // Every x seconds, check if the video is playing
+            TIMER.schedule(task, delay, delay)
+            initialized = true
         }
-        val delay = 5.seconds.inWholeMilliseconds
-        // Every x seconds, check if the video is playing
-        task =
-            object : TimerTask() {
-                override fun run() {
-                    try {
-                        saveActivity(-1L)
-                    } catch (ex: Exception) {
-                        Timber.Forest.w(ex, "Exception during track activity timer")
-                    }
-                }
-            }
-        TIMER.schedule(task, delay, delay)
     }
 
     fun release() {
@@ -73,6 +77,7 @@ class TrackActivityPlaybackListener(
         TIMER.purge()
         val position = player.currentPosition.milliseconds.inWholeTicks
         coroutineScope.launch(Dispatchers.IO + ExceptionHandler()) {
+            Timber.v("reportPlaybackStopped for ${itemPlayback.itemId}")
             api.playStateApi.reportPlaybackStopped(
                 PlaybackStopInfo(
                     itemId = itemPlayback.itemId,
@@ -86,7 +91,11 @@ class TrackActivityPlaybackListener(
     }
 
     override fun onIsPlayingChanged(isPlaying: Boolean) {
-        saveActivity(-1)
+        if (initialized) {
+            saveActivity(-1)
+        } else if (isPlaying) {
+            init()
+        }
     }
 
     override fun onPlaybackStateChanged(playbackState: Int) {
@@ -100,25 +109,28 @@ class TrackActivityPlaybackListener(
         coroutineScope.launch(Dispatchers.IO + ExceptionHandler()) {
             val calcPosition =
                 withContext(Dispatchers.Main) {
-                    (if (position >= 0) position else player.currentPosition).milliseconds
+                    (if (position >= 0) position else player.currentPosition)
                 }
-//            Timber.v("saveActivity: itemId=${itemPlayback.itemId}, pos=$calcPosition")
-            api.playStateApi.reportPlaybackProgress(
-                PlaybackProgressInfo(
-                    itemId = itemPlayback.itemId,
-                    positionTicks = calcPosition.inWholeTicks,
-                    canSeek = true,
-                    isPaused = withContext(Dispatchers.Main) { !player.isPlaying },
-                    isMuted = false,
-                    playMethod = playback.playMethod,
-                    repeatMode = RepeatMode.REPEAT_NONE,
-                    playbackOrder = PlaybackOrder.DEFAULT,
-                    playSessionId = playback.playSessionId,
-                    audioStreamIndex = itemPlayback.audioIndex.takeIf { itemPlayback.audioIndexEnabled },
-                    subtitleStreamIndex = itemPlayback.subtitleIndex.takeIf { itemPlayback.subtitleIndexEnabled },
-                    liveStreamId = playback.liveStreamId,
-                ),
-            )
+            if (calcPosition > 0) {
+                val isPaused = withContext(Dispatchers.Main) { !player.isPlaying }
+                Timber.v("saveActivity: itemId=${itemPlayback.itemId}, pos=$calcPosition")
+                api.playStateApi.reportPlaybackProgress(
+                    PlaybackProgressInfo(
+                        itemId = itemPlayback.itemId,
+                        positionTicks = calcPosition.milliseconds.inWholeTicks,
+                        canSeek = true,
+                        isPaused = isPaused,
+                        isMuted = false,
+                        playMethod = playback.playMethod,
+                        repeatMode = RepeatMode.REPEAT_NONE,
+                        playbackOrder = PlaybackOrder.DEFAULT,
+                        audioStreamIndex = itemPlayback.audioIndex.takeIf { itemPlayback.audioIndexEnabled },
+                        subtitleStreamIndex = itemPlayback.subtitleIndex.takeIf { itemPlayback.subtitleIndexEnabled },
+                        playSessionId = playback.playSessionId,
+                        liveStreamId = playback.liveStreamId,
+                    ),
+                )
+            }
         }
     }
 
