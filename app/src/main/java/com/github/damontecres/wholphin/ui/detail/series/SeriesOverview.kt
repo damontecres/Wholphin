@@ -1,3 +1,5 @@
+@file:UseSerializers(UUIDSerializer::class)
+
 package com.github.damontecres.wholphin.ui.detail.series
 
 import androidx.compose.runtime.Composable
@@ -26,21 +28,34 @@ import com.github.damontecres.wholphin.ui.components.chooseVersionParams
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialog
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialogInfo
 import com.github.damontecres.wholphin.ui.detail.buildMoreDialogItems
+import com.github.damontecres.wholphin.ui.equalsNotNull
+import com.github.damontecres.wholphin.ui.indexOfFirstOrNull
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.LoadingState
 import com.github.damontecres.wholphin.util.seasonEpisode
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.UseSerializers
 import org.jellyfin.sdk.model.api.ImageType
 import org.jellyfin.sdk.model.extensions.ticks
+import org.jellyfin.sdk.model.serializer.UUIDSerializer
 import org.jellyfin.sdk.model.serializer.toUUID
 import timber.log.Timber
+import java.util.UUID
 import kotlin.time.Duration
 
 @Serializable
 data class SeasonEpisode(
     val season: Int,
     val episode: Int,
+)
+
+@Serializable
+data class SeasonEpisodeIds(
+    val seasonId: UUID,
+    val seasonNumber: Int?,
+    val episodeId: UUID?,
+    val episodeNumber: Int?,
 )
 
 @Serializable
@@ -55,7 +70,7 @@ fun SeriesOverview(
     destination: Destination.SeriesOverview,
     modifier: Modifier = Modifier,
     viewModel: SeriesViewModel = hiltViewModel(),
-    initialSeasonEpisode: SeasonEpisode? = null,
+    initialSeasonEpisode: SeasonEpisodeIds? = null,
 ) {
     LifecycleStartEffect(destination.itemId) {
         viewModel.maybePlayThemeSong(
@@ -76,8 +91,7 @@ fun SeriesOverview(
             preferences,
             destination.itemId,
             destination.item,
-            initialSeasonEpisode?.season,
-            initialSeasonEpisode?.episode,
+            initialSeasonEpisode,
         )
         initialLoadDone = true
     }
@@ -85,9 +99,9 @@ fun SeriesOverview(
     val loading by viewModel.loading.observeAsState(LoadingState.Loading)
 
     val series by viewModel.item.observeAsState(null)
-    val seasons by viewModel.seasons.observeAsState(ItemListAndMapping.empty())
+    val seasons by viewModel.seasons.observeAsState(listOf())
     val episodes by viewModel.episodes.observeAsState(EpisodeList.Loading)
-    val episodeList = (episodes as? EpisodeList.Success)?.episodes?.items
+    val episodeList = (episodes as? EpisodeList.Success)?.episodes
 
     var position by rememberSaveable(
         destination,
@@ -100,18 +114,18 @@ fun SeriesOverview(
     ) {
         mutableStateOf(
             SeriesOverviewPosition(
-                seasons.numberToIndex[initialSeasonEpisode?.season ?: 0] ?: 0,
-                (episodes as? EpisodeList.Success)?.episodes?.numberToIndex[
-                    initialSeasonEpisode?.episode
-                        ?: 0,
-                ] ?: 0,
+                seasons.indexOfFirstOrNull {
+                    equalsNotNull(it.id, initialSeasonEpisode?.seasonId) ||
+                        equalsNotNull(it.indexNumber, initialSeasonEpisode?.seasonNumber)
+                } ?: 0,
+                (episodes as? EpisodeList.Success)?.initialIndex ?: 0,
             ),
         )
     }
     if (initialLoadDone) {
         LaunchedEffect(Unit) {
-            seasons.indexToNumber[position.seasonTabIndex]?.let {
-                viewModel.loadEpisodes(it)
+            seasons.getOrNull(position.seasonTabIndex)?.let {
+                viewModel.loadEpisodes(it.id)
             }
         }
     }
@@ -123,10 +137,10 @@ fun SeriesOverview(
     LaunchedEffect(episodes) {
         episodes?.let { episodes ->
             if (episodes is EpisodeList.Success) {
-                if (episodes.episodes.items.isNotEmpty()) {
+                if (episodes.episodes.isNotEmpty()) {
                     // TODO focus on first episode when changing seasons?
 //            firstItemFocusRequester.requestFocus()
-                    episodes.episodes.items.getOrNull(position.episodeRowIndex)?.let {
+                    episodes.episodes.getOrNull(position.episodeRowIndex)?.let {
                         viewModel.refreshEpisode(it.id, position.episodeRowIndex)
                     }
                 }
@@ -137,7 +151,6 @@ fun SeriesOverview(
     LaunchedEffect(position) {
         (episodes as? EpisodeList.Success)
             ?.episodes
-            ?.items
             ?.getOrNull(position.episodeRowIndex)
             ?.let {
                 viewModel.lookUpChosenTracks(it.id, it)
@@ -230,7 +243,7 @@ fun SeriesOverview(
                 SeriesOverviewContent(
                     preferences = preferences,
                     series = series,
-                    seasons = seasons.items,
+                    seasons = seasons,
                     episodes = episodes,
                     chosenStreams = chosenStreams,
                     position = position,
@@ -245,8 +258,8 @@ fun SeriesOverview(
                     episodeRowFocusRequester = episodeRowFocusRequester,
                     onFocus = {
                         if (it.seasonTabIndex != position.seasonTabIndex) {
-                            seasons.indexToNumber[it.seasonTabIndex]?.let { seasonNumber ->
-                                viewModel.loadEpisodes(seasonNumber)
+                            seasons.getOrNull(it.seasonTabIndex)?.let { season ->
+                                viewModel.loadEpisodes(season.id)
                             }
                         }
                         position = it

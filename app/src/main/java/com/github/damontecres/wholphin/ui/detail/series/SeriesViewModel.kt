@@ -16,6 +16,7 @@ import com.github.damontecres.wholphin.preferences.ThemeSongVolume
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.SlimItemFields
 import com.github.damontecres.wholphin.ui.detail.ItemViewModel
+import com.github.damontecres.wholphin.ui.equalsNotNull
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.letNotEmpty
 import com.github.damontecres.wholphin.ui.nav.Destination
@@ -68,7 +69,7 @@ class SeriesViewModel
         private lateinit var seriesId: UUID
         private lateinit var prefs: UserPreferences
         val loading = MutableLiveData<LoadingState>(LoadingState.Loading)
-        val seasons = MutableLiveData<ItemListAndMapping>(ItemListAndMapping.empty())
+        val seasons = MutableLiveData<List<BaseItem>>(listOf())
         val episodes = MutableLiveData<EpisodeList>(EpisodeList.Loading)
         val people = MutableLiveData<List<Person>>(listOf())
         val similar = MutableLiveData<List<BaseItem>>()
@@ -77,8 +78,7 @@ class SeriesViewModel
             prefs: UserPreferences,
             itemId: UUID,
             potential: BaseItem?,
-            season: Int?,
-            episode: Int?,
+            seasonEpisodeIds: SeasonEpisodeIds?,
         ) {
             this.seriesId = itemId
             this.prefs = prefs
@@ -89,16 +89,28 @@ class SeriesViewModel
                 ) + Dispatchers.IO,
             ) {
                 val item = fetchItem(seriesId, potential)
-                val seasonsInfo = getSeasons(item)
+                val seasons = getSeasons(item)
 
                 // If a particular season was requested, fetch those episodes, otherwise get the first season
+                val initialSeason =
+                    if (seasonEpisodeIds != null) {
+                        seasons.firstOrNull {
+                            equalsNotNull(it.id, seasonEpisodeIds.seasonId) ||
+                                equalsNotNull(it.indexNumber, seasonEpisodeIds.seasonNumber)
+                        }
+                    } else {
+                        seasons.firstOrNull()
+                    }
                 val episodeInfo =
-                    (season ?: seasonsInfo.items.firstOrNull()?.indexNumber)
-                        ?.let { seasonNum ->
-                            loadEpisodesInternal(seasonNum)
-                        } ?: EpisodeList.Error("Could not determine season")
+                    initialSeason?.let {
+                        loadEpisodesInternal(
+                            it.id,
+                            seasonEpisodeIds?.episodeId,
+                            seasonEpisodeIds?.episodeNumber,
+                        )
+                    } ?: EpisodeList.Error("Could not determine season for selected episode")
                 withContext(Dispatchers.Main) {
-                    seasons.value = seasonsInfo
+                    this@SeriesViewModel.seasons.value = seasons
                     episodes.value = episodeInfo
                     loading.value = LoadingState.Success
                     people.value =
@@ -108,18 +120,20 @@ class SeriesViewModel
                             }.orEmpty()
                 }
                 if (!similar.isInitialized) {
-                    val similar =
-                        api.libraryApi
-                            .getSimilarItems(
-                                GetSimilarItemsRequest(
-                                    userId = serverRepository.currentUser?.id,
-                                    itemId = itemId,
-                                    fields = SlimItemFields,
-                                    limit = 25,
-                                ),
-                            ).content.items
-                            .map { BaseItem.from(it, api, true) }
-                    this@SeriesViewModel.similar.setValueOnMain(similar)
+                    viewModelScope.launchIO {
+                        val similar =
+                            api.libraryApi
+                                .getSimilarItems(
+                                    GetSimilarItemsRequest(
+                                        userId = serverRepository.currentUser?.id,
+                                        itemId = itemId,
+                                        fields = SlimItemFields,
+                                        limit = 25,
+                                    ),
+                                ).content.items
+                                .map { BaseItem.from(it, api, true) }
+                        this@SeriesViewModel.similar.setValueOnMain(similar)
+                    }
                 }
             }
         }
@@ -163,7 +177,7 @@ class SeriesViewModel
             themeSongPlayer.stop()
         }
 
-        private suspend fun getSeasons(series: BaseItem): ItemListAndMapping {
+        private suspend fun getSeasons(series: BaseItem): List<BaseItem> {
             val request =
                 GetItemsRequest(
                     parentId = series.id,
@@ -178,30 +192,26 @@ class SeriesViewModel
                             ItemFields.SEASON_USER_DATA,
                         ),
                 )
-            val pager =
-                ApiRequestPager(
-                    api,
-                    request,
-                    GetItemsRequestHandler,
-                    viewModelScope,
-                )
-            pager.init()
-            Timber.Forest.v("Loaded ${pager.size} seasons for series ${series.id}")
-            val pairs =
-                pager.mapIndexed { index, _ ->
-                    val season = pager.getBlocking(index)
-                    Pair(season?.indexNumber!!, index)
+            val seasons =
+                GetItemsRequestHandler.execute(api, request).content.items.map {
+                    BaseItem.from(
+                        it,
+                        api,
+                    )
                 }
-            val seasonNumToIndex = mapOf(*pairs.toTypedArray())
-            val indexToSeasonNum = mapOf(*pairs.map { Pair(it.second, it.first) }.toTypedArray())
-            return ItemListAndMapping(pager, seasonNumToIndex, indexToSeasonNum)
+            Timber.v("Loaded ${seasons.size} seasons for series ${series.id}")
+            return seasons
         }
 
-        private suspend fun loadEpisodesInternal(season: Int): EpisodeList {
+        private suspend fun loadEpisodesInternal(
+            seasonId: UUID,
+            episodeId: UUID?,
+            episodeNumber: Int?,
+        ): EpisodeList {
             val request =
                 GetEpisodesRequest(
-                    seriesId = item.value!!.id,
-                    season = season,
+                    seriesId = seriesId,
+                    seasonId = seasonId,
                     sortBy = ItemSortBy.INDEX_NUMBER,
                     fields =
                         listOf(
@@ -215,18 +225,30 @@ class SeriesViewModel
                 )
             val pager = ApiRequestPager(api, request, GetEpisodesRequestHandler, viewModelScope)
             pager.init()
-            Timber.v("Loaded ${pager.size} episodes for season $season")
-            return EpisodeList.Success(convertPager(pager))
+            val initialIndex =
+                if (episodeId != null || episodeNumber != null) {
+                    pager
+                        .indexOfBlocking {
+                            equalsNotNull(it?.id, episodeId) ||
+                                equalsNotNull(it?.indexNumber, episodeNumber)
+                        }.coerceAtLeast(0)
+                } else {
+                    // Force the first page to to be fetched
+                    pager.getBlocking(0)
+                    0
+                }
+            Timber.v("Loaded ${pager.size} episodes for season $seasonId, initialIndex=$initialIndex")
+            return EpisodeList.Success(pager, initialIndex)
         }
 
-        fun loadEpisodes(season: Int) {
+        fun loadEpisodes(seasonId: UUID) {
             this@SeriesViewModel.episodes.value = EpisodeList.Loading
-            viewModelScope.launch(ExceptionHandler(true)) {
+            viewModelScope.launchIO(ExceptionHandler(true)) {
                 val episodes =
                     try {
-                        loadEpisodesInternal(season)
+                        loadEpisodesInternal(seasonId, null, null)
                     } catch (e: Exception) {
-                        Timber.e(e, "Error loading episodes for $seriesId for season $season")
+                        Timber.e(e, "Error loading episodes for $seriesId for season $seasonId")
                         EpisodeList.Error(e)
                     }
                 withContext(Dispatchers.Main) {
@@ -295,13 +317,13 @@ class SeriesViewModel
         ) = viewModelScope.launch(ExceptionHandler() + Dispatchers.IO) {
             val base = api.userLibraryApi.getItem(itemId).content
             val item = BaseItem.Companion.from(base, api)
-            val eps = episodes.value!!
+            val eps = episodes.value
             if (eps is EpisodeList.Success) {
                 val newItems =
-                    eps.episodes.items.toMutableList().apply {
+                    eps.episodes.toMutableList().apply {
                         this[listIndex] = item
                     }
-                val newValue = EpisodeList.Success(eps.episodes.copy(items = newItems))
+                val newValue = eps.copy(episodes = newItems)
                 withContext(Dispatchers.Main) {
                     episodes.value = newValue
                 }
@@ -398,32 +420,6 @@ class SeriesViewModel
         }
     }
 
-data class ItemListAndMapping(
-    val items: List<BaseItem?>,
-    val numberToIndex: Map<Int, Int>,
-    val indexToNumber: Map<Int, Int>,
-) {
-    companion object {
-        fun empty() = ItemListAndMapping(listOf(), mapOf(), mapOf())
-    }
-}
-
-/**
- * Calculate the index<->season/ep number pairings
- *
- * This allows for handling of missing seasons
- */
-private suspend fun convertPager(pager: ApiRequestPager<*>): ItemListAndMapping {
-    val pairs =
-        pager.mapIndexed { index, _ ->
-            val item = pager.getBlocking(index)
-            Pair(item?.indexNumber ?: index, index)
-        }
-    val seasonNumToIndex = mapOf(*pairs.toTypedArray())
-    val indexToSeasonNum = mapOf(*pairs.map { Pair(it.second, it.first) }.toTypedArray())
-    return ItemListAndMapping(pager, seasonNumToIndex, indexToSeasonNum)
-}
-
 sealed interface EpisodeList {
     data object Loading : EpisodeList
 
@@ -435,6 +431,7 @@ sealed interface EpisodeList {
     }
 
     data class Success(
-        val episodes: ItemListAndMapping,
+        val episodes: List<BaseItem?>,
+        val initialIndex: Int,
     ) : EpisodeList
 }

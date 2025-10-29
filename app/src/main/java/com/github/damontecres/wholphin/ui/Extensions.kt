@@ -375,3 +375,8 @@ suspend fun <T> MutableLiveData<T>.setValueOnMain(value: T) =
     withContext(Dispatchers.Main) {
         this@setValueOnMain.value = value
     }
+
+fun equalsNotNull(
+    a: Any?,
+    b: Any?,
+) = a != null && b != null && a == b

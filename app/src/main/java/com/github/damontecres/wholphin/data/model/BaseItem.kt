@@ -1,6 +1,6 @@
 package com.github.damontecres.wholphin.data.model
 
-import com.github.damontecres.wholphin.ui.detail.series.SeasonEpisode
+import com.github.damontecres.wholphin.ui.detail.series.SeasonEpisodeIds
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.util.seasonEpisode
 import kotlinx.serialization.Serializable
@@ -54,27 +54,23 @@ data class BaseItem(
             // Redirect episodes & seasons to their series if possible
             when (type) {
                 BaseItemKind.EPISODE -> {
-                    indexNumber?.let { episode ->
-                        data.parentIndexNumber?.let { season ->
-                            Destination.SeriesOverview(
-                                data.seriesId!!,
-                                BaseItemKind.SERIES,
-                                this,
-                                SeasonEpisode(season, episode),
-                            )
-                        }
-                    } ?: Destination.MediaItem(id, type, this)
-                }
-
-                BaseItemKind.SEASON ->
-                    data.indexNumber?.let { season ->
+                    data.seasonId?.let { seasonId ->
                         Destination.SeriesOverview(
                             data.seriesId!!,
                             BaseItemKind.SERIES,
                             this,
-                            SeasonEpisode(season, 0),
+                            SeasonEpisodeIds(seasonId, data.parentIndexNumber, id, indexNumber),
                         )
                     } ?: Destination.MediaItem(id, type, this)
+                }
+
+                BaseItemKind.SEASON ->
+                    Destination.SeriesOverview(
+                        data.seriesId!!,
+                        BaseItemKind.SERIES,
+                        this,
+                        SeasonEpisodeIds(id, indexNumber, null, null),
+                    )
 
                 else -> Destination.MediaItem(id, type, this)
             }
