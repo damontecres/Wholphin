@@ -173,10 +173,11 @@ class PlaybackViewModel
             this.itemId = itemId
             val item = destination.item
             viewModelScope.launch(
-                LoadingExceptionHandler(
-                    loading,
-                    "Error preparing for playback for ${destination.itemId}",
-                ) + Dispatchers.IO,
+                Dispatchers.IO +
+                    LoadingExceptionHandler(
+                        loading,
+                        "Error preparing for playback for ${destination.itemId}",
+                    ),
             ) {
                 val queriedItem = item?.data ?: api.userLibraryApi.getItem(itemId).content
                 val base =
@@ -493,7 +494,7 @@ class PlaybackViewModel
                         subtitleIndex = subtitleIndex ?: TrackIndex.DISABLED,
                     )
                 if (userInitiated) {
-                    viewModelScope.launch(Dispatchers.IO + ExceptionHandler()) {
+                    viewModelScope.launchIO {
                         Timber.v("Saving user initiated item playback: %s", itemPlayback)
                         val updated = itemPlaybackRepository.saveItemPlayback(itemPlayback)
                         withContext(Dispatchers.Main) {
@@ -560,7 +561,7 @@ class PlaybackViewModel
         }
 
         fun changeAudioStream(index: Int) {
-            viewModelScope.launch(ExceptionHandler()) {
+            viewModelScope.launchIO {
                 changeStreams(
                     dto,
                     currentItemPlayback.value!!,
@@ -573,7 +574,7 @@ class PlaybackViewModel
         }
 
         fun changeSubtitleStream(index: Int?): Job =
-            viewModelScope.launch(ExceptionHandler()) {
+            viewModelScope.launchIO {
                 changeStreams(
                     dto,
                     currentItemPlayback.value!!,
@@ -604,7 +605,7 @@ class PlaybackViewModel
                         object : Player.Listener {
                             override fun onPlaybackStateChanged(playbackState: Int) {
                                 if (playbackState == Player.STATE_ENDED) {
-                                    viewModelScope.launch(Dispatchers.IO + ExceptionHandler()) {
+                                    viewModelScope.launchIO {
                                         val nextItem = playlist.peek()
                                         Timber.v("Setting next up to ${nextItem?.id}")
                                         withContext(Dispatchers.Main) {
@@ -625,7 +626,7 @@ class PlaybackViewModel
         private fun listenForSegments() {
             segmentJob?.cancel()
             segmentJob =
-                viewModelScope.launch(ExceptionHandler() + Dispatchers.IO) {
+                viewModelScope.launchIO {
                     val prefs = preferences.appPreferences.playbackPreferences
                     val segments by api.mediaSegmentsApi.getItemSegments(itemId)
                     if (segments.items.isNotEmpty()) {
@@ -700,7 +701,7 @@ class PlaybackViewModel
         fun playUpNextUp() {
             playlist.value?.let {
                 if (it.hasNext()) {
-                    viewModelScope.launch(ExceptionHandler()) {
+                    viewModelScope.launchIO {
                         cancelUpNextEpisode()
                         val item = it.getAndAdvance()
                         val played = play(item.data, 0)
@@ -715,7 +716,7 @@ class PlaybackViewModel
         fun playPrevious() {
             playlist.value?.let {
                 if (it.hasPrevious()) {
-                    viewModelScope.launch(ExceptionHandler()) {
+                    viewModelScope.launchIO {
                         cancelUpNextEpisode()
                         val item = it.getPreviousAndReverse()
                         val played = play(item.data, 0)
@@ -727,13 +728,13 @@ class PlaybackViewModel
             }
         }
 
-        fun cancelUpNextEpisode() {
-            nextUp.value = null
+        suspend fun cancelUpNextEpisode() {
+            nextUp.setValueOnMain(null)
         }
 
         fun playItemInPlaylist(item: BaseItem) {
             playlist.value?.let { playlist ->
-                viewModelScope.launch(ExceptionHandler()) {
+                viewModelScope.launchIO {
                     val toPlay = playlist.advanceTo(item.id)
                     if (toPlay != null) {
                         val played = play(toPlay.data, 0)
