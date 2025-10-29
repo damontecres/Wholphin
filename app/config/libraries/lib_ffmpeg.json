@@ -1,0 +1,11 @@
+{
+  "uniqueId": "org.ffmpeg",
+  "developers": [],
+  "artifactVersion": "6.0",
+  "description": "A complete, cross-platform solution to record, convert and stream audio and video",
+  "name": "FFmpeg",
+  "licenses": [
+    "lgpl-2.1"
+  ],
+  "website": "https://www.ffmpeg.org"
+}
