@@ -13,15 +13,14 @@ ENABLED_DECODERS=(dca ac3 eac3 mlp truehd)
 FFMPEG_BRANCH="release/6.0"
 
 # Path configs
+DIR_PATH="$(pwd)"
+TARGET_PATH="$DIR_PATH/app/libs"
 MEDIA_PATH="$DIR_PATH//ffmpeg_decoder/media"
 FFMPEG_MODULE_PATH="$MEDIA_PATH/libraries/decoder_ffmpeg/src/main"
 FFMPEG_PATH="$DIR_PATH/ffmpeg_decoder/ffmpeg"
 HOST="$(uname -s | tr '[:upper:]' '[:lower:]')"
 HOST_PLATFORM="$HOST-x86_64"
 
-
-DIR_PATH="$(pwd)"
-TARGET_PATH="$DIR_PATH/app/libs"
 mkdir -p "$TARGET_PATH"
 mkdir -p ffmpeg_decoder
 
