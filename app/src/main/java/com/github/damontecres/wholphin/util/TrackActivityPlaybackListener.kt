@@ -45,6 +45,7 @@ class TrackActivityPlaybackListener(
             }
         }
 
+    @Volatile
     private var initialized = false
 
     fun init() {
