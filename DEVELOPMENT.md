@@ -24,3 +24,11 @@ We follow GitHub's fork & pull request model for contributions.
 After forking and cloning your fork, you can import the project into Android Studio.
 
 You need a compatible Android Studio version for the configured AGP. This is generally `Narwhal 3 Feature Drop | 2025.1.3` or newer. See https://developer.android.com/build/releases/gradle-plugin and [`libs.versions.toml](./gradle/libs.versions.toml).
+
+### FFmpeg decoder module
+
+The app ships with [media3 ffmpeg decoder module](https://github.com/androidx/media/blob/release/libraries/decoder_ffmpeg/README.md).
+
+It is not required to build the extension in order to build the app locally.
+
+You can build the module on MacOS or Linux with the [`./build_ffmpeg_decoder.sh`](./build_ffmpeg_decoder.sh) script. You must have the [Android NDK](https://developer.android.com/ndk) installed.

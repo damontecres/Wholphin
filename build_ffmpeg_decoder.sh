@@ -1,12 +1,23 @@
 #!/usr/bin/env bash
 set -ex
 
-
 if [ -z "$1" ]; then
   echo "Error: Must provide NDK path"
   exit 1
 fi
 NDK_PATH="$1"
+
+# Config
+ANDROID_ABI=21
+ENABLED_DECODERS=(dca ac3 eac3 mlp truehd)
+FFMPEG_BRANCH="release/6.0"
+
+# Path configs
+MEDIA_PATH="$DIR_PATH//ffmpeg_decoder/media"
+FFMPEG_MODULE_PATH="$MEDIA_PATH/libraries/decoder_ffmpeg/src/main"
+FFMPEG_PATH="$DIR_PATH/ffmpeg_decoder/ffmpeg"
+HOST="$(uname -s | tr '[:upper:]' '[:lower:]')"
+HOST_PLATFORM="$HOST-x86_64"
 
 
 DIR_PATH="$(pwd)"
@@ -27,20 +38,12 @@ fi
 
 if [[ -d ffmpeg ]]; then
   pushd ffmpeg || exit
-  git checkout --force "release/6.0"
+  git checkout --force "$FFMPEG_BRANCH"
 else
-  git clone https://github.com/FFmpeg/FFmpeg --depth 1 --single-branch -b release/6.0 ffmpeg
+  git clone https://github.com/FFmpeg/FFmpeg --depth 1 --single-branch -b "$FFMPEG_BRANCH" ffmpeg
 fi
 
-MEDIA_PATH="$DIR_PATH//ffmpeg_decoder/media"
-FFMPEG_MODULE_PATH="$MEDIA_PATH/libraries/decoder_ffmpeg/src/main"
-FFMPEG_PATH="$DIR_PATH/ffmpeg_decoder/ffmpeg"
 ln -s "$FFMPEG_PATH" "${FFMPEG_MODULE_PATH}/jni/ffmpeg"
-
-HOST="$(uname -s | tr '[:upper:]' '[:lower:]')"
-HOST_PLATFORM="$HOST-x86_64"
-ANDROID_ABI=21
-ENABLED_DECODERS=(dca ac3 eac3 mlp truehd)
 
 pushd "${FFMPEG_MODULE_PATH}/jni" || exit
 
