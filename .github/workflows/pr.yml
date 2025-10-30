@@ -18,13 +18,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout the code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         fetch-depth: 0 # Need the tags to build
     - name: Setup Python
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v6
       with:
-        python-version: '3.10'
+        python-version: '3.12'
     - name: Run pre-commit
       uses: pre-commit/action@v3.0.1
 
@@ -33,11 +33,11 @@ jobs:
     needs: pre-commit
     steps:
       - name: Checkout the code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0 # Need the tags to build
       - name: Setup JDK
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: zulu
           java-version: '21'
@@ -46,10 +46,27 @@ jobs:
         uses: android-actions/setup-android@v3
         with:
           packages: "tools platform-tools build-tools;${{ env.BUILD_TOOLS_VERSION }} ndk;${{ env.NDK_VERSION }}"
+
+      - name: Load ffmpeg module cache
+        id: cache_ffmpeg_module
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            app/libs
+          key: ${{ runner.os }}-ffmpeg-${{ hashFiles('**/libs.versions.toml', '**/build_ffmpeg_decoder.sh') }}
       - name: Build ffmpeg decoder
         id: ffmpeg-decoder
+        if: steps.cache_ffmpeg_module.outputs.cache-hit != 'true'
         run: |
           ./build_ffmpeg_decoder.sh "${{ env.ANDROID_SDK_ROOT }}/ndk/${{ env.NDK_VERSION }}"
+      - name: Save ffmpeg module cache
+        id: cache_ffmpeg_module_save
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            app/libs
+          key: ${{ steps.cache_ffmpeg_module.outputs.cache-primary-key }}
+
       - name: Build app
         id: buildapp
         run: |
@@ -58,13 +75,13 @@ jobs:
       - name: Tar build dirs
         run: |
           tar -czf build.tgz */build/.
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         id: upload-build-dirs
         with:
           name: "${{ env.BUILD_DIRS_ARTIFACT }}"
           path: build.tgz
           if-no-files-found: error
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         with:
           name: Wholphin-debug.apk
           path: "${{ steps.buildapp.outputs.apk }}"
