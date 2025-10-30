@@ -46,10 +46,27 @@ jobs:
         uses: android-actions/setup-android@v3
         with:
           packages: "tools platform-tools build-tools;${{ env.BUILD_TOOLS_VERSION }} ndk;${{ env.NDK_VERSION }}"
+
+      - name: Load ffmpeg module cache
+        id: cache_ffmpeg_module
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            app/libs
+          key: ${{ runner.os }}-${{ hashFiles('gradle/libs.versions.toml,build_ffmpeg_decoder.sh') }}
       - name: Build ffmpeg decoder
         id: ffmpeg-decoder
+        if: steps.cache_ffmpeg_module.outputs.cache-hit != 'true'
         run: |
           ./build_ffmpeg_decoder.sh "${{ env.ANDROID_SDK_ROOT }}/ndk/${{ env.NDK_VERSION }}"
+      - name: Save ffmpeg module cache
+        id: cache_ffmpeg_module_save
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            app/libs
+          key: ${{ steps.cache_ffmpeg_module.outputs.cache-primary-key }}
+
       - name: Build app
         id: buildapp
         run: |
