@@ -234,7 +234,9 @@ class SeriesViewModel
                         }.coerceAtLeast(0)
                 } else {
                     // Force the first page to to be fetched
-                    pager.getBlocking(0)
+                    if (pager.isNotEmpty()) {
+                        pager.getBlocking(0)
+                    }
                     0
                 }
             Timber.v("Loaded ${pager.size} episodes for season $seasonId, initialIndex=$initialIndex")

@@ -1,5 +1,6 @@
 package com.github.damontecres.wholphin.ui.main
 
+import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -33,6 +34,7 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -80,6 +82,7 @@ fun HomePage(
     modifier: Modifier = Modifier,
     viewModel: HomeViewModel = hiltViewModel(),
 ) {
+    val context = LocalContext.current
     var firstLoad by rememberSaveable { mutableStateOf(true) }
     LaunchedEffect(Unit) {
         viewModel.init(preferences).join()
@@ -87,6 +90,20 @@ fun HomePage(
     }
     val loading by viewModel.loadingState.observeAsState(LoadingState.Loading)
     val homeRows by viewModel.homeRows.observeAsState(listOf())
+    LaunchedEffect(loading) {
+        val state = loading
+        if (!firstLoad && state is LoadingState.Error) {
+            // After the first load, refreshes occur in the background and an ErrorMessage won't show
+            // So send a Toast on errors instead
+            Toast
+                .makeText(
+                    context,
+                    "Home refresh error: ${state.localizedMessage}",
+                    Toast.LENGTH_LONG,
+                ).show()
+        }
+    }
+
     when (val state = if (firstLoad) loading else LoadingState.Success) {
         is LoadingState.Error -> ErrorMessage(state)
 
