@@ -4,11 +4,12 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.github.damontecres.wholphin.data.model.BaseItem
+import com.github.damontecres.wholphin.ui.setValueOnMain
 import com.github.damontecres.wholphin.util.LoadingExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
+import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.async
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.imageApi
@@ -66,14 +67,14 @@ abstract class LoadingItemViewModel(
     open fun init(
         itemId: UUID,
         potential: BaseItem?,
-    ): Job? {
-        loading.value = LoadingState.Loading
-        return viewModelScope.launch(
+    ): Deferred<BaseItem?> =
+        viewModelScope.async(
             LoadingExceptionHandler(
                 loading,
                 "Error loading item $itemId",
             ) + Dispatchers.IO,
         ) {
+            loading.setValueOnMain(LoadingState.Loading)
             try {
                 fetchAndSetItem(itemId)
             } catch (e: Exception) {
@@ -82,16 +83,18 @@ abstract class LoadingItemViewModel(
                     item.value = null
                     loading.value = LoadingState.Error("Error loading item $itemId", e)
                 }
+                null
             }
         }
-    }
 
-    open suspend fun fetchAndSetItem(itemId: UUID) =
+    open suspend fun fetchAndSetItem(itemId: UUID): BaseItem =
         withContext(Dispatchers.IO) {
             val fetchedItem = api.userLibraryApi.getItem(itemId).content
+            val item = BaseItem.from(fetchedItem, api)
             withContext(Dispatchers.Main) {
-                item.value = BaseItem.from(fetchedItem, api)
+                this@LoadingItemViewModel.item.value = item
                 loading.value = LoadingState.Success
             }
+            return@withContext item
         }
 }

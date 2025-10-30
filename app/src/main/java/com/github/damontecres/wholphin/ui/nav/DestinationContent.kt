@@ -11,6 +11,7 @@ import com.github.damontecres.wholphin.ui.detail.CollectionFolderMovie
 import com.github.damontecres.wholphin.ui.detail.CollectionFolderTv
 import com.github.damontecres.wholphin.ui.detail.DebugPage
 import com.github.damontecres.wholphin.ui.detail.FavoritesPage
+import com.github.damontecres.wholphin.ui.detail.PersonPage
 import com.github.damontecres.wholphin.ui.detail.PlaylistDetails
 import com.github.damontecres.wholphin.ui.detail.movie.MovieDetails
 import com.github.damontecres.wholphin.ui.detail.series.SeriesDetails
@@ -170,6 +171,13 @@ fun DestinationContent(
                         destination.itemId,
                         destination.item,
                         false,
+                        modifier,
+                    )
+
+                BaseItemKind.PERSON ->
+                    PersonPage(
+                        preferences,
+                        destination,
                         modifier,
                     )
 
