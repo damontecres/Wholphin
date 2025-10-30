@@ -52,10 +52,7 @@ class MovieViewModel
         val similar = MutableLiveData<List<BaseItem>>()
         val chosenStreams = MutableLiveData<ChosenStreams?>(null)
 
-        override fun init(
-            itemId: UUID,
-            potential: BaseItem?,
-        ): Job? {
+        fun init(itemId: UUID): Job? {
             this.itemId = itemId
             return viewModelScope.launch(
                 Dispatchers.IO +
@@ -103,9 +100,9 @@ class MovieViewModel
                         people.value =
                             item.data.people
                                 ?.letNotEmpty { people ->
-                                    people.map { Person.Companion.fromDto(it, api) }
+                                    people.map { Person.fromDto(it, api) }
                                 }.orEmpty()
-                        chapters.value = Chapter.Companion.fromDto(item.data, api)
+                        chapters.value = Chapter.fromDto(item.data, api)
                     }
                     if (!similar.isInitialized) {
                         val similar =

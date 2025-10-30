@@ -13,6 +13,7 @@ import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import org.jellyfin.sdk.model.api.BaseItemDto
 import org.jellyfin.sdk.model.api.MediaStream
 import org.jellyfin.sdk.model.api.MediaStreamType
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -21,6 +22,18 @@ import java.util.Locale
  * Format a [LocalDateTime] as `Aug 24, 2000`
  */
 fun formatDateTime(dateTime: LocalDateTime): String =
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        // TODO server returns in UTC, but sdk converts to local time
+        // eg 2020-02-14T00:00:00.0000000Z => 2020-02-13T17:00:00 PT => Feb 13, 2020
+        val formatter = DateTimeFormatter.ofPattern("MMM d, yyyy")
+        formatter.format(dateTime)
+    } else if (dateTime.toString().length >= 10) {
+        dateTime.toString().substring(0, 10)
+    } else {
+        dateTime.toString()
+    }
+
+fun formatDate(dateTime: LocalDate): String =
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
         // TODO server returns in UTC, but sdk converts to local time
         // eg 2020-02-14T00:00:00.0000000Z => 2020-02-13T17:00:00 PT => Feb 13, 2020

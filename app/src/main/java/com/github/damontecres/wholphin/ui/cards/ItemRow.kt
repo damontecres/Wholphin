@@ -17,6 +17,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
@@ -39,6 +40,7 @@ fun ItemRow(
     modifier: Modifier = Modifier,
     focusPair: FocusPair? = null,
     cardOnFocus: ((isFocused: Boolean, index: Int) -> Unit)? = null,
+    horizontalPadding: Dp = 16.dp,
 ) {
     val state = rememberLazyListState()
     val firstFocus = remember { FocusRequester() }
@@ -54,8 +56,8 @@ fun ItemRow(
         )
         LazyRow(
             state = state,
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
-            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(horizontalPadding),
+            contentPadding = PaddingValues(horizontal = horizontalPadding, vertical = 8.dp),
             modifier =
                 Modifier
                     .fillMaxWidth()

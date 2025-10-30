@@ -74,6 +74,7 @@ import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
 import kotlinx.coroutines.launch
+import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.extensions.ticks
 import org.jellyfin.sdk.model.serializer.toUUID
 import kotlin.time.Duration
@@ -87,7 +88,7 @@ fun MovieDetails(
 ) {
     val context = LocalContext.current
     LaunchedEffect(Unit) {
-        viewModel.init(destination.itemId, destination.item)
+        viewModel.init(destination.itemId)
     }
     val item by viewModel.item.observeAsState()
     val people by viewModel.people.observeAsState(listOf())
@@ -118,6 +119,14 @@ fun MovieDetails(
                     similar = similar,
                     onClickItem = {
                         viewModel.navigationManager.navigateTo(it.destination())
+                    },
+                    onClickPerson = {
+                        viewModel.navigationManager.navigateTo(
+                            Destination.MediaItem(
+                                it.id,
+                                BaseItemKind.PERSON,
+                            ),
+                        )
                     },
                     playOnClick = {
                         viewModel.navigationManager.navigateTo(
@@ -266,6 +275,7 @@ fun MovieDetailsContent(
     favoriteOnClick: () -> Unit,
     moreOnClick: () -> Unit,
     onClickItem: (BaseItem) -> Unit,
+    onClickPerson: (Person) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val scope = rememberCoroutineScope()
@@ -361,6 +371,7 @@ fun MovieDetailsContent(
                         people = people,
                         onClick = {
                             position = PEOPLE_ROW
+                            onClickPerson.invoke(it)
                         },
                         onLongClick = {},
                         modifier =

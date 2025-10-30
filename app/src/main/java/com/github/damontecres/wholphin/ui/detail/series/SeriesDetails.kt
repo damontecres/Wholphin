@@ -72,6 +72,7 @@ import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
 import kotlinx.coroutines.launch
+import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.extensions.ticks
 import kotlin.time.Duration
 
@@ -123,6 +124,14 @@ fun SeriesDetails(
                     favorite = item.data.userData?.isFavorite ?: false,
                     modifier = modifier,
                     onClickItem = { viewModel.navigateTo(it.destination()) },
+                    onClickPerson = {
+                        viewModel.navigateTo(
+                            Destination.MediaItem(
+                                it.id,
+                                BaseItemKind.PERSON,
+                            ),
+                        )
+                    },
                     onLongClickItem = { season ->
                         seasonDialog =
                             buildDialogForSeason(
@@ -196,6 +205,7 @@ fun SeriesDetailsContent(
     played: Boolean,
     favorite: Boolean,
     onClickItem: (BaseItem) -> Unit,
+    onClickPerson: (Person) -> Unit,
     onLongClickItem: (BaseItem) -> Unit,
     overviewOnClick: () -> Unit,
     playOnClick: () -> Unit,
@@ -361,6 +371,7 @@ fun SeriesDetailsContent(
                             people = people,
                             onClick = {
                                 position = PEOPLE_ROW
+                                onClickPerson.invoke(it)
                             },
                             onLongClick = {},
                             modifier =
