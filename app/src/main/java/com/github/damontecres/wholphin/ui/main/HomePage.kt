@@ -20,6 +20,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -62,6 +63,7 @@ import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.LoadingState
 import com.github.damontecres.wholphin.util.formatDateTime
 import com.github.damontecres.wholphin.util.seasonEpisode
+import kotlinx.coroutines.delay
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.extensions.ticks
 import kotlin.time.Duration
@@ -148,6 +150,7 @@ fun HomePageContent(
     onFocusPosition: ((RowColumn) -> Unit)? = null,
     loadingState: LoadingState? = null,
 ) {
+    val scope = rememberCoroutineScope()
     var position by rememberSaveable(stateSaver = RowColumnSaver) {
         mutableStateOf(RowColumn(0, 0))
     }
@@ -158,6 +161,9 @@ fun HomePageContent(
     val positionFocusRequester = remember { FocusRequester() }
     LaunchedEffect(Unit) {
         positionFocusRequester.tryRequestFocus()
+        // Hacky, but mostly works
+        delay(50)
+        listState.animateScrollToItem(position.row)
     }
     LaunchedEffect(position) {
         listState.animateScrollToItem(position.row)
