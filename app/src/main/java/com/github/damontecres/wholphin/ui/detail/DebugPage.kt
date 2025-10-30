@@ -66,10 +66,10 @@ class DebugViewModel
                     withContext(Dispatchers.Main) {
                         itemPlaybacks.value = results
                     }
-                    val logcat = getLogCatLines()
-                    withContext(Dispatchers.Main) {
-                        this@DebugViewModel.logcat.value = logcat
-                    }
+                }
+                val logcat = getLogCatLines()
+                withContext(Dispatchers.Main) {
+                    this@DebugViewModel.logcat.value = logcat
                 }
             }
         }
@@ -95,7 +95,7 @@ class DebugViewModel
                     while (count < lineCount) {
                         val line = reader.readLine()
                         if (line != null) {
-                            val level = line.split(" ").getOrNull(4)
+                            val level = line.split(Regex("\\s+")).getOrNull(4)
                             val logLevel =
                                 when (level?.uppercase()) {
                                     "V" -> Log.VERBOSE
