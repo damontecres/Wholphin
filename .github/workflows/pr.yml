@@ -53,7 +53,7 @@ jobs:
         with:
           path: |
             app/libs
-          key: ${{ runner.os }}-${{ hashFiles('gradle/libs.versions.toml,build_ffmpeg_decoder.sh') }}
+          key: ${{ runner.os }}-${{ hashFiles('/gradle/libs.versions.toml,/build_ffmpeg_decoder.sh') }}
       - name: Build ffmpeg decoder
         id: ffmpeg-decoder
         if: steps.cache_ffmpeg_module.outputs.cache-hit != 'true'
