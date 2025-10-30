@@ -12,6 +12,7 @@ defaults:
 env:
   APK_SHORT_NAME: Wholphin.apk
   BUILD_TOOLS_VERSION: 36.0.0
+  NDK_VERSION: "29.0.14206865"
 
 jobs:
   publish:
@@ -36,7 +37,11 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
         with:
-          packages: "tools platform-tools build-tools;${{ env.BUILD_TOOLS_VERSION }}"
+          packages: "tools platform-tools build-tools;${{ env.BUILD_TOOLS_VERSION }} ndk;${{ env.NDK_VERSION }}"
+      - name: Build ffmpeg decoder
+        id: ffmpeg-decoder
+        run: |
+          ./build_ffmpeg_decoder.sh "${{ env.ANDROID_SDK_ROOT }}/ndk/${{ env.NDK_VERSION }}"
       - name: Build app
         id: buildapp
         env:

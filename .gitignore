@@ -48,3 +48,8 @@ google-services.json
 .externalNativeBuild
 .cxx
 local.properties
+local_scripts/
+app/libs/
+ffmpeg_decoder/
+app/release/
+app/debug/

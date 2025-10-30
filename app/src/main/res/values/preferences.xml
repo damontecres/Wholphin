@@ -31,4 +31,10 @@
         <item>Fill Height</item>
     </string-array>
 
+    <string-array name="ffmpeg_extension_options">
+        <item>Only use FFmpeg if no built-in decoder exists</item>
+        <item>Prefer to use FFmpeg over built-in decoders</item>
+        <item>Never use FFmpeg decoders</item>
+    </string-array>
+
 </resources>

@@ -18,11 +18,18 @@ enum PrefContentScale{
   FILL_HEIGHT = 5;
 }
 
+enum MediaExtensionStatus{
+  MES_FALLBACK = 0;
+  MES_PREFERRED = 1;
+  MES_DISABLED = 2;
+}
+
 message PlaybackOverrides{
   bool ac3_supported = 1;
   bool downmix_stereo = 2;
   bool direct_play_ass = 3;
   bool direct_play_pgs = 4;
+  MediaExtensionStatus media_extensions_enabled = 5;
 }
 
 message PlaybackPreferences {

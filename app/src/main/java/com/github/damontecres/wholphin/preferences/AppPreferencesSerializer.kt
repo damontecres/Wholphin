@@ -52,6 +52,8 @@ class AppPreferencesSerializer
                                             downmixStereo = AppPreference.DownMixStereo.defaultValue
                                             directPlayAss = AppPreference.DirectPlayAss.defaultValue
                                             directPlayPgs = AppPreference.DirectPlayPgs.defaultValue
+                                            mediaExtensionsEnabled =
+                                                AppPreference.FfmpegPreference.defaultValue
                                         }.build()
                             }.build()
                     homePagePreferences =

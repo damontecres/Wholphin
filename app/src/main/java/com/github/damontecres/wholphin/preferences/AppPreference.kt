@@ -535,6 +535,19 @@ sealed interface AppPreference<T> {
                 valueToIndex = { it.number },
             )
 
+        val FfmpegPreference =
+            AppChoicePreference<MediaExtensionStatus>(
+                title = R.string.ffmpeg_extension_pref,
+                defaultValue = MediaExtensionStatus.MES_FALLBACK,
+                getter = { it.playbackPreferences.overrides.mediaExtensionsEnabled },
+                setter = { prefs, value ->
+                    prefs.updatePlaybackOverrides { mediaExtensionsEnabled = value }
+                },
+                displayValues = R.array.ffmpeg_extension_options,
+                indexToValue = { MediaExtensionStatus.forNumber(it) },
+                valueToIndex = { it.number },
+            )
+
         val ClearImageCache =
             AppClickablePreference(
                 title = R.string.clear_image_cache,
@@ -657,6 +670,7 @@ val advancedPreferences =
                     AppPreference.Ac3Supported,
                     AppPreference.DirectPlayAss,
                     AppPreference.DirectPlayPgs,
+                    AppPreference.FfmpegPreference,
                 ),
         ),
         PreferenceGroup(
