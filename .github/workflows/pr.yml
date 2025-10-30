@@ -36,14 +36,6 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0 # Need the tags to build
-      - name: Load ffmpeg module cache
-        id: cache_ffmpeg_module
-        uses: actions/cache/restore@v4
-        with:
-          path: |
-            app/libs
-          key: ${{ runner.os }}-ffmpeg-${{ hashFiles('**/libs.versions.toml', '**/build_ffmpeg_decoder.sh') }}
-
       - name: Setup JDK
         uses: actions/setup-java@v4
         with:
@@ -55,7 +47,13 @@ jobs:
         with:
           packages: "tools platform-tools build-tools;${{ env.BUILD_TOOLS_VERSION }} ndk;${{ env.NDK_VERSION }}"
 
-
+      - name: Load ffmpeg module cache
+        id: cache_ffmpeg_module
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            app/libs
+          key: ${{ runner.os }}-ffmpeg-${{ hashFiles('**/libs.versions.toml', '**/build_ffmpeg_decoder.sh') }}
       - name: Build ffmpeg decoder
         id: ffmpeg-decoder
         if: steps.cache_ffmpeg_module.outputs.cache-hit != 'true'
