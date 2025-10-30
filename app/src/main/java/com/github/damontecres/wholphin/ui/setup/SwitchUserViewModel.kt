@@ -55,12 +55,18 @@ class SwitchUserViewModel
         val addServerState = MutableLiveData<LoadingState>(LoadingState.Pending)
         val switchUserState = MutableLiveData<LoadingState>(LoadingState.Pending)
 
+        val loginAttempts = MutableLiveData(0)
+
         fun clearAddServerState() {
             addServerState.value = LoadingState.Pending
         }
 
         fun clearSwitchUserState() {
             switchUserState.value = LoadingState.Pending
+        }
+
+        fun resetAttempts() {
+            loginAttempts.value = 0
         }
 
         init {
@@ -338,6 +344,7 @@ class SwitchUserViewModel
             msg: String? = null,
             ex: Exception? = null,
         ) = withContext(Dispatchers.Main) {
+            loginAttempts.value = (loginAttempts.value ?: 0) + 1
             switchUserState.value = LoadingState.Error(msg, ex)
         }
     }

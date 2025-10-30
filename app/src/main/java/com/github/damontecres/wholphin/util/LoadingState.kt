@@ -15,5 +15,8 @@ sealed interface LoadingState {
         val exception: Throwable? = null,
     ) : LoadingState {
         constructor(exception: Throwable) : this(null, exception)
+
+        val localizedMessage: String =
+            listOfNotNull(message, exception?.localizedMessage).joinToString(" - ")
     }
 }

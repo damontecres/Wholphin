@@ -31,6 +31,7 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.tv.material3.Button
 import androidx.tv.material3.MaterialTheme
@@ -61,6 +62,7 @@ fun SwitchUserContent(
     var showAddUser by remember { mutableStateOf(false) }
 
     val userState by viewModel.switchUserState.observeAsState(LoadingState.Pending)
+    val loginAttempts by viewModel.loginAttempts.observeAsState(0)
     LaunchedEffect(userState) {
         if (!showAddUser) {
             when (val s = userState) {
@@ -129,6 +131,7 @@ fun SwitchUserContent(
             var useQuickConnect by remember { mutableStateOf(quickConnectEnabled) }
             LaunchedEffect(Unit) {
                 viewModel.clearSwitchUserState()
+                viewModel.resetAttempts()
                 if (useQuickConnect) {
                     viewModel.initiateQuickConnect(server)
                 }
@@ -138,6 +141,10 @@ fun SwitchUserContent(
                     viewModel.cancelQuickConnect()
                     showAddUser = false
                 },
+                properties =
+                    DialogProperties(
+                        usePlatformDefaultWidth = false,
+                    ),
             ) {
                 Column(
                     verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -145,7 +152,7 @@ fun SwitchUserContent(
                         Modifier
                             .focusGroup()
                             .padding(16.dp)
-                            .fillMaxWidth(),
+                            .fillMaxWidth(.66f),
                 ) {
                     if (useQuickConnect) {
                         if (quickConnect == null && userState !is LoadingState.Error) {
@@ -206,7 +213,7 @@ fun SwitchUserContent(
                         UserStateError(userState)
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.focusGroup(),
+                            modifier = Modifier.align(Alignment.CenterHorizontally),
                         ) {
                             Text(
                                 text = "Username",
@@ -231,7 +238,7 @@ fun SwitchUserContent(
                         }
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier,
+                            modifier = Modifier.align(Alignment.CenterHorizontally),
                         ) {
                             Text(
                                 text = "Password",
@@ -265,6 +272,20 @@ fun SwitchUserContent(
                             Text("Login")
                         }
                     }
+                    if (loginAttempts > 2) {
+                        Text(
+                            text = "Trouble logging in?",
+                            modifier = Modifier.align(Alignment.CenterHorizontally),
+                        )
+                        Button(
+                            onClick = {
+                                viewModel.navigationManager.navigateTo(Destination.Debug)
+                            },
+                            modifier = Modifier.align(Alignment.CenterHorizontally),
+                        ) {
+                            Text("Show debug info")
+                        }
+                    }
                 }
             }
         }
@@ -288,11 +309,19 @@ private fun UserStateError(
                         color = MaterialTheme.colorScheme.error,
                     )
                 }
-                s.exception?.localizedMessage?.let {
-                    Text(
-                        text = it,
-                        color = MaterialTheme.colorScheme.error,
-                    )
+                if (s.exception != null) {
+                    s.exception.localizedMessage?.let {
+                        Text(
+                            text = it,
+                            color = MaterialTheme.colorScheme.error,
+                        )
+                    }
+                    s.exception.cause?.localizedMessage?.let {
+                        Text(
+                            text = "Cause: $it",
+                            color = MaterialTheme.colorScheme.error,
+                        )
+                    }
                 }
             }
         }

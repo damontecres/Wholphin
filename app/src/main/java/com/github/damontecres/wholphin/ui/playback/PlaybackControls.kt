@@ -20,6 +20,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.shape.CircleShape
@@ -638,7 +640,7 @@ private fun BottomDialog(
                     .padding(8.dp)
                     .background(Color.DarkGray, shape = RoundedCornerShape(16.dp)),
         ) {
-            Column(
+            LazyColumn(
                 modifier =
                     Modifier
                         .fillMaxWidth()
@@ -647,7 +649,7 @@ private fun BottomDialog(
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                choices.forEachIndexed { index, choice ->
+                itemsIndexed(choices) { index, choice ->
                     val interactionSource = remember { MutableInteractionSource() }
                     val focused = interactionSource.collectIsFocusedAsState().value
                     val color =

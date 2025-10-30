@@ -1,5 +1,6 @@
 package com.github.damontecres.wholphin.ui.main
 
+import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,6 +21,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -32,6 +34,7 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -62,6 +65,7 @@ import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.LoadingState
 import com.github.damontecres.wholphin.util.formatDateTime
 import com.github.damontecres.wholphin.util.seasonEpisode
+import kotlinx.coroutines.delay
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.extensions.ticks
 import kotlin.time.Duration
@@ -78,6 +82,7 @@ fun HomePage(
     modifier: Modifier = Modifier,
     viewModel: HomeViewModel = hiltViewModel(),
 ) {
+    val context = LocalContext.current
     var firstLoad by rememberSaveable { mutableStateOf(true) }
     LaunchedEffect(Unit) {
         viewModel.init(preferences).join()
@@ -85,6 +90,20 @@ fun HomePage(
     }
     val loading by viewModel.loadingState.observeAsState(LoadingState.Loading)
     val homeRows by viewModel.homeRows.observeAsState(listOf())
+    LaunchedEffect(loading) {
+        val state = loading
+        if (!firstLoad && state is LoadingState.Error) {
+            // After the first load, refreshes occur in the background and an ErrorMessage won't show
+            // So send a Toast on errors instead
+            Toast
+                .makeText(
+                    context,
+                    "Home refresh error: ${state.localizedMessage}",
+                    Toast.LENGTH_LONG,
+                ).show()
+        }
+    }
+
     when (val state = if (firstLoad) loading else LoadingState.Success) {
         is LoadingState.Error -> ErrorMessage(state)
 
@@ -148,6 +167,7 @@ fun HomePageContent(
     onFocusPosition: ((RowColumn) -> Unit)? = null,
     loadingState: LoadingState? = null,
 ) {
+    val scope = rememberCoroutineScope()
     var position by rememberSaveable(stateSaver = RowColumnSaver) {
         mutableStateOf(RowColumn(0, 0))
     }
@@ -158,6 +178,9 @@ fun HomePageContent(
     val positionFocusRequester = remember { FocusRequester() }
     LaunchedEffect(Unit) {
         positionFocusRequester.tryRequestFocus()
+        // Hacky, but mostly works
+        delay(50)
+        listState.animateScrollToItem(position.row)
     }
     LaunchedEffect(position) {
         listState.animateScrollToItem(position.row)
