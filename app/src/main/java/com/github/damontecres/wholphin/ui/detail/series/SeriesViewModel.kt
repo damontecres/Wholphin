@@ -146,7 +146,7 @@ class SeriesViewModel
             seriesId: UUID,
             playThemeSongs: ThemeSongVolume,
         ) {
-            viewModelScope.launch(ExceptionHandler()) {
+            viewModelScope.launchIO {
                 val themeSongs = api.libraryApi.getThemeSongs(seriesId).content
                 themeSongs.items.firstOrNull()?.let { theme ->
                     theme.mediaSources?.firstOrNull()?.let { source ->
@@ -161,7 +161,7 @@ class SeriesViewModel
                                         Codec.Audio.FLAC,
                                     ),
                             )
-                        Timber.Forest.v("Found theme song for series $seriesId")
+                        Timber.v("Found theme song for series $seriesId")
                         withContext(Dispatchers.Main) {
                             themeSongPlayer.play(playThemeSongs, url)
                             addCloseable {

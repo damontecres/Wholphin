@@ -3,12 +3,12 @@ package com.github.damontecres.wholphin.util
 import android.content.Context
 import android.widget.Toast
 import com.github.damontecres.wholphin.hilt.IoCoroutineScope
+import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.showToast
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.launch
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.sessionApi
 import org.jellyfin.sdk.api.sockets.subscribe
@@ -32,7 +32,7 @@ class ServerEventListener
         }
 
         fun init() {
-            scope.launch(ExceptionHandler()) {
+            scope.launchIO {
                 api.sessionApi.postCapabilities(
                     playableMediaTypes = listOf(MediaType.VIDEO),
                     supportedCommands =
