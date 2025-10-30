@@ -150,8 +150,8 @@ class MainActivity : AppCompatActivity() {
                                         }
                                     }
                                 }
-                                LaunchedEffect(server) {
-                                    serverEventListener.init()
+                                LaunchedEffect(server, user) {
+                                    serverEventListener.init(server, user)
                                 }
                                 ApplicationContent(
                                     user = user,
