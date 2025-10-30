@@ -56,6 +56,7 @@ import com.github.damontecres.wholphin.util.subtitleMimeTypes
 import com.github.damontecres.wholphin.util.supportItemKinds
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -590,7 +591,7 @@ class PlaybackViewModel
                     currentItemPlayback.value!!,
                     index,
                     currentItemPlayback.value?.subtitleIndex,
-                    player.currentPosition,
+                    onMain { player.currentPosition },
                     true,
                 )
             }
@@ -603,7 +604,7 @@ class PlaybackViewModel
                     currentItemPlayback.value!!,
                     currentItemPlayback.value?.audioIndex,
                     index,
-                    player.currentPosition,
+                    onMain { player.currentPosition },
                     true,
                 )
             }
@@ -656,7 +657,7 @@ class PlaybackViewModel
                         while (isActive) {
                             delay(500L)
                             val currentTicks =
-                                withContext(Dispatchers.Main) { player.currentPosition.milliseconds.inWholeTicks }
+                                onMain { player.currentPosition.milliseconds.inWholeTicks }
                             val currentSegment =
                                 segments.items
                                     .firstOrNull {
@@ -955,6 +956,8 @@ val Format.idAsInt: Int?
                 it.toIntOrNull()
             }
         }
+
+suspend fun <T> onMain(block: suspend CoroutineScope.() -> T) = withContext(Dispatchers.Main, block)
 
 @OptIn(UnstableApi::class)
 private fun applyTrackSelections(
