@@ -42,7 +42,7 @@ jobs:
         with:
           path: |
             app/libs
-          key: ${{ runner.os }}-ffmpeg-${{ hashFiles('/gradle/libs.versions.toml', '/build_ffmpeg_decoder.sh') }}
+          key: ${{ runner.os }}-ffmpeg-${{ hashFiles('**/gradle/libs.versions.toml', '**/build_ffmpeg_decoder.sh') }}
 
       - name: Setup JDK
         uses: actions/setup-java@v4
