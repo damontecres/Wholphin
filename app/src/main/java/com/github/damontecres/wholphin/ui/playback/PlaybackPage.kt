@@ -348,6 +348,7 @@ fun PlaybackPage(
                                     }
 
                                     PlaybackAction.SearchCaptions -> {
+                                        controllerViewState.hideControls()
                                         viewModel.searchForSubtitles()
                                     }
 
