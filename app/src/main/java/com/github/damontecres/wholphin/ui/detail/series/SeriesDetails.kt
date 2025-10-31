@@ -176,6 +176,7 @@ fun SeriesDetails(
     overviewDialog?.let { info ->
         ItemDetailsDialog(
             info = info,
+            showFilePath = false,
             onDismissRequest = { overviewDialog = null },
         )
     }
