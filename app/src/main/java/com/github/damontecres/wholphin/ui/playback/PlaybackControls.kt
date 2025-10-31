@@ -379,7 +379,7 @@ fun RightPlaybackButtons(
     ) {
         // Captions
         PlaybackButton(
-            enabled = subtitleStreams.isNotEmpty(),
+            enabled = true,
             iconRes = R.drawable.captions_svgrepo_com,
             onClick = {
                 onControllerInteractionForDialog.invoke()
