@@ -479,7 +479,7 @@ class PlaybackViewModel
 
                 val externalSubtitle =
                     source.mediaStreams
-                        ?.firstOrNull { it.type == MediaStreamType.SUBTITLE && it.index == subtitleIndex && it.isExternal }
+                        ?.firstOrNull { it.type == MediaStreamType.SUBTITLE && it.isExternal && it.index == subtitleIndex }
                         ?.let {
                             it.deliveryUrl?.let { deliveryUrl ->
                                 var flags = 0
@@ -488,7 +488,7 @@ class PlaybackViewModel
                                 MediaItem.SubtitleConfiguration
                                     .Builder(
                                         api.createUrl(deliveryUrl).toUri(),
-                                    ).setId("${it.index + 1}") // Indexes are 1 based
+                                    ).setId("e:${it.index}")
                                     .setMimeType(subtitleMimeTypes[it.codec])
                                     .setLanguage(it.language)
                                     .setSelectionFlags(flags)
@@ -564,6 +564,7 @@ class PlaybackViewModel
                                             audioIndex,
                                             subtitleIndex,
                                             externalSubtitleCount,
+                                            externalSubtitle != null,
                                         )
                                         player.removeListener(this)
                                     }
@@ -966,18 +967,21 @@ private fun applyTrackSelections(
     audioIndex: Int?,
     subtitleIndex: Int?,
     externalSubtitleCount: Int,
+    subtitleIsExternal: Boolean,
 ) {
     if (source.supportsDirectPlay) {
         if (subtitleIndex != null && subtitleIndex >= 0) {
+            val indexToFind =
+                subtitleIndex + if (subtitleIsExternal) 0 else (if (externalSubtitleCount > 0) -1 else 1)
             val chosenTrack =
                 player.currentTracks.groups.firstOrNull { group ->
                     group.type == C.TRACK_TYPE_TEXT && group.isSupported &&
                         (0..<group.mediaTrackGroup.length)
                             .map {
                                 group.getTrackFormat(it).idAsInt
-                            }.contains(subtitleIndex + 1) // Indexes are 1 based
+                            }.contains(indexToFind)
                 }
-            Timber.v("Chosen subtitle track: $chosenTrack")
+            Timber.v("Chosen subtitle ($subtitleIndex/$indexToFind) track: $chosenTrack")
             chosenTrack?.let {
                 player.trackSelectionParameters =
                     player.trackSelectionParameters
