@@ -142,10 +142,7 @@ fun MovieDetails(
                             ItemDetailsDialogInfo(
                                 title = movie.name ?: "Unknown",
                                 overview = movie.data.overview,
-                                files =
-                                    movie.data.mediaSources
-                                        ?.mapNotNull { it.path }
-                                        .orEmpty(),
+                                files = movie.data.mediaSources.orEmpty(),
                             )
                     },
                     moreOnClick = {
@@ -228,6 +225,10 @@ fun MovieDetails(
     overviewDialog?.let { info ->
         ItemDetailsDialog(
             info = info,
+            showFilePath =
+                viewModel.serverRepository.currentUserDto
+                    ?.policy
+                    ?.isAdministrator == true,
             onDismissRequest = { overviewDialog = null },
         )
     }

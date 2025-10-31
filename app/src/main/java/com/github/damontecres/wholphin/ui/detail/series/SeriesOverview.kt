@@ -315,10 +315,7 @@ fun SeriesOverview(
                                 ItemDetailsDialogInfo(
                                     title = it.name ?: "Unknown",
                                     overview = it.data.overview,
-                                    files =
-                                        it.data.mediaSources
-                                            ?.mapNotNull { it.path }
-                                            .orEmpty(),
+                                    files = it.data.mediaSources.orEmpty(),
                                 )
                         }
                     },
@@ -331,6 +328,10 @@ fun SeriesOverview(
     overviewDialog?.let { info ->
         ItemDetailsDialog(
             info = info,
+            showFilePath =
+                viewModel.serverRepository.currentUserDto
+                    ?.policy
+                    ?.isAdministrator == true,
             onDismissRequest = { overviewDialog = null },
         )
     }
