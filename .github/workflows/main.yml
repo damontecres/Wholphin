@@ -56,10 +56,25 @@ jobs:
           echo "LATEST_TAG=$LATEST_TAG" >> "$GITHUB_ENV"
           echo "VERSION_NAME=$VERSION_NAME" >> "$GITHUB_ENV"
           echo "TAG_NAME=$TAG_NAME" >> "$GITHUB_ENV"
+      - name: Load ffmpeg module cache
+        id: cache_ffmpeg_module
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            app/libs
+          key: ${{ runner.os }}-ffmpeg-${{ hashFiles('**/libs.versions.toml', '**/build_ffmpeg_decoder.sh') }}
       - name: Build ffmpeg decoder
         id: ffmpeg-decoder
+        if: steps.cache_ffmpeg_module.outputs.cache-hit != 'true'
         run: |
           ./build_ffmpeg_decoder.sh "${{ env.ANDROID_SDK_ROOT }}/ndk/${{ env.NDK_VERSION }}"
+      - name: Save ffmpeg module cache
+        id: cache_ffmpeg_module_save
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            app/libs
+          key: ${{ steps.cache_ffmpeg_module.outputs.cache-primary-key }}
       - name: Build release app
         id: build
         env:
