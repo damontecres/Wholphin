@@ -80,7 +80,6 @@ import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.DeviceProfile
 import org.jellyfin.sdk.model.api.MediaSegmentDto
 import org.jellyfin.sdk.model.api.MediaSegmentType
-import org.jellyfin.sdk.model.api.MediaSourceInfo
 import org.jellyfin.sdk.model.api.MediaStreamType
 import org.jellyfin.sdk.model.api.PlayMethod
 import org.jellyfin.sdk.model.api.PlaybackInfoDto
@@ -560,7 +559,7 @@ class PlaybackViewModel
                                     if (tracks.groups.isNotEmpty()) {
                                         applyTrackSelections(
                                             player,
-                                            source,
+                                            source.supportsDirectPlay,
                                             audioIndex,
                                             subtitleIndex,
                                             externalSubtitleCount,
@@ -1026,17 +1025,24 @@ suspend fun <T> onMain(block: suspend CoroutineScope.() -> T) = withContext(Disp
 @OptIn(UnstableApi::class)
 private fun applyTrackSelections(
     player: Player,
-    source: MediaSourceInfo,
+    supportsDirectPlay: Boolean,
     audioIndex: Int?,
     subtitleIndex: Int?,
     externalSubtitleCount: Int,
     subtitleIsExternal: Boolean,
 ) {
-    if (source.supportsDirectPlay) {
-        if (subtitleIndex != null && subtitleIndex >= 0) {
-            val indexToFind =
-                subtitleIndex + if (subtitleIsExternal) 0 else (if (externalSubtitleCount > 0) -1 else 1)
-            val chosenTrack =
+    if (subtitleIndex != null && subtitleIndex >= 0 && (subtitleIsExternal || supportsDirectPlay)) {
+        val chosenTrack =
+            if (subtitleIsExternal) {
+                player.currentTracks.groups.firstOrNull { group ->
+                    group.type == C.TRACK_TYPE_TEXT && group.isSupported &&
+                        (0..<group.mediaTrackGroup.length)
+                            .mapNotNull {
+                                group.getTrackFormat(it).id
+                            }.any { it.endsWith("e:$subtitleIndex") }
+                }
+            } else {
+                val indexToFind = subtitleIndex - externalSubtitleCount + 1
                 player.currentTracks.groups.firstOrNull { group ->
                     group.type == C.TRACK_TYPE_TEXT && group.isSupported &&
                         (0..<group.mediaTrackGroup.length)
@@ -1044,48 +1050,51 @@ private fun applyTrackSelections(
                                 group.getTrackFormat(it).idAsInt
                             }.contains(indexToFind)
                 }
-            Timber.v("Chosen subtitle ($subtitleIndex/$indexToFind) track: $chosenTrack")
-            chosenTrack?.let {
-                player.trackSelectionParameters =
-                    player.trackSelectionParameters
-                        .buildUpon()
-                        .setTrackTypeDisabled(C.TRACK_TYPE_TEXT, false)
-                        .setOverrideForType(
-                            TrackSelectionOverride(
-                                chosenTrack.mediaTrackGroup,
-                                0,
-                            ),
-                        ).build()
             }
-        } else {
+
+        Timber.v("Chosen subtitle ($subtitleIndex) track: $chosenTrack")
+        chosenTrack?.let {
             player.trackSelectionParameters =
                 player.trackSelectionParameters
                     .buildUpon()
-                    .setTrackTypeDisabled(C.TRACK_TYPE_TEXT, true)
-                    .build()
+                    .setTrackTypeDisabled(C.TRACK_TYPE_TEXT, false)
+                    .setOverrideForType(
+                        TrackSelectionOverride(
+                            chosenTrack.mediaTrackGroup,
+                            0,
+                        ),
+                    ).build()
         }
-        if (audioIndex != null) {
-            val chosenTrack =
-                player.currentTracks.groups.firstOrNull { group ->
-                    group.type == C.TRACK_TYPE_AUDIO && group.isSupported &&
-                        (0..<group.mediaTrackGroup.length)
-                            .map {
-                                group.getTrackFormat(it).idAsInt
-                            }.contains(audioIndex - externalSubtitleCount + 1) // Indexes are 1 based
-                }
-            Timber.v("Chosen audio track: $chosenTrack")
-            chosenTrack?.let {
-                player.trackSelectionParameters =
-                    player.trackSelectionParameters
-                        .buildUpon()
-                        .setTrackTypeDisabled(C.TRACK_TYPE_AUDIO, false)
-                        .setOverrideForType(
-                            TrackSelectionOverride(
-                                chosenTrack.mediaTrackGroup,
-                                0,
-                            ),
-                        ).build()
+    } else {
+        player.trackSelectionParameters =
+            player.trackSelectionParameters
+                .buildUpon()
+                .setTrackTypeDisabled(C.TRACK_TYPE_TEXT, true)
+                .build()
+    }
+    if (audioIndex != null && supportsDirectPlay) {
+        val indexToFind =
+            audioIndex - externalSubtitleCount + 1
+        val chosenTrack =
+            player.currentTracks.groups.firstOrNull { group ->
+                group.type == C.TRACK_TYPE_AUDIO && group.isSupported &&
+                    (0..<group.mediaTrackGroup.length)
+                        .map {
+                            group.getTrackFormat(it).idAsInt
+                        }.contains(indexToFind)
             }
+        Timber.v("Chosen audio ($audioIndex/$indexToFind) track: $chosenTrack")
+        chosenTrack?.let {
+            player.trackSelectionParameters =
+                player.trackSelectionParameters
+                    .buildUpon()
+                    .setTrackTypeDisabled(C.TRACK_TYPE_AUDIO, false)
+                    .setOverrideForType(
+                        TrackSelectionOverride(
+                            chosenTrack.mediaTrackGroup,
+                            0,
+                        ),
+                    ).build()
         }
     }
 }
