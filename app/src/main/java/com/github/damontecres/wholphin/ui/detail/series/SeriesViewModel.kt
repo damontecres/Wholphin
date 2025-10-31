@@ -61,7 +61,7 @@ class SeriesViewModel
     constructor(
         api: ApiClient,
         @param:ApplicationContext val context: Context,
-        private val serverRepository: ServerRepository,
+        val serverRepository: ServerRepository,
         private val navigationManager: NavigationManager,
         private val itemPlaybackRepository: ItemPlaybackRepository,
         private val themeSongPlayer: ThemeSongPlayer,

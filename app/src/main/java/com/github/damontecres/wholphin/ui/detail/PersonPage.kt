@@ -193,6 +193,7 @@ fun PersonPage(
                                 overview = person.data.overview,
                                 files = listOf(),
                             ),
+                        showFilePath = false,
                         onDismissRequest = { showOverviewDialog = false },
                     )
                 }
@@ -339,8 +340,10 @@ fun PersonHeader(
 //                    .fillMaxWidth(.7f)
                     .weight(3f)
                     .padding(top = 16.dp, end = 32.dp)
-                    .background(MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp), RoundedCornerShape(10))
-                    .padding(16.dp),
+                    .background(
+                        MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp),
+                        RoundedCornerShape(10),
+                    ).padding(16.dp),
         ) {
             Text(
                 text = name,
