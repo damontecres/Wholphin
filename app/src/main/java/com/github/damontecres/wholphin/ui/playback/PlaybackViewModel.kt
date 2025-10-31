@@ -1032,17 +1032,27 @@ private fun applyTrackSelections(
     subtitleIsExternal: Boolean,
 ) {
     if (subtitleIndex != null && subtitleIndex >= 0 && (subtitleIsExternal || supportsDirectPlay)) {
-        val indexToFind =
-            subtitleIndex + if (subtitleIsExternal) 0 else (if (externalSubtitleCount > 0) -1 else 1)
         val chosenTrack =
-            player.currentTracks.groups.firstOrNull { group ->
-                group.type == C.TRACK_TYPE_TEXT && group.isSupported &&
-                    (0..<group.mediaTrackGroup.length)
-                        .map {
-                            group.getTrackFormat(it).idAsInt
-                        }.contains(indexToFind)
+            if (subtitleIsExternal) {
+                player.currentTracks.groups.firstOrNull { group ->
+                    group.type == C.TRACK_TYPE_TEXT && group.isSupported &&
+                        (0..<group.mediaTrackGroup.length)
+                            .mapNotNull {
+                                group.getTrackFormat(it).id
+                            }.any { it.endsWith("e:$subtitleIndex") }
+                }
+            } else {
+                val indexToFind = subtitleIndex - externalSubtitleCount + 1
+                player.currentTracks.groups.firstOrNull { group ->
+                    group.type == C.TRACK_TYPE_TEXT && group.isSupported &&
+                        (0..<group.mediaTrackGroup.length)
+                            .map {
+                                group.getTrackFormat(it).idAsInt
+                            }.contains(indexToFind)
+                }
             }
-        Timber.v("Chosen subtitle ($subtitleIndex/$indexToFind) track: $chosenTrack")
+
+        Timber.v("Chosen subtitle ($subtitleIndex) track: $chosenTrack")
         chosenTrack?.let {
             player.trackSelectionParameters =
                 player.trackSelectionParameters
