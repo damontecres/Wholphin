@@ -67,6 +67,7 @@ import com.github.damontecres.wholphin.ui.FontAwesome
 import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.preferences.PreferenceScreenOption
+import com.github.damontecres.wholphin.ui.setValueOnMain
 import com.github.damontecres.wholphin.ui.spacedByWithFooter
 import com.github.damontecres.wholphin.ui.toServerString
 import com.github.damontecres.wholphin.ui.tryRequestFocus
@@ -75,6 +76,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.model.api.CollectionType
 import org.jellyfin.sdk.model.api.DeviceProfile
+import timber.log.Timber
 import java.util.UUID
 import javax.inject.Inject
 
@@ -96,11 +98,46 @@ class NavDrawerViewModel
                 val all = all ?: navDrawerItemRepository.getNavDrawerItems()
                 this@NavDrawerViewModel.all = all
                 val libraries = navDrawerItemRepository.getFilteredNavDrawerItems(all)
+                val moreLibraries = all.toMutableList().apply { removeAll(libraries) }
 
                 withContext(Dispatchers.Main) {
-                    this@NavDrawerViewModel.moreLibraries.value =
-                        all.toMutableList().apply { removeAll(libraries) }
+                    this@NavDrawerViewModel.moreLibraries.value = moreLibraries
                     this@NavDrawerViewModel.libraries.value = libraries
+                }
+                val asDestinations =
+                    (libraries + listOf(NavDrawerItem.More) + moreLibraries).map {
+                        if (it is ServerNavDrawerItem) {
+                            it.destination
+                        } else if (it is NavDrawerItem.Favorites) {
+                            Destination.Favorites
+                        } else {
+                            null
+                        }
+                    }
+
+                val backstack = navigationManager.backStack.toList().reversed()
+                for (i in 0..<backstack.size) {
+                    val key = backstack[i]
+                    if (key is Destination) {
+                        val index =
+                            if (key is Destination.Home) {
+                                -1
+                            } else if (key is Destination.Search) {
+                                -2
+                            } else {
+                                val idx = asDestinations.indexOf(key)
+                                if (idx >= 0) {
+                                    idx
+                                } else {
+                                    null
+                                }
+                            }
+                        Timber.v("Found $index => $key")
+                        if (index != null) {
+                            selectedIndex.setValueOnMain(index)
+                            break
+                        }
+                    }
                 }
             }
         }
@@ -304,9 +341,9 @@ fun NavDrawer(
                         itemsIndexed(moreLibraries) { index, it ->
                             NavItem(
                                 library = it,
-                                selected = selectedIndex == (index + libraries.size),
+                                selected = selectedIndex == (index + libraries.size + 1),
                                 moreExpanded = showMore,
-                                onClick = { onClick.invoke(index + libraries.size, it) },
+                                onClick = { onClick.invoke(index + libraries.size + 1, it) },
                                 containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp),
                                 modifier =
                                     Modifier
@@ -364,8 +401,8 @@ fun NavigationDrawerScope.IconNavItem(
         leadingContent = {
             val color =
                 when {
-                    isFocused -> LocalContentColor.current
                     selected -> MaterialTheme.colorScheme.border
+                    isFocused -> LocalContentColor.current
                     else -> LocalContentColor.current
                 }
             Icon(
@@ -422,13 +459,6 @@ fun NavigationDrawerScope.NavItem(
                     else -> R.string.fa_film
                 }
         }
-    val isFocused = interactionSource.collectIsFocusedAsState().value
-    val color =
-        when {
-            isFocused -> Color.Unspecified
-            selected -> MaterialTheme.colorScheme.border
-            else -> Color.Unspecified
-        }
     NavigationDrawerItem(
         modifier = modifier,
         selected = false,
@@ -445,12 +475,13 @@ fun NavigationDrawerScope.NavItem(
                         textAlign = TextAlign.Center,
                         fontSize = 16.sp,
                         fontFamily = FontAwesome,
-                        color = color,
+                        color = if (selected) MaterialTheme.colorScheme.border else LocalContentColor.current,
                     )
                 } else {
                     Icon(
                         painter = painterResource(icon),
                         contentDescription = null,
+                        tint = if (selected) MaterialTheme.colorScheme.border else LocalContentColor.current,
                     )
                 }
             }
@@ -463,7 +494,7 @@ fun NavigationDrawerScope.NavItem(
                 )
             }
         },
-        interactionSource = null,
+        interactionSource = interactionSource,
     ) {
         Text(
             modifier = Modifier,
