@@ -70,6 +70,8 @@ class AppPreferencesSerializer
                             .apply {
                                 playThemeSongs = AppPreference.PlayThemeMusic.defaultValue
                                 appThemeColors = AppPreference.ThemeColors.defaultValue
+                                navDrawerSwitchOnFocus =
+                                    AppPreference.NavDrawerSwitchOnFocus.defaultValue
                             }.build()
                 }.build()
 

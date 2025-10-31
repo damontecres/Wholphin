@@ -8,6 +8,7 @@ import androidx.preference.PreferenceManager
 import com.github.damontecres.wholphin.WholphinApplication
 import com.github.damontecres.wholphin.preferences.AppPreference
 import com.github.damontecres.wholphin.preferences.AppPreferences
+import com.github.damontecres.wholphin.preferences.updateInterfacePreferences
 import com.github.damontecres.wholphin.preferences.updatePlaybackOverrides
 import dagger.hilt.android.qualifiers.ApplicationContext
 import timber.log.Timber
@@ -78,6 +79,13 @@ suspend fun upgradeApp(
                 downmixStereo = AppPreference.DownMixStereo.defaultValue
                 directPlayAss = AppPreference.DirectPlayAss.defaultValue
                 directPlayPgs = AppPreference.DirectPlayPgs.defaultValue
+            }
+        }
+    }
+    if (previous.isEqualOrBefore(Version.fromString("0.2.3-6-g0"))) {
+        appPreferences.updateData {
+            it.updateInterfacePreferences {
+                navDrawerSwitchOnFocus = AppPreference.NavDrawerSwitchOnFocus.defaultValue
             }
         }
     }

@@ -21,7 +21,7 @@
     <string name="cancel">Cancel</string>
     <string name="save">Save</string>
     <string name="app_name_long">Wholphin</string>
-    <string name="basic_interface">Basic Interface</string>
+    <string name="ui_interface">Interface</string>
     <string name="playback">Playback</string>
     <string name="about">About</string>
     <string name="advanced_settings">Advanced Settings</string>
@@ -98,5 +98,7 @@
     <string name="send_app_logs_summary">Useful for debugging</string>
     <string name="global_content_scale">Default content scale</string>
     <string name="ffmpeg_extension_pref">Use FFmpeg decoder module</string>
+    <string name="nav_drawer_switch_on_focus">Switch nav drawer pages on focus</string>
+    <string name="nav_drawer_switch_on_focus_summary_off">Click to switch pages</string>
 
 </resources>

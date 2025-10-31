@@ -23,10 +23,13 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -67,14 +70,17 @@ import com.github.damontecres.wholphin.ui.FontAwesome
 import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.preferences.PreferenceScreenOption
+import com.github.damontecres.wholphin.ui.setValueOnMain
 import com.github.damontecres.wholphin.ui.spacedByWithFooter
 import com.github.damontecres.wholphin.ui.toServerString
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.model.api.CollectionType
 import org.jellyfin.sdk.model.api.DeviceProfile
+import timber.log.Timber
 import java.util.UUID
 import javax.inject.Inject
 
@@ -96,11 +102,46 @@ class NavDrawerViewModel
                 val all = all ?: navDrawerItemRepository.getNavDrawerItems()
                 this@NavDrawerViewModel.all = all
                 val libraries = navDrawerItemRepository.getFilteredNavDrawerItems(all)
+                val moreLibraries = all.toMutableList().apply { removeAll(libraries) }
 
                 withContext(Dispatchers.Main) {
-                    this@NavDrawerViewModel.moreLibraries.value =
-                        all.toMutableList().apply { removeAll(libraries) }
+                    this@NavDrawerViewModel.moreLibraries.value = moreLibraries
                     this@NavDrawerViewModel.libraries.value = libraries
+                }
+                val asDestinations =
+                    (libraries + listOf(NavDrawerItem.More) + moreLibraries).map {
+                        if (it is ServerNavDrawerItem) {
+                            it.destination
+                        } else if (it is NavDrawerItem.Favorites) {
+                            Destination.Favorites
+                        } else {
+                            null
+                        }
+                    }
+
+                val backstack = navigationManager.backStack.toList().reversed()
+                for (i in 0..<backstack.size) {
+                    val key = backstack[i]
+                    if (key is Destination) {
+                        val index =
+                            if (key is Destination.Home) {
+                                -1
+                            } else if (key is Destination.Search) {
+                                -2
+                            } else {
+                                val idx = asDestinations.indexOf(key)
+                                if (idx >= 0) {
+                                    idx
+                                } else {
+                                    null
+                                }
+                            }
+                        Timber.v("Found $index => $key")
+                        if (index != null) {
+                            selectedIndex.setValueOnMain(index)
+                            break
+                        }
+                    }
                 }
             }
         }
@@ -182,6 +223,8 @@ fun NavDrawer(
 //    val libraries = if (showPinnedOnly) pinnedLibraries else allLibraries
     // A negative index is a built in page, >=0 is a library
     val selectedIndex by viewModel.selectedIndex.observeAsState(-1)
+    var focusedIndex by remember { mutableIntStateOf(Int.MIN_VALUE) }
+    val derivedFocusedIndex by remember { derivedStateOf { focusedIndex } }
 
     fun setShowMore(value: Boolean) {
         viewModel.setShowMore(value)
@@ -210,6 +253,31 @@ fun NavDrawer(
             }
         }
     }
+    if (preferences.appPreferences.interfacePreferences.navDrawerSwitchOnFocus) {
+        LaunchedEffect(derivedFocusedIndex) {
+            val index = derivedFocusedIndex
+            delay(600)
+            if (index != selectedIndex) {
+                if (index == -1) {
+                    viewModel.setIndex(-1)
+                    viewModel.navigationManager.goToHome()
+                } else if (index in libraries.indices) {
+                    if (moreLibraries.isEmpty() || index != libraries.lastIndex) {
+                        libraries.getOrNull(index)?.let {
+                            onClick.invoke(index, it)
+                        }
+                    }
+                } else {
+                    val newIndex = libraries.size - index + 1
+                    if (newIndex in moreLibraries.indices) {
+                        moreLibraries.getOrNull(newIndex)?.let {
+                            onClick.invoke(index, it)
+                        }
+                    }
+                }
+            }
+        }
+    }
 
     NavigationDrawer(
         modifier =
@@ -234,11 +302,16 @@ fun NavDrawer(
                             .background(MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp)),
                 ) {
                     item {
+                        // Even though some must be clicked, focusing on it should clear other focused items
+                        val interactionSource = remember { MutableInteractionSource() }
+                        val focused by interactionSource.collectIsFocusedAsState()
+                        LaunchedEffect(focused) { if (focused) focusedIndex = Int.MIN_VALUE }
                         IconNavItem(
                             text = user?.name ?: "",
                             subtext = server?.name ?: server?.url,
                             icon = Icons.Default.AccountCircle,
                             selected = false,
+                            interactionSource = interactionSource,
                             onClick = {
                                 viewModel.navigationManager.navigateTo(Destination.UserList)
                             },
@@ -246,10 +319,14 @@ fun NavDrawer(
                         )
                     }
                     item {
+                        val interactionSource = remember { MutableInteractionSource() }
+                        val focused by interactionSource.collectIsFocusedAsState()
+                        LaunchedEffect(focused) { if (focused) focusedIndex = -2 }
                         IconNavItem(
                             text = "Search",
                             icon = Icons.Default.Search,
                             selected = selectedIndex == -2,
+                            interactionSource = interactionSource,
                             onClick = {
                                 viewModel.setIndex(-2)
                                 viewModel.navigationManager.navigateToFromDrawer(Destination.Search)
@@ -263,10 +340,14 @@ fun NavDrawer(
                         )
                     }
                     item {
+                        val interactionSource = remember { MutableInteractionSource() }
+                        val focused by interactionSource.collectIsFocusedAsState()
+                        LaunchedEffect(focused) { if (focused) focusedIndex = -1 }
                         IconNavItem(
                             text = "Home",
                             icon = Icons.Default.Home,
                             selected = selectedIndex == -1,
+                            interactionSource = interactionSource,
                             onClick = {
                                 viewModel.setIndex(-1)
                                 if (destination is Destination.Home) {
@@ -284,10 +365,14 @@ fun NavDrawer(
                         )
                     }
                     itemsIndexed(libraries) { index, it ->
+                        val interactionSource = remember { MutableInteractionSource() }
+                        val focused by interactionSource.collectIsFocusedAsState()
+                        LaunchedEffect(focused) { if (focused) focusedIndex = index }
                         NavItem(
                             library = it,
                             selected = selectedIndex == index,
                             moreExpanded = showMore,
+                            interactionSource = interactionSource,
                             onClick = {
                                 onClick.invoke(index, it)
                                 if (it !is NavDrawerItem.More) setShowMore(false)
@@ -302,26 +387,35 @@ fun NavDrawer(
                     }
                     if (showMore) {
                         itemsIndexed(moreLibraries) { index, it ->
+                            val adjustedIndex = (index + libraries.size + 1)
+                            val interactionSource = remember { MutableInteractionSource() }
+                            val focused by interactionSource.collectIsFocusedAsState()
+                            LaunchedEffect(focused) { if (focused) focusedIndex = adjustedIndex }
                             NavItem(
                                 library = it,
-                                selected = selectedIndex == (index + libraries.size),
+                                selected = selectedIndex == adjustedIndex,
                                 moreExpanded = showMore,
-                                onClick = { onClick.invoke(index + libraries.size, it) },
+                                onClick = { onClick.invoke(adjustedIndex, it) },
                                 containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp),
+                                interactionSource = interactionSource,
                                 modifier =
                                     Modifier
                                         .ifElse(
-                                            selectedIndex == (index + libraries.size),
+                                            selectedIndex == adjustedIndex,
                                             Modifier.focusRequester(focusRequester),
                                         ).animateItem(),
                             )
                         }
                     }
                     item {
+                        val interactionSource = remember { MutableInteractionSource() }
+                        val focused by interactionSource.collectIsFocusedAsState()
+                        LaunchedEffect(focused) { if (focused) focusedIndex = Int.MIN_VALUE }
                         IconNavItem(
                             text = "Settings",
                             icon = Icons.Default.Settings,
                             selected = false,
+                            interactionSource = interactionSource,
                             onClick = {
                                 viewModel.navigationManager.navigateTo(
                                     Destination.Settings(
@@ -364,8 +458,8 @@ fun NavigationDrawerScope.IconNavItem(
         leadingContent = {
             val color =
                 when {
-                    isFocused -> LocalContentColor.current
                     selected -> MaterialTheme.colorScheme.border
+                    isFocused -> LocalContentColor.current
                     else -> LocalContentColor.current
                 }
             Icon(
@@ -422,13 +516,6 @@ fun NavigationDrawerScope.NavItem(
                     else -> R.string.fa_film
                 }
         }
-    val isFocused = interactionSource.collectIsFocusedAsState().value
-    val color =
-        when {
-            isFocused -> Color.Unspecified
-            selected -> MaterialTheme.colorScheme.border
-            else -> Color.Unspecified
-        }
     NavigationDrawerItem(
         modifier = modifier,
         selected = false,
@@ -445,12 +532,13 @@ fun NavigationDrawerScope.NavItem(
                         textAlign = TextAlign.Center,
                         fontSize = 16.sp,
                         fontFamily = FontAwesome,
-                        color = color,
+                        color = if (selected) MaterialTheme.colorScheme.border else LocalContentColor.current,
                     )
                 } else {
                     Icon(
                         painter = painterResource(icon),
                         contentDescription = null,
+                        tint = if (selected) MaterialTheme.colorScheme.border else LocalContentColor.current,
                     )
                 }
             }
@@ -463,7 +551,7 @@ fun NavigationDrawerScope.NavItem(
                 )
             }
         },
-        interactionSource = null,
+        interactionSource = interactionSource,
     ) {
         Text(
             modifier = Modifier,
