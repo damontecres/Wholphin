@@ -81,6 +81,7 @@ message InterfacePreferences {
   bool remember_selected_tab = 2;
   map<string, int32> remembered_tabs = 3;
   AppThemeColors app_theme_colors = 4;
+  bool nav_drawer_switch_on_focus = 5;
 }
 
 message AppPreferences {

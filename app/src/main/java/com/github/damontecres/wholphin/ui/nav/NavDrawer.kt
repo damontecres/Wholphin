@@ -253,21 +253,27 @@ fun NavDrawer(
             }
         }
     }
-    LaunchedEffect(derivedFocusedIndex) {
-        val index = derivedFocusedIndex
-        delay(500)
-        if (index != selectedIndex) {
-            if (index == -1) {
-                viewModel.setIndex(-1)
-                viewModel.navigationManager.goToHome()
-            } else if (index in libraries.indices) {
-                if (moreLibraries.isEmpty() || index != libraries.lastIndex) {
-                    onClick.invoke(index, libraries[index])
-                }
-            } else {
-                val newIndex = libraries.size - index + 1
-                if (newIndex in moreLibraries.indices) {
-                    onClick.invoke(index, moreLibraries[newIndex])
+    if (preferences.appPreferences.interfacePreferences.navDrawerSwitchOnFocus) {
+        LaunchedEffect(derivedFocusedIndex) {
+            val index = derivedFocusedIndex
+            delay(600)
+            if (index != selectedIndex) {
+                if (index == -1) {
+                    viewModel.setIndex(-1)
+                    viewModel.navigationManager.goToHome()
+                } else if (index in libraries.indices) {
+                    if (moreLibraries.isEmpty() || index != libraries.lastIndex) {
+                        libraries.getOrNull(index)?.let {
+                            onClick.invoke(index, it)
+                        }
+                    }
+                } else {
+                    val newIndex = libraries.size - index + 1
+                    if (newIndex in moreLibraries.indices) {
+                        moreLibraries.getOrNull(newIndex)?.let {
+                            onClick.invoke(index, it)
+                        }
+                    }
                 }
             }
         }

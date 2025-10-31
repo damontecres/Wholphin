@@ -590,13 +590,25 @@ sealed interface AppPreference<T> {
                 getter = { },
                 setter = { prefs, _ -> prefs },
             )
+
+        val NavDrawerSwitchOnFocus =
+            AppSwitchPreference(
+                title = R.string.nav_drawer_switch_on_focus,
+                defaultValue = true,
+                getter = { it.interfacePreferences.navDrawerSwitchOnFocus },
+                setter = { prefs, value ->
+                    prefs.updateInterfacePreferences { navDrawerSwitchOnFocus = value }
+                },
+                summaryOn = R.string.enabled,
+                summaryOff = R.string.nav_drawer_switch_on_focus_summary_off,
+            )
     }
 }
 
 val basicPreferences =
     listOf(
         PreferenceGroup(
-            title = R.string.basic_interface,
+            title = R.string.ui_interface,
             preferences =
                 listOf(
                     AppPreference.HomePageItems,
@@ -648,6 +660,13 @@ val uiPreferences = listOf<PreferenceGroup>()
 
 val advancedPreferences =
     listOf(
+        PreferenceGroup(
+            title = R.string.ui_interface,
+            preferences =
+                listOf(
+                    AppPreference.NavDrawerSwitchOnFocus,
+                ),
+        ),
         PreferenceGroup(
             title = R.string.playback,
             preferences =
