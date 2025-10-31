@@ -479,7 +479,7 @@ class PlaybackViewModel
 
                 val externalSubtitle =
                     source.mediaStreams
-                        ?.firstOrNull { it.type == MediaStreamType.SUBTITLE && it.index == subtitleIndex && it.isExternal }
+                        ?.firstOrNull { it.type == MediaStreamType.SUBTITLE && it.isExternal && it.index == subtitleIndex }
                         ?.let {
                             it.deliveryUrl?.let { deliveryUrl ->
                                 var flags = 0
@@ -488,7 +488,7 @@ class PlaybackViewModel
                                 MediaItem.SubtitleConfiguration
                                     .Builder(
                                         api.createUrl(deliveryUrl).toUri(),
-                                    ).setId("${it.index + 1}") // Indexes are 1 based
+                                    ).setId("e:${it.index}")
                                     .setMimeType(subtitleMimeTypes[it.codec])
                                     .setLanguage(it.language)
                                     .setSelectionFlags(flags)
@@ -564,6 +564,7 @@ class PlaybackViewModel
                                             audioIndex,
                                             subtitleIndex,
                                             externalSubtitleCount,
+                                            externalSubtitle != null,
                                         )
                                         player.removeListener(this)
                                     }
@@ -871,7 +872,6 @@ class PlaybackViewModel
                                     compareByDescending<RemoteSubtitleInfo> { it.communityRating }
                                         .thenByDescending { it.downloadCount },
                                 )
-
                         subtitleSearch.setValueOnMain(SubtitleSearch.Success(results))
                     }
                 } catch (ex: Exception) {
@@ -902,9 +902,73 @@ class PlaybackViewModel
                                 itemId = it.sourceId ?: it.itemId,
                                 subtitleId = subtitleId,
                             )
+                            val currentSubtitleStreams =
+                                this@PlaybackViewModel
+                                    .subtitleStreams.value
+                                    .orEmpty()
+                            val subtitleCount = currentSubtitleStreams.size
+                            var newCount = subtitleCount
+                            var maxAttempts = 4
+                            var newStreams: List<SubtitleStream> = listOf()
 
+                            // The server triggers a refresh in the background, so query periodically for the item until its updated
+                            while (maxAttempts > 0 && subtitleCount == newCount) {
+                                maxAttempts--
+                                delay(1500)
+                                dto = api.userLibraryApi.getItem(itemId = dto.id).content
+                                val mediaSource = chooseSource(dto, it)
+                                if (mediaSource == null) {
+                                    // This shouldn't happen, but just in case
+                                    showToast(
+                                        context,
+                                        "Item is no longer playable...",
+                                        Toast.LENGTH_SHORT,
+                                    )
+                                    return@launchIO
+                                }
+
+                                val subtitleStreams =
+                                    mediaSource.mediaStreams
+                                        ?.filter { it.type == MediaStreamType.SUBTITLE }
+                                        .orEmpty()
+                                newCount = subtitleStreams.size
+
+                                if (subtitleCount != newCount) {
+                                    newStreams =
+                                        subtitleStreams.map {
+                                            SubtitleStream(
+                                                it.index,
+                                                it.language,
+                                                it.title,
+                                                it.codec,
+                                                it.codecTag,
+                                                it.isExternal,
+                                                it.isForced,
+                                                it.isDefault,
+                                                it.displayTitle,
+                                            )
+                                        }
+                                    this@PlaybackViewModel.subtitleStreams.setValueOnMain(newStreams)
+                                }
+                            }
+                            if (maxAttempts == 0) {
+                                showToast(
+                                    context,
+                                    "Download is taking a long time, you may need to restart playback",
+                                )
+                            } else {
+                                // Find the new subtitle stream
+                                val newStream =
+                                    newStreams
+                                        .toMutableList()
+                                        .apply {
+                                            removeAll(currentSubtitleStreams)
+                                        }.firstOrNull { it.external }
+                                if (newStream != null) {
+                                    changeSubtitleStream(newStream.index).join()
+                                }
+                            }
                             subtitleSearch.setValueOnMain(null)
-                            changeSubtitleStream(0).join()
                             withContext(Dispatchers.Main) {
                                 if (wasPlaying) {
                                     player.play()
@@ -966,18 +1030,21 @@ private fun applyTrackSelections(
     audioIndex: Int?,
     subtitleIndex: Int?,
     externalSubtitleCount: Int,
+    subtitleIsExternal: Boolean,
 ) {
     if (source.supportsDirectPlay) {
         if (subtitleIndex != null && subtitleIndex >= 0) {
+            val indexToFind =
+                subtitleIndex + if (subtitleIsExternal) 0 else (if (externalSubtitleCount > 0) -1 else 1)
             val chosenTrack =
                 player.currentTracks.groups.firstOrNull { group ->
                     group.type == C.TRACK_TYPE_TEXT && group.isSupported &&
                         (0..<group.mediaTrackGroup.length)
                             .map {
                                 group.getTrackFormat(it).idAsInt
-                            }.contains(subtitleIndex + 1) // Indexes are 1 based
+                            }.contains(indexToFind)
                 }
-            Timber.v("Chosen subtitle track: $chosenTrack")
+            Timber.v("Chosen subtitle ($subtitleIndex/$indexToFind) track: $chosenTrack")
             chosenTrack?.let {
                 player.trackSelectionParameters =
                     player.trackSelectionParameters
