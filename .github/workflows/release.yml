@@ -68,4 +68,4 @@ jobs:
           artifacts: "${{ steps.buildapp.outputs.apk }},${{ env.APK_SHORT_NAME }}"
           makeLatest: true
           prerelease: false
-          generateReleaseNotes: true
+          generateReleaseNotes: false
