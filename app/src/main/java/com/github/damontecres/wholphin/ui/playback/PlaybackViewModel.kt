@@ -494,6 +494,7 @@ class PlaybackViewModel
                                     .build()
                             }
                         }
+                Timber.v("externalSubtitleCount=$externalSubtitleCount, externalSubtitle=$externalSubtitle")
 
                 val mediaItem =
                     MediaItem
@@ -964,7 +965,21 @@ class PlaybackViewModel
                                             removeAll(currentSubtitleStreams)
                                         }.firstOrNull { it.external }
                                 if (newStream != null) {
-                                    changeSubtitleStream(newStream.index).join()
+                                    var audioIndex = currentItemPlayback.value?.audioIndex
+                                    if (audioIndex != null && audioIndex != TrackIndex.UNSPECIFIED) {
+                                        // User has picked a specific audio track
+                                        // Since, now adding a new external subtitle track, need to adjust the audio index as well
+                                        Timber.v("New external subtitle, audioIndex=$audioIndex, adding 1")
+                                        audioIndex += 1
+                                    }
+                                    changeStreams(
+                                        dto,
+                                        currentItemPlayback.value!!,
+                                        audioIndex,
+                                        newStream.index,
+                                        onMain { player.currentPosition },
+                                        true,
+                                    )
                                 }
                             }
                             subtitleSearch.setValueOnMain(null)
