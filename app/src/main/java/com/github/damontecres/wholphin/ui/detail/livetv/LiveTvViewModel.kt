@@ -17,6 +17,7 @@ import com.github.damontecres.wholphin.util.LoadingExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -29,7 +30,6 @@ import org.jellyfin.sdk.model.api.ImageType
 import org.jellyfin.sdk.model.api.ItemSortBy
 import org.jellyfin.sdk.model.api.TimerInfoDto
 import org.jellyfin.sdk.model.api.request.GetLiveTvChannelsRequest
-import org.jellyfin.sdk.model.api.request.GetLiveTvProgramsRequest
 import org.jellyfin.sdk.model.extensions.ticks
 import timber.log.Timber
 import java.time.LocalDateTime
@@ -39,7 +39,7 @@ import javax.inject.Inject
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
-const val MAX_HOURS = 48L
+const val MAX_HOURS = 3L
 
 @HiltViewModel
 class LiveTvViewModel
@@ -56,11 +56,17 @@ class LiveTvViewModel
         private val mutex = Mutex()
 
         val channels = MutableLiveData<List<TvChannel>>()
+        val channelProgramCount = mutableMapOf<UUID, Int>()
         val programs = MutableLiveData<List<TvProgram>>()
         val programsByChannel = MutableLiveData<Map<UUID, List<TvProgram>>>(mapOf())
 
         val fetchingItem = MutableLiveData<LoadingState>(LoadingState.Pending)
         val fetchedItem = MutableLiveData<BaseItem?>(null)
+
+        val offset = MutableLiveData(0)
+        val programOffset = MutableLiveData(0)
+        private val range = 10
+        private var currentIndex = 0
 
         fun init(firstLoad: Boolean) {
             start = LocalDateTime.now().truncatedTo(ChronoUnit.HOURS)
@@ -86,7 +92,7 @@ class LiveTvViewModel
                 Timber.d("Got ${channels.size} channels")
                 channelsIdToIndex =
                     channels.withIndex().associateBy({ it.value.id }, { it.index })
-                fetchPrograms(channels)
+                fetchPrograms(channels.subList(0, range.coerceAtMost(channels.size)))
 
                 withContext(Dispatchers.Main) {
                     this@LiveTvViewModel.channels.value = channels
@@ -105,9 +111,9 @@ class LiveTvViewModel
             mutex.withLock {
                 val maxStartDate = start.plusHours(MAX_HOURS).minusMinutes(1)
                 val minEndDate = start.plusMinutes(1L)
-
+                Timber.v("Fetching programs for ${channels.size} channels")
                 val request =
-                    GetLiveTvProgramsRequest(
+                    GetProgramsDto(
                         maxStartDate = maxStartDate,
                         minEndDate = minEndDate,
                         channelIds = channels.map { it.id },
@@ -115,7 +121,7 @@ class LiveTvViewModel
                     )
                 val programs =
                     api.liveTvApi
-                        .getLiveTvPrograms(request)
+                        .getPrograms(request)
                         .content.items
                         .map { dto ->
                             val category =
@@ -182,6 +188,9 @@ class LiveTvViewModel
                             fake.addAll(fakePrograms)
                         }
                     }
+                finalProgramsByChannel.forEach { (channelId, programs) ->
+                    channelProgramCount[channelId] = programs.size
+                }
                 val finalProgramList =
                     (programs + fake).sortedWith(
                         compareBy(
@@ -299,6 +308,34 @@ class LiveTvViewModel
                     }
             }
             loading.setValueOnMain(LoadingState.Success)
+        }
+
+        fun onFocusChannel(index: Int): Job? {
+            return channels.value?.let { channels ->
+                val offset = offset.value!!
+                val absoluteIndex = offset + index
+                val rangeStart = (currentIndex - range / 2).coerceAtLeast(0)
+                val rangeEnd = (currentIndex + range / 2).coerceAtMost(channels.size)
+                Timber.v(
+                    "onFocusChannel: index=$index, currentIndex=$currentIndex, offset=$offset, rangeStart=$rangeStart, rangeEnd=$rangeEnd",
+                )
+                if (absoluteIndex !in (rangeStart..<rangeEnd)) {
+                    val fetchStart = (absoluteIndex - range).coerceAtLeast(0)
+                    val fetchEnd = (absoluteIndex + range).coerceAtMost(channels.size)
+                    Timber.v("Loading more programs for channels $fetchStart=>$fetchEnd")
+                    return viewModelScope.launchIO {
+                        fetchPrograms(channels.subList(fetchStart, fetchEnd))
+                        val programOffset =
+                            (offset..<fetchStart).sumOf { channelProgramCount[channels[it].id]!! }
+                        withContext(Dispatchers.Main) {
+                            this@LiveTvViewModel.offset.value = fetchStart
+                            currentIndex = index
+                            this@LiveTvViewModel.programOffset.value = programOffset
+                        }
+                    }
+                }
+                return null
+            }
         }
     }
 
