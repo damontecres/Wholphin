@@ -104,11 +104,9 @@ fun TvGuideGrid(
                 TvGuideGrid(
                     loading = state is LoadingState.Loading,
                     channels = channels,
-//                    programList = programs,
                     programs = programs,
                     channelProgramCount = viewModel.channelProgramCount,
                     start = viewModel.start,
-//                    channelOffset = fetchedRange.start,
                     onClickChannel = { index, channel ->
                         viewModel.navigationManager.navigateTo(
                             Destination.Playback(
@@ -166,7 +164,6 @@ fun TvGuideGrid(
                     onRecord = { series ->
                         fetchedItem?.let {
                             viewModel.record(
-                                programIndex = showItemDialog!!,
                                 programId = it.id,
                                 series = series,
                             )
@@ -176,8 +173,6 @@ fun TvGuideGrid(
                     onCancelRecord = { series ->
                         fetchedItem?.data?.let {
                             viewModel.cancelRecording(
-                                programIndex = showItemDialog!!,
-                                programId = it.id,
                                 series = series,
                                 timerId = if (series) it.seriesTimerId else it.timerId,
                             )
@@ -190,21 +185,16 @@ fun TvGuideGrid(
     }
 }
 
-const val CHANNEL_COLUMN = -1
-
 @Composable
 fun TvGuideGrid(
     loading: Boolean,
     channels: List<TvChannel>,
-//    programList: List<TvProgram>,
-//    programs: Map<UUID, List<TvProgram>>,
     programs: FetchedPrograms,
     channelProgramCount: Map<UUID, Int>,
     start: LocalDateTime,
     onClickChannel: (Int, TvChannel) -> Unit,
     onClickProgram: (Int, TvProgram) -> Unit,
     onFocus: (RowColumn) -> Unit,
-//    channelOffset: Int,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -517,7 +507,6 @@ fun TvGuideGrid(
                 Box(
                     modifier =
                         Modifier
-//                        .scale(if (focused) 1.1f else 1f)
                             .padding(2.dp)
                             .fillMaxSize()
                             .background(

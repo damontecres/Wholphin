@@ -172,7 +172,7 @@ class LiveTvViewModel
                         val fakePrograms =
                             (0..<MAX_HOURS).map {
                                 TvProgram(
-                                    id = UUID.randomUUID(), // TODO
+                                    id = UUID.randomUUID(),
                                     channelId = channel.id,
                                     start = start.plusHours(it),
                                     end = start.plusHours(it + 1),
@@ -233,8 +233,6 @@ class LiveTvViewModel
         }
 
         fun cancelRecording(
-            programIndex: Int,
-            programId: UUID,
             series: Boolean,
             timerId: String?,
         ) {
@@ -251,7 +249,6 @@ class LiveTvViewModel
         }
 
         fun record(
-            programIndex: Int,
             programId: UUID,
             series: Boolean,
         ) {
@@ -287,31 +284,6 @@ class LiveTvViewModel
                 }
                 fetchProgramsWithLoading(channels.value.orEmpty(), programs.value!!.range)
             }
-        }
-
-        suspend fun refreshProgram(
-            programIndex: Int,
-            programId: UUID,
-        ) = mutex.withLock {
-            loading.setValueOnMain(LoadingState.Loading)
-            // TODO
-//            val program by api.liveTvApi.getProgram(programId.toServerString())
-//            val newProgram =
-//                programs.value?.getOrNull(programIndex)?.copy(
-//                    isRecording = program.timerId.isNotNullOrBlank(),
-//                    isSeriesRecording = program.seriesTimerId.isNotNullOrBlank(),
-//                )
-//            Timber.v("new program %s", newProgram)
-//            if (newProgram != null) {
-//                programs.value
-//                    ?.toMutableList()
-//                    ?.apply {
-//                        this[programIndex] = newProgram
-//                    }?.let {
-//                        this@LiveTvViewModel.programs.setValueOnMain(it)
-//                    }
-//            }
-            loading.setValueOnMain(LoadingState.Success)
         }
 
         private var focusLoadingJob: Job? = null
