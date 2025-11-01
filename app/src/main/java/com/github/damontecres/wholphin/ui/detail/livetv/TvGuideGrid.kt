@@ -80,7 +80,7 @@ fun TvGuideGrid(
     val channels by viewModel.channels.observeAsState(listOf())
     val programs by viewModel.programs.observeAsState(listOf())
     val programsByChannel by viewModel.programsByChannel.observeAsState(mapOf())
-    val channelOffset by viewModel.offset.observeAsState(0)
+    val fetchedRange by viewModel.fetchedRange.observeAsState(0..0)
     when (val state = loading) {
         is LoadingState.Error -> ErrorMessage(state, modifier)
         LoadingState.Pending,
@@ -107,7 +107,7 @@ fun TvGuideGrid(
                     programs = programsByChannel,
                     channelProgramCount = viewModel.channelProgramCount,
                     start = viewModel.start,
-                    channelOffset = channelOffset,
+                    channelOffset = fetchedRange.start,
                     onClickChannel = { index, channel ->
                         viewModel.navigationManager.navigateTo(
                             Destination.Playback(
@@ -209,8 +209,6 @@ fun TvGuideGrid(
     val focusManager = LocalFocusManager.current
     val state = rememberSaveableProgramGuideState()
     val scope = rememberCoroutineScope()
-//    var focusedProgramIndex by rememberInt(0)
-//    var focusedChannelIndex by rememberInt(0)
 
     var focusedItem by rememberPosition(RowColumn(0, 0))
     val focusedChannelIndex = focusedItem.row
@@ -222,9 +220,9 @@ fun TvGuideGrid(
         }
 
     LaunchedEffect(focusedProgramIndex) {
-        val (channelIndex, programIndex) = focusedItem
-        Timber.v("Focusing on $focusedItem, programIndex=$focusedProgramIndex")
+//        Timber.v("Focusing on $focusedItem, programIndex=$focusedProgramIndex")
         scope.launch(ExceptionHandler()) {
+//            Timber.v("program=${programList.getOrNull(focusedProgramIndex)}")
             state.animateToProgram(focusedProgramIndex, Alignment.Center)
         }
     }
@@ -236,35 +234,6 @@ fun TvGuideGrid(
             channelHeight = 80.dp,
             currentTimeWidth = 2.dp,
         )
-
-//    val programsBeforeChannel =
-//        remember {
-//            CacheBuilder
-//                .newBuilder()
-//                .maximumSize(200)
-//                .build<Int, Int>(
-//                    object : CacheLoader<Int, Int>() {
-//                        override fun load(key: Int): Int =
-//                            (
-//                                channels
-//                                    .subList(0, key)
-//                                    .map { it.id }
-//                                    .sumOf {
-//                                        channelProgramCount[it] ?: 0
-//                                    } - programOffset
-//                            ).coerceAtLeast(0)
-//                    },
-//                )
-//        }
-    var movementEnabled by remember { mutableStateOf(true) }
-//    LaunchedEffect(programOffset) {
-//        movementEnabled = false
-//        programsBeforeChannel.invalidateAll()
-//        Timber.v("Adjusting focusedProgramIndex, $focusedProgramIndex - $programOffset")
-//        focusedProgramIndex = (focusedProgramIndex - programOffset).coerceAtLeast(0)
-//        movementEnabled = true
-//    }
-
     var gridHasFocus by rememberSaveable { mutableStateOf(false) }
     var channelColumnFocused by rememberSaveable { mutableStateOf(false) }
     Box(modifier = modifier) {
@@ -280,9 +249,6 @@ fun TvGuideGrid(
                     .onPreviewKeyEvent {
                         if (it.type == KeyEventType.KeyUp) {
                             return@onPreviewKeyEvent false
-                        }
-                        if (!movementEnabled) {
-                            return@onPreviewKeyEvent true
                         }
                         val item = focusedItem
                         val newFocusedItem =
@@ -429,32 +395,23 @@ fun TvGuideGrid(
                             }
 
                         if (newFocusedItem != null) {
-                            focusedItem = newFocusedItem
-                            onFocus(newFocusedItem)
+                            val channel = channels[newFocusedItem.row]
+                            val programs = programs[channel.id].orEmpty()
+                            // Ensure it isn't going out of range
+                            val toFocus =
+                                newFocusedItem
+                                    .copy(
+                                        row = newFocusedItem.row.coerceIn(0, channels.size - 1),
+                                        column =
+                                            newFocusedItem.column.coerceIn(
+                                                0,
+                                                programs.size - 1,
+                                            ),
+                                    )
+                            focusedItem = toFocus
+                            onFocus(toFocus)
                             return@onPreviewKeyEvent true
                         }
-//                        if (newIndex != null) {
-// //                        Timber.v("newIndex=$newIndex")
-//                            if (newIndex >= 0) {
-//                                val before = programsBeforeChannel.get(focusedChannelIndex)
-//                                val max =
-//                                    before +
-//                                        channels[focusedChannelIndex].let {
-//                                            programs[it.id]?.size ?: 0
-//                                        } - 1
-//                                val index = newIndex.coerceIn(before, max)
-//                                Timber.v("move: programIndex=$index, channelIndex=$focusedChannelIndex")
-//                                scope.launch(ExceptionHandler()) {
-//                                    focusedProgramIndex = index
-//                                    state.animateToProgram(index, Alignment.Center)
-//                                    onFocusChannel.invoke(focusedChannelIndex)
-//                                }
-//                                return@onPreviewKeyEvent true
-//                            } else {
-//                                Timber.w("newIndex is <0: $newIndex")
-//                                return@onPreviewKeyEvent true
-//                            }
-//                        }
                         return@onPreviewKeyEvent false
                     },
         ) {

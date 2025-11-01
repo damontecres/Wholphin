@@ -40,7 +40,7 @@ import javax.inject.Inject
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
-const val MAX_HOURS = 3L
+const val MAX_HOURS = 48L
 
 @HiltViewModel
 class LiveTvViewModel
@@ -64,10 +64,7 @@ class LiveTvViewModel
         val fetchingItem = MutableLiveData<LoadingState>(LoadingState.Pending)
         val fetchedItem = MutableLiveData<BaseItem?>(null)
 
-        val offset = MutableLiveData(0)
-        val programOffset = MutableLiveData(0)
         private val range = 8
-        private var currentIndex = 0
         val fetchedRange = MutableLiveData<IntRange>(0..<range)
 
         fun init(firstLoad: Boolean) {
@@ -196,13 +193,21 @@ class LiveTvViewModel
                 channelProgramCount[channelId] = programs.size
             }
             val finalProgramList =
-                (programs + fake).sortedWith(
-                    compareBy(
-                        { channelsIdToIndex[it.channelId]!! },
-                        { it.start },
-                    ),
-                )
+                (programs + fake)
+                    .filterNot {
+                        // TODO filter out items that start after end
+                        // This can happen due to daylight savings switch or just be bad data
+                        it.startHours >= it.endHours
+                    }.sortedWith(
+                        compareBy(
+                            { channelsIdToIndex[it.channelId]!! },
+                            { it.start },
+                        ),
+                    )
             Timber.d("Got ${programs.size} programs & ${fake.size} fake programs")
+            finalProgramList
+                .filter { it.startHours == it.endHours }
+                .let { Timber.e("Items with same start & end!!! %s", it) }
             withContext(Dispatchers.Main) {
                 this@LiveTvViewModel.programs.value = finalProgramList
                 this@LiveTvViewModel.programsByChannel.value = finalProgramsByChannel
@@ -336,11 +341,6 @@ class LiveTvViewModel
                     Timber.v("Loading more programs for channels $newFetchRange")
                     return viewModelScope.launchIO {
                         fetchPrograms(channels, newFetchRange)
-//                        withContext(Dispatchers.Main) {
-//                            this@LiveTvViewModel.offset.value = fetchStart
-//                            currentIndex = index
-//                            this@LiveTvViewModel.programOffset.value = programOffset
-//                        }
                     }
                 }
                 return null
