@@ -29,7 +29,6 @@ import org.jellyfin.sdk.model.api.ImageType
 import org.jellyfin.sdk.model.api.ItemSortBy
 import org.jellyfin.sdk.model.api.TimerInfoDto
 import org.jellyfin.sdk.model.api.request.GetLiveTvChannelsRequest
-import org.jellyfin.sdk.model.api.request.GetLiveTvProgramsRequest
 import org.jellyfin.sdk.model.extensions.ticks
 import timber.log.Timber
 import java.time.LocalDateTime
@@ -106,8 +105,8 @@ class LiveTvViewModel
                 val maxStartDate = start.plusHours(MAX_HOURS).minusMinutes(1)
                 val minEndDate = start.plusMinutes(1L)
 
-                val request =
-                    GetLiveTvProgramsRequest(
+                val dtoRequest =
+                    GetProgramsDto(
                         maxStartDate = maxStartDate,
                         minEndDate = minEndDate,
                         channelIds = channels.map { it.id },
@@ -115,7 +114,7 @@ class LiveTvViewModel
                     )
                 val programs =
                     api.liveTvApi
-                        .getLiveTvPrograms(request)
+                        .getPrograms(dtoRequest)
                         .content.items
                         .map { dto ->
                             val category =
