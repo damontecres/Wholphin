@@ -602,6 +602,19 @@ sealed interface AppPreference<T> {
                 summaryOn = R.string.enabled,
                 summaryOff = R.string.nav_drawer_switch_on_focus_summary_off,
             )
+
+        val ShowNextUpTiming =
+            AppChoicePreference<ShowNextUpWhen>(
+                title = R.string.show_next_up_when,
+                defaultValue = ShowNextUpWhen.END_OF_PLAYBACK,
+                getter = { it.playbackPreferences.showNextUpWhen },
+                setter = { prefs, value ->
+                    prefs.updatePlaybackPreferences { showNextUpWhen = value }
+                },
+                displayValues = R.array.show_next_up_when_options,
+                indexToValue = { ShowNextUpWhen.forNumber(it) },
+                valueToIndex = { it.number },
+            )
     }
 }
 
@@ -630,6 +643,7 @@ val basicPreferences =
                     AppPreference.AutoPlayNextDelay,
                     AppPreference.PassOutProtection,
                     AppPreference.SkipBackOnResume,
+                    AppPreference.ShowNextUpTiming,
                 ),
         ),
         PreferenceGroup(

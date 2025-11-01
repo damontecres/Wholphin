@@ -217,7 +217,7 @@ fun PlaybackPage(
                 modifier
                     .background(Color.Black),
             ) {
-                val playerSize by animateFloatAsState(if (nextUp == null) 1f else .66f)
+                val playerSize by animateFloatAsState(if (nextUp == null) 1f else .6f)
                 Box(
                     modifier =
                         Modifier
@@ -470,7 +470,7 @@ fun PlaybackPage(
                                 Modifier
                                     .padding(8.dp)
 //                                    .height(128.dp)
-                                    .fillMaxHeight(.5f)
+                                    .fillMaxHeight(1 - playerSize)
                                     .fillMaxWidth(.66f)
                                     .align(Alignment.BottomCenter)
                                     .background(
