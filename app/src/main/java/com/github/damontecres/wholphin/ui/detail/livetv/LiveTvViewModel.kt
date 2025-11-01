@@ -59,13 +59,11 @@ class LiveTvViewModel
         val channels = MutableLiveData<List<TvChannel>>()
         val channelProgramCount = mutableMapOf<UUID, Int>()
         val programs = MutableLiveData<FetchedPrograms>()
-//        val programsByChannel = MutableLiveData<Map<UUID, List<TvProgram>>>(mapOf())
 
         val fetchingItem = MutableLiveData<LoadingState>(LoadingState.Pending)
         val fetchedItem = MutableLiveData<BaseItem?>(null)
 
-        private val range = 8
-//        val fetchedRange = MutableLiveData<IntRange>(0..<range)
+        private val range = 150
 
         fun init(firstLoad: Boolean) {
             start = LocalDateTime.now().truncatedTo(ChronoUnit.HOURS)
@@ -115,7 +113,7 @@ class LiveTvViewModel
         ) = mutex.withLock {
             val maxStartDate = start.plusHours(MAX_HOURS).minusMinutes(1)
             val minEndDate = start.plusMinutes(1L)
-            val channelsToFetch = channels.subList(range.first, range.last)
+            val channelsToFetch = channels.subList(range.first, range.last + 1)
             Timber.v("Fetching programs for $range channels ${channelsToFetch.size}")
             val request =
                 GetProgramsDto(
@@ -199,20 +197,13 @@ class LiveTvViewModel
             }
             val finalProgramList =
                 (programs + fake)
-                    .filterNot {
-                        // TODO filter out items that start after end
-                        // This can happen due to daylight savings switch or just be bad data
-                        it.startHours >= it.endHours
-                    }.sortedWith(
+                    .sortedWith(
                         compareBy(
                             { channelsIdToIndex[it.channelId]!! },
                             { it.start },
                         ),
                     )
             Timber.d("Got ${programs.size} programs & ${fake.size} fake programs")
-            finalProgramList
-                .filter { it.startHours == it.endHours }
-                .let { Timber.e("Items with same start & end!!! %s", it) }
             withContext(Dispatchers.Main) {
                 this@LiveTvViewModel.programs.value =
                     FetchedPrograms(range, finalProgramList, finalProgramsByChannel)
@@ -251,11 +242,10 @@ class LiveTvViewModel
                 viewModelScope.launchIO(ExceptionHandler(autoToast = true)) {
                     if (series) {
                         api.liveTvApi.cancelSeriesTimer(timerId)
-                        fetchProgramsWithLoading(channels.value.orEmpty(), programs.value!!.range)
                     } else {
                         api.liveTvApi.cancelTimer(timerId)
-                        refreshProgram(programIndex, programId)
                     }
+                    fetchProgramsWithLoading(channels.value.orEmpty(), programs.value!!.range)
                 }
             }
         }
@@ -269,7 +259,6 @@ class LiveTvViewModel
                 val d by api.liveTvApi.getDefaultTimer(programId.toServerString())
                 if (series) {
                     api.liveTvApi.createSeriesTimer(d)
-                    fetchProgramsWithLoading(channels.value.orEmpty(), programs.value!!.range)
                 } else {
                     val payload =
                         TimerInfoDto(
@@ -295,8 +284,8 @@ class LiveTvViewModel
                             keepUntil = d.keepUntil,
                         )
                     api.liveTvApi.createTimer(payload)
-                    refreshProgram(programIndex, programId)
                 }
+                fetchProgramsWithLoading(channels.value.orEmpty(), programs.value!!.range)
             }
         }
 
@@ -325,17 +314,33 @@ class LiveTvViewModel
             loading.setValueOnMain(LoadingState.Success)
         }
 
-        fun onFocusChannel(position: RowColumn): Job? {
-            return channels.value?.let { channels ->
+        private var focusLoadingJob: Job? = null
+
+        fun onFocusChannel(position: RowColumn) {
+            channels.value?.let { channels ->
                 val fetchedRange = programs.value!!.range
-                val quarter = (fetchedRange.last - fetchedRange.start) / 4
-                val rangeStart = fetchedRange.start + quarter
-                val rangeEnd = fetchedRange.last - quarter
+                val quarter = range / 4
+                var rangeStart = fetchedRange.start + quarter
+                var rangeEnd = fetchedRange.last - quarter
+
+                if (rangeEnd - rangeStart < range) {
+                    if (position.row < range / 2) {
+                        // Close to beginning
+                        rangeStart = 0
+                    } else if (position.row > (channels.size - range / 2)) {
+                        // Close to the end
+                        rangeEnd = channels.size
+                    }
+                }
                 val testRange = rangeStart..<rangeEnd
 
-//                Timber.v(
-//                    "onFocusChannel: position=$position, fetchedRange=$fetchedRange, testRange=$testRange",
-//                )
+                Timber.v(
+                    "onFocusChannel: position=%s, fetchedRange=%s, testRange=%s",
+                    position,
+                    fetchedRange,
+                    testRange,
+                )
+
                 val fetchStart = (position.row - range).coerceAtLeast(0)
                 val fetchEnd = (position.row + range).coerceAtMost(channels.size)
                 val newFetchRange = fetchStart..<fetchEnd
@@ -344,11 +349,12 @@ class LiveTvViewModel
                 // Fetch new data
                 if (position.row !in testRange && !newFetchRange.within(fetchedRange)) {
                     Timber.v("Loading more programs for channels $newFetchRange")
-                    return viewModelScope.launchIO {
-                        fetchProgramsWithLoading(channels, newFetchRange)
-                    }
+                    focusLoadingJob?.cancel()
+                    focusLoadingJob =
+                        viewModelScope.launchIO {
+                            fetchProgramsWithLoading(channels, newFetchRange)
+                        }
                 }
-                return null
             }
         }
     }

@@ -51,7 +51,6 @@ import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.data.RowColumn
 import com.github.damontecres.wholphin.ui.enableMarquee
 import com.github.damontecres.wholphin.ui.nav.Destination
-import com.github.damontecres.wholphin.ui.playback.isDpad
 import com.github.damontecres.wholphin.ui.rememberPosition
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.ExceptionHandler
@@ -65,6 +64,7 @@ import timber.log.Timber
 import java.time.LocalDateTime
 import java.time.OffsetDateTime
 import java.util.UUID
+import kotlin.math.abs
 
 @Composable
 fun TvGuideGrid(
@@ -254,10 +254,6 @@ fun TvGuideGrid(
                         if (it.type == KeyEventType.KeyUp) {
                             return@onPreviewKeyEvent false
                         }
-                        if (isDpad(it) && loading) {
-                            // Prevent movement during loading
-                            return@onPreviewKeyEvent true
-                        }
                         val item = focusedItem
                         val newFocusedItem =
                             when (it.key) {
@@ -304,12 +300,16 @@ fun TvGuideGrid(
                                             val currentChannel = channels[item.row].id
                                             val currentProgram =
                                                 programs.programsByChannel[currentChannel]?.get(item.column)
+                                            val newChannelId = channels[newChannelIndex].id
+                                            val newChannelPrograms =
+                                                programs.programsByChannel[newChannelId]
+                                            if (newChannelPrograms == null) {
+                                                return@onPreviewKeyEvent true
+                                            }
                                             if (currentProgram == null) {
                                                 item
                                             } else {
                                                 val start = currentProgram.startHours
-                                                val newChannelPrograms =
-                                                    programs.programsByChannel[channels[newChannelIndex].id].orEmpty()
                                                 val pIndex =
                                                     newChannelPrograms.indexOfFirst { start in (it.startHours..<it.endHours) }
                                                 if (pIndex >= 0) {
@@ -335,43 +335,50 @@ fun TvGuideGrid(
                                         // If trying to move below the final channel, then move focus out of the grid
                                         focusManager.moveFocus(FocusDirection.Down)
                                         null
-                                    } else if (channelColumnFocused) {
-                                        // If focused on the channel column, move down a channel
-                                        RowColumn(newChannelIndex, 0)
                                     } else {
                                         // Otherwise, moving to a new row
-                                        // Get current program & its start time
-                                        val currentChannel = channels[item.row].id
-                                        val currentProgram =
-                                            programs.programsByChannel[currentChannel]?.get(item.column)
-                                        if (currentProgram == null) {
-                                            // Data is loading in the background
-                                            item
+                                        // Get the new row/channel's programs
+                                        val newChannelId = channels[newChannelIndex].id
+                                        val newChannelPrograms =
+                                            programs.programsByChannel[newChannelId]
+                                        if (newChannelPrograms == null) {
+                                            // This means there is no data for the new channel and it is loading in the background
+                                            return@onPreviewKeyEvent true
+                                        }
+                                        if (channelColumnFocused) {
+                                            // If focused on the channel column, move down a channel
+                                            RowColumn(newChannelIndex, 0)
                                         } else {
-                                            val start = currentProgram.startHours
-                                            // Get the new row/channel's programs
-                                            val newChannelPrograms =
-                                                programs.programsByChannel[channels[newChannelIndex].id].orEmpty()
-                                            // Find the first program where the start time (of the previously focused program) is in the middle of a program
-                                            val pIndex =
-                                                newChannelPrograms.indexOfFirst { start in (it.startHours..<it.endHours) }
-                                            if (pIndex >= 0) {
-                                                // Found one, so focus on it
-                                                RowColumn(newChannelIndex, pIndex)
+                                            // Get current program & its start time
+                                            val currentChannel = channels[item.row].id
+                                            val currentProgram =
+                                                programs.programsByChannel[currentChannel]?.get(item.column)
+                                            if (currentProgram == null) {
+                                                // Data is loading in the background
+                                                item
                                             } else {
-                                                // Didn't find one, probably due to missing data
-                                                // So now first the first one that starts after the previously focused program
+                                                val start = currentProgram.startHours
+                                                // Find the first program where the start time (of the previously focused program) is in the middle of a program
                                                 val pIndex =
-                                                    newChannelPrograms.indexOfFirst { it.startHours >= start }
+                                                    newChannelPrograms.indexOfFirst { start in (it.startHours..<it.endHours) }
                                                 if (pIndex >= 0) {
                                                     // Found one, so focus on it
                                                     RowColumn(newChannelIndex, pIndex)
                                                 } else {
-                                                    // Did not find one, so focus on the final program in the list
-                                                    RowColumn(
-                                                        newChannelIndex,
-                                                        newChannelPrograms.size - 1,
-                                                    )
+                                                    // Didn't find one, probably due to missing data
+                                                    // So now first the first one that starts after the previously focused program
+                                                    val pIndex =
+                                                        newChannelPrograms.indexOfFirst { it.startHours >= start }
+                                                    if (pIndex >= 0) {
+                                                        // Found one, so focus on it
+                                                        RowColumn(newChannelIndex, pIndex)
+                                                    } else {
+                                                        // Did not find one, so focus on the final program in the list
+                                                        RowColumn(
+                                                            newChannelIndex,
+                                                            newChannelPrograms.size - 1,
+                                                        )
+                                                    }
                                                 }
                                             }
                                         }
@@ -416,7 +423,7 @@ fun TvGuideGrid(
                                         column =
                                             newFocusedItem.column.coerceIn(
                                                 0,
-                                                programs.size - 1,
+                                                (programs.size - 1).coerceAtLeast(0),
                                             ),
                                     )
                             focusedItem = toFocus
@@ -486,7 +493,14 @@ fun TvGuideGrid(
                 layoutInfo = { programIndex ->
                     val program = programs.programs[programIndex]
                     val channelIndex = channels.indexOfFirst { it.id == program.channelId }
-                    ProgramGuideItem.Program(channelIndex, program.startHours, program.endHours)
+                    // Using the duration for endHour accounts for daylight savings switch
+                    // Eg a 1:30am-1:00am show
+                    val duration = abs(program.endHours - program.startHours)
+                    ProgramGuideItem.Program(
+                        channelIndex,
+                        program.startHours,
+                        program.startHours + duration,
+                    )
                 },
             ) { programIndex ->
                 val program = programs.programs[programIndex]
