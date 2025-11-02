@@ -158,26 +158,28 @@ class CollectionFolderViewModel
         }
 
         suspend fun positionOfLetter(letter: Char): Int? =
-            item.value?.let { item ->
-                val includeItemTypes =
-                    when (item.data.collectionType) {
-                        CollectionType.MOVIES -> listOf(BaseItemKind.MOVIE)
-                        CollectionType.TVSHOWS -> listOf(BaseItemKind.SERIES)
-                        CollectionType.HOMEVIDEOS -> listOf(BaseItemKind.VIDEO)
+            withContext(Dispatchers.IO) {
+                item.value?.let { item ->
+                    val includeItemTypes =
+                        when (item.data.collectionType) {
+                            CollectionType.MOVIES -> listOf(BaseItemKind.MOVIE)
+                            CollectionType.TVSHOWS -> listOf(BaseItemKind.SERIES)
+                            CollectionType.HOMEVIDEOS -> listOf(BaseItemKind.VIDEO)
 
-                        else -> listOf()
-                    }
-                val request =
-                    GetItemsRequest(
-                        parentId = item.id,
-                        includeItemTypes = includeItemTypes,
-                        nameLessThan = letter.toString(),
-                        limit = 0,
-                        enableTotalRecordCount = true,
-                        recursive = true,
-                    )
-                val result by GetItemsRequestHandler.execute(api, request)
-                result.totalRecordCount
+                            else -> listOf()
+                        }
+                    val request =
+                        GetItemsRequest(
+                            parentId = item.id,
+                            includeItemTypes = includeItemTypes,
+                            nameLessThan = letter.toString(),
+                            limit = 0,
+                            enableTotalRecordCount = true,
+                            recursive = true,
+                        )
+                    val result by GetItemsRequestHandler.execute(api, request)
+                    result.totalRecordCount
+                }
             }
     }
 
