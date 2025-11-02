@@ -100,5 +100,7 @@
     <string name="ffmpeg_extension_pref">Use FFmpeg decoder module</string>
     <string name="nav_drawer_switch_on_focus">Switch nav drawer pages on focus</string>
     <string name="nav_drawer_switch_on_focus_summary_off">Click to switch pages</string>
+    <string name="show_next_up_when">Show next up</string>
+    <string name="next_up">Next Up</string>
 
 </resources>
