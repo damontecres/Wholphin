@@ -626,7 +626,6 @@ val basicPreferences =
                 listOf(
                     AppPreference.HomePageItems,
                     AppPreference.RewatchNextUp,
-                    AppPreference.CombineContinueNext,
                     AppPreference.PlayThemeMusic,
                     AppPreference.RememberSelectedTab,
                     AppPreference.ThemeColors,
@@ -638,12 +637,17 @@ val basicPreferences =
                 listOf(
                     AppPreference.SkipForward,
                     AppPreference.SkipBack,
-                    AppPreference.ControllerTimeout,
+                    AppPreference.SkipBackOnResume,
+                ),
+        ),
+        PreferenceGroup(
+            title = R.string.next_up,
+            preferences =
+                listOf(
+                    AppPreference.ShowNextUpTiming,
                     AppPreference.AutoPlayNextUp,
                     AppPreference.AutoPlayNextDelay,
                     AppPreference.PassOutProtection,
-                    AppPreference.SkipBackOnResume,
-                    AppPreference.ShowNextUpTiming,
                 ),
         ),
         PreferenceGroup(
@@ -678,7 +682,9 @@ val advancedPreferences =
             title = R.string.ui_interface,
             preferences =
                 listOf(
+                    AppPreference.CombineContinueNext,
                     AppPreference.NavDrawerSwitchOnFocus,
+                    AppPreference.ControllerTimeout,
                 ),
         ),
         PreferenceGroup(
