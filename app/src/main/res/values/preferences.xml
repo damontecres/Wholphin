@@ -37,4 +37,9 @@
         <item>Never use FFmpeg decoders</item>
     </string-array>
 
+    <string-array name="show_next_up_when_options">
+        <item>At the end of playback</item>
+        <item>During end credits/outro</item>
+    </string-array>
+
 </resources>

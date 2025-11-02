@@ -43,6 +43,7 @@ class AppPreferencesSerializer
                                 skipRecaps = AppPreference.SkipRecaps.defaultValue
                                 passOutProtectionMs =
                                     AppPreference.PassOutProtection.defaultValue.hours.inWholeMilliseconds
+                                showNextUpWhen = AppPreference.ShowNextUpTiming.defaultValue
 
                                 overrides =
                                     PlaybackOverrides

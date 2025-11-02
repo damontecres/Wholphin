@@ -33,6 +33,7 @@ import com.github.damontecres.wholphin.data.model.chooseStream
 import com.github.damontecres.wholphin.preferences.AppPreference
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.MediaExtensionStatus
+import com.github.damontecres.wholphin.preferences.ShowNextUpWhen
 import com.github.damontecres.wholphin.preferences.SkipSegmentBehavior
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.launchIO
@@ -97,12 +98,6 @@ import javax.inject.Inject
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 
-enum class TranscodeType {
-    DIRECT_PLAY,
-    DIRECT_STREAM,
-    TRANSCODE,
-}
-
 data class StreamDecision(
     val itemId: UUID,
     val type: PlayMethod,
@@ -159,6 +154,7 @@ class PlaybackViewModel
         val trickplay = MutableLiveData<TrickplayInfo?>(null)
         val chapters = MutableLiveData<List<Chapter>>(listOf())
         val currentSegment = EqualityMutableLiveData<MediaSegmentDto?>(null)
+        private val autoSkippedSegments = mutableSetOf<UUID>()
 
         private lateinit var preferences: UserPreferences
         private lateinit var deviceProfile: DeviceProfile
@@ -244,6 +240,7 @@ class PlaybackViewModel
         ): Boolean =
             withContext(Dispatchers.IO) {
                 Timber.i("Playing ${base.id}")
+                autoSkippedSegments.clear()
                 if (base.type !in supportItemKinds) {
                     showToast(
                         context,
@@ -358,11 +355,9 @@ class PlaybackViewModel
                         audioIndex = audioIndex ?: TrackIndex.UNSPECIFIED,
                         subtitleIndex = subtitleIndex ?: TrackIndex.UNSPECIFIED,
                     )
-                withContext(Dispatchers.Main) {
-                    this@PlaybackViewModel.currentItemPlayback.value = itemPlaybackToUse
-                }
 
                 withContext(Dispatchers.Main) {
+                    this@PlaybackViewModel.currentItemPlayback.value = itemPlaybackToUse
                     this@PlaybackViewModel.audioStreams.value = audioStreams
                     this@PlaybackViewModel.subtitleStreams.value = subtitleStreams
 
@@ -664,39 +659,53 @@ class PlaybackViewModel
                                     .firstOrNull {
                                         it.type != MediaSegmentType.UNKNOWN && currentTicks >= it.startTicks && currentTicks < it.endTicks
                                     }
-                            if (currentSegment != null) {
+                            if (currentSegment != null && autoSkippedSegments.add(currentSegment.id)) {
                                 Timber.d(
                                     "Found media segment for %s: %s, %s",
                                     currentSegment.itemId,
                                     currentSegment.id,
                                     currentSegment.type,
                                 )
-                                val behavior =
-                                    when (currentSegment.type) {
-                                        MediaSegmentType.COMMERCIAL -> prefs.skipCommercials
-                                        MediaSegmentType.PREVIEW -> prefs.skipPreviews
-                                        MediaSegmentType.RECAP -> prefs.skipRecaps
-                                        MediaSegmentType.OUTRO -> prefs.skipOutros
-                                        MediaSegmentType.INTRO -> prefs.skipIntros
-                                        MediaSegmentType.UNKNOWN -> SkipSegmentBehavior.IGNORE
+                                val playlist = this@PlaybackViewModel.playlist.value
+
+                                if (currentSegment.type == MediaSegmentType.OUTRO &&
+                                    prefs.showNextUpWhen == ShowNextUpWhen.DURING_CREDITS &&
+                                    playlist != null && playlist.hasNext()
+                                ) {
+                                    val nextItem = playlist.peek()
+                                    Timber.v("Setting next up during outro to ${nextItem?.id}")
+                                    withContext(Dispatchers.Main) {
+                                        nextUp.value = nextItem
                                     }
-                                withContext(Dispatchers.Main) {
-                                    when (behavior) {
-                                        SkipSegmentBehavior.AUTO_SKIP -> {
-                                            this@PlaybackViewModel.currentSegment.value = null
-                                            player.seekTo(currentSegment.endTicks.ticks.inWholeMilliseconds + 1)
+                                } else {
+                                    val behavior =
+                                        when (currentSegment.type) {
+                                            MediaSegmentType.COMMERCIAL -> prefs.skipCommercials
+                                            MediaSegmentType.PREVIEW -> prefs.skipPreviews
+                                            MediaSegmentType.RECAP -> prefs.skipRecaps
+                                            MediaSegmentType.OUTRO -> prefs.skipOutros
+                                            MediaSegmentType.INTRO -> prefs.skipIntros
+                                            MediaSegmentType.UNKNOWN -> SkipSegmentBehavior.IGNORE
                                         }
+                                    withContext(Dispatchers.Main) {
+                                        when (behavior) {
+                                            SkipSegmentBehavior.AUTO_SKIP -> {
+                                                this@PlaybackViewModel.currentSegment.value = null
+                                                player.seekTo(currentSegment.endTicks.ticks.inWholeMilliseconds + 1)
+                                            }
 
-                                        SkipSegmentBehavior.ASK_TO_SKIP -> {
-                                            this@PlaybackViewModel.currentSegment.value = currentSegment
-                                        }
+                                            SkipSegmentBehavior.ASK_TO_SKIP -> {
+                                                this@PlaybackViewModel.currentSegment.value =
+                                                    currentSegment
+                                            }
 
-                                        else -> {
-                                            this@PlaybackViewModel.currentSegment.value = null
+                                            else -> {
+                                                this@PlaybackViewModel.currentSegment.value = null
+                                            }
                                         }
                                     }
                                 }
-                            } else {
+                            } else if (currentSegment == null) {
                                 withContext(Dispatchers.Main) {
                                     this@PlaybackViewModel.currentSegment.value = null
                                 }
