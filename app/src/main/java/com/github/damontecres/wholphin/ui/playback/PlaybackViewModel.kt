@@ -98,12 +98,6 @@ import javax.inject.Inject
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 
-enum class TranscodeType {
-    DIRECT_PLAY,
-    DIRECT_STREAM,
-    TRANSCODE,
-}
-
 data class StreamDecision(
     val itemId: UUID,
     val type: PlayMethod,
@@ -361,11 +355,9 @@ class PlaybackViewModel
                         audioIndex = audioIndex ?: TrackIndex.UNSPECIFIED,
                         subtitleIndex = subtitleIndex ?: TrackIndex.UNSPECIFIED,
                     )
-                withContext(Dispatchers.Main) {
-                    this@PlaybackViewModel.currentItemPlayback.value = itemPlaybackToUse
-                }
 
                 withContext(Dispatchers.Main) {
+                    this@PlaybackViewModel.currentItemPlayback.value = itemPlaybackToUse
                     this@PlaybackViewModel.audioStreams.value = audioStreams
                     this@PlaybackViewModel.subtitleStreams.value = subtitleStreams
 
@@ -667,7 +659,7 @@ class PlaybackViewModel
                                     .firstOrNull {
                                         it.type != MediaSegmentType.UNKNOWN && currentTicks >= it.startTicks && currentTicks < it.endTicks
                                     }
-                            if (currentSegment != null) {
+                            if (currentSegment != null && autoSkippedSegments.add(currentSegment.id)) {
                                 Timber.d(
                                     "Found media segment for %s: %s, %s",
                                     currentSegment.itemId,
@@ -699,9 +691,7 @@ class PlaybackViewModel
                                         when (behavior) {
                                             SkipSegmentBehavior.AUTO_SKIP -> {
                                                 this@PlaybackViewModel.currentSegment.value = null
-                                                if (autoSkippedSegments.add(currentSegment.id)) {
-                                                    player.seekTo(currentSegment.endTicks.ticks.inWholeMilliseconds + 1)
-                                                }
+                                                player.seekTo(currentSegment.endTicks.ticks.inWholeMilliseconds + 1)
                                             }
 
                                             SkipSegmentBehavior.ASK_TO_SKIP -> {
@@ -715,7 +705,7 @@ class PlaybackViewModel
                                         }
                                     }
                                 }
-                            } else {
+                            } else if (currentSegment == null) {
                                 withContext(Dispatchers.Main) {
                                     this@PlaybackViewModel.currentSegment.value = null
                                 }
