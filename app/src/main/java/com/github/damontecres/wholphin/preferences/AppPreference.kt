@@ -683,7 +683,8 @@ val advancedPreferences =
             preferences =
                 listOf(
                     AppPreference.CombineContinueNext,
-                    AppPreference.NavDrawerSwitchOnFocus,
+                    // Temporarily disabled, see https://github.com/damontecres/Wholphin/pull/127#issuecomment-3478058418
+//                    AppPreference.NavDrawerSwitchOnFocus,
                     AppPreference.ControllerTimeout,
                 ),
         ),
