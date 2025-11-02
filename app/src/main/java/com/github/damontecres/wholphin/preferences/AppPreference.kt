@@ -660,13 +660,14 @@ val uiPreferences = listOf<PreferenceGroup>()
 
 val advancedPreferences =
     listOf(
-        PreferenceGroup(
-            title = R.string.ui_interface,
-            preferences =
-                listOf(
-                    AppPreference.NavDrawerSwitchOnFocus,
-                ),
-        ),
+//        PreferenceGroup(
+//            title = R.string.ui_interface,
+//            preferences =
+//                listOf(
+//                    // Temporarily disabled, see https://github.com/damontecres/Wholphin/pull/127#issuecomment-3478058418
+//                    AppPreference.NavDrawerSwitchOnFocus,
+//                ),
+//        ),
         PreferenceGroup(
             title = R.string.playback,
             preferences =

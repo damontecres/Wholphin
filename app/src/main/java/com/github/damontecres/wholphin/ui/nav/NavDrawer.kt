@@ -253,7 +253,8 @@ fun NavDrawer(
             }
         }
     }
-    if (preferences.appPreferences.interfacePreferences.navDrawerSwitchOnFocus) {
+    // Temporarily disabled, see https://github.com/damontecres/Wholphin/pull/127#issuecomment-3478058418
+    if (false && preferences.appPreferences.interfacePreferences.navDrawerSwitchOnFocus) {
         LaunchedEffect(derivedFocusedIndex) {
             val index = derivedFocusedIndex
             delay(600)
