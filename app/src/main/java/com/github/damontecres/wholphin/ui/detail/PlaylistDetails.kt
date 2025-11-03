@@ -102,7 +102,7 @@ class PlaylistViewModel
                 Dispatchers.IO +
                     LoadingExceptionHandler(loading, "Failed to fetch playlist $playlistId"),
             ) {
-                val playlist = fetchItem(playlistId, null)
+                val playlist = fetchItem(playlistId)
                 val request =
                     GetPlaylistItemsRequest(
                         playlistId = playlist.id,

@@ -26,8 +26,11 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
+import com.github.damontecres.wholphin.data.LibraryDisplayInfoDao
+import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.GetItemsFilter
+import com.github.damontecres.wholphin.data.model.LibraryDisplayInfo
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.OneTimeLaunchedEffect
 import com.github.damontecres.wholphin.ui.SlimItemFields
@@ -62,6 +65,8 @@ class CollectionFolderViewModel
     @Inject
     constructor(
         api: ApiClient,
+        private val serverRepository: ServerRepository,
+        private val libraryDisplayInfoDao: LibraryDisplayInfoDao,
     ) : ItemViewModel(api) {
         val loading = MutableLiveData<LoadingState>(LoadingState.Loading)
         val pager = MutableLiveData<List<BaseItem?>>(listOf())
@@ -71,7 +76,7 @@ class CollectionFolderViewModel
         fun init(
             itemId: UUID?,
             potential: BaseItem?,
-            sortAndDirection: SortAndDirection,
+            initialSortAndDirection: SortAndDirection?,
             recursive: Boolean,
             filter: GetItemsFilter,
         ): Job =
@@ -82,12 +87,41 @@ class CollectionFolderViewModel
                 ) + Dispatchers.IO,
             ) {
                 if (itemId != null) {
-                    fetchItem(itemId, potential)
+                    fetchItem(itemId)
+
+                    val sortAndDirection =
+                        if (initialSortAndDirection == null) {
+                            serverRepository.currentUser?.let { user ->
+                                libraryDisplayInfoDao.getItem(user, itemId)?.sortAndDirection
+                            } ?: SortAndDirection.DEFAULT
+                        } else {
+                            SortAndDirection.DEFAULT
+                        }
+                    loadResults(sortAndDirection, recursive, filter)
                 }
-                loadResults(sortAndDirection, recursive, filter)
             }
 
-        fun loadResults(
+        fun onSortChange(
+            sortAndDirection: SortAndDirection,
+            recursive: Boolean,
+            filter: GetItemsFilter,
+        ) {
+            serverRepository.currentUser?.let { user ->
+                viewModelScope.launch(Dispatchers.IO) {
+                    val libraryDisplayInfo =
+                        LibraryDisplayInfo(
+                            userId = user.rowId,
+                            itemId = itemId,
+                            sort = sortAndDirection.sort,
+                            direction = sortAndDirection.direction,
+                        )
+                    libraryDisplayInfoDao.saveItem(libraryDisplayInfo)
+                }
+            }
+            loadResults(sortAndDirection, recursive, filter)
+        }
+
+        private fun loadResults(
             sortAndDirection: SortAndDirection,
             recursive: Boolean,
             filter: GetItemsFilter,
@@ -198,18 +232,14 @@ fun CollectionFolderGrid(
     onClickItem: (BaseItem) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: CollectionFolderViewModel = hiltViewModel(),
-    initialSortAndDirection: SortAndDirection =
-        SortAndDirection(
-            ItemSortBy.SORT_NAME,
-            SortOrder.ASCENDING,
-        ),
+    initialSortAndDirection: SortAndDirection? = null,
     showTitle: Boolean = true,
     positionCallback: ((columns: Int, position: Int) -> Unit)? = null,
 ) {
     OneTimeLaunchedEffect {
         viewModel.init(itemId, item, initialSortAndDirection, recursive, initialFilter)
     }
-    val sortAndDirection by viewModel.sortAndDirection.observeAsState(initialSortAndDirection)
+    val sortAndDirection by viewModel.sortAndDirection.observeAsState()
     val filter by viewModel.filter.observeAsState(initialFilter)
     val loading by viewModel.loading.observeAsState(LoadingState.Loading)
     val item by viewModel.item.observeAsState()
@@ -226,11 +256,11 @@ fun CollectionFolderGrid(
                     preferences,
                     item,
                     pager,
-                    sortAndDirection = sortAndDirection,
+                    sortAndDirection = sortAndDirection!!,
                     modifier = modifier,
                     onClickItem = onClickItem,
                     onSortChange = {
-                        viewModel.loadResults(it, recursive, filter)
+                        viewModel.onSortChange(it, recursive, filter)
                     },
                     showTitle = showTitle,
                     positionCallback = positionCallback,
