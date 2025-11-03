@@ -75,12 +75,12 @@ class ThemeSongPlayer
             }
 
         private fun play(
-            volume: ThemeSongVolume,
+            volumeLevel: ThemeSongVolume,
             url: String,
         ) {
             stop()
             val volumeLevel =
-                when (volume) {
+                when (volumeLevel) {
                     ThemeSongVolume.UNRECOGNIZED,
                     ThemeSongVolume.DISABLED,
                     -> return
@@ -91,23 +91,12 @@ class ThemeSongPlayer
                     ThemeSongVolume.HIGH -> .5f
                     ThemeSongVolume.HIGHEST -> 75f
                 }
-            player
-                .apply {
-                    this.volume = volumeLevel
-                    playWhenReady = true
-                    addListener(
-                        object : Player.Listener {
-                            override fun onPlaybackStateChanged(playbackState: Int) {
-                                if (playbackState == Player.STATE_ENDED) {
-                                    removeListener(this)
-                                    stop()
-                                }
-                            }
-                        },
-                    )
-                }
-            player.setMediaItem(MediaItem.fromUri(url))
-            player.prepare()
+            player.apply {
+                volume = volumeLevel
+                setMediaItem(MediaItem.fromUri(url))
+                prepare()
+                play()
+            }
         }
 
         fun stop() {
