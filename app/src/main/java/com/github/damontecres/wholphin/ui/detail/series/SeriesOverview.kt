@@ -13,8 +13,10 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.LifecycleStartEffect
+import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.chooseSource
 import com.github.damontecres.wholphin.preferences.UserPreferences
@@ -72,15 +74,7 @@ fun SeriesOverview(
     viewModel: SeriesViewModel = hiltViewModel(),
     initialSeasonEpisode: SeasonEpisodeIds? = null,
 ) {
-    LifecycleStartEffect(destination.itemId) {
-        viewModel.maybePlayThemeSong(
-            destination.itemId,
-            preferences.appPreferences.interfacePreferences.playThemeSongs,
-        )
-        onStopOrDispose {
-            viewModel.release()
-        }
-    }
+    val context = LocalContext.current
     val firstItemFocusRequester = remember { FocusRequester() }
     val episodeRowFocusRequester = remember { FocusRequester() }
 
@@ -168,6 +162,15 @@ fun SeriesOverview(
         LoadingState.Success -> {
             series?.let { series ->
                 LaunchedEffect(Unit) { episodeRowFocusRequester.tryRequestFocus() }
+                LifecycleStartEffect(destination.itemId) {
+                    viewModel.maybePlayThemeSong(
+                        destination.itemId,
+                        preferences.appPreferences.interfacePreferences.playThemeSongs,
+                    )
+                    onStopOrDispose {
+                        viewModel.release()
+                    }
+                }
 
                 fun buildMoreForEpisode(
                     ep: BaseItem,
@@ -178,7 +181,8 @@ fun SeriesOverview(
                         title = series.name + " - " + ep.data.seasonEpisode,
                         items =
                             buildMoreDialogItems(
-                                ep,
+                                context = context,
+                                item = ep,
                                 watched = ep.data.userData?.played ?: false,
                                 favorite = ep.data.userData?.isFavorite ?: false,
                                 series = series,
@@ -208,7 +212,10 @@ fun SeriesOverview(
                                 },
                                 onChooseVersion = {
                                     chooseVersion =
-                                        chooseVersionParams(ep.data.mediaSources!!) { idx ->
+                                        chooseVersionParams(
+                                            context,
+                                            ep.data.mediaSources!!,
+                                        ) { idx ->
                                             val source = ep.data.mediaSources!![idx]
                                             viewModel.savePlayVersion(
                                                 ep,
@@ -224,6 +231,7 @@ fun SeriesOverview(
                                     )?.let { source ->
                                         chooseVersion =
                                             chooseStream(
+                                                context = context,
                                                 streams = source.mediaStreams.orEmpty(),
                                                 type = type,
                                                 onClick = { trackIndex ->
@@ -313,7 +321,7 @@ fun SeriesOverview(
                         episodeList?.getOrNull(position.episodeRowIndex)?.let {
                             overviewDialog =
                                 ItemDetailsDialogInfo(
-                                    title = it.name ?: "Unknown",
+                                    title = it.name ?: context.getString(R.string.unknown),
                                     overview = it.data.overview,
                                     files = it.data.mediaSources.orEmpty(),
                                 )

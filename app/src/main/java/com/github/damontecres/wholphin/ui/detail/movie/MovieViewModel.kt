@@ -1,7 +1,9 @@
 package com.github.damontecres.wholphin.ui.detail.movie
 
+import android.content.Context
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
+import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.ChosenStreams
 import com.github.damontecres.wholphin.data.ItemPlaybackRepository
 import com.github.damontecres.wholphin.data.ServerRepository
@@ -12,16 +14,20 @@ import com.github.damontecres.wholphin.data.model.LocalTrailer
 import com.github.damontecres.wholphin.data.model.Person
 import com.github.damontecres.wholphin.data.model.RemoteTrailer
 import com.github.damontecres.wholphin.data.model.Trailer
+import com.github.damontecres.wholphin.preferences.ThemeSongVolume
 import com.github.damontecres.wholphin.ui.SlimItemFields
 import com.github.damontecres.wholphin.ui.detail.LoadingItemViewModel
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.letNotEmpty
+import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.nav.NavigationManager
 import com.github.damontecres.wholphin.ui.setValueOnMain
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
+import com.github.damontecres.wholphin.util.ThemeSongPlayer
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -40,21 +46,20 @@ class MovieViewModel
     @Inject
     constructor(
         api: ApiClient,
-        val navigationManager: NavigationManager,
+        @param:ApplicationContext private val context: Context,
+        private val navigationManager: NavigationManager,
         val serverRepository: ServerRepository,
         val itemPlaybackRepository: ItemPlaybackRepository,
+        private val themeSongPlayer: ThemeSongPlayer,
     ) : LoadingItemViewModel(api) {
-        private lateinit var itemId: UUID
-
         val trailers = MutableLiveData<List<Trailer>>(listOf())
         val people = MutableLiveData<List<Person>>(listOf())
         val chapters = MutableLiveData<List<Chapter>>(listOf())
         val similar = MutableLiveData<List<BaseItem>>()
         val chosenStreams = MutableLiveData<ChosenStreams?>(null)
 
-        fun init(itemId: UUID): Job? {
-            this.itemId = itemId
-            return viewModelScope.launch(
+        fun init(itemId: UUID): Job? =
+            viewModelScope.launch(
                 Dispatchers.IO +
                     LoadingExceptionHandler(
                         loading,
@@ -78,7 +83,7 @@ class MovieViewModel
                                                 // TODO would be nice to clean up the trailer name
 //                                                ?.replace(item.name ?: "", "")
 //                                                ?.removePrefix(" - ")
-                                                ?: "Trailer"
+                                                ?: context.getString(R.string.trailer)
                                         RemoteTrailer(name, url)
                                     }
                                 }.orEmpty()
@@ -120,7 +125,6 @@ class MovieViewModel
                     }
                 }
             }
-        }
 
         fun setWatched(played: Boolean) =
             viewModelScope.launch(ExceptionHandler() + Dispatchers.IO) {
@@ -180,5 +184,26 @@ class MovieViewModel
                     chosenStreams.value = chosen
                 }
             }
+        }
+
+        fun maybePlayThemeSong(
+            seriesId: UUID,
+            playThemeSongs: ThemeSongVolume,
+        ) {
+            viewModelScope.launchIO {
+                themeSongPlayer.playThemeFor(seriesId, playThemeSongs)
+                addCloseable {
+                    themeSongPlayer.stop()
+                }
+            }
+        }
+
+        fun release() {
+            themeSongPlayer.stop()
+        }
+
+        fun navigateTo(destination: Destination) {
+            release()
+            navigationManager.navigateTo(destination)
         }
     }

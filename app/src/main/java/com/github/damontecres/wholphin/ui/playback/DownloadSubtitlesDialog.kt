@@ -28,6 +28,8 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.tv.material3.Icon
@@ -35,6 +37,7 @@ import androidx.tv.material3.ListItem
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import androidx.tv.material3.surfaceColorAtElevation
+import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.ui.AppColors
 import com.github.damontecres.wholphin.ui.components.DialogItem
 import com.github.damontecres.wholphin.ui.components.DialogItemDivider
@@ -58,7 +61,7 @@ fun DownloadSubtitlesContent(
         SubtitleSearch.Searching -> {
             Wrapper {
                 Text(
-                    text = "Searching...",
+                    text = stringResource(R.string.searching),
                     style = MaterialTheme.typography.titleLarge,
                     color = MaterialTheme.colorScheme.onSurface,
                 )
@@ -68,7 +71,7 @@ fun DownloadSubtitlesContent(
         SubtitleSearch.Downloading -> {
             Wrapper {
                 Text(
-                    text = "Downloading...",
+                    text = stringResource(R.string.downloading),
                     style = MaterialTheme.typography.titleLarge,
                     color = MaterialTheme.colorScheme.onSurface,
                 )
@@ -199,9 +202,15 @@ fun convertRemoteSubtitles(
                     op.providerName?.let(::add)
                     op.threeLetterIsoLanguageName?.let(::add)
                     if (op.forced == true) {
-                        add("Forced")
+                        add(stringResource(R.string.forced_track))
                     }
-                    add("${abbreviateNumber(op.downloadCount ?: 0)} downloads")
+                    add(
+                        pluralStringResource(
+                            R.plurals.downloads,
+                            op.downloadCount ?: 0,
+                            abbreviateNumber(op.downloadCount ?: 0),
+                        ),
+                    )
                 }
             Text(
                 text = strings.joinToString(" - "),

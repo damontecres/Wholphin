@@ -64,17 +64,18 @@ class GenreViewModel
             }
         }
 
-        suspend fun positionOfLetter(letter: Char): Int {
-            val request =
-                GetGenresRequest(
-                    parentId = itemId,
-                    nameLessThan = letter.toString(),
-                    limit = 0,
-                    enableTotalRecordCount = true,
-                )
-            val result by GetGenresRequestHandler.execute(api, request)
-            return result.totalRecordCount
-        }
+        suspend fun positionOfLetter(letter: Char): Int =
+            withContext(Dispatchers.IO) {
+                val request =
+                    GetGenresRequest(
+                        parentId = itemId,
+                        nameLessThan = letter.toString(),
+                        limit = 0,
+                        enableTotalRecordCount = true,
+                    )
+                val result by GetGenresRequestHandler.execute(api, request)
+                return@withContext result.totalRecordCount
+            }
     }
 
 @Composable

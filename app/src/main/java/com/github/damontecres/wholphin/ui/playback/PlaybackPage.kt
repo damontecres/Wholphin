@@ -39,6 +39,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -60,6 +61,7 @@ import androidx.tv.material3.Button
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import androidx.tv.material3.surfaceColorAtElevation
+import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.ItemPlayback
 import com.github.damontecres.wholphin.data.model.Playlist
 import com.github.damontecres.wholphin.preferences.UserPreferences
@@ -69,9 +71,12 @@ import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.tryRequestFocus
+import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
 import com.github.damontecres.wholphin.util.seasonEpisode
+import com.github.damontecres.wholphin.util.stringRes
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import org.jellyfin.sdk.model.api.DeviceProfile
 import org.jellyfin.sdk.model.extensions.ticks
 import java.util.UUID
@@ -162,7 +167,6 @@ fun PlaybackPage(
             val scaledModifier =
                 Modifier.resizeWithContentScale(contentScale, presentationState.videoSizeDp)
             val focusRequester = remember { FocusRequester() }
-            val controllerFocusRequester = remember { FocusRequester() }
             val playPauseState = rememberPlayPauseButtonState(player)
             val seekBarState = rememberSeekBarState(player, scope)
 
@@ -215,9 +219,9 @@ fun PlaybackPage(
 
             Box(
                 modifier
-                    .background(Color.Black),
+                    .background(if (nextUp == null) Color.Black else MaterialTheme.colorScheme.background),
             ) {
-                val playerSize by animateFloatAsState(if (nextUp == null) 1f else .66f)
+                val playerSize by animateFloatAsState(if (nextUp == null) 1f else .6f)
                 Box(
                     modifier =
                         Modifier
@@ -410,7 +414,7 @@ fun PlaybackPage(
                             modifier = Modifier.focusRequester(focusRequester),
                         ) {
                             Text(
-                                text = "Skip ${segment.type.serialName}",
+                                text = stringResource(R.string.skip) + " " + stringResource(segment.type.stringRes),
                             )
                         }
                     }
@@ -418,7 +422,13 @@ fun PlaybackPage(
 
                 // Next up episode
                 BackHandler(nextUp != null) {
-                    viewModel.navigationManager.goBack()
+                    if (player.isPlaying) {
+                        scope.launch(ExceptionHandler()) {
+                            viewModel.cancelUpNextEpisode()
+                        }
+                    } else {
+                        viewModel.navigationManager.goBack()
+                    }
                 }
                 AnimatedVisibility(
                     nextUp != null,
@@ -470,7 +480,7 @@ fun PlaybackPage(
                                 Modifier
                                     .padding(8.dp)
 //                                    .height(128.dp)
-                                    .fillMaxHeight(.5f)
+                                    .fillMaxHeight(1 - playerSize)
                                     .fillMaxWidth(.66f)
                                     .align(Alignment.BottomCenter)
                                     .background(

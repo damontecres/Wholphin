@@ -2,10 +2,8 @@ package com.github.damontecres.wholphin.ui.detail.series
 
 import android.content.Context
 import android.widget.Toast
-import androidx.annotation.OptIn
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
-import androidx.media3.common.util.UnstableApi
 import com.github.damontecres.wholphin.data.ChosenStreams
 import com.github.damontecres.wholphin.data.ItemPlaybackRepository
 import com.github.damontecres.wholphin.data.ServerRepository
@@ -30,7 +28,6 @@ import com.github.damontecres.wholphin.util.GetItemsRequestHandler
 import com.github.damontecres.wholphin.util.LoadingExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
 import com.github.damontecres.wholphin.util.ThemeSongPlayer
-import com.github.damontecres.wholphin.util.profile.Codec
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -41,7 +38,6 @@ import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.libraryApi
 import org.jellyfin.sdk.api.client.extensions.playStateApi
 import org.jellyfin.sdk.api.client.extensions.tvShowsApi
-import org.jellyfin.sdk.api.client.extensions.universalAudioApi
 import org.jellyfin.sdk.api.client.extensions.userLibraryApi
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.ItemFields
@@ -88,7 +84,7 @@ class SeriesViewModel
                     "Error loading series $seriesId",
                 ) + Dispatchers.IO,
             ) {
-                val item = fetchItem(seriesId, potential)
+                val item = fetchItem(seriesId)
                 val seasons = getSeasons(item)
 
                 // If a particular season was requested, fetch those episodes, otherwise get the first season
@@ -141,34 +137,14 @@ class SeriesViewModel
         /**
          * If the series has a theme song & app settings allow, play it
          */
-        @OptIn(UnstableApi::class)
         fun maybePlayThemeSong(
             seriesId: UUID,
             playThemeSongs: ThemeSongVolume,
         ) {
             viewModelScope.launchIO {
-                val themeSongs = api.libraryApi.getThemeSongs(seriesId).content
-                themeSongs.items.firstOrNull()?.let { theme ->
-                    theme.mediaSources?.firstOrNull()?.let { source ->
-                        val url =
-                            api.universalAudioApi.getUniversalAudioStreamUrl(
-                                theme.id,
-                                container =
-                                    listOf(
-                                        Codec.Audio.OPUS,
-                                        Codec.Audio.MP3,
-                                        Codec.Audio.AAC,
-                                        Codec.Audio.FLAC,
-                                    ),
-                            )
-                        Timber.v("Found theme song for series $seriesId")
-                        withContext(Dispatchers.Main) {
-                            themeSongPlayer.play(playThemeSongs, url)
-                            addCloseable {
-                                themeSongPlayer.stop()
-                            }
-                        }
-                    }
+                themeSongPlayer.playThemeFor(seriesId, playThemeSongs)
+                addCloseable {
+                    themeSongPlayer.stop()
                 }
             }
         }
@@ -287,7 +263,7 @@ class SeriesViewModel
             if (listIndex != null) {
                 refreshEpisode(itemId, listIndex)
             } else {
-                fetchItem(seriesId, null)
+                fetchItem(seriesId)
             }
         }
 
@@ -296,7 +272,7 @@ class SeriesViewModel
             played: Boolean,
         ) = viewModelScope.launch(Dispatchers.IO + ExceptionHandler()) {
             setWatched(seasonId, played, null)
-            val series = fetchItem(seriesId, null)
+            val series = fetchItem(seriesId)
             val seasons = getSeasons(series)
             this@SeriesViewModel.seasons.setValueOnMain(seasons)
         }
@@ -308,7 +284,7 @@ class SeriesViewModel
                 } else {
                     api.playStateApi.markUnplayedItem(seriesId)
                 }
-                val series = fetchItem(seriesId, null)
+                val series = fetchItem(seriesId)
                 val seasons = getSeasons(series)
                 this@SeriesViewModel.seasons.setValueOnMain(seasons)
             }

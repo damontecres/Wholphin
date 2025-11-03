@@ -147,7 +147,7 @@ fun MovieDetailsHeader(
                 ?.joinToString(", ") { it.name!! }
                 ?.let {
                     Text(
-                        text = "Directed by $it",
+                        text = stringResource(R.string.directed_by, it),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurface,
                     )
@@ -183,7 +183,7 @@ fun MovieDetailsHeader(
                     ?.let {
                         if (it.isNotNullOrBlank()) {
                             TitleValueText(
-                                "Subtitles",
+                                stringResource(R.string.subtitles),
                                 it,
                                 modifier = Modifier.widthIn(max = 200.dp),
                             )

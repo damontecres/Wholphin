@@ -84,13 +84,15 @@ class ServerRepository
             }
             Timber.v("Changing user to ${user.name} on ${server.url}")
             apiClient.update(baseUrl = server.url, accessToken = user.accessToken)
-            val userDto =
-                apiClient.userApi
-                    .getCurrentUser()
-                    .content
-            val sysInfo by apiClient.systemApi.getSystemInfo()
-
-            val updatedServer = server.copy(name = sysInfo.serverName)
+            val userDto by apiClient.userApi.getCurrentUser()
+            val updatedServer =
+                try {
+                    val sysInfo by apiClient.systemApi.getPublicSystemInfo()
+                    server.copy(name = sysInfo.serverName)
+                } catch (ex: Exception) {
+                    Timber.w(ex, "Exception fetching public system info")
+                    server
+                }
             var updatedUser =
                 user.copy(
                     id = userDto.id,
@@ -171,8 +173,14 @@ class ServerRepository
                         }
                     if (user != null) {
                         changeUser(server, user)
+                    } else {
+                        throw IllegalArgumentException("Authentication result's user was null")
                     }
+                } else {
+                    throw IllegalArgumentException("Authentication result's serverId not valid: ${authenticationResult.serverId}")
                 }
+            } else {
+                throw IllegalArgumentException("Authentication result's access token was null")
             }
         }
 

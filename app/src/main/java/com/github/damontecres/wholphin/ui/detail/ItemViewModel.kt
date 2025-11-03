@@ -25,21 +25,11 @@ abstract class ItemViewModel(
     val api: ApiClient,
 ) : ViewModel() {
     val item = MutableLiveData<BaseItem?>(null)
+    lateinit var itemId: UUID
 
-    suspend fun fetchItem(
-        itemId: UUID,
-        potential: BaseItem?,
-    ): BaseItem =
+    suspend fun fetchItem(itemId: UUID): BaseItem =
         withContext(Dispatchers.IO) {
-//            val fetchedItem =
-//                when {
-//                    item.value == null && potential?.id == itemId -> potential
-//                    item.value?.id == itemId -> item.value
-//                    else -> {
-//                        val it = api.userLibraryApi.getItem(itemId).content
-//                        BaseItem.from(it, api)
-//                    }
-//                }
+            this@ItemViewModel.itemId = itemId
             val it = api.userLibraryApi.getItem(itemId).content
             val fetchedItem = BaseItem.from(it, api)
             return@withContext fetchedItem.let {
@@ -89,10 +79,8 @@ abstract class LoadingItemViewModel(
 
     open suspend fun fetchAndSetItem(itemId: UUID): BaseItem =
         withContext(Dispatchers.IO) {
-            val fetchedItem = api.userLibraryApi.getItem(itemId).content
-            val item = BaseItem.from(fetchedItem, api)
+            val item = fetchItem(itemId)
             withContext(Dispatchers.Main) {
-                this@LoadingItemViewModel.item.value = item
                 loading.value = LoadingState.Success
             }
             return@withContext item

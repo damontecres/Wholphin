@@ -22,6 +22,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
@@ -30,6 +31,7 @@ import androidx.tv.material3.Icon
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import androidx.tv.material3.surfaceColorAtElevation
+import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.ui.components.CircularProgress
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
@@ -165,7 +167,14 @@ fun ProgramDialog(
                                                         )
                                                     }
                                                     Text(
-                                                        text = if (isSeriesRecording) "Cancel Series Recording" else "Record Series",
+                                                        text =
+                                                            if (isSeriesRecording) {
+                                                                stringResource(
+                                                                    R.string.cancel_series_recording,
+                                                                )
+                                                            } else {
+                                                                stringResource(R.string.record_series)
+                                                            },
                                                     )
                                                 }
                                             }
@@ -193,7 +202,16 @@ fun ProgramDialog(
                                                         )
                                                     }
                                                     Text(
-                                                        text = if (isRecording) "Cancel Recording" else "Record Program",
+                                                        text =
+                                                            if (isRecording) {
+                                                                stringResource(
+                                                                    R.string.cancel_recording,
+                                                                )
+                                                            } else {
+                                                                stringResource(
+                                                                    R.string.record_program,
+                                                                )
+                                                            },
                                                     )
                                                 }
                                             }
@@ -210,11 +228,11 @@ fun ProgramDialog(
                                         ) {
                                             Icon(
                                                 imageVector = Icons.Default.PlayArrow,
-                                                contentDescription = "Delete",
+                                                contentDescription = stringResource(R.string.delete),
                                                 tint = Color.Green.copy(alpha = .75f),
                                             )
                                             Text(
-                                                text = "Watch live",
+                                                text = stringResource(R.string.watch_live),
                                             )
                                         }
                                     }

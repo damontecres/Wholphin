@@ -21,6 +21,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.tv.material3.MaterialTheme
@@ -29,6 +30,7 @@ import androidx.tv.material3.TabDefaults
 import androidx.tv.material3.TabRow
 import androidx.tv.material3.TabRowDefaults
 import androidx.tv.material3.Text
+import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.GetItemsFilter
 import com.github.damontecres.wholphin.preferences.UserPreferences
@@ -52,7 +54,12 @@ fun CollectionFolderTv(
     val rememberedTabIndex =
         remember { preferencesViewModel.getRememberedTab(preferences, destination.itemId, 0) }
 
-    val tabs = listOf("Recommended", "Library", "Genres")
+    val tabs =
+        listOf(
+            stringResource(R.string.recommended),
+            stringResource(R.string.library),
+            stringResource(R.string.genres),
+        )
     var focusTabIndex by rememberSaveable { mutableIntStateOf(rememberedTabIndex) }
     var selectedTabIndex by rememberSaveable { mutableIntStateOf(rememberedTabIndex) }
     val focusRequester = remember { FocusRequester() }

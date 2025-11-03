@@ -5,6 +5,7 @@ import android.content.Context
 import android.provider.Settings
 import androidx.datastore.core.DataStore
 import com.github.damontecres.wholphin.BuildConfig
+import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.UserPreferences
@@ -47,9 +48,11 @@ annotation class IoCoroutineScope
 object AppModule {
     @Provides
     @Singleton
-    fun clientInfo(): ClientInfo =
+    fun clientInfo(
+        @ApplicationContext context: Context,
+    ): ClientInfo =
         ClientInfo(
-            name = "Wholphin",
+            name = context.getString(R.string.app_name),
             version = BuildConfig.VERSION_NAME,
         )
 

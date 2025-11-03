@@ -82,7 +82,7 @@ fun FocusedEpisodeFooter(
                 ?.let {
                     if (it.isNotNullOrBlank()) {
                         TitleValueText(
-                            "Subtitles",
+                            stringResource(R.string.subtitles),
                             it,
                             modifier = Modifier.widthIn(max = 160.dp),
                         )

@@ -22,6 +22,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -31,6 +32,7 @@ import androidx.tv.material3.Button
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import androidx.tv.material3.surfaceColorAtElevation
+import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.ui.components.BasicDialog
 import com.github.damontecres.wholphin.ui.components.CircularProgress
 import com.github.damontecres.wholphin.ui.components.EditTextBox
@@ -78,7 +80,7 @@ fun SwitchServerContent(
                         ),
             ) {
                 Text(
-                    text = "Select Server",
+                    text = stringResource(R.string.select_server),
                     style = MaterialTheme.typography.displaySmall,
                     color = MaterialTheme.colorScheme.onSurface,
                 )
@@ -120,13 +122,13 @@ fun SwitchServerContent(
                         ),
             ) {
                 Text(
-                    text = "Discovered Servers",
+                    text = stringResource(R.string.discovered_servers),
                     style = MaterialTheme.typography.displaySmall,
                     color = MaterialTheme.colorScheme.onSurface,
                 )
                 if (discoveredServers.isEmpty()) {
                     Text(
-                        text = "Searching...",
+                        text = stringResource(R.string.searching),
                         style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.onSurface,
                     )
@@ -184,7 +186,7 @@ fun SwitchServerContent(
                             .fillMaxWidth(.4f),
                 ) {
                     Text(
-                        text = "Enter Server URL",
+                        text = stringResource(R.string.enter_server_url),
                     )
                     EditTextBox(
                         value = url,
@@ -227,7 +229,7 @@ fun SwitchServerContent(
                         if (state == LoadingState.Loading) {
                             CircularProgress(Modifier.size(32.dp))
                         } else {
-                            Text(text = "Submit")
+                            Text(text = stringResource(R.string.submit))
                         }
                     }
                 }

@@ -1,5 +1,6 @@
 package com.github.damontecres.wholphin.ui.detail
 
+import android.content.Context
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.ArrowForward
@@ -36,6 +37,7 @@ import kotlin.time.Duration.Companion.seconds
  * @param onChooseTracks callback to pick a track for the given type of the item
  */
 fun buildMoreDialogItems(
+    context: Context,
     item: BaseItem,
     series: BaseItem?,
     sourceId: UUID?,
@@ -50,7 +52,7 @@ fun buildMoreDialogItems(
     buildList {
         add(
             DialogItem(
-                "Play",
+                context.getString(R.string.play),
                 Icons.Default.PlayArrow,
                 iconColor = Color.Green.copy(alpha = .8f),
             ) {
@@ -83,7 +85,7 @@ fun buildMoreDialogItems(
         series?.let {
             add(
                 DialogItem(
-                    "Go to series",
+                    context.getString(R.string.go_to_series),
                     Icons.AutoMirrored.Filled.ArrowForward,
                 ) {
                     navigateTo(
@@ -100,7 +102,10 @@ fun buildMoreDialogItems(
             if (sources.size > 1) {
                 add(
                     DialogItem(
-                        "Choose Version",
+                        context.getString(
+                            R.string.choose_stream,
+                            context.getString(R.string.version),
+                        ),
                         R.string.fa_file_video,
                     ) {
                         onChooseVersion.invoke()
@@ -116,7 +121,10 @@ fun buildMoreDialogItems(
                 if (audioCount > 1) {
                     add(
                         DialogItem(
-                            "Choose audio",
+                            context.getString(
+                                R.string.choose_stream,
+                                context.getString(R.string.audio),
+                            ),
                             R.string.fa_volume_low,
                         ) {
                             onChooseTracks.invoke(MediaStreamType.AUDIO)
@@ -126,7 +134,10 @@ fun buildMoreDialogItems(
                 if (subtitleCount > 0) {
                     add(
                         DialogItem(
-                            "Choose subtitles",
+                            context.getString(
+                                R.string.choose_stream,
+                                context.getString(R.string.subtitles),
+                            ),
                             R.string.fa_closed_captioning,
                         ) {
                             onChooseTracks.invoke(MediaStreamType.SUBTITLE)
@@ -138,6 +149,7 @@ fun buildMoreDialogItems(
     }
 
 fun buildMoreDialogItemsForHome(
+    context: Context,
     item: BaseItem,
     seriesId: UUID?,
     playbackPosition: Duration,
@@ -151,7 +163,7 @@ fun buildMoreDialogItemsForHome(
         val itemId = item.id
         add(
             DialogItem(
-                "Go To",
+                context.getString(R.string.go_to),
                 Icons.Default.ArrowForward,
             ) {
                 navigateTo(item.destination())
@@ -161,7 +173,7 @@ fun buildMoreDialogItemsForHome(
             if (playbackPosition >= 1.seconds) {
                 add(
                     DialogItem(
-                        "Resume",
+                        context.getString(R.string.resume),
                         Icons.Default.PlayArrow,
                         iconColor = Color.Green.copy(alpha = .8f),
                     ) {
@@ -175,7 +187,7 @@ fun buildMoreDialogItemsForHome(
                 )
                 add(
                     DialogItem(
-                        "Restart",
+                        context.getString(R.string.restart),
                         Icons.Default.Refresh,
 //                    iconColor = Color.Green.copy(alpha = .8f),
                     ) {
@@ -190,7 +202,7 @@ fun buildMoreDialogItemsForHome(
             } else {
                 add(
                     DialogItem(
-                        "Play",
+                        context.getString(R.string.play),
                         Icons.Default.PlayArrow,
                         iconColor = Color.Green.copy(alpha = .8f),
                     ) {
@@ -224,7 +236,7 @@ fun buildMoreDialogItemsForHome(
         seriesId?.let {
             add(
                 DialogItem(
-                    "Go to series",
+                    context.getString(R.string.go_to_series),
                     Icons.AutoMirrored.Filled.ArrowForward,
                 ) {
                     navigateTo(

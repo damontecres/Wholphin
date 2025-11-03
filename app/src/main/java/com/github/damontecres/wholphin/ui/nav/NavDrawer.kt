@@ -253,7 +253,8 @@ fun NavDrawer(
             }
         }
     }
-    if (preferences.appPreferences.interfacePreferences.navDrawerSwitchOnFocus) {
+    // Temporarily disabled, see https://github.com/damontecres/Wholphin/pull/127#issuecomment-3478058418
+    if (false && preferences.appPreferences.interfacePreferences.navDrawerSwitchOnFocus) {
         LaunchedEffect(derivedFocusedIndex) {
             val index = derivedFocusedIndex
             delay(600)
@@ -323,7 +324,7 @@ fun NavDrawer(
                         val focused by interactionSource.collectIsFocusedAsState()
                         LaunchedEffect(focused) { if (focused) focusedIndex = -2 }
                         IconNavItem(
-                            text = "Search",
+                            text = stringResource(R.string.search),
                             icon = Icons.Default.Search,
                             selected = selectedIndex == -2,
                             interactionSource = interactionSource,
@@ -344,7 +345,7 @@ fun NavDrawer(
                         val focused by interactionSource.collectIsFocusedAsState()
                         LaunchedEffect(focused) { if (focused) focusedIndex = -1 }
                         IconNavItem(
-                            text = "Home",
+                            text = stringResource(R.string.home),
                             icon = Icons.Default.Home,
                             selected = selectedIndex == -1,
                             interactionSource = interactionSource,
@@ -412,7 +413,7 @@ fun NavDrawer(
                         val focused by interactionSource.collectIsFocusedAsState()
                         LaunchedEffect(focused) { if (focused) focusedIndex = Int.MIN_VALUE }
                         IconNavItem(
-                            text = "Settings",
+                            text = stringResource(R.string.settings),
                             icon = Icons.Default.Settings,
                             selected = false,
                             interactionSource = interactionSource,

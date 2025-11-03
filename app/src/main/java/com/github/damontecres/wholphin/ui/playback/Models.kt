@@ -1,5 +1,8 @@
 package com.github.damontecres.wholphin.ui.playback
 
+import com.github.damontecres.wholphin.R
+import com.github.damontecres.wholphin.WholphinApplication
+
 data class SubtitleStream(
     val index: Int,
     val language: String?,
@@ -17,7 +20,8 @@ data class SubtitleStream(
                 language,
                 title,
                 codec,
-            ).joinToString(" - ").ifBlank { "Unknown" }
+            ).joinToString(" - ")
+                .ifBlank { WholphinApplication.instance.getString(R.string.unknown) }
 }
 
 data class AudioStream(

@@ -1,5 +1,6 @@
 package com.github.damontecres.wholphin.ui.detail.series
 
+import android.content.Context
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -33,6 +34,7 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -83,15 +85,7 @@ fun SeriesDetails(
     modifier: Modifier = Modifier,
     viewModel: SeriesViewModel = hiltViewModel(),
 ) {
-    LifecycleStartEffect(destination.itemId) {
-        viewModel.maybePlayThemeSong(
-            destination.itemId,
-            preferences.appPreferences.interfacePreferences.playThemeSongs,
-        )
-        onStopOrDispose {
-            viewModel.release()
-        }
-    }
+    val context = LocalContext.current
     LaunchedEffect(Unit) {
         viewModel.init(preferences, destination.itemId, destination.item, null)
     }
@@ -113,6 +107,16 @@ fun SeriesDetails(
         -> LoadingPage()
         LoadingState.Success -> {
             item?.let { item ->
+                LifecycleStartEffect(destination.itemId) {
+                    viewModel.maybePlayThemeSong(
+                        destination.itemId,
+                        preferences.appPreferences.interfacePreferences.playThemeSongs,
+                    )
+                    onStopOrDispose {
+                        viewModel.release()
+                    }
+                }
+
                 val played = item.data.userData?.played ?: false
                 SeriesDetailsContent(
                     preferences = preferences,
@@ -135,7 +139,8 @@ fun SeriesDetails(
                     onLongClickItem = { season ->
                         seasonDialog =
                             buildDialogForSeason(
-                                season,
+                                context = context,
+                                s = season,
                                 onClickItem = { viewModel.navigateTo(it.destination()) },
                                 markPlayed = { played ->
                                     viewModel.setSeasonWatched(season.id, played)
@@ -145,7 +150,7 @@ fun SeriesDetails(
                     overviewOnClick = {
                         overviewDialog =
                             ItemDetailsDialogInfo(
-                                title = item.name ?: "Unknown",
+                                title = item.name ?: context.getString(R.string.unknown),
                                 overview = item.data.overview,
                                 files = listOf(),
                             )
@@ -160,7 +165,8 @@ fun SeriesDetails(
                 if (showWatchConfirmation) {
                     ConfirmDialog(
                         title = item.name ?: "",
-                        body = if (played) "Mark entire series as unplayed?" else "Mark entire series as played?",
+                        body =
+                            stringResource(if (played) R.string.mark_entire_series_as_unplayed else R.string.mark_entire_series_as_played),
                         onCancel = {
                             showWatchConfirmation = false
                         },
@@ -342,7 +348,7 @@ fun SeriesDetailsContent(
                 }
                 item {
                     ItemRow(
-                        title = "Seasons",
+                        title = stringResource(R.string.tv_seasons),
                         items = seasons,
                         onClickItem = {
                             position = SEASONS_ROW
@@ -443,7 +449,7 @@ fun SeriesDetailsHeader(
         modifier = modifier,
     ) {
         Text(
-            text = series.name ?: "Unknown",
+            text = series.name ?: stringResource(R.string.unknown),
             style = MaterialTheme.typography.displaySmall,
             modifier = Modifier.fillMaxWidth(),
         )
@@ -486,6 +492,7 @@ fun SeriesDetailsHeader(
 }
 
 fun buildDialogForSeason(
+    context: Context,
     s: BaseItem,
     onClickItem: (BaseItem) -> Unit,
     markPlayed: (Boolean) -> Unit,
@@ -493,26 +500,26 @@ fun buildDialogForSeason(
     val items =
         buildList {
             add(
-                DialogItem("Go to", Icons.Default.PlayArrow) {
+                DialogItem(context.getString(R.string.go_to), Icons.Default.PlayArrow) {
                     onClickItem.invoke(s)
                 },
             )
             if (s.data.userData?.played == true) {
                 add(
-                    DialogItem("Mark as unplayed", R.string.fa_eye) {
+                    DialogItem(context.getString(R.string.mark_unwatched), R.string.fa_eye) {
                         markPlayed.invoke(false)
                     },
                 )
             } else {
                 add(
-                    DialogItem("Mark as played", R.string.fa_eye_slash) {
+                    DialogItem(context.getString(R.string.mark_watched), R.string.fa_eye_slash) {
                         markPlayed.invoke(true)
                     },
                 )
             }
         }
     return DialogParams(
-        title = s.name ?: "Season",
+        title = s.name ?: context.getString(R.string.tv_season),
         fromLongClick = true,
         items = items,
     )

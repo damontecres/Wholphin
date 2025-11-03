@@ -1,5 +1,6 @@
 package com.github.damontecres.wholphin.ui.components
 
+import android.content.Context
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -19,6 +20,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -26,8 +28,12 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
+import com.github.damontecres.wholphin.R
+import com.github.damontecres.wholphin.data.LibraryDisplayInfoDao
+import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.GetItemsFilter
+import com.github.damontecres.wholphin.data.model.LibraryDisplayInfo
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.OneTimeLaunchedEffect
 import com.github.damontecres.wholphin.ui.SlimItemFields
@@ -43,6 +49,7 @@ import com.github.damontecres.wholphin.util.GetItemsRequestHandler
 import com.github.damontecres.wholphin.util.LoadingExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -62,6 +69,9 @@ class CollectionFolderViewModel
     @Inject
     constructor(
         api: ApiClient,
+        @param:ApplicationContext private val context: Context,
+        private val serverRepository: ServerRepository,
+        private val libraryDisplayInfoDao: LibraryDisplayInfoDao,
     ) : ItemViewModel(api) {
         val loading = MutableLiveData<LoadingState>(LoadingState.Loading)
         val pager = MutableLiveData<List<BaseItem?>>(listOf())
@@ -71,23 +81,52 @@ class CollectionFolderViewModel
         fun init(
             itemId: UUID?,
             potential: BaseItem?,
-            sortAndDirection: SortAndDirection,
+            initialSortAndDirection: SortAndDirection?,
             recursive: Boolean,
             filter: GetItemsFilter,
         ): Job =
             viewModelScope.launch(
                 LoadingExceptionHandler(
                     loading,
-                    "Error loading collection $itemId",
+                    context.getString(R.string.error_loading_collection, itemId),
                 ) + Dispatchers.IO,
             ) {
                 if (itemId != null) {
-                    fetchItem(itemId, potential)
+                    fetchItem(itemId)
+
+                    val sortAndDirection =
+                        if (initialSortAndDirection == null) {
+                            serverRepository.currentUser?.let { user ->
+                                libraryDisplayInfoDao.getItem(user, itemId)?.sortAndDirection
+                            } ?: SortAndDirection.DEFAULT
+                        } else {
+                            SortAndDirection.DEFAULT
+                        }
+                    loadResults(sortAndDirection, recursive, filter)
                 }
-                loadResults(sortAndDirection, recursive, filter)
             }
 
-        fun loadResults(
+        fun onSortChange(
+            sortAndDirection: SortAndDirection,
+            recursive: Boolean,
+            filter: GetItemsFilter,
+        ) {
+            serverRepository.currentUser?.let { user ->
+                viewModelScope.launch(Dispatchers.IO) {
+                    val libraryDisplayInfo =
+                        LibraryDisplayInfo(
+                            userId = user.rowId,
+                            itemId = itemId,
+                            sort = sortAndDirection.sort,
+                            direction = sortAndDirection.direction,
+                        )
+                    libraryDisplayInfoDao.saveItem(libraryDisplayInfo)
+                }
+            }
+            loadResults(sortAndDirection, recursive, filter)
+        }
+
+        private fun loadResults(
             sortAndDirection: SortAndDirection,
             recursive: Boolean,
             filter: GetItemsFilter,
@@ -126,17 +165,25 @@ class CollectionFolderViewModel
                             recursive = recursive,
                             excludeItemIds = item?.let { listOf(item.id) },
                             sortBy =
-                                listOf(
-                                    sortAndDirection.sort,
-                                    ItemSortBy.SORT_NAME,
-                                    ItemSortBy.PRODUCTION_YEAR,
-                                ),
+                                buildList {
+                                    add(sortAndDirection.sort)
+                                    if (sortAndDirection.sort != ItemSortBy.SORT_NAME) {
+                                        add(ItemSortBy.SORT_NAME)
+                                    }
+                                    if (item?.data?.collectionType == CollectionType.MOVIES) {
+                                        add(ItemSortBy.PRODUCTION_YEAR)
+                                    }
+                                },
                             sortOrder =
-                                listOf(
-                                    sortAndDirection.direction,
-                                    SortOrder.ASCENDING,
-                                    SortOrder.ASCENDING,
-                                ),
+                                buildList {
+                                    add(sortAndDirection.direction)
+                                    if (sortAndDirection.sort != ItemSortBy.SORT_NAME) {
+                                        add(SortOrder.ASCENDING)
+                                    }
+                                    if (item?.data?.collectionType == CollectionType.MOVIES) {
+                                        add(SortOrder.ASCENDING)
+                                    }
+                                },
                             fields = SlimItemFields,
                         ),
                     )
@@ -158,26 +205,28 @@ class CollectionFolderViewModel
         }
 
         suspend fun positionOfLetter(letter: Char): Int? =
-            item.value?.let { item ->
-                val includeItemTypes =
-                    when (item.data.collectionType) {
-                        CollectionType.MOVIES -> listOf(BaseItemKind.MOVIE)
-                        CollectionType.TVSHOWS -> listOf(BaseItemKind.SERIES)
-                        CollectionType.HOMEVIDEOS -> listOf(BaseItemKind.VIDEO)
+            withContext(Dispatchers.IO) {
+                item.value?.let { item ->
+                    val includeItemTypes =
+                        when (item.data.collectionType) {
+                            CollectionType.MOVIES -> listOf(BaseItemKind.MOVIE)
+                            CollectionType.TVSHOWS -> listOf(BaseItemKind.SERIES)
+                            CollectionType.HOMEVIDEOS -> listOf(BaseItemKind.VIDEO)
 
-                        else -> listOf()
-                    }
-                val request =
-                    GetItemsRequest(
-                        parentId = item.id,
-                        includeItemTypes = includeItemTypes,
-                        nameLessThan = letter.toString(),
-                        limit = 0,
-                        enableTotalRecordCount = true,
-                        recursive = true,
-                    )
-                val result by GetItemsRequestHandler.execute(api, request)
-                result.totalRecordCount
+                            else -> listOf()
+                        }
+                    val request =
+                        GetItemsRequest(
+                            parentId = item.id,
+                            includeItemTypes = includeItemTypes,
+                            nameLessThan = letter.toString(),
+                            limit = 0,
+                            enableTotalRecordCount = true,
+                            recursive = true,
+                        )
+                    val result by GetItemsRequestHandler.execute(api, request)
+                    result.totalRecordCount
+                }
             }
     }
 
@@ -196,18 +245,14 @@ fun CollectionFolderGrid(
     onClickItem: (BaseItem) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: CollectionFolderViewModel = hiltViewModel(),
-    initialSortAndDirection: SortAndDirection =
-        SortAndDirection(
-            ItemSortBy.SORT_NAME,
-            SortOrder.ASCENDING,
-        ),
+    initialSortAndDirection: SortAndDirection? = null,
     showTitle: Boolean = true,
     positionCallback: ((columns: Int, position: Int) -> Unit)? = null,
 ) {
     OneTimeLaunchedEffect {
         viewModel.init(itemId, item, initialSortAndDirection, recursive, initialFilter)
     }
-    val sortAndDirection by viewModel.sortAndDirection.observeAsState(initialSortAndDirection)
+    val sortAndDirection by viewModel.sortAndDirection.observeAsState()
     val filter by viewModel.filter.observeAsState(initialFilter)
     val loading by viewModel.loading.observeAsState(LoadingState.Loading)
     val item by viewModel.item.observeAsState()
@@ -224,11 +269,11 @@ fun CollectionFolderGrid(
                     preferences,
                     item,
                     pager,
-                    sortAndDirection = sortAndDirection,
+                    sortAndDirection = sortAndDirection!!,
                     modifier = modifier,
                     onClickItem = onClickItem,
                     onSortChange = {
-                        viewModel.loadResults(it, recursive, filter)
+                        viewModel.onSortChange(it, recursive, filter)
                     },
                     showTitle = showTitle,
                     positionCallback = positionCallback,
@@ -252,7 +297,7 @@ fun CollectionFolderGridContent(
     showTitle: Boolean = true,
     positionCallback: ((columns: Int, position: Int) -> Unit)? = null,
 ) {
-    val title = item?.name ?: item?.data?.collectionType?.name ?: "Collection"
+    val title = item?.name ?: item?.data?.collectionType?.name ?: stringResource(R.string.collection)
     val sortOptions =
         when (item?.data?.collectionType) {
             CollectionType.MOVIES -> MovieSortOptions

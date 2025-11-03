@@ -1,9 +1,11 @@
 package com.github.damontecres.wholphin.ui.detail.livetv
 
+import android.content.Context
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.ui.AppColors
 import com.github.damontecres.wholphin.ui.data.RowColumn
@@ -17,6 +19,7 @@ import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -46,6 +49,7 @@ const val MAX_HOURS = 48L
 class LiveTvViewModel
     @Inject
     constructor(
+        @param:ApplicationContext private val context: Context,
         val api: ApiClient,
         val navigationManager: NavigationManager,
     ) : ViewModel() {
@@ -70,7 +74,13 @@ class LiveTvViewModel
             if (!firstLoad) {
                 loading.value = LoadingState.Loading
             }
-            viewModelScope.launch(Dispatchers.IO + LoadingExceptionHandler(loading, "Could not fetch channels")) {
+            viewModelScope.launch(
+                Dispatchers.IO +
+                    LoadingExceptionHandler(
+                        loading,
+                        "Could not fetch channels",
+                    ),
+            ) {
                 val channelData by api.liveTvApi.getLiveTvChannels(
                     GetLiveTvChannelsRequest(
                         startIndex = 0,
@@ -179,7 +189,7 @@ class LiveTvViewModel
                                     startHours = it.toFloat(),
                                     endHours = (it + 1).toFloat(),
                                     duration = 60.seconds,
-                                    name = "No data",
+                                    name = context.getString(R.string.no_data),
                                     subtitle = null,
                                     seasonEpisode = null,
                                     isRecording = false,

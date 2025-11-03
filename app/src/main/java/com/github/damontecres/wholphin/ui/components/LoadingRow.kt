@@ -8,10 +8,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
+import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.ui.Cards
 import com.github.damontecres.wholphin.ui.cards.ItemRow
@@ -70,7 +72,7 @@ fun LoadingRow(
         ->
             LoadingRowPlaceholder(
                 title = title,
-                message = "Loading...",
+                message = stringResource(R.string.loading),
                 modifier = modifier,
             )
 
@@ -88,7 +90,7 @@ fun LoadingRow(
             } else if (showIfEmpty) {
                 LoadingRowPlaceholder(
                     title = title,
-                    message = "No results",
+                    message = stringResource(R.string.no_results),
                     modifier = modifier,
                 )
             }

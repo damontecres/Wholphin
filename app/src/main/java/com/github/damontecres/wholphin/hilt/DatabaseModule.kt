@@ -9,6 +9,7 @@ import androidx.room.Room
 import com.github.damontecres.wholphin.data.AppDatabase
 import com.github.damontecres.wholphin.data.ItemPlaybackDao
 import com.github.damontecres.wholphin.data.JellyfinServerDao
+import com.github.damontecres.wholphin.data.LibraryDisplayInfoDao
 import com.github.damontecres.wholphin.data.Migrations
 import com.github.damontecres.wholphin.data.ServerPreferencesDao
 import com.github.damontecres.wholphin.preferences.AppPreferences
@@ -50,6 +51,10 @@ object DatabaseModule {
     @Provides
     @Singleton
     fun serverPreferencesDao(db: AppDatabase): ServerPreferencesDao = db.serverPreferencesDao()
+
+    @Provides
+    @Singleton
+    fun libraryDisplayInfoDao(db: AppDatabase): LibraryDisplayInfoDao = db.libraryDisplayInfoDao()
 
     @Provides
     @Singleton

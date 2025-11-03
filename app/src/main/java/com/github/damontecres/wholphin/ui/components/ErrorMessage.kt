@@ -6,12 +6,14 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.tv.material3.Button
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
+import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.ui.detail.DebugViewModel.Companion.sendAppLogs
 import com.github.damontecres.wholphin.util.LoadingState
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -50,7 +52,7 @@ fun ErrorMessage(
         modifier = modifier.padding(16.dp),
     ) {
         Text(
-            text = "An error occurred! Press the button to send logs to your server.",
+            text = stringResource(R.string.compose_error_message_title),
             color = MaterialTheme.colorScheme.error,
             style = MaterialTheme.typography.titleMedium,
         )
@@ -60,7 +62,7 @@ fun ErrorMessage(
             },
         ) {
             Text(
-                text = "Send Logs",
+                text = stringResource(R.string.send_app_logs),
             )
         }
         message?.let {

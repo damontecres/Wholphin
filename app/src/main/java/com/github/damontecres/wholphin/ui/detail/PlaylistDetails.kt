@@ -42,6 +42,8 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -102,7 +104,7 @@ class PlaylistViewModel
                 Dispatchers.IO +
                     LoadingExceptionHandler(loading, "Failed to fetch playlist $playlistId"),
             ) {
-                val playlist = fetchItem(playlistId, null)
+                val playlist = fetchItem(playlistId)
                 val request =
                     GetPlaylistItemsRequest(
                         playlistId = playlist.id,
@@ -123,6 +125,7 @@ fun PlaylistDetails(
     modifier: Modifier = Modifier,
     viewModel: PlaylistViewModel = hiltViewModel(),
 ) {
+    val context = LocalContext.current
     LaunchedEffect(Unit) {
         viewModel.init(destination.itemId)
     }
@@ -170,13 +173,13 @@ fun PlaylistDetails(
                                 items =
                                     listOf(
                                         DialogItem(
-                                            "Go to",
+                                            context.getString(R.string.go_to),
                                             Icons.Default.ArrowForward,
                                         ) {
                                             viewModel.navigationManager.navigateTo(item.destination())
                                         },
                                         DialogItem(
-                                            "Play from here",
+                                            context.getString(R.string.play_from_here),
                                             Icons.Default.PlayArrow,
                                         ) {
                                             viewModel.navigationManager.navigateTo(
@@ -282,7 +285,7 @@ fun PlaylistDetailsContent(
                             .padding(horizontal = 16.dp),
                 ) {
                     Text(
-                        text = playlist.name ?: "Playlist",
+                        text = playlist.name ?: stringResource(R.string.playlist),
                         color = MaterialTheme.colorScheme.onSurface,
                         style = MaterialTheme.typography.displayMedium,
                         textAlign = TextAlign.Center,

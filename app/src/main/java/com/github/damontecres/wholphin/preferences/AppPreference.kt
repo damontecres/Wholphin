@@ -70,7 +70,11 @@ sealed interface AppPreference<T> {
                 },
                 summarizer = { value ->
                     if (value != null) {
-                        "$value seconds"
+                        WholphinApplication.instance.resources.getQuantityString(
+                            R.plurals.seconds,
+                            value.toInt(),
+                            value.toInt(),
+                        )
                     } else {
                         null
                     }
@@ -95,7 +99,11 @@ sealed interface AppPreference<T> {
                 },
                 summarizer = { value ->
                     if (value != null) {
-                        "$value seconds"
+                        WholphinApplication.instance.resources.getQuantityString(
+                            R.plurals.seconds,
+                            value.toInt(),
+                            value.toInt(),
+                        )
                     } else {
                         null
                     }
@@ -137,7 +145,14 @@ sealed interface AppPreference<T> {
                 setter = { prefs, value ->
                     prefs.updatePlaybackPreferences { controllerTimeoutMs = value }
                 },
-                summarizer = { value -> value?.let { "${value / 1000.0} seconds" } },
+                summarizer = { value ->
+                    value?.let {
+                        WholphinApplication.instance.getString(
+                            R.string.decimal_seconds,
+                            value / 1000.0,
+                        )
+                    }
+                },
             )
 
         val SeekBarSteps =
@@ -243,7 +258,7 @@ sealed interface AppPreference<T> {
                 },
                 summarizer = { value ->
                     if (value == 0L) {
-                        "Disabled"
+                        WholphinApplication.instance.getString(R.string.disabled)
                     } else {
                         "${value}s"
                     }
@@ -262,10 +277,16 @@ sealed interface AppPreference<T> {
                     prefs.updatePlaybackPreferences { autoPlayNextDelaySeconds = value }
                 },
                 summarizer = { value ->
-                    if (value == 0L) {
-                        "Immediate"
+                    if (value == null) {
+                        ""
+                    } else if (value == 0L) {
+                        WholphinApplication.instance.getString(R.string.immediate)
                     } else {
-                        "$value seconds"
+                        WholphinApplication.instance.resources.getQuantityString(
+                            R.plurals.seconds,
+                            value.toInt(),
+                            value.toInt(),
+                        )
                     }
                 },
             )
@@ -284,10 +305,16 @@ sealed interface AppPreference<T> {
                     }
                 },
                 summarizer = { value ->
-                    if (value == 0L) {
-                        "Disabled"
+                    if (value == null) {
+                        ""
+                    } else if (value == 0L) {
+                        WholphinApplication.instance.getString(R.string.disabled)
                     } else {
-                        "$value hours"
+                        WholphinApplication.instance.resources.getQuantityString(
+                            R.plurals.hours,
+                            value.toInt(),
+                            value.toInt(),
+                        )
                     }
                 },
             )
@@ -485,7 +512,7 @@ sealed interface AppPreference<T> {
 
         val SkipCommercials =
             AppChoicePreference<SkipSegmentBehavior>(
-                title = R.string.skip_comercials_behavior,
+                title = R.string.skip_commercials_behavior,
                 defaultValue = SkipSegmentBehavior.ASK_TO_SKIP,
                 getter = { it.playbackPreferences.skipCommercials },
                 setter = { prefs, value ->
@@ -602,6 +629,19 @@ sealed interface AppPreference<T> {
                 summaryOn = R.string.enabled,
                 summaryOff = R.string.nav_drawer_switch_on_focus_summary_off,
             )
+
+        val ShowNextUpTiming =
+            AppChoicePreference<ShowNextUpWhen>(
+                title = R.string.show_next_up_when,
+                defaultValue = ShowNextUpWhen.END_OF_PLAYBACK,
+                getter = { it.playbackPreferences.showNextUpWhen },
+                setter = { prefs, value ->
+                    prefs.updatePlaybackPreferences { showNextUpWhen = value }
+                },
+                displayValues = R.array.show_next_up_when_options,
+                indexToValue = { ShowNextUpWhen.forNumber(it) },
+                valueToIndex = { it.number },
+            )
     }
 }
 
@@ -613,7 +653,6 @@ val basicPreferences =
                 listOf(
                     AppPreference.HomePageItems,
                     AppPreference.RewatchNextUp,
-                    AppPreference.CombineContinueNext,
                     AppPreference.PlayThemeMusic,
                     AppPreference.RememberSelectedTab,
                     AppPreference.ThemeColors,
@@ -625,11 +664,17 @@ val basicPreferences =
                 listOf(
                     AppPreference.SkipForward,
                     AppPreference.SkipBack,
-                    AppPreference.ControllerTimeout,
+                    AppPreference.SkipBackOnResume,
+                ),
+        ),
+        PreferenceGroup(
+            title = R.string.next_up,
+            preferences =
+                listOf(
+                    AppPreference.ShowNextUpTiming,
                     AppPreference.AutoPlayNextUp,
                     AppPreference.AutoPlayNextDelay,
                     AppPreference.PassOutProtection,
-                    AppPreference.SkipBackOnResume,
                 ),
         ),
         PreferenceGroup(
@@ -664,7 +709,10 @@ val advancedPreferences =
             title = R.string.ui_interface,
             preferences =
                 listOf(
-                    AppPreference.NavDrawerSwitchOnFocus,
+                    AppPreference.CombineContinueNext,
+                    // Temporarily disabled, see https://github.com/damontecres/Wholphin/pull/127#issuecomment-3478058418
+//                    AppPreference.NavDrawerSwitchOnFocus,
+                    AppPreference.ControllerTimeout,
                 ),
         ),
         PreferenceGroup(

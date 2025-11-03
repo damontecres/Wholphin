@@ -1,5 +1,53 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="pref_key_update_last_check_threshold" translatable="false">preference.update.threshold</string>
+    <string name="pref_key_update_last_check" translatable="false">preference.update.lastTimestamp</string>
+
+    <string name="ac3_supported">Device supports AC3/Dolby Digital</string>
+    <string name="advanced_settings">Advanced Settings</string>
+    <string name="advanced_ui">Advanced UI</string>
+    <string name="app_theme">Application Theme</string>
+    <string name="auto_check_for_updates">Automatically check for updates</string>
+    <string name="auto_play_next_delay">Delay before playing next up</string>
+    <string name="auto_play_next">Auto play next up</string>
+    <string name="check_for_updates">Check for updates</string>
+    <string name="combine_continue_next_summary">Applies to TV Series only</string>
+    <string name="combine_continue_next"><![CDATA[Combine Continue Watching & Next Up]]></string>
+    <string name="direct_play_ass">Direct play ASS subtitles</string>
+    <string name="direct_play_pgs">Direct play PGS subtitles</string>
+    <string name="downmix_stereo">Always downmix to stereo</string>
+    <string name="ffmpeg_extension_pref">Use FFmpeg decoder module</string>
+    <string name="global_content_scale">Default content scale</string>
+    <string name="install_update">Install update</string>
+    <string name="installed_version">Installed version</string>
+    <string name="max_homepage_items">Max items on home page rows</string>
+    <string name="nav_drawer_pins_summary">Choose the default items to show, others will be hidden</string>
+    <string name="nav_drawer_pins">Customize Navigation Drawer Items</string>
+    <string name="nav_drawer_switch_on_focus_summary_off">Click to switch pages</string>
+    <string name="nav_drawer_switch_on_focus">Switch nav drawer pages on focus</string>
+    <string name="pass_out_protection">Passout Protection</string>
+    <string name="play_theme_music">Play theme music</string>
+    <string name="playback_overrides">Playback overrides</string>
+    <string name="remember_selected_tab">Remember selected tabs</string>
+    <string name="rewatch_next_up">Enable rewatching in next up</string>
+    <string name="seek_bar_steps">Seek bar steps</string>
+    <string name="send_app_logs_summary">Useful for debugging</string>
+    <string name="send_app_logs">Send app logs to current server</string>
+    <string name="send_crash_reports_summary">Will try to send to last connected server</string>
+    <string name="send_crash_reports">Send Crash Reports</string>
+    <string name="settings">Settings</string>
+    <string name="skip_back_on_resume_preference">Skip back when resuming playback</string>
+    <string name="skip_back_preference">Skip back</string>
+    <string name="skip_commercials_behavior">Skip commercials behavior</string>
+    <string name="skip_forward_preference">Skip forward</string>
+    <string name="skip_intro_behavior">Skip intro behavior</string>
+    <string name="skip_outro_behavior">Skip outro behavior</string>
+    <string name="skip_previews_behavior">Skip previews behavior</string>
+    <string name="skip_recap_behavior">Skip recap behavior</string>
+    <string name="update_available">Update available</string>
+    <string name="update_url_summary">URL used to check for app updates</string>
+    <string name="update_url">Update URL</string>
+
     <string-array name="theme_song_volume">
         <item>Disabled</item>
         <item>Lowest</item>
@@ -35,6 +83,11 @@
         <item>Only use FFmpeg if no built-in decoder exists</item>
         <item>Prefer to use FFmpeg over built-in decoders</item>
         <item>Never use FFmpeg decoders</item>
+    </string-array>
+
+    <string-array name="show_next_up_when_options">
+        <item>At the end of playback</item>
+        <item>During end credits/outro</item>
     </string-array>
 
 </resources>

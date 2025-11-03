@@ -1,8 +1,10 @@
 package com.github.damontecres.wholphin.ui.main
 
+import android.content.Context
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.NavDrawerItemRepository
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.BaseItem
@@ -15,6 +17,7 @@ import com.github.damontecres.wholphin.util.LoadingExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
 import com.github.damontecres.wholphin.util.supportItemKinds
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -40,6 +43,7 @@ import javax.inject.Inject
 class HomeViewModel
     @Inject
     constructor(
+        @param:ApplicationContext private val context: Context,
         val api: ApiClient,
         val navigationManager: NavigationManager,
         val serverRepository: ServerRepository,
@@ -86,7 +90,7 @@ class HomeViewModel
                             if (resume.isNotEmpty()) {
                                 add(
                                     HomeRow(
-                                        section = HomeSection.RESUME,
+                                        titleRes = R.string.recently_added,
                                         items = resume,
                                     ),
                                 )
@@ -94,7 +98,7 @@ class HomeViewModel
                             if (nextUp.isNotEmpty()) {
                                 add(
                                     HomeRow(
-                                        section = HomeSection.NEXT_UP,
+                                        titleRes = R.string.next_up,
                                         items = nextUp,
                                     ),
                                 )
@@ -191,10 +195,10 @@ class HomeViewModel
                     .mapNotNull { view ->
                         val title =
                             if (view.collectionType == CollectionType.LIVETV) {
-                                "Recently Recorded"
+                                context.getString(R.string.recently_recorded)
                             } else {
-                                view.name?.let { "Recently Added in $it" }
-                            }
+                                view.name?.let { context.getString(R.string.recently_added_in, it) }
+                            } ?: context.getString(R.string.recently_added)
                         val viewId =
                             if (view.collectionType == CollectionType.LIVETV) {
                                 api.liveTvApi
@@ -222,9 +226,8 @@ class HomeViewModel
                                     .content
                                     .map { BaseItem.from(it, api, true) }
                             HomeRow(
-                                section = HomeSection.LATEST_MEDIA,
-                                items = latest,
                                 title = title,
+                                items = latest,
                             )
                         }
                     }
