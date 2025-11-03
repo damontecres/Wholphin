@@ -33,6 +33,7 @@ import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.type
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.MutableLiveData
@@ -42,6 +43,7 @@ import androidx.tv.material3.Button
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import androidx.tv.material3.surfaceColorAtElevation
+import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.PreviewTvSpec
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
@@ -221,7 +223,7 @@ fun InstallUpdatePageContent(
                     ).padding(16.dp),
         ) {
             Text(
-                text = "Update available",
+                text = stringResource(R.string.update_available),
                 style = MaterialTheme.typography.displaySmall,
                 color = MaterialTheme.colorScheme.onSurface,
             )
@@ -234,14 +236,14 @@ fun InstallUpdatePageContent(
                 onClick = onInstallRelease,
             ) {
                 Text(
-                    text = "Download & Update",
+                    text = stringResource(R.string.download_and_update),
                 )
             }
             Button(
                 onClick = onCancel,
             ) {
                 Text(
-                    text = "Cancel",
+                    text = stringResource(R.string.cancel),
                 )
             }
         }

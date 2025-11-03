@@ -1,7 +1,9 @@
 package com.github.damontecres.wholphin.ui.detail.movie
 
+import android.content.Context
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
+import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.ChosenStreams
 import com.github.damontecres.wholphin.data.ItemPlaybackRepository
 import com.github.damontecres.wholphin.data.ServerRepository
@@ -25,6 +27,7 @@ import com.github.damontecres.wholphin.util.LoadingExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
 import com.github.damontecres.wholphin.util.ThemeSongPlayer
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -43,6 +46,7 @@ class MovieViewModel
     @Inject
     constructor(
         api: ApiClient,
+        @param:ApplicationContext private val context: Context,
         private val navigationManager: NavigationManager,
         val serverRepository: ServerRepository,
         val itemPlaybackRepository: ItemPlaybackRepository,
@@ -79,7 +83,7 @@ class MovieViewModel
                                                 // TODO would be nice to clean up the trailer name
 //                                                ?.replace(item.name ?: "", "")
 //                                                ?.removePrefix(" - ")
-                                                ?: "Trailer"
+                                                ?: context.getString(R.string.trailer)
                                         RemoteTrailer(name, url)
                                     }
                                 }.orEmpty()

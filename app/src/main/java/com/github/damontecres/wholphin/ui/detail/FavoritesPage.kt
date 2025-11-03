@@ -21,6 +21,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.tv.material3.MaterialTheme
@@ -29,6 +30,7 @@ import androidx.tv.material3.TabDefaults
 import androidx.tv.material3.TabRow
 import androidx.tv.material3.TabRowDefaults
 import androidx.tv.material3.Text
+import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.GetItemsFilter
 import com.github.damontecres.wholphin.preferences.UserPreferences
@@ -55,7 +57,12 @@ fun FavoritesPage(
             )
         }
 
-    val tabs = listOf("Movies", "TV Shows", "Episodes")
+    val tabs =
+        listOf(
+            stringResource(R.string.movies),
+            stringResource(R.string.tv_shows),
+            stringResource(R.string.episodes),
+        )
     val tabFocusRequesters = remember { List(tabs.size) { FocusRequester() } }
     var focusTabIndex by rememberSaveable { mutableIntStateOf(rememberedTabIndex) }
     var selectedTabIndex by rememberSaveable { mutableIntStateOf(rememberedTabIndex) }

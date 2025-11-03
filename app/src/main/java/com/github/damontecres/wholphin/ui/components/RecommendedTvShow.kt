@@ -8,6 +8,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.preferences.UserPreferences
@@ -16,7 +17,6 @@ import com.github.damontecres.wholphin.ui.SlimItemFields
 import com.github.damontecres.wholphin.ui.data.RowColumn
 import com.github.damontecres.wholphin.ui.main.HomePageContent
 import com.github.damontecres.wholphin.ui.main.HomeRow
-import com.github.damontecres.wholphin.ui.main.HomeSection
 import com.github.damontecres.wholphin.util.ApiRequestPager
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.GetItemsRequestHandler
@@ -124,12 +124,12 @@ class RecommendedTvShowViewModel
                 rows.forEach { it.init() }
                 val homeRows =
                     listOf(
-                        HomeRow(HomeSection.RESUME, resumeItems, "Continue Watching"),
-                        HomeRow(HomeSection.NEXT_UP, nextUpItems, "Next Up"),
-                        HomeRow(HomeSection.LATEST_MEDIA, recentlyReleasedItems, "Recently Released"),
-                        HomeRow(HomeSection.LATEST_MEDIA, recentlyAddedItems, "Recently Added"),
-                        HomeRow(HomeSection.NONE, suggestedItems, "Suggestions"),
-                        HomeRow(HomeSection.NONE, unwatchedTopRatedItems, "Top Rated Unwatched"),
+                        HomeRow(R.string.continue_watching, resumeItems),
+                        HomeRow(R.string.next_up, nextUpItems),
+                        HomeRow(R.string.recently_released, recentlyReleasedItems),
+                        HomeRow(R.string.recently_added, recentlyAddedItems),
+                        HomeRow(R.string.suggestions, suggestedItems),
+                        HomeRow(R.string.top_unwatched, unwatchedTopRatedItems),
                     ).filter { it.items.isNotEmpty() }
                 withContext(Dispatchers.Main) {
                     this@RecommendedTvShowViewModel.rows.value = homeRows

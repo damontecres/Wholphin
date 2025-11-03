@@ -42,6 +42,7 @@ import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.type
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.tv.material3.Button
@@ -298,7 +299,7 @@ fun CardGrid(
 //                focusedIndex = -1
                 Box(modifier = Modifier.fillMaxSize()) {
                     Text(
-                        text = "No results",
+                        text = stringResource(R.string.no_results),
                         color = MaterialTheme.colorScheme.onBackground,
                         modifier = Modifier.align(Alignment.Center),
                     )
@@ -326,6 +327,8 @@ fun CardGrid(
                 }
             }
         }
+        val context = LocalContext.current
+        val letters = context.getString(R.string.jump_letters)
         // Letters
         val currentLetter =
             remember(focusedIndex) {
@@ -344,10 +347,11 @@ fun CardGrid(
                             null
                         }
                     }
-                    ?: LETTERS[0]
+                    ?: letters[0]
             }
         if (showLetterButtons && pager.isNotEmpty()) {
             AlphabetButtons(
+                letters = letters,
                 currentLetter = currentLetter,
                 modifier = Modifier.align(Alignment.CenterVertically),
                 letterClicked = { letter ->
@@ -404,18 +408,18 @@ fun JumpButton(
     }
 }
 
-private const val LETTERS = "#ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-
 @Composable
 fun AlphabetButtons(
+    letters: String,
     currentLetter: Char,
     letterClicked: (Char) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val listState = rememberLazyListState()
 
-    val index = LETTERS.indexOf(currentLetter)
+    val index = letters.indexOf(currentLetter)
     LaunchedEffect(currentLetter) {
         scope.launch(ExceptionHandler()) {
             val firstVisibleItemIndex = listState.firstVisibleItemIndex
@@ -428,19 +432,19 @@ fun AlphabetButtons(
             }
         }
     }
-    val focusRequesters = remember { List(LETTERS.length) { FocusRequester() } }
+    val focusRequesters = remember { List(letters.length) { FocusRequester() } }
     LazyColumn(
         state = listState,
         modifier =
             modifier.focusProperties {
                 onEnter = {
-                    focusRequesters[index.coerceIn(0, LETTERS.length - 1)].tryRequestFocus()
+                    focusRequesters[index.coerceIn(0, letters.length - 1)].tryRequestFocus()
                 }
             },
     ) {
         items(
-            LETTERS.length,
-            key = { LETTERS[it] },
+            letters.length,
+            key = { letters[it] },
         ) { index ->
             val interactionSource = remember { MutableInteractionSource() }
             val focused by interactionSource.collectIsFocusedAsState()
@@ -452,17 +456,17 @@ fun AlphabetButtons(
                 contentPadding = PaddingValues(2.dp),
                 interactionSource = interactionSource,
                 onClick = {
-                    letterClicked.invoke(LETTERS[index])
+                    letterClicked.invoke(letters[index])
                 },
             ) {
                 val color =
-                    if (!focused && LETTERS[index] == currentLetter) {
+                    if (!focused && letters[index] == currentLetter) {
                         MaterialTheme.colorScheme.tertiary
                     } else {
                         LocalContentColor.current
                     }
                 Text(
-                    text = LETTERS[index].toString(),
+                    text = letters[index].toString(),
                     color = color,
                 )
             }

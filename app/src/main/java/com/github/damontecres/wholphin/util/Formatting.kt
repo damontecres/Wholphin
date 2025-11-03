@@ -1,6 +1,7 @@
 package com.github.damontecres.wholphin.util
 
 import android.os.Build
+import androidx.annotation.StringRes
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
 import com.github.damontecres.wholphin.R
@@ -11,6 +12,7 @@ import com.github.damontecres.wholphin.data.model.chooseStream
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import org.jellyfin.sdk.model.api.BaseItemDto
+import org.jellyfin.sdk.model.api.MediaSegmentType
 import org.jellyfin.sdk.model.api.MediaStream
 import org.jellyfin.sdk.model.api.MediaStreamType
 import java.time.LocalDate
@@ -164,3 +166,15 @@ fun formatBytes(
     }
     return String.format(Locale.getDefault(), "%.2f%s", count, suffixes[unit])
 }
+
+@get:StringRes
+val MediaSegmentType.stringRes: Int
+    get() =
+        when (this) {
+            MediaSegmentType.UNKNOWN -> R.string.unknown
+            MediaSegmentType.COMMERCIAL -> R.string.commercial
+            MediaSegmentType.PREVIEW -> R.string.preview
+            MediaSegmentType.RECAP -> R.string.recap
+            MediaSegmentType.OUTRO -> R.string.outro
+            MediaSegmentType.INTRO -> R.string.intro
+        }

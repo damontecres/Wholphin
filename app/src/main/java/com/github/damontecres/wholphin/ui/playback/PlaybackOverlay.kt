@@ -38,11 +38,13 @@ import androidx.compose.ui.input.key.type
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.media3.common.Player
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
+import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.Chapter
 import com.github.damontecres.wholphin.data.model.ItemPlayback
@@ -199,7 +201,7 @@ fun PlaybackOverlay(
                             },
                 ) {
                     Text(
-                        text = "Chapters",
+                        text = stringResource(R.string.chapters),
                         style = MaterialTheme.typography.titleLarge,
                     )
                     LazyRow(
@@ -240,7 +242,7 @@ fun PlaybackOverlay(
                     }
                     if (playlist.hasNext()) {
                         Text(
-                            text = "Queue",
+                            text = stringResource(R.string.queue),
                             style = MaterialTheme.typography.titleLarge,
                             modifier =
                                 Modifier
@@ -282,7 +284,7 @@ fun PlaybackOverlay(
                             },
                 ) {
                     Text(
-                        text = "Queue",
+                        text = stringResource(R.string.queue),
                         style = MaterialTheme.typography.titleLarge,
                     )
                     LazyRow(
@@ -489,7 +491,7 @@ fun Controller(
         when (nextState) {
             OverlayViewState.CHAPTERS ->
                 Text(
-                    text = "Chapters",
+                    text = stringResource(R.string.chapters),
                     style = MaterialTheme.typography.titleLarge,
                     modifier =
                         Modifier
@@ -501,7 +503,7 @@ fun Controller(
 
             OverlayViewState.QUEUE ->
                 Text(
-                    text = "Queue",
+                    text = stringResource(R.string.queue),
                     style = MaterialTheme.typography.titleLarge,
                     modifier =
                         Modifier

@@ -19,6 +19,7 @@ import androidx.media3.common.Tracks
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.ExoPlayer
+import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.ItemPlaybackDao
 import com.github.damontecres.wholphin.data.ItemPlaybackRepository
 import com.github.damontecres.wholphin.data.ServerRepository
@@ -963,7 +964,7 @@ class PlaybackViewModel
                             if (maxAttempts == 0) {
                                 showToast(
                                     context,
-                                    "Download is taking a long time, you may need to restart playback",
+                                    context.getString(R.string.subtitle_download_too_long),
                                 )
                             } else {
                                 // Find the new subtitle stream

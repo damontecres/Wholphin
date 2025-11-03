@@ -22,6 +22,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.MutableLiveData
@@ -33,6 +34,7 @@ import androidx.tv.material3.TabDefaults
 import androidx.tv.material3.TabRow
 import androidx.tv.material3.TabRowDefaults
 import androidx.tv.material3.Text
+import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.GetItemsFilter
@@ -96,8 +98,8 @@ fun CollectionFolderLiveTv(
 
     val tabs =
         listOf(
-            TabId("Guide", UUID.randomUUID()),
-            TabId("DVR Schedule", UUID.randomUUID()),
+            TabId(stringResource(R.string.tv_guide), UUID.randomUUID()),
+            TabId(stringResource(R.string.tv_dvr_schedule), UUID.randomUUID()),
         ) + folders
 
     var focusTabIndex by rememberSaveable { mutableIntStateOf(rememberedTabIndex) }

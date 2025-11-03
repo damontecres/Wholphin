@@ -150,7 +150,7 @@ fun MovieDetails(
                     overviewOnClick = {
                         overviewDialog =
                             ItemDetailsDialogInfo(
-                                title = movie.name ?: "Unknown",
+                                title = movie.name ?: context.getString(R.string.unknown),
                                 overview = movie.data.overview,
                                 files = movie.data.mediaSources.orEmpty(),
                             )
@@ -162,6 +162,7 @@ fun MovieDetails(
                                 title = movie.name + " (${movie.data.productionYear ?: ""})",
                                 items =
                                     buildMoreDialogItems(
+                                        context = context,
                                         item = movie,
                                         watched = movie.data.userData?.played ?: false,
                                         favorite = movie.data.userData?.isFavorite ?: false,
@@ -172,7 +173,10 @@ fun MovieDetails(
                                         onClickFavorite = viewModel::setFavorite,
                                         onChooseVersion = {
                                             chooseVersion =
-                                                chooseVersionParams(movie.data.mediaSources!!) { idx ->
+                                                chooseVersionParams(
+                                                    context,
+                                                    movie.data.mediaSources!!,
+                                                ) { idx ->
                                                     val source = movie.data.mediaSources!![idx]
                                                     viewModel.savePlayVersion(
                                                         movie,
@@ -188,6 +192,7 @@ fun MovieDetails(
                                             )?.let { source ->
                                                 chooseVersion =
                                                     chooseStream(
+                                                        context = context,
                                                         streams = source.mediaStreams.orEmpty(),
                                                         type = type,
                                                         onClick = { trackIndex ->

@@ -1,5 +1,6 @@
 package com.github.damontecres.wholphin.ui.components
 
+import android.content.Context
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -19,6 +20,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -26,6 +28,7 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
+import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.LibraryDisplayInfoDao
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.BaseItem
@@ -46,6 +49,7 @@ import com.github.damontecres.wholphin.util.GetItemsRequestHandler
 import com.github.damontecres.wholphin.util.LoadingExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -65,6 +69,7 @@ class CollectionFolderViewModel
     @Inject
     constructor(
         api: ApiClient,
+        @param:ApplicationContext private val context: Context,
         private val serverRepository: ServerRepository,
         private val libraryDisplayInfoDao: LibraryDisplayInfoDao,
     ) : ItemViewModel(api) {
@@ -83,7 +88,7 @@ class CollectionFolderViewModel
             viewModelScope.launch(
                 LoadingExceptionHandler(
                     loading,
-                    "Error loading collection $itemId",
+                    context.getString(R.string.error_loading_collection, itemId),
                 ) + Dispatchers.IO,
             ) {
                 if (itemId != null) {
@@ -292,7 +297,7 @@ fun CollectionFolderGridContent(
     showTitle: Boolean = true,
     positionCallback: ((columns: Int, position: Int) -> Unit)? = null,
 ) {
-    val title = item?.name ?: item?.data?.collectionType?.name ?: "Collection"
+    val title = item?.name ?: item?.data?.collectionType?.name ?: stringResource(R.string.collection)
     val sortOptions =
         when (item?.data?.collectionType) {
             CollectionType.MOVIES -> MovieSortOptions

@@ -39,6 +39,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -60,6 +61,7 @@ import androidx.tv.material3.Button
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import androidx.tv.material3.surfaceColorAtElevation
+import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.ItemPlayback
 import com.github.damontecres.wholphin.data.model.Playlist
 import com.github.damontecres.wholphin.preferences.UserPreferences
@@ -72,6 +74,7 @@ import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
 import com.github.damontecres.wholphin.util.seasonEpisode
+import com.github.damontecres.wholphin.util.stringRes
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.jellyfin.sdk.model.api.DeviceProfile
@@ -411,7 +414,7 @@ fun PlaybackPage(
                             modifier = Modifier.focusRequester(focusRequester),
                         ) {
                             Text(
-                                text = "Skip ${segment.type.serialName}",
+                                text = stringResource(R.string.skip) + " " + stringResource(segment.type.stringRes),
                             )
                         }
                     }

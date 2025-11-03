@@ -33,6 +33,7 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.tv.material3.MaterialTheme
@@ -42,6 +43,7 @@ import androidx.tv.material3.TabRow
 import androidx.tv.material3.TabRowDefaults
 import androidx.tv.material3.Text
 import coil3.compose.AsyncImage
+import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.ChosenStreams
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.aspectRatioFloat
@@ -178,7 +180,9 @@ fun SeriesOverviewContent(
                                         .focusRequester(focusRequesters[index]),
                             ) {
                                 Text(
-                                    text = season.name ?: "Season ${season.data.indexNumber}",
+                                    text =
+                                        season.name
+                                            ?: (stringResource(R.string.tv_season) + " ${season.data.indexNumber}"),
                                     modifier = Modifier.padding(8.dp),
                                 )
                             }

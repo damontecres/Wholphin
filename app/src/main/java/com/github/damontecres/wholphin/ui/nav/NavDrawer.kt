@@ -324,7 +324,7 @@ fun NavDrawer(
                         val focused by interactionSource.collectIsFocusedAsState()
                         LaunchedEffect(focused) { if (focused) focusedIndex = -2 }
                         IconNavItem(
-                            text = "Search",
+                            text = stringResource(R.string.search),
                             icon = Icons.Default.Search,
                             selected = selectedIndex == -2,
                             interactionSource = interactionSource,
@@ -345,7 +345,7 @@ fun NavDrawer(
                         val focused by interactionSource.collectIsFocusedAsState()
                         LaunchedEffect(focused) { if (focused) focusedIndex = -1 }
                         IconNavItem(
-                            text = "Home",
+                            text = stringResource(R.string.home),
                             icon = Icons.Default.Home,
                             selected = selectedIndex == -1,
                             interactionSource = interactionSource,
@@ -413,7 +413,7 @@ fun NavDrawer(
                         val focused by interactionSource.collectIsFocusedAsState()
                         LaunchedEffect(focused) { if (focused) focusedIndex = Int.MIN_VALUE }
                         IconNavItem(
-                            text = "Settings",
+                            text = stringResource(R.string.settings),
                             icon = Icons.Default.Settings,
                             selected = false,
                             interactionSource = interactionSource,
