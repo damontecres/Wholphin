@@ -21,6 +21,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.MutableLiveData
@@ -28,6 +30,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
+import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.Cards
@@ -153,6 +156,7 @@ fun SearchPage(
     modifier: Modifier = Modifier,
     viewModel: SearchViewModel = hiltViewModel(),
 ) {
+    val context = LocalContext.current
     val movies by viewModel.movies.observeAsState(SearchResult.NoQuery)
     val collections by viewModel.collections.observeAsState(SearchResult.NoQuery)
     val series by viewModel.series.observeAsState(SearchResult.NoQuery)
@@ -198,7 +202,7 @@ fun SearchPage(
             }
         }
         searchResultRow(
-            title = "Movies",
+            title = context.getString(R.string.movies),
             result = movies,
             rowIndex = MOVIE_ROW,
             position = position,
@@ -208,7 +212,7 @@ fun SearchPage(
             modifier = Modifier.fillMaxWidth(),
         )
         searchResultRow(
-            title = "Collections",
+            title = context.getString(R.string.collections),
             result = collections,
             rowIndex = COLLECTION_ROW,
             position = position,
@@ -218,7 +222,7 @@ fun SearchPage(
             modifier = Modifier.fillMaxWidth(),
         )
         searchResultRow(
-            title = "Series",
+            title = context.getString(R.string.tv_shows),
             result = series,
             rowIndex = SERIES_ROW,
             position = position,
@@ -228,7 +232,7 @@ fun SearchPage(
             modifier = Modifier.fillMaxWidth(),
         )
         searchResultRow(
-            title = "Episodes",
+            title = context.getString(R.string.episodes),
             result = episodes,
             rowIndex = EPISODE_ROW,
             position = position,
@@ -308,7 +312,7 @@ fun LazyListScope.searchResultRow(
             SearchResult.Searching ->
                 SearchResultPlaceholder(
                     title = title,
-                    message = "Searching...",
+                    message = stringResource(R.string.searching),
                     modifier = modifier,
                 )
 
@@ -316,7 +320,7 @@ fun LazyListScope.searchResultRow(
                 if (r.items.isEmpty()) {
                     SearchResultPlaceholder(
                         title = title,
-                        message = "No results",
+                        message = stringResource(R.string.no_results),
                         modifier = modifier,
                     )
                 } else {

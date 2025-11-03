@@ -1,5 +1,6 @@
 package com.github.damontecres.wholphin.ui.components
 
+import android.content.Context
 import android.view.KeyEvent
 import androidx.annotation.StringRes
 import androidx.compose.foundation.background
@@ -462,12 +463,13 @@ fun ConfirmDialogContent(
 }
 
 fun chooseVersionParams(
+    context: Context,
     sources: List<MediaSourceInfo>,
     onClick: (Int) -> Unit,
 ): DialogParams =
     DialogParams(
         fromLongClick = false,
-        title = "Play Version",
+        title = context.getString(R.string.choose_stream, context.getString(R.string.version)),
         items =
             sources.filter { it.id.isNotNullOrBlank() }.mapIndexed { index, source ->
                 val videoStream =
@@ -485,21 +487,33 @@ fun chooseVersionParams(
             },
     )
 
+@StringRes
+fun resourceFor(type: MediaStreamType): Int =
+    when (type) {
+        MediaStreamType.AUDIO -> R.string.audio
+        MediaStreamType.VIDEO -> R.string.video
+        MediaStreamType.SUBTITLE -> R.string.subtitles
+        MediaStreamType.EMBEDDED_IMAGE -> 0
+        MediaStreamType.DATA -> 0
+        MediaStreamType.LYRIC -> 0
+    }
+
 fun chooseStream(
+    context: Context,
     streams: List<MediaStream>,
     type: MediaStreamType,
     onClick: (Int) -> Unit,
 ): DialogParams =
     DialogParams(
         fromLongClick = false,
-        title = "Choose ${type.serialName}", // TODO
+        title = context.getString(R.string.choose_stream, context.getString(resourceFor(type))),
         items =
             buildList {
                 if (type == MediaStreamType.SUBTITLE) {
                     add(
                         DialogItem(
                             headlineContent = {
-                                Text(text = "None")
+                                Text(text = stringResource(R.string.none))
                             },
                             supportingContent = {
                             },

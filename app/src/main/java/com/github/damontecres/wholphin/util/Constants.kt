@@ -1,15 +1,7 @@
 package com.github.damontecres.wholphin.util
 
-import com.github.damontecres.wholphin.ui.main.HomeSection
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.CollectionType
-
-val supportedHomeSection =
-    setOf(
-        HomeSection.LATEST_MEDIA,
-        HomeSection.NEXT_UP,
-        HomeSection.RESUME,
-    )
 
 val supportItemKinds =
     setOf(

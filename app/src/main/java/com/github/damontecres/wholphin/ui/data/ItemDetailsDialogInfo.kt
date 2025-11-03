@@ -8,10 +8,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.ProvideTextStyle
 import androidx.tv.material3.Text
+import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.ui.components.ScrollableDialog
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.letNotEmpty
@@ -74,24 +76,30 @@ fun MediaSourceInfo(
         modifier = modifier,
     ) {
         Text(
-            text = "Name: ${source.name}",
+            text = stringResource(R.string.name) + ": ${source.name}",
         )
         Text(
             text = "ID: ${source.id}",
         )
         if (showFilePath) {
             Text(
-                text = "Path: ${source.path}",
+                text = stringResource(R.string.path) + ": ${source.path}",
             )
         }
         source.size?.let { size ->
             Text(
-                text = "Size: ${formatBytes(size)}",
+                text = stringResource(R.string.file_size) + ": ${formatBytes(size)}",
             )
         }
         source.bitrate?.let { bitrate ->
             Text(
-                text = "Bitrate: ${formatBytes(bitrate, byteRateSuffixes)}",
+                text =
+                    stringResource(R.string.bitrate) + ": ${
+                        formatBytes(
+                            bitrate,
+                            byteRateSuffixes,
+                        )
+                    }",
             )
         }
         source.mediaStreams?.letNotEmpty { streams ->
@@ -109,7 +117,7 @@ fun MediaSourceInfo(
                         stream.profile?.let(::add)
                     }
                 Text(
-                    text = "Video: " + data.joinToString(" - "),
+                    text = stringResource(R.string.video) + ": " + data.joinToString(" - "),
                 )
             }
 
@@ -121,10 +129,10 @@ fun MediaSourceInfo(
                         stream.channelLayout?.let(::add)
                         stream.bitRate?.let { add(formatBytes(it, byteRateSuffixes)) }
                         if (stream.audioSpatialFormat != AudioSpatialFormat.NONE) add(stream.audioSpatialFormat.serialName)
-                        if (stream.isDefault) add("Default")
+                        if (stream.isDefault) add(stringResource(R.string.default_track))
                     }
                 Text(
-                    text = "Audio ${index + 1}: " + data.joinToString(" - "),
+                    text = stringResource(R.string.audio) + " ${index + 1}: " + data.joinToString(" - "),
                 )
             }
 
@@ -133,12 +141,14 @@ fun MediaSourceInfo(
                     buildList {
                         stream.language?.let { add(languageName(it)) }
                         stream.codec?.let(::add)
-                        if (stream.isDefault) add("Default")
-                        if (stream.isForced) add("Forced")
-                        if (stream.isExternal) add("External")
+                        if (stream.isDefault) add(stringResource(R.string.default_track))
+                        if (stream.isForced) add(stringResource(R.string.forced_track))
+                        if (stream.isExternal) add(stringResource(R.string.external_track))
                     }
                 Text(
-                    text = "Subtitle ${index + 1}: " + data.joinToString(" - "),
+                    text =
+                        stringResource(R.string.subtitle) + " ${index + 1}: " +
+                            data.joinToString(" - "),
                 )
             }
         }

@@ -46,6 +46,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
@@ -66,6 +67,7 @@ import com.github.damontecres.wholphin.ui.seekBack
 import com.github.damontecres.wholphin.ui.seekForward
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.ExceptionHandler
+import com.github.damontecres.wholphin.util.stringRes
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -212,7 +214,7 @@ fun PlaybackControls(
                                 .padding(end = 32.dp),
                     ) {
                         Text(
-                            text = "Skip ${segment.type.serialName}",
+                            text = stringResource(R.string.skip) + " " + stringResource(segment.type.stringRes),
                         )
                     }
                 }
@@ -332,7 +334,7 @@ fun LeftPlaybackButtons(
         val options =
             buildList {
                 addAll(moreButtonOptions.options.keys)
-                add(if (showDebugInfo) "Hide debug info" else "Show debug info")
+                add(stringResource(if (showDebugInfo) R.string.hide_debug_info else R.string.show_debug_info))
             }
         BottomDialog(
             choices = options,
@@ -407,7 +409,12 @@ fun RightPlaybackButtons(
         val currentChoice =
             subtitleStreams.indexOfFirstOrNull { it.index == subtitleIndex } ?: subtitleStreams.size
         BottomDialog(
-            choices = options + listOf("None", "Search & Download"),
+            choices =
+                options +
+                    listOf(
+                        stringResource(R.string.none),
+                        stringResource(R.string.search_and_download),
+                    ),
             currentChoice = currentChoice,
             onDismissRequest = {
                 onControllerInteraction.invoke()
@@ -434,7 +441,12 @@ fun RightPlaybackButtons(
         )
     }
     if (showOptionsDialog) {
-        val options = listOf("Audio Track", "Playback Speed", "Video Scale")
+        val options =
+            listOf(
+                stringResource(R.string.audio),
+                stringResource(R.string.playback_speed),
+                stringResource(R.string.video_scale),
+            )
         BottomDialog(
             choices = options,
             currentChoice = null,

@@ -15,6 +15,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 import androidx.tv.material3.Icon
@@ -96,7 +97,7 @@ fun ServerList(
                 ListItem(
                     enabled = true,
                     selected = false,
-                    headlineContent = { Text(text = "Add Server") },
+                    headlineContent = { Text(text = stringResource(R.string.add_server)) },
                     leadingContent = {
                         Icon(
                             imageVector = Icons.Default.Add,
@@ -116,11 +117,14 @@ fun ServerList(
             title = server.name ?: server.url,
             dialogItems =
                 listOf(
-                    DialogItem("Switch", R.string.fa_arrow_left_arrow_right) {
+                    DialogItem(
+                        stringResource(R.string.switch_servers),
+                        R.string.fa_arrow_left_arrow_right,
+                    ) {
                         onSwitchServer.invoke(server)
                     },
                     DialogItem(
-                        "Delete",
+                        stringResource(R.string.delete),
                         Icons.Default.Delete,
                         Color.Red.copy(alpha = .8f),
                     ) {

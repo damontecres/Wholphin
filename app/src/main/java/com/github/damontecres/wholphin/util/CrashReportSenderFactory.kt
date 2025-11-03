@@ -48,7 +48,7 @@ class CrashReportSender : ReportSender {
                 val api =
                     createJellyfin {
                         this.context = context
-                        clientInfo = AppModule.clientInfo()
+                        clientInfo = AppModule.clientInfo(context)
                         deviceInfo = AppModule.deviceInfo(context)
                         apiClientFactory = okHttpFactory
                         socketConnectionFactory = okHttpFactory

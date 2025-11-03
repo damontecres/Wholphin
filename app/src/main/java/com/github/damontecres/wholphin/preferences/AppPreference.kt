@@ -70,7 +70,11 @@ sealed interface AppPreference<T> {
                 },
                 summarizer = { value ->
                     if (value != null) {
-                        "$value seconds"
+                        WholphinApplication.instance.resources.getQuantityString(
+                            R.plurals.seconds,
+                            value.toInt(),
+                            value.toInt(),
+                        )
                     } else {
                         null
                     }
@@ -95,7 +99,11 @@ sealed interface AppPreference<T> {
                 },
                 summarizer = { value ->
                     if (value != null) {
-                        "$value seconds"
+                        WholphinApplication.instance.resources.getQuantityString(
+                            R.plurals.seconds,
+                            value.toInt(),
+                            value.toInt(),
+                        )
                     } else {
                         null
                     }
@@ -137,7 +145,14 @@ sealed interface AppPreference<T> {
                 setter = { prefs, value ->
                     prefs.updatePlaybackPreferences { controllerTimeoutMs = value }
                 },
-                summarizer = { value -> value?.let { "${value / 1000.0} seconds" } },
+                summarizer = { value ->
+                    value?.let {
+                        WholphinApplication.instance.getString(
+                            R.string.decimal_seconds,
+                            value / 1000.0,
+                        )
+                    }
+                },
             )
 
         val SeekBarSteps =
@@ -243,7 +258,7 @@ sealed interface AppPreference<T> {
                 },
                 summarizer = { value ->
                     if (value == 0L) {
-                        "Disabled"
+                        WholphinApplication.instance.getString(R.string.disabled)
                     } else {
                         "${value}s"
                     }
@@ -262,10 +277,16 @@ sealed interface AppPreference<T> {
                     prefs.updatePlaybackPreferences { autoPlayNextDelaySeconds = value }
                 },
                 summarizer = { value ->
-                    if (value == 0L) {
-                        "Immediate"
+                    if (value == null) {
+                        ""
+                    } else if (value == 0L) {
+                        WholphinApplication.instance.getString(R.string.immediate)
                     } else {
-                        "$value seconds"
+                        WholphinApplication.instance.resources.getQuantityString(
+                            R.plurals.seconds,
+                            value.toInt(),
+                            value.toInt(),
+                        )
                     }
                 },
             )
@@ -284,10 +305,16 @@ sealed interface AppPreference<T> {
                     }
                 },
                 summarizer = { value ->
-                    if (value == 0L) {
-                        "Disabled"
+                    if (value == null) {
+                        ""
+                    } else if (value == 0L) {
+                        WholphinApplication.instance.getString(R.string.disabled)
                     } else {
-                        "$value hours"
+                        WholphinApplication.instance.resources.getQuantityString(
+                            R.plurals.hours,
+                            value.toInt(),
+                            value.toInt(),
+                        )
                     }
                 },
             )
@@ -485,7 +512,7 @@ sealed interface AppPreference<T> {
 
         val SkipCommercials =
             AppChoicePreference<SkipSegmentBehavior>(
-                title = R.string.skip_comercials_behavior,
+                title = R.string.skip_commercials_behavior,
                 defaultValue = SkipSegmentBehavior.ASK_TO_SKIP,
                 getter = { it.playbackPreferences.skipCommercials },
                 setter = { prefs, value ->

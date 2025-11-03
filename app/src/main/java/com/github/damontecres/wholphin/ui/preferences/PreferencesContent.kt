@@ -97,9 +97,9 @@ fun PreferencesContent(
         }
     val screenTitle =
         when (preferenceScreenOption) {
-            PreferenceScreenOption.BASIC -> "Preferences"
-            PreferenceScreenOption.ADVANCED -> "Advanced Preferences"
-            PreferenceScreenOption.USER_INTERFACE -> "User Interface Preferences"
+            PreferenceScreenOption.BASIC -> R.string.settings
+            PreferenceScreenOption.ADVANCED -> R.string.advanced_settings
+            PreferenceScreenOption.USER_INTERFACE -> R.string.ui_interface
         }
 
     var visible by remember { mutableStateOf(false) }
@@ -126,7 +126,7 @@ fun PreferencesContent(
         ) {
             stickyHeader {
                 Text(
-                    text = screenTitle,
+                    text = stringResource(screenTitle),
                     style = MaterialTheme.typography.headlineSmall,
                     color = MaterialTheme.colorScheme.onSurface,
                     textAlign = TextAlign.Center,

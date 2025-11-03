@@ -67,7 +67,7 @@ fun UserList(
             ListItem(
                 enabled = true,
                 selected = false,
-                headlineContent = { Text(text = "Add User") },
+                headlineContent = { Text(text = stringResource(R.string.add_user)) },
                 leadingContent = {
                     Icon(
                         imageVector = Icons.Default.Add,
@@ -84,7 +84,7 @@ fun UserList(
             ListItem(
                 enabled = true,
                 selected = false,
-                headlineContent = { Text(text = "Switch servers") },
+                headlineContent = { Text(text = stringResource(R.string.switch_servers)) },
                 leadingContent = {
                     Text(
                         text = stringResource(R.string.fa_arrow_left_arrow_right),
@@ -102,11 +102,14 @@ fun UserList(
             title = user.name ?: user.id.toString(),
             dialogItems =
                 listOf(
-                    DialogItem("Switch", R.string.fa_arrow_left_arrow_right) {
+                    DialogItem(
+                        stringResource(R.string.switch_user),
+                        R.string.fa_arrow_left_arrow_right,
+                    ) {
                         onSwitchUser.invoke(user)
                     },
                     DialogItem(
-                        "Delete",
+                        stringResource(R.string.delete),
                         Icons.Default.Delete,
                         Color.Red.copy(alpha = .8f),
                     ) {

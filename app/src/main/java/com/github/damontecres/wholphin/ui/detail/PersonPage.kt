@@ -24,6 +24,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shadow
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -33,6 +34,7 @@ import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import androidx.tv.material3.surfaceColorAtElevation
 import coil3.compose.AsyncImage
+import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.OneTimeLaunchedEffect
@@ -258,7 +260,7 @@ fun PersonPageContent(
         }
         item {
             LoadingRow(
-                title = rowTitle("Movies", movies),
+                title = rowTitle(stringResource(R.string.movies), movies),
                 state = movies,
                 rowIndex = MOVIE_ROW,
                 position = position,
@@ -271,7 +273,7 @@ fun PersonPageContent(
         }
         item {
             LoadingRow(
-                title = rowTitle("Series", series),
+                title = rowTitle(stringResource(R.string.tv_shows), series),
                 state = series,
                 rowIndex = SERIES_ROW,
                 position = position,
@@ -284,7 +286,7 @@ fun PersonPageContent(
         }
         item {
             LoadingRow(
-                title = rowTitle("Episodes", episodes),
+                title = rowTitle(stringResource(R.string.episodes), episodes),
                 state = episodes,
                 rowIndex = EPISODE_ROW,
                 position = position,
@@ -365,9 +367,14 @@ fun PersonHeader(
                 val age = if (deathdate == null) birthdate.until(LocalDate.now())?.years else null
                 val text =
                     if (age != null) {
-                        "Born: ${formatDate(it)} ($age years old)"
+                        stringResource(R.string.born) + ": ${formatDate(it)} (${
+                            stringResource(
+                                R.string.years_old,
+                                age,
+                            )
+                        })"
                     } else {
-                        "Born: ${formatDate(it)}"
+                        stringResource(R.string.born) + ": ${formatDate(it)}"
                     }
                 Text(
                     text = text,
@@ -379,7 +386,7 @@ fun PersonHeader(
             }
             birthPlace?.let {
                 Text(
-                    text = "Birthplace: $it",
+                    text = stringResource(R.string.birthplace) + ": $it",
                     color = MaterialTheme.colorScheme.onSurface,
                     style = MaterialTheme.typography.titleSmall,
                     maxLines = 1,
@@ -390,9 +397,14 @@ fun PersonHeader(
                 val age = birthdate?.until(it)?.years
                 val text =
                     if (age != null) {
-                        "Died: ${formatDate(it)} ($age years old)"
+                        stringResource(R.string.died) + ": ${formatDate(it)} (${
+                            stringResource(
+                                R.string.years_old,
+                                age,
+                            )
+                        })"
                     } else {
-                        "Died: ${formatDate(it)}"
+                        stringResource(R.string.died) + ": ${formatDate(it)}"
                     }
                 Text(
                     text = text,

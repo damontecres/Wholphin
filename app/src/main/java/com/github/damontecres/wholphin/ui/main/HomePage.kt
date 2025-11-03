@@ -1,6 +1,7 @@
 package com.github.damontecres.wholphin.ui.main
 
 import android.widget.Toast
+import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -71,10 +72,20 @@ import org.jellyfin.sdk.model.extensions.ticks
 import kotlin.time.Duration
 
 data class HomeRow(
-    val section: HomeSection,
+    @param:StringRes val titleRes: Int?,
+    val title: String?,
     val items: List<BaseItem?>,
-    val title: String? = null,
-)
+) {
+    constructor(
+        @StringRes titleRes: Int,
+        items: List<BaseItem?>,
+    ) : this(titleRes, null, items)
+
+    constructor(
+        title: String,
+        items: List<BaseItem?>,
+    ) : this(null, title, items)
+}
 
 @Composable
 fun HomePage(
@@ -121,6 +132,7 @@ fun HomePage(
                 onLongClickItem = {
                     val dialogItems =
                         buildMoreDialogItemsForHome(
+                            context = context,
                             item = it,
                             seriesId = it.data.seriesId,
                             playbackPosition =
@@ -242,7 +254,7 @@ fun HomePageContent(
                 itemsIndexed(homeRows) { rowIndex, row ->
                     if (row.items.isNotEmpty()) {
                         ItemRow(
-                            title = row.title ?: stringResource(row.section.nameRes),
+                            title = row.title ?: row.titleRes?.let { stringResource(it) } ?: "",
                             items = row.items,
                             onClickItem = onClickItem,
                             cardOnFocus = { isFocused, index ->
