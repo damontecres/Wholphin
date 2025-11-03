@@ -100,7 +100,7 @@ class ThemeSongPlayer
                             override fun onPlaybackStateChanged(playbackState: Int) {
                                 if (playbackState == Player.STATE_ENDED) {
                                     removeListener(this)
-                                    release()
+                                    stop()
                                 }
                             }
                         },
