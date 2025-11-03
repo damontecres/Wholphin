@@ -160,17 +160,25 @@ class CollectionFolderViewModel
                             recursive = recursive,
                             excludeItemIds = item?.let { listOf(item.id) },
                             sortBy =
-                                listOf(
-                                    sortAndDirection.sort,
-                                    ItemSortBy.SORT_NAME,
-                                    ItemSortBy.PRODUCTION_YEAR,
-                                ),
+                                buildList {
+                                    add(sortAndDirection.sort)
+                                    if (sortAndDirection.sort != ItemSortBy.SORT_NAME) {
+                                        add(ItemSortBy.SORT_NAME)
+                                    }
+                                    if (item?.data?.collectionType == CollectionType.MOVIES) {
+                                        add(ItemSortBy.PRODUCTION_YEAR)
+                                    }
+                                },
                             sortOrder =
-                                listOf(
-                                    sortAndDirection.direction,
-                                    SortOrder.ASCENDING,
-                                    SortOrder.ASCENDING,
-                                ),
+                                buildList {
+                                    add(sortAndDirection.direction)
+                                    if (sortAndDirection.sort != ItemSortBy.SORT_NAME) {
+                                        add(SortOrder.ASCENDING)
+                                    }
+                                    if (item?.data?.collectionType == CollectionType.MOVIES) {
+                                        add(SortOrder.ASCENDING)
+                                    }
+                                },
                             fields = SlimItemFields,
                         ),
                     )
