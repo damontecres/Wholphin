@@ -83,15 +83,6 @@ fun SeriesDetails(
     modifier: Modifier = Modifier,
     viewModel: SeriesViewModel = hiltViewModel(),
 ) {
-    LifecycleStartEffect(destination.itemId) {
-        viewModel.maybePlayThemeSong(
-            destination.itemId,
-            preferences.appPreferences.interfacePreferences.playThemeSongs,
-        )
-        onStopOrDispose {
-            viewModel.release()
-        }
-    }
     LaunchedEffect(Unit) {
         viewModel.init(preferences, destination.itemId, destination.item, null)
     }
@@ -113,6 +104,16 @@ fun SeriesDetails(
         -> LoadingPage()
         LoadingState.Success -> {
             item?.let { item ->
+                LifecycleStartEffect(destination.itemId) {
+                    viewModel.maybePlayThemeSong(
+                        destination.itemId,
+                        preferences.appPreferences.interfacePreferences.playThemeSongs,
+                    )
+                    onStopOrDispose {
+                        viewModel.release()
+                    }
+                }
+
                 val played = item.data.userData?.played ?: false
                 SeriesDetailsContent(
                     preferences = preferences,

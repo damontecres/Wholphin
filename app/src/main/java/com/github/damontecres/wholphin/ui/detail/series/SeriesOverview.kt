@@ -72,15 +72,6 @@ fun SeriesOverview(
     viewModel: SeriesViewModel = hiltViewModel(),
     initialSeasonEpisode: SeasonEpisodeIds? = null,
 ) {
-    LifecycleStartEffect(destination.itemId) {
-        viewModel.maybePlayThemeSong(
-            destination.itemId,
-            preferences.appPreferences.interfacePreferences.playThemeSongs,
-        )
-        onStopOrDispose {
-            viewModel.release()
-        }
-    }
     val firstItemFocusRequester = remember { FocusRequester() }
     val episodeRowFocusRequester = remember { FocusRequester() }
 
@@ -168,6 +159,15 @@ fun SeriesOverview(
         LoadingState.Success -> {
             series?.let { series ->
                 LaunchedEffect(Unit) { episodeRowFocusRequester.tryRequestFocus() }
+                LifecycleStartEffect(destination.itemId) {
+                    viewModel.maybePlayThemeSong(
+                        destination.itemId,
+                        preferences.appPreferences.interfacePreferences.playThemeSongs,
+                    )
+                    onStopOrDispose {
+                        viewModel.release()
+                    }
+                }
 
                 fun buildMoreForEpisode(
                     ep: BaseItem,

@@ -39,6 +39,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.LifecycleStartEffect
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import coil3.compose.AsyncImage
@@ -109,6 +110,15 @@ fun MovieDetails(
         -> LoadingPage()
         LoadingState.Success -> {
             item?.let { movie ->
+                LifecycleStartEffect(destination.itemId) {
+                    viewModel.maybePlayThemeSong(
+                        destination.itemId,
+                        preferences.appPreferences.interfacePreferences.playThemeSongs,
+                    )
+                    onStopOrDispose {
+                        viewModel.release()
+                    }
+                }
                 MovieDetailsContent(
                     preferences = preferences,
                     movie = movie,
@@ -118,10 +128,10 @@ fun MovieDetails(
                     trailers = trailers,
                     similar = similar,
                     onClickItem = {
-                        viewModel.navigationManager.navigateTo(it.destination())
+                        viewModel.navigateTo(it.destination())
                     },
                     onClickPerson = {
-                        viewModel.navigationManager.navigateTo(
+                        viewModel.navigateTo(
                             Destination.MediaItem(
                                 it.id,
                                 BaseItemKind.PERSON,
@@ -129,7 +139,7 @@ fun MovieDetails(
                         )
                     },
                     playOnClick = {
-                        viewModel.navigationManager.navigateTo(
+                        viewModel.navigateTo(
                             Destination.Playback(
                                 movie.id,
                                 it.inWholeMilliseconds,
@@ -157,7 +167,7 @@ fun MovieDetails(
                                         favorite = movie.data.userData?.isFavorite ?: false,
                                         series = null,
                                         sourceId = chosenStreams?.sourceId,
-                                        navigateTo = viewModel.navigationManager::navigateTo,
+                                        navigateTo = viewModel::navigateTo,
                                         onClickWatch = viewModel::setWatched,
                                         onClickFavorite = viewModel::setFavorite,
                                         onChooseVersion = {
@@ -203,7 +213,7 @@ fun MovieDetails(
                     trailerOnClick = { trailer ->
                         when (trailer) {
                             is LocalTrailer ->
-                                viewModel.navigationManager.navigateTo(
+                                viewModel.navigateTo(
                                     Destination.Playback(
                                         itemId = trailer.baseItem.id,
                                         item = trailer.baseItem,

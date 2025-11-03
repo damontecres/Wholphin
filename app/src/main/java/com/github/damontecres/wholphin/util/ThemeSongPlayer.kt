@@ -10,25 +10,71 @@ import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import com.github.damontecres.wholphin.hilt.AuthOkHttpClient
 import com.github.damontecres.wholphin.preferences.ThemeSongVolume
+import com.github.damontecres.wholphin.util.profile.Codec
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
+import org.jellyfin.sdk.api.client.ApiClient
+import org.jellyfin.sdk.api.client.extensions.libraryApi
+import org.jellyfin.sdk.api.client.extensions.universalAudioApi
+import timber.log.Timber
+import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
  * Simple service to play theme song music
  */
+@OptIn(UnstableApi::class)
 @Singleton
 class ThemeSongPlayer
     @Inject
     constructor(
         @param:ApplicationContext private val context: Context,
         @param:AuthOkHttpClient private val authOkHttpClient: OkHttpClient,
+        private val api: ApiClient,
     ) {
-        private var player: Player? = null
+        private val player: Player by lazy {
+            ExoPlayer
+                .Builder(context)
+                .setMediaSourceFactory(
+                    DefaultMediaSourceFactory(
+                        OkHttpDataSource.Factory(authOkHttpClient),
+                    ),
+                ).build()
+        }
 
-        @OptIn(UnstableApi::class)
-        fun play(
+        suspend fun playThemeFor(
+            itemId: UUID,
+            volume: ThemeSongVolume,
+        ): Boolean =
+            withContext(Dispatchers.IO) {
+                if (volume == ThemeSongVolume.DISABLED || volume == ThemeSongVolume.UNRECOGNIZED) {
+                    return@withContext false
+                }
+                val themeSongs by api.libraryApi.getThemeSongs(itemId)
+                return@withContext themeSongs.items.randomOrNull()?.let { theme ->
+                    val url =
+                        api.universalAudioApi.getUniversalAudioStreamUrl(
+                            theme.id,
+                            container =
+                                listOf(
+                                    Codec.Audio.OPUS,
+                                    Codec.Audio.MP3,
+                                    Codec.Audio.AAC,
+                                    Codec.Audio.FLAC,
+                                ),
+                        )
+                    Timber.v("Found theme song for $itemId")
+                    withContext(Dispatchers.Main) {
+                        play(volume, url)
+                    }
+                    true
+                } ?: false
+            }
+
+        private fun play(
             volume: ThemeSongVolume,
             url: String,
         ) {
@@ -45,24 +91,27 @@ class ThemeSongPlayer
                     ThemeSongVolume.HIGH -> .5f
                     ThemeSongVolume.HIGHEST -> 75f
                 }
-            val player =
-                ExoPlayer
-                    .Builder(context)
-                    .setMediaSourceFactory(
-                        DefaultMediaSourceFactory(
-                            OkHttpDataSource.Factory(authOkHttpClient),
-                        ),
-                    ).build()
-                    .apply {
-                        this.volume = volumeLevel
-                        playWhenReady = true
-                    }
+            player
+                .apply {
+                    this.volume = volumeLevel
+                    playWhenReady = true
+                    addListener(
+                        object : Player.Listener {
+                            override fun onPlaybackStateChanged(playbackState: Int) {
+                                if (playbackState == Player.STATE_ENDED) {
+                                    removeListener(this)
+                                    release()
+                                }
+                            }
+                        },
+                    )
+                }
             player.setMediaItem(MediaItem.fromUri(url))
             player.prepare()
-            this.player = player
         }
 
         fun stop() {
-            player?.release()
+            Timber.v("Stopping theme song")
+            player.stop()
         }
     }

@@ -12,15 +12,18 @@ import com.github.damontecres.wholphin.data.model.LocalTrailer
 import com.github.damontecres.wholphin.data.model.Person
 import com.github.damontecres.wholphin.data.model.RemoteTrailer
 import com.github.damontecres.wholphin.data.model.Trailer
+import com.github.damontecres.wholphin.preferences.ThemeSongVolume
 import com.github.damontecres.wholphin.ui.SlimItemFields
 import com.github.damontecres.wholphin.ui.detail.LoadingItemViewModel
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.letNotEmpty
+import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.nav.NavigationManager
 import com.github.damontecres.wholphin.ui.setValueOnMain
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
+import com.github.damontecres.wholphin.util.ThemeSongPlayer
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -40,9 +43,10 @@ class MovieViewModel
     @Inject
     constructor(
         api: ApiClient,
-        val navigationManager: NavigationManager,
+        private val navigationManager: NavigationManager,
         val serverRepository: ServerRepository,
         val itemPlaybackRepository: ItemPlaybackRepository,
+        private val themeSongPlayer: ThemeSongPlayer,
     ) : LoadingItemViewModel(api) {
         private lateinit var itemId: UUID
 
@@ -180,5 +184,26 @@ class MovieViewModel
                     chosenStreams.value = chosen
                 }
             }
+        }
+
+        fun maybePlayThemeSong(
+            seriesId: UUID,
+            playThemeSongs: ThemeSongVolume,
+        ) {
+            viewModelScope.launchIO {
+                themeSongPlayer.playThemeFor(seriesId, playThemeSongs)
+                addCloseable {
+                    themeSongPlayer.stop()
+                }
+            }
+        }
+
+        fun release() {
+            themeSongPlayer.stop()
+        }
+
+        fun navigateTo(destination: Destination) {
+            release()
+            navigationManager.navigateTo(destination)
         }
     }
