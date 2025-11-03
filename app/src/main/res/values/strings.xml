@@ -102,5 +102,8 @@
     <string name="nav_drawer_switch_on_focus_summary_off">Click to switch pages</string>
     <string name="show_next_up_when">Show next up</string>
     <string name="next_up">Next Up</string>
+    <string name="community_rating">Community Rating</string>
+    <string name="critic_rating">Critic Rating</string>
+    <string name="play_count">Play Count</string>
 
 </resources>

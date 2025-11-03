@@ -84,7 +84,7 @@ class SeriesViewModel
                     "Error loading series $seriesId",
                 ) + Dispatchers.IO,
             ) {
-                val item = fetchItem(seriesId, potential)
+                val item = fetchItem(seriesId)
                 val seasons = getSeasons(item)
 
                 // If a particular season was requested, fetch those episodes, otherwise get the first season
@@ -263,7 +263,7 @@ class SeriesViewModel
             if (listIndex != null) {
                 refreshEpisode(itemId, listIndex)
             } else {
-                fetchItem(seriesId, null)
+                fetchItem(seriesId)
             }
         }
 
@@ -272,7 +272,7 @@ class SeriesViewModel
             played: Boolean,
         ) = viewModelScope.launch(Dispatchers.IO + ExceptionHandler()) {
             setWatched(seasonId, played, null)
-            val series = fetchItem(seriesId, null)
+            val series = fetchItem(seriesId)
             val seasons = getSeasons(series)
             this@SeriesViewModel.seasons.setValueOnMain(seasons)
         }
@@ -284,7 +284,7 @@ class SeriesViewModel
                 } else {
                     api.playStateApi.markUnplayedItem(seriesId)
                 }
-                val series = fetchItem(seriesId, null)
+                val series = fetchItem(seriesId)
                 val seasons = getSeasons(series)
                 this@SeriesViewModel.seasons.setValueOnMain(seasons)
             }

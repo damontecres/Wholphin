@@ -10,6 +10,14 @@ data class SortAndDirection(
     val direction: SortOrder,
 ) {
     fun flip() = copy(direction = direction.flip())
+
+    companion object {
+        val DEFAULT =
+            SortAndDirection(
+                ItemSortBy.SORT_NAME,
+                SortOrder.ASCENDING,
+            )
+    }
 }
 
 fun SortOrder.flip() = if (this == SortOrder.ASCENDING) SortOrder.DESCENDING else SortOrder.ASCENDING
@@ -20,6 +28,9 @@ val MovieSortOptions =
         ItemSortBy.PREMIERE_DATE,
         ItemSortBy.DATE_CREATED,
         ItemSortBy.DATE_PLAYED,
+        ItemSortBy.COMMUNITY_RATING,
+        ItemSortBy.CRITIC_RATING,
+        ItemSortBy.PLAY_COUNT,
         ItemSortBy.RANDOM,
     )
 
@@ -30,6 +41,7 @@ val SeriesSortOptions =
         ItemSortBy.DATE_CREATED,
         ItemSortBy.DATE_LAST_CONTENT_ADDED,
         ItemSortBy.DATE_PLAYED,
+        ItemSortBy.COMMUNITY_RATING,
         ItemSortBy.RANDOM,
     )
 
@@ -50,5 +62,8 @@ fun getStringRes(sort: ItemSortBy): Int =
         ItemSortBy.DATE_LAST_CONTENT_ADDED -> R.string.sort_by_date_episode_added
         ItemSortBy.DATE_PLAYED -> R.string.sort_by_date_played
         ItemSortBy.RANDOM -> R.string.sort_by_random
+        ItemSortBy.COMMUNITY_RATING -> R.string.community_rating
+        ItemSortBy.CRITIC_RATING -> R.string.critic_rating
+        ItemSortBy.PLAY_COUNT -> R.string.play_count
         else -> throw IllegalArgumentException("Unsupported sort option: $sort")
     }

@@ -48,17 +48,14 @@ class MovieViewModel
         val itemPlaybackRepository: ItemPlaybackRepository,
         private val themeSongPlayer: ThemeSongPlayer,
     ) : LoadingItemViewModel(api) {
-        private lateinit var itemId: UUID
-
         val trailers = MutableLiveData<List<Trailer>>(listOf())
         val people = MutableLiveData<List<Person>>(listOf())
         val chapters = MutableLiveData<List<Chapter>>(listOf())
         val similar = MutableLiveData<List<BaseItem>>()
         val chosenStreams = MutableLiveData<ChosenStreams?>(null)
 
-        fun init(itemId: UUID): Job? {
-            this.itemId = itemId
-            return viewModelScope.launch(
+        fun init(itemId: UUID): Job? =
+            viewModelScope.launch(
                 Dispatchers.IO +
                     LoadingExceptionHandler(
                         loading,
@@ -124,7 +121,6 @@ class MovieViewModel
                     }
                 }
             }
-        }
 
         fun setWatched(played: Boolean) =
             viewModelScope.launch(ExceptionHandler() + Dispatchers.IO) {
