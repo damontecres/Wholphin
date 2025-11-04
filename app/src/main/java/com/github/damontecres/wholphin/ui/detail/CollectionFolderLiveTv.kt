@@ -41,6 +41,7 @@ import com.github.damontecres.wholphin.data.model.GetItemsFilter
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.components.CollectionFolderGrid
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
+import com.github.damontecres.wholphin.ui.data.VideoSortOptions
 import com.github.damontecres.wholphin.ui.detail.livetv.DvrSchedule
 import com.github.damontecres.wholphin.ui.detail.livetv.TvGuideGrid
 import com.github.damontecres.wholphin.ui.ifElse
@@ -207,6 +208,7 @@ fun CollectionFolderLiveTv(
                         initialFilter = GetItemsFilter(),
                         showTitle = showHeader,
                         recursive = false,
+                        sortOptions = VideoSortOptions,
                         modifier =
                             Modifier
                                 .padding(start = 16.dp),

@@ -37,10 +37,7 @@ import com.github.damontecres.wholphin.data.model.LibraryDisplayInfo
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.OneTimeLaunchedEffect
 import com.github.damontecres.wholphin.ui.SlimItemFields
-import com.github.damontecres.wholphin.ui.data.MovieSortOptions
-import com.github.damontecres.wholphin.ui.data.SeriesSortOptions
 import com.github.damontecres.wholphin.ui.data.SortAndDirection
-import com.github.damontecres.wholphin.ui.data.VideoSortOptions
 import com.github.damontecres.wholphin.ui.detail.CardGrid
 import com.github.damontecres.wholphin.ui.detail.ItemViewModel
 import com.github.damontecres.wholphin.ui.toServerString
@@ -245,6 +242,7 @@ fun CollectionFolderGrid(
     initialFilter: GetItemsFilter,
     recursive: Boolean,
     onClickItem: (BaseItem) -> Unit,
+    sortOptions: List<ItemSortBy>,
     modifier: Modifier = Modifier,
     initialSortAndDirection: SortAndDirection? = null,
     showTitle: Boolean = true,
@@ -255,6 +253,7 @@ fun CollectionFolderGrid(
     initialFilter,
     recursive,
     onClickItem,
+    sortOptions,
     modifier,
     initialSortAndDirection = initialSortAndDirection,
     showTitle = showTitle,
@@ -268,6 +267,7 @@ fun CollectionFolderGrid(
     initialFilter: GetItemsFilter,
     recursive: Boolean,
     onClickItem: (BaseItem) -> Unit,
+    sortOptions: List<ItemSortBy>,
     modifier: Modifier = Modifier,
     viewModel: CollectionFolderViewModel = hiltViewModel(),
     initialSortAndDirection: SortAndDirection? = null,
@@ -301,6 +301,7 @@ fun CollectionFolderGrid(
                         viewModel.onSortChange(it, recursive, filter)
                     },
                     showTitle = showTitle,
+                    sortOptions = sortOptions,
                     positionCallback = positionCallback,
                     letterPosition = { viewModel.positionOfLetter(it) ?: -1 },
                 )
@@ -318,18 +319,12 @@ fun CollectionFolderGridContent(
     onClickItem: (BaseItem) -> Unit,
     onSortChange: (SortAndDirection) -> Unit,
     letterPosition: suspend (Char) -> Int,
+    sortOptions: List<ItemSortBy>,
     modifier: Modifier = Modifier,
     showTitle: Boolean = true,
     positionCallback: ((columns: Int, position: Int) -> Unit)? = null,
 ) {
     val title = item?.name ?: item?.data?.collectionType?.name ?: stringResource(R.string.collection)
-    val sortOptions =
-        when (item?.data?.collectionType) {
-            CollectionType.MOVIES -> MovieSortOptions
-            CollectionType.TVSHOWS -> SeriesSortOptions
-            CollectionType.HOMEVIDEOS -> VideoSortOptions
-            else -> listOf(ItemSortBy.SORT_NAME, ItemSortBy.DATE_CREATED, ItemSortBy.RANDOM)
-        }
 
     var showHeader by rememberSaveable { mutableStateOf(true) }
 

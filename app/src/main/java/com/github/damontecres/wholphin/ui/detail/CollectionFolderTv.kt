@@ -38,6 +38,7 @@ import com.github.damontecres.wholphin.ui.components.CollectionFolderGrid
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.GenreCardGrid
 import com.github.damontecres.wholphin.ui.components.RecommendedTvShow
+import com.github.damontecres.wholphin.ui.data.SeriesSortOptions
 import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.preferences.PreferencesViewModel
@@ -164,6 +165,7 @@ fun CollectionFolderTv(
                         ),
                     showTitle = false,
                     recursive = true,
+                    sortOptions = SeriesSortOptions,
                     modifier =
                         Modifier
                             .padding(start = 16.dp)

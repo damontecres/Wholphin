@@ -38,6 +38,8 @@ import com.github.damontecres.wholphin.ui.components.CollectionFolderGrid
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.GenreCardGrid
 import com.github.damontecres.wholphin.ui.components.RecommendedMovie
+import com.github.damontecres.wholphin.ui.data.MovieSortOptions
+import com.github.damontecres.wholphin.ui.data.VideoSortOptions
 import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.preferences.PreferencesViewModel
@@ -166,6 +168,7 @@ fun CollectionFolderMovie(
                         ),
                     showTitle = false,
                     recursive = true,
+                    sortOptions = MovieSortOptions,
                     modifier =
                         Modifier
                             .padding(start = 16.dp)
@@ -187,6 +190,7 @@ fun CollectionFolderMovie(
                         ),
                     showTitle = false,
                     recursive = true,
+                    sortOptions = VideoSortOptions,
                     modifier =
                         Modifier
                             .padding(start = 16.dp)
