@@ -106,7 +106,7 @@ fun TvGuideGrid(
                     channels = channels,
                     programs = programs,
                     channelProgramCount = viewModel.channelProgramCount,
-                    start = viewModel.start,
+                    start = viewModel.guideStart,
                     onClickChannel = { index, channel ->
                         viewModel.navigationManager.navigateTo(
                             Destination.Playback(
