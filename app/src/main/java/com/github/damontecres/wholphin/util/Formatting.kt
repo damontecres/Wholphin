@@ -18,7 +18,10 @@ import org.jellyfin.sdk.model.api.MediaStreamType
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
 import java.util.Locale
+
+val TimeFormatter = DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT)
 
 /**
  * Format a [LocalDateTime] as `Aug 24, 2000`

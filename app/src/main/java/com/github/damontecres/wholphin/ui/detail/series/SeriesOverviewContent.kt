@@ -132,6 +132,12 @@ fun SeriesOverviewContent(
             modifier = Modifier,
         ) {
             item {
+                val paddingValues =
+                    if (preferences.appPreferences.interfacePreferences.showClock) {
+                        PaddingValues(start = 16.dp, end = 100.dp)
+                    } else {
+                        PaddingValues(start = 16.dp, end = 16.dp)
+                    }
                 TabRow(
                     selectedTabIndex = focusTabIndex,
                     modifier =
@@ -140,7 +146,7 @@ fun SeriesOverviewContent(
                                 focusRequesters.size > selectedTabIndex,
                                 { Modifier.focusRestorer(focusRequesters[selectedTabIndex]) },
                             ).focusRequester(tabRowFocusRequester)
-                            .padding(horizontal = 16.dp)
+                            .padding(paddingValues)
                             .fillMaxWidth()
                             .onFocusChanged {
                                 if (!it.isFocused) {

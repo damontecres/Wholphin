@@ -387,6 +387,7 @@ fun PlaybackPage(
                                 viewModel.playItemInPlaylist(it)
                             },
                             currentSegment = currentSegment,
+                            showClock = preferences.appPreferences.interfacePreferences.showClock,
                         )
                     }
                 }

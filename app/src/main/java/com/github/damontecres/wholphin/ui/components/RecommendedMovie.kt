@@ -158,6 +158,7 @@ fun RecommendedMovie(
                 onClickItem = onClickItem,
                 onLongClickItem = {},
                 onFocusPosition = onFocusPosition,
+                showClock = preferences.appPreferences.interfacePreferences.showClock,
                 modifier = modifier,
             )
     }

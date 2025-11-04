@@ -158,6 +158,7 @@ fun HomePage(
                         )
                 },
                 loadingState = loading,
+                showClock = preferences.appPreferences.interfacePreferences.showClock,
                 modifier = modifier,
             )
             dialog?.let { params ->
@@ -175,6 +176,7 @@ fun HomePageContent(
     homeRows: List<HomeRow>,
     onClickItem: (BaseItem) -> Unit,
     onLongClickItem: (BaseItem) -> Unit,
+    showClock: Boolean,
     modifier: Modifier = Modifier,
     onFocusPosition: ((RowColumn) -> Unit)? = null,
     loadingState: LoadingState? = null,
@@ -312,7 +314,7 @@ fun HomePageContent(
                 Box(
                     modifier =
                         Modifier
-                            .padding(16.dp)
+                            .padding(if (showClock) 40.dp else 20.dp)
                             .size(40.dp)
                             .align(Alignment.TopEnd),
                 ) {

@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -56,9 +57,15 @@ import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.letNotEmpty
 import com.github.damontecres.wholphin.ui.tryRequestFocus
+import com.github.damontecres.wholphin.util.TimeFormatter
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import org.jellyfin.sdk.model.api.MediaSegmentDto
 import org.jellyfin.sdk.model.api.TrickplayInfo
+import java.time.LocalTime
 import kotlin.time.Duration
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 
 private val titleTextSize = 28.sp
 private val subtitleTextSize = 18.sp
@@ -74,6 +81,7 @@ fun PlaybackOverlay(
     playerControls: Player,
     controllerViewState: ControllerViewState,
     showPlay: Boolean,
+    showClock: Boolean,
     previousEnabled: Boolean,
     nextEnabled: Boolean,
     seekEnabled: Boolean,
@@ -144,6 +152,7 @@ fun PlaybackOverlay(
                 playerControls = playerControls,
                 controllerViewState = controllerViewState,
                 showPlay = showPlay,
+                showClock = showClock,
                 previousEnabled = previousEnabled,
                 nextEnabled = nextEnabled,
                 seekEnabled = seekEnabled,
@@ -415,6 +424,7 @@ fun Controller(
     subtitleStreams: List<SubtitleStream>,
     playerControls: Player,
     controllerViewState: ControllerViewState,
+    showClock: Boolean,
     showPlay: Boolean,
     previousEnabled: Boolean,
     nextEnabled: Boolean,
@@ -453,12 +463,40 @@ fun Controller(
                     fontSize = titleTextSize,
                 )
             }
-            subtitle?.let {
-                Text(
-                    text = it,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontSize = subtitleTextSize,
-                )
+            Row(
+                horizontalArrangement = Arrangement.SpaceBetween,
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .align(Alignment.End),
+            ) {
+                subtitle?.let {
+                    Text(
+                        text = it,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontSize = subtitleTextSize,
+                    )
+                }
+                if (showClock) {
+                    var remaining by remember { mutableStateOf((playerControls.duration - playerControls.currentPosition).milliseconds) }
+                    LaunchedEffect(playerControls) {
+                        while (isActive) {
+                            remaining =
+                                (playerControls.duration - playerControls.currentPosition).milliseconds
+                            delay(1.seconds)
+                        }
+                    }
+                    val endTime = LocalTime.now().plusSeconds(remaining.inWholeSeconds)
+                    val endTimeStr = TimeFormatter.format(endTime)
+                    Text(
+                        text = "Ends $endTimeStr",
+                        color = MaterialTheme.colorScheme.onSurface,
+                        style = MaterialTheme.typography.labelLarge,
+                        modifier =
+                            Modifier
+                                .padding(end = 32.dp),
+                    )
+                }
             }
         }
         PlaybackControls(
