@@ -65,8 +65,11 @@ import com.github.damontecres.wholphin.ui.components.ExpandablePlayButtons
 import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.components.chooseStream
 import com.github.damontecres.wholphin.ui.components.chooseVersionParams
+import com.github.damontecres.wholphin.ui.data.AddPlaylistViewModel
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialog
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialogInfo
+import com.github.damontecres.wholphin.ui.detail.PlaylistDialog
+import com.github.damontecres.wholphin.ui.detail.PlaylistLoadingState
 import com.github.damontecres.wholphin.ui.detail.buildMoreDialogItems
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.nav.Destination
@@ -76,6 +79,7 @@ import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
 import kotlinx.coroutines.launch
 import org.jellyfin.sdk.model.api.BaseItemKind
+import org.jellyfin.sdk.model.api.MediaType
 import org.jellyfin.sdk.model.extensions.ticks
 import org.jellyfin.sdk.model.serializer.toUUID
 import kotlin.time.Duration
@@ -86,6 +90,7 @@ fun MovieDetails(
     destination: Destination.MediaItem,
     modifier: Modifier = Modifier,
     viewModel: MovieViewModel = hiltViewModel(),
+    playlistViewModel: AddPlaylistViewModel = hiltViewModel(),
 ) {
     val context = LocalContext.current
     LaunchedEffect(Unit) {
@@ -102,6 +107,8 @@ fun MovieDetails(
     var overviewDialog by remember { mutableStateOf<ItemDetailsDialogInfo?>(null) }
     var moreDialog by remember { mutableStateOf<DialogParams?>(null) }
     var chooseVersion by remember { mutableStateOf<DialogParams?>(null) }
+    var showPlaylistDialog by remember { mutableStateOf(false) }
+    val playlistState by playlistViewModel.playlistState.observeAsState(PlaylistLoadingState.Pending)
 
     when (val state = loading) {
         is LoadingState.Error -> ErrorMessage(state)
@@ -206,6 +213,10 @@ fun MovieDetails(
                                                     )
                                             }
                                         },
+                                        onClickAddPlaylist = {
+                                            playlistViewModel.loadPlaylists(MediaType.VIDEO)
+                                            showPlaylistDialog = true
+                                        },
                                     ),
                             )
                     },
@@ -265,6 +276,23 @@ fun MovieDetails(
             onDismissRequest = { chooseVersion = null },
             dismissOnClick = true,
             waitToLoad = params.fromLongClick,
+        )
+    }
+    if (showPlaylistDialog) {
+        PlaylistDialog(
+            title = stringResource(R.string.add_to_playlist),
+            state = playlistState,
+            onDismissRequest = { showPlaylistDialog = false },
+            onClick = {
+                playlistViewModel.addToPlaylist(it.id, destination.itemId)
+                showPlaylistDialog = false
+            },
+            createEnabled = true,
+            onCreatePlaylist = {
+                playlistViewModel.createPlaylistAndAddItem(it, destination.itemId)
+                showPlaylistDialog = false
+            },
+            elevation = 3.dp,
         )
     }
 }

@@ -139,6 +139,8 @@
     <string name="years_old">%1$d years old</string>
     <string name="play_with_transcoding">Play with transcoding</string>
     <string name="aired_episode_order">Aired Episode Order</string>
+    <string name="create_playlist">Create new playlist</string>
+    <string name="add_to_playlist">Add to playlist</string>
 
     <plurals name="downloads">
         <item quantity="zero">%d downloads</item>
@@ -149,6 +151,11 @@
         <item quantity="zero">%d hours</item>
         <item quantity="one">%d hour</item>
         <item quantity="other">%d hours</item>
+    </plurals>
+    <plurals name="items">
+        <item quantity="zero">%d items</item>
+        <item quantity="one">%d item</item>
+        <item quantity="other">%d items</item>
     </plurals>
     <plurals name="seconds">
         <item quantity="zero">%d seconds</item>

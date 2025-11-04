@@ -48,6 +48,7 @@ fun buildMoreDialogItems(
     onClickFavorite: (Boolean) -> Unit,
     onChooseVersion: () -> Unit,
     onChooseTracks: (MediaStreamType) -> Unit,
+    onClickAddPlaylist: () -> Unit,
 ): List<DialogItem> =
     buildList {
         add(
@@ -115,6 +116,14 @@ fun buildMoreDialogItems(
         }
         add(
             DialogItem(
+                text = R.string.add_to_playlist,
+                iconStringRes = R.string.fa_list_ul,
+            ) {
+                onClickAddPlaylist.invoke()
+            },
+        )
+        add(
+            DialogItem(
                 text = if (watched) R.string.mark_unwatched else R.string.mark_watched,
                 iconStringRes = if (watched) R.string.fa_eye else R.string.fa_eye_slash,
             ) {
@@ -173,6 +182,7 @@ fun buildMoreDialogItemsForHome(
     navigateTo: (Destination) -> Unit,
     onClickWatch: (UUID, Boolean) -> Unit,
     onClickFavorite: (UUID, Boolean) -> Unit,
+    onClickAddPlaylist: (UUID) -> Unit,
 ): List<DialogItem> =
     buildList {
         val itemId = item.id
@@ -231,6 +241,14 @@ fun buildMoreDialogItemsForHome(
                 )
             }
         }
+        add(
+            DialogItem(
+                text = R.string.add_to_playlist,
+                iconStringRes = R.string.fa_list_ul,
+            ) {
+                onClickAddPlaylist.invoke(itemId)
+            },
+        )
         add(
             DialogItem(
                 text = if (watched) R.string.mark_unwatched else R.string.mark_watched,
