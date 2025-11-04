@@ -75,6 +75,13 @@ class SwitchUserViewModel
 
         fun init() {
             viewModelScope.launchIO {
+                quickConnectJob?.cancel()
+                withContext(Dispatchers.Main) {
+                    users.value = listOf()
+                    serverStatus.value = mapOf()
+                    serverQuickConnect.value = mapOf()
+                }
+
                 val allServers =
                     serverDao
                         .getServers()

@@ -73,6 +73,7 @@ sealed class Destination(
         val startIndex: Int? = null,
         val shuffle: Boolean = false,
         val itemPlayback: ItemPlayback? = null,
+        val forceTranscoding: Boolean = false,
     ) : Destination(true) {
         override fun toString(): String = "Playback(itemId=$itemId, positionMs=$positionMs)"
 

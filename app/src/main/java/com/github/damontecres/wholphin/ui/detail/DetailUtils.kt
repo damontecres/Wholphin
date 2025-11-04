@@ -65,53 +65,7 @@ fun buildMoreDialogItems(
                 )
             },
         )
-        add(
-            DialogItem(
-                text = if (watched) R.string.mark_unwatched else R.string.mark_watched,
-                iconStringRes = if (watched) R.string.fa_eye else R.string.fa_eye_slash,
-            ) {
-                onClickWatch.invoke(!watched)
-            },
-        )
-        add(
-            DialogItem(
-                text = if (favorite) R.string.remove_favorite else R.string.add_favorite,
-                iconStringRes = R.string.fa_heart,
-                iconColor = if (favorite) Color.Red else Color.Unspecified,
-            ) {
-                onClickFavorite.invoke(!favorite)
-            },
-        )
-        series?.let {
-            add(
-                DialogItem(
-                    context.getString(R.string.go_to_series),
-                    Icons.AutoMirrored.Filled.ArrowForward,
-                ) {
-                    navigateTo(
-                        Destination.MediaItem(
-                            series.id,
-                            BaseItemKind.SERIES,
-                            series,
-                        ),
-                    )
-                },
-            )
-        }
         item.data.mediaSources?.letNotEmpty { sources ->
-            if (sources.size > 1) {
-                add(
-                    DialogItem(
-                        context.getString(
-                            R.string.choose_stream,
-                            context.getString(R.string.version),
-                        ),
-                        R.string.fa_file_video,
-                    ) {
-                        onChooseVersion.invoke()
-                    },
-                )
-            }
             val source =
                 sourceId?.let { sources.firstOrNull { it.id?.toUUIDOrNull() == sourceId } }
                     ?: sources.firstOrNull()
@@ -145,7 +99,68 @@ fun buildMoreDialogItems(
                     )
                 }
             }
+            if (sources.size > 1) {
+                add(
+                    DialogItem(
+                        context.getString(
+                            R.string.choose_stream,
+                            context.getString(R.string.version),
+                        ),
+                        R.string.fa_file_video,
+                    ) {
+                        onChooseVersion.invoke()
+                    },
+                )
+            }
         }
+        add(
+            DialogItem(
+                text = if (watched) R.string.mark_unwatched else R.string.mark_watched,
+                iconStringRes = if (watched) R.string.fa_eye else R.string.fa_eye_slash,
+            ) {
+                onClickWatch.invoke(!watched)
+            },
+        )
+        add(
+            DialogItem(
+                text = if (favorite) R.string.remove_favorite else R.string.add_favorite,
+                iconStringRes = R.string.fa_heart,
+                iconColor = if (favorite) Color.Red else Color.Unspecified,
+            ) {
+                onClickFavorite.invoke(!favorite)
+            },
+        )
+        series?.let {
+            add(
+                DialogItem(
+                    context.getString(R.string.go_to_series),
+                    Icons.AutoMirrored.Filled.ArrowForward,
+                ) {
+                    navigateTo(
+                        Destination.MediaItem(
+                            series.id,
+                            BaseItemKind.SERIES,
+                            series,
+                        ),
+                    )
+                },
+            )
+        }
+        add(
+            DialogItem(
+                context.getString(R.string.play_with_transcoding),
+                Icons.Default.PlayArrow,
+            ) {
+                navigateTo(
+                    Destination.Playback(
+                        item.id,
+                        item.resumeMs ?: 0L,
+                        item,
+                        forceTranscoding = true,
+                    ),
+                )
+            },
+        )
     }
 
 fun buildMoreDialogItemsForHome(

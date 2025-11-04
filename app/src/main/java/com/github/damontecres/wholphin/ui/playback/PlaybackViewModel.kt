@@ -209,6 +209,11 @@ class PlaybackViewModel
                                 destination.startIndex,
                                 destination.shuffle,
                             )
+                        if (playlist.items.isEmpty()) {
+                            showToast(context, "Playlist is empty", Toast.LENGTH_SHORT)
+                            navigationManager.goBack()
+                            return@launch
+                        }
                         withContext(Dispatchers.Main) {
                             this@PlaybackViewModel.playlist.value = playlist
                         }
@@ -218,7 +223,13 @@ class PlaybackViewModel
                         queriedItem
                     }
 
-                val played = play(base, destination.positionMs, destination.itemPlayback)
+                val played =
+                    play(
+                        base,
+                        destination.positionMs,
+                        destination.itemPlayback,
+                        destination.forceTranscoding,
+                    )
                 if (!played) {
                     playUpNextUp()
                 }
@@ -238,6 +249,7 @@ class PlaybackViewModel
             base: BaseItemDto,
             positionMs: Long,
             itemPlayback: ItemPlayback? = null,
+            forceTranscoding: Boolean = false,
         ): Boolean =
             withContext(Dispatchers.IO) {
                 Timber.i("Playing ${base.id}")
@@ -369,6 +381,8 @@ class PlaybackViewModel
                         subtitleIndex,
                         if (positionMs > 0) positionMs else C.TIME_UNSET,
                         itemPlayback != null, // If it was passed in, then it was not queried from the database
+                        enableDirectPlay = !forceTranscoding,
+                        enableDirectStream = !forceTranscoding,
                     )
                     player.prepare()
 
