@@ -44,6 +44,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import coil3.compose.AsyncImage
+import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.Cards
@@ -55,8 +56,11 @@ import com.github.damontecres.wholphin.ui.components.DialogPopup
 import com.github.damontecres.wholphin.ui.components.DotSeparatedRow
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.LoadingPage
+import com.github.damontecres.wholphin.ui.data.AddPlaylistViewModel
 import com.github.damontecres.wholphin.ui.data.RowColumn
 import com.github.damontecres.wholphin.ui.data.RowColumnSaver
+import com.github.damontecres.wholphin.ui.detail.PlaylistDialog
+import com.github.damontecres.wholphin.ui.detail.PlaylistLoadingState
 import com.github.damontecres.wholphin.ui.detail.buildMoreDialogItemsForHome
 import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
@@ -68,7 +72,9 @@ import com.github.damontecres.wholphin.util.formatDateTime
 import com.github.damontecres.wholphin.util.seasonEpisode
 import kotlinx.coroutines.delay
 import org.jellyfin.sdk.model.api.BaseItemKind
+import org.jellyfin.sdk.model.api.MediaType
 import org.jellyfin.sdk.model.extensions.ticks
+import java.util.UUID
 import kotlin.time.Duration
 
 data class HomeRow(
@@ -92,6 +98,7 @@ fun HomePage(
     preferences: UserPreferences,
     modifier: Modifier = Modifier,
     viewModel: HomeViewModel = hiltViewModel(),
+    playlistViewModel: AddPlaylistViewModel = hiltViewModel(),
 ) {
     val context = LocalContext.current
     var firstLoad by rememberSaveable { mutableStateOf(true) }
@@ -124,6 +131,8 @@ fun HomePage(
 
         LoadingState.Success -> {
             var dialog by remember { mutableStateOf<DialogParams?>(null) }
+            var showPlaylistDialog by remember { mutableStateOf<UUID?>(null) }
+            val playlistState by playlistViewModel.playlistState.observeAsState(PlaylistLoadingState.Pending)
             HomePageContent(
                 homeRows,
                 onClickItem = {
@@ -149,6 +158,10 @@ fun HomePage(
                             onClickFavorite = { itemId, favorite ->
                                 viewModel.setFavorite(itemId, favorite)
                             },
+                            onClickAddPlaylist = { itemId ->
+                                playlistViewModel.loadPlaylists(MediaType.VIDEO)
+                                showPlaylistDialog = itemId
+                            },
                         )
                     dialog =
                         DialogParams(
@@ -164,6 +177,23 @@ fun HomePage(
                 DialogPopup(
                     params = params,
                     onDismissRequest = { dialog = null },
+                )
+            }
+            showPlaylistDialog?.let { itemId ->
+                PlaylistDialog(
+                    title = stringResource(R.string.add_to_playlist),
+                    state = playlistState,
+                    onDismissRequest = { showPlaylistDialog = null },
+                    onClick = {
+                        playlistViewModel.addToPlaylist(it.id, itemId)
+                        showPlaylistDialog = null
+                    },
+                    createEnabled = true,
+                    onCreatePlaylist = {
+                        playlistViewModel.createPlaylistAndAddItem(it, itemId)
+                        showPlaylistDialog = null
+                    },
+                    elevation = 3.dp,
                 )
             }
         }

@@ -14,6 +14,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.LifecycleStartEffect
 import com.github.damontecres.wholphin.R
@@ -27,8 +29,11 @@ import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.components.chooseStream
 import com.github.damontecres.wholphin.ui.components.chooseVersionParams
+import com.github.damontecres.wholphin.ui.data.AddPlaylistViewModel
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialog
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialogInfo
+import com.github.damontecres.wholphin.ui.detail.PlaylistDialog
+import com.github.damontecres.wholphin.ui.detail.PlaylistLoadingState
 import com.github.damontecres.wholphin.ui.detail.buildMoreDialogItems
 import com.github.damontecres.wholphin.ui.equalsNotNull
 import com.github.damontecres.wholphin.ui.indexOfFirstOrNull
@@ -39,6 +44,7 @@ import com.github.damontecres.wholphin.util.seasonEpisode
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.UseSerializers
 import org.jellyfin.sdk.model.api.ImageType
+import org.jellyfin.sdk.model.api.MediaType
 import org.jellyfin.sdk.model.extensions.ticks
 import org.jellyfin.sdk.model.serializer.UUIDSerializer
 import org.jellyfin.sdk.model.serializer.toUUID
@@ -72,6 +78,7 @@ fun SeriesOverview(
     destination: Destination.SeriesOverview,
     modifier: Modifier = Modifier,
     viewModel: SeriesViewModel = hiltViewModel(),
+    playlistViewModel: AddPlaylistViewModel = hiltViewModel(),
     initialSeasonEpisode: SeasonEpisodeIds? = null,
 ) {
     val context = LocalContext.current
@@ -127,6 +134,8 @@ fun SeriesOverview(
     var overviewDialog by remember { mutableStateOf<ItemDetailsDialogInfo?>(null) }
     var moreDialog by remember { mutableStateOf<DialogParams?>(null) }
     var chooseVersion by remember { mutableStateOf<DialogParams?>(null) }
+    var showPlaylistDialog by remember { mutableStateOf<UUID?>(null) }
+    val playlistState by playlistViewModel.playlistState.observeAsState(PlaylistLoadingState.Pending)
 
     LaunchedEffect(episodes) {
         episodes?.let { episodes ->
@@ -245,6 +254,10 @@ fun SeriesOverview(
                                             )
                                     }
                                 },
+                                onClickAddPlaylist = {
+                                    playlistViewModel.loadPlaylists(MediaType.VIDEO)
+                                    showPlaylistDialog = ep.id
+                                },
                             ),
                     )
 
@@ -361,6 +374,23 @@ fun SeriesOverview(
             onDismissRequest = { chooseVersion = null },
             dismissOnClick = true,
             waitToLoad = params.fromLongClick,
+        )
+    }
+    showPlaylistDialog?.let { itemId ->
+        PlaylistDialog(
+            title = stringResource(R.string.add_to_playlist),
+            state = playlistState,
+            onDismissRequest = { showPlaylistDialog = null },
+            onClick = {
+                playlistViewModel.addToPlaylist(it.id, itemId)
+                showPlaylistDialog = null
+            },
+            createEnabled = true,
+            onCreatePlaylist = {
+                playlistViewModel.createPlaylistAndAddItem(it, itemId)
+                showPlaylistDialog = null
+            },
+            elevation = 3.dp,
         )
     }
 }
