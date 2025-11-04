@@ -89,4 +89,11 @@ suspend fun upgradeApp(
             }
         }
     }
+    if (previous.isEqualOrBefore(Version.fromString("0.2.5-11-g0"))) {
+        appPreferences.updateData {
+            it.updateInterfacePreferences {
+                showClock = AppPreference.ShowClock.defaultValue
+            }
+        }
+    }
 }

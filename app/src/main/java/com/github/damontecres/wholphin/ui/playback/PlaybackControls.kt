@@ -282,6 +282,7 @@ fun SeekBar(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
+            val remaining = ((player.duration - position) / 1000).seconds
             Text(
                 text = (position / 1000).seconds.toString(),
                 color = MaterialTheme.colorScheme.onSurface,
@@ -291,7 +292,7 @@ fun SeekBar(
                         .padding(8.dp),
             )
             Text(
-                text = "-" + ((player.duration - position) / 1000).seconds.toString(),
+                text = "-$remaining",
                 color = MaterialTheme.colorScheme.onSurface,
                 style = MaterialTheme.typography.labelLarge,
                 modifier =

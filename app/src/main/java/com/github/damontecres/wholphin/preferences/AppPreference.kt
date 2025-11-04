@@ -642,6 +642,18 @@ sealed interface AppPreference<T> {
                 indexToValue = { ShowNextUpWhen.forNumber(it) },
                 valueToIndex = { it.number },
             )
+
+        val ShowClock =
+            AppSwitchPreference(
+                title = R.string.show_clock,
+                defaultValue = true,
+                getter = { it.interfacePreferences.showClock },
+                setter = { prefs, value ->
+                    prefs.updateInterfacePreferences { showClock = value }
+                },
+                summaryOn = R.string.enabled,
+                summaryOff = R.string.disabled,
+            )
     }
 }
 
@@ -709,6 +721,7 @@ val advancedPreferences =
             title = R.string.ui_interface,
             preferences =
                 listOf(
+                    AppPreference.ShowClock,
                     AppPreference.CombineContinueNext,
                     // Temporarily disabled, see https://github.com/damontecres/Wholphin/pull/127#issuecomment-3478058418
 //                    AppPreference.NavDrawerSwitchOnFocus,

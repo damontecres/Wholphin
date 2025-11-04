@@ -73,6 +73,7 @@ class AppPreferencesSerializer
                                 appThemeColors = AppPreference.ThemeColors.defaultValue
                                 navDrawerSwitchOnFocus =
                                     AppPreference.NavDrawerSwitchOnFocus.defaultValue
+                                showClock = AppPreference.ShowClock.defaultValue
                             }.build()
                 }.build()
 

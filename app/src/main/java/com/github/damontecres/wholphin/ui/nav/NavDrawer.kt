@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -27,6 +28,7 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
@@ -74,13 +76,16 @@ import com.github.damontecres.wholphin.ui.setValueOnMain
 import com.github.damontecres.wholphin.ui.spacedByWithFooter
 import com.github.damontecres.wholphin.ui.toServerString
 import com.github.damontecres.wholphin.ui.tryRequestFocus
+import com.github.damontecres.wholphin.util.TimeFormatter
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.model.api.CollectionType
 import org.jellyfin.sdk.model.api.DeviceProfile
 import timber.log.Timber
+import java.time.LocalTime
 import java.util.UUID
 import javax.inject.Inject
 
@@ -431,13 +436,35 @@ fun NavDrawer(
             }
         },
     ) {
-        // Drawer content
-        DestinationContent(
-            destination = destination,
-            preferences = preferences,
-            deviceProfile = deviceProfile,
+        Box(
             modifier = Modifier.fillMaxSize(),
-        )
+        ) {
+            // Drawer content
+            DestinationContent(
+                destination = destination,
+                preferences = preferences,
+                deviceProfile = deviceProfile,
+                modifier = Modifier.fillMaxSize(),
+            )
+            if (preferences.appPreferences.interfacePreferences.showClock) {
+                var now by remember { mutableStateOf(LocalTime.now()) }
+                LaunchedEffect(Unit) {
+                    if (isActive) {
+                        now = LocalTime.now()
+                    }
+                }
+                Text(
+                    text = TimeFormatter.format(now),
+//                    style = MaterialTheme.typography.titleMedium,
+                    fontSize = 18.sp,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier =
+                        Modifier
+                            .align(Alignment.TopEnd)
+                            .padding(vertical = 16.dp, horizontal = 24.dp),
+                )
+            }
+        }
     }
 }
 
