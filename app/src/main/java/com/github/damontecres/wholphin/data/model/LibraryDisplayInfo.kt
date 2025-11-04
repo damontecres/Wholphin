@@ -7,6 +7,7 @@ import androidx.room.ForeignKey
 import androidx.room.Ignore
 import androidx.room.Index
 import com.github.damontecres.wholphin.ui.data.SortAndDirection
+import com.github.damontecres.wholphin.ui.toServerString
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import kotlinx.serialization.UseSerializers
@@ -31,10 +32,17 @@ import java.util.UUID
 @Serializable
 data class LibraryDisplayInfo(
     val userId: Int,
-    val itemId: UUID,
+    val itemId: String,
     val sort: ItemSortBy,
     val direction: SortOrder,
 ) {
+    constructor(
+        userId: Int,
+        itemId: UUID,
+        sort: ItemSortBy,
+        direction: SortOrder,
+    ) : this(userId, itemId.toServerString(), sort, direction)
+
     @Ignore @Transient
     val sortAndDirection = SortAndDirection(sort, direction)
 }

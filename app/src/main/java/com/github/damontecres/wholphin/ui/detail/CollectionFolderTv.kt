@@ -158,7 +158,6 @@ fun CollectionFolderTv(
                 CollectionFolderGrid(
                     preferences = preferences,
                     itemId = destination.itemId,
-                    item = destination.item,
                     initialFilter =
                         GetItemsFilter(
                             includeItemTypes = listOf(BaseItemKind.SERIES),

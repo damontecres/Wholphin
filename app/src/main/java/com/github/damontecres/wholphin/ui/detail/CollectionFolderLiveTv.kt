@@ -204,7 +204,6 @@ fun CollectionFolderLiveTv(
                         preferences = preferences,
                         onClickItem = onClickItem,
                         itemId = folders[folderIndex].id,
-                        item = null,
                         initialFilter = GetItemsFilter(),
                         showTitle = showHeader,
                         recursive = false,

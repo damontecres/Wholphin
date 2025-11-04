@@ -160,7 +160,6 @@ fun CollectionFolderMovie(
                     preferences = preferences,
                     onClickItem = onClickItem,
                     itemId = destination.itemId,
-                    item = destination.item,
                     initialFilter =
                         GetItemsFilter(
                             includeItemTypes = listOf(BaseItemKind.MOVIE),
@@ -182,7 +181,6 @@ fun CollectionFolderMovie(
                     preferences = preferences,
                     onClickItem = onClickItem,
                     itemId = destination.itemId,
-                    item = destination.item,
                     initialFilter =
                         GetItemsFilter(
                             includeItemTypes = listOf(BaseItemKind.BOX_SET),

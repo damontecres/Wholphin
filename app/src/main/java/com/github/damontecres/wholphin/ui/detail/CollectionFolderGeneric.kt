@@ -31,7 +31,6 @@ fun CollectionFolderGeneric(
         preferences = preferences,
         onClickItem = { preferencesViewModel.navigationManager.navigateTo(it.destination()) },
         itemId = itemId,
-        item = item,
         initialFilter = filter,
         showTitle = showHeader,
         recursive = recursive,

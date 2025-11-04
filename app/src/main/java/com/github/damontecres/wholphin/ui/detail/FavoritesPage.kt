@@ -147,8 +147,7 @@ fun FavoritesPage(
                 CollectionFolderGrid(
                     preferences = preferences,
                     onClickItem = onClickItem,
-                    itemId = null,
-                    item = null,
+                    itemId = "${NavDrawerItem.Favorites.id}_movies",
                     initialFilter =
                         GetItemsFilter(
                             favorite = true,
@@ -170,8 +169,7 @@ fun FavoritesPage(
                 CollectionFolderGrid(
                     preferences = preferences,
                     onClickItem = onClickItem,
-                    itemId = null,
-                    item = null,
+                    itemId = "${NavDrawerItem.Favorites.id}_series",
                     initialFilter =
                         GetItemsFilter(
                             favorite = true,
@@ -193,8 +191,7 @@ fun FavoritesPage(
                 CollectionFolderGrid(
                     preferences = preferences,
                     onClickItem = onClickItem,
-                    itemId = null,
-                    item = null,
+                    itemId = "${NavDrawerItem.Favorites.id}_episodes",
                     initialFilter =
                         GetItemsFilter(
                             favorite = true,

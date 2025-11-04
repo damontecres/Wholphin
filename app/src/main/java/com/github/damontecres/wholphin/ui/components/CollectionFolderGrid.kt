@@ -43,6 +43,7 @@ import com.github.damontecres.wholphin.ui.data.SortAndDirection
 import com.github.damontecres.wholphin.ui.data.VideoSortOptions
 import com.github.damontecres.wholphin.ui.detail.CardGrid
 import com.github.damontecres.wholphin.ui.detail.ItemViewModel
+import com.github.damontecres.wholphin.ui.toServerString
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.ApiRequestPager
 import com.github.damontecres.wholphin.util.GetItemsRequestHandler
@@ -61,6 +62,7 @@ import org.jellyfin.sdk.model.api.ImageType
 import org.jellyfin.sdk.model.api.ItemSortBy
 import org.jellyfin.sdk.model.api.SortOrder
 import org.jellyfin.sdk.model.api.request.GetItemsRequest
+import org.jellyfin.sdk.model.serializer.toUUIDOrNull
 import java.util.UUID
 import javax.inject.Inject
 
@@ -79,8 +81,7 @@ class CollectionFolderViewModel
         val filter = MutableLiveData<GetItemsFilter>(GetItemsFilter())
 
         fun init(
-            itemId: UUID?,
-            potential: BaseItem?,
+            itemId: String,
             initialSortAndDirection: SortAndDirection?,
             recursive: Boolean,
             filter: GetItemsFilter,
@@ -91,12 +92,13 @@ class CollectionFolderViewModel
                     context.getString(R.string.error_loading_collection, itemId),
                 ) + Dispatchers.IO,
             ) {
-                if (itemId != null) {
-                    fetchItem(itemId)
+                this@CollectionFolderViewModel.itemId = itemId
+                itemId?.toUUIDOrNull()?.let {
+                    fetchItem(it)
                 }
 
                 val sortAndDirection =
-                    if (initialSortAndDirection == null && itemId != null) {
+                    if (initialSortAndDirection == null) {
                         serverRepository.currentUser?.let { user ->
                             libraryDisplayInfoDao.getItem(user, itemId)?.sortAndDirection
                         } ?: SortAndDirection.DEFAULT
@@ -239,8 +241,30 @@ class CollectionFolderViewModel
 @Composable
 fun CollectionFolderGrid(
     preferences: UserPreferences,
-    itemId: UUID?,
-    item: BaseItem?,
+    itemId: UUID,
+    initialFilter: GetItemsFilter,
+    recursive: Boolean,
+    onClickItem: (BaseItem) -> Unit,
+    modifier: Modifier = Modifier,
+    initialSortAndDirection: SortAndDirection? = null,
+    showTitle: Boolean = true,
+    positionCallback: ((columns: Int, position: Int) -> Unit)? = null,
+) = CollectionFolderGrid(
+    preferences,
+    itemId.toServerString(),
+    initialFilter,
+    recursive,
+    onClickItem,
+    modifier,
+    initialSortAndDirection = initialSortAndDirection,
+    showTitle = showTitle,
+    positionCallback = positionCallback,
+)
+
+@Composable
+fun CollectionFolderGrid(
+    preferences: UserPreferences,
+    itemId: String,
     initialFilter: GetItemsFilter,
     recursive: Boolean,
     onClickItem: (BaseItem) -> Unit,
@@ -251,7 +275,7 @@ fun CollectionFolderGrid(
     positionCallback: ((columns: Int, position: Int) -> Unit)? = null,
 ) {
     OneTimeLaunchedEffect {
-        viewModel.init(itemId, item, initialSortAndDirection, recursive, initialFilter)
+        viewModel.init(itemId, initialSortAndDirection, recursive, initialFilter)
     }
     val sortAndDirection by viewModel.sortAndDirection.observeAsState()
     val filter by viewModel.filter.observeAsState(initialFilter)

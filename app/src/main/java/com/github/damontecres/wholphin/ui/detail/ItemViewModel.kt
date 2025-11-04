@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.ui.setValueOnMain
+import com.github.damontecres.wholphin.ui.toServerString
 import com.github.damontecres.wholphin.util.LoadingExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
 import kotlinx.coroutines.Deferred
@@ -25,11 +26,13 @@ abstract class ItemViewModel(
     val api: ApiClient,
 ) : ViewModel() {
     val item = MutableLiveData<BaseItem?>(null)
-    lateinit var itemId: UUID
+    lateinit var itemId: String
+    lateinit var itemUuid: UUID
 
     suspend fun fetchItem(itemId: UUID): BaseItem =
         withContext(Dispatchers.IO) {
-            this@ItemViewModel.itemId = itemId
+            this@ItemViewModel.itemId = itemId.toServerString()
+            this@ItemViewModel.itemUuid = itemId
             val it = api.userLibraryApi.getItem(itemId).content
             val fetchedItem = BaseItem.from(it, api)
             return@withContext fetchedItem.let {
