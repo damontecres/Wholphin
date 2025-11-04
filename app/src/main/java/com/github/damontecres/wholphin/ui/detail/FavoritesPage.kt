@@ -36,6 +36,9 @@ import com.github.damontecres.wholphin.data.model.GetItemsFilter
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.components.CollectionFolderGrid
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
+import com.github.damontecres.wholphin.ui.data.EpisodeSortOptions
+import com.github.damontecres.wholphin.ui.data.MovieSortOptions
+import com.github.damontecres.wholphin.ui.data.SeriesSortOptions
 import com.github.damontecres.wholphin.ui.nav.NavDrawerItem
 import com.github.damontecres.wholphin.ui.preferences.PreferencesViewModel
 import com.github.damontecres.wholphin.ui.tryRequestFocus
@@ -147,8 +150,7 @@ fun FavoritesPage(
                 CollectionFolderGrid(
                     preferences = preferences,
                     onClickItem = onClickItem,
-                    itemId = null,
-                    item = null,
+                    itemId = "${NavDrawerItem.Favorites.id}_movies",
                     initialFilter =
                         GetItemsFilter(
                             favorite = true,
@@ -156,6 +158,7 @@ fun FavoritesPage(
                         ),
                     showTitle = false,
                     recursive = true,
+                    sortOptions = MovieSortOptions,
                     modifier =
                         Modifier
                             .padding(start = 16.dp)
@@ -170,8 +173,7 @@ fun FavoritesPage(
                 CollectionFolderGrid(
                     preferences = preferences,
                     onClickItem = onClickItem,
-                    itemId = null,
-                    item = null,
+                    itemId = "${NavDrawerItem.Favorites.id}_series",
                     initialFilter =
                         GetItemsFilter(
                             favorite = true,
@@ -179,6 +181,7 @@ fun FavoritesPage(
                         ),
                     showTitle = false,
                     recursive = true,
+                    sortOptions = SeriesSortOptions,
                     modifier =
                         Modifier
                             .padding(start = 16.dp)
@@ -193,8 +196,7 @@ fun FavoritesPage(
                 CollectionFolderGrid(
                     preferences = preferences,
                     onClickItem = onClickItem,
-                    itemId = null,
-                    item = null,
+                    itemId = "${NavDrawerItem.Favorites.id}_episodes",
                     initialFilter =
                         GetItemsFilter(
                             favorite = true,
@@ -202,6 +204,7 @@ fun FavoritesPage(
                         ),
                     showTitle = false,
                     recursive = true,
+                    sortOptions = EpisodeSortOptions,
                     modifier =
                         Modifier
                             .padding(start = 16.dp)

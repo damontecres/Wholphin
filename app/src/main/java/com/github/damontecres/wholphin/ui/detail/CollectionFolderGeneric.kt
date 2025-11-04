@@ -13,6 +13,7 @@ import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.GetItemsFilter
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.components.CollectionFolderGrid
+import com.github.damontecres.wholphin.ui.data.VideoSortOptions
 import com.github.damontecres.wholphin.ui.preferences.PreferencesViewModel
 import java.util.UUID
 
@@ -31,10 +32,10 @@ fun CollectionFolderGeneric(
         preferences = preferences,
         onClickItem = { preferencesViewModel.navigationManager.navigateTo(it.destination()) },
         itemId = itemId,
-        item = item,
         initialFilter = filter,
         showTitle = showHeader,
         recursive = recursive,
+        sortOptions = VideoSortOptions,
         modifier =
             modifier
                 .padding(start = 16.dp),
