@@ -45,6 +45,15 @@ val SeriesSortOptions =
         ItemSortBy.RANDOM,
     )
 
+val EpisodeSortOptions =
+    listOf(
+        ItemSortBy.SORT_NAME,
+        ItemSortBy.DATE_CREATED,
+        ItemSortBy.DATE_PLAYED,
+        ItemSortBy.AIRED_EPISODE_ORDER,
+        ItemSortBy.RANDOM,
+    )
+
 val VideoSortOptions =
     listOf(
         ItemSortBy.SORT_NAME,
@@ -56,14 +65,19 @@ val VideoSortOptions =
 @StringRes
 fun getStringRes(sort: ItemSortBy): Int =
     when (sort) {
-        ItemSortBy.SORT_NAME -> R.string.sort_by_name
+        ItemSortBy.SORT_NAME,
+        ItemSortBy.SERIES_SORT_NAME,
+        -> R.string.sort_by_name
         ItemSortBy.PREMIERE_DATE -> R.string.sort_by_date_released
         ItemSortBy.DATE_CREATED -> R.string.sort_by_date_added
         ItemSortBy.DATE_LAST_CONTENT_ADDED -> R.string.sort_by_date_episode_added
-        ItemSortBy.DATE_PLAYED -> R.string.sort_by_date_played
+        ItemSortBy.DATE_PLAYED,
+        ItemSortBy.SERIES_DATE_PLAYED,
+        -> R.string.sort_by_date_played
         ItemSortBy.RANDOM -> R.string.sort_by_random
         ItemSortBy.COMMUNITY_RATING -> R.string.community_rating
         ItemSortBy.CRITIC_RATING -> R.string.critic_rating
         ItemSortBy.PLAY_COUNT -> R.string.play_count
+        ItemSortBy.AIRED_EPISODE_ORDER -> R.string.aired_episode_order
         else -> throw IllegalArgumentException("Unsupported sort option: $sort")
     }

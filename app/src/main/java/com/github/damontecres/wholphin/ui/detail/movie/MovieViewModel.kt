@@ -129,21 +129,21 @@ class MovieViewModel
         fun setWatched(played: Boolean) =
             viewModelScope.launch(ExceptionHandler() + Dispatchers.IO) {
                 if (played) {
-                    api.playStateApi.markPlayedItem(itemId)
+                    api.playStateApi.markPlayedItem(itemUuid)
                 } else {
-                    api.playStateApi.markUnplayedItem(itemId)
+                    api.playStateApi.markUnplayedItem(itemUuid)
                 }
-                fetchAndSetItem(itemId)
+                fetchAndSetItem(itemUuid)
             }
 
         fun setFavorite(favorite: Boolean) =
             viewModelScope.launch(ExceptionHandler() + Dispatchers.IO) {
                 if (favorite) {
-                    api.userLibraryApi.markFavoriteItem(itemId)
+                    api.userLibraryApi.markFavoriteItem(itemUuid)
                 } else {
-                    api.userLibraryApi.unmarkFavoriteItem(itemId)
+                    api.userLibraryApi.unmarkFavoriteItem(itemUuid)
                 }
-                fetchAndSetItem(itemId)
+                fetchAndSetItem(itemUuid)
             }
 
         fun savePlayVersion(

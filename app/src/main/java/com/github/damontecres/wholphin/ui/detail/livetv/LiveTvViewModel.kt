@@ -6,8 +6,10 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.github.damontecres.wholphin.R
+import com.github.damontecres.wholphin.WholphinApplication
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.ui.AppColors
+import com.github.damontecres.wholphin.ui.data.RowColumn
 import com.github.damontecres.wholphin.ui.detail.series.SeasonEpisode
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.launchIO
@@ -20,6 +22,7 @@ import com.github.damontecres.wholphin.util.LoadingState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -27,19 +30,21 @@ import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.imageApi
 import org.jellyfin.sdk.api.client.extensions.liveTvApi
+import org.jellyfin.sdk.model.api.BaseItemDto
 import org.jellyfin.sdk.model.api.GetProgramsDto
 import org.jellyfin.sdk.model.api.ImageType
 import org.jellyfin.sdk.model.api.ItemSortBy
 import org.jellyfin.sdk.model.api.TimerInfoDto
 import org.jellyfin.sdk.model.api.request.GetLiveTvChannelsRequest
-import org.jellyfin.sdk.model.api.request.GetLiveTvProgramsRequest
 import org.jellyfin.sdk.model.extensions.ticks
 import timber.log.Timber
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
 import java.util.UUID
 import javax.inject.Inject
+import kotlin.math.min
 import kotlin.time.Duration
+import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 
 const val MAX_HOURS = 48L
@@ -54,24 +59,32 @@ class LiveTvViewModel
     ) : ViewModel() {
         val loading = MutableLiveData<LoadingState>(LoadingState.Pending)
 
-        lateinit var start: LocalDateTime
+        lateinit var guideStart: LocalDateTime
             private set
         private lateinit var channelsIdToIndex: Map<UUID, Int>
         private val mutex = Mutex()
 
         val channels = MutableLiveData<List<TvChannel>>()
-        val programs = MutableLiveData<List<TvProgram>>()
-        val programsByChannel = MutableLiveData<Map<UUID, List<TvProgram>>>(mapOf())
+        val channelProgramCount = mutableMapOf<UUID, Int>()
+        val programs = MutableLiveData<FetchedPrograms>()
 
         val fetchingItem = MutableLiveData<LoadingState>(LoadingState.Pending)
         val fetchedItem = MutableLiveData<BaseItem?>(null)
 
+        private val range = 100
+
         fun init(firstLoad: Boolean) {
-            start = LocalDateTime.now().truncatedTo(ChronoUnit.HOURS)
+            guideStart = LocalDateTime.now().truncatedTo(ChronoUnit.HOURS)
             if (!firstLoad) {
                 loading.value = LoadingState.Loading
             }
-            viewModelScope.launch(Dispatchers.IO + LoadingExceptionHandler(loading, "Could not fetch channels")) {
+            viewModelScope.launch(
+                Dispatchers.IO +
+                    LoadingExceptionHandler(
+                        loading,
+                        "Could not fetch channels",
+                    ),
+            ) {
                 val channelData by api.liveTvApi.getLiveTvChannels(
                     GetLiveTvChannelsRequest(
                         startIndex = 0,
@@ -90,57 +103,81 @@ class LiveTvViewModel
                 Timber.d("Got ${channels.size} channels")
                 channelsIdToIndex =
                     channels.withIndex().associateBy({ it.value.id }, { it.index })
-                fetchPrograms(channels)
+                // Initially, quickly load the first 10 channels (only ~6 are visible immediately), then below will load more
+                // This makes the guide appear faster, and load more useable data in the background
+                val initial = 10
+                fetchPrograms(channels, 0..<initial.coerceAtMost(channels.size))
 
                 withContext(Dispatchers.Main) {
                     this@LiveTvViewModel.channels.value = channels
                     loading.value = LoadingState.Success
                 }
+                // Now load the full range
+                if (channels.size > initial) {
+                    fetchPrograms(channels, 0..<range.coerceAtMost(channels.size))
+                }
             }
         }
 
-        private suspend fun fetchProgramsWithLoading(channels: List<TvChannel>) {
+        private suspend fun fetchProgramsWithLoading(
+            channels: List<TvChannel>,
+            range: IntRange,
+        ) {
             loading.setValueOnMain(LoadingState.Loading)
-            fetchPrograms(channels)
+            fetchPrograms(channels, range)
             loading.setValueOnMain(LoadingState.Success)
         }
 
-        private suspend fun fetchPrograms(channels: List<TvChannel>) =
-            mutex.withLock {
-                val maxStartDate = start.plusHours(MAX_HOURS).minusMinutes(1)
-                val minEndDate = start.plusMinutes(1L)
-
-                val request =
-                    GetLiveTvProgramsRequest(
-                        maxStartDate = maxStartDate,
-                        minEndDate = minEndDate,
-                        channelIds = channels.map { it.id },
-                        sortBy = listOf(ItemSortBy.START_DATE),
-                    )
-                val programs =
-                    api.liveTvApi
-                        .getLiveTvPrograms(request)
-                        .content.items
-                        .map { dto ->
-                            val category =
-                                if (dto.isKids ?: false) {
-                                    ProgramCategory.KIDS
-                                } else if (dto.isMovie ?: false) {
-                                    ProgramCategory.MOVIE
-                                } else if (dto.isNews ?: false) {
-                                    ProgramCategory.NEWS
-                                } else if (dto.isSports ?: false) {
-                                    ProgramCategory.SPORTS
-                                } else {
-                                    null
-                                }
+        private suspend fun fetchPrograms(
+            channels: List<TvChannel>,
+            range: IntRange,
+        ) = mutex.withLock {
+            val maxStartDate = guideStart.plusHours(MAX_HOURS).minusMinutes(1)
+            val minEndDate = guideStart.plusMinutes(1L)
+            val channelsToFetch = channels.subList(range.first, range.last + 1)
+            Timber.v("Fetching programs for $range channels ${channelsToFetch.size}")
+            val request =
+                GetProgramsDto(
+                    maxStartDate = maxStartDate,
+                    minEndDate = minEndDate,
+                    channelIds = channelsToFetch.map { it.id },
+                    sortBy = listOf(ItemSortBy.START_DATE),
+                )
+            val fetchedPrograms =
+                api.liveTvApi
+                    .getPrograms(request)
+                    .content.items
+            val programsByChannel = mutableMapOf<UUID, List<TvProgram>>()
+            val fetchedGroupedBy = fetchedPrograms.groupBy { it.channelId }
+            fetchedGroupedBy.forEach { (channelId, programs) ->
+                if (channelId != null) {
+                    val listing = mutableListOf<TvProgram>()
+                    programs as MutableList<BaseItemDto>
+                    programs.forEachIndexed { index, dto ->
+                        val category =
+                            if (dto.isKids ?: false) {
+                                ProgramCategory.KIDS
+                            } else if (dto.isMovie ?: false) {
+                                ProgramCategory.MOVIE
+                            } else if (dto.isNews ?: false) {
+                                ProgramCategory.NEWS
+                            } else if (dto.isSports ?: false) {
+                                ProgramCategory.SPORTS
+                            } else {
+                                null
+                            }
+                        val p =
                             TvProgram(
                                 id = dto.id,
                                 channelId = dto.channelId!!,
                                 start = dto.startDate!!,
                                 end = dto.endDate!!,
-                                startHours = hoursBetween(start, dto.startDate!!).coerceAtLeast(0f),
-                                endHours = hoursBetween(start, dto.endDate!!),
+                                startHours =
+                                    hoursBetween(
+                                        guideStart,
+                                        dto.startDate!!,
+                                    ).coerceAtLeast(0f),
+                                endHours = hoursBetween(guideStart, dto.endDate!!),
                                 duration = dto.runTimeTicks!!.ticks,
                                 name = dto.seriesName ?: dto.name,
                                 subtitle = dto.episodeTitle.takeIf { dto.isSeries ?: false },
@@ -155,24 +192,44 @@ class LiveTvViewModel
                                 isRepeat = dto.isRepeat ?: false,
                                 category = category,
                             )
-                        }
-
-                val programsByChannel = programs.groupBy { it.channelId }
-                val emptyChannels = channels.filter { programsByChannel[it.id].orEmpty().isEmpty() }
-                val fake = mutableListOf<TvProgram>()
-                val finalProgramsByChannel =
-                    programsByChannel.toMutableMap().apply {
-                        emptyChannels.forEach { channel ->
-                            val fakePrograms =
-                                (0..<MAX_HOURS).map {
+                        if (index == 0) {
+                            if (p.startHours > 0) {
+                                // Fill out before the first program
+                                var start = 0f
+                                var end = min(start + 1f, p.startHours)
+                                while (start < p.startHours) {
+                                    val fake =
+                                        TvProgram.fake(
+                                            guideStart,
+                                            channelId,
+                                            start,
+                                            end,
+                                        )
+                                    start = end
+                                    end = min(start + 1f, p.startHours)
+                                    listing.add(fake)
+                                }
+                            }
+                            listing.add(p)
+                        } else if (index > 0) {
+                            if (channelId == UUID.fromString("638232b7-7ef7-7e98-903d-2249ee3fd2cd")) {
+                                Timber.v("Found ")
+                            }
+                            var previous = listing.last()
+                            while (previous.endHours < p.startHours) {
+                                // Fill gaps between programs
+                                val start = previous.endHours
+                                val duration = (p.startHours - start).coerceAtMost(1f)
+//                                Timber.v("Adding fake for $channelId: $start=>${start + duration}")
+                                previous =
                                     TvProgram(
-                                        id = UUID.randomUUID(), // TODO
-                                        channelId = channel.id,
-                                        start = start.plusHours(it),
-                                        end = start.plusHours(it + 1),
-                                        startHours = it.toFloat(),
-                                        endHours = (it + 1).toFloat(),
-                                        duration = 60.seconds,
+                                        id = UUID.randomUUID(),
+                                        channelId = channelId,
+                                        start = previous.end,
+                                        end = previous.end.plusMinutes((duration * 60).toLong()),
+                                        startHours = start,
+                                        endHours = start + duration,
+                                        duration = (duration * 60).toInt().minutes,
                                         name = context.getString(R.string.no_data),
                                         subtitle = null,
                                         seasonEpisode = null,
@@ -181,24 +238,83 @@ class LiveTvViewModel
                                         isRepeat = false,
                                         category = ProgramCategory.FAKE,
                                     )
+                                listing.add(previous)
+                            }
+                            listing.add(p)
+                        }
+                        if (index == (programs.size - 1)) {
+                            if (p.endHours < MAX_HOURS) {
+                                // Fill after the last program
+                                val end = (p.endHours + 1).toInt()
+                                listing.add(
+                                    TvProgram.fake(
+                                        guideStart,
+                                        channelId,
+                                        p.endHours,
+                                        end.toFloat(),
+                                    ),
+                                )
+                                (end..<MAX_HOURS).forEach {
+                                    listing.add(
+                                        TvProgram.fake(
+                                            guideStart,
+                                            channelId,
+                                            it.toFloat(),
+                                            it + 1f,
+                                        ),
+                                    )
                                 }
-                            put(channel.id, fakePrograms)
-                            fake.addAll(fakePrograms)
+                            }
                         }
                     }
-                val finalProgramList =
-                    (programs + fake).sortedWith(
+                    programsByChannel[channelId] = listing
+                }
+            }
+            val emptyChannels =
+                channelsToFetch.filter { programsByChannel[it.id].orEmpty().isEmpty() }
+            val fake = mutableListOf<TvProgram>()
+
+            emptyChannels.forEach { channel ->
+                val fakePrograms =
+                    (0..<MAX_HOURS).map {
+                        TvProgram(
+                            id = UUID.randomUUID(),
+                            channelId = channel.id,
+                            start = guideStart.plusHours(it),
+                            end = guideStart.plusHours(it + 1),
+                            startHours = it.toFloat(),
+                            endHours = (it + 1).toFloat(),
+                            duration = 60.seconds,
+                            name = context.getString(R.string.no_data),
+                            subtitle = null,
+                            seasonEpisode = null,
+                            isRecording = false,
+                            isSeriesRecording = false,
+                            isRepeat = false,
+                            category = ProgramCategory.FAKE,
+                        )
+                    }
+                programsByChannel.put(channel.id, fakePrograms)
+                fake.addAll(fakePrograms)
+            }
+
+            programsByChannel.forEach { (channelId, programs) ->
+                channelProgramCount[channelId] = programs.size
+            }
+            val finalProgramList =
+                (programsByChannel.values.flatten())
+                    .sortedWith(
                         compareBy(
                             { channelsIdToIndex[it.channelId]!! },
                             { it.start },
                         ),
                     )
-                Timber.d("Got ${programs.size} programs & ${fake.size} fake programs")
-                withContext(Dispatchers.Main) {
-                    this@LiveTvViewModel.programs.value = finalProgramList
-                    this@LiveTvViewModel.programsByChannel.value = finalProgramsByChannel
-                }
+            Timber.d("Got ${fetchedPrograms.size} programs & ${finalProgramList.size} total programs")
+            withContext(Dispatchers.Main) {
+                this@LiveTvViewModel.programs.value =
+                    FetchedPrograms(range, finalProgramList, programsByChannel)
             }
+        }
 
         fun getItem(programId: UUID) {
             fetchingItem.value = LoadingState.Loading
@@ -223,8 +339,6 @@ class LiveTvViewModel
         }
 
         fun cancelRecording(
-            programIndex: Int,
-            programId: UUID,
             series: Boolean,
             timerId: String?,
         ) {
@@ -232,17 +346,15 @@ class LiveTvViewModel
                 viewModelScope.launchIO(ExceptionHandler(autoToast = true)) {
                     if (series) {
                         api.liveTvApi.cancelSeriesTimer(timerId)
-                        fetchProgramsWithLoading(channels.value.orEmpty())
                     } else {
                         api.liveTvApi.cancelTimer(timerId)
-                        refreshProgram(programIndex, programId)
                     }
+                    fetchProgramsWithLoading(channels.value.orEmpty(), programs.value!!.range)
                 }
             }
         }
 
         fun record(
-            programIndex: Int,
             programId: UUID,
             series: Boolean,
         ) {
@@ -250,7 +362,6 @@ class LiveTvViewModel
                 val d by api.liveTvApi.getDefaultTimer(programId.toServerString())
                 if (series) {
                     api.liveTvApi.createSeriesTimer(d)
-                    fetchProgramsWithLoading(channels.value.orEmpty())
                 } else {
                     val payload =
                         TimerInfoDto(
@@ -276,35 +387,57 @@ class LiveTvViewModel
                             keepUntil = d.keepUntil,
                         )
                     api.liveTvApi.createTimer(payload)
-                    refreshProgram(programIndex, programId)
                 }
+                fetchProgramsWithLoading(channels.value.orEmpty(), programs.value!!.range)
             }
         }
 
-        suspend fun refreshProgram(
-            programIndex: Int,
-            programId: UUID,
-        ) = mutex.withLock {
-            loading.setValueOnMain(LoadingState.Loading)
-            val program by api.liveTvApi.getProgram(programId.toServerString())
-            val newProgram =
-                programs.value?.getOrNull(programIndex)?.copy(
-                    isRecording = program.timerId.isNotNullOrBlank(),
-                    isSeriesRecording = program.seriesTimerId.isNotNullOrBlank(),
-                )
-            Timber.v("new program %s", newProgram)
-            if (newProgram != null) {
-                programs.value
-                    ?.toMutableList()
-                    ?.apply {
-                        this[programIndex] = newProgram
-                    }?.let {
-                        this@LiveTvViewModel.programs.setValueOnMain(it)
+        private var focusLoadingJob: Job? = null
+
+        fun onFocusChannel(position: RowColumn) {
+            channels.value?.let { channels ->
+                val fetchedRange = programs.value!!.range
+                val quarter = range / 4
+                var rangeStart = fetchedRange.start + quarter
+                var rangeEnd = fetchedRange.last - quarter
+
+                if (rangeEnd - rangeStart < range) {
+                    if (position.row < range / 2) {
+                        // Close to beginning
+                        rangeStart = 0
+                    } else if (position.row > (channels.size - range / 2)) {
+                        // Close to the end
+                        rangeEnd = channels.size
                     }
+                }
+                val testRange = rangeStart..<rangeEnd
+
+                Timber.v(
+                    "onFocusChannel: position=%s, fetchedRange=%s, testRange=%s",
+                    position,
+                    fetchedRange,
+                    testRange,
+                )
+
+                val fetchStart = (position.row - range).coerceAtLeast(0)
+                val fetchEnd = (position.row + range).coerceAtMost(channels.size)
+                val newFetchRange = fetchStart..<fetchEnd
+                // If current channel  is not within +/- range
+                // And the potential new fetch range is not wholly within the current (eg not near the top or bottom)
+                // Fetch new data
+                if (position.row !in testRange && !newFetchRange.within(fetchedRange)) {
+                    Timber.v("Loading more programs for channels $newFetchRange")
+                    focusLoadingJob?.cancel()
+                    focusLoadingJob =
+                        viewModelScope.launchIO {
+                            fetchProgramsWithLoading(channels, newFetchRange)
+                        }
+                }
             }
-            loading.setValueOnMain(LoadingState.Success)
         }
     }
+
+fun IntRange.within(other: IntRange): Boolean = this.first >= other.first && this.last <= other.last
 
 /**
  * Returns the number of hours between two [LocalDateTime]
@@ -341,6 +474,32 @@ data class TvProgram(
     val category: ProgramCategory?,
 ) {
     val isFake = category == ProgramCategory.FAKE
+
+    companion object {
+        private val NO_DATA = WholphinApplication.instance.getString(R.string.no_data)
+
+        fun fake(
+            zeroHourStart: LocalDateTime,
+            channelId: UUID,
+            startHours: Float,
+            endHours: Float,
+        ) = TvProgram(
+            id = UUID.randomUUID(),
+            channelId = channelId,
+            start = zeroHourStart.plusMinutes((startHours * 60).toLong()),
+            end = zeroHourStart.plusMinutes((endHours * 60).toLong()),
+            startHours = startHours,
+            endHours = endHours,
+            duration = ((endHours - startHours) * 60).toInt().minutes,
+            name = NO_DATA,
+            subtitle = null,
+            seasonEpisode = null,
+            isRecording = false,
+            isSeriesRecording = false,
+            isRepeat = false,
+            category = ProgramCategory.FAKE,
+        )
+    }
 }
 
 enum class ProgramCategory(
@@ -352,3 +511,9 @@ enum class ProgramCategory(
     SPORTS(AppColors.DarkRed),
     FAKE(null),
 }
+
+data class FetchedPrograms(
+    val range: IntRange,
+    val programs: List<TvProgram>,
+    val programsByChannel: Map<UUID, List<TvProgram>>,
+)
