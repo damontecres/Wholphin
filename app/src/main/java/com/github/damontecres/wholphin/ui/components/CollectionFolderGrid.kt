@@ -93,17 +93,18 @@ class CollectionFolderViewModel
             ) {
                 if (itemId != null) {
                     fetchItem(itemId)
-
-                    val sortAndDirection =
-                        if (initialSortAndDirection == null) {
-                            serverRepository.currentUser?.let { user ->
-                                libraryDisplayInfoDao.getItem(user, itemId)?.sortAndDirection
-                            } ?: SortAndDirection.DEFAULT
-                        } else {
-                            SortAndDirection.DEFAULT
-                        }
-                    loadResults(sortAndDirection, recursive, filter)
                 }
+
+                val sortAndDirection =
+                    if (initialSortAndDirection == null && itemId != null) {
+                        serverRepository.currentUser?.let { user ->
+                            libraryDisplayInfoDao.getItem(user, itemId)?.sortAndDirection
+                        } ?: SortAndDirection.DEFAULT
+                    } else {
+                        SortAndDirection.DEFAULT
+                    }
+
+                loadResults(sortAndDirection, recursive, filter)
             }
 
         fun onSortChange(
