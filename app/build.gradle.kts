@@ -134,25 +134,24 @@ android {
             }
         }
 
-//        applicationVariants.all {
-//            val variant = this
-//            variant.outputs
-//                .map { it as com.android.build.gradle.internal.api.BaseVariantOutputImpl }
-//                .forEach { output ->
-//                    val outputFileName =
-//                        "Wholphin-${variant.baseName}-${variant.versionName}-${variant.versionCode}.apk"
-//                    output.outputFileName = outputFileName
-//                }
-//        }
+        applicationVariants.all {
+            val variant = this
+            variant.outputs
+                .map { it as com.android.build.gradle.internal.api.BaseVariantOutputImpl }
+                .forEach { output ->
+                    val outputFileName =
+                        "Wholphin-${variant.baseName}-${variant.versionName}-${variant.versionCode}.apk"
+                    output.outputFileName = outputFileName
+                }
+        }
     }
 
     splits {
         abi {
-            isEnable = true
+            isEnable = false
             reset()
-            include("arm64-v8a")
-//            include("armeabi-v7a") // TODO
-            isUniversalApk = false
+//            include("armeabi-v7a", "arm64-v8a")
+            isUniversalApk = true
         }
     }
 }
@@ -185,24 +184,6 @@ aboutLibraries {
         duplicationRule = DuplicateRule.SIMPLE
     }
 }
-
-// Map versionCode so each ABI gets a different one
-// e.g. x86 with version 21 gets a versionCode of 3021
-// val abiCodes = mapOf("armeabi-v7a" to 1, "arm64-v8a" to 2, "x86" to 3, "x86_64" to 4)
-// val universalBase = 8000
-// android.applicationVariants.all { variant ->
-//    variant.outputs.forEach { output ->
-//        val base = output.filters.firstOrNull { it.filterType==VariantOutput.ABI }
-// //        val base = abiCodes.get(output.getFilter(VariantOutput.ABI))
-//        // universal APK just gets a constant added to it
-//        if (base != null) {
-//            output.versionCodeOverride = base * 1000 + variant.versionCode
-//        } else {
-//            output.versionCodeOverride = universalBase + variant.versionCode
-//        }
-//    }
-//    true
-// }
 
 dependencies {
     implementation(libs.androidx.core.ktx)

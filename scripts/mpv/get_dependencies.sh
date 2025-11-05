@@ -66,3 +66,5 @@ if [[ ! -d lua ]]; then
 fi
 
 # python packages: jsonschema jinja2 meson
+
+popd || exit

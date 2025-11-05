@@ -25,12 +25,16 @@ import androidx.media3.common.text.CueGroup
 import androidx.media3.common.util.Size
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.common.util.Util
+import timber.log.Timber
+import kotlin.concurrent.atomics.ExperimentalAtomicApi
 import kotlin.time.Duration.Companion.milliseconds
 
+@kotlin.OptIn(ExperimentalAtomicApi::class)
 @OptIn(UnstableApi::class)
 class MpvPlayer(
     private val context: Context,
-) : BasePlayer() {
+) : BasePlayer(),
+    MPVLib.EventObserver {
     private var surface: Surface? = null
     private val listeners = mutableListOf<Player.Listener>()
     private val looper = Util.getCurrentOrMainLooper()
@@ -42,8 +46,13 @@ class MpvPlayer(
     init {
         MPVLib.create(context)
         MPVLib.init()
-        MPVLib.setOptionString("hwdec", "mediacodec,mediacodec-copy")
+        // TODO add option for enabling HW decoding
+//        MPVLib.setOptionString("hwdec", "mediacodec,mediacodec-copy")
+//        MPVLib.setOptionString("vo", "gpu")
         MPVLib.setOptionString("gpu-context", "android")
+        // TODO disable HW decoding for now
+        MPVLib.setOptionString("hwdec", "no")
+
         MPVLib.setOptionString("opengl-es", "yes")
         MPVLib.setOptionString("hwdec-codecs", "h264,hevc,mpeg4,mpeg2video,vp8,vp9,av1")
         val cacheMegs = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) 64 else 32
@@ -53,6 +62,8 @@ class MpvPlayer(
         MPVLib.setOptionString("force-window", "no")
         // need to idle at least once for playFile() logic to work
         MPVLib.setOptionString("idle", "once")
+        MPVLib.addObserver(this)
+        MPVProperty.observedProperties.forEach(MPVLib::observeProperty)
 
         availableCommands =
             Player.Commands
@@ -228,7 +239,7 @@ class MpvPlayer(
     override fun getCurrentMediaItemIndex(): Int = 0
 
     override fun getDuration(): Long {
-        val duration = MPVLib.getPropertyDouble("duration")!!.milliseconds.inWholeMilliseconds
+        val duration = MPVLib.getPropertyDouble("duration/full")!!.milliseconds.inWholeMilliseconds
         return duration
     }
 
@@ -279,17 +290,22 @@ class MpvPlayer(
         this.surfaceSize = if (surface == null) Size(0, 0) else Size.UNKNOWN
         if (surface != null) {
             this.surface = surface
+            Timber.v("Queued attach")
             MPVLib.attachSurface(surface)
             MPVLib.setOptionString("force-window", "yes")
+            Timber.d("Attached surface")
 
             val url = mediaItem!!.localConfiguration?.uri.toString()
             MPVLib.command(arrayOf("loadfile", url))
+            MPVLib.setPropertyString("vo", "gpu")
+            Timber.d("Called loadfile")
         } else {
             clearVideoSurfaceView(null)
         }
     }
 
     override fun clearVideoSurfaceView(surfaceView: SurfaceView?) {
+        Timber.d("Detaching surface")
         MPVLib.detachSurface()
         MPVLib.setPropertyString("vo", "null")
         MPVLib.setPropertyString("force-window", "no")
@@ -388,5 +404,41 @@ class MpvPlayer(
             return
         }
         MPVLib.setPropertyDouble("time-pos", positionMs.toDouble())
+    }
+
+    override fun eventProperty(property: String) {
+        Timber.v("eventProperty: $property")
+    }
+
+    override fun eventProperty(
+        property: String,
+        value: Long,
+    ) {
+        Timber.v("eventProperty: $property=$value")
+    }
+
+    override fun eventProperty(
+        property: String,
+        value: Boolean,
+    ) {
+        Timber.v("eventProperty: $property=$value")
+    }
+
+    override fun eventProperty(
+        property: String,
+        value: String,
+    ) {
+        Timber.v("eventProperty: $property=$value")
+    }
+
+    override fun eventProperty(
+        property: String,
+        value: Double,
+    ) {
+        Timber.v("eventProperty: $property=$value")
+    }
+
+    override fun event(eventId: Int) {
+        Timber.v("event: $eventId")
     }
 }
