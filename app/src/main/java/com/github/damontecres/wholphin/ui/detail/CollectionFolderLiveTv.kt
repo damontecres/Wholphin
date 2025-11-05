@@ -20,20 +20,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.focus.focusRestorer
-import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.tv.material3.MaterialTheme
-import androidx.tv.material3.Tab
-import androidx.tv.material3.TabDefaults
-import androidx.tv.material3.TabRow
-import androidx.tv.material3.TabRowDefaults
-import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.BaseItem
@@ -41,10 +33,10 @@ import com.github.damontecres.wholphin.data.model.GetItemsFilter
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.components.CollectionFolderGrid
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
+import com.github.damontecres.wholphin.ui.components.TabRow
 import com.github.damontecres.wholphin.ui.data.VideoSortOptions
 import com.github.damontecres.wholphin.ui.detail.livetv.DvrSchedule
 import com.github.damontecres.wholphin.ui.detail.livetv.TvGuideGrid
-import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.nav.NavigationManager
@@ -103,7 +95,6 @@ fun CollectionFolderLiveTv(
             TabId(stringResource(R.string.tv_dvr_schedule), UUID.randomUUID()),
         ) + folders
 
-    var focusTabIndex by rememberSaveable { mutableIntStateOf(rememberedTabIndex) }
     var selectedTabIndex by rememberSaveable { mutableIntStateOf(rememberedTabIndex) }
     val focusRequester = remember { FocusRequester() }
 
@@ -129,55 +120,13 @@ fun CollectionFolderLiveTv(
             exit = slideOutVertically() + fadeOut(),
         ) {
             TabRow(
-                selectedTabIndex = focusTabIndex,
+                selectedTabIndex = selectedTabIndex,
                 modifier =
                     Modifier
                         .padding(start = 32.dp, top = 16.dp, bottom = 16.dp)
-                        .focusRestorer(firstTabFocusRequester)
-                        .onFocusChanged {
-                            if (!it.isFocused) {
-                                focusTabIndex = selectedTabIndex
-                            }
-                        },
-                indicator =
-                    @Composable { tabPositions, doesTabRowHaveFocus ->
-                        tabPositions.getOrNull(focusTabIndex)?.let { currentTabPosition ->
-//                        TabRowDefaults.PillIndicator(
-//                            currentTabPosition = currentTabPosition,
-//                            doesTabRowHaveFocus = doesTabRowHaveFocus,
-//                        )
-                            TabRowDefaults.UnderlinedIndicator(
-                                currentTabPosition = currentTabPosition,
-                                doesTabRowHaveFocus = doesTabRowHaveFocus,
-                                activeColor = MaterialTheme.colorScheme.border,
-                            )
-                        }
-                    },
-                tabs = {
-                    tabs.forEachIndexed { index, tabId ->
-                        Tab(
-                            selected = focusTabIndex == index,
-                            onClick = { selectedTabIndex = index },
-                            onFocus = { focusTabIndex = index },
-                            colors =
-                                TabDefaults.pillIndicatorTabColors(
-                                    focusedContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                ),
-                        ) {
-                            Text(
-                                text = tabId.title,
-                                style = MaterialTheme.typography.titleMedium,
-                                modifier =
-                                    Modifier
-                                        .padding(8.dp)
-                                        .ifElse(
-                                            index == selectedTabIndex,
-                                            Modifier.focusRequester(firstTabFocusRequester),
-                                        ),
-                            )
-                        }
-                    }
-                },
+                        .focusRequester(firstTabFocusRequester),
+                tabs = tabs.map { it.title },
+                onClick = { selectedTabIndex = it },
             )
         }
         when (selectedTabIndex) {

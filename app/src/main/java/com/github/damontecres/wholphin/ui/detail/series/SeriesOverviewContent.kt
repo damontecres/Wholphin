@@ -29,7 +29,6 @@ import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusRestorer
-import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -37,10 +36,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.tv.material3.MaterialTheme
-import androidx.tv.material3.Tab
-import androidx.tv.material3.TabDefaults
-import androidx.tv.material3.TabRow
-import androidx.tv.material3.TabRowDefaults
 import androidx.tv.material3.Text
 import coil3.compose.AsyncImage
 import com.github.damontecres.wholphin.R
@@ -52,6 +47,7 @@ import com.github.damontecres.wholphin.ui.OneTimeLaunchedEffect
 import com.github.damontecres.wholphin.ui.cards.BannerCard
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.LoadingPage
+import com.github.damontecres.wholphin.ui.components.TabRow
 import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.tryRequestFocus
@@ -139,62 +135,22 @@ fun SeriesOverviewContent(
                         PaddingValues(start = 16.dp, end = 16.dp)
                     }
                 TabRow(
-                    selectedTabIndex = focusTabIndex,
+                    selectedTabIndex = selectedTabIndex,
+                    tabs =
+                        seasons.mapNotNull {
+                            it?.name
+                                ?: (stringResource(R.string.tv_season) + " ${it?.data?.indexNumber}")
+                        },
+                    onClick = {
+                        selectedTabIndex = it
+                        onFocus.invoke(SeriesOverviewPosition(it, 0))
+                    },
                     modifier =
                         Modifier
-                            .ifElse(
-                                focusRequesters.size > selectedTabIndex,
-                                { Modifier.focusRestorer(focusRequesters[selectedTabIndex]) },
-                            ).focusRequester(tabRowFocusRequester)
+                            .focusRequester(tabRowFocusRequester)
                             .padding(paddingValues)
-                            .fillMaxWidth()
-                            .onFocusChanged {
-                                if (!it.isFocused) {
-                                    focusTabIndex = selectedTabIndex
-                                }
-                            },
-                    indicator =
-                        @Composable { tabPositions, doesTabRowHaveFocus ->
-                            tabPositions.getOrNull(focusTabIndex)?.let { currentTabPosition ->
-//                        TabRowDefaults.PillIndicator(
-//                            currentTabPosition = currentTabPosition,
-//                            doesTabRowHaveFocus = doesTabRowHaveFocus,
-//                        )
-                                TabRowDefaults.UnderlinedIndicator(
-                                    currentTabPosition = currentTabPosition,
-                                    doesTabRowHaveFocus = doesTabRowHaveFocus,
-                                    activeColor = MaterialTheme.colorScheme.border,
-                                )
-                            }
-                        },
-                ) {
-                    seasons.forEachIndexed { index, season ->
-                        season?.let { season ->
-                            Tab(
-                                selected = focusTabIndex == index,
-                                onFocus = { focusTabIndex = index },
-                                onClick = {
-                                    selectedTabIndex = index
-                                    onFocus.invoke(SeriesOverviewPosition(index, 0))
-                                },
-                                colors =
-                                    TabDefaults.pillIndicatorTabColors(
-                                        focusedContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    ),
-                                modifier =
-                                    Modifier
-                                        .focusRequester(focusRequesters[index]),
-                            ) {
-                                Text(
-                                    text =
-                                        season.name
-                                            ?: (stringResource(R.string.tv_season) + " ${season.data.indexNumber}"),
-                                    modifier = Modifier.padding(8.dp),
-                                )
-                            }
-                        }
-                    }
-                }
+                            .fillMaxWidth(),
+                )
             }
             item {
                 series.name?.let {
