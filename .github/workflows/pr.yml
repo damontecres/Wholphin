@@ -29,6 +29,10 @@ jobs:
     runs-on: ubuntu-latest
     needs: pre-commit
     steps:
+      - name: Checkout the code
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0 # Need the tags to build
       - name: Setup
         uses: ./.github/actions/setup.yml
       - name: Native build

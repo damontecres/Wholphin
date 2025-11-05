@@ -4,12 +4,8 @@ description: "Setup the environment"
 runs:
   using: "composite"
   steps:
-    - name: Checkout the code
-      uses: actions/checkout@v5
-      with:
-        fetch-depth: 0 # Need the tags to build
     # Setup the SDKs
-    - name: Set up Python 3.9
+    - name: Set up Python
       uses: actions/setup-python@v5
       with:
         python-version: '3.12'
