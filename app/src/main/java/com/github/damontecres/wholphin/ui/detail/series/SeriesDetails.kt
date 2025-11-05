@@ -61,8 +61,7 @@ import com.github.damontecres.wholphin.ui.components.ExpandableFaButton
 import com.github.damontecres.wholphin.ui.components.ExpandablePlayButton
 import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.components.OverviewText
-import com.github.damontecres.wholphin.ui.components.StarRating
-import com.github.damontecres.wholphin.ui.components.StarRatingPrecision
+import com.github.damontecres.wholphin.ui.components.SimpleStarRating
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialog
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialogInfo
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
@@ -467,18 +466,10 @@ fun SeriesDetailsHeader(
             )
         }
 
-        dto.communityRating?.let {
-            if (it >= 0f) {
-                StarRating(
-                    rating100 = (it * 10).toInt(),
-                    onRatingChange = {},
-                    enabled = false,
-                    precision = StarRatingPrecision.HALF,
-                    playSoundOnFocus = true,
-                    modifier = Modifier.height(24.dp),
-                )
-            }
-        }
+        SimpleStarRating(
+            dto.communityRating,
+            Modifier.height(20.dp),
+        )
 
         dto.overview?.let { overview ->
             OverviewText(

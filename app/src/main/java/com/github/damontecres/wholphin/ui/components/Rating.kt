@@ -4,8 +4,11 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.selection.selectable
@@ -33,12 +36,17 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.tv.material3.Icon
 import androidx.tv.material3.MaterialTheme
+import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.ui.AppColors
+import com.github.damontecres.wholphin.ui.PreviewTvSpec
 import com.github.damontecres.wholphin.ui.playOnClickSound
 import com.github.damontecres.wholphin.ui.playSoundOnFocus
+import com.github.damontecres.wholphin.ui.theme.WholphinTheme
 import com.github.damontecres.wholphin.ui.tryRequestFocus
+import java.util.Locale
 
 enum class StarRatingPrecision {
     FULL,
@@ -62,6 +70,33 @@ val FilledStarColor = Color(0xFFFFC700)
 val EmptyStarColor = Color(0x2AFFC700)
 
 val ratingBarHeight: Dp = 32.dp
+
+@Composable
+fun SimpleStarRating(
+    communityRating: Float?,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(2.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = modifier,
+    ) {
+        communityRating?.let {
+            Text(
+                text = String.format(Locale.getDefault(), "%.1f", it),
+                fontSize = 14.sp,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier,
+            )
+            Icon(
+                imageVector = Icons.Filled.Star,
+                tint = FilledStarColor,
+                contentDescription = null,
+                modifier = Modifier,
+            )
+        }
+    }
+}
 
 /**
  * Shows a rating out of 5 stars
@@ -208,6 +243,18 @@ fun StarRating(
                     }
                 }
             }
+        }
+    }
+}
+
+@PreviewTvSpec
+@Composable
+private fun SimpleStarRatingPreview() {
+    WholphinTheme {
+        Column {
+            SimpleStarRating(7.5f, Modifier.height(32.dp))
+            SimpleStarRating(7.5f, Modifier.height(20.dp))
+            SimpleStarRating(null, Modifier.height(32.dp))
         }
     }
 }
