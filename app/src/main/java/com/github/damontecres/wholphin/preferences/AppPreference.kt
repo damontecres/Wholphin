@@ -654,6 +654,30 @@ sealed interface AppPreference<T> {
                 summaryOn = R.string.enabled,
                 summaryOff = R.string.disabled,
             )
+
+        val PlayerBackendPref =
+            AppChoicePreference<PlayerBackend>(
+                title = R.string.player_backend,
+                defaultValue = PlayerBackend.EXO_PLAYER,
+                getter = { it.playbackPreferences.playerBackend },
+                setter = { prefs, value ->
+                    prefs.updatePlaybackPreferences { playerBackend = value }
+                },
+                displayValues = R.array.player_backend_options,
+                indexToValue = { PlayerBackend.forNumber(it) },
+                valueToIndex = { it.number },
+            )
+
+        val MpvHardwareDecoding =
+            AppSwitchPreference(
+                title = R.string.mpv_hardware_decoding,
+                defaultValue = true,
+                getter = { it.playbackPreferences.mpvOptions.enableHardwareDecoding },
+                setter = { prefs, value ->
+                    prefs.updateMpvOptions { enableHardwareDecoding = value }
+                },
+                summary = R.string.disable_if_crash,
+            )
     }
 }
 
@@ -739,6 +763,8 @@ val advancedPreferences =
                     AppPreference.SkipRecaps,
                     AppPreference.MaxBitrate,
                     AppPreference.PlaybackDebugInfo,
+                    AppPreference.PlayerBackendPref,
+                    AppPreference.MpvHardwareDecoding,
                 ),
         ),
         PreferenceGroup(

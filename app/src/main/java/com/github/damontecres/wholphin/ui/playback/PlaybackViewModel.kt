@@ -18,6 +18,7 @@ import androidx.media3.common.TrackSelectionOverride
 import androidx.media3.common.Tracks
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.DefaultRenderersFactory
+import androidx.media3.exoplayer.ExoPlayer
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.ItemPlaybackDao
 import com.github.damontecres.wholphin.data.ItemPlaybackRepository
@@ -33,6 +34,7 @@ import com.github.damontecres.wholphin.data.model.chooseStream
 import com.github.damontecres.wholphin.preferences.AppPreference
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.MediaExtensionStatus
+import com.github.damontecres.wholphin.preferences.PlayerBackend
 import com.github.damontecres.wholphin.preferences.ShowNextUpWhen
 import com.github.damontecres.wholphin.preferences.SkipSegmentBehavior
 import com.github.damontecres.wholphin.preferences.UserPreferences
@@ -121,28 +123,41 @@ class PlaybackViewModel
     ) : ViewModel(),
         Player.Listener {
         val player by lazy {
-            val extensions =
-                runBlocking { appPreferences.data.firstOrNull() }?.playbackPreferences?.overrides?.mediaExtensionsEnabled
-            Timber.v("extensions=$extensions")
-            val rendererMode =
-                when (extensions) {
-                    MediaExtensionStatus.MES_FALLBACK -> DefaultRenderersFactory.EXTENSION_RENDERER_MODE_ON
-                    MediaExtensionStatus.MES_PREFERRED -> DefaultRenderersFactory.EXTENSION_RENDERER_MODE_PREFER
-                    MediaExtensionStatus.MES_DISABLED -> DefaultRenderersFactory.EXTENSION_RENDERER_MODE_OFF
-                    else -> DefaultRenderersFactory.EXTENSION_RENDERER_MODE_ON
+            val prefs = runBlocking { appPreferences.data.firstOrNull()?.playbackPreferences }
+
+            val backend = prefs?.playerBackend ?: AppPreference.PlayerBackendPref.defaultValue
+            when (backend) {
+                PlayerBackend.MPV -> {
+                    val enableHardwareDecoding =
+                        prefs?.mpvOptions?.enableHardwareDecoding
+                            ?: AppPreference.MpvHardwareDecoding.defaultValue
+                    MpvPlayer(context, enableHardwareDecoding)
+                        .apply {
+                            playWhenReady = true
+                        }
                 }
-//            ExoPlayer
-//                .Builder(context)
-//                .setRenderersFactory(
-//                    DefaultRenderersFactory(context)
-//                        .setEnableDecoderFallback(true)
-//                        .setExtensionRendererMode(rendererMode),
-//                ).build()
-            // TODO add settings for enabling HW decoding
-            MpvPlayer(context, false)
-                .apply {
-                    playWhenReady = true
+
+                PlayerBackend.EXO_PLAYER,
+                PlayerBackend.UNRECOGNIZED,
+                -> {
+                    val extensions = prefs?.overrides?.mediaExtensionsEnabled
+                    Timber.v("extensions=$extensions")
+                    val rendererMode =
+                        when (extensions) {
+                            MediaExtensionStatus.MES_FALLBACK -> DefaultRenderersFactory.EXTENSION_RENDERER_MODE_ON
+                            MediaExtensionStatus.MES_PREFERRED -> DefaultRenderersFactory.EXTENSION_RENDERER_MODE_PREFER
+                            MediaExtensionStatus.MES_DISABLED -> DefaultRenderersFactory.EXTENSION_RENDERER_MODE_OFF
+                            else -> DefaultRenderersFactory.EXTENSION_RENDERER_MODE_ON
+                        }
+                    ExoPlayer
+                        .Builder(context)
+                        .setRenderersFactory(
+                            DefaultRenderersFactory(context)
+                                .setEnableDecoderFallback(true)
+                                .setExtensionRendererMode(rendererMode),
+                        ).build()
                 }
+            }
         }
 
         val loading = MutableLiveData<LoadingState>(LoadingState.Loading)
@@ -518,7 +533,8 @@ class PlaybackViewModel
 
                 val playback =
                     CurrentPlayback(
-                        listOf(),
+                        backend = preferences.appPreferences.playbackPreferences.playerBackend,
+                        tracks = listOf(),
                         playMethod = transcodeType,
                         playSessionId = response.playSessionId,
                         liveStreamId = source.liveStreamId,
@@ -1029,6 +1045,7 @@ class PlaybackViewModel
     }
 
 data class CurrentPlayback(
+    val backend: PlayerBackend,
     val tracks: List<TrackSupport>,
     val playMethod: PlayMethod,
     val playSessionId: String?,

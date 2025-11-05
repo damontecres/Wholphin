@@ -90,4 +90,9 @@
         <item>During end credits/outro</item>
     </string-array>
 
+    <string-array name="player_backend_options">
+        <item>ExoPlayer (default)</item>
+        <item>MPV (Experimental)</item>
+    </string-array>
+
 </resources>

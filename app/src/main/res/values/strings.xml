@@ -142,6 +142,9 @@
     <string name="aired_episode_order">Aired Episode Order</string>
     <string name="create_playlist">Create new playlist</string>
     <string name="add_to_playlist">Add to playlist</string>
+    <string name="player_backend">Playback Backend</string>
+    <string name="mpv_hardware_decoding">MPV: Use hardware decoding</string>
+    <string name="disable_if_crash">Disable if you experience crashes</string>
 
     <plurals name="downloads">
         <item quantity="zero">%d downloads</item>

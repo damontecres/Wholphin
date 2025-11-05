@@ -293,8 +293,10 @@ class MpvPlayer(
     }
 
     override fun getDuration(): Long {
-        throwIfReleased()
         if (DEBUG) Timber.v("getDuration")
+        if (isReleased) {
+            return durationMs
+        }
         val duration =
             MPVLib.getPropertyDouble("duration/full")?.seconds?.inWholeMilliseconds
                 ?: durationMs
