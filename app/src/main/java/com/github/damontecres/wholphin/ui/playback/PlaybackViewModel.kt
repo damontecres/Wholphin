@@ -18,7 +18,6 @@ import androidx.media3.common.TrackSelectionOverride
 import androidx.media3.common.Tracks
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.DefaultRenderersFactory
-import androidx.media3.exoplayer.ExoPlayer
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.ItemPlaybackDao
 import com.github.damontecres.wholphin.data.ItemPlaybackRepository
@@ -53,6 +52,7 @@ import com.github.damontecres.wholphin.util.TrackActivityPlaybackListener
 import com.github.damontecres.wholphin.util.TrackSupport
 import com.github.damontecres.wholphin.util.checkForSupport
 import com.github.damontecres.wholphin.util.formatDateTime
+import com.github.damontecres.wholphin.util.mpv.MpvPlayer
 import com.github.damontecres.wholphin.util.seasonEpisodePadded
 import com.github.damontecres.wholphin.util.subtitleMimeTypes
 import com.github.damontecres.wholphin.util.supportItemKinds
@@ -131,13 +131,14 @@ class PlaybackViewModel
                     MediaExtensionStatus.MES_DISABLED -> DefaultRenderersFactory.EXTENSION_RENDERER_MODE_OFF
                     else -> DefaultRenderersFactory.EXTENSION_RENDERER_MODE_ON
                 }
-            ExoPlayer
-                .Builder(context)
-                .setRenderersFactory(
-                    DefaultRenderersFactory(context)
-                        .setEnableDecoderFallback(true)
-                        .setExtensionRendererMode(rendererMode),
-                ).build()
+//            ExoPlayer
+//                .Builder(context)
+//                .setRenderersFactory(
+//                    DefaultRenderersFactory(context)
+//                        .setEnableDecoderFallback(true)
+//                        .setExtensionRendererMode(rendererMode),
+//                ).build()
+            MpvPlayer(context)
                 .apply {
                     playWhenReady = true
                 }

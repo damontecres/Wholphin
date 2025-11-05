@@ -236,7 +236,7 @@ fun PlaybackPage(
                         surfaceType = SURFACE_TYPE_SURFACE_VIEW,
                         modifier = scaledModifier,
                     )
-                    if (presentationState.coverSurface) {
+                    if (false && presentationState.coverSurface) {
                         Box(
                             Modifier
                                 .matchParentSize()

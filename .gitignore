@@ -53,3 +53,10 @@ app/libs/
 ffmpeg_decoder/
 app/release/
 app/debug/
+
+# mpv
+app/src/main/obj/
+app/src/main/libs/
+app/src/main/jnilibs/
+scripts/mpv/deps/
+scripts/mpv/prefix/
