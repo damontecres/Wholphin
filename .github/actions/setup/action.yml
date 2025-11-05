@@ -19,3 +19,8 @@ runs:
       uses: android-actions/setup-android@v3
       with:
         packages: "tools platform-tools build-tools;36.0.0 ndk;29.0.14206865"
+    - name: Add NDK to path
+      shell: bash
+      run: |
+        echo "Adding to path: ${{ env.ANDROID_SDK_ROOT }}/ndk/29.0.14206865:${{ env.ANDROID_SDK_ROOT }}/ndk/29.0.14206865/toolchains/llvm/prebuilt/linux-x86_64/bin"
+        echo "${{ env.ANDROID_SDK_ROOT }}/ndk/29.0.14206865:${{ env.ANDROID_SDK_ROOT }}/ndk/29.0.14206865/toolchains/llvm/prebuilt/linux-x86_64/bin" >> $GITHUB_PATH

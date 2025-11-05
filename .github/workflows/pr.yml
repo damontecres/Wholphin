@@ -42,11 +42,11 @@ jobs:
       - name: Build app
         id: buildapp
         run: |
-          ./gradlew clean build
+          ./gradlew clean assembleDebug
           echo "apk=$(ls app/build/outputs/apk/debug/Wholphin-debug*.apk)" >> "$GITHUB_OUTPUT"
       - name: Tar build dirs
         run: |
-          tar -czf build.tgz */build/.
+          tar -czf build.tgz ./app/.
       - uses: actions/upload-artifact@v5
         id: upload-build-dirs
         with:
