@@ -1,0 +1,26 @@
+name: Setup
+description: "Setup the environment"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Checkout the code
+      uses: actions/checkout@v5
+      with:
+        fetch-depth: 0 # Need the tags to build
+    # Setup the SDKs
+    - name: Set up Python 3.9
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+        cache: 'pip'
+    - name: Setup JDK
+      uses: actions/setup-java@v5
+      with:
+        distribution: zulu
+        java-version: '21'
+        cache: 'gradle'
+    - name: Setup Android SDK
+      uses: android-actions/setup-android@v3
+      with:
+        packages: "tools platform-tools build-tools;36.0.0 ndk;29.0.14206865"
