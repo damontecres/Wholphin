@@ -3,7 +3,6 @@ package com.github.damontecres.wholphin.ui.detail.series
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -16,8 +15,7 @@ import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.ui.components.DotSeparatedRow
 import com.github.damontecres.wholphin.ui.components.OverviewText
-import com.github.damontecres.wholphin.ui.components.StarRating
-import com.github.damontecres.wholphin.ui.components.StarRatingPrecision
+import com.github.damontecres.wholphin.ui.components.SimpleStarRating
 import com.github.damontecres.wholphin.ui.roundMinutes
 import com.github.damontecres.wholphin.ui.timeRemaining
 import com.github.damontecres.wholphin.util.formatDateTime
@@ -69,20 +67,10 @@ fun FocusedEpisodeHeader(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            dto.communityRating?.let {
-                if (it > 0f) {
-                    StarRating(
-                        rating100 = (it * 10).toInt(),
-                        onRatingChange = {},
-                        enabled = false,
-                        precision = StarRatingPrecision.HALF,
-                        playSoundOnFocus = true,
-                        modifier = Modifier.height(24.dp),
-                    )
-                } else {
-                    Spacer(Modifier.height(24.dp))
-                }
-            } ?: Spacer(Modifier.height(24.dp))
+            SimpleStarRating(
+                dto.communityRating,
+                Modifier.height(20.dp),
+            )
         }
         OverviewText(
             overview = dto.overview ?: "",
