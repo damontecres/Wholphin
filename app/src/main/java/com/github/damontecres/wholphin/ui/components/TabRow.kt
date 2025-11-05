@@ -119,7 +119,7 @@ fun Tab(
                 text = title,
                 fontSize = 16.sp,
                 color = contentColor,
-                modifier = Modifier.padding(horizontal = 8.dp),
+                modifier = Modifier.padding(horizontal = 16.dp),
             )
             TabIndicator(
                 selected = selected,
