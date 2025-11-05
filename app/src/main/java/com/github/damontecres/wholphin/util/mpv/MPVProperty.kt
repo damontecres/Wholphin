@@ -21,6 +21,7 @@ object MPVProperty {
     const val HWDEC = "hwdec-current"
     const val MUTE = "mute"
     const val TRACK_AUDIO = "current-tracks/audio/selected"
+    const val SEEKABLE = "seekable"
 
     val observedProperties =
         mapOf(
@@ -38,5 +39,6 @@ object MPVProperty {
             HWDEC to MPV_FORMAT_NONE,
             MUTE to MPV_FORMAT_FLAG,
             TRACK_AUDIO to MPV_FORMAT_NONE,
+            SEEKABLE to MPV_FORMAT_FLAG,
         )
 }

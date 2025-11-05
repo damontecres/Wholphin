@@ -25,6 +25,7 @@ import androidx.media3.common.text.CueGroup
 import androidx.media3.common.util.Size
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.common.util.Util
+import com.github.damontecres.wholphin.util.mpv.MPVLib.MpvEvent.MPV_EVENT_FILE_LOADED
 import timber.log.Timber
 import kotlin.concurrent.atomics.ExperimentalAtomicApi
 import kotlin.time.Duration.Companion.seconds
@@ -48,6 +49,7 @@ class MpvPlayer(
 
     private var mediaItem: MediaItem? = null
 
+    private var startPositionMs: Long = 0L
     private var durationMs: Long = 0L
     private var positionMs: Long = 0L
 
@@ -135,7 +137,7 @@ class MpvPlayer(
     ) {
         if (DEBUG) Timber.v("setMediaItems")
         setMediaItems(mediaItems.subList(startIndex, mediaItems.size), false)
-        seekTo(startPositionMs)
+        this.startPositionMs = startPositionMs
     }
 
     override fun addMediaItems(
@@ -164,6 +166,8 @@ class MpvPlayer(
 
     override fun prepare() {
         if (DEBUG) Timber.v("prepare")
+        durationMs = 0L
+        positionMs = 0L
     }
 
     override fun getPlaybackState(): Int {
@@ -235,6 +239,7 @@ class MpvPlayer(
     override fun release() {
         Timber.i("release")
         if (!isReleased) {
+            MPVLib.removeObserver(this)
             clearVideoSurfaceView(null)
             MPVLib.destroy()
         }
@@ -519,6 +524,14 @@ class MpvPlayer(
 
     override fun event(eventId: Int) {
         Timber.v("event: $eventId")
+        when (eventId) {
+            MPV_EVENT_FILE_LOADED -> {
+                Timber.d("Seeking to $startPositionMs")
+                if (startPositionMs > 0) {
+                    seekTo(startPositionMs)
+                }
+            }
+        }
     }
 
     private fun throwIfReleased() {
