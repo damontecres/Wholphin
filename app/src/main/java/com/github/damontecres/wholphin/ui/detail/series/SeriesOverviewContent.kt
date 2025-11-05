@@ -76,10 +76,7 @@ fun SeriesOverviewContent(
     modifier: Modifier = Modifier,
 ) {
     val bringIntoViewRequester = remember { BringIntoViewRequester() }
-    var focusTabIndex by rememberSaveable(position) { mutableIntStateOf(position.seasonTabIndex) }
     var selectedTabIndex by rememberSaveable(position) { mutableIntStateOf(position.seasonTabIndex) }
-    val focusRequesters = remember(seasons.size) { List(seasons.size) { FocusRequester() } }
-    var resolvedTabIndex by remember { mutableIntStateOf(selectedTabIndex) }
     val tabRowFocusRequester = remember { FocusRequester() }
 
     val focusedEpisode =
