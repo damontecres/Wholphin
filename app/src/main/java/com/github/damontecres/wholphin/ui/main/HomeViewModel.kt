@@ -90,7 +90,7 @@ class HomeViewModel
                             if (resume.isNotEmpty()) {
                                 add(
                                     HomeRow(
-                                        titleRes = R.string.recently_added,
+                                        titleRes = R.string.continue_watching,
                                         items = resume,
                                     ),
                                 )
