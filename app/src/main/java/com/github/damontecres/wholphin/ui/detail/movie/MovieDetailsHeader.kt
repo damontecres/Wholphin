@@ -5,7 +5,6 @@ import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -34,8 +33,7 @@ import com.github.damontecres.wholphin.data.model.chooseStream
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.components.DotSeparatedRow
 import com.github.damontecres.wholphin.ui.components.OverviewText
-import com.github.damontecres.wholphin.ui.components.StarRating
-import com.github.damontecres.wholphin.ui.components.StarRatingPrecision
+import com.github.damontecres.wholphin.ui.components.SimpleStarRating
 import com.github.damontecres.wholphin.ui.components.TitleValueText
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.roundMinutes
@@ -102,24 +100,13 @@ fun MovieDetailsHeader(
                 DotSeparatedRow(
                     texts = details,
                     textStyle = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.padding(start = 8.dp),
+                    modifier = Modifier,
                 )
             }
-            dto.communityRating?.let {
-                if (it > 0f) {
-                    StarRating(
-                        rating100 = (it * 10).toInt(),
-                        onRatingChange = {},
-                        enabled = false,
-                        precision = StarRatingPrecision.HALF,
-                        playSoundOnFocus = true,
-                        modifier = Modifier.height(32.dp),
-                    )
-                } else {
-                    Spacer(Modifier.height(32.dp))
-                }
-            }
-
+            SimpleStarRating(
+                dto.communityRating,
+                Modifier.height(20.dp),
+            )
             dto.taglines?.firstOrNull()?.let { tagline ->
                 Text(
                     text = tagline,

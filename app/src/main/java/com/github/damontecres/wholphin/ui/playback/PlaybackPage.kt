@@ -208,6 +208,7 @@ fun PlaybackPage(
                     updateSkipIndicator = updateSkipIndicator,
                     skipBackOnResume = preferences.appPreferences.playbackPreferences.skipBackOnResume,
                     onInteraction = viewModel::reportInteraction,
+                    oneClickPause = preferences.appPreferences.playbackPreferences.oneClickPause,
                 )
 
             val showSegment =

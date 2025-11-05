@@ -19,17 +19,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.focus.focusRestorer
-import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.tv.material3.MaterialTheme
-import androidx.tv.material3.Tab
-import androidx.tv.material3.TabDefaults
-import androidx.tv.material3.TabRow
-import androidx.tv.material3.TabRowDefaults
-import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.GetItemsFilter
@@ -38,8 +30,8 @@ import com.github.damontecres.wholphin.ui.components.CollectionFolderGrid
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.GenreCardGrid
 import com.github.damontecres.wholphin.ui.components.RecommendedTvShow
+import com.github.damontecres.wholphin.ui.components.TabRow
 import com.github.damontecres.wholphin.ui.data.SeriesSortOptions
-import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.preferences.PreferencesViewModel
 import com.github.damontecres.wholphin.ui.tryRequestFocus
@@ -61,7 +53,6 @@ fun CollectionFolderTv(
             stringResource(R.string.library),
             stringResource(R.string.genres),
         )
-    var focusTabIndex by rememberSaveable { mutableIntStateOf(rememberedTabIndex) }
     var selectedTabIndex by rememberSaveable { mutableIntStateOf(rememberedTabIndex) }
     val focusRequester = remember { FocusRequester() }
 
@@ -88,55 +79,13 @@ fun CollectionFolderTv(
             exit = slideOutVertically() + fadeOut(),
         ) {
             TabRow(
-                selectedTabIndex = focusTabIndex,
+                selectedTabIndex = selectedTabIndex,
                 modifier =
                     Modifier
                         .padding(start = 32.dp, top = 16.dp, bottom = 16.dp)
-                        .focusRestorer(firstTabFocusRequester)
-                        .onFocusChanged {
-                            if (!it.isFocused) {
-                                focusTabIndex = selectedTabIndex
-                            }
-                        },
-                indicator =
-                    @Composable { tabPositions, doesTabRowHaveFocus ->
-                        tabPositions.getOrNull(focusTabIndex)?.let { currentTabPosition ->
-//                        TabRowDefaults.PillIndicator(
-//                            currentTabPosition = currentTabPosition,
-//                            doesTabRowHaveFocus = doesTabRowHaveFocus,
-//                        )
-                            TabRowDefaults.UnderlinedIndicator(
-                                currentTabPosition = currentTabPosition,
-                                doesTabRowHaveFocus = doesTabRowHaveFocus,
-                                activeColor = MaterialTheme.colorScheme.border,
-                            )
-                        }
-                    },
-                tabs = {
-                    tabs.forEachIndexed { index, title ->
-                        Tab(
-                            selected = focusTabIndex == index,
-                            onClick = { selectedTabIndex = index },
-                            onFocus = { focusTabIndex = index },
-                            colors =
-                                TabDefaults.pillIndicatorTabColors(
-                                    focusedContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                ),
-                        ) {
-                            Text(
-                                text = title,
-                                style = MaterialTheme.typography.titleMedium,
-                                modifier =
-                                    Modifier
-                                        .padding(8.dp)
-                                        .ifElse(
-                                            index == selectedTabIndex,
-                                            Modifier.focusRequester(firstTabFocusRequester),
-                                        ),
-                            )
-                        }
-                    }
-                },
+                        .focusRequester(firstTabFocusRequester),
+                tabs = tabs,
+                onClick = { selectedTabIndex = it },
             )
         }
         when (selectedTabIndex) {

@@ -655,6 +655,18 @@ sealed interface AppPreference<T> {
                 summaryOff = R.string.disabled,
             )
 
+        val OneClickPause =
+            AppSwitchPreference(
+                title = R.string.one_click_pause,
+                defaultValue = false,
+                getter = { it.playbackPreferences.oneClickPause },
+                setter = { prefs, value ->
+                    prefs.updatePlaybackPreferences { oneClickPause = value }
+                },
+                summaryOn = R.string.one_click_pause_summary_on,
+                summaryOff = R.string.disabled,
+            )
+
         val PlayerBackendPref =
             AppChoicePreference<PlayerBackend>(
                 title = R.string.player_backend,
@@ -756,6 +768,7 @@ val advancedPreferences =
             title = R.string.playback,
             preferences =
                 listOf(
+                    AppPreference.OneClickPause,
                     AppPreference.SkipIntros,
                     AppPreference.SkipOutros,
                     AppPreference.SkipCommercials,
