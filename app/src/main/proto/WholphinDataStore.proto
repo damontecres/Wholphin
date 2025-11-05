@@ -58,6 +58,7 @@ message PlaybackPreferences {
   int64 pass_out_protection_ms = 16;
   PrefContentScale global_content_scale = 17;
   ShowNextUpWhen show_next_up_when = 18;
+  bool one_click_pause = 19;
 }
 
 message HomePagePreferences{

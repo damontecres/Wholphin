@@ -142,6 +142,8 @@
     <string name="aired_episode_order">Aired Episode Order</string>
     <string name="create_playlist">Create new playlist</string>
     <string name="add_to_playlist">Add to playlist</string>
+    <string name="one_click_pause">Pause with one click</string>
+    <string name="one_click_pause_summary_on">Press D-Pad center to pause/play</string>
 
     <plurals name="downloads">
         <item quantity="zero">%d downloads</item>
