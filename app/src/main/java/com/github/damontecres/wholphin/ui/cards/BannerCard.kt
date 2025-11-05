@@ -1,5 +1,6 @@
 package com.github.damontecres.wholphin.ui.cards
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -24,6 +25,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.tv.material3.Border
 import androidx.tv.material3.Card
 import androidx.tv.material3.CardDefaults
 import androidx.tv.material3.MaterialTheme
@@ -49,6 +51,7 @@ fun BannerCard(
     cardHeight: Dp = 140.dp * .85f,
     aspectRatio: Float = 16f / 9,
     interactionSource: MutableInteractionSource? = null,
+    useUnfocusedBorder: Boolean = false,
 ) {
     var imageError by remember { mutableStateOf(false) }
     Card(
@@ -59,6 +62,22 @@ fun BannerCard(
         colors =
             CardDefaults.colors(
 //                containerColor = Color.Transparent,
+            ),
+        border =
+            CardDefaults.border(
+                border =
+                    if (useUnfocusedBorder) {
+                        Border(
+                            border =
+                                BorderStroke(
+                                    width = 2.dp,
+                                    color = MaterialTheme.colorScheme.border.copy(alpha = .66f),
+                                ),
+                            shape = RoundedCornerShape(8.dp),
+                        )
+                    } else {
+                        Border.None
+                    },
             ),
     ) {
         Box(

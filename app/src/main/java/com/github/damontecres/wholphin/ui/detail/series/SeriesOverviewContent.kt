@@ -284,6 +284,7 @@ fun SeriesOverviewContent(
                                             ),
                                         interactionSource = interactionSource,
                                         cardHeight = 120.dp,
+                                        useUnfocusedBorder = position.episodeRowIndex == episodeIndex,
                                     )
                                 }
                             }
