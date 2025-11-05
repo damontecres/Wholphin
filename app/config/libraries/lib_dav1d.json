@@ -1,0 +1,11 @@
+{
+  "uniqueId": "com.github.videolan.dav1d",
+  "developers": [],
+  "artifactVersion": "master",
+  "description": "dav1d is an AV1 cross-platform decoder, open-source, and focused on speed and correctness",
+  "name": "dav1d",
+  "licenses": [
+    "dav1d"
+  ],
+  "website": "https://github.com/videolan/dav1d"
+}

@@ -1,0 +1,11 @@
+{
+  "uniqueId": "com.github.libass.libass",
+  "developers": [],
+  "artifactVersion": "master",
+  "description": "libass is a portable subtitle renderer for the ASS/SSA (Advanced Substation Alpha/Substation Alpha) subtitle format",
+  "name": "libass",
+  "licenses": [
+    "libass"
+  ],
+  "website": "https://github.com/libass/libass"
+}
