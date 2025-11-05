@@ -8,6 +8,7 @@ import com.github.damontecres.wholphin.util.mpv.MPVLib.MpvFormat.MPV_FORMAT_STRI
 
 object MPVProperty {
     const val POSITION = "time-pos"
+    const val POSITION_FULL = "time-pos/full"
     const val DURATION = "duration/full"
     const val PAUSED = "pause"
     const val PAUSED_FOR_CACHE = "paused-for-cache"
@@ -24,6 +25,7 @@ object MPVProperty {
     val observedProperties =
         mapOf(
             POSITION to MPV_FORMAT_INT64,
+//            POSITION_FULL to MPV_FORMAT_DOUBLE,
             DURATION to MPV_FORMAT_DOUBLE,
             PAUSED to MPV_FORMAT_FLAG,
             PAUSED_FOR_CACHE to MPV_FORMAT_FLAG,

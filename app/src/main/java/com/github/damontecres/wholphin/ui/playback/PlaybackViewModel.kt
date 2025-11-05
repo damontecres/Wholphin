@@ -138,7 +138,8 @@ class PlaybackViewModel
 //                        .setEnableDecoderFallback(true)
 //                        .setExtensionRendererMode(rendererMode),
 //                ).build()
-            MpvPlayer(context)
+            // TODO add settings for enabling HW decoding
+            MpvPlayer(context, false)
                 .apply {
                     playWhenReady = true
                 }

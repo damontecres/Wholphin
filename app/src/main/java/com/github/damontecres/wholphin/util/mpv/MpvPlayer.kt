@@ -27,14 +27,19 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.common.util.Util
 import timber.log.Timber
 import kotlin.concurrent.atomics.ExperimentalAtomicApi
-import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 
 @kotlin.OptIn(ExperimentalAtomicApi::class)
 @OptIn(UnstableApi::class)
 class MpvPlayer(
     private val context: Context,
+    enableHardwareDecoding: Boolean,
 ) : BasePlayer(),
     MPVLib.EventObserver {
+    companion object {
+        private const val DEBUG = false
+    }
+
     private var surface: Surface? = null
     private val listeners = mutableListOf<Player.Listener>()
     private val looper = Util.getCurrentOrMainLooper()
@@ -43,15 +48,22 @@ class MpvPlayer(
 
     private var mediaItem: MediaItem? = null
 
+    private var durationMs: Long = 0L
+    private var positionMs: Long = 0L
+
+    var isReleased = false
+        private set
+
     init {
         MPVLib.create(context)
         MPVLib.init()
-        // TODO add option for enabling HW decoding
-//        MPVLib.setOptionString("hwdec", "mediacodec,mediacodec-copy")
-//        MPVLib.setOptionString("vo", "gpu")
+        if (enableHardwareDecoding) {
+            MPVLib.setOptionString("hwdec", "mediacodec,mediacodec-copy")
+            MPVLib.setOptionString("vo", "gpu")
+        } else {
+            MPVLib.setOptionString("hwdec", "no")
+        }
         MPVLib.setOptionString("gpu-context", "android")
-        // TODO disable HW decoding for now
-        MPVLib.setOptionString("hwdec", "no")
 
         MPVLib.setOptionString("opengl-es", "yes")
         MPVLib.setOptionString("hwdec-codecs", "h264,hevc,mpeg4,mpeg2video,vp8,vp9,av1")
@@ -95,10 +107,12 @@ class MpvPlayer(
     override fun getApplicationLooper(): Looper = looper
 
     override fun addListener(listener: Player.Listener) {
+        if (DEBUG) Timber.v("addListener")
         listeners.add(listener)
     }
 
     override fun removeListener(listener: Player.Listener) {
+        if (DEBUG) Timber.v("removeListener")
         listeners.remove(listener)
     }
 
@@ -106,6 +120,9 @@ class MpvPlayer(
         mediaItems: List<MediaItem>,
         resetPosition: Boolean,
     ) {
+        throwIfReleased()
+
+        if (DEBUG) Timber.v("setMediaItems")
         mediaItems.firstOrNull()?.let {
             mediaItem = it
         }
@@ -116,6 +133,7 @@ class MpvPlayer(
         startIndex: Int,
         startPositionMs: Long,
     ) {
+        if (DEBUG) Timber.v("setMediaItems")
         setMediaItems(mediaItems.subList(startIndex, mediaItems.size), false)
         seekTo(startPositionMs)
     }
@@ -145,9 +163,11 @@ class MpvPlayer(
     override fun getAvailableCommands(): Player.Commands = availableCommands
 
     override fun prepare() {
+        if (DEBUG) Timber.v("prepare")
     }
 
     override fun getPlaybackState(): Int {
+        if (DEBUG) Timber.v("getPlaybackState")
         val state = STATE_READY
         return state
     }
@@ -159,6 +179,8 @@ class MpvPlayer(
     }
 
     override fun setPlayWhenReady(playWhenReady: Boolean) {
+        throwIfReleased()
+        if (DEBUG) Timber.v("setPlayWhenReady")
         if (playWhenReady) {
         } else {
             MPVLib.setPropertyBoolean("pause", true)
@@ -166,16 +188,20 @@ class MpvPlayer(
     }
 
     override fun getPlayWhenReady(): Boolean {
+        throwIfReleased()
+        if (DEBUG) Timber.v("getPlayWhenReady")
         val isPaused = MPVLib.getPropertyBoolean("pause")!!
         return !isPaused
     }
 
     override fun setRepeatMode(repeatMode: Int) {
+        if (DEBUG) Timber.v("setRepeatMode")
     }
 
     override fun getRepeatMode(): Int = Player.REPEAT_MODE_OFF
 
     override fun setShuffleModeEnabled(shuffleModeEnabled: Boolean) {
+        if (DEBUG) Timber.v("setShuffleModeEnabled")
     }
 
     override fun getShuffleModeEnabled(): Boolean = false
@@ -189,73 +215,113 @@ class MpvPlayer(
     override fun getMaxSeekToPreviousPosition(): Long = 10_000
 
     override fun setPlaybackParameters(playbackParameters: PlaybackParameters) {
+        if (DEBUG) Timber.v("setPlaybackParameters")
         // TODO
     }
 
     override fun getPlaybackParameters(): PlaybackParameters {
+        if (DEBUG) Timber.v("getPlaybackParameters")
         // TODO
         return PlaybackParameters.DEFAULT
     }
 
     override fun stop() {
+        // TODO
+        throwIfReleased()
+        if (DEBUG) Timber.v("stop")
         pause()
-//        MPVLib.setPropertyString("vo", "gpu")
     }
 
     override fun release() {
-        MPVLib.destroy()
+        Timber.i("release")
+        if (!isReleased) {
+            clearVideoSurfaceView(null)
+            MPVLib.destroy()
+        }
+        isReleased = true
     }
 
     override fun getCurrentTracks(): Tracks {
+        if (DEBUG) Timber.v("getCurrentTracks")
         // TODO
         return Tracks.EMPTY
     }
 
     override fun getTrackSelectionParameters(): TrackSelectionParameters {
+        if (DEBUG) Timber.v("getTrackSelectionParameters")
         // TODO
         return TrackSelectionParameters.Builder().build()
     }
 
     override fun setTrackSelectionParameters(parameters: TrackSelectionParameters) {
+        if (DEBUG) Timber.v("setTrackSelectionParameters")
         // TODO
     }
 
-    override fun getMediaMetadata(): MediaMetadata = mediaItem!!.mediaMetadata
+    override fun getMediaMetadata(): MediaMetadata {
+        if (DEBUG) Timber.v("getMediaMetadata")
+        return mediaItem!!.mediaMetadata
+    }
 
-    override fun getPlaylistMetadata(): MediaMetadata = MediaMetadata.EMPTY
+    override fun getPlaylistMetadata(): MediaMetadata {
+        if (DEBUG) Timber.v("getPlaylistMetadata")
+        return MediaMetadata.EMPTY
+    }
 
     override fun setPlaylistMetadata(mediaMetadata: MediaMetadata): Unit = throw UnsupportedOperationException()
 
     override fun getCurrentTimeline(): Timeline {
+        if (DEBUG) Timber.v("getCurrentTimeline")
         // TODO
         return Timeline.EMPTY
     }
 
     override fun getCurrentPeriodIndex(): Int {
+        if (DEBUG) Timber.v("getCurrentPeriodIndex")
         // TODO
         return 0
     }
 
-    override fun getCurrentMediaItemIndex(): Int = 0
+    override fun getCurrentMediaItemIndex(): Int {
+        if (DEBUG) Timber.v("getCurrentMediaItemIndex")
+        return 0
+    }
 
     override fun getDuration(): Long {
-        val duration = MPVLib.getPropertyDouble("duration/full")!!.milliseconds.inWholeMilliseconds
+        throwIfReleased()
+        if (DEBUG) Timber.v("getDuration")
+        val duration =
+            MPVLib.getPropertyDouble("duration/full")?.seconds?.inWholeMilliseconds
+                ?: durationMs
         return duration
     }
 
     override fun getCurrentPosition(): Long {
-        val position = MPVLib.getPropertyDouble("time-pos/full")?.milliseconds?.inWholeMilliseconds ?: 0
+        if (DEBUG) Timber.v("getCurrentPosition")
+        if (isReleased) {
+            return positionMs
+        }
+        val position =
+            MPVLib.getPropertyDouble("time-pos/full")?.seconds?.inWholeMilliseconds
+                ?: positionMs
         return position
     }
 
     override fun getBufferedPosition(): Long {
+        if (DEBUG) Timber.v("getBufferedPosition")
         // TODO
         return currentPosition
     }
 
-    override fun getTotalBufferedDuration(): Long = bufferedPosition
+    override fun getTotalBufferedDuration(): Long {
+        if (DEBUG) Timber.v("getTotalBufferedDuration")
+        return bufferedPosition
+    }
 
-    override fun isPlayingAd(): Boolean = false
+    override fun isPlayingAd(): Boolean {
+        if (DEBUG) Timber.v("isPlayingAd")
+        return false
+    }
 
     override fun getCurrentAdGroupIndex(): Int = C.INDEX_UNSET
 
@@ -285,6 +351,8 @@ class MpvPlayer(
     override fun clearVideoSurfaceHolder(surfaceHolder: SurfaceHolder?): Unit = throw UnsupportedOperationException()
 
     override fun setVideoSurfaceView(surfaceView: SurfaceView?) {
+        throwIfReleased()
+        if (DEBUG) Timber.v("setVideoSurfaceView")
         val surface = surfaceView?.holder?.surface
         val newSurfaceSize = if (surface == null) 0 else C.LENGTH_UNSET
         this.surfaceSize = if (surface == null) Size(0, 0) else Size.UNKNOWN
@@ -305,7 +373,7 @@ class MpvPlayer(
     }
 
     override fun clearVideoSurfaceView(surfaceView: SurfaceView?) {
-        Timber.d("Detaching surface")
+        Timber.d("clearVideoSurfaceView")
         MPVLib.detachSurface()
         MPVLib.setPropertyString("vo", "null")
         MPVLib.setPropertyString("force-window", "no")
@@ -317,6 +385,8 @@ class MpvPlayer(
     override fun clearVideoTextureView(textureView: TextureView?): Unit = throw UnsupportedOperationException()
 
     override fun getVideoSize(): VideoSize {
+        throwIfReleased()
+        if (DEBUG) Timber.v("getVideoSize")
         val width = MPVLib.getPropertyInt("width")
         val height = MPVLib.getPropertyInt("height")
         return if (width != null && height != null) {
@@ -333,6 +403,7 @@ class MpvPlayer(
     override fun getCurrentCues(): CueGroup = CueGroup.EMPTY_TIME_ZERO
 
     override fun getDeviceInfo(): DeviceInfo {
+        if (DEBUG) Timber.v("getDeviceInfo")
         // TODO
         return DeviceInfo.Builder(DeviceInfo.PLAYBACK_TYPE_REMOTE).build()
     }
@@ -400,10 +471,12 @@ class MpvPlayer(
         seekCommand: Int,
         isRepeatingCurrentItem: Boolean,
     ) {
+        throwIfReleased()
+        if (DEBUG) Timber.v("seekTo")
         if (mediaItemIndex == C.INDEX_UNSET) {
             return
         }
-        MPVLib.setPropertyDouble("time-pos", positionMs.toDouble())
+        MPVLib.setPropertyDouble("time-pos", positionMs / 1000.0)
     }
 
     override fun eventProperty(property: String) {
@@ -414,31 +487,43 @@ class MpvPlayer(
         property: String,
         value: Long,
     ) {
-        Timber.v("eventProperty: $property=$value")
+        Timber.v("eventPropertyLong: $property=$value")
+        when (property) {
+            MPVProperty.POSITION -> positionMs = value.seconds.inWholeMilliseconds
+        }
     }
 
     override fun eventProperty(
         property: String,
         value: Boolean,
     ) {
-        Timber.v("eventProperty: $property=$value")
+        Timber.v("eventPropertyBoolean: $property=$value")
     }
 
     override fun eventProperty(
         property: String,
         value: String,
     ) {
-        Timber.v("eventProperty: $property=$value")
+        Timber.v("eventPropertyString: $property=$value")
     }
 
     override fun eventProperty(
         property: String,
         value: Double,
     ) {
-        Timber.v("eventProperty: $property=$value")
+        Timber.v("eventPropertyDouble: $property=$value")
+        when (property) {
+            MPVProperty.DURATION -> durationMs = value.seconds.inWholeMilliseconds
+        }
     }
 
     override fun event(eventId: Int) {
         Timber.v("event: $eventId")
+    }
+
+    private fun throwIfReleased() {
+        if (isReleased) {
+            throw IllegalStateException("Cannot access MpvPlayer after it is released")
+        }
     }
 }
