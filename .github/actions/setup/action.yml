@@ -9,7 +9,6 @@ runs:
       uses: actions/setup-python@v5
       with:
         python-version: '3.12'
-        cache: 'pip'
     - name: Setup JDK
       uses: actions/setup-java@v5
       with:
