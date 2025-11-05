@@ -23,6 +23,7 @@ class PlaybackKeyHandler(
     private val controllerViewState: ControllerViewState,
     private val updateSkipIndicator: (Long) -> Unit,
     private val skipBackOnResume: Duration?,
+    private val oneClickPause: Boolean,
     private val onInteraction: () -> Unit,
 ) {
     fun onKeyEvent(it: KeyEvent): Boolean {
@@ -33,7 +34,7 @@ class PlaybackKeyHandler(
             result = false
         } else if (it.type != KeyEventType.KeyUp) {
             result = false
-        } else if (isDpad(it)) {
+        } else if (isDirectionalDpad(it) || isEnterKey(it)) {
             if (!controllerViewState.controlsVisible) {
                 if (skipWithLeftRight && it.key == Key.DirectionLeft) {
                     updateSkipIndicator(-seekBack.inWholeMilliseconds)
@@ -41,6 +42,15 @@ class PlaybackKeyHandler(
                 } else if (skipWithLeftRight && it.key == Key.DirectionRight) {
                     player.seekForward(seekForward)
                     updateSkipIndicator(seekForward.inWholeMilliseconds)
+                } else if (oneClickPause && isEnterKey(it)) {
+                    Util.handlePlayPauseButtonAction(player)
+                    if (!player.isPlaying) {
+                        controllerViewState.showControls()
+                    } else {
+                        skipBackOnResume?.let {
+                            player.seekBack(it)
+                        }
+                    }
                 } else {
                     controllerViewState.showControls()
                 }
