@@ -576,6 +576,11 @@ class MpvPlayer(
                     Timber.d("Seeking to $startPositionMs")
                     seekTo(startPositionMs)
                 }
+                mediaItem!!.localConfiguration?.subtitleConfigurations?.forEach {
+                    val url = it.uri.toString()
+                    Timber.v("Adding external subtitle track $url")
+                    MPVLib.command(arrayOf("sub-add", url, "auto"))
+                }
                 getTracks().let {
                     notifyListeners(EVENT_TRACKS_CHANGED) { onTracksChanged(it) }
                 }
@@ -675,7 +680,9 @@ class MpvPlayer(
                             .setCodecs(codec)
                             .setSampleMimeType(mimeType)
                             .setLanguage(lang)
-                            .setLabel(listOfNotNull(title, codecDescription).joinToString(","))
+                            // TODO title contains apikey for external subtitles
+                            // .setLabel(listOfNotNull(title, codecDescription).joinToString(","))
+                            .setLabel(codecDescription)
                             .setSelectionFlags(flags)
                     channelCount?.let(builder::setChannelCount)
                     val format = builder.build()
