@@ -84,6 +84,8 @@ import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.DeviceProfile
 import org.jellyfin.sdk.model.api.MediaSegmentDto
 import org.jellyfin.sdk.model.api.MediaSegmentType
+import org.jellyfin.sdk.model.api.MediaSourceInfo
+import org.jellyfin.sdk.model.api.MediaStream
 import org.jellyfin.sdk.model.api.MediaStreamType
 import org.jellyfin.sdk.model.api.PlayMethod
 import org.jellyfin.sdk.model.api.PlaybackInfoDto
@@ -423,6 +425,56 @@ class PlaybackViewModel
         ) = withContext(Dispatchers.IO) {
             val itemId = item.id
 
+            val currentPlayback = this@PlaybackViewModel.currentPlayback.value
+            if (currentPlayback != null && currentPlayback.playMethod == PlayMethod.DIRECT_PLAY) {
+                // If direct playing, can try to switch tracks without playback restarting
+                // Except for external subtitles
+                // TODO there's probably no reason why we can't add external subtitles?
+
+                val source = currentPlayback.mediaSourceInfo
+                val externalSubtitleCount = source.externalSubtitlesCount
+                val externalSubtitle = source.findExternalSubtitle(subtitleIndex)
+
+                val result =
+                    withContext(Dispatchers.Main) {
+                        applyTrackSelections(
+                            player,
+                            true,
+                            audioIndex,
+                            subtitleIndex,
+                            externalSubtitleCount,
+                            externalSubtitle != null,
+                        )
+                    }
+                if (result.bothSelected) {
+                    Timber.d("Changes tracks audio=$audioIndex, subtitle=$subtitleIndex")
+                    val itemPlayback =
+                        currentItemPlayback.copy(
+                            sourceId = source.id?.toUUIDOrNull(),
+                            audioIndex = audioIndex ?: TrackIndex.UNSPECIFIED,
+                            subtitleIndex = subtitleIndex ?: TrackIndex.DISABLED,
+                        )
+                    if (userInitiated) {
+                        viewModelScope.launchIO {
+                            Timber.v("Saving user initiated item playback: %s", itemPlayback)
+                            val updated = itemPlaybackRepository.saveItemPlayback(itemPlayback)
+                            withContext(Dispatchers.Main) {
+                                this@PlaybackViewModel.currentItemPlayback.value = updated
+                            }
+                        }
+                    }
+                    withContext(Dispatchers.Main) {
+                        this@PlaybackViewModel.currentPlayback.value =
+                            currentPlayback.copy(
+                                tracks = checkForSupport(player.currentTracks),
+                            )
+                        this@PlaybackViewModel.currentItemPlayback.value = itemPlayback
+                    }
+
+                    return@withContext
+                }
+            }
+
             // TODO
 //            if (currentItemPlayback.let {
 //                    it.itemId == itemId &&
@@ -505,28 +557,25 @@ class PlaybackViewModel
                 val decision = StreamDecision(itemId, transcodeType, mediaUrl)
                 Timber.v("Playback decision: $decision")
 
-                val externalSubtitleCount =
-                    source.mediaStreams
-                        ?.count { it.type == MediaStreamType.SUBTITLE && it.isExternal } ?: 0
+                val externalSubtitleCount = source.externalSubtitlesCount
 
                 val externalSubtitle =
-                    source.mediaStreams
-                        ?.firstOrNull { it.type == MediaStreamType.SUBTITLE && it.isExternal && it.index == subtitleIndex }
-                        ?.let {
-                            it.deliveryUrl?.let { deliveryUrl ->
-                                var flags = 0
-                                if (it.isForced) flags = flags.or(C.SELECTION_FLAG_FORCED)
-                                if (it.isDefault) flags = flags.or(C.SELECTION_FLAG_DEFAULT)
-                                MediaItem.SubtitleConfiguration
-                                    .Builder(
-                                        api.createUrl(deliveryUrl).toUri(),
-                                    ).setId("e:${it.index}")
-                                    .setMimeType(subtitleMimeTypes[it.codec])
-                                    .setLanguage(it.language)
-                                    .setSelectionFlags(flags)
-                                    .build()
-                            }
+                    source.findExternalSubtitle(subtitleIndex)?.let {
+                        it.deliveryUrl?.let { deliveryUrl ->
+                            var flags = 0
+                            if (it.isForced) flags = flags.or(C.SELECTION_FLAG_FORCED)
+                            if (it.isDefault) flags = flags.or(C.SELECTION_FLAG_DEFAULT)
+                            MediaItem.SubtitleConfiguration
+                                .Builder(
+                                    api.createUrl(deliveryUrl).toUri(),
+                                ).setId("e:${it.index}")
+                                .setMimeType(subtitleMimeTypes[it.codec])
+                                .setLanguage(it.language)
+                                .setSelectionFlags(flags)
+                                .build()
                         }
+                    }
+
                 Timber.v("externalSubtitleCount=$externalSubtitleCount, externalSubtitle=$externalSubtitle")
 
                 val mediaItem =
@@ -544,6 +593,7 @@ class PlaybackViewModel
                         playMethod = transcodeType,
                         playSessionId = response.playSessionId,
                         liveStreamId = source.liveStreamId,
+                        mediaSourceInfo = source,
                     )
                 val itemPlayback =
                     currentItemPlayback.copy(
@@ -580,7 +630,7 @@ class PlaybackViewModel
 
                     duration.value = source.runTimeTicks?.ticks
                     loading.value = LoadingState.Success
-                    currentPlayback.value = playback
+                    this@PlaybackViewModel.currentPlayback.value = playback
                     this@PlaybackViewModel.currentItemPlayback.value = itemPlayback
                     player.setMediaItem(
                         mediaItem,
@@ -1056,6 +1106,7 @@ data class CurrentPlayback(
     val playMethod: PlayMethod,
     val playSessionId: String?,
     val liveStreamId: String?,
+    val mediaSourceInfo: MediaSourceInfo,
 )
 
 sealed interface SubtitleSearch {
@@ -1084,7 +1135,31 @@ val Format.idAsInt: Int?
             }
         }
 
+/**
+ * Returns the number of external subtitle streams there are
+ */
+val MediaSourceInfo.externalSubtitlesCount: Int
+    get() =
+        mediaStreams
+            ?.count { it.type == MediaStreamType.SUBTITLE && it.isExternal } ?: 0
+
+/**
+ * Returns the [MediaStream] for the given subtitle index iff it is external
+ */
+fun MediaSourceInfo.findExternalSubtitle(subtitleIndex: Int?): MediaStream? =
+    subtitleIndex?.let {
+        mediaStreams
+            ?.firstOrNull { it.type == MediaStreamType.SUBTITLE && it.isExternal && it.index == subtitleIndex }
+    }
+
 suspend fun <T> onMain(block: suspend CoroutineScope.() -> T) = withContext(Dispatchers.Main, block)
+
+data class TrackSelectionResult(
+    val audioSelected: Boolean,
+    val subtitleSelected: Boolean,
+) {
+    val bothSelected: Boolean = audioSelected && subtitleSelected
+}
 
 @OptIn(UnstableApi::class)
 private fun applyTrackSelections(
@@ -1094,71 +1169,79 @@ private fun applyTrackSelections(
     subtitleIndex: Int?,
     externalSubtitleCount: Int,
     subtitleIsExternal: Boolean,
-) {
-    if (subtitleIndex != null && subtitleIndex >= 0 && (subtitleIsExternal || supportsDirectPlay)) {
-        val chosenTrack =
-            if (subtitleIsExternal) {
-                player.currentTracks.groups.firstOrNull { group ->
-                    group.type == C.TRACK_TYPE_TEXT && group.isSupported &&
-                        (0..<group.mediaTrackGroup.length)
-                            .mapNotNull {
-                                group.getTrackFormat(it).id
-                            }.any { it.endsWith("e:$subtitleIndex") }
+): TrackSelectionResult {
+    val subtitleSelected =
+        if (subtitleIndex != null && subtitleIndex >= 0 && (subtitleIsExternal || supportsDirectPlay)) {
+            val chosenTrack =
+                if (subtitleIsExternal) {
+                    player.currentTracks.groups.firstOrNull { group ->
+                        group.type == C.TRACK_TYPE_TEXT && group.isSupported &&
+                            (0..<group.mediaTrackGroup.length)
+                                .mapNotNull {
+                                    group.getTrackFormat(it).id
+                                }.any { it.endsWith("e:$subtitleIndex") }
+                    }
+                } else {
+                    val indexToFind = subtitleIndex - externalSubtitleCount + 1
+                    player.currentTracks.groups.firstOrNull { group ->
+                        group.type == C.TRACK_TYPE_TEXT && group.isSupported &&
+                            (0..<group.mediaTrackGroup.length)
+                                .map {
+                                    group.getTrackFormat(it).idAsInt
+                                }.contains(indexToFind)
+                    }
                 }
-            } else {
-                val indexToFind = subtitleIndex - externalSubtitleCount + 1
+
+            Timber.v("Chosen subtitle ($subtitleIndex) track: $chosenTrack")
+            chosenTrack?.let {
+                player.trackSelectionParameters =
+                    player.trackSelectionParameters
+                        .buildUpon()
+                        .setTrackTypeDisabled(C.TRACK_TYPE_TEXT, false)
+                        .setOverrideForType(
+                            TrackSelectionOverride(
+                                chosenTrack.mediaTrackGroup,
+                                0,
+                            ),
+                        ).build()
+            }
+            chosenTrack != null
+        } else {
+            player.trackSelectionParameters =
+                player.trackSelectionParameters
+                    .buildUpon()
+                    .setTrackTypeDisabled(C.TRACK_TYPE_TEXT, true)
+                    .build()
+            true
+        }
+    val audioSelected =
+        if (audioIndex != null && supportsDirectPlay) {
+            val indexToFind =
+                audioIndex - externalSubtitleCount + 1
+            val chosenTrack =
                 player.currentTracks.groups.firstOrNull { group ->
-                    group.type == C.TRACK_TYPE_TEXT && group.isSupported &&
+                    group.type == C.TRACK_TYPE_AUDIO && group.isSupported &&
                         (0..<group.mediaTrackGroup.length)
                             .map {
                                 group.getTrackFormat(it).idAsInt
                             }.contains(indexToFind)
                 }
+            Timber.v("Chosen audio ($audioIndex/$indexToFind) track: $chosenTrack")
+            chosenTrack?.let {
+                player.trackSelectionParameters =
+                    player.trackSelectionParameters
+                        .buildUpon()
+                        .setTrackTypeDisabled(C.TRACK_TYPE_AUDIO, false)
+                        .setOverrideForType(
+                            TrackSelectionOverride(
+                                chosenTrack.mediaTrackGroup,
+                                0,
+                            ),
+                        ).build()
             }
-
-        Timber.v("Chosen subtitle ($subtitleIndex) track: $chosenTrack")
-        chosenTrack?.let {
-            player.trackSelectionParameters =
-                player.trackSelectionParameters
-                    .buildUpon()
-                    .setTrackTypeDisabled(C.TRACK_TYPE_TEXT, false)
-                    .setOverrideForType(
-                        TrackSelectionOverride(
-                            chosenTrack.mediaTrackGroup,
-                            0,
-                        ),
-                    ).build()
+            chosenTrack != null
+        } else {
+            audioIndex == null
         }
-    } else {
-        player.trackSelectionParameters =
-            player.trackSelectionParameters
-                .buildUpon()
-                .setTrackTypeDisabled(C.TRACK_TYPE_TEXT, true)
-                .build()
-    }
-    if (audioIndex != null && supportsDirectPlay) {
-        val indexToFind =
-            audioIndex - externalSubtitleCount + 1
-        val chosenTrack =
-            player.currentTracks.groups.firstOrNull { group ->
-                group.type == C.TRACK_TYPE_AUDIO && group.isSupported &&
-                    (0..<group.mediaTrackGroup.length)
-                        .map {
-                            group.getTrackFormat(it).idAsInt
-                        }.contains(indexToFind)
-            }
-        Timber.v("Chosen audio ($audioIndex/$indexToFind) track: $chosenTrack")
-        chosenTrack?.let {
-            player.trackSelectionParameters =
-                player.trackSelectionParameters
-                    .buildUpon()
-                    .setTrackTypeDisabled(C.TRACK_TYPE_AUDIO, false)
-                    .setOverrideForType(
-                        TrackSelectionOverride(
-                            chosenTrack.mediaTrackGroup,
-                            0,
-                        ),
-                    ).build()
-        }
-    }
+    return TrackSelectionResult(audioSelected, subtitleSelected)
 }
