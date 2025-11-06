@@ -625,16 +625,15 @@ class PlaybackViewModel
                         player.removeListener(it)
                     }
 
-                    // TODO temporarily disable
-//                    val activityListener =
-//                        TrackActivityPlaybackListener(
-//                            api = api,
-//                            player = player,
-//                            playback = playback,
-//                            itemPlayback = itemPlayback,
-//                        )
-//                    player.addListener(activityListener)
-//                    this@PlaybackViewModel.activityListener = activityListener
+                    val activityListener =
+                        TrackActivityPlaybackListener(
+                            api = api,
+                            player = player,
+                            playback = playback,
+                            itemPlayback = itemPlayback,
+                        )
+                    player.addListener(activityListener)
+                    this@PlaybackViewModel.activityListener = activityListener
 
                     duration.value = source.runTimeTicks?.ticks
                     loading.value = LoadingState.Success
