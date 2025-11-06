@@ -79,7 +79,7 @@ class MpvPlayer(
     private var mediaItem: MediaItem? = null
     private var startPositionMs: Long = 0L
     private var durationMs: Long = 0L
-    private var positionMs: Long = 0L
+    private var positionMs: Long = -1L
     private var playbackState: Int = STATE_READY
 
     var isReleased = false
@@ -200,7 +200,7 @@ class MpvPlayer(
     override fun prepare() {
         if (DEBUG) Timber.v("prepare")
         durationMs = 0L
-        positionMs = 0L
+        positionMs = -1L
     }
 
     override fun getPlaybackState(): Int {
@@ -616,7 +616,9 @@ class MpvPlayer(
 
             MPV_EVENT_END_FILE -> {
                 Timber.d("event: MPV_EVENT_END_FILE")
-                if (positionMs >= durationMs) {
+                val curPos = MPVLib.getPropertyDouble("time-pos/full")
+                Timber.v("MPV_EVENT_END_FILE: positionMs=$positionMs, durationMs=$durationMs, curPos=$curPos")
+                if (positionMs >= (durationMs - 1000) && curPos == null) {
                     playbackState = STATE_ENDED
                     notifyListeners(EVENT_PLAYBACK_STATE_CHANGED) {
                         onPlaybackStateChanged(STATE_ENDED)
