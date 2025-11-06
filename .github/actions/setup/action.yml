@@ -15,12 +15,17 @@ runs:
         distribution: zulu
         java-version: '21'
         cache: 'gradle'
+    - name: Set versions
+      shell: bash
+      run: |
+        echo "BUILD_TOOLS_VERSION=36.0.0" >> $GITHUB_ENV
+        echo "NDK_VERSION=29.0.14206865" >> $GITHUB_ENV
     - name: Setup Android SDK
       uses: android-actions/setup-android@v3
       with:
-        packages: "tools platform-tools build-tools;36.0.0 ndk;29.0.14206865"
+        packages: "tools platform-tools build-tools;${{ env.BUILD_TOOLS_VERSION }} ndk;${{ env.NDK_VERSION }}"
     - name: Add NDK to path
       shell: bash
       run: |
-        echo "Adding to path: ${{ env.ANDROID_SDK_ROOT }}/ndk/29.0.14206865:${{ env.ANDROID_SDK_ROOT }}/ndk/29.0.14206865/toolchains/llvm/prebuilt/linux-x86_64/bin"
-        echo "${{ env.ANDROID_SDK_ROOT }}/ndk/29.0.14206865:${{ env.ANDROID_SDK_ROOT }}/ndk/29.0.14206865/toolchains/llvm/prebuilt/linux-x86_64/bin" >> $GITHUB_PATH
+        echo "Adding to path: ${{ env.ANDROID_SDK_ROOT }}/ndk/${{ env.NDK_VERSION }}:${{ env.ANDROID_SDK_ROOT }}/ndk/${{ env.NDK_VERSION }}/toolchains/llvm/prebuilt/linux-x86_64/bin"
+        echo "${{ env.ANDROID_SDK_ROOT }}/ndk/${{ env.NDK_VERSION }}:${{ env.ANDROID_SDK_ROOT }}/ndk/${{ env.NDK_VERSION }}/toolchains/llvm/prebuilt/linux-x86_64/bin" >> $GITHUB_PATH
