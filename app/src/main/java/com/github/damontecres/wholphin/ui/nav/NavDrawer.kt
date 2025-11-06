@@ -449,8 +449,9 @@ fun NavDrawer(
             if (preferences.appPreferences.interfacePreferences.showClock) {
                 var now by remember { mutableStateOf(LocalTime.now()) }
                 LaunchedEffect(Unit) {
-                    if (isActive) {
+                    while (isActive) {
                         now = LocalTime.now()
+                        delay(1000L)
                     }
                 }
                 Text(
