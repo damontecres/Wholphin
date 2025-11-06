@@ -437,7 +437,7 @@ class PlaybackViewModel
                 "changeStreams: userInitiated=$userInitiated, audioIndex=$audioIndex, subtitleIndex=$subtitleIndex, " +
                     "enableDirectPlay=$enableDirectPlay, enableDirectStream=$enableDirectStream",
             )
-
+            val playerBackend = preferences.appPreferences.playbackPreferences.playerBackend
             // TODO if the new audio or subtitle index is already in the streams (eg direct play), should toggle in the player instead
             val maxBitrate =
                 preferences.appPreferences.playbackPreferences.maxBitrate
@@ -448,7 +448,12 @@ class PlaybackViewModel
                         itemId,
                         PlaybackInfoDto(
                             startTimeTicks = null,
-                            deviceProfile = deviceProfile,
+                            deviceProfile =
+                                if (playerBackend == PlayerBackend.EXO_PLAYER) {
+                                    deviceProfile
+                                } else {
+                                    null
+                                },
                             maxAudioChannels = null,
                             audioStreamIndex = audioIndex,
                             subtitleStreamIndex = subtitleIndex,
@@ -491,6 +496,7 @@ class PlaybackViewModel
                 }
                 val transcodeType =
                     when {
+                        playerBackend == PlayerBackend.MPV -> PlayMethod.DIRECT_PLAY
                         source.supportsDirectPlay -> PlayMethod.DIRECT_PLAY
                         source.supportsDirectStream -> PlayMethod.DIRECT_STREAM
                         source.supportsTranscoding -> PlayMethod.TRANSCODE

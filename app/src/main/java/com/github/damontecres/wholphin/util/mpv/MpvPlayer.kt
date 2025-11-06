@@ -31,6 +31,7 @@ import androidx.media3.common.util.ListenerSet
 import androidx.media3.common.util.Size
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.common.util.Util
+import com.github.damontecres.wholphin.util.mpv.MPVLib.MpvEvent.MPV_EVENT_END_FILE
 import com.github.damontecres.wholphin.util.mpv.MPVLib.MpvEvent.MPV_EVENT_FILE_LOADED
 import timber.log.Timber
 import kotlin.concurrent.atomics.ExperimentalAtomicApi
@@ -68,6 +69,7 @@ class MpvPlayer(
     private var startPositionMs: Long = 0L
     private var durationMs: Long = 0L
     private var positionMs: Long = 0L
+    private var playbackState: Int = STATE_READY
 
     var isReleased = false
         private set
@@ -144,6 +146,9 @@ class MpvPlayer(
         mediaItems.firstOrNull()?.let {
             mediaItem = it
         }
+        if (surface != null) {
+            loadFile()
+        }
     }
 
     override fun setMediaItems(
@@ -188,8 +193,7 @@ class MpvPlayer(
 
     override fun getPlaybackState(): Int {
         if (DEBUG) Timber.v("getPlaybackState")
-        val state = STATE_READY
-        return state
+        return playbackState
     }
 
     override fun getPlaybackSuppressionReason(): Int = Player.PLAYBACK_SUPPRESSION_REASON_NONE
@@ -205,6 +209,12 @@ class MpvPlayer(
             MPVLib.setPropertyBoolean("pause", false)
         } else {
             MPVLib.setPropertyBoolean("pause", true)
+        }
+        notifyListeners(EVENT_PLAY_WHEN_READY_CHANGED) {
+            onPlayWhenReadyChanged(
+                playWhenReady,
+                PLAY_WHEN_READY_CHANGE_REASON_USER_REQUEST,
+            )
         }
     }
 
@@ -377,19 +387,13 @@ class MpvPlayer(
         throwIfReleased()
         if (DEBUG) Timber.v("setVideoSurfaceView")
         val surface = surfaceView?.holder?.surface
-        val newSurfaceSize = if (surface == null) 0 else C.LENGTH_UNSET
-        this.surfaceSize = if (surface == null) Size(0, 0) else Size.UNKNOWN
         if (surface != null) {
             this.surface = surface
             Timber.v("Queued attach")
             MPVLib.attachSurface(surface)
             MPVLib.setOptionString("force-window", "yes")
             Timber.d("Attached surface")
-
-            val url = mediaItem!!.localConfiguration?.uri.toString()
-            MPVLib.command(arrayOf("loadfile", url))
-            MPVLib.setPropertyString("vo", "gpu")
-            Timber.d("Called loadfile")
+            loadFile()
         } else {
             clearVideoSurfaceView(null)
         }
@@ -558,7 +562,18 @@ class MpvPlayer(
                     notifyListeners(EVENT_TRACKS_CHANGED) { onTracksChanged(it) }
                 }
             }
+            MPV_EVENT_END_FILE -> {
+                playbackState = STATE_ENDED
+                notifyListeners(EVENT_PLAYBACK_STATE_CHANGED) { onPlaybackStateChanged(STATE_ENDED) }
+            }
         }
+    }
+
+    private fun loadFile() {
+        val url = mediaItem!!.localConfiguration?.uri.toString()
+        MPVLib.command(arrayOf("loadfile", url))
+        MPVLib.setPropertyString("vo", "gpu")
+        Timber.d("Called loadfile")
     }
 
     private fun throwIfReleased() {
