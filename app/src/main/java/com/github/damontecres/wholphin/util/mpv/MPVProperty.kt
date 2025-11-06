@@ -22,6 +22,7 @@ object MPVProperty {
     const val MUTE = "mute"
     const val TRACK_AUDIO = "current-tracks/audio/selected"
     const val SEEKABLE = "seekable"
+    const val SUBTITLE_TEXT = "sub-text"
 
     val observedProperties =
         mapOf(
@@ -40,5 +41,6 @@ object MPVProperty {
             MUTE to MPV_FORMAT_FLAG,
             TRACK_AUDIO to MPV_FORMAT_NONE,
             SEEKABLE to MPV_FORMAT_FLAG,
+            SUBTITLE_TEXT to MPV_FORMAT_STRING,
         )
 }

@@ -1209,13 +1209,16 @@ private fun applyTrackSelections(
     val embeddedSubtitleCount = source.embeddedSubtitleCount
     val externalSubtitleCount = source.externalSubtitlesCount
 
+    val paramsBuilder = player.trackSelectionParameters.buildUpon()
+    val tracks = player.currentTracks.groups
+
     val subtitleSelected =
         if (subtitleIndex != null && subtitleIndex >= 0) {
             val subtitleIsExternal = source.findExternalSubtitle(subtitleIndex) != null
             if (subtitleIsExternal || supportsDirectPlay) {
                 val chosenTrack =
                     if (subtitleIsExternal && playerBackend == PlayerBackend.EXO_PLAYER) {
-                        player.currentTracks.groups.firstOrNull { group ->
+                        tracks.firstOrNull { group ->
                             group.type == C.TRACK_TYPE_TEXT && group.isSupported &&
                                 (0..<group.mediaTrackGroup.length)
                                     .mapNotNull {
@@ -1236,7 +1239,6 @@ private fun applyTrackSelections(
                             )
                         Timber.v("Chosen subtitle ($subtitleIndex/$indexToFind) track")
                         // subtitleIndex - externalSubtitleCount + 1
-                        val tracks = player.currentTracks.groups
                         tracks.firstOrNull { group ->
                             group.type == C.TRACK_TYPE_TEXT && group.isSupported &&
                                 (0..<group.mediaTrackGroup.length)
@@ -1248,27 +1250,23 @@ private fun applyTrackSelections(
 
                 Timber.v("Chosen subtitle ($subtitleIndex) track: $chosenTrack")
                 chosenTrack?.let {
-                    player.trackSelectionParameters =
-                        player.trackSelectionParameters
-                            .buildUpon()
-                            .setTrackTypeDisabled(C.TRACK_TYPE_TEXT, false)
-                            .setOverrideForType(
-                                TrackSelectionOverride(
-                                    chosenTrack.mediaTrackGroup,
-                                    0,
-                                ),
-                            ).build()
+                    paramsBuilder
+                        .setTrackTypeDisabled(C.TRACK_TYPE_TEXT, false)
+                        .setOverrideForType(
+                            TrackSelectionOverride(
+                                chosenTrack.mediaTrackGroup,
+                                0,
+                            ),
+                        )
                 }
                 chosenTrack != null
             } else {
                 false
             }
         } else {
-            player.trackSelectionParameters =
-                player.trackSelectionParameters
-                    .buildUpon()
-                    .setTrackTypeDisabled(C.TRACK_TYPE_TEXT, true)
-                    .build()
+            paramsBuilder
+                .setTrackTypeDisabled(C.TRACK_TYPE_TEXT, true)
+
             true
         }
     val audioSelected =
@@ -1285,7 +1283,7 @@ private fun applyTrackSelections(
                     false,
                 )
             val chosenTrack =
-                player.currentTracks.groups.firstOrNull { group ->
+                tracks.firstOrNull { group ->
                     group.type == C.TRACK_TYPE_AUDIO && group.isSupported &&
                         (0..<group.mediaTrackGroup.length)
                             .map {
@@ -1294,21 +1292,22 @@ private fun applyTrackSelections(
                 }
             Timber.v("Chosen audio ($audioIndex/$indexToFind) track: $chosenTrack")
             chosenTrack?.let {
-                player.trackSelectionParameters =
-                    player.trackSelectionParameters
-                        .buildUpon()
-                        .setTrackTypeDisabled(C.TRACK_TYPE_AUDIO, false)
-                        .setOverrideForType(
-                            TrackSelectionOverride(
-                                chosenTrack.mediaTrackGroup,
-                                0,
-                            ),
-                        ).build()
+                paramsBuilder
+                    .setTrackTypeDisabled(C.TRACK_TYPE_AUDIO, false)
+                    .setOverrideForType(
+                        TrackSelectionOverride(
+                            chosenTrack.mediaTrackGroup,
+                            0,
+                        ),
+                    )
             }
             chosenTrack != null
         } else {
             audioIndex == null
         }
+    if (audioSelected && subtitleSelected) {
+        player.trackSelectionParameters = paramsBuilder.build()
+    }
     return TrackSelectionResult(audioSelected, subtitleSelected)
 }
 
