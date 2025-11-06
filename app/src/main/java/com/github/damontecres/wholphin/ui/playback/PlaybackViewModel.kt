@@ -424,12 +424,14 @@ class PlaybackViewModel
             enableDirectStream: Boolean = true,
         ) = withContext(Dispatchers.IO) {
             val itemId = item.id
+            val playerBackend = preferences.appPreferences.playbackPreferences.playerBackend
 
             val currentPlayback = this@PlaybackViewModel.currentPlayback.value
             if (currentPlayback != null && currentPlayback.playMethod == PlayMethod.DIRECT_PLAY) {
                 // If direct playing, can try to switch tracks without playback restarting
                 // Except for external subtitles
                 // TODO there's probably no reason why we can't add external subtitles?
+                Timber.v("changeStreams direct play")
 
                 val source = currentPlayback.mediaSourceInfo
                 val externalSubtitleCount = source.externalSubtitlesCount
@@ -439,14 +441,18 @@ class PlaybackViewModel
                     withContext(Dispatchers.Main) {
                         applyTrackSelections(
                             player,
+                            playerBackend,
                             true,
                             audioIndex,
                             subtitleIndex,
+                            source.videoStreamCount,
+                            source.audioStreamCount,
                             externalSubtitleCount,
                             externalSubtitle != null,
                         )
                     }
                 if (result.bothSelected) {
+                    // TODO lots of duplicate code in this block
                     Timber.d("Changes tracks audio=$audioIndex, subtitle=$subtitleIndex")
                     val itemPlayback =
                         currentItemPlayback.copy(
@@ -489,7 +495,6 @@ class PlaybackViewModel
                 "changeStreams: userInitiated=$userInitiated, audioIndex=$audioIndex, subtitleIndex=$subtitleIndex, " +
                     "enableDirectPlay=$enableDirectPlay, enableDirectStream=$enableDirectStream",
             )
-            val playerBackend = preferences.appPreferences.playbackPreferences.playerBackend
             // TODO if the new audio or subtitle index is already in the streams (eg direct play), should toggle in the player instead
             val maxBitrate =
                 preferences.appPreferences.playbackPreferences.maxBitrate
@@ -618,15 +623,16 @@ class PlaybackViewModel
                         player.removeListener(it)
                     }
 
-                    val activityListener =
-                        TrackActivityPlaybackListener(
-                            api = api,
-                            player = player,
-                            playback = playback,
-                            itemPlayback = itemPlayback,
-                        )
-                    player.addListener(activityListener)
-                    this@PlaybackViewModel.activityListener = activityListener
+                    // TODO temporarily disable
+//                    val activityListener =
+//                        TrackActivityPlaybackListener(
+//                            api = api,
+//                            player = player,
+//                            playback = playback,
+//                            itemPlayback = itemPlayback,
+//                        )
+//                    player.addListener(activityListener)
+//                    this@PlaybackViewModel.activityListener = activityListener
 
                     duration.value = source.runTimeTicks?.ticks
                     loading.value = LoadingState.Success
@@ -644,9 +650,12 @@ class PlaybackViewModel
                                     if (tracks.groups.isNotEmpty()) {
                                         applyTrackSelections(
                                             player,
+                                            playerBackend,
                                             source.supportsDirectPlay,
                                             audioIndex,
                                             subtitleIndex,
+                                            source.videoStreamCount,
+                                            source.audioStreamCount,
                                             externalSubtitleCount,
                                             externalSubtitle != null,
                                         )
@@ -1144,6 +1153,22 @@ val MediaSourceInfo.externalSubtitlesCount: Int
             ?.count { it.type == MediaStreamType.SUBTITLE && it.isExternal } ?: 0
 
 /**
+ * Returns the number of video streams there are
+ */
+val MediaSourceInfo.videoStreamCount: Int
+    get() =
+        mediaStreams
+            ?.count { it.type == MediaStreamType.VIDEO } ?: 0
+
+/**
+ * Returns the number of audio streams there are
+ */
+val MediaSourceInfo.audioStreamCount: Int
+    get() =
+        mediaStreams
+            ?.count { it.type == MediaStreamType.AUDIO } ?: 0
+
+/**
  * Returns the [MediaStream] for the given subtitle index iff it is external
  */
 fun MediaSourceInfo.findExternalSubtitle(subtitleIndex: Int?): MediaStream? =
@@ -1164,9 +1189,12 @@ data class TrackSelectionResult(
 @OptIn(UnstableApi::class)
 private fun applyTrackSelections(
     player: Player,
+    playerBackend: PlayerBackend,
     supportsDirectPlay: Boolean,
     audioIndex: Int?,
     subtitleIndex: Int?,
+    videoStreamCount: Int,
+    audioStreamCount: Int,
     externalSubtitleCount: Int,
     subtitleIsExternal: Boolean,
 ): TrackSelectionResult {
@@ -1182,7 +1210,18 @@ private fun applyTrackSelections(
                                 }.any { it.endsWith("e:$subtitleIndex") }
                     }
                 } else {
-                    val indexToFind = subtitleIndex - externalSubtitleCount + 1
+                    // TODO this might be incorrect
+                    val indexToFind =
+                        calculateIndexToFind(
+                            subtitleIndex,
+                            MediaStreamType.SUBTITLE,
+                            playerBackend,
+                            videoStreamCount,
+                            audioStreamCount,
+                            externalSubtitleCount,
+                        )
+                    Timber.v("Chosen subtitle ($subtitleIndex/$indexToFind) track")
+                    // subtitleIndex - externalSubtitleCount + 1
                     player.currentTracks.groups.firstOrNull { group ->
                         group.type == C.TRACK_TYPE_TEXT && group.isSupported &&
                             (0..<group.mediaTrackGroup.length)
@@ -1217,7 +1256,14 @@ private fun applyTrackSelections(
     val audioSelected =
         if (audioIndex != null && supportsDirectPlay) {
             val indexToFind =
-                audioIndex - externalSubtitleCount + 1
+                calculateIndexToFind(
+                    audioIndex,
+                    MediaStreamType.AUDIO,
+                    playerBackend,
+                    videoStreamCount,
+                    audioStreamCount,
+                    externalSubtitleCount,
+                )
             val chosenTrack =
                 player.currentTracks.groups.firstOrNull { group ->
                     group.type == C.TRACK_TYPE_AUDIO && group.isSupported &&
@@ -1245,3 +1291,32 @@ private fun applyTrackSelections(
         }
     return TrackSelectionResult(audioSelected, subtitleSelected)
 }
+
+/**
+ * Maps the server provided index to the track index based on the [PlayerBackend] and other stream information
+ */
+private fun calculateIndexToFind(
+    serverIndex: Int,
+    type: MediaStreamType,
+    playerBackend: PlayerBackend,
+    videoStreamCount: Int,
+    audioStreamCount: Int,
+    externalSubtitleCount: Int,
+): Int =
+    when (playerBackend) {
+        PlayerBackend.EXO_PLAYER,
+        PlayerBackend.UNRECOGNIZED,
+        -> {
+            serverIndex - externalSubtitleCount + 1
+        }
+
+        // TODO MPV could use literal indexes because they are stored in the track format ID
+        PlayerBackend.MPV -> {
+            when (type) {
+                MediaStreamType.VIDEO -> serverIndex - externalSubtitleCount + 1
+                MediaStreamType.AUDIO -> serverIndex - externalSubtitleCount - videoStreamCount + 1
+                MediaStreamType.SUBTITLE -> serverIndex - externalSubtitleCount - videoStreamCount - audioStreamCount + 1
+                else -> throw UnsupportedOperationException("Cannot calculate index for $type")
+            }
+        }
+    }

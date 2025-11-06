@@ -34,8 +34,11 @@ import androidx.media3.common.util.Util
 import androidx.media3.exoplayer.trackselection.DefaultTrackSelector
 import androidx.media3.exoplayer.trackselection.TrackSelector
 import androidx.media3.exoplayer.upstream.DefaultBandwidthMeter
+import com.github.damontecres.wholphin.util.mpv.MPVLib.MpvEvent.MPV_EVENT_AUDIO_RECONFIG
 import com.github.damontecres.wholphin.util.mpv.MPVLib.MpvEvent.MPV_EVENT_END_FILE
 import com.github.damontecres.wholphin.util.mpv.MPVLib.MpvEvent.MPV_EVENT_FILE_LOADED
+import com.github.damontecres.wholphin.util.mpv.MPVLib.MpvEvent.MPV_EVENT_PLAYBACK_RESTART
+import com.github.damontecres.wholphin.util.mpv.MPVLib.MpvEvent.MPV_EVENT_VIDEO_RECONFIG
 import timber.log.Timber
 import kotlin.concurrent.atomics.ExperimentalAtomicApi
 import kotlin.time.Duration.Companion.seconds
@@ -295,7 +298,7 @@ class MpvPlayer(
     }
 
     override fun setTrackSelectionParameters(parameters: TrackSelectionParameters) {
-        if (DEBUG) Timber.v("setTrackSelectionParameters")
+        Timber.v("TrackSelection: setTrackSelectionParameters %s", parameters)
         val tracks = getTracks()
         if (C.TRACK_TYPE_TEXT in parameters.disabledTrackTypes) {
             // Subtitles disabled
@@ -522,14 +525,14 @@ class MpvPlayer(
     }
 
     override fun eventProperty(property: String) {
-        Timber.v("eventProperty: $property")
+        if (DEBUG) Timber.v("eventProperty: $property")
     }
 
     override fun eventProperty(
         property: String,
         value: Long,
     ) {
-        Timber.v("eventPropertyLong: $property=$value")
+        if (DEBUG) Timber.v("eventPropertyLong: $property=$value")
         when (property) {
             MPVProperty.POSITION -> positionMs = value.seconds.inWholeMilliseconds
         }
@@ -539,7 +542,7 @@ class MpvPlayer(
         property: String,
         value: Boolean,
     ) {
-        Timber.v("eventPropertyBoolean: $property=$value")
+        if (DEBUG) Timber.v("eventPropertyBoolean: $property=$value")
         when (property) {
             MPVProperty.PAUSED -> {
                 isPaused = value
@@ -552,7 +555,7 @@ class MpvPlayer(
         property: String,
         value: String,
     ) {
-        Timber.v("eventPropertyString: $property=$value")
+        if (DEBUG) Timber.v("eventPropertyString: $property=$value")
     }
 
     override fun eventProperty(
@@ -566,20 +569,48 @@ class MpvPlayer(
     }
 
     override fun event(eventId: Int) {
-        Timber.v("event: $eventId")
         when (eventId) {
             MPV_EVENT_FILE_LOADED -> {
-                Timber.d("Seeking to $startPositionMs")
+                Timber.d("event: MPV_EVENT_FILE_LOADED")
                 if (startPositionMs > 0) {
+                    Timber.d("Seeking to $startPositionMs")
                     seekTo(startPositionMs)
                 }
                 getTracks().let {
                     notifyListeners(EVENT_TRACKS_CHANGED) { onTracksChanged(it) }
                 }
             }
+
+            MPV_EVENT_PLAYBACK_RESTART -> {
+                Timber.d("event: MPV_EVENT_PLAYBACK_RESTART")
+            }
+
+            MPV_EVENT_AUDIO_RECONFIG -> {
+                Timber.d("event: MPV_EVENT_AUDIO_RECONFIG")
+                getTracks().let {
+                    notifyListeners(EVENT_TRACKS_CHANGED) { onTracksChanged(it) }
+                }
+            }
+
+            MPV_EVENT_VIDEO_RECONFIG -> {
+                Timber.d("event: MPV_EVENT_VIDEO_RECONFIG")
+                getTracks().let {
+                    notifyListeners(EVENT_TRACKS_CHANGED) { onTracksChanged(it) }
+                }
+            }
+
             MPV_EVENT_END_FILE -> {
-                playbackState = STATE_ENDED
-                notifyListeners(EVENT_PLAYBACK_STATE_CHANGED) { onPlaybackStateChanged(STATE_ENDED) }
+                Timber.d("event: MPV_EVENT_END_FILE")
+                if (positionMs >= durationMs) {
+                    playbackState = STATE_ENDED
+                    notifyListeners(EVENT_PLAYBACK_STATE_CHANGED) {
+                        onPlaybackStateChanged(STATE_ENDED)
+                    }
+                }
+            }
+
+            else -> {
+                Timber.v("event: $eventId")
             }
         }
     }
