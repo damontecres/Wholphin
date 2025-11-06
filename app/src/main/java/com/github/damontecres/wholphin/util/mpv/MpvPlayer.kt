@@ -2,6 +2,7 @@ package com.github.damontecres.wholphin.util.mpv
 
 import android.content.Context
 import android.os.Build
+import android.os.Handler
 import android.os.Looper
 import android.view.Surface
 import android.view.SurfaceHolder
@@ -12,16 +13,21 @@ import androidx.media3.common.AudioAttributes
 import androidx.media3.common.BasePlayer
 import androidx.media3.common.C
 import androidx.media3.common.DeviceInfo
+import androidx.media3.common.Format
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
+import androidx.media3.common.MimeTypes
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.PlaybackParameters
 import androidx.media3.common.Player
 import androidx.media3.common.Timeline
+import androidx.media3.common.TrackGroup
 import androidx.media3.common.TrackSelectionParameters
 import androidx.media3.common.Tracks
 import androidx.media3.common.VideoSize
 import androidx.media3.common.text.CueGroup
+import androidx.media3.common.util.Clock
+import androidx.media3.common.util.ListenerSet
 import androidx.media3.common.util.Size
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.common.util.Util
@@ -41,9 +47,19 @@ class MpvPlayer(
         private const val DEBUG = false
     }
 
+    private var isPaused: Boolean = true
     private var surface: Surface? = null
-    private val listeners = mutableListOf<Player.Listener>()
+//    private val listeners = mutableListOf<Player.Listener>()
+
     private val looper = Util.getCurrentOrMainLooper()
+    private val handler = Handler(looper)
+    private val listeners =
+        ListenerSet<Player.Listener>(
+            looper,
+            Clock.DEFAULT,
+        ) { listener, eventFlags ->
+            listener.onEvents(this@MpvPlayer, Player.Events(eventFlags))
+        }
     private val availableCommands: Player.Commands
     private lateinit var surfaceSize: Size
 
@@ -186,6 +202,7 @@ class MpvPlayer(
         throwIfReleased()
         if (DEBUG) Timber.v("setPlayWhenReady")
         if (playWhenReady) {
+            MPVLib.setPropertyBoolean("pause", false)
         } else {
             MPVLib.setPropertyBoolean("pause", true)
         }
@@ -194,7 +211,7 @@ class MpvPlayer(
     override fun getPlayWhenReady(): Boolean {
         throwIfReleased()
         if (DEBUG) Timber.v("getPlayWhenReady")
-        val isPaused = MPVLib.getPropertyBoolean("pause")!!
+        val isPaused = MPVLib.getPropertyBoolean("pause") ?: this.isPaused
         return !isPaused
     }
 
@@ -248,8 +265,7 @@ class MpvPlayer(
 
     override fun getCurrentTracks(): Tracks {
         if (DEBUG) Timber.v("getCurrentTracks")
-        // TODO
-        return Tracks.EMPTY
+        return getTracks() ?: Tracks.EMPTY
     }
 
     override fun getTrackSelectionParameters(): TrackSelectionParameters {
@@ -505,6 +521,12 @@ class MpvPlayer(
         value: Boolean,
     ) {
         Timber.v("eventPropertyBoolean: $property=$value")
+        when (property) {
+            MPVProperty.PAUSED -> {
+                isPaused = value
+                notifyListeners(EVENT_IS_PLAYING_CHANGED) { onIsPlayingChanged(!value) }
+            }
+        }
     }
 
     override fun eventProperty(
@@ -532,6 +554,9 @@ class MpvPlayer(
                 if (startPositionMs > 0) {
                     seekTo(startPositionMs)
                 }
+                getTracks()?.let {
+                    notifyListeners(EVENT_TRACKS_CHANGED) { onTracksChanged(it) }
+                }
             }
         }
     }
@@ -540,5 +565,73 @@ class MpvPlayer(
         if (isReleased) {
             throw IllegalStateException("Cannot access MpvPlayer after it is released")
         }
+    }
+
+    private fun notifyListeners(
+        eventId: Int,
+        block: Player.Listener.() -> Unit,
+    ) {
+        handler.post {
+            listeners.queueEvent(eventId) {
+                block.invoke(it)
+            }
+            listeners.flushEvents()
+        }
+    }
+
+    private fun getTracks(): Tracks? {
+        val trackCount = MPVLib.getPropertyInt("track-list/count") ?: return null
+        val groups =
+            (0..<trackCount).mapNotNull { idx ->
+                val type = MPVLib.getPropertyString("track-list/$idx/type")
+                val id = MPVLib.getPropertyInt("track-list/$idx/id")
+                val lang = MPVLib.getPropertyString("track-list/$idx/lang")
+                val codec = MPVLib.getPropertyString("track-list/$idx/codec")
+                val codecDescription = MPVLib.getPropertyString("track-list/$idx/codec-desc")
+                val title = MPVLib.getPropertyString("track-list/$idx/title")
+                val isDefault = MPVLib.getPropertyBoolean("track-list/$idx/default") ?: false
+                val isForced = MPVLib.getPropertyBoolean("track-list/$idx/forced") ?: false
+                val isExternal = MPVLib.getPropertyBoolean("track-list/$idx/external") ?: false
+                val isSelected = MPVLib.getPropertyBoolean("track-list/$idx/selected") ?: false
+                val channelCount = MPVLib.getPropertyInt("track-list/$idx/demux-channel-count")
+
+                if (type != null && id != null) {
+                    // TODO do we need the real mimetypes?
+                    val mimeType =
+                        when (type) {
+                            "video" -> MimeTypes.BASE_TYPE_VIDEO + "/todo"
+                            "audio" -> MimeTypes.BASE_TYPE_AUDIO + "/todo"
+                            "sub" -> MimeTypes.BASE_TYPE_TEXT + "/todo"
+                            else -> "unknown/todo"
+                        }
+                    var flags = 0
+                    if (isDefault) flags = flags or C.SELECTION_FLAG_DEFAULT
+                    if (isForced) flags = flags or C.SELECTION_FLAG_FORCED
+                    val builder =
+                        Format
+                            .Builder()
+                            .setId(id)
+                            .setCodecs(codec)
+                            .setSampleMimeType(mimeType)
+                            .setLanguage(lang)
+                            .setLabel(listOfNotNull(title, codecDescription).joinToString(","))
+                            .setSelectionFlags(flags)
+                    channelCount?.let(builder::setChannelCount)
+                    val format = builder.build()
+
+                    val trackGroup = TrackGroup(format)
+                    val group =
+                        Tracks.Group(
+                            trackGroup,
+                            false,
+                            intArrayOf(C.FORMAT_HANDLED),
+                            booleanArrayOf(isSelected),
+                        )
+                    group
+                } else {
+                    null
+                }
+            }
+        return Tracks(groups)
     }
 }
