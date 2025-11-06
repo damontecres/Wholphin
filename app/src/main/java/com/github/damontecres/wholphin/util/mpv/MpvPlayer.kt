@@ -31,6 +31,9 @@ import androidx.media3.common.util.ListenerSet
 import androidx.media3.common.util.Size
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.common.util.Util
+import androidx.media3.exoplayer.trackselection.DefaultTrackSelector
+import androidx.media3.exoplayer.trackselection.TrackSelector
+import androidx.media3.exoplayer.upstream.DefaultBandwidthMeter
 import com.github.damontecres.wholphin.util.mpv.MPVLib.MpvEvent.MPV_EVENT_END_FILE
 import com.github.damontecres.wholphin.util.mpv.MPVLib.MpvEvent.MPV_EVENT_FILE_LOADED
 import timber.log.Timber
@@ -48,7 +51,8 @@ class MpvPlayer(
     private val context: Context,
     enableHardwareDecoding: Boolean,
 ) : BasePlayer(),
-    MPVLib.EventObserver {
+    MPVLib.EventObserver,
+    TrackSelector.InvalidationListener {
     companion object {
         private const val DEBUG = false
     }
@@ -66,6 +70,7 @@ class MpvPlayer(
             listener.onEvents(this@MpvPlayer, Player.Events(eventFlags))
         }
     private val availableCommands: Player.Commands
+    private val trackSelector = DefaultTrackSelector(context)
 
     private var mediaItem: MediaItem? = null
     private var startPositionMs: Long = 0L
@@ -124,6 +129,7 @@ class MpvPlayer(
 //                    COMMAND_GET_TEXT,
                     COMMAND_RELEASE,
                 ).build()
+        trackSelector.init(this, DefaultBandwidthMeter.getSingletonInstance(context))
     }
 
     override fun getApplicationLooper(): Looper = looper
@@ -282,13 +288,44 @@ class MpvPlayer(
 
     override fun getTrackSelectionParameters(): TrackSelectionParameters {
         if (DEBUG) Timber.v("getTrackSelectionParameters")
-        // TODO
-        return TrackSelectionParameters.Builder().build()
+
+        return TrackSelectionParameters
+            .Builder()
+            .build()
     }
 
     override fun setTrackSelectionParameters(parameters: TrackSelectionParameters) {
         if (DEBUG) Timber.v("setTrackSelectionParameters")
-        // TODO
+        val tracks = getTracks()
+        if (C.TRACK_TYPE_TEXT in parameters.disabledTrackTypes) {
+            // Subtitles disabled
+            Timber.v("TrackSelection: disabling subtitles")
+            MPVLib.setPropertyString("sid", "no")
+        }
+        if (C.TRACK_TYPE_AUDIO in parameters.disabledTrackTypes) {
+            // Audio disabled
+            Timber.v("TrackSelection: disabling audio")
+            MPVLib.setPropertyString("aid", "no")
+        }
+        Timber.v("TrackSelection: Got ${parameters.overrides.size} overrides")
+        parameters.overrides.forEach { (trackGroup, trackSelectionOverride) ->
+            tracks.groups.firstOrNull { it.mediaTrackGroup == trackGroup }?.let {
+                val id = it.mediaTrackGroup.getFormat(0).id
+                val splits = id?.split(":")
+                val trackId = splits?.getOrNull(1)
+                val propertyName =
+                    when (it.mediaTrackGroup.type) {
+                        C.TRACK_TYPE_AUDIO -> "aid"
+                        C.TRACK_TYPE_VIDEO -> "vid"
+                        C.TRACK_TYPE_TEXT -> "sid"
+                        else -> null
+                    }
+                Timber.v("TrackSelection: activating %s %s '%s'", propertyName, trackId, id)
+                if (trackId != null && propertyName != null) {
+                    MPVLib.setPropertyString(propertyName, trackId)
+                }
+            }
+        }
     }
 
     override fun getMediaMetadata(): MediaMetadata {
@@ -425,9 +462,7 @@ class MpvPlayer(
         }
     }
 
-    override fun getSurfaceSize(): Size {
-        TODO("Not yet implemented")
-    }
+    override fun getSurfaceSize(): Size = throw UnsupportedOperationException()
 
     override fun getCurrentCues(): CueGroup = CueGroup.EMPTY_TIME_ZERO
 
@@ -437,62 +472,40 @@ class MpvPlayer(
         return DeviceInfo.Builder(DeviceInfo.PLAYBACK_TYPE_REMOTE).build()
     }
 
-    override fun getDeviceVolume(): Int {
-        TODO("Not yet implemented")
-    }
+    override fun getDeviceVolume(): Int = throw UnsupportedOperationException()
 
-    override fun isDeviceMuted(): Boolean {
-        TODO("Not yet implemented")
-    }
+    override fun isDeviceMuted(): Boolean = throw UnsupportedOperationException()
 
     @Deprecated("Deprecated in Java")
-    override fun setDeviceVolume(volume: Int) {
-        TODO("Not yet implemented")
-    }
+    override fun setDeviceVolume(volume: Int): Unit = throw UnsupportedOperationException()
 
     override fun setDeviceVolume(
         volume: Int,
         flags: Int,
-    ) {
-        TODO("Not yet implemented")
-    }
+    ): Unit = throw UnsupportedOperationException()
 
     @Deprecated("Deprecated in Java")
-    override fun increaseDeviceVolume() {
-        TODO("Not yet implemented")
-    }
+    override fun increaseDeviceVolume(): Unit = throw UnsupportedOperationException()
 
-    override fun increaseDeviceVolume(flags: Int) {
-        TODO("Not yet implemented")
-    }
+    override fun increaseDeviceVolume(flags: Int): Unit = throw UnsupportedOperationException()
 
     @Deprecated("Deprecated in Java")
-    override fun decreaseDeviceVolume() {
-        TODO("Not yet implemented")
-    }
+    override fun decreaseDeviceVolume(): Unit = throw UnsupportedOperationException()
 
-    override fun decreaseDeviceVolume(flags: Int) {
-        TODO("Not yet implemented")
-    }
+    override fun decreaseDeviceVolume(flags: Int): Unit = throw UnsupportedOperationException()
 
     @Deprecated("Deprecated in Java")
-    override fun setDeviceMuted(muted: Boolean) {
-        TODO("Not yet implemented")
-    }
+    override fun setDeviceMuted(muted: Boolean): Unit = throw UnsupportedOperationException()
 
     override fun setDeviceMuted(
         muted: Boolean,
         flags: Int,
-    ) {
-        TODO("Not yet implemented")
-    }
+    ): Unit = throw UnsupportedOperationException()
 
     override fun setAudioAttributes(
         audioAttributes: AudioAttributes,
         handleAudioFocus: Boolean,
-    ) {
-        TODO("Not yet implemented")
-    }
+    ): Unit = throw UnsupportedOperationException()
 
     override fun seekTo(
         mediaItemIndex: Int,
@@ -627,7 +640,7 @@ class MpvPlayer(
                     val builder =
                         Format
                             .Builder()
-                            .setId(id)
+                            .setId("$idx:$id")
                             .setCodecs(codec)
                             .setSampleMimeType(mimeType)
                             .setLanguage(lang)
@@ -650,5 +663,9 @@ class MpvPlayer(
                 }
             }
         return Tracks(groups)
+    }
+
+    override fun onTrackSelectionsInvalidated() {
+        TODO("Not yet implemented")
     }
 }
