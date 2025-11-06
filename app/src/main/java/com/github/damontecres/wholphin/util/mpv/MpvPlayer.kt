@@ -37,6 +37,11 @@ import timber.log.Timber
 import kotlin.concurrent.atomics.ExperimentalAtomicApi
 import kotlin.time.Duration.Companion.seconds
 
+/**
+ * This is barebones implementation of a [Player] which plays content using libmpv
+ *
+ * It doesn't support every feature or emit every event
+ */
 @kotlin.OptIn(ExperimentalAtomicApi::class)
 @OptIn(UnstableApi::class)
 class MpvPlayer(
@@ -50,7 +55,6 @@ class MpvPlayer(
 
     private var isPaused: Boolean = true
     private var surface: Surface? = null
-//    private val listeners = mutableListOf<Player.Listener>()
 
     private val looper = Util.getCurrentOrMainLooper()
     private val handler = Handler(looper)
@@ -62,10 +66,8 @@ class MpvPlayer(
             listener.onEvents(this@MpvPlayer, Player.Events(eventFlags))
         }
     private val availableCommands: Player.Commands
-    private lateinit var surfaceSize: Size
 
     private var mediaItem: MediaItem? = null
-
     private var startPositionMs: Long = 0L
     private var durationMs: Long = 0L
     private var positionMs: Long = 0L
@@ -275,7 +277,7 @@ class MpvPlayer(
 
     override fun getCurrentTracks(): Tracks {
         if (DEBUG) Timber.v("getCurrentTracks")
-        return getTracks() ?: Tracks.EMPTY
+        return getTracks()
     }
 
     override fun getTrackSelectionParameters(): TrackSelectionParameters {
@@ -558,7 +560,7 @@ class MpvPlayer(
                 if (startPositionMs > 0) {
                     seekTo(startPositionMs)
                 }
-                getTracks()?.let {
+                getTracks().let {
                     notifyListeners(EVENT_TRACKS_CHANGED) { onTracksChanged(it) }
                 }
             }
@@ -594,8 +596,8 @@ class MpvPlayer(
         }
     }
 
-    private fun getTracks(): Tracks? {
-        val trackCount = MPVLib.getPropertyInt("track-list/count") ?: return null
+    private fun getTracks(): Tracks {
+        val trackCount = MPVLib.getPropertyInt("track-list/count") ?: return Tracks.EMPTY
         val groups =
             (0..<trackCount).mapNotNull { idx ->
                 val type = MPVLib.getPropertyString("track-list/$idx/type")
