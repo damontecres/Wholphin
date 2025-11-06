@@ -103,8 +103,7 @@ class MpvPlayer(
         MPVLib.setOptionString("demuxer-max-back-bytes", "${cacheMegs * 1024 * 1024}")
 
         MPVLib.setOptionString("force-window", "no")
-        // need to idle at least once for playFile() logic to work
-        MPVLib.setOptionString("idle", "once")
+        MPVLib.setOptionString("idle", "yes")
         MPVLib.addObserver(this)
         MPVProperty.observedProperties.forEach(MPVLib::observeProperty)
 
@@ -201,6 +200,7 @@ class MpvPlayer(
         if (DEBUG) Timber.v("prepare")
         durationMs = 0L
         positionMs = -1L
+        playbackState = STATE_READY
     }
 
     override fun getPlaybackState(): Int {

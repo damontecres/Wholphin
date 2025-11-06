@@ -405,6 +405,7 @@ class PlaybackViewModel
                         enableDirectStream = !forceTranscoding,
                     )
                     player.prepare()
+                    player.play()
 
                     this@PlaybackViewModel.chapters.value = Chapter.fromDto(base, api)
                     Timber.v("chapters=${this@PlaybackViewModel.chapters.value?.size}")
