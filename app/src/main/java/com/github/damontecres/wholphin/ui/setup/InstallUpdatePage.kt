@@ -15,9 +15,11 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -28,6 +30,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
@@ -35,6 +39,7 @@ import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -46,19 +51,25 @@ import androidx.tv.material3.surfaceColorAtElevation
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.PreviewTvSpec
+import com.github.damontecres.wholphin.ui.components.BasicDialog
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.LoadingPage
+import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.nav.NavigationManager
+import com.github.damontecres.wholphin.ui.setValueOnMain
 import com.github.damontecres.wholphin.ui.theme.WholphinTheme
+import com.github.damontecres.wholphin.util.DownloadCallback
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
 import com.github.damontecres.wholphin.util.Release
 import com.github.damontecres.wholphin.util.UpdateChecker
 import com.github.damontecres.wholphin.util.Version
+import com.github.damontecres.wholphin.util.formatBytes
 import com.mikepenz.markdown.m3.Markdown
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
@@ -69,9 +80,14 @@ class UpdateViewModel
     constructor(
         val updater: UpdateChecker,
         val navigationManager: NavigationManager,
-    ) : ViewModel() {
+    ) : ViewModel(),
+        DownloadCallback {
         val loading = MutableLiveData<LoadingState>(LoadingState.Pending)
         val release = MutableLiveData<Release?>(null)
+
+        val downloading = MutableLiveData<Boolean>(false)
+        val contentLength = MutableLiveData<Long>(-1)
+        val bytesDownloaded = MutableLiveData<Long>(-1)
 
         val currentVersion = updater.getInstalledVersion()
 
@@ -80,16 +96,54 @@ class UpdateViewModel
             viewModelScope.launch(Dispatchers.IO + LoadingExceptionHandler(loading, "Failed to check for update")) {
                 val release = updater.getLatestRelease(updateUrl)
                 withContext(Dispatchers.Main) {
+                    contentLength.value = -1
+                    bytesDownloaded.value = -1
                     this@UpdateViewModel.release.value = release
                     loading.value = LoadingState.Success
                 }
             }
         }
 
+        private var downloadJob: Job? = null
+
         fun installRelease(release: Release) {
-            viewModelScope.launch(Dispatchers.IO + LoadingExceptionHandler(loading, "Failed to install update")) {
-                updater.installRelease(release)
+            downloadJob =
+                viewModelScope.launch(
+                    Dispatchers.IO +
+                        LoadingExceptionHandler(
+                            loading,
+                            "Failed to install update",
+                        ),
+                ) {
+                    downloading.setValueOnMain(true)
+                    updater.installRelease(release, this@UpdateViewModel)
+                    downloading.setValueOnMain(false)
+                }
+        }
+
+        fun cancelDownload() {
+            viewModelScope.launch(
+                Dispatchers.IO +
+                    LoadingExceptionHandler(
+                        loading,
+                        "Error",
+                    ),
+            ) {
+                downloadJob?.cancel()
+                withContext(Dispatchers.Main) {
+                    downloading.value = false
+                    contentLength.value = -1
+                    bytesDownloaded.value = -1
+                }
             }
+        }
+
+        override fun contentLength(contentLength: Long) {
+            this@UpdateViewModel.contentLength.value = contentLength
+        }
+
+        override fun bytesDownloaded(bytes: Long) {
+            this@UpdateViewModel.bytesDownloaded.value = bytes
         }
     }
 
@@ -101,6 +155,11 @@ fun InstallUpdatePage(
 ) {
     val loading by viewModel.loading.observeAsState(LoadingState.Pending)
     val release by viewModel.release.observeAsState(null)
+
+    val isDownloading by viewModel.downloading.observeAsState(false)
+    val contentLength by viewModel.contentLength.observeAsState(-1L)
+    val bytesDownloaded by viewModel.bytesDownloaded.observeAsState(-1)
+
     LaunchedEffect(Unit) {
         viewModel.init(preferences.appPreferences.updateUrl)
     }
@@ -121,7 +180,7 @@ fun InstallUpdatePage(
         LoadingState.Pending,
         -> LoadingPage(modifier)
 
-        LoadingState.Success ->
+        LoadingState.Success -> {
             release?.let {
                 InstallUpdatePageContent(
                     currentVersion = viewModel.currentVersion,
@@ -136,9 +195,26 @@ fun InstallUpdatePage(
                     onCancel = {
                         viewModel.navigationManager.goBack()
                     },
-                    modifier = modifier,
+                    modifier =
+                        modifier
+                            .ifElse(
+                                isDownloading,
+                                Modifier
+                                    .blur(8.dp)
+                                    .alpha(.33f),
+                            ),
                 )
             }
+            if (isDownloading) {
+                DownloadDialog(
+                    contentLength = contentLength,
+                    bytesDownloaded = bytesDownloaded,
+                    onDismissRequest = {
+                        viewModel.cancelDownload()
+                    },
+                )
+            }
+        }
     }
 }
 
@@ -244,6 +320,65 @@ fun InstallUpdatePageContent(
             ) {
                 Text(
                     text = stringResource(R.string.cancel),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun DownloadDialog(
+    contentLength: Long,
+    bytesDownloaded: Long,
+    onDismissRequest: () -> Unit,
+) {
+    val progress =
+        if (contentLength > 0) {
+            bytesDownloaded.toFloat() / contentLength
+        } else {
+            null
+        }
+    BasicDialog(
+        onDismissRequest = onDismissRequest,
+        elevation = 6.dp,
+    ) {
+        Column(
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.padding(16.dp),
+        ) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier,
+            ) {
+                Text(
+                    text = stringResource(R.string.downloading),
+                    fontSize = 24.sp,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+                if (progress != null) {
+                    CircularProgressIndicator(
+                        progress = { progress },
+                        Modifier
+                            .size(48.dp)
+                            .padding(8.dp),
+                    )
+                } else {
+                    CircularProgressIndicator(
+                        Modifier
+                            .size(48.dp)
+                            .padding(8.dp),
+                    )
+                }
+            }
+            if (progress != null) {
+                val bytes = formatBytes(bytesDownloaded)
+                val size = formatBytes(contentLength)
+                Text(
+                    text = "$bytes / $size",
+                    fontSize = 18.sp,
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
             }
         }

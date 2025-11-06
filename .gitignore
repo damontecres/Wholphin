@@ -53,3 +53,7 @@ app/libs/
 ffmpeg_decoder/
 app/release/
 app/debug/
+
+app/src/main/jnilibs/
+app/src/main/libs/
+app/src/main/obj/
