@@ -14,12 +14,13 @@ runs:
       with:
         path: |
           app/libs
-        key: ${{ runner.os }}-ffmpeg-${{ hashFiles('**/libs.versions.toml', '**/build_ffmpeg_decoder.sh') }}
+        key: ${{ runner.os }}-ffmpeg-${{ hashFiles('**/libs.versions.toml', '**/scripts/ffmpeg/build_ffmpeg_decoder.sh') }}
     - name: Build ffmpeg decoder
       id: ffmpeg-decoder
       if: steps.cache_ffmpeg_module.outputs.cache-hit != 'true'
       shell: bash
       run: |
+        cd scripts/ffmpeg
         ./build_ffmpeg_decoder.sh "${{ env.ANDROID_SDK_ROOT }}/ndk/${{ env.NDK_VERSION }}"
     - name: Save ffmpeg module cache
       id: cache_ffmpeg_module_save

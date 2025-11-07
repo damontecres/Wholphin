@@ -25,10 +25,24 @@ After forking and cloning your fork, you can import the project into Android Stu
 
 You need a compatible Android Studio version for the configured AGP. This is generally `Narwhal 3 Feature Drop | 2025.1.3` or newer. See https://developer.android.com/build/releases/gradle-plugin and [`libs.versions.toml](./gradle/libs.versions.toml).
 
-### FFmpeg decoder module
+### Native components
 
-The app ships with [media3 ffmpeg decoder module](https://github.com/androidx/media/blob/release/libraries/decoder_ffmpeg/README.md).
+Wholphin includes some optional native components that are compiled outside of the normal Android gradle build process.
+
+These components are not generally required to build or test the app during development.
+
+If you want to build any of them locally, you must have the [Android NDK](https://developer.android.com/ndk) installed.
+
+#### FFmpeg decoder module
+
+Wholphin ships with [media3 ffmpeg decoder module](https://github.com/androidx/media/blob/release/libraries/decoder_ffmpeg/README.md).
 
 It is not required to build the extension in order to build the app locally.
 
-You can build the module on MacOS or Linux with the [`./build_ffmpeg_decoder.sh`](./build_ffmpeg_decoder.sh) script. You must have the [Android NDK](https://developer.android.com/ndk) installed.
+You can build the module on MacOS or Linux with the [`build_ffmpeg_decoder.sh`](./scripts/ffmpeg/build_ffmpeg_decoder.sh) script.
+
+#### MPV player backend
+
+Wholphin has a playback engine that uses [`libmpv`](https://github.com/mpv-player/mpv). The app uses JNI code from [`mpv-android`](https://github.com/mpv-android/mpv-android) and has an implementation of `androidx.media3.common.Player` to swap out for `ExoPlayer`.
+
+See the [build scripts](scripts/mpv/) for details on building this component.
