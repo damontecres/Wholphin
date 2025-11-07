@@ -12,6 +12,7 @@ import com.github.damontecres.wholphin.preferences.updateInterfacePreferences
 import com.github.damontecres.wholphin.preferences.updatePlaybackOverrides
 import dagger.hilt.android.qualifiers.ApplicationContext
 import timber.log.Timber
+import java.io.File
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -46,6 +47,7 @@ class AppUpgradeHandler
                     putLong(VERSION_CODE_CURRENT_KEY, newVersionCode)
                 }
                 try {
+                    copySubfont()
                     upgradeApp(
                         context,
                         Version.fromString(previousVersion ?: "0.0.0"),
@@ -55,6 +57,20 @@ class AppUpgradeHandler
                 } catch (ex: Exception) {
                     Timber.e(ex, "Exception during app upgrade")
                 }
+            }
+        }
+
+        private fun copySubfont() {
+            try {
+                val fontFileName = "subfont.tff"
+                val outputFile = File(context.filesDir, fontFileName)
+                context.assets.open(fontFileName).use { input ->
+                    outputFile.outputStream().use { output ->
+                        input.copyTo(output)
+                    }
+                }
+            } catch (ex: Exception) {
+                Timber.e(ex, "Exception copying subfont.tff")
             }
         }
 

@@ -25,7 +25,6 @@ import androidx.media3.common.TrackGroup
 import androidx.media3.common.TrackSelectionParameters
 import androidx.media3.common.Tracks
 import androidx.media3.common.VideoSize
-import androidx.media3.common.text.Cue
 import androidx.media3.common.text.CueGroup
 import androidx.media3.common.util.Clock
 import androidx.media3.common.util.ListenerSet
@@ -86,8 +85,11 @@ class MpvPlayer(
         private set
 
     init {
+        Timber.v("config-dir=${context.filesDir.path}")
         MPVLib.create(context)
-        MPVLib.init()
+        MPVLib.setOptionString("config", "yes")
+        MPVLib.setOptionString("config-dir", context.filesDir.path)
+
         if (enableHardwareDecoding) {
             MPVLib.setOptionString("hwdec", "mediacodec,mediacodec-copy")
             MPVLib.setOptionString("vo", "gpu")
@@ -102,8 +104,11 @@ class MpvPlayer(
         MPVLib.setOptionString("demuxer-max-bytes", "${cacheMegs * 1024 * 1024}")
         MPVLib.setOptionString("demuxer-max-back-bytes", "${cacheMegs * 1024 * 1024}")
 
+        MPVLib.init()
+
         MPVLib.setOptionString("force-window", "no")
         MPVLib.setOptionString("idle", "yes")
+
         MPVLib.addObserver(this)
         MPVProperty.observedProperties.forEach(MPVLib::observeProperty)
 
@@ -557,15 +562,6 @@ class MpvPlayer(
         value: String,
     ) {
         if (DEBUG) Timber.v("eventPropertyString: $property=$value")
-        when (property) {
-            MPVProperty.SUBTITLE_TEXT -> {
-                if (DEBUG) Timber.v("Subtitles: $value")
-                val cues = listOf(Cue.Builder().setText(value).build())
-                // TODO need to deal with presentation time?
-                val cueGroup = CueGroup(cues, 10.seconds.inWholeMicroseconds)
-                notifyListeners(EVENT_CUES) { onCues(cueGroup) }
-            }
-        }
     }
 
     override fun eventProperty(
@@ -598,6 +594,9 @@ class MpvPlayer(
 
             MPV_EVENT_PLAYBACK_RESTART -> {
                 Timber.d("event: MPV_EVENT_PLAYBACK_RESTART")
+                getTracks().let {
+                    notifyListeners(EVENT_TRACKS_CHANGED) { onTracksChanged(it) }
+                }
             }
 
             MPV_EVENT_AUDIO_RECONFIG -> {
