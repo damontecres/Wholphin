@@ -143,12 +143,12 @@ fun NextUpCard(
         onClick = onClick,
         interactionSource = interactionSource,
     ) {
-        Box(modifier = Modifier) {
+        Box(modifier = Modifier.fillMaxSize()) {
             AsyncImage(
                 model = imageUrl,
                 contentDescription = null,
                 contentScale = ContentScale.Fit,
-                modifier = Modifier,
+                modifier = Modifier.fillMaxSize(),
             )
 
             Box(
