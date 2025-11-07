@@ -33,6 +33,7 @@ fun SliderBar(
     min: Long,
     max: Long,
     onChange: (Long) -> Unit,
+    enableWrapAround: Boolean,
     modifier: Modifier = Modifier,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
     interval: Int = 1,
@@ -52,7 +53,7 @@ fun SliderBar(
                 onChange(currentValue)
             },
             onLeft = {
-                if (currentValue <= min) {
+                if (enableWrapAround && currentValue <= min) {
                     currentValue = max
                 } else {
                     currentValue = (currentValue - interval).coerceAtLeast(min)
@@ -60,7 +61,7 @@ fun SliderBar(
                 onChange(currentValue)
             },
             onRight = {
-                if (currentValue >= max) {
+                if (enableWrapAround && currentValue >= max) {
                     currentValue = min
                 } else {
                     currentValue = (currentValue + interval).coerceAtMost(max)
