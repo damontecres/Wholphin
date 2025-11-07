@@ -55,8 +55,8 @@ fun FocusedEpisodeHeader(
                         ?.let {
                             add(it)
                         }
-                    dto.timeRemaining?.roundMinutes?.let { add("$it left") }
                     dto.officialRating?.let(::add)
+                    dto.timeRemaining?.roundMinutes?.let { add("$it left") }
                 }
             DotSeparatedRow(
                 texts = details,
