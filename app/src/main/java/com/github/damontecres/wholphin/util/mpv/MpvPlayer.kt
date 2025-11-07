@@ -274,7 +274,6 @@ class MpvPlayer(
     }
 
     override fun stop() {
-        // TODO
         throwIfReleased()
         if (DEBUG) Timber.v("stop")
         pause()
@@ -390,13 +389,12 @@ class MpvPlayer(
 
     override fun getBufferedPosition(): Long {
         if (DEBUG) Timber.v("getBufferedPosition")
-        // TODO
-        return currentPosition
+        return currentPosition + totalBufferedDuration
     }
 
     override fun getTotalBufferedDuration(): Long {
         if (DEBUG) Timber.v("getTotalBufferedDuration")
-        return bufferedPosition
+        return MPVLib.getPropertyDouble("demuxer-cache-duration")?.seconds?.inWholeMilliseconds ?: 0
     }
 
     override fun isPlayingAd(): Boolean {
@@ -412,9 +410,7 @@ class MpvPlayer(
 
     override fun getContentBufferedPosition(): Long = bufferedPosition
 
-    override fun getAudioAttributes(): AudioAttributes {
-        TODO("Not yet implemented")
-    }
+    override fun getAudioAttributes(): AudioAttributes = throw UnsupportedOperationException()
 
     override fun setVolume(volume: Float) {
     }
@@ -477,7 +473,6 @@ class MpvPlayer(
 
     override fun getDeviceInfo(): DeviceInfo {
         if (DEBUG) Timber.v("getDeviceInfo")
-        // TODO
         return DeviceInfo.Builder(DeviceInfo.PLAYBACK_TYPE_REMOTE).build()
     }
 
@@ -578,10 +573,6 @@ class MpvPlayer(
         when (eventId) {
             MPV_EVENT_FILE_LOADED -> {
                 Timber.d("event: MPV_EVENT_FILE_LOADED")
-                if (startPositionMs > 0) {
-                    Timber.d("Seeking to $startPositionMs")
-                    seekTo(startPositionMs)
-                }
                 mediaItem!!.localConfiguration?.subtitleConfigurations?.forEach {
                     val url = it.uri.toString()
                     Timber.v("Adding external subtitle track $url")
@@ -633,7 +624,20 @@ class MpvPlayer(
 
     private fun loadFile() {
         val url = mediaItem!!.localConfiguration?.uri.toString()
-        MPVLib.command(arrayOf("loadfile", url))
+        if (startPositionMs > 0) {
+            MPVLib.command(
+                arrayOf(
+                    "loadfile",
+                    url,
+                    "replace",
+                    "-1",
+                    "start=${startPositionMs / 1000.0}",
+                ),
+            )
+        } else {
+            MPVLib.command(arrayOf("loadfile", url, "replace", "-1"))
+        }
+
         MPVLib.setPropertyString("vo", "gpu")
         Timber.d("Called loadfile")
     }
@@ -665,12 +669,13 @@ class MpvPlayer(
                 val lang = MPVLib.getPropertyString("track-list/$idx/lang")
                 val codec = MPVLib.getPropertyString("track-list/$idx/codec")
                 val codecDescription = MPVLib.getPropertyString("track-list/$idx/codec-desc")
-                val title = MPVLib.getPropertyString("track-list/$idx/title")
                 val isDefault = MPVLib.getPropertyBoolean("track-list/$idx/default") ?: false
                 val isForced = MPVLib.getPropertyBoolean("track-list/$idx/forced") ?: false
                 val isExternal = MPVLib.getPropertyBoolean("track-list/$idx/external") ?: false
                 val isSelected = MPVLib.getPropertyBoolean("track-list/$idx/selected") ?: false
                 val channelCount = MPVLib.getPropertyInt("track-list/$idx/demux-channel-count")
+                val title =
+                    if (type != "sub" || !isExternal) MPVLib.getPropertyString("track-list/$idx/title") else null
 
                 if (type != null && id != null) {
                     // TODO do we need the real mimetypes?
@@ -691,10 +696,12 @@ class MpvPlayer(
                             .setCodecs(codec)
                             .setSampleMimeType(mimeType)
                             .setLanguage(lang)
-                            // TODO title contains apikey for external subtitles
-                            // .setLabel(listOfNotNull(title, codecDescription).joinToString(","))
-                            .setLabel(codecDescription)
+                            .setLabel(listOfNotNull(title, codecDescription).joinToString(","))
                             .setSelectionFlags(flags)
+                    if (type == "video" && isSelected) {
+                        builder.setWidth(MPVLib.getPropertyInt("width") ?: -1)
+                        builder.setHeight(MPVLib.getPropertyInt("height") ?: -1)
+                    }
                     channelCount?.let(builder::setChannelCount)
                     val format = builder.build()
 
@@ -715,6 +722,6 @@ class MpvPlayer(
     }
 
     override fun onTrackSelectionsInvalidated() {
-        TODO("Not yet implemented")
+        // no-op
     }
 }
