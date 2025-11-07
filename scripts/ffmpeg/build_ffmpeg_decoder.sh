@@ -7,6 +7,10 @@ if [ -z "$1" ]; then
 fi
 NDK_PATH="$1"
 
+SCRIPT_PATH="$(realpath "${BASH_SOURCE[0]}")"
+SCRIPT_DIR="$(dirname "${SCRIPT_PATH}")"
+PROJECT_ROOT="$(realpath "${SCRIPT_DIR}/../../")"
+
 # Config
 ANDROID_ABI=21
 ENABLED_DECODERS=(dca ac3 eac3 mlp truehd)
@@ -24,7 +28,9 @@ HOST_PLATFORM="$HOST-x86_64"
 mkdir -p "$TARGET_PATH"
 mkdir -p ffmpeg_decoder
 
-media_version="$(grep "androidx-media3 = " gradle/libs.versions.toml | awk -F'"' '{print $2}')"
+echo "$PROJECT_ROOT/gradle/libs.versions.toml"
+
+media_version="$(grep "androidx-media3 = " "$PROJECT_ROOT/gradle/libs.versions.toml" | awk -F'"' '{print $2}')"
 
 pushd ffmpeg_decoder || exit
 
