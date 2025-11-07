@@ -16,9 +16,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
@@ -64,15 +61,7 @@ fun MovieDetailsHeader(
         Text(
             text = movie.name ?: "",
             color = MaterialTheme.colorScheme.onSurface,
-            style =
-                MaterialTheme.typography.displayMedium.copy(
-                    shadow =
-                        Shadow(
-                            color = Color.DarkGray,
-                            offset = Offset(5f, 2f),
-                            blurRadius = 2f,
-                        ),
-                ),
+            style = MaterialTheme.typography.displayMedium,
             maxLines = 2,
             overflow = TextOverflow.Ellipsis,
         )

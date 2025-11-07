@@ -357,15 +357,7 @@ fun PersonHeader(
             Text(
                 text = name,
                 color = MaterialTheme.colorScheme.onSurface,
-                style =
-                    MaterialTheme.typography.displaySmall.copy(
-                        shadow =
-                            Shadow(
-                                color = Color.DarkGray,
-                                offset = Offset(5f, 2f),
-                                blurRadius = 2f,
-                            ),
-                    ),
+                style = MaterialTheme.typography.displaySmall,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.padding(bottom = 8.dp),
