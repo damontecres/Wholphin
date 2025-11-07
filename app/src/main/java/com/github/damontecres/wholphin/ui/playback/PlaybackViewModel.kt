@@ -68,6 +68,7 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
+import org.jellyfin.sdk.api.client.extensions.imageApi
 import org.jellyfin.sdk.api.client.extensions.mediaInfoApi
 import org.jellyfin.sdk.api.client.extensions.mediaSegmentsApi
 import org.jellyfin.sdk.api.client.extensions.subtitleApi
@@ -77,6 +78,7 @@ import org.jellyfin.sdk.api.client.extensions.videosApi
 import org.jellyfin.sdk.api.sockets.subscribe
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.DeviceProfile
+import org.jellyfin.sdk.model.api.ImageType
 import org.jellyfin.sdk.model.api.MediaSegmentDto
 import org.jellyfin.sdk.model.api.MediaSegmentType
 import org.jellyfin.sdk.model.api.MediaSourceInfo
@@ -125,6 +127,7 @@ class PlaybackViewModel
         }
 
         val loading = MutableLiveData<LoadingState>(LoadingState.Loading)
+        val logoUrl = MutableLiveData<String?>(null)
 
         val title = MutableLiveData<String?>(null)
         val subtitle = MutableLiveData<String?>(null)
@@ -217,11 +220,17 @@ class PlaybackViewModel
                 }
 
                 if (!isPlaylist && queriedItem.type == BaseItemKind.EPISODE) {
+                    base.seriesId?.let {
+                        // Use series logo for episodes
+                        logoUrl.setValueOnMain(api.imageApi.getItemImageUrl(it, ImageType.LOGO))
+                    }
                     val playlist =
                         playlistCreator.createFromEpisode(queriedItem.seriesId!!, queriedItem.id)
                     withContext(Dispatchers.Main) {
                         this@PlaybackViewModel.playlist.value = playlist
                     }
+                } else {
+                    logoUrl.setValueOnMain(api.imageApi.getItemImageUrl(itemId, ImageType.LOGO))
                 }
                 maybeSetupPlaylistListener()
             }

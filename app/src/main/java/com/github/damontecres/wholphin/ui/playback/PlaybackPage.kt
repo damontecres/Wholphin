@@ -126,6 +126,7 @@ fun PlaybackPage(
             val player = viewModel.player
             val title by viewModel.title.observeAsState(null)
             val subtitle by viewModel.subtitle.observeAsState(null)
+            val logoImageUrl by viewModel.logoUrl.observeAsState(null)
             val duration by viewModel.duration.observeAsState(null)
             val audioStreams by viewModel.audioStreams.observeAsState(listOf())
             val subtitleStreams by viewModel.subtitleStreams.observeAsState(listOf())
@@ -410,6 +411,7 @@ fun PlaybackPage(
                             },
                             currentSegment = currentSegment,
                             showClock = preferences.appPreferences.interfacePreferences.showClock,
+                            logoImageUrl = logoImageUrl,
                         )
                     }
                 }

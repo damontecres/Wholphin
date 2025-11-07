@@ -45,6 +45,7 @@ import androidx.compose.ui.unit.sp
 import androidx.media3.common.Player
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
+import coil3.compose.AsyncImage
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.Chapter
@@ -101,6 +102,7 @@ fun PlaybackOverlay(
     currentItemPlayback: ItemPlayback,
     audioStreams: List<AudioStream>,
     currentSegment: MediaSegmentDto?,
+    logoImageUrl: String?,
     modifier: Modifier = Modifier,
     subtitle: String? = null,
     trickplayInfo: TrickplayInfo? = null,
@@ -394,6 +396,21 @@ fun PlaybackOverlay(
                     )
                 }
             }
+        }
+        AnimatedVisibility(
+            !showDebugInfo && logoImageUrl.isNotNullOrBlank() && controllerViewState.controlsVisible,
+            modifier =
+                Modifier
+                    .align(Alignment.TopStart),
+        ) {
+            AsyncImage(
+                model = logoImageUrl,
+                contentDescription = "Logo",
+                modifier =
+                    Modifier
+                        .fillMaxWidth(.33f)
+                        .padding(32.dp),
+            )
         }
         AnimatedVisibility(
             showDebugInfo && controllerViewState.controlsVisible,
