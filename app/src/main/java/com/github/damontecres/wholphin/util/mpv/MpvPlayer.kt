@@ -264,13 +264,13 @@ class MpvPlayer(
 
     override fun setPlaybackParameters(playbackParameters: PlaybackParameters) {
         if (DEBUG) Timber.v("setPlaybackParameters")
-        // TODO
+        MPVLib.setPropertyDouble("speed", playbackParameters.speed.toDouble())
     }
 
     override fun getPlaybackParameters(): PlaybackParameters {
         if (DEBUG) Timber.v("getPlaybackParameters")
-        // TODO
-        return PlaybackParameters.DEFAULT
+        val speed = MPVLib.getPropertyDouble("speed")?.toFloat() ?: 1f
+        return PlaybackParameters(speed)
     }
 
     override fun stop() {
