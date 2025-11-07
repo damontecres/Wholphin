@@ -2,6 +2,7 @@ package com.github.damontecres.wholphin.ui.detail.movie
 
 import android.content.Context
 import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.ChosenStreams
@@ -16,7 +17,6 @@ import com.github.damontecres.wholphin.data.model.RemoteTrailer
 import com.github.damontecres.wholphin.data.model.Trailer
 import com.github.damontecres.wholphin.preferences.ThemeSongVolume
 import com.github.damontecres.wholphin.ui.SlimItemFields
-import com.github.damontecres.wholphin.ui.detail.LoadingItemViewModel
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.letNotEmpty
 import com.github.damontecres.wholphin.ui.nav.Destination
@@ -26,10 +26,15 @@ import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
 import com.github.damontecres.wholphin.util.ThemeSongPlayer
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedFactory
+import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
@@ -39,26 +44,53 @@ import org.jellyfin.sdk.api.client.extensions.userLibraryApi
 import org.jellyfin.sdk.model.api.MediaStreamType
 import org.jellyfin.sdk.model.api.request.GetSimilarItemsRequest
 import java.util.UUID
-import javax.inject.Inject
 
-@HiltViewModel
+@HiltViewModel(assistedFactory = MovieViewModel.Factory::class)
 class MovieViewModel
-    @Inject
+    @AssistedInject
     constructor(
-        api: ApiClient,
+        private val api: ApiClient,
         @param:ApplicationContext private val context: Context,
         private val navigationManager: NavigationManager,
         val serverRepository: ServerRepository,
         val itemPlaybackRepository: ItemPlaybackRepository,
         private val themeSongPlayer: ThemeSongPlayer,
-    ) : LoadingItemViewModel(api) {
+        @Assisted val itemId: UUID,
+    ) : ViewModel() {
+        @AssistedFactory
+        interface Factory {
+            fun create(itemId2: UUID): MovieViewModel
+        }
+
+        val loading = MutableLiveData<LoadingState>(LoadingState.Pending)
+        val item = MutableLiveData<BaseItem?>(null)
         val trailers = MutableLiveData<List<Trailer>>(listOf())
         val people = MutableLiveData<List<Person>>(listOf())
         val chapters = MutableLiveData<List<Chapter>>(listOf())
         val similar = MutableLiveData<List<BaseItem>>()
         val chosenStreams = MutableLiveData<ChosenStreams?>(null)
 
-        fun init(itemId: UUID): Job? =
+        init {
+            init()
+        }
+
+        private fun fetchAndSetItem(): Deferred<BaseItem> =
+            viewModelScope.async(
+                Dispatchers.IO +
+                    LoadingExceptionHandler(
+                        loading,
+                        "Error fetching movie",
+                    ),
+            ) {
+                val item =
+                    api.userLibraryApi.getItem(itemId).content.let {
+                        BaseItem.from(it, api)
+                    }
+                this@MovieViewModel.item.setValueOnMain(item)
+                item
+            }
+
+        fun init(): Job =
             viewModelScope.launch(
                 Dispatchers.IO +
                     LoadingExceptionHandler(
@@ -66,84 +98,83 @@ class MovieViewModel
                         "Error fetching movie",
                     ),
             ) {
-                fetchAndSetItem(itemId)
-                item.value?.let { item ->
-                    val result = itemPlaybackRepository.getSelectedTracks(item.id, item)
-                    withContext(Dispatchers.Main) {
-                        chosenStreams.value = result
-                        loading.value = LoadingState.Success
-                    }
-                    viewModelScope.launchIO {
-                        val remoteTrailers =
-                            item.data.remoteTrailers
-                                ?.mapNotNull { t ->
-                                    t.url?.let { url ->
-                                        val name =
-                                            t.name
-                                                // TODO would be nice to clean up the trailer name
+                val item = fetchAndSetItem().await()
+                val result = itemPlaybackRepository.getSelectedTracks(item.id, item)
+                withContext(Dispatchers.Main) {
+                    this@MovieViewModel.item.value = item
+                    chosenStreams.value = result
+                    loading.value = LoadingState.Success
+                }
+                viewModelScope.launchIO {
+                    val remoteTrailers =
+                        item.data.remoteTrailers
+                            ?.mapNotNull { t ->
+                                t.url?.let { url ->
+                                    val name =
+                                        t.name
+                                            // TODO would be nice to clean up the trailer name
 //                                                ?.replace(item.name ?: "", "")
 //                                                ?.removePrefix(" - ")
-                                                ?: context.getString(R.string.trailer)
-                                        RemoteTrailer(name, url)
-                                    }
-                                }.orEmpty()
-                                .sortedBy { it.name }
-                        val localTrailerCount = item.data.localTrailerCount ?: 0
-                        val localTrailers =
-                            if (localTrailerCount > 0) {
-                                api.userLibraryApi.getLocalTrailers(itemId).content.map {
-                                    LocalTrailer(BaseItem.Companion.from(it, api))
+                                            ?: context.getString(R.string.trailer)
+                                    RemoteTrailer(name, url)
                                 }
-                            } else {
-                                listOf()
+                            }.orEmpty()
+                            .sortedBy { it.name }
+                    val localTrailerCount = item.data.localTrailerCount ?: 0
+                    val localTrailers =
+                        if (localTrailerCount > 0) {
+                            api.userLibraryApi.getLocalTrailers(itemId).content.map {
+                                LocalTrailer(BaseItem.Companion.from(it, api))
                             }
-                        withContext(Dispatchers.Main) {
-                            this@MovieViewModel.trailers.value = localTrailers + remoteTrailers
+                        } else {
+                            listOf()
                         }
-                    }
                     withContext(Dispatchers.Main) {
-                        people.value =
-                            item.data.people
-                                ?.letNotEmpty { people ->
-                                    people.map { Person.fromDto(it, api) }
-                                }.orEmpty()
-                        chapters.value = Chapter.fromDto(item.data, api)
+                        this@MovieViewModel.trailers.value = localTrailers + remoteTrailers
                     }
-                    if (!similar.isInitialized) {
-                        val similar =
-                            api.libraryApi
-                                .getSimilarItems(
-                                    GetSimilarItemsRequest(
-                                        userId = serverRepository.currentUser?.id,
-                                        itemId = itemId,
-                                        fields = SlimItemFields,
-                                        limit = 25,
-                                    ),
-                                ).content.items
-                                .map { BaseItem.Companion.from(it, api) }
-                        this@MovieViewModel.similar.setValueOnMain(similar)
-                    }
+                }
+                withContext(Dispatchers.Main) {
+                    people.value =
+                        item.data.people
+                            ?.letNotEmpty { people ->
+                                people.map { Person.fromDto(it, api) }
+                            }.orEmpty()
+                    chapters.value = Chapter.fromDto(item.data, api)
+                }
+                if (!similar.isInitialized) {
+                    val similar =
+                        api.libraryApi
+                            .getSimilarItems(
+                                GetSimilarItemsRequest(
+                                    userId = serverRepository.currentUser?.id,
+                                    itemId = itemId,
+                                    fields = SlimItemFields,
+                                    limit = 25,
+                                ),
+                            ).content.items
+                            .map { BaseItem.Companion.from(it, api) }
+                    this@MovieViewModel.similar.setValueOnMain(similar)
                 }
             }
 
         fun setWatched(played: Boolean) =
             viewModelScope.launch(ExceptionHandler() + Dispatchers.IO) {
                 if (played) {
-                    api.playStateApi.markPlayedItem(itemUuid)
+                    api.playStateApi.markPlayedItem(itemId)
                 } else {
-                    api.playStateApi.markUnplayedItem(itemUuid)
+                    api.playStateApi.markUnplayedItem(itemId)
                 }
-                fetchAndSetItem(itemUuid)
+                fetchAndSetItem()
             }
 
         fun setFavorite(favorite: Boolean) =
             viewModelScope.launch(ExceptionHandler() + Dispatchers.IO) {
                 if (favorite) {
-                    api.userLibraryApi.markFavoriteItem(itemUuid)
+                    api.userLibraryApi.markFavoriteItem(itemId)
                 } else {
-                    api.userLibraryApi.unmarkFavoriteItem(itemUuid)
+                    api.userLibraryApi.unmarkFavoriteItem(itemId)
                 }
-                fetchAndSetItem(itemUuid)
+                fetchAndSetItem()
             }
 
         fun savePlayVersion(

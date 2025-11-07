@@ -39,6 +39,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.LifecycleStartEffect
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
@@ -89,12 +90,16 @@ fun MovieDetails(
     preferences: UserPreferences,
     destination: Destination.MediaItem,
     modifier: Modifier = Modifier,
-    viewModel: MovieViewModel = hiltViewModel(),
+    viewModel: MovieViewModel =
+        hiltViewModel<MovieViewModel, MovieViewModel.Factory>(
+            creationCallback = { it.create(destination.itemId) },
+        ),
     playlistViewModel: AddPlaylistViewModel = hiltViewModel(),
 ) {
     val context = LocalContext.current
-    LaunchedEffect(Unit) {
-        viewModel.init(destination.itemId)
+    LifecycleResumeEffect(Unit) {
+        viewModel.init()
+        onPauseOrDispose { }
     }
     val item by viewModel.item.observeAsState()
     val people by viewModel.people.observeAsState(listOf())
