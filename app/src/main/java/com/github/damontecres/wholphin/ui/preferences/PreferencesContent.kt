@@ -175,7 +175,13 @@ fun PreferencesContent(
                                 .padding(top = 8.dp, bottom = 4.dp),
                     )
                 }
-                group.preferences.forEachIndexed { prefIndex, pref ->
+                val groupPreferences =
+                    group.preferences +
+                        group.conditionalPreferences
+                            .filter { it.condition.invoke(preferences) }
+                            .map { it.preferences }
+                            .flatten()
+                groupPreferences.forEachIndexed { prefIndex, pref ->
                     pref as AppPreference<Any>
                     item {
                         val interactionSource = remember { MutableInteractionSource() }

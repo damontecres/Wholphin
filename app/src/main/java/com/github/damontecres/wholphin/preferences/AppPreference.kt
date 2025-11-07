@@ -8,6 +8,7 @@ import androidx.preference.PreferenceManager
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.WholphinApplication
 import com.github.damontecres.wholphin.ui.nav.Destination
+import com.github.damontecres.wholphin.ui.preferences.ConditionalPreferences
 import com.github.damontecres.wholphin.ui.preferences.PreferenceGroup
 import com.github.damontecres.wholphin.ui.preferences.PreferenceScreenOption
 import com.github.damontecres.wholphin.ui.preferences.PreferenceValidation
@@ -769,6 +770,7 @@ val advancedPreferences =
             preferences =
                 listOf(
                     AppPreference.OneClickPause,
+                    AppPreference.GlobalContentScale,
                     AppPreference.SkipIntros,
                     AppPreference.SkipOutros,
                     AppPreference.SkipCommercials,
@@ -776,20 +778,27 @@ val advancedPreferences =
                     AppPreference.SkipRecaps,
                     AppPreference.MaxBitrate,
                     AppPreference.PlaybackDebugInfo,
-                    AppPreference.PlayerBackendPref,
-                    AppPreference.MpvHardwareDecoding,
                 ),
         ),
         PreferenceGroup(
-            title = R.string.playback_overrides,
-            preferences =
+            title = R.string.player_backend,
+            preferences = listOf(AppPreference.PlayerBackendPref),
+            conditionalPreferences =
                 listOf(
-                    AppPreference.GlobalContentScale,
-                    AppPreference.DownMixStereo,
-                    AppPreference.Ac3Supported,
-                    AppPreference.DirectPlayAss,
-                    AppPreference.DirectPlayPgs,
-                    AppPreference.FfmpegPreference,
+                    ConditionalPreferences(
+                        { it.playbackPreferences.playerBackend == PlayerBackend.EXO_PLAYER },
+                        listOf(
+                            AppPreference.FfmpegPreference,
+                            AppPreference.DownMixStereo,
+                            AppPreference.Ac3Supported,
+                            AppPreference.DirectPlayAss,
+                            AppPreference.DirectPlayPgs,
+                        ),
+                    ),
+                    ConditionalPreferences(
+                        { it.playbackPreferences.playerBackend == PlayerBackend.MPV },
+                        listOf(AppPreference.MpvHardwareDecoding),
+                    ),
                 ),
         ),
         PreferenceGroup(
