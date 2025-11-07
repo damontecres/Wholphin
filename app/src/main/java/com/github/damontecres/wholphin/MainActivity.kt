@@ -73,6 +73,9 @@ class MainActivity : AppCompatActivity() {
     @OptIn(ExperimentalTvMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        if (savedInstanceState == null) {
+            appUpgradeHandler.copySubfont(false)
+        }
         Timber.i("MainActivity.onCreate")
         setContent {
             CoilConfig(okHttpClient, false)
