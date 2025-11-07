@@ -146,9 +146,9 @@
     <string name="one_click_pause_summary_on">Press D-Pad center to pause/play</string>
 
     <plurals name="downloads">
-        <item quantity="zero">%d downloads</item>
-        <item quantity="one">%d download</item>
-        <item quantity="other">%d downloads</item>
+        <item quantity="zero">%s downloads</item>
+        <item quantity="one">%s download</item>
+        <item quantity="other">%s downloads</item>
     </plurals>
     <plurals name="hours">
         <item quantity="zero">%d hours</item>
