@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -18,12 +19,15 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
@@ -34,7 +38,11 @@ import androidx.tv.material3.Icon
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import androidx.tv.material3.surfaceColorAtElevation
+import coil3.ColorImage
+import coil3.annotation.ExperimentalCoilApi
 import coil3.compose.AsyncImage
+import coil3.compose.AsyncImagePreviewHandler
+import coil3.compose.LocalAsyncImagePreviewHandler
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.ui.AppColors
 import com.github.damontecres.wholphin.ui.PreviewTvSpec
@@ -67,7 +75,7 @@ fun NextUpEpisode(
             modifier =
                 Modifier
                     .fillMaxSize()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                    .padding(horizontal = 24.dp, vertical = 16.dp),
         ) {
             Text(
                 text = stringResource(R.string.next_up) + "...",
@@ -88,8 +96,10 @@ fun NextUpEpisode(
                     interactionSource = interactionSource,
                     modifier =
                         Modifier
-//                            .fillMaxWidth(.4f)
-//                            .fillMaxHeight()
+                            .fillMaxHeight()
+                            .aspectRatio(aspectRatio)
+//                            .fillMaxSize()
+//                            .weight(1f)
                             .focusRequester(focusRequester),
                 )
                 Column(
@@ -133,67 +143,79 @@ fun NextUpCard(
         onClick = onClick,
         interactionSource = interactionSource,
     ) {
-        Box(modifier = Modifier) {
+        Box(modifier = Modifier.fillMaxSize()) {
             AsyncImage(
                 model = imageUrl,
                 contentDescription = null,
                 contentScale = ContentScale.Fit,
-                modifier = Modifier,
+                modifier = Modifier.fillMaxSize(),
             )
-            if (timeLeft != null && timeLeft > Duration.ZERO) {
-                Box(
-                    modifier =
-                        Modifier
-                            .align(Alignment.Center)
-                            .background(
-                                AppColors.TransparentBlack50,
-                                shape = CircleShape,
-                            ),
-                ) {
+
+            Box(
+                modifier =
+                    Modifier
+                        .align(Alignment.Center)
+                        .background(
+                            AppColors.TransparentBlack50,
+                            shape = CircleShape,
+                        ),
+            ) {
+                if (timeLeft != null && timeLeft > Duration.ZERO) {
                     Text(
                         text = timeLeft.toString(),
                         style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.padding(8.dp),
+                        modifier = Modifier.padding(12.dp),
+                    )
+                } else {
+                    Icon(
+                        imageVector = Icons.Default.PlayArrow,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurface,
+                        modifier =
+                            Modifier
+                                .size(60.dp)
+                                .align(Alignment.Center),
                     )
                 }
-            } else {
-                Icon(
-                    imageVector = Icons.Default.PlayArrow,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurface,
-                    modifier =
-                        Modifier
-                            .size(60.dp)
-                            .align(Alignment.Center),
-                )
             }
         }
     }
 }
 
+@OptIn(ExperimentalCoilApi::class)
 @PreviewTvSpec
 @Composable
 private fun NextUpEpisodePreview() {
     WholphinTheme(true) {
-        NextUpEpisode(
-            title = "Episode Title",
-            description = "This is the description of the episode. It might be long.",
-            imageUrl = "",
-            onClick = {},
-            aspectRatio = 4f / 3,
-            timeLeft = 30.seconds,
-            modifier =
-                Modifier
-                    .padding(16.dp)
-                    .height(200.dp)
-                    .width(400.dp)
+        val previewHandler =
+            AsyncImagePreviewHandler {
+                ColorImage(Color.Blue.toArgb())
+            }
+
+        CompositionLocalProvider(LocalAsyncImagePreviewHandler provides previewHandler) {
+            NextUpEpisode(
+                title = "Episode Title",
+                description =
+                    "This is the description of the episode. It might be long. " +
+                        "It might be very, very long and overflow the available space. " +
+                        "But it just keeps going and going.",
+                imageUrl = "",
+                onClick = {},
+                aspectRatio = 4f / 3,
+                timeLeft = 30.seconds,
+                modifier =
+                    Modifier
+                        .padding(16.dp)
+                        .height(200.dp)
+                        .width(400.dp)
 //                    .fillMaxWidth(.4f)
 //                .align(Alignment.BottomCenter)
-                    .background(
-                        MaterialTheme.colorScheme.surfaceColorAtElevation(2.dp),
-                        shape = RoundedCornerShape(8.dp),
-                    ),
-        )
+                        .background(
+                            MaterialTheme.colorScheme.surfaceColorAtElevation(2.dp),
+                            shape = RoundedCornerShape(8.dp),
+                        ),
+            )
+        }
     }
 }

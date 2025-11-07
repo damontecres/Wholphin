@@ -263,7 +263,7 @@ fun HomePageContent(
         }
 
         Column(modifier = Modifier.fillMaxSize()) {
-            MainPageHeader(
+            HomePageHeader(
                 item = focusedItem,
                 modifier =
                     Modifier
@@ -357,7 +357,7 @@ fun HomePageContent(
 }
 
 @Composable
-fun MainPageHeader(
+fun HomePageHeader(
     item: BaseItem?,
     modifier: Modifier = Modifier,
 ) {
@@ -396,6 +396,7 @@ fun MainPageHeader(
                         dto.timeRemaining?.roundMinutes?.let {
                             add("$it left")
                         }
+                        dto.officialRating?.let(::add)
                     }
                 title?.let {
                     Text(

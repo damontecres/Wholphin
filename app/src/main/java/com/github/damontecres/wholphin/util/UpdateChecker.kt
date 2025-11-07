@@ -30,8 +30,11 @@ import kotlinx.serialization.json.jsonPrimitive
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.Response
+import okhttp3.internal.headersContentLength
 import timber.log.Timber
 import java.io.File
+import java.io.InputStream
+import java.io.OutputStream
 import java.util.Date
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -170,7 +173,10 @@ class UpdateChecker
             }
         }
 
-        suspend fun installRelease(release: Release) {
+        suspend fun installRelease(
+            release: Release,
+            callback: DownloadCallback,
+        ) {
             withContext(Dispatchers.IO) {
                 cleanup()
                 val request =
@@ -182,6 +188,9 @@ class UpdateChecker
                 okHttpClient.newCall(request).execute().use {
                     if (it.isSuccessful && it.body != null) {
                         Timber.v("Request successful for ${release.downloadUrl}")
+                        withContext(Dispatchers.Main) {
+                            callback.contentLength(it.headersContentLength())
+                        }
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                             val contentValues =
                                 ContentValues().apply {
@@ -201,7 +210,7 @@ class UpdateChecker
                             if (uri != null) {
                                 it.body!!.byteStream().use { input ->
                                     resolver.openOutputStream(uri).use { output ->
-                                        input.copyTo(output!!)
+                                        copyTo(input, output!!, callback = callback)
                                     }
                                 }
 
@@ -212,7 +221,7 @@ class UpdateChecker
                             } else {
                                 Timber.e("Resolver URI is null, trying fallback")
 //                                showToast(context, "Unable to download the apk")
-                                val targetFile = fallbackDownload(it)
+                                val targetFile = fallbackDownload(it, callback)
                                 val intent = Intent(Intent.ACTION_INSTALL_PACKAGE)
                                 intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
                                 intent.data =
@@ -224,7 +233,7 @@ class UpdateChecker
                                 context.startActivity(intent)
                             }
                         } else {
-                            val targetFile = fallbackDownload(it)
+                            val targetFile = fallbackDownload(it, callback)
                             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
                                 val intent = Intent(Intent.ACTION_INSTALL_PACKAGE)
                                 intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
@@ -250,13 +259,18 @@ class UpdateChecker
             }
         }
 
-        private fun fallbackDownload(response: Response): File {
+        private suspend fun fallbackDownload(
+            response: Response,
+            callback: DownloadCallback,
+        ): File {
             val downloadDir =
                 Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
             downloadDir.mkdirs()
             val targetFile = File(downloadDir, ASSET_NAME)
             targetFile.outputStream().use { output ->
-                response.body!!.byteStream().copyTo(output)
+                response.body!!.byteStream().use { input ->
+                    copyTo(input, output, callback = callback)
+                }
             }
             return targetFile
         }
@@ -324,3 +338,29 @@ data class Release(
     val body: String?,
     val notes: List<String>,
 )
+
+interface DownloadCallback {
+    fun contentLength(contentLength: Long)
+
+    fun bytesDownloaded(bytes: Long)
+}
+
+suspend fun copyTo(
+    input: InputStream,
+    out: OutputStream,
+    bufferSize: Int = 16 * 1024,
+    callback: DownloadCallback,
+): Long {
+    var bytesCopied: Long = 0
+    val buffer = ByteArray(bufferSize)
+    var bytes = input.read(buffer)
+    while (bytes >= 0) {
+        out.write(buffer, 0, bytes)
+        bytesCopied += bytes
+        withContext(Dispatchers.Main) {
+            callback.bytesDownloaded(bytesCopied)
+        }
+        bytes = input.read(buffer)
+    }
+    return bytesCopied
+}

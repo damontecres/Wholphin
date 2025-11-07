@@ -352,7 +352,7 @@ fun LeftPlaybackButtons(
     }
 }
 
-private val speedOptions = listOf(".25", ".5", ".75", "1.0", "1.25", "1.5", "2.0")
+private val speedOptions = listOf(".25", ".5", ".75", "1.0", "1.25", "1.5", "1.75", "2.0")
 
 @Composable
 fun RightPlaybackButtons(
@@ -456,6 +456,7 @@ fun RightPlaybackButtons(
                 showOptionsDialog = false
             },
             onSelectChoice = { index, _ ->
+                onControllerInteractionForDialog.invoke()
                 when (index) {
                     0 -> showAudioDialog = true
                     1 -> showSpeedDialog = true

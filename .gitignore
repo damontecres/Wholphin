@@ -53,6 +53,7 @@ app/libs/
 ffmpeg_decoder/
 app/release/
 app/debug/
+<<<<<<< HEAD
 
 # mpv
 app/src/main/obj/
