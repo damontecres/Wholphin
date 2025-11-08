@@ -9,6 +9,7 @@ import android.view.SurfaceHolder
 import android.view.SurfaceView
 import android.view.TextureView
 import androidx.annotation.OptIn
+import androidx.compose.ui.graphics.Color
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.BasePlayer
 import androidx.media3.common.C
@@ -103,6 +104,16 @@ class MpvPlayer(
         val cacheMegs = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) 64 else 32
         MPVLib.setOptionString("demuxer-max-bytes", "${cacheMegs * 1024 * 1024}")
         MPVLib.setOptionString("demuxer-max-back-bytes", "${cacheMegs * 1024 * 1024}")
+
+        // TODO make configurable
+        // Subtitle styling
+        MPVLib.setPropertyInt("sub-font-size", 56)
+        MPVLib.setPropertyColor("sub-color", Color.White)
+        MPVLib.setPropertyColor("sub-outline-color", Color.Black)
+        MPVLib.setPropertyDouble("sub-outline-size", 1.65)
+
+        // sub-back-color
+        // sub-border-style
 
         MPVLib.init()
 
@@ -724,4 +735,15 @@ class MpvPlayer(
     override fun onTrackSelectionsInvalidated() {
         // no-op
     }
+
+    var subtitleDelay: Double
+        get() = MPVLib.getPropertyDouble("sub-delay") ?: 0.0
+        set(value) = MPVLib.setPropertyDouble("sub-delay", value)
 }
+
+private fun MPVLib.setPropertyColor(
+    property: String,
+    color: Color,
+) = MPVLib.setPropertyString(property, color.mpvFormat)
+
+private val Color.mpvFormat: String get() = "$red/$green/$blue/$alpha"
