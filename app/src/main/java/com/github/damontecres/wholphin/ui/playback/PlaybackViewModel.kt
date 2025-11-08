@@ -420,7 +420,7 @@ class PlaybackViewModel
             currentItemPlayback: ItemPlayback = this@PlaybackViewModel.currentItemPlayback.value!!,
             audioIndex: Int?,
             subtitleIndex: Int?,
-            positionMs: Long = C.TIME_UNSET,
+            positionMs: Long = 0,
             userInitiated: Boolean,
             enableDirectPlay: Boolean = true,
             enableDirectStream: Boolean = true,
@@ -485,7 +485,7 @@ class PlaybackViewModel
 
             Timber.d(
                 "changeStreams: userInitiated=$userInitiated, audioIndex=$audioIndex, subtitleIndex=$subtitleIndex, " +
-                    "enableDirectPlay=$enableDirectPlay, enableDirectStream=$enableDirectStream",
+                    "enableDirectPlay=$enableDirectPlay, enableDirectStream=$enableDirectStream, positionMs=$positionMs",
             )
 
             val maxBitrate =

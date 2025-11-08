@@ -184,8 +184,8 @@ class MpvPlayer(
         startPositionMs: Long,
     ) {
         if (DEBUG) Timber.v("setMediaItems")
-        setMediaItems(mediaItems.subList(startIndex, mediaItems.size), false)
         this.startPositionMs = startPositionMs
+        setMediaItems(mediaItems.subList(startIndex, mediaItems.size), false)
     }
 
     override fun addMediaItems(
