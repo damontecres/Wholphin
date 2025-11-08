@@ -251,7 +251,7 @@ class PlaybackViewModel
                         destination.forceTranscoding,
                     )
                 if (!played) {
-                    playUpNextUp()
+                    playNextUp()
                 }
 
                 if (!isPlaylist && queriedItem.type == BaseItemKind.EPISODE) {
@@ -429,7 +429,7 @@ class PlaybackViewModel
             val playerBackend = preferences.appPreferences.playbackPreferences.playerBackend
 
             val currentPlayback = this@PlaybackViewModel.currentPlayback.value
-            if (currentPlayback != null && currentPlayback.playMethod == PlayMethod.DIRECT_PLAY) {
+            if (currentPlayback != null && currentPlayback.itemId == item.id && currentPlayback.playMethod == PlayMethod.DIRECT_PLAY) {
                 // If direct playing, can try to switch tracks without playback restarting
                 // Except for external subtitles
                 // TODO there's probably no reason why we can't add external subtitles?
@@ -483,21 +483,11 @@ class PlaybackViewModel
                 }
             }
 
-            // TODO
-//            if (currentItemPlayback.let {
-//                    it.itemId == itemId &&
-//                        it.audioIndex == audioIndex &&
-//                        it.subtitleIndex == subtitleIndex
-//                } == true
-//            ) {
-//                Timber.i("No change in playback for changeStreams")
-//                return@withContext
-//            }
             Timber.d(
                 "changeStreams: userInitiated=$userInitiated, audioIndex=$audioIndex, subtitleIndex=$subtitleIndex, " +
                     "enableDirectPlay=$enableDirectPlay, enableDirectStream=$enableDirectStream",
             )
-            // TODO if the new audio or subtitle index is already in the streams (eg direct play), should toggle in the player instead
+
             val maxBitrate =
                 preferences.appPreferences.playbackPreferences.maxBitrate
                     .takeIf { it > 0 } ?: AppPreference.DEFAULT_BITRATE
@@ -595,6 +585,7 @@ class PlaybackViewModel
 
                 val playback =
                     CurrentPlayback(
+                        itemId = item.id,
                         backend = preferences.appPreferences.playbackPreferences.playerBackend,
                         tracks = listOf(),
                         playMethod = transcodeType,
@@ -831,7 +822,7 @@ class PlaybackViewModel
                     }
             }
 
-        fun playUpNextUp() {
+        fun playNextUp() {
             playlist.value?.let {
                 if (it.hasNext()) {
                     viewModelScope.launchIO {
@@ -839,7 +830,7 @@ class PlaybackViewModel
                         val item = it.getAndAdvance()
                         val played = play(item.data, 0)
                         if (!played) {
-                            playUpNextUp()
+                            playNextUp()
                         }
                     }
                 }
@@ -872,7 +863,7 @@ class PlaybackViewModel
                     if (toPlay != null) {
                         val played = play(toPlay.data, 0)
                         if (!played) {
-                            playUpNextUp()
+                            playNextUp()
                         }
                     } else {
                         // TODO
@@ -941,7 +932,7 @@ class PlaybackViewModel
 
                             PlaystateCommand.PAUSE -> player.pause()
                             PlaystateCommand.UNPAUSE -> player.play()
-                            PlaystateCommand.NEXT_TRACK -> playUpNextUp()
+                            PlaystateCommand.NEXT_TRACK -> playNextUp()
                             PlaystateCommand.PREVIOUS_TRACK -> playPrevious()
                             PlaystateCommand.SEEK -> it.seekPositionTicks?.ticks?.let { player.seekTo(it.inWholeMilliseconds) }
                             PlaystateCommand.REWIND ->
@@ -1111,6 +1102,7 @@ class PlaybackViewModel
     }
 
 data class CurrentPlayback(
+    val itemId: UUID,
     val backend: PlayerBackend,
     val tracks: List<TrackSupport>,
     val playMethod: PlayMethod,

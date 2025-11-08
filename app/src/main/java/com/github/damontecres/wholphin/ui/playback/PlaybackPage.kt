@@ -359,7 +359,7 @@ fun PlaybackPage(
 
                                     PlaybackAction.Next -> {
                                         // TODO focus is lost
-                                        viewModel.playUpNextUp()
+                                        viewModel.playNextUp()
                                     }
 
                                     PlaybackAction.Previous -> {
@@ -452,14 +452,14 @@ fun PlaybackPage(
                         if (autoPlayEnabled) {
                             LaunchedEffect(Unit) {
                                 if (timeLeft == 0L) {
-                                    viewModel.playUpNextUp()
+                                    viewModel.playNextUp()
                                 } else {
                                     while (timeLeft > 0) {
                                         delay(1.seconds)
                                         timeLeft--
                                     }
                                     if (timeLeft == 0L && autoPlayEnabled) {
-                                        viewModel.playUpNextUp()
+                                        viewModel.playNextUp()
                                     }
                                 }
                             }
@@ -475,7 +475,7 @@ fun PlaybackPage(
                             aspectRatio = it.data.primaryImageAspectRatio?.toFloat() ?: (16f / 9),
                             onClick = {
                                 viewModel.reportInteraction()
-                                viewModel.playUpNextUp()
+                                viewModel.playNextUp()
                             },
                             timeLeft = if (autoPlayEnabled) timeLeft.seconds else null,
                             modifier =
