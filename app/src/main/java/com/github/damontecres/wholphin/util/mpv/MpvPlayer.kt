@@ -328,21 +328,32 @@ class MpvPlayer(
         }
         Timber.v("TrackSelection: Got ${parameters.overrides.size} overrides")
         parameters.overrides.forEach { (trackGroup, trackSelectionOverride) ->
-            tracks.groups.firstOrNull { it.mediaTrackGroup == trackGroup }?.let {
-                val id = it.mediaTrackGroup.getFormat(0).id
-                val splits = id?.split(":")
-                val trackId = splits?.getOrNull(1)
-                val propertyName =
-                    when (it.mediaTrackGroup.type) {
-                        C.TRACK_TYPE_AUDIO -> "aid"
-                        C.TRACK_TYPE_VIDEO -> "vid"
-                        C.TRACK_TYPE_TEXT -> "sid"
-                        else -> null
+            val result =
+                tracks.groups.firstOrNull { it.mediaTrackGroup == trackGroup }?.let {
+                    val id = it.mediaTrackGroup.getFormat(0).id
+                    val splits = id?.split(":")
+                    val trackId = splits?.getOrNull(1)
+                    val propertyName =
+                        when (it.mediaTrackGroup.type) {
+                            C.TRACK_TYPE_AUDIO -> "aid"
+                            C.TRACK_TYPE_VIDEO -> "vid"
+                            C.TRACK_TYPE_TEXT -> "sid"
+                            else -> null
+                        }
+                    Timber.v("TrackSelection: activating %s %s '%s'", propertyName, trackId, id)
+                    if (trackId != null && propertyName != null) {
+                        MPVLib.setPropertyString(propertyName, trackId)
+                        true
+                    } else {
+                        false
                     }
-                Timber.v("TrackSelection: activating %s %s '%s'", propertyName, trackId, id)
-                if (trackId != null && propertyName != null) {
-                    MPVLib.setPropertyString(propertyName, trackId)
                 }
+            if (result != true) {
+                Timber.w(
+                    "Did not find track to select for type=%s, id=%s",
+                    trackGroup.type,
+                    trackGroup.getFormat(0).id,
+                )
             }
         }
     }
@@ -586,8 +597,9 @@ class MpvPlayer(
                 Timber.d("event: MPV_EVENT_FILE_LOADED")
                 mediaItem!!.localConfiguration?.subtitleConfigurations?.forEach {
                     val url = it.uri.toString()
-                    Timber.v("Adding external subtitle track $url")
-                    MPVLib.command(arrayOf("sub-add", url, "auto"))
+                    val title = it.label ?: "External Subtitles"
+                    Timber.v("Adding external subtitle track '$title'")
+                    MPVLib.command(arrayOf("sub-add", url, "auto", title))
                 }
                 getTracks().let {
                     notifyListeners(EVENT_TRACKS_CHANGED) { onTracksChanged(it) }
@@ -685,8 +697,7 @@ class MpvPlayer(
                 val isExternal = MPVLib.getPropertyBoolean("track-list/$idx/external") ?: false
                 val isSelected = MPVLib.getPropertyBoolean("track-list/$idx/selected") ?: false
                 val channelCount = MPVLib.getPropertyInt("track-list/$idx/demux-channel-count")
-                val title =
-                    if (type != "sub" || !isExternal) MPVLib.getPropertyString("track-list/$idx/title") else null
+                val title = MPVLib.getPropertyString("track-list/$idx/title")
 
                 if (type != null && id != null) {
                     // TODO do we need the real mimetypes?

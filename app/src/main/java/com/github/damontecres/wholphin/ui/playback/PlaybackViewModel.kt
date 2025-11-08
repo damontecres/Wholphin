@@ -568,6 +568,7 @@ class PlaybackViewModel
                                 ).setId("e:${it.index}")
                                 .setMimeType(subtitleMimeTypes[it.codec])
                                 .setLanguage(it.language)
+                                .setLabel(it.title)
                                 .setSelectionFlags(flags)
                                 .build()
                         }
