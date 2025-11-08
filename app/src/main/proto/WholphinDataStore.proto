@@ -83,6 +83,29 @@ enum AppThemeColors {
   ORANGE = 3;
 }
 
+enum EdgeStyle{
+  EDGE_NONE = 0;
+  EDGE_SOLID = 1;
+  EDGE_SHADOW = 2;
+}
+
+enum BackgroundStyle{
+  BG_NONE = 0;
+  BG_WRAP = 1;
+  BG_BOXED = 2;
+}
+
+message SubtitlePreferences{
+  int32 font_size = 1;
+  int32 font_color = 2;
+  int32 font_opacity = 3;
+  int32 edge_color = 4;
+  EdgeStyle edge_style = 5;
+  int32 background_color = 6;
+  int32 background_opacity = 7;
+  BackgroundStyle background_style = 8;
+}
+
 message InterfacePreferences {
   ThemeSongVolume play_theme_songs = 1;
   bool remember_selected_tab = 2;
@@ -90,6 +113,7 @@ message InterfacePreferences {
   AppThemeColors app_theme_colors = 4;
   bool nav_drawer_switch_on_focus = 5;
   bool show_clock = 6;
+  SubtitlePreferences subtitles_preferences = 7;
 }
 
 message AppPreferences {

@@ -44,7 +44,7 @@ fun SliderBar(
         targetValue = 6.dp.times((if (isFocused) 2f else 1f)),
     )
     var currentValue by remember(value) { mutableLongStateOf(value) }
-    val percent = currentValue.toFloat() / (max - min)
+    val percent = (currentValue - min).toFloat() / (max - min)
 
     val handleSeekEventModifier =
         Modifier.handleDPadKeyEvents(

@@ -1,7 +1,9 @@
 package com.github.damontecres.wholphin.preferences
 
+import androidx.compose.ui.graphics.toArgb
 import androidx.datastore.core.CorruptionException
 import androidx.datastore.core.Serializer
+import com.github.damontecres.wholphin.ui.preferences.subtitle.SubtitleSettings
 import com.google.protobuf.InvalidProtocolBufferException
 import java.io.InputStream
 import java.io.OutputStream
@@ -74,6 +76,23 @@ class AppPreferencesSerializer
                                 navDrawerSwitchOnFocus =
                                     AppPreference.NavDrawerSwitchOnFocus.defaultValue
                                 showClock = AppPreference.ShowClock.defaultValue
+
+                                subtitlesPreferences =
+                                    SubtitlePreferences
+                                        .newBuilder()
+                                        .apply {
+                                            fontSize = SubtitleSettings.FontSize.defaultValue.toInt()
+                                            fontColor = SubtitleSettings.FontColor.defaultValue.toArgb()
+                                            fontOpacity = SubtitleSettings.FontOpacity.defaultValue.toInt()
+                                            edgeColor = SubtitleSettings.EdgeColor.defaultValue.toArgb()
+                                            edgeStyle = SubtitleSettings.EdgeStylePref.defaultValue
+                                            backgroundColor =
+                                                SubtitleSettings.BackgroundColor.defaultValue.toArgb()
+                                            backgroundOpacity =
+                                                SubtitleSettings.BackgroundOpacity.defaultValue.toInt()
+                                            backgroundStyle =
+                                                SubtitleSettings.BackgroundStylePref.defaultValue
+                                        }.build()
                             }.build()
                 }.build()
 
@@ -111,4 +130,9 @@ inline fun AppPreferences.updateHomePagePreferences(block: HomePagePreferences.B
 inline fun AppPreferences.updateInterfacePreferences(block: InterfacePreferences.Builder.() -> Unit): AppPreferences =
     update {
         interfacePreferences = interfacePreferences.toBuilder().apply(block).build()
+    }
+
+inline fun AppPreferences.updateSubtitlePreferences(block: SubtitlePreferences.Builder.() -> Unit): AppPreferences =
+    updateInterfacePreferences {
+        subtitlesPreferences = subtitlesPreferences.toBuilder().apply(block).build()
     }
