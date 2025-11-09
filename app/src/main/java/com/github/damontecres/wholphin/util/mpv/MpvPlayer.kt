@@ -591,6 +591,7 @@ class MpvPlayer(
                     Timber.v("Adding external subtitle track '$title'")
                     MPVLib.command(arrayOf("sub-add", url, "auto", title))
                 }
+                notifyListeners(EVENT_IS_PLAYING_CHANGED) { onIsPlayingChanged(true) }
                 getTracks().let {
                     notifyListeners(EVENT_TRACKS_CHANGED) { onTracksChanged(it) }
                 }
@@ -619,6 +620,8 @@ class MpvPlayer(
 
             MPV_EVENT_END_FILE -> {
                 Timber.d("event: MPV_EVENT_END_FILE")
+                notifyListeners(EVENT_IS_PLAYING_CHANGED) { onIsPlayingChanged(false) }
+
                 val curPos = MPVLib.getPropertyDouble("time-pos/full")
                 Timber.v("MPV_EVENT_END_FILE: positionMs=$positionMs, durationMs=$durationMs, curPos=$curPos")
                 if (positionMs >= (durationMs - 1000) && curPos == null) {
