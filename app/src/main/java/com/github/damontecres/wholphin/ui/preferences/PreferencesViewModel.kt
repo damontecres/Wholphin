@@ -12,6 +12,8 @@ import com.github.damontecres.wholphin.data.isPinned
 import com.github.damontecres.wholphin.data.model.NavDrawerPinnedItem
 import com.github.damontecres.wholphin.data.model.NavPinType
 import com.github.damontecres.wholphin.preferences.AppPreferences
+import com.github.damontecres.wholphin.preferences.resetSubtitles
+import com.github.damontecres.wholphin.preferences.updateSubtitlePreferences
 import com.github.damontecres.wholphin.ui.detail.DebugViewModel.Companion.sendAppLogs
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.nav.NavDrawerItem
@@ -90,5 +92,21 @@ class PreferencesViewModel
 
         fun sendAppLogs() {
             sendAppLogs(context, api, clientInfo, deviceInfo)
+        }
+
+        fun resetSubtitleSettings() {
+            viewModelScope.launchIO {
+                resetSubtitleSettings(preferenceDataStore)
+            }
+        }
+
+        companion object {
+            suspend fun resetSubtitleSettings(appPreferences: DataStore<AppPreferences>) {
+                appPreferences.updateData {
+                    it.updateSubtitlePreferences {
+                        resetSubtitles()
+                    }
+                }
+            }
         }
     }

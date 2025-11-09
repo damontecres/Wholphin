@@ -666,6 +666,12 @@ sealed interface AppPreference<T> {
                 summaryOn = R.string.one_click_pause_summary_on,
                 summaryOff = R.string.disabled,
             )
+
+        val SubtitleStyle =
+            AppDestinationPreference(
+                title = R.string.subtitle_style,
+                destination = Destination.Settings(PreferenceScreenOption.SUBTITLES),
+            )
     }
 }
 
@@ -679,6 +685,7 @@ val basicPreferences =
                     AppPreference.RewatchNextUp,
                     AppPreference.PlayThemeMusic,
                     AppPreference.RememberSelectedTab,
+                    AppPreference.SubtitleStyle,
                     AppPreference.ThemeColors,
                 ),
         ),

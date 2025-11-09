@@ -10,6 +10,7 @@ import com.github.damontecres.wholphin.preferences.AppPreference
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.updateInterfacePreferences
 import com.github.damontecres.wholphin.preferences.updatePlaybackOverrides
+import com.github.damontecres.wholphin.ui.preferences.PreferencesViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import timber.log.Timber
 import javax.inject.Inject
@@ -95,5 +96,8 @@ suspend fun upgradeApp(
                 showClock = AppPreference.ShowClock.defaultValue
             }
         }
+    }
+    if (previous.isEqualOrBefore(Version.fromString("0.2.7-1-g0"))) {
+        PreferencesViewModel.resetSubtitleSettings(appPreferences)
     }
 }

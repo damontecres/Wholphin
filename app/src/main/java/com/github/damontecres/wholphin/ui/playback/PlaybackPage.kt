@@ -1,6 +1,7 @@
 package com.github.damontecres.wholphin.ui.playback
 
 import androidx.activity.compose.BackHandler
+import androidx.annotation.Dimension
 import androidx.annotation.OptIn
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
@@ -70,6 +71,7 @@ import com.github.damontecres.wholphin.ui.OneTimeLaunchedEffect
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.nav.Destination
+import com.github.damontecres.wholphin.ui.preferences.subtitle.SubtitleSettings.toSubtitleStyle
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
@@ -285,8 +287,10 @@ fun PlaybackPage(
                         AndroidView(
                             factory = { context ->
                                 SubtitleView(context).apply {
-                                    setUserDefaultStyle()
-                                    setUserDefaultTextSize()
+                                    preferences.appPreferences.interfacePreferences.subtitlesPreferences.let {
+                                        setStyle(it.toSubtitleStyle())
+                                        setFixedTextSize(Dimension.SP, it.fontSize.toFloat())
+                                    }
                                 }
                             },
                             update = {
