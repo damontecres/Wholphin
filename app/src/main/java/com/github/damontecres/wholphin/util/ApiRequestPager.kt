@@ -21,6 +21,7 @@ import org.jellyfin.sdk.api.client.extensions.liveTvApi
 import org.jellyfin.sdk.api.client.extensions.playlistsApi
 import org.jellyfin.sdk.api.client.extensions.suggestionsApi
 import org.jellyfin.sdk.api.client.extensions.tvShowsApi
+import org.jellyfin.sdk.api.client.extensions.userLibraryApi
 import org.jellyfin.sdk.model.api.BaseItemDtoQueryResult
 import org.jellyfin.sdk.model.api.GetProgramsDto
 import org.jellyfin.sdk.model.api.request.GetEpisodesRequest
@@ -31,6 +32,7 @@ import org.jellyfin.sdk.model.api.request.GetPlaylistItemsRequest
 import org.jellyfin.sdk.model.api.request.GetResumeItemsRequest
 import org.jellyfin.sdk.model.api.request.GetSuggestionsRequest
 import timber.log.Timber
+import java.util.UUID
 import java.util.function.Predicate
 
 /**
@@ -58,7 +60,7 @@ class ApiRequestPager<T>(
         CacheBuilder
             .newBuilder()
             .maximumSize(cacheSize)
-            .build<Int, List<BaseItem>>()
+            .build<Int, MutableList<BaseItem>>()
 
     suspend fun init(): ApiRequestPager<T> {
         if (totalCount < 0) {
@@ -122,12 +124,37 @@ class ApiRequestPager<T>(
                             false,
                         )
                     val result = requestHandler.execute(api, newRequest).content
-                    val data = result.items.map { BaseItem.from(it, api, useSeriesForPrimary) }
+                    val data = mutableListOf<BaseItem>()
+                    result.items.forEach { data.add(BaseItem.from(it, api, useSeriesForPrimary)) }
                     cachedPages.put(pageNumber, data)
                     items = ItemList(totalCount, pageSize, cachedPages.asMap())
                 }
             }
         }
+
+    suspend fun refreshItem(
+        position: Int,
+        itemId: UUID,
+    ) {
+        val item =
+            api.userLibraryApi.getItem(itemId).content.let {
+                BaseItem.from(
+                    it,
+                    api,
+                    useSeriesForPrimary,
+                )
+            }
+        val pageNumber = position / pageSize
+        val index = position - pageNumber * pageSize
+        mutex.withLock {
+            val page = cachedPages.getIfPresent(pageNumber)
+            if (page != null && index in page.indices) {
+                page[index] = item
+                cachedPages.put(pageNumber, page)
+                items = ItemList(totalCount, pageSize, cachedPages.asMap())
+            }
+        }
+    }
 
     companion object {
         private const val DEBUG = false
