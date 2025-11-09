@@ -75,6 +75,15 @@ object SubtitleSettings {
                 prefs.updateSubtitlePreferences { fontBold = value }
             },
         )
+    val FontItalic =
+        AppSwitchPreference(
+            title = R.string.italic_font,
+            defaultValue = false,
+            getter = { it.interfacePreferences.subtitlesPreferences.fontItalic },
+            setter = { prefs, value ->
+                prefs.updateSubtitlePreferences { fontItalic = value }
+            },
+        )
 
     val FontOpacity =
         AppSliderPreference(
@@ -180,20 +189,37 @@ object SubtitleSettings {
     val preferences =
         listOf(
             PreferenceGroup(
-                title = R.string.subtitle_style,
+                title = R.string.font,
                 preferences =
                     listOf(
                         FontSize,
                         FontColor,
                         FontBold,
+                        FontItalic,
                         FontOpacity,
+                    ),
+            ),
+            PreferenceGroup(
+                title = R.string.edge_style,
+                preferences =
+                    listOf(
                         EdgeStylePref,
                         EdgeColor,
+                    ),
+            ),
+            PreferenceGroup(
+                title = R.string.background,
+                preferences =
+                    listOf(
                         BackgroundStylePref,
                         BackgroundColor,
                         BackgroundOpacity,
-                        Reset,
                     ),
+            ),
+            PreferenceGroup(
+                title = R.string.more,
+                preferences =
+                    listOf(Reset),
             ),
         )
 
@@ -211,7 +237,12 @@ object SubtitleSettings {
                 EdgeStyle.EDGE_SHADOW -> CaptionStyleCompat.EDGE_TYPE_DROP_SHADOW
             },
             fo.or(edgeColor),
-            if (fontBold) Typeface.DEFAULT_BOLD else Typeface.DEFAULT,
+            when {
+                fontBold && fontItalic -> Typeface.defaultFromStyle(Typeface.BOLD_ITALIC)
+                fontBold -> Typeface.defaultFromStyle(Typeface.BOLD)
+                fontItalic -> Typeface.defaultFromStyle(Typeface.ITALIC)
+                else -> Typeface.DEFAULT
+            },
         )
     }
 }
