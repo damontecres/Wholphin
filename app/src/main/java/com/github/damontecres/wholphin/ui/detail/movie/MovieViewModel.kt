@@ -59,7 +59,7 @@ class MovieViewModel
     ) : ViewModel() {
         @AssistedFactory
         interface Factory {
-            fun create(itemId2: UUID): MovieViewModel
+            fun create(itemId: UUID): MovieViewModel
         }
 
         val loading = MutableLiveData<LoadingState>(LoadingState.Pending)

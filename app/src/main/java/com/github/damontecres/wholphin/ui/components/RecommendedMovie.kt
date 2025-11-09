@@ -26,6 +26,9 @@ import com.github.damontecres.wholphin.util.GetResumeItemsRequestHandler
 import com.github.damontecres.wholphin.util.GetSuggestionsRequestHandler
 import com.github.damontecres.wholphin.util.HomeRowLoadingState
 import com.github.damontecres.wholphin.util.LoadingState
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedFactory
+import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -42,16 +45,21 @@ import org.jellyfin.sdk.model.api.request.GetResumeItemsRequest
 import org.jellyfin.sdk.model.api.request.GetSuggestionsRequest
 import timber.log.Timber
 import java.util.UUID
-import javax.inject.Inject
 
-@HiltViewModel
+@HiltViewModel(assistedFactory = RecommendedMovieViewModel.Factory::class)
 class RecommendedMovieViewModel
-    @Inject
+    @AssistedInject
     constructor(
         @param:ApplicationContext private val context: Context,
         private val api: ApiClient,
         private val serverRepository: ServerRepository,
+        @Assisted val parentId: UUID,
     ) : ViewModel() {
+        @AssistedFactory
+        interface Factory {
+            fun create(parentId: UUID): RecommendedMovieViewModel
+        }
+
         val loading = MutableLiveData<LoadingState>(LoadingState.Loading)
 
         val rows =
@@ -64,10 +72,7 @@ class RecommendedMovieViewModel
                     }.toMutableList(),
             )
 
-        fun init(
-            preferences: UserPreferences,
-            parentId: UUID,
-        ) {
+        fun init() {
             viewModelScope.launch(Dispatchers.IO + ExceptionHandler()) {
                 try {
                     val resumeItemsRequest =
@@ -84,6 +89,9 @@ class RecommendedMovieViewModel
                             GetResumeItemsRequestHandler,
                             viewModelScope,
                         ).init()
+                    if (resumeItems.isNotEmpty()) {
+                        resumeItems.getBlocking(0)
+                    }
 
                     update(
                         0,
@@ -206,10 +214,13 @@ fun RecommendedMovie(
     onClickItem: (BaseItem) -> Unit,
     onFocusPosition: (RowColumn) -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: RecommendedMovieViewModel = hiltViewModel(),
+    viewModel: RecommendedMovieViewModel =
+        hiltViewModel<RecommendedMovieViewModel, RecommendedMovieViewModel.Factory>(
+            creationCallback = { it.create(parentId) },
+        ),
 ) {
     OneTimeLaunchedEffect {
-        viewModel.init(preferences, parentId)
+        viewModel.init()
     }
     val loading by viewModel.loading.observeAsState(LoadingState.Loading)
     val rows by viewModel.rows.collectAsState(listOf())
