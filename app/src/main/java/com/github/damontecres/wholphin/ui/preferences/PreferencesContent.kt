@@ -50,6 +50,8 @@ import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.playOnClickSound
 import com.github.damontecres.wholphin.ui.playSoundOnFocus
+import com.github.damontecres.wholphin.ui.preferences.subtitle.SubtitleSettings
+import com.github.damontecres.wholphin.ui.preferences.subtitle.SubtitleStylePage
 import com.github.damontecres.wholphin.ui.setup.UpdateViewModel
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.ExceptionHandler
@@ -94,12 +96,14 @@ fun PreferencesContent(
             PreferenceScreenOption.BASIC -> basicPreferences
             PreferenceScreenOption.ADVANCED -> advancedPreferences
             PreferenceScreenOption.USER_INTERFACE -> uiPreferences
+            PreferenceScreenOption.SUBTITLES -> SubtitleSettings.preferences
         }
     val screenTitle =
         when (preferenceScreenOption) {
             PreferenceScreenOption.BASIC -> R.string.settings
             PreferenceScreenOption.ADVANCED -> R.string.advanced_settings
             PreferenceScreenOption.USER_INTERFACE -> R.string.ui_interface
+            PreferenceScreenOption.SUBTITLES -> R.string.subtitle_style
         }
 
     var visible by remember { mutableStateOf(false) }
@@ -302,6 +306,19 @@ fun PreferencesContent(
                                 )
                             }
 
+                            SubtitleSettings.Reset -> {
+                                ClickPreference(
+                                    title = stringResource(pref.title),
+                                    onClick = {
+                                        viewModel.resetSubtitleSettings()
+                                    },
+                                    modifier = Modifier,
+                                    summary = pref.summary(context, null),
+                                    onLongClick = {},
+                                    interactionSource = interactionSource,
+                                )
+                            }
+
                             else -> {
                                 val value = pref.getter.invoke(preferences)
                                 ComposablePreference(
@@ -357,13 +374,24 @@ fun PreferencesPage(
     Box(
         modifier = modifier.background(MaterialTheme.colorScheme.background),
     ) {
-        PreferencesContent(
-            initialPreferences,
-            preferenceScreenOption,
-            Modifier
-                .fillMaxWidth(.4f)
-                .fillMaxHeight()
-                .align(Alignment.TopEnd),
-        )
+        when (preferenceScreenOption) {
+            PreferenceScreenOption.BASIC,
+            PreferenceScreenOption.ADVANCED,
+            PreferenceScreenOption.USER_INTERFACE,
+            ->
+                PreferencesContent(
+                    initialPreferences,
+                    preferenceScreenOption,
+                    Modifier
+                        .fillMaxWidth(.4f)
+                        .fillMaxHeight()
+                        .align(Alignment.TopEnd),
+                )
+
+            PreferenceScreenOption.SUBTITLES ->
+                SubtitleStylePage(
+                    initialPreferences,
+                )
+        }
     }
 }

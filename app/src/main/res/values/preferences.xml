@@ -47,6 +47,23 @@
     <string name="update_available">Update available</string>
     <string name="update_url_summary">URL used to check for app updates</string>
     <string name="update_url">Update URL</string>
+    <string name="font_size">Font size</string>
+    <string name="font_color">Font color</string>
+    <string name="font_opacity">Font opacity</string>
+    <string name="edge_style">Edge style</string>
+    <string name="edge_color">Edge color</string>
+    <string name="background_opacity">Background opacity</string>
+    <string name="background_style">Background style</string>
+    <string name="subtitle_style">Subtitle style</string>
+    <string name="background_color">Background color</string>
+    <string name="reset">Reset</string>
+    <string name="bold_font">Bold font</string>
+
+    <string name="player_backend">Playback Backend</string>
+    <string name="mpv_hardware_decoding">MPV: Use hardware decoding</string>
+    <string name="disable_if_crash">Disable if you experience crashes</string>
+    <string name="mpv_options">MPV Options</string>
+    <string name="exoplayer_options">ExoPlayer Options</string>
 
     <string-array name="theme_song_volume">
         <item>Disabled</item>
@@ -90,9 +107,33 @@
         <item>During end credits/outro</item>
     </string-array>
 
+    <string-array name="font_colors">
+        <item>White</item>
+        <item>Black</item>
+        <item>Light Gray</item>
+        <item>Dark Gray</item>
+        <item>Red</item>
+        <item>Yellow</item>
+        <item>Green</item>
+        <item>Cyan</item>
+        <item>Blue</item>
+        <item>Magenta</item>
+    </string-array>
+
+    <string-array name="subtitle_edge">
+        <item>None</item>
+        <item>Outline</item>
+        <item>Shadow</item>
+    </string-array>
+
+    <string-array name="background_style">
+        <item>None</item>
+        <item>Wrap</item>
+        <item>Boxed</item>
+    </string-array>
+
     <string-array name="player_backend_options">
         <item>ExoPlayer (default)</item>
         <item>MPV (Experimental)</item>
     </string-array>
-
 </resources>

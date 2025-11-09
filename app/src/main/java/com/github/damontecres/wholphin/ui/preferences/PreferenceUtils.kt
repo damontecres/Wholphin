@@ -35,6 +35,7 @@ enum class PreferenceScreenOption {
     BASIC,
     ADVANCED,
     USER_INTERFACE,
+    SUBTITLES,
     ;
 
     companion object {

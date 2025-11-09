@@ -342,37 +342,50 @@ fun PlaybackOverlay(
                     (playerControls.currentPosition.toFloat() / playerControls.duration)
             }
         }
-        if (trickplayInfo != null) {
-            AnimatedVisibility(
-                seekProgressPercent >= 0 && seekBarFocused,
-            ) {
-                val tilesPerImage = trickplayInfo.tileWidth * trickplayInfo.tileHeight
-                val index =
-                    (seekProgressMs / trickplayInfo.interval).toInt() / tilesPerImage
-                val imageUrl = trickplayUrlFor(index)
 
-                if (imageUrl != null) {
-                    Box(
-                        modifier =
-                            Modifier
-                                .align(Alignment.Center)
-                                .fillMaxWidth(.95f),
-                    ) {
-                        SeekPreviewImage(
-                            modifier =
-                                Modifier
-                                    .align(Alignment.BottomStart)
-                                    .offsetByPercent(
-                                        xPercentage = seekProgressPercent.coerceIn(0f, 1f),
-                                    ).padding(bottom = controllerHeight - titleHeight - subtitleHeight),
-                            previewImageUrl = imageUrl,
-                            duration = playerControls.duration,
-                            seekProgressMs = seekProgressMs,
-                            videoWidth = trickplayInfo.width,
-                            videoHeight = trickplayInfo.height,
-                            trickPlayInfo = trickplayInfo,
-                        )
+        AnimatedVisibility(
+            seekProgressPercent >= 0 && seekBarFocused,
+        ) {
+            Box(
+                modifier =
+                    Modifier
+                        .align(Alignment.Center)
+                        .fillMaxWidth(.95f),
+            ) {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier =
+                        Modifier
+                            .align(Alignment.BottomStart)
+                            .offsetByPercent(
+                                xPercentage = seekProgressPercent.coerceIn(0f, 1f),
+                            ).padding(bottom = controllerHeight - titleHeight - subtitleHeight),
+                ) {
+                    if (trickplayInfo != null) {
+                        val tilesPerImage = trickplayInfo.tileWidth * trickplayInfo.tileHeight
+                        val index =
+                            (seekProgressMs / trickplayInfo.interval).toInt() / tilesPerImage
+                        val imageUrl = trickplayUrlFor(index)
+
+                        if (imageUrl != null) {
+                            SeekPreviewImage(
+                                modifier =
+                                Modifier,
+                                previewImageUrl = imageUrl,
+                                duration = playerControls.duration,
+                                seekProgressMs = seekProgressMs,
+                                videoWidth = trickplayInfo.width,
+                                videoHeight = trickplayInfo.height,
+                                trickPlayInfo = trickplayInfo,
+                            )
+                        }
                     }
+                    Text(
+                        text = (seekProgressMs / 1000L).seconds.toString(),
+                        color = MaterialTheme.colorScheme.onSurface,
+                        style = MaterialTheme.typography.labelLarge,
+                    )
                 }
             }
         }

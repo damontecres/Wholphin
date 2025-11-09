@@ -144,11 +144,9 @@
     <string name="add_to_playlist">Add to playlist</string>
     <string name="one_click_pause">Pause with one click</string>
     <string name="one_click_pause_summary_on">Press D-Pad center to pause/play</string>
-    <string name="player_backend">Playback Backend</string>
-    <string name="mpv_hardware_decoding">MPV: Use hardware decoding</string>
-    <string name="disable_if_crash">Disable if you experience crashes</string>
-    <string name="mpv_options">MPV Options</string>
-    <string name="exoplayer_options">ExoPlayer Options</string>
+    <string name="italic_font">Italicize font</string>
+    <string name="font">Font</string>
+    <string name="background">Background</string>
 
     <plurals name="downloads">
         <item quantity="zero">%s downloads</item>
