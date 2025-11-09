@@ -104,6 +104,7 @@ message SubtitlePreferences{
   int32 background_color = 6;
   int32 background_opacity = 7;
   BackgroundStyle background_style = 8;
+  bool font_bold = 9;
 }
 
 message InterfacePreferences {

@@ -1,5 +1,6 @@
 package com.github.damontecres.wholphin.ui.preferences.subtitle
 
+import android.graphics.Typeface
 import androidx.annotation.OptIn
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
@@ -9,6 +10,7 @@ import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.preferences.AppChoicePreference
 import com.github.damontecres.wholphin.preferences.AppClickablePreference
 import com.github.damontecres.wholphin.preferences.AppSliderPreference
+import com.github.damontecres.wholphin.preferences.AppSwitchPreference
 import com.github.damontecres.wholphin.preferences.BackgroundStyle
 import com.github.damontecres.wholphin.preferences.EdgeStyle
 import com.github.damontecres.wholphin.preferences.SubtitlePreferences
@@ -61,6 +63,16 @@ object SubtitleSettings {
             valueToIndex = { value ->
                 val color = value.toArgb().and(0x00FFFFFF)
                 colorList.indexOfFirstOrNull { color == it.toArgb().and(0x00FFFFFF) } ?: 0
+            },
+        )
+
+    val FontBold =
+        AppSwitchPreference(
+            title = R.string.bold_font,
+            defaultValue = false,
+            getter = { it.interfacePreferences.subtitlesPreferences.fontBold },
+            setter = { prefs, value ->
+                prefs.updateSubtitlePreferences { fontBold = value }
             },
         )
 
@@ -173,6 +185,7 @@ object SubtitleSettings {
                     listOf(
                         FontSize,
                         FontColor,
+                        FontBold,
                         FontOpacity,
                         EdgeStylePref,
                         EdgeColor,
@@ -198,7 +211,7 @@ object SubtitleSettings {
                 EdgeStyle.EDGE_SHADOW -> CaptionStyleCompat.EDGE_TYPE_DROP_SHADOW
             },
             fo.or(edgeColor),
-            null,
+            if (fontBold) Typeface.DEFAULT_BOLD else Typeface.DEFAULT,
         )
     }
 }

@@ -56,6 +56,8 @@
     <string name="background_style">Background style</string>
     <string name="subtitle_style">Subtitle style</string>
     <string name="background_color">Background color</string>
+    <string name="reset">Reset</string>
+    <string name="bold_font">Bold font</string>
 
     <string-array name="theme_song_volume">
         <item>Disabled</item>

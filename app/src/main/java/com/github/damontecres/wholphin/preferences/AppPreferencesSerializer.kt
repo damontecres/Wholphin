@@ -81,17 +81,7 @@ class AppPreferencesSerializer
                                     SubtitlePreferences
                                         .newBuilder()
                                         .apply {
-                                            fontSize = SubtitleSettings.FontSize.defaultValue.toInt()
-                                            fontColor = SubtitleSettings.FontColor.defaultValue.toArgb()
-                                            fontOpacity = SubtitleSettings.FontOpacity.defaultValue.toInt()
-                                            edgeColor = SubtitleSettings.EdgeColor.defaultValue.toArgb()
-                                            edgeStyle = SubtitleSettings.EdgeStylePref.defaultValue
-                                            backgroundColor =
-                                                SubtitleSettings.BackgroundColor.defaultValue.toArgb()
-                                            backgroundOpacity =
-                                                SubtitleSettings.BackgroundOpacity.defaultValue.toInt()
-                                            backgroundStyle =
-                                                SubtitleSettings.BackgroundStylePref.defaultValue
+                                            resetSubtitles()
                                         }.build()
                             }.build()
                 }.build()
@@ -136,3 +126,15 @@ inline fun AppPreferences.updateSubtitlePreferences(block: SubtitlePreferences.B
     updateInterfacePreferences {
         subtitlesPreferences = subtitlesPreferences.toBuilder().apply(block).build()
     }
+
+fun SubtitlePreferences.Builder.resetSubtitles() {
+    fontSize = SubtitleSettings.FontSize.defaultValue.toInt()
+    fontColor = SubtitleSettings.FontColor.defaultValue.toArgb()
+    fontBold = SubtitleSettings.FontBold.defaultValue
+    fontOpacity = SubtitleSettings.FontOpacity.defaultValue.toInt()
+    edgeColor = SubtitleSettings.EdgeColor.defaultValue.toArgb()
+    edgeStyle = SubtitleSettings.EdgeStylePref.defaultValue
+    backgroundColor = SubtitleSettings.BackgroundColor.defaultValue.toArgb()
+    backgroundOpacity = SubtitleSettings.BackgroundOpacity.defaultValue.toInt()
+    backgroundStyle = SubtitleSettings.BackgroundStylePref.defaultValue
+}
