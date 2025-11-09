@@ -1,6 +1,8 @@
 package com.github.damontecres.wholphin.ui.components
 
+import android.content.Context
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Modifier
@@ -15,17 +17,21 @@ import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.OneTimeLaunchedEffect
 import com.github.damontecres.wholphin.ui.SlimItemFields
 import com.github.damontecres.wholphin.ui.data.RowColumn
+import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.main.HomePageContent
-import com.github.damontecres.wholphin.ui.main.HomeRow
 import com.github.damontecres.wholphin.util.ApiRequestPager
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.GetItemsRequestHandler
 import com.github.damontecres.wholphin.util.GetNextUpRequestHandler
 import com.github.damontecres.wholphin.util.GetResumeItemsRequestHandler
 import com.github.damontecres.wholphin.util.GetSuggestionsRequestHandler
+import com.github.damontecres.wholphin.util.HomeRowLoadingState
 import com.github.damontecres.wholphin.util.LoadingState
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
@@ -36,6 +42,7 @@ import org.jellyfin.sdk.model.api.request.GetItemsRequest
 import org.jellyfin.sdk.model.api.request.GetNextUpRequest
 import org.jellyfin.sdk.model.api.request.GetResumeItemsRequest
 import org.jellyfin.sdk.model.api.request.GetSuggestionsRequest
+import timber.log.Timber
 import java.util.UUID
 import javax.inject.Inject
 
@@ -43,34 +50,83 @@ import javax.inject.Inject
 class RecommendedTvShowViewModel
     @Inject
     constructor(
+        @param:ApplicationContext private val context: Context,
         private val api: ApiClient,
         private val serverRepository: ServerRepository,
     ) : ViewModel() {
         val loading = MutableLiveData<LoadingState>(LoadingState.Loading)
-        val rows = MutableLiveData<List<HomeRow>>()
+
+        val rows =
+            MutableStateFlow<MutableList<HomeRowLoadingState>>(
+                rowTitles
+                    .map {
+                        HomeRowLoadingState.Pending(
+                            context.getString(it),
+                        )
+                    }.toMutableList(),
+            )
 
         fun init(
             preferences: UserPreferences,
             parentId: UUID,
         ) {
             viewModelScope.launch(Dispatchers.IO + ExceptionHandler()) {
-                val resumeItemsRequest =
-                    GetResumeItemsRequest(
-                        parentId = parentId,
-                        fields = SlimItemFields,
-                        includeItemTypes = listOf(BaseItemKind.EPISODE),
-                        enableUserData = true,
-                    )
-                val resumeItems =
-                    ApiRequestPager(api, resumeItemsRequest, GetResumeItemsRequestHandler, viewModelScope, useSeriesForPrimary = true)
+                try {
+                    val resumeItemsRequest =
+                        GetResumeItemsRequest(
+                            parentId = parentId,
+                            fields = SlimItemFields,
+                            includeItemTypes = listOf(BaseItemKind.EPISODE),
+                            enableUserData = true,
+                        )
+                    val resumeItems =
+                        ApiRequestPager(
+                            api,
+                            resumeItemsRequest,
+                            GetResumeItemsRequestHandler,
+                            viewModelScope,
+                            useSeriesForPrimary = true,
+                        ).init()
 
-                val nextUpRequest =
-                    GetNextUpRequest(
-                        parentId = parentId,
-                        fields = SlimItemFields,
-                        enableUserData = true,
+                    val nextUpRequest =
+                        GetNextUpRequest(
+                            parentId = parentId,
+                            fields = SlimItemFields,
+                            enableUserData = true,
+                        )
+                    val nextUpItems =
+                        ApiRequestPager(
+                            api,
+                            nextUpRequest,
+                            GetNextUpRequestHandler,
+                            viewModelScope,
+                            useSeriesForPrimary = true,
+                        ).init()
+
+                    update(
+                        0,
+                        HomeRowLoadingState.Success(
+                            context.getString(R.string.continue_watching),
+                            resumeItems,
+                        ),
                     )
-                val nextUpItems = ApiRequestPager(api, nextUpRequest, GetNextUpRequestHandler, viewModelScope, useSeriesForPrimary = true)
+                    update(
+                        1,
+                        HomeRowLoadingState.Success(
+                            context.getString(R.string.next_up),
+                            nextUpItems,
+                        ),
+                    )
+
+                    withContext(Dispatchers.Main) {
+                        loading.value = LoadingState.Success
+                    }
+                } catch (ex: Exception) {
+                    Timber.e(ex, "Exception fetching tv recommendations")
+                    withContext(Dispatchers.Main) {
+                        loading.value = LoadingState.Error(ex)
+                    }
+                }
 
                 val recentlyReleasedRequest =
                     GetItemsRequest(
@@ -120,22 +176,49 @@ class RecommendedTvShowViewModel
                     ApiRequestPager(api, unwatchedTopRatedRequest, GetItemsRequestHandler, viewModelScope, useSeriesForPrimary = true)
 
                 val rows =
-                    listOf(resumeItems, nextUpItems, recentlyReleasedItems, recentlyAddedItems, suggestedItems, unwatchedTopRatedItems)
-                rows.forEach { it.init() }
-                val homeRows =
                     listOf(
-                        HomeRow(R.string.continue_watching, resumeItems),
-                        HomeRow(R.string.next_up, nextUpItems),
-                        HomeRow(R.string.recently_released, recentlyReleasedItems),
-                        HomeRow(R.string.recently_added, recentlyAddedItems),
-                        HomeRow(R.string.suggestions, suggestedItems),
-                        HomeRow(R.string.top_unwatched, unwatchedTopRatedItems),
-                    ).filter { it.items.isNotEmpty() }
-                withContext(Dispatchers.Main) {
-                    this@RecommendedTvShowViewModel.rows.value = homeRows
-                    loading.value = LoadingState.Success
+                        R.string.recently_released to recentlyReleasedItems,
+                        R.string.recently_added to recentlyAddedItems,
+                        R.string.suggestions to suggestedItems,
+                        R.string.top_unwatched to unwatchedTopRatedItems,
+                    )
+
+                rows.forEachIndexed { index, (title, pager) ->
+                    viewModelScope.launchIO {
+                        val title = context.getString(title)
+                        val result =
+                            try {
+                                pager.init()
+                                HomeRowLoadingState.Success(title, pager)
+                            } catch (ex: Exception) {
+                                Timber.e(ex, "Error fetching %s", title)
+                                HomeRowLoadingState.Error(title, null, ex)
+                            }
+                        update(index + 2, result)
+                    }
                 }
             }
+        }
+
+        private fun update(
+            position: Int,
+            row: HomeRowLoadingState,
+        ) {
+            rows.update { current ->
+                current.apply { set(position, row) }
+            }
+        }
+
+        companion object {
+            private val rowTitles =
+                listOf(
+                    R.string.continue_watching,
+                    R.string.next_up,
+                    R.string.recently_released,
+                    R.string.recently_added,
+                    R.string.suggestions,
+                    R.string.top_unwatched,
+                )
         }
     }
 
@@ -155,7 +238,7 @@ fun RecommendedTvShow(
         viewModel.init(preferences, parentId)
     }
     val loading by viewModel.loading.observeAsState(LoadingState.Loading)
-    val rows by viewModel.rows.observeAsState(listOf())
+    val rows by viewModel.rows.collectAsState(listOf())
 
     when (val state = loading) {
         is LoadingState.Error -> ErrorMessage(state)
