@@ -293,17 +293,11 @@ class SeriesViewModel
             itemId: UUID,
             listIndex: Int,
         ) = viewModelScope.launch(ExceptionHandler() + Dispatchers.IO) {
-            val base = api.userLibraryApi.getItem(itemId).content
-            val item = BaseItem.Companion.from(base, api)
             val eps = episodes.value
             if (eps is EpisodeList.Success) {
-                val newItems =
-                    eps.episodes.toMutableList().apply {
-                        this[listIndex] = item
-                    }
-                val newValue = eps.copy(episodes = newItems)
+                eps.episodes.refreshItem(listIndex, itemId)
                 withContext(Dispatchers.Main) {
-                    episodes.value = newValue
+                    episodes.value = eps
                 }
             }
         }
@@ -409,7 +403,7 @@ sealed interface EpisodeList {
     }
 
     data class Success(
-        val episodes: List<BaseItem?>,
+        val episodes: ApiRequestPager<GetEpisodesRequest>,
         val initialIndex: Int,
     ) : EpisodeList
 }

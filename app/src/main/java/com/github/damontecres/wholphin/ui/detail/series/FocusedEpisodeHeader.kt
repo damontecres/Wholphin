@@ -24,18 +24,18 @@ import org.jellyfin.sdk.model.extensions.ticks
 
 @Composable
 fun FocusedEpisodeHeader(
-    ep: BaseItem,
+    ep: BaseItem?,
     overviewOnClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
-    val dto = ep.data
+    val dto = ep?.data
     Column(
         verticalArrangement = Arrangement.spacedBy(4.dp),
         modifier = modifier,
     ) {
         Text(
-            text = dto.episodeTitle ?: dto.name ?: "",
+            text = dto?.episodeTitle ?: dto?.name ?: "",
             style = MaterialTheme.typography.headlineSmall,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
@@ -46,17 +46,17 @@ fun FocusedEpisodeHeader(
         ) {
             val details =
                 buildList {
-                    dto.seasonEpisode?.let(::add)
-                    dto.premiereDate?.let { add(formatDateTime(it)) }
-                    val duration = dto.runTimeTicks?.ticks
+                    dto?.seasonEpisode?.let(::add)
+                    dto?.premiereDate?.let { add(formatDateTime(it)) }
+                    val duration = dto?.runTimeTicks?.ticks
                     duration
                         ?.roundMinutes
                         ?.toString()
                         ?.let {
                             add(it)
                         }
-                    dto.officialRating?.let(::add)
-                    dto.timeRemaining?.roundMinutes?.let { add("$it left") }
+                    dto?.officialRating?.let(::add)
+                    dto?.timeRemaining?.roundMinutes?.let { add("$it left") }
                 }
             DotSeparatedRow(
                 texts = details,
@@ -68,12 +68,12 @@ fun FocusedEpisodeHeader(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             SimpleStarRating(
-                dto.communityRating,
+                dto?.communityRating,
                 Modifier.height(20.dp),
             )
         }
         OverviewText(
-            overview = dto.overview ?: "",
+            overview = dto?.overview ?: "",
             maxLines = 3,
             onClick = overviewOnClick,
         )
