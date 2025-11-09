@@ -300,6 +300,19 @@ fun PreferencesContent(
                                 )
                             }
 
+                            SubtitleSettings.Reset -> {
+                                ClickPreference(
+                                    title = stringResource(pref.title),
+                                    onClick = {
+                                        viewModel.resetSubtitleSettings()
+                                    },
+                                    modifier = Modifier,
+                                    summary = pref.summary(context, null),
+                                    onLongClick = {},
+                                    interactionSource = interactionSource,
+                                )
+                            }
+
                             else -> {
                                 val value = pref.getter.invoke(preferences)
                                 ComposablePreference(

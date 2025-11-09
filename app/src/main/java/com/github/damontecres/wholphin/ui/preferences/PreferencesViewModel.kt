@@ -1,6 +1,7 @@
 package com.github.damontecres.wholphin.ui.preferences
 
 import android.content.Context
+import androidx.compose.ui.graphics.toArgb
 import androidx.datastore.core.DataStore
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -12,10 +13,12 @@ import com.github.damontecres.wholphin.data.isPinned
 import com.github.damontecres.wholphin.data.model.NavDrawerPinnedItem
 import com.github.damontecres.wholphin.data.model.NavPinType
 import com.github.damontecres.wholphin.preferences.AppPreferences
+import com.github.damontecres.wholphin.preferences.updateSubtitlePreferences
 import com.github.damontecres.wholphin.ui.detail.DebugViewModel.Companion.sendAppLogs
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.nav.NavDrawerItem
 import com.github.damontecres.wholphin.ui.nav.NavigationManager
+import com.github.damontecres.wholphin.ui.preferences.subtitle.SubtitleSettings
 import com.github.damontecres.wholphin.ui.setValueOnMain
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.RememberTabManager
@@ -90,5 +93,28 @@ class PreferencesViewModel
 
         fun sendAppLogs() {
             sendAppLogs(context, api, clientInfo, deviceInfo)
+        }
+
+        fun resetSubtitleSettings() {
+            viewModelScope.launchIO {
+                resetSubtitleSettings(preferenceDataStore)
+            }
+        }
+
+        companion object {
+            suspend fun resetSubtitleSettings(appPreferences: DataStore<AppPreferences>) {
+                appPreferences.updateData {
+                    it.updateSubtitlePreferences {
+                        fontSize = SubtitleSettings.FontSize.defaultValue.toInt()
+                        fontColor = SubtitleSettings.FontColor.defaultValue.toArgb()
+                        fontOpacity = SubtitleSettings.FontOpacity.defaultValue.toInt()
+                        edgeColor = SubtitleSettings.EdgeColor.defaultValue.toArgb()
+                        edgeStyle = SubtitleSettings.EdgeStylePref.defaultValue
+                        backgroundColor = SubtitleSettings.BackgroundColor.defaultValue.toArgb()
+                        backgroundOpacity = SubtitleSettings.BackgroundOpacity.defaultValue.toInt()
+                        backgroundStyle = SubtitleSettings.BackgroundStylePref.defaultValue
+                    }
+                }
+            }
         }
     }

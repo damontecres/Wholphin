@@ -7,6 +7,7 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.ui.CaptionStyleCompat
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.preferences.AppChoicePreference
+import com.github.damontecres.wholphin.preferences.AppClickablePreference
 import com.github.damontecres.wholphin.preferences.AppSliderPreference
 import com.github.damontecres.wholphin.preferences.BackgroundStyle
 import com.github.damontecres.wholphin.preferences.EdgeStyle
@@ -157,6 +158,13 @@ object SubtitleSettings {
             valueToIndex = { it.number },
         )
 
+    val Reset =
+        AppClickablePreference(
+            title = R.string.reset,
+            getter = { },
+            setter = { prefs, _ -> prefs },
+        )
+
     val preferences =
         listOf(
             PreferenceGroup(
@@ -171,6 +179,7 @@ object SubtitleSettings {
                         BackgroundStylePref,
                         BackgroundColor,
                         BackgroundOpacity,
+                        Reset,
                     ),
             ),
         )
