@@ -105,16 +105,6 @@ class MpvPlayer(
         MPVLib.setOptionString("demuxer-max-bytes", "${cacheMegs * 1024 * 1024}")
         MPVLib.setOptionString("demuxer-max-back-bytes", "${cacheMegs * 1024 * 1024}")
 
-        // TODO make configurable
-        // Subtitle styling
-        MPVLib.setPropertyInt("sub-font-size", 56)
-        MPVLib.setPropertyColor("sub-color", Color.White)
-        MPVLib.setPropertyColor("sub-outline-color", Color.Black)
-        MPVLib.setPropertyDouble("sub-outline-size", 1.65)
-
-        // sub-back-color
-        // sub-border-style
-
         MPVLib.init()
 
         MPVLib.setOptionString("force-window", "no")
@@ -752,7 +742,7 @@ class MpvPlayer(
         set(value) = MPVLib.setPropertyDouble("sub-delay", value)
 }
 
-private fun MPVLib.setPropertyColor(
+fun MPVLib.setPropertyColor(
     property: String,
     color: Color,
 ) = MPVLib.setPropertyString(property, color.mpvFormat)
