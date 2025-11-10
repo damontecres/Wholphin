@@ -87,11 +87,12 @@ fun HomePage(
     val context = LocalContext.current
     var firstLoad by rememberSaveable { mutableStateOf(true) }
     LaunchedEffect(Unit) {
-        viewModel.init(preferences).join()
+        viewModel.init(firstLoad, preferences).join()
         firstLoad = false
     }
     val loading by viewModel.loadingState.observeAsState(LoadingState.Loading)
-    val homeRows by viewModel.homeRows.observeAsState(listOf())
+    val watchingRows by viewModel.watchingRows.observeAsState(listOf())
+    val latestRows by viewModel.latestRows.observeAsState(listOf())
     LaunchedEffect(loading) {
         val state = loading
         if (!firstLoad && state is LoadingState.Error) {
@@ -118,7 +119,7 @@ fun HomePage(
             var showPlaylistDialog by remember { mutableStateOf<UUID?>(null) }
             val playlistState by playlistViewModel.playlistState.observeAsState(PlaylistLoadingState.Pending)
             HomePageContent(
-                homeRows,
+                watchingRows + latestRows,
                 onClickItem = {
                     viewModel.navigationManager.navigateTo(it.destination())
                 },
