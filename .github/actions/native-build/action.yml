@@ -37,7 +37,7 @@ runs:
       with:
         path: |
           app/src/main/libs
-        key: ${{ runner.os }}-libmpv-${{ hashFiles('**/scripts/mpv/*.sh', '**/scripts/mpv/include/*', '**/scripts/mpv/scripts/*') }}
+        key: ${{ runner.os }}-libmpv-${{ hashFiles('**/scripts/mpv/*.sh', '**/scripts/mpv/include/*', '**/scripts/mpv/scripts/*', 'app/src/main/jni/*') }}
 
     - name: Install dependencies
       if: steps.cache_libmpv_module.outputs.cache-hit != 'true'
