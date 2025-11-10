@@ -1,8 +1,10 @@
 package com.github.damontecres.wholphin.util
 
 import android.content.Context
+import androidx.annotation.OptIn
 import androidx.datastore.core.DataStore
 import androidx.media3.common.Player
+import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.ExoPlayer
 import com.github.damontecres.wholphin.preferences.AppPreferences
@@ -18,6 +20,7 @@ import javax.inject.Singleton
  * Constructs a [Player] instance for video playback
  */
 @Singleton
+@OptIn(markerClass = [UnstableApi::class])
 class PlayerFactory
     @Inject
     constructor(
