@@ -33,8 +33,9 @@ class PlayerFactory
             private set
 
         fun createVideoPlayer(): Player {
-            if (currentPlayer?.isReleased == true) {
-                throw IllegalStateException("Player was not released before trying to create a new one!")
+            if (currentPlayer?.isReleased == false) {
+                Timber.w("Player was not released before trying to create a new one!")
+                currentPlayer?.release()
             }
 
             val extensions =
