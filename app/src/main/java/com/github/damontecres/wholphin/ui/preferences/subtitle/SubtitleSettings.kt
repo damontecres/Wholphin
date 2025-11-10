@@ -281,6 +281,11 @@ object SubtitleSettings {
             }
         }
 
+        if (fontBold) {
+            MPVLib.setPropertyString("sub-font", "Droid Sans Bold")
+        } else {
+            MPVLib.setPropertyString("sub-font", "Droid Sans")
+        }
         MPVLib.setPropertyBoolean("sub-bold", fontBold)
         MPVLib.setPropertyBoolean("sub-italic", fontItalic)
 

@@ -41,6 +41,7 @@ import com.github.damontecres.wholphin.util.mpv.MPVLib.MpvEvent.MPV_EVENT_FILE_L
 import com.github.damontecres.wholphin.util.mpv.MPVLib.MpvEvent.MPV_EVENT_PLAYBACK_RESTART
 import com.github.damontecres.wholphin.util.mpv.MPVLib.MpvEvent.MPV_EVENT_VIDEO_RECONFIG
 import timber.log.Timber
+import java.io.File
 import kotlin.concurrent.atomics.ExperimentalAtomicApi
 import kotlin.time.Duration.Companion.seconds
 
@@ -109,6 +110,7 @@ class MpvPlayer(
 
         MPVLib.setOptionString("force-window", "no")
         MPVLib.setOptionString("idle", "yes")
+        MPVLib.setOptionString("sub-fonts-dir", File(context.filesDir, "fonts").absolutePath)
 
         MPVLib.addObserver(this)
         MPVProperty.observedProperties.forEach(MPVLib::observeProperty)
