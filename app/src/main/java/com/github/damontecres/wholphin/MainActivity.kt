@@ -37,6 +37,7 @@ import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.nav.NavigationManager
 import com.github.damontecres.wholphin.ui.theme.WholphinTheme
 import com.github.damontecres.wholphin.util.AppUpgradeHandler
+import com.github.damontecres.wholphin.util.PlaybackLifecycleObserver
 import com.github.damontecres.wholphin.util.ServerEventListener
 import com.github.damontecres.wholphin.util.UpdateChecker
 import com.github.damontecres.wholphin.util.profile.createDeviceProfile
@@ -70,10 +71,14 @@ class MainActivity : AppCompatActivity() {
     @Inject
     lateinit var serverEventListener: ServerEventListener
 
+    @Inject
+    lateinit var playbackLifecycleObserver: PlaybackLifecycleObserver
+
     @OptIn(ExperimentalTvMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
         Timber.i("MainActivity.onCreate")
+        super.onCreate(savedInstanceState)
+        lifecycle.addObserver(playbackLifecycleObserver)
         setContent {
             CoilConfig(okHttpClient, false)
             val appPreferences by userPreferencesDataStore.data.collectAsState(null)
@@ -174,12 +179,5 @@ class MainActivity : AppCompatActivity() {
         lifecycleScope.launchIO {
             appUpgradeHandler.run()
         }
-    }
-
-    override fun onPause() {
-        if (navigationManager.backStack.lastOrNull() is Destination.Playback) {
-            navigationManager.goBack()
-        }
-        super.onPause()
     }
 }
