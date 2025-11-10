@@ -45,6 +45,11 @@ static void sendEventToJava(JNIEnv *env, int event)
     env->CallStaticVoidMethod(mpv_MPVLib, mpv_MPVLib_event, event);
 }
 
+static void sendEndFileEventToJava(JNIEnv *env, mpv_event_end_file *event)
+{
+    env->CallStaticVoidMethod(mpv_MPVLib, mpv_MPVLib_end_file_event, event->reason, event->error);
+}
+
 static void sendLogMessageToJava(JNIEnv *env, mpv_event_log_message *msg)
 {
     // filter the most obvious cases of invalid utf-8, since Java would choke on it
@@ -79,6 +84,7 @@ void *event_thread(void *arg)
         mpv_event *mp_event;
         mpv_event_property *mp_property = NULL;
         mpv_event_log_message *msg = NULL;
+        mpv_event_end_file *mp_end_file = NULL;
 
         mp_event = mpv_wait_event(g_mpv, -1.0);
 
@@ -98,6 +104,9 @@ void *event_thread(void *arg)
             mp_property = (mpv_event_property*)mp_event->data;
             sendPropertyUpdateToJava(env, mp_property);
             break;
+        case MPV_EVENT_END_FILE:
+            mp_end_file = (mpv_event_end_file*)mp_event->data;
+            sendEndFileEventToJava(env, mp_end_file);
         default:
             ALOGV("event: %s\n", mpv_event_name(mp_event->event_id));
             sendEventToJava(env, mp_event->event_id);

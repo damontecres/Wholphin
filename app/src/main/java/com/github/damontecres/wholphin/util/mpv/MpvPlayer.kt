@@ -35,6 +35,9 @@ import androidx.media3.common.util.Util
 import androidx.media3.exoplayer.trackselection.DefaultTrackSelector
 import androidx.media3.exoplayer.trackselection.TrackSelector
 import androidx.media3.exoplayer.upstream.DefaultBandwidthMeter
+import com.github.damontecres.wholphin.util.mpv.MPVLib.MpvEndFileReason.MPV_END_FILE_REASON_EOF
+import com.github.damontecres.wholphin.util.mpv.MPVLib.MpvEndFileReason.MPV_END_FILE_REASON_ERROR
+import com.github.damontecres.wholphin.util.mpv.MPVLib.MpvEndFileReason.MPV_END_FILE_REASON_STOP
 import com.github.damontecres.wholphin.util.mpv.MPVLib.MpvEvent.MPV_EVENT_AUDIO_RECONFIG
 import com.github.damontecres.wholphin.util.mpv.MPVLib.MpvEvent.MPV_EVENT_END_FILE
 import com.github.damontecres.wholphin.util.mpv.MPVLib.MpvEvent.MPV_EVENT_FILE_LOADED
@@ -83,6 +86,7 @@ class MpvPlayer(
     private var positionMs: Long = -1L
     private var playbackState: Int = STATE_READY
 
+    @Volatile
     var isReleased = false
         private set
 
@@ -277,9 +281,15 @@ class MpvPlayer(
     }
 
     override fun stop() {
-        throwIfReleased()
         if (DEBUG) Timber.v("stop")
+        throwIfReleased()
         pause()
+        mediaItem = null
+        positionMs = -1L
+        durationMs = 0L
+        playbackState = STATE_IDLE
+        notifyListeners(EVENT_IS_PLAYING_CHANGED) { onIsPlayingChanged(false) }
+        notifyListeners(EVENT_PLAYBACK_STATE_CHANGED) { onPlaybackStateChanged(STATE_IDLE) }
     }
 
     override fun release() {
@@ -294,6 +304,7 @@ class MpvPlayer(
 
     override fun getCurrentTracks(): Tracks {
         if (DEBUG) Timber.v("getCurrentTracks")
+        throwIfReleased()
         return getTracks()
     }
 
@@ -307,6 +318,7 @@ class MpvPlayer(
 
     override fun setTrackSelectionParameters(parameters: TrackSelectionParameters) {
         Timber.v("TrackSelection: setTrackSelectionParameters %s", parameters)
+        throwIfReleased()
         val tracks = getTracks()
         if (C.TRACK_TYPE_TEXT in parameters.disabledTrackTypes) {
             // Subtitles disabled
@@ -352,7 +364,7 @@ class MpvPlayer(
 
     override fun getMediaMetadata(): MediaMetadata {
         if (DEBUG) Timber.v("getMediaMetadata")
-        return mediaItem!!.mediaMetadata
+        return MediaMetadata.EMPTY
     }
 
     override fun getPlaylistMetadata(): MediaMetadata {
@@ -408,6 +420,7 @@ class MpvPlayer(
 
     override fun getTotalBufferedDuration(): Long {
         if (DEBUG) Timber.v("getTotalBufferedDuration")
+        if (isReleased) return 0
         return MPVLib.getPropertyDouble("demuxer-cache-duration")?.seconds?.inWholeMilliseconds ?: 0
     }
 
@@ -426,8 +439,7 @@ class MpvPlayer(
 
     override fun getAudioAttributes(): AudioAttributes = throw UnsupportedOperationException()
 
-    override fun setVolume(volume: Float) {
-    }
+    override fun setVolume(volume: Float): Unit = throw UnsupportedOperationException()
 
     override fun getVolume(): Float = 1f
 
@@ -622,20 +634,47 @@ class MpvPlayer(
 
             MPV_EVENT_END_FILE -> {
                 Timber.d("event: MPV_EVENT_END_FILE")
-                notifyListeners(EVENT_IS_PLAYING_CHANGED) { onIsPlayingChanged(false) }
-
-                val curPos = MPVLib.getPropertyDouble("time-pos/full")
-                Timber.v("MPV_EVENT_END_FILE: positionMs=$positionMs, durationMs=$durationMs, curPos=$curPos")
-                if (positionMs >= (durationMs - 1000) && curPos == null) {
-                    playbackState = STATE_ENDED
-                    notifyListeners(EVENT_PLAYBACK_STATE_CHANGED) {
-                        onPlaybackStateChanged(STATE_ENDED)
-                    }
-                }
+                // Handled by eventEndFile
             }
 
             else -> {
                 Timber.v("event: $eventId")
+            }
+        }
+    }
+
+    override fun eventEndFile(
+        reason: Int,
+        error: Int,
+    ) {
+        Timber.d("MPV_EVENT_END_FILE: %s %s", reason, error)
+        notifyListeners(EVENT_IS_PLAYING_CHANGED) { onIsPlayingChanged(false) }
+        when (reason) {
+            MPV_END_FILE_REASON_EOF -> {
+                notifyListeners(EVENT_PLAYBACK_STATE_CHANGED) {
+                    onPlaybackStateChanged(STATE_ENDED)
+                }
+            }
+
+            MPV_END_FILE_REASON_STOP -> {
+                // User initiated (eg stop, play next, etc)
+            }
+
+            MPV_END_FILE_REASON_ERROR -> {
+                Timber.e("libmpv error, error=%s", error)
+                notifyListeners(EVENT_PLAYER_ERROR) {
+                    onPlayerError(
+                        PlaybackException(
+                            "libmpv error",
+                            null,
+                            error,
+                        ),
+                    )
+                }
+            }
+
+            else -> {
+                // no-op
             }
         }
     }
@@ -743,8 +782,14 @@ class MpvPlayer(
     }
 
     var subtitleDelay: Double
-        get() = MPVLib.getPropertyDouble("sub-delay") ?: 0.0
-        set(value) = MPVLib.setPropertyDouble("sub-delay", value)
+        get() {
+            throwIfReleased()
+            return MPVLib.getPropertyDouble("sub-delay") ?: 0.0
+        }
+        set(value) {
+            throwIfReleased()
+            MPVLib.setPropertyDouble("sub-delay", value)
+        }
 }
 
 fun MPVLib.setPropertyColor(

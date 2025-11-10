@@ -170,6 +170,18 @@ object MPVLib {
         }
     }
 
+    @JvmStatic
+    fun eventEndFile(
+        reason: Int,
+        error: Int,
+    ) {
+        synchronized(observers) {
+            for (o in observers) {
+                o.eventEndFile(reason, error)
+            }
+        }
+    }
+
     private val log_observers = mutableListOf<LogObserver>()
 
     @JvmStatic
@@ -223,6 +235,11 @@ object MPVLib {
         )
 
         fun event(eventId: Int)
+
+        fun eventEndFile(
+            reason: Int,
+            error: Int,
+        )
     }
 
     interface LogObserver {
@@ -281,5 +298,37 @@ object MPVLib {
         const val MPV_LOG_LEVEL_V: Int = 50
         const val MPV_LOG_LEVEL_DEBUG: Int = 60
         const val MPV_LOG_LEVEL_TRACE: Int = 70
+    }
+
+    object MpvEndFileReason {
+        const val MPV_END_FILE_REASON_EOF: Int = 0
+        const val MPV_END_FILE_REASON_STOP: Int = 2
+        const val MPV_END_FILE_REASON_QUIT: Int = 3
+        const val MPV_END_FILE_REASON_ERROR: Int = 4
+        const val MPV_END_FILE_REASON_REDIRECT: Int = 5
+    }
+
+    object MpvError {
+        const val MPV_ERROR_SUCCESS = 0
+        const val MPV_ERROR_EVENT_QUEUE_FULL = -1
+        const val MPV_ERROR_NOMEM = -2
+        const val MPV_ERROR_UNINITIALIZED = -3
+        const val MPV_ERROR_INVALID_PARAMETER = -4
+        const val MPV_ERROR_OPTION_NOT_FOUND = -5
+        const val MPV_ERROR_OPTION_FORMAT = -6
+        const val MPV_ERROR_OPTION_ERROR = -7
+        const val MPV_ERROR_PROPERTY_NOT_FOUND = -8
+        const val MPV_ERROR_PROPERTY_FORMAT = -9
+        const val MPV_ERROR_PROPERTY_UNAVAILABLE = -10
+        const val MPV_ERROR_PROPERTY_ERROR = -11
+        const val MPV_ERROR_COMMAND = -12
+        const val MPV_ERROR_LOADING_FAILED = -13
+        const val MPV_ERROR_AO_INIT_FAILED = -14
+        const val MPV_ERROR_VO_INIT_FAILED = -15
+        const val MPV_ERROR_NOTHING_TO_PLAY = -16
+        const val MPV_ERROR_UNKNOWN_FORMAT = -17
+        const val MPV_ERROR_UNSUPPORTED = -18
+        const val MPV_ERROR_NOT_IMPLEMENTED = -19
+        const val MPV_ERROR_GENERIC = -20
     }
 }
