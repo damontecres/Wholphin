@@ -278,7 +278,7 @@ fun HomePageContent(
                         -> {
                             Column(
                                 verticalArrangement = Arrangement.spacedBy(8.dp),
-                                modifier = modifier,
+                                modifier = Modifier.animateItem(),
                             ) {
                                 Text(
                                     text = r.title,
@@ -296,7 +296,7 @@ fun HomePageContent(
                         is HomeRowLoadingState.Error -> {
                             Column(
                                 verticalArrangement = Arrangement.spacedBy(8.dp),
-                                modifier = modifier,
+                                modifier = Modifier.animateItem(),
                             ) {
                                 Text(
                                     text = r.title,
@@ -324,7 +324,10 @@ fun HomePageContent(
                                         }
                                     },
                                     onLongClickItem = onLongClickItem,
-                                    modifier = Modifier.fillMaxWidth(),
+                                    modifier =
+                                        Modifier
+                                            .fillMaxWidth()
+                                            .animateItem(),
                                     cardContent = { index, item, cardModifier, onClick, onLongClick ->
                                         // TODO better aspect ration handling?
                                         BannerCard(
