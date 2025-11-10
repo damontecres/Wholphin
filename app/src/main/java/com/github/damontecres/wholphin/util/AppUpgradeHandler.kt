@@ -63,9 +63,9 @@ class AppUpgradeHandler
 
         fun copySubfont(overwrite: Boolean) {
             try {
-                listOf("DroidSans", "DroidSans-Bold")
+                listOf("Roboto-Regular", "Roboto-Bold")
                     .forEach { font ->
-                        val fontFileName = "font-droid-sans/$font.ttf"
+                        val fontFileName = "font-roboto/$font.ttf"
                         val outputDir = File(context.filesDir, "fonts")
                         if (!outputDir.exists()) {
                             outputDir.mkdir()
@@ -82,7 +82,7 @@ class AppUpgradeHandler
                     }
                 val oldFont = File(context.filesDir, "subfont.ttf")
                 if (oldFont.exists()) {
-                    Timber.w("Old font exists, will delete it")
+                    Timber.w("Old subfont.tff exists, will delete it")
                     oldFont.delete()
                 }
             } catch (ex: Exception) {
