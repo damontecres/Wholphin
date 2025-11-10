@@ -76,13 +76,13 @@ class TrackActivityPlaybackListener(
     fun release() {
         task.cancel()
         TIMER.purge()
-        val position = player.currentPosition.milliseconds.inWholeTicks
+        val position = player.currentPosition.milliseconds
         coroutineScope.launch(Dispatchers.IO + ExceptionHandler()) {
-            Timber.v("reportPlaybackStopped for ${itemPlayback.itemId}")
+            Timber.v("reportPlaybackStopped for ${itemPlayback.itemId} at $position")
             api.playStateApi.reportPlaybackStopped(
                 PlaybackStopInfo(
                     itemId = itemPlayback.itemId,
-                    positionTicks = position,
+                    positionTicks = position.inWholeTicks,
                     failed = false,
                     playSessionId = playback.playSessionId,
                     liveStreamId = playback.liveStreamId,
