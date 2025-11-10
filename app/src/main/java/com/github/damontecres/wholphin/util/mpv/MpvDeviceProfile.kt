@@ -43,6 +43,7 @@ val mpvDeviceProfile =
                 Codec.Container.MKV,
                 Codec.Container.MOV,
                 Codec.Container.MP4,
+                Codec.Container.MPG,
                 Codec.Container.OGM,
                 Codec.Container.OGV,
                 Codec.Container.TS,
@@ -62,7 +63,7 @@ val mpvDeviceProfile =
                 Codec.Video.VP9,
             )
 
-            audioCodec(*supportedAudioCodecs)
+            audioCodec(*supportedAudioCodecs, Codec.Audio.WAV, Codec.Audio.OGG)
         }
 
         subtitleProfile(Codec.Subtitle.VTT, embedded = true, hls = true, external = true)
@@ -71,6 +72,7 @@ val mpvDeviceProfile =
         subtitleProfile(Codec.Subtitle.SUBRIP, embedded = true, external = true)
         subtitleProfile(Codec.Subtitle.TTML, embedded = true, external = true)
         subtitleProfile(Codec.Subtitle.DVBSUB, embedded = true, encode = true)
+        subtitleProfile(Codec.Subtitle.DVDSUB, embedded = true, encode = true)
         subtitleProfile(Codec.Subtitle.IDX, embedded = true, encode = true)
         subtitleProfile(Codec.Subtitle.PGS, embedded = true, encode = true)
         subtitleProfile(Codec.Subtitle.PGSSUB, embedded = true, encode = true)

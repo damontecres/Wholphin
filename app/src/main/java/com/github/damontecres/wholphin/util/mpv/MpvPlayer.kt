@@ -597,6 +597,8 @@ class MpvPlayer(
 
     override fun event(eventId: Int) {
         when (eventId) {
+//            MPV_EVENT_START_FILE -> {
+//            }
             MPV_EVENT_FILE_LOADED -> {
                 Timber.d("event: MPV_EVENT_FILE_LOADED")
                 mediaItem!!.localConfiguration?.subtitleConfigurations?.forEach {
@@ -605,6 +607,7 @@ class MpvPlayer(
                     Timber.v("Adding external subtitle track '$title'")
                     MPVLib.command(arrayOf("sub-add", url, "auto", title))
                 }
+                notifyListeners(EVENT_RENDERED_FIRST_FRAME) { onRenderedFirstFrame() }
                 notifyListeners(EVENT_IS_PLAYING_CHANGED) { onIsPlayingChanged(true) }
                 getTracks().let {
                     notifyListeners(EVENT_TRACKS_CHANGED) { onTracksChanged(it) }

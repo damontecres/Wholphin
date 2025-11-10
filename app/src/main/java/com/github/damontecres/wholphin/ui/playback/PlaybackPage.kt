@@ -177,7 +177,7 @@ fun PlaybackPage(
             var playbackSpeed by remember { mutableFloatStateOf(1.0f) }
             LaunchedEffect(playbackSpeed) { player.setPlaybackSpeed(playbackSpeed) }
 
-            val presentationState = rememberPresentationState(player)
+            val presentationState = rememberPresentationState(player, false)
             val scaledModifier =
                 Modifier.resizeWithContentScale(contentScale, presentationState.videoSizeDp)
             val focusRequester = remember { FocusRequester() }
@@ -251,7 +251,7 @@ fun PlaybackPage(
                         surfaceType = SURFACE_TYPE_SURFACE_VIEW,
                         modifier = scaledModifier,
                     )
-                    if (false && presentationState.coverSurface) {
+                    if (presentationState.coverSurface) {
                         Box(
                             Modifier
                                 .matchParentSize()

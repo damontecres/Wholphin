@@ -545,7 +545,7 @@ class PlaybackViewModel
                 }
                 val transcodeType =
                     when {
-                        playerBackend == PlayerBackend.MPV -> PlayMethod.DIRECT_PLAY
+//                        playerBackend == PlayerBackend.MPV -> PlayMethod.DIRECT_PLAY
                         source.supportsDirectPlay -> PlayMethod.DIRECT_PLAY
                         source.supportsDirectStream -> PlayMethod.DIRECT_STREAM
                         source.supportsTranscoding -> PlayMethod.TRANSCODE
