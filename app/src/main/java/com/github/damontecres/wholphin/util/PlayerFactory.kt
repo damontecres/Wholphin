@@ -1,3 +1,5 @@
+@file:OptIn(markerClass = [UnstableApi::class])
+
 package com.github.damontecres.wholphin.util
 
 import android.content.Context
@@ -20,7 +22,6 @@ import javax.inject.Singleton
  * Constructs a [Player] instance for video playback
  */
 @Singleton
-@OptIn(markerClass = [UnstableApi::class])
 class PlayerFactory
     @Inject
     constructor(
