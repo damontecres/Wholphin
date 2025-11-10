@@ -42,3 +42,29 @@ sealed interface RowLoadingState {
             listOfNotNull(message, exception?.localizedMessage).joinToString(" - ")
     }
 }
+
+sealed interface HomeRowLoadingState {
+    val title: String
+
+    data class Pending(
+        override val title: String,
+    ) : HomeRowLoadingState
+
+    data class Loading(
+        override val title: String,
+    ) : HomeRowLoadingState
+
+    data class Success(
+        override val title: String,
+        val items: List<BaseItem?>,
+    ) : HomeRowLoadingState
+
+    data class Error(
+        override val title: String,
+        val message: String? = null,
+        val exception: Throwable? = null,
+    ) : HomeRowLoadingState {
+        val localizedMessage: String =
+            listOfNotNull(message, exception?.localizedMessage).joinToString(" - ")
+    }
+}

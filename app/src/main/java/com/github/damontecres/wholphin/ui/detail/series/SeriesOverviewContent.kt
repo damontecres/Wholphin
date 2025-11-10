@@ -162,13 +162,11 @@ fun SeriesOverviewContent(
             }
             item {
                 // Episode header
-                focusedEpisode?.let { ep ->
-                    FocusedEpisodeHeader(
-                        ep = ep,
-                        overviewOnClick = overviewOnClick,
-                        modifier = Modifier.fillMaxWidth(.66f),
-                    )
-                }
+                FocusedEpisodeHeader(
+                    ep = focusedEpisode,
+                    overviewOnClick = overviewOnClick,
+                    modifier = Modifier.fillMaxWidth(.66f),
+                )
             }
             item {
                 key(position.seasonTabIndex) {

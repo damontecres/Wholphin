@@ -1,7 +1,6 @@
 package com.github.damontecres.wholphin.ui.main
 
 import android.widget.Toast
-import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -67,6 +66,7 @@ import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.roundMinutes
 import com.github.damontecres.wholphin.ui.timeRemaining
 import com.github.damontecres.wholphin.ui.tryRequestFocus
+import com.github.damontecres.wholphin.util.HomeRowLoadingState
 import com.github.damontecres.wholphin.util.LoadingState
 import com.github.damontecres.wholphin.util.formatDateTime
 import com.github.damontecres.wholphin.util.seasonEpisode
@@ -76,22 +76,6 @@ import org.jellyfin.sdk.model.api.MediaType
 import org.jellyfin.sdk.model.extensions.ticks
 import java.util.UUID
 import kotlin.time.Duration
-
-data class HomeRow(
-    @param:StringRes val titleRes: Int?,
-    val title: String?,
-    val items: List<BaseItem?>,
-) {
-    constructor(
-        @StringRes titleRes: Int,
-        items: List<BaseItem?>,
-    ) : this(titleRes, null, items)
-
-    constructor(
-        title: String,
-        items: List<BaseItem?>,
-    ) : this(null, title, items)
-}
 
 @Composable
 fun HomePage(
@@ -203,7 +187,7 @@ fun HomePage(
 
 @Composable
 fun HomePageContent(
-    homeRows: List<HomeRow>,
+    homeRows: List<HomeRowLoadingState>,
     onClickItem: (BaseItem) -> Unit,
     onLongClickItem: (BaseItem) -> Unit,
     showClock: Boolean,
@@ -215,7 +199,10 @@ fun HomePageContent(
     var position by rememberSaveable(stateSaver = RowColumnSaver) {
         mutableStateOf(RowColumn(0, 0))
     }
-    var focusedItem = position.let { homeRows.getOrNull(it.row)?.items?.getOrNull(it.column) }
+    var focusedItem =
+        position.let {
+            (homeRows.getOrNull(it.row) as? HomeRowLoadingState.Success)?.items?.getOrNull(it.column)
+        }
 
     val listState = rememberLazyListState()
     val focusRequester = remember { FocusRequester() }
@@ -284,55 +271,101 @@ fun HomePageContent(
                 modifier = Modifier,
             ) {
                 itemsIndexed(homeRows) { rowIndex, row ->
-                    if (row.items.isNotEmpty()) {
-                        ItemRow(
-                            title = row.title ?: row.titleRes?.let { stringResource(it) } ?: "",
-                            items = row.items,
-                            onClickItem = onClickItem,
-                            cardOnFocus = { isFocused, index ->
-                                if (isFocused) {
-                                    focusedItem = row.items.getOrNull(index)
-                                    position = RowColumn(rowIndex, index)
-                                }
-                            },
-                            onLongClickItem = onLongClickItem,
-                            modifier = Modifier.fillMaxWidth(),
-                            cardContent = { index, item, cardModifier, onClick, onLongClick ->
-                                // TODO better aspect ration handling?
-                                BannerCard(
-                                    name = item?.data?.seriesName ?: item?.name,
-                                    imageUrl = item?.imageUrl,
-                                    aspectRatio = (2f / 3f),
-                                    cornerText =
-                                        item?.data?.indexNumber?.let { "E$it" }
-                                            ?: item?.data?.childCount?.let { if (it > 0) it.toString() else null },
-                                    played = item?.data?.userData?.played ?: false,
-                                    playPercent = item?.data?.userData?.playedPercentage ?: 0.0,
-                                    onClick = onClick,
-                                    onLongClick = onLongClick,
-                                    modifier =
-                                        cardModifier
-                                            .ifElse(
-                                                focusedItem == item,
-                                                Modifier.focusRequester(focusRequester),
-                                            ).ifElse(
-                                                RowColumn(rowIndex, index) == position,
-                                                Modifier.focusRequester(positionFocusRequester),
-                                            ).onFocusChanged {
-                                                if (it.isFocused) {
-                                                    onFocusPosition?.invoke(
-                                                        RowColumn(
-                                                            rowIndex,
-                                                            index,
-                                                        ),
-                                                    )
-                                                }
-                                            },
-                                    interactionSource = null,
-                                    cardHeight = Cards.height2x3,
+                    when (val r = row) {
+                        is HomeRowLoadingState.Loading,
+                        is HomeRowLoadingState.Pending,
+                        -> {
+                            Column(
+                                verticalArrangement = Arrangement.spacedBy(8.dp),
+                                modifier = modifier,
+                            ) {
+                                Text(
+                                    text = r.title,
+                                    style = MaterialTheme.typography.titleLarge,
+                                    color = MaterialTheme.colorScheme.onBackground,
                                 )
-                            },
-                        )
+                                Text(
+                                    text = stringResource(R.string.loading),
+                                    style = MaterialTheme.typography.titleMedium,
+                                    color = MaterialTheme.colorScheme.onBackground,
+                                )
+                            }
+                        }
+
+                        is HomeRowLoadingState.Error -> {
+                            Column(
+                                verticalArrangement = Arrangement.spacedBy(8.dp),
+                                modifier = modifier,
+                            ) {
+                                Text(
+                                    text = r.title,
+                                    style = MaterialTheme.typography.titleLarge,
+                                    color = MaterialTheme.colorScheme.onBackground,
+                                )
+                                Text(
+                                    text = r.localizedMessage,
+                                    style = MaterialTheme.typography.titleMedium,
+                                    color = MaterialTheme.colorScheme.error,
+                                )
+                            }
+                        }
+
+                        is HomeRowLoadingState.Success -> {
+                            if (row.items.isNotEmpty()) {
+                                ItemRow(
+                                    title = row.title,
+                                    items = row.items,
+                                    onClickItem = onClickItem,
+                                    cardOnFocus = { isFocused, index ->
+                                        if (isFocused) {
+                                            focusedItem = row.items.getOrNull(index)
+                                            position = RowColumn(rowIndex, index)
+                                        }
+                                    },
+                                    onLongClickItem = onLongClickItem,
+                                    modifier = Modifier.fillMaxWidth(),
+                                    cardContent = { index, item, cardModifier, onClick, onLongClick ->
+                                        // TODO better aspect ration handling?
+                                        BannerCard(
+                                            name = item?.data?.seriesName ?: item?.name,
+                                            imageUrl = item?.imageUrl,
+                                            aspectRatio = (2f / 3f),
+                                            cornerText =
+                                                item?.data?.indexNumber?.let { "E$it" }
+                                                    ?: item?.data?.childCount?.let { if (it > 0) it.toString() else null },
+                                            played = item?.data?.userData?.played ?: false,
+                                            playPercent =
+                                                item?.data?.userData?.playedPercentage
+                                                    ?: 0.0,
+                                            onClick = onClick,
+                                            onLongClick = onLongClick,
+                                            modifier =
+                                                cardModifier
+                                                    .ifElse(
+                                                        focusedItem == item,
+                                                        Modifier.focusRequester(focusRequester),
+                                                    ).ifElse(
+                                                        RowColumn(rowIndex, index) == position,
+                                                        Modifier.focusRequester(
+                                                            positionFocusRequester,
+                                                        ),
+                                                    ).onFocusChanged {
+                                                        if (it.isFocused) {
+                                                            onFocusPosition?.invoke(
+                                                                RowColumn(
+                                                                    rowIndex,
+                                                                    index,
+                                                                ),
+                                                            )
+                                                        }
+                                                    },
+                                            interactionSource = null,
+                                            cardHeight = Cards.height2x3,
+                                        )
+                                    },
+                                )
+                            }
+                        }
                     }
                 }
             }

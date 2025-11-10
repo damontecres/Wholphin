@@ -1,6 +1,8 @@
 package com.github.damontecres.wholphin.ui.components
 
+import android.content.Context
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Modifier
@@ -15,16 +17,23 @@ import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.OneTimeLaunchedEffect
 import com.github.damontecres.wholphin.ui.SlimItemFields
 import com.github.damontecres.wholphin.ui.data.RowColumn
+import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.main.HomePageContent
-import com.github.damontecres.wholphin.ui.main.HomeRow
 import com.github.damontecres.wholphin.util.ApiRequestPager
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.GetItemsRequestHandler
 import com.github.damontecres.wholphin.util.GetResumeItemsRequestHandler
 import com.github.damontecres.wholphin.util.GetSuggestionsRequestHandler
+import com.github.damontecres.wholphin.util.HomeRowLoadingState
 import com.github.damontecres.wholphin.util.LoadingState
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedFactory
+import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
@@ -34,33 +43,73 @@ import org.jellyfin.sdk.model.api.SortOrder
 import org.jellyfin.sdk.model.api.request.GetItemsRequest
 import org.jellyfin.sdk.model.api.request.GetResumeItemsRequest
 import org.jellyfin.sdk.model.api.request.GetSuggestionsRequest
+import timber.log.Timber
 import java.util.UUID
-import javax.inject.Inject
 
-@HiltViewModel
+@HiltViewModel(assistedFactory = RecommendedMovieViewModel.Factory::class)
 class RecommendedMovieViewModel
-    @Inject
+    @AssistedInject
     constructor(
+        @param:ApplicationContext private val context: Context,
         private val api: ApiClient,
         private val serverRepository: ServerRepository,
+        @Assisted val parentId: UUID,
     ) : ViewModel() {
-        val loading = MutableLiveData<LoadingState>(LoadingState.Loading)
-        val rows = MutableLiveData<List<HomeRow>>()
+        @AssistedFactory
+        interface Factory {
+            fun create(parentId: UUID): RecommendedMovieViewModel
+        }
 
-        fun init(
-            preferences: UserPreferences,
-            parentId: UUID,
-        ) {
+        val loading = MutableLiveData<LoadingState>(LoadingState.Loading)
+
+        val rows =
+            MutableStateFlow<MutableList<HomeRowLoadingState>>(
+                rowTitles
+                    .map {
+                        HomeRowLoadingState.Pending(
+                            context.getString(it),
+                        )
+                    }.toMutableList(),
+            )
+
+        fun init() {
             viewModelScope.launch(Dispatchers.IO + ExceptionHandler()) {
-                val resumeItemsRequest =
-                    GetResumeItemsRequest(
-                        parentId = parentId,
-                        fields = SlimItemFields,
-                        includeItemTypes = listOf(BaseItemKind.MOVIE),
-                        enableUserData = true,
+                try {
+                    val resumeItemsRequest =
+                        GetResumeItemsRequest(
+                            parentId = parentId,
+                            fields = SlimItemFields,
+                            includeItemTypes = listOf(BaseItemKind.MOVIE),
+                            enableUserData = true,
+                        )
+                    val resumeItems =
+                        ApiRequestPager(
+                            api,
+                            resumeItemsRequest,
+                            GetResumeItemsRequestHandler,
+                            viewModelScope,
+                        ).init()
+                    if (resumeItems.isNotEmpty()) {
+                        resumeItems.getBlocking(0)
+                    }
+
+                    update(
+                        0,
+                        HomeRowLoadingState.Success(
+                            context.getString(R.string.continue_watching),
+                            resumeItems,
+                        ),
                     )
-                val resumeItems =
-                    ApiRequestPager(api, resumeItemsRequest, GetResumeItemsRequestHandler, viewModelScope)
+
+                    withContext(Dispatchers.Main) {
+                        loading.value = LoadingState.Success
+                    }
+                } catch (ex: Exception) {
+                    Timber.e(ex, "Exception fetching movie recommendations")
+                    withContext(Dispatchers.Main) {
+                        loading.value = LoadingState.Error(ex)
+                    }
+                }
 
                 val recentlyReleasedRequest =
                     GetItemsRequest(
@@ -109,21 +158,49 @@ class RecommendedMovieViewModel
                 val unwatchedTopRatedItems =
                     ApiRequestPager(api, unwatchedTopRatedRequest, GetItemsRequestHandler, viewModelScope, useSeriesForPrimary = true)
 
-                val rows = listOf(resumeItems, recentlyReleasedItems, recentlyAddedItems, suggestedItems, unwatchedTopRatedItems)
-                rows.forEach { it.init() }
-                val homeRows =
+                val rows =
                     listOf(
-                        HomeRow(R.string.continue_watching, resumeItems),
-                        HomeRow(R.string.recently_released, recentlyReleasedItems),
-                        HomeRow(R.string.recently_added, recentlyAddedItems),
-                        HomeRow(R.string.suggestions, suggestedItems),
-                        HomeRow(R.string.top_unwatched, unwatchedTopRatedItems),
-                    ).filter { it.items.isNotEmpty() }
-                withContext(Dispatchers.Main) {
-                    this@RecommendedMovieViewModel.rows.value = homeRows
-                    loading.value = LoadingState.Success
+                        R.string.recently_released to recentlyReleasedItems,
+                        R.string.recently_added to recentlyAddedItems,
+                        R.string.suggestions to suggestedItems,
+                        R.string.top_unwatched to unwatchedTopRatedItems,
+                    )
+
+                rows.forEachIndexed { index, (title, pager) ->
+                    viewModelScope.launchIO {
+                        val title = context.getString(title)
+                        val result =
+                            try {
+                                pager.init()
+                                HomeRowLoadingState.Success(title, pager)
+                            } catch (ex: Exception) {
+                                Timber.e(ex, "Error fetching %s", title)
+                                HomeRowLoadingState.Error(title, null, ex)
+                            }
+                        update(index + 1, result)
+                    }
                 }
             }
+        }
+
+        private fun update(
+            position: Int,
+            row: HomeRowLoadingState,
+        ) {
+            rows.update { current ->
+                current.apply { set(position, row) }
+            }
+        }
+
+        companion object {
+            private val rowTitles =
+                listOf(
+                    R.string.continue_watching,
+                    R.string.recently_released,
+                    R.string.recently_added,
+                    R.string.suggestions,
+                    R.string.top_unwatched,
+                )
         }
     }
 
@@ -137,13 +214,16 @@ fun RecommendedMovie(
     onClickItem: (BaseItem) -> Unit,
     onFocusPosition: (RowColumn) -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: RecommendedMovieViewModel = hiltViewModel(),
+    viewModel: RecommendedMovieViewModel =
+        hiltViewModel<RecommendedMovieViewModel, RecommendedMovieViewModel.Factory>(
+            creationCallback = { it.create(parentId) },
+        ),
 ) {
     OneTimeLaunchedEffect {
-        viewModel.init(preferences, parentId)
+        viewModel.init()
     }
     val loading by viewModel.loading.observeAsState(LoadingState.Loading)
-    val rows by viewModel.rows.observeAsState(listOf())
+    val rows by viewModel.rows.collectAsState(listOf())
 
     when (val state = loading) {
         is LoadingState.Error -> ErrorMessage(state)
