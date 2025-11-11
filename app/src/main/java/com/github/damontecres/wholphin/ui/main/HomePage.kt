@@ -87,10 +87,11 @@ fun HomePage(
     val context = LocalContext.current
     var firstLoad by rememberSaveable { mutableStateOf(true) }
     LaunchedEffect(Unit) {
-        viewModel.init(firstLoad, preferences).join()
+        viewModel.init(preferences).join()
         firstLoad = false
     }
     val loading by viewModel.loadingState.observeAsState(LoadingState.Loading)
+    val refreshing by viewModel.refreshState.observeAsState(LoadingState.Loading)
     val watchingRows by viewModel.watchingRows.observeAsState(listOf())
     val latestRows by viewModel.latestRows.observeAsState(listOf())
     LaunchedEffect(loading) {
@@ -107,7 +108,7 @@ fun HomePage(
         }
     }
 
-    when (val state = if (firstLoad) loading else LoadingState.Success) {
+    when (val state = loading) {
         is LoadingState.Error -> ErrorMessage(state)
 
         LoadingState.Loading,
@@ -155,7 +156,7 @@ fun HomePage(
                             items = dialogItems,
                         )
                 },
-                loadingState = loading,
+                loadingState = refreshing,
                 showClock = preferences.appPreferences.interfacePreferences.showClock,
                 modifier = modifier,
             )

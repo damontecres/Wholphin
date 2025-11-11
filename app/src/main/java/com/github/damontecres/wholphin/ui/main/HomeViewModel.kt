@@ -52,18 +52,18 @@ class HomeViewModel
         val navDrawerItemRepository: NavDrawerItemRepository,
     ) : ViewModel() {
         val loadingState = MutableLiveData<LoadingState>(LoadingState.Pending)
+        val refreshState = MutableLiveData<LoadingState>(LoadingState.Pending)
         val watchingRows = MutableLiveData<List<HomeRowLoadingState>>(listOf())
         val latestRows = MutableLiveData<List<HomeRowLoadingState>>(listOf())
 
         private lateinit var preferences: UserPreferences
 
-        fun init(
-            firstLoad: Boolean,
-            preferences: UserPreferences,
-        ): Job {
-            if (firstLoad) {
+        fun init(preferences: UserPreferences): Job {
+            val reload = loadingState.value != LoadingState.Success
+            if (reload) {
                 loadingState.value = LoadingState.Loading
             }
+            refreshState.value = LoadingState.Loading
             this.preferences = preferences
             val prefs = preferences.appPreferences.homePagePreferences
             val limit = prefs.maxItemsPerRow
@@ -116,12 +116,13 @@ class HomeViewModel
 
                     withContext(Dispatchers.Main) {
                         this@HomeViewModel.watchingRows.value = watching
-                        if (firstLoad) {
+                        if (reload) {
                             this@HomeViewModel.latestRows.value = pendingLatest
                         }
                         loadingState.value = LoadingState.Success
                     }
                     loadLatest(latest)
+                    refreshState.setValueOnMain(LoadingState.Success)
                 }
             }
         }
@@ -263,7 +264,7 @@ class HomeViewModel
                 api.playStateApi.markUnplayedItem(itemId)
             }
             withContext(Dispatchers.Main) {
-                init(false, preferences)
+                init(preferences)
             }
         }
 
@@ -277,7 +278,7 @@ class HomeViewModel
                 api.userLibraryApi.unmarkFavoriteItem(itemId)
             }
             withContext(Dispatchers.Main) {
-                init(false, preferences)
+                init(preferences)
             }
         }
     }
