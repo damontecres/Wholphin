@@ -12,6 +12,7 @@ import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.SlimItemFields
 import com.github.damontecres.wholphin.ui.nav.NavigationManager
 import com.github.damontecres.wholphin.ui.nav.ServerNavDrawerItem
+import com.github.damontecres.wholphin.ui.setValueOnMain
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.HomeRowLoadingState
 import com.github.damontecres.wholphin.util.LoadingExceptionHandler
@@ -51,12 +52,18 @@ class HomeViewModel
         val navDrawerItemRepository: NavDrawerItemRepository,
     ) : ViewModel() {
         val loadingState = MutableLiveData<LoadingState>(LoadingState.Pending)
-        val homeRows = MutableLiveData<List<HomeRowLoadingState>>()
+        val refreshState = MutableLiveData<LoadingState>(LoadingState.Pending)
+        val watchingRows = MutableLiveData<List<HomeRowLoadingState>>(listOf())
+        val latestRows = MutableLiveData<List<HomeRowLoadingState>>(listOf())
 
         private lateinit var preferences: UserPreferences
 
         fun init(preferences: UserPreferences): Job {
-            loadingState.value = LoadingState.Loading
+            val reload = loadingState.value != LoadingState.Success
+            if (reload) {
+                loadingState.value = LoadingState.Loading
+            }
+            refreshState.value = LoadingState.Loading
             this.preferences = preferences
             val prefs = preferences.appPreferences.homePagePreferences
             val limit = prefs.maxItemsPerRow
@@ -84,9 +91,7 @@ class HomeViewModel
                             prefs.enableRewatchingNextUp,
                             prefs.combineContinueNext,
                         )
-                    val latest = getLatest(userDto, limit, includedIds)
-
-                    val homeRows =
+                    val watching =
                         buildList {
                             if (resume.isNotEmpty()) {
                                 add(
@@ -104,12 +109,20 @@ class HomeViewModel
                                     ),
                                 )
                             }
-                            addAll(latest)
                         }
+
+                    val latest = getLatest(userDto, limit, includedIds)
+                    val pendingLatest = latest.map { HomeRowLoadingState.Loading(it.title) }
+
                     withContext(Dispatchers.Main) {
-                        this@HomeViewModel.homeRows.value = homeRows
+                        this@HomeViewModel.watchingRows.value = watching
+                        if (reload) {
+                            this@HomeViewModel.latestRows.value = pendingLatest
+                        }
                         loadingState.value = LoadingState.Success
                     }
+                    loadLatest(latest)
+                    refreshState.setValueOnMain(LoadingState.Success)
                 }
             }
         }
@@ -140,7 +153,7 @@ class HomeViewModel
                     .getResumeItems(request)
                     .content
                     .items
-                    .map { BaseItem.Companion.from(it, api, true) }
+                    .map { BaseItem.from(it, api, true) }
             return items
         }
 
@@ -174,70 +187,71 @@ class HomeViewModel
             user: UserDto,
             limit: Int,
             includedIds: List<UUID>,
-        ): List<HomeRowLoadingState> {
-            val latestMediaIncludes =
-                user.configuration
-                    ?.orderedViews
-                    .orEmpty()
-                    .toMutableList()
-                    .apply {
-                        removeAll(user.configuration?.latestItemsExcludes.orEmpty())
-                    }.filter { includedIds.contains(it) }
-
+        ): List<LatestData> {
+            val excluded = user.configuration?.latestItemsExcludes.orEmpty()
             val views by api.userViewsApi.getUserViews()
-            val rows =
-                latestMediaIncludes
-                    .mapNotNull { viewId -> views.items.firstOrNull { it.id == viewId } }
-                    .filter { it.collectionType in supportedLatestCollectionTypes }
-                    .mapNotNull { view ->
+            val latestData =
+                views.items
+                    .filter {
+                        it.id in includedIds && it.id !in excluded &&
+                            it.collectionType in supportedLatestCollectionTypes
+                    }.mapNotNull { view ->
                         val title =
                             if (view.collectionType == CollectionType.LIVETV) {
                                 context.getString(R.string.recently_recorded)
                             } else {
                                 view.name?.let { context.getString(R.string.recently_added_in, it) }
                             } ?: context.getString(R.string.recently_added)
-                        try {
-                            val viewId =
-                                if (view.collectionType == CollectionType.LIVETV) {
-                                    api.liveTvApi
-                                        .getRecordingFolders(
-                                            userId = user.id,
-                                        ).content.items
-                                        .firstOrNull()
-                                        ?.id
-                                } else {
-                                    view.id
-                                }
-                            viewId?.let {
-                                val request =
-                                    GetLatestMediaRequest(
-                                        fields = SlimItemFields,
-                                        imageTypeLimit = 1,
-                                        parentId = viewId,
-                                        groupItems = true,
-                                        limit = limit,
-                                        isPlayed = null, // Server will handle user's preference
-                                    )
-                                val latest =
-                                    api.userLibraryApi
-                                        .getLatestMedia(request)
-                                        .content
-                                        .map { BaseItem.from(it, api, true) }
-                                HomeRowLoadingState.Success(
-                                    title = title,
-                                    items = latest,
-                                )
+                        val viewId =
+                            if (view.collectionType == CollectionType.LIVETV) {
+                                api.liveTvApi
+                                    .getRecordingFolders(
+                                        userId = user.id,
+                                    ).content.items
+                                    .firstOrNull()
+                                    ?.id
+                            } else {
+                                view.id
                             }
-                        } catch (ex: Exception) {
-                            Timber.e(ex, "Exception fetching %s", title)
-                            HomeRowLoadingState.Error(
-                                title = title,
-                                exception = ex,
-                            )
+                        viewId?.let {
+                            val request =
+                                GetLatestMediaRequest(
+                                    fields = SlimItemFields,
+                                    imageTypeLimit = 1,
+                                    parentId = viewId,
+                                    groupItems = true,
+                                    limit = limit,
+                                    isPlayed = null, // Server will handle user's preference
+                                )
+                            LatestData(title, request)
                         }
                     }
 
-            return rows
+            return latestData
+        }
+
+        private suspend fun loadLatest(latestData: List<LatestData>) {
+            val rows =
+                latestData.map { (title, request) ->
+                    try {
+                        val latest =
+                            api.userLibraryApi
+                                .getLatestMedia(request)
+                                .content
+                                .map { BaseItem.from(it, api, true) }
+                        HomeRowLoadingState.Success(
+                            title = title,
+                            items = latest,
+                        )
+                    } catch (ex: Exception) {
+                        Timber.e(ex, "Exception fetching %s", title)
+                        HomeRowLoadingState.Error(
+                            title = title,
+                            exception = ex,
+                        )
+                    }
+                }
+            latestRows.setValueOnMain(rows)
         }
 
         fun setWatched(
@@ -275,3 +289,8 @@ val supportedLatestCollectionTypes =
         CollectionType.TVSHOWS,
         CollectionType.LIVETV,
     )
+
+data class LatestData(
+    val title: String,
+    val request: GetLatestMediaRequest,
+)

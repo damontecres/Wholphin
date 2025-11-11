@@ -91,7 +91,9 @@ fun HomePage(
         firstLoad = false
     }
     val loading by viewModel.loadingState.observeAsState(LoadingState.Loading)
-    val homeRows by viewModel.homeRows.observeAsState(listOf())
+    val refreshing by viewModel.refreshState.observeAsState(LoadingState.Loading)
+    val watchingRows by viewModel.watchingRows.observeAsState(listOf())
+    val latestRows by viewModel.latestRows.observeAsState(listOf())
     LaunchedEffect(loading) {
         val state = loading
         if (!firstLoad && state is LoadingState.Error) {
@@ -106,7 +108,7 @@ fun HomePage(
         }
     }
 
-    when (val state = if (firstLoad) loading else LoadingState.Success) {
+    when (val state = loading) {
         is LoadingState.Error -> ErrorMessage(state)
 
         LoadingState.Loading,
@@ -118,7 +120,7 @@ fun HomePage(
             var showPlaylistDialog by remember { mutableStateOf<UUID?>(null) }
             val playlistState by playlistViewModel.playlistState.observeAsState(PlaylistLoadingState.Pending)
             HomePageContent(
-                homeRows,
+                watchingRows + latestRows,
                 onClickItem = {
                     viewModel.navigationManager.navigateTo(it.destination())
                 },
@@ -154,7 +156,7 @@ fun HomePage(
                             items = dialogItems,
                         )
                 },
-                loadingState = loading,
+                loadingState = refreshing,
                 showClock = preferences.appPreferences.interfacePreferences.showClock,
                 modifier = modifier,
             )
@@ -277,7 +279,7 @@ fun HomePageContent(
                         -> {
                             Column(
                                 verticalArrangement = Arrangement.spacedBy(8.dp),
-                                modifier = modifier,
+                                modifier = Modifier.animateItem(),
                             ) {
                                 Text(
                                     text = r.title,
@@ -295,7 +297,7 @@ fun HomePageContent(
                         is HomeRowLoadingState.Error -> {
                             Column(
                                 verticalArrangement = Arrangement.spacedBy(8.dp),
-                                modifier = modifier,
+                                modifier = Modifier.animateItem(),
                             ) {
                                 Text(
                                     text = r.title,
@@ -323,7 +325,10 @@ fun HomePageContent(
                                         }
                                     },
                                     onLongClickItem = onLongClickItem,
-                                    modifier = Modifier.fillMaxWidth(),
+                                    modifier =
+                                        Modifier
+                                            .fillMaxWidth()
+                                            .animateItem(),
                                     cardContent = { index, item, cardModifier, onClick, onLongClick ->
                                         // TODO better aspect ration handling?
                                         BannerCard(

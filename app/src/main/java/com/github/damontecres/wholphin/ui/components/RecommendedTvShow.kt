@@ -253,7 +253,7 @@ fun RecommendedTvShow(
     }
 
     val loading by viewModel.loading.observeAsState(LoadingState.Loading)
-    val rows by viewModel.rows.collectAsState(listOf())
+    val rows by viewModel.rows.collectAsState()
 
     when (val state = loading) {
         is LoadingState.Error -> ErrorMessage(state)

@@ -148,6 +148,20 @@ fun DestinationContent(
 
                 BaseItemKind.USER_VIEW ->
                     when (destination.item?.data?.collectionType) {
+                        CollectionType.TVSHOWS ->
+                            CollectionFolderTv(
+                                preferences,
+                                destination,
+                                modifier,
+                            )
+
+                        CollectionType.MOVIES ->
+                            CollectionFolderMovie(
+                                preferences,
+                                destination,
+                                modifier,
+                            )
+
                         CollectionType.LIVETV ->
                             CollectionFolderLiveTv(
                                 preferences,
