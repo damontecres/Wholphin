@@ -8,6 +8,7 @@ import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.NavDrawerItemRepository
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.BaseItem
+import com.github.damontecres.wholphin.preferences.AppPreference
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.SlimItemFields
 import com.github.damontecres.wholphin.ui.nav.NavigationManager
@@ -19,6 +20,8 @@ import com.github.damontecres.wholphin.util.HomeRowLoadingState
 import com.github.damontecres.wholphin.util.LoadingExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
 import com.github.damontecres.wholphin.util.supportItemKinds
+import com.google.common.cache.CacheBuilder
+import com.google.common.cache.CacheLoader
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -26,6 +29,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
@@ -270,6 +274,33 @@ class HomeViewModel
             latestRows.setValueOnMain(rows)
         }
 
+        private val datePlayedCache =
+            CacheBuilder
+                .newBuilder()
+                .maximumSize(AppPreference.HomePageItems.max)
+                .build<SeriesItemId, LocalDateTime?>(
+                    object :
+                        CacheLoader<SeriesItemId, LocalDateTime?>() {
+                        override fun load(key: SeriesItemId): LocalDateTime? {
+                            val request =
+                                GetEpisodesRequest(
+                                    seriesId = key.seriesId!!,
+                                    adjacentTo = key.itemId,
+                                    limit = 1,
+                                )
+                            val result =
+                                runBlocking {
+                                    GetEpisodesRequestHandler
+                                        .execute(
+                                            api,
+                                            request,
+                                        ).content.items
+                                }
+                            return result.firstOrNull()?.userData?.lastPlayedDate
+                        }
+                    },
+                )
+
         private suspend fun buildCombined(
             resume: List<BaseItem>,
             nextUp: List<BaseItem>,
@@ -282,19 +313,7 @@ class HomeViewModel
                         semaphore.withPermit {
                             viewModelScope.async {
                                 try {
-                                    val request =
-                                        GetEpisodesRequest(
-                                            seriesId = item.data.seriesId!!,
-                                            adjacentTo = item.id,
-                                            limit = 1,
-                                        )
-                                    val result =
-                                        GetEpisodesRequestHandler
-                                            .execute(
-                                                api,
-                                                request,
-                                            ).content.items
-                                    result.firstOrNull()?.userData?.lastPlayedDate
+                                    datePlayedCache.get(SeriesItemId(item.data.seriesId!!, item.id))
                                 } catch (ex: Exception) {
                                     Timber.e(ex, "Error fetching %s", item.id)
                                     null
@@ -348,4 +367,9 @@ val supportedLatestCollectionTypes =
 data class LatestData(
     val title: String,
     val request: GetLatestMediaRequest,
+)
+
+data class SeriesItemId(
+    val seriesId: UUID,
+    val itemId: UUID,
 )
