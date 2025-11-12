@@ -69,6 +69,7 @@ import com.github.damontecres.wholphin.ui.components.chooseVersionParams
 import com.github.damontecres.wholphin.ui.data.AddPlaylistViewModel
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialog
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialogInfo
+import com.github.damontecres.wholphin.ui.detail.MoreDialogActions
 import com.github.damontecres.wholphin.ui.detail.PlaylistDialog
 import com.github.damontecres.wholphin.ui.detail.PlaylistLoadingState
 import com.github.damontecres.wholphin.ui.detail.buildMoreDialogItems
@@ -180,9 +181,20 @@ fun MovieDetails(
                                         favorite = movie.data.userData?.isFavorite ?: false,
                                         series = null,
                                         sourceId = chosenStreams?.sourceId,
-                                        navigateTo = viewModel::navigateTo,
-                                        onClickWatch = viewModel::setWatched,
-                                        onClickFavorite = viewModel::setFavorite,
+                                        actions =
+                                            MoreDialogActions(
+                                                navigateTo = viewModel::navigateTo,
+                                                onClickWatch = { _, watched ->
+                                                    viewModel.setWatched(watched)
+                                                },
+                                                onClickFavorite = { _, favorite ->
+                                                    viewModel.setFavorite(favorite)
+                                                },
+                                                onClickAddPlaylist = {
+                                                    playlistViewModel.loadPlaylists(MediaType.VIDEO)
+                                                    showPlaylistDialog = true
+                                                },
+                                            ),
                                         onChooseVersion = {
                                             chooseVersion =
                                                 chooseVersionParams(
@@ -217,10 +229,6 @@ fun MovieDetails(
                                                         },
                                                     )
                                             }
-                                        },
-                                        onClickAddPlaylist = {
-                                            playlistViewModel.loadPlaylists(MediaType.VIDEO)
-                                            showPlaylistDialog = true
                                         },
                                     ),
                             )

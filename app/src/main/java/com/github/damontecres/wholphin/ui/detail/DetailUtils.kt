@@ -21,10 +21,10 @@ import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
 data class MoreDialogActions(
-    val navigateTo: (Destination) -> Unit = {},
-    var onClickWatch: (UUID, Boolean) -> Unit = { _, _ -> },
-    var onClickFavorite: (UUID, Boolean) -> Unit = { _, _ -> },
-    var onClickAddPlaylist: (UUID) -> Unit = {},
+    val navigateTo: (Destination) -> Unit,
+    var onClickWatch: (UUID, Boolean) -> Unit,
+    var onClickFavorite: (UUID, Boolean) -> Unit,
+    var onClickAddPlaylist: (UUID) -> Unit,
 )
 
 /**
@@ -50,12 +50,9 @@ fun buildMoreDialogItems(
     sourceId: UUID?,
     watched: Boolean,
     favorite: Boolean,
-    navigateTo: (Destination) -> Unit,
-    onClickWatch: (Boolean) -> Unit,
-    onClickFavorite: (Boolean) -> Unit,
+    actions: MoreDialogActions,
     onChooseVersion: () -> Unit,
     onChooseTracks: (MediaStreamType) -> Unit,
-    onClickAddPlaylist: () -> Unit,
 ): List<DialogItem> =
     buildList {
         add(
@@ -64,7 +61,7 @@ fun buildMoreDialogItems(
                 Icons.Default.PlayArrow,
                 iconColor = Color.Green.copy(alpha = .8f),
             ) {
-                navigateTo(
+                actions.navigateTo(
                     Destination.Playback(
                         item.id,
                         item.resumeMs ?: 0L,
@@ -126,7 +123,7 @@ fun buildMoreDialogItems(
                 text = R.string.add_to_playlist,
                 iconStringRes = R.string.fa_list_ul,
             ) {
-                onClickAddPlaylist.invoke()
+                actions.onClickAddPlaylist.invoke(item.id)
             },
         )
         add(
@@ -134,7 +131,7 @@ fun buildMoreDialogItems(
                 text = if (watched) R.string.mark_unwatched else R.string.mark_watched,
                 iconStringRes = if (watched) R.string.fa_eye else R.string.fa_eye_slash,
             ) {
-                onClickWatch.invoke(!watched)
+                actions.onClickWatch.invoke(item.id, !watched)
             },
         )
         add(
@@ -143,7 +140,7 @@ fun buildMoreDialogItems(
                 iconStringRes = R.string.fa_heart,
                 iconColor = if (favorite) Color.Red else Color.Unspecified,
             ) {
-                onClickFavorite.invoke(!favorite)
+                actions.onClickFavorite.invoke(item.id, !favorite)
             },
         )
         series?.let {
@@ -152,7 +149,7 @@ fun buildMoreDialogItems(
                     context.getString(R.string.go_to_series),
                     Icons.AutoMirrored.Filled.ArrowForward,
                 ) {
-                    navigateTo(
+                    actions.navigateTo(
                         Destination.MediaItem(
                             series.id,
                             BaseItemKind.SERIES,
@@ -167,7 +164,7 @@ fun buildMoreDialogItems(
                 context.getString(R.string.play_with_transcoding),
                 Icons.Default.PlayArrow,
             ) {
-                navigateTo(
+                actions.navigateTo(
                     Destination.Playback(
                         item.id,
                         item.resumeMs ?: 0L,
