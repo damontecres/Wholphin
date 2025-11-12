@@ -32,6 +32,7 @@ import com.github.damontecres.wholphin.ui.components.chooseVersionParams
 import com.github.damontecres.wholphin.ui.data.AddPlaylistViewModel
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialog
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialogInfo
+import com.github.damontecres.wholphin.ui.detail.MoreDialogActions
 import com.github.damontecres.wholphin.ui.detail.PlaylistDialog
 import com.github.damontecres.wholphin.ui.detail.PlaylistLoadingState
 import com.github.damontecres.wholphin.ui.detail.buildMoreDialogItems
@@ -196,29 +197,28 @@ fun SeriesOverview(
                                 favorite = ep.data.userData?.isFavorite ?: false,
                                 series = series,
                                 sourceId = chosenStreams?.sourceId,
-                                navigateTo = viewModel::navigateTo,
-                                onClickWatch = { played ->
-                                    episodeList
-                                        ?.getOrNull(position.episodeRowIndex)
-                                        ?.let {
+                                actions =
+                                    MoreDialogActions(
+                                        navigateTo = viewModel::navigateTo,
+                                        onClickWatch = { itemId, watched ->
                                             viewModel.setWatched(
-                                                it.id,
-                                                played,
+                                                itemId,
+                                                watched,
                                                 position.episodeRowIndex,
                                             )
-                                        }
-                                },
-                                onClickFavorite = { favorite ->
-                                    episodeList
-                                        ?.getOrNull(position.episodeRowIndex)
-                                        ?.let {
+                                        },
+                                        onClickFavorite = { itemId, favorite ->
                                             viewModel.setFavorite(
-                                                it.id,
+                                                itemId,
                                                 favorite,
                                                 position.episodeRowIndex,
                                             )
-                                        }
-                                },
+                                        },
+                                        onClickAddPlaylist = {
+                                            playlistViewModel.loadPlaylists(MediaType.VIDEO)
+                                            showPlaylistDialog = it
+                                        },
+                                    ),
                                 onChooseVersion = {
                                     chooseVersion =
                                         chooseVersionParams(
@@ -253,10 +253,6 @@ fun SeriesOverview(
                                                 },
                                             )
                                     }
-                                },
-                                onClickAddPlaylist = {
-                                    playlistViewModel.loadPlaylists(MediaType.VIDEO)
-                                    showPlaylistDialog = ep.id
                                 },
                             ),
                     )
@@ -350,7 +346,7 @@ fun SeriesOverview(
         ItemDetailsDialog(
             info = info,
             showFilePath =
-                viewModel.serverRepository.currentUserDto
+                viewModel.serverRepository.currentUserDto.value
                     ?.policy
                     ?.isAdministrator == true,
             onDismissRequest = { overviewDialog = null },

@@ -27,7 +27,7 @@ class NavDrawerItemRepository
             val user = serverRepository.currentUser
             val userViews =
                 api.userViewsApi
-                    .getUserViews(userId = user?.id)
+                    .getUserViews(userId = user.value?.id)
                     .content.items
 
             val builtins = listOf(NavDrawerItem.Favorites)
@@ -46,7 +46,7 @@ class NavDrawerItemRepository
         }
 
         suspend fun getFilteredNavDrawerItems(items: List<NavDrawerItem>): List<NavDrawerItem> {
-            val user = serverRepository.currentUser
+            val user = serverRepository.currentUser.value
             val navDrawerPins =
                 user
                     ?.let {

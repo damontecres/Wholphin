@@ -15,6 +15,7 @@ import com.github.damontecres.wholphin.ui.nav.NavigationManager
 import com.github.damontecres.wholphin.ui.nav.ServerNavDrawerItem
 import com.github.damontecres.wholphin.ui.setValueOnMain
 import com.github.damontecres.wholphin.util.ExceptionHandler
+import com.github.damontecres.wholphin.util.FavoriteWatchManager
 import com.github.damontecres.wholphin.util.GetEpisodesRequestHandler
 import com.github.damontecres.wholphin.util.HomeRowLoadingState
 import com.github.damontecres.wholphin.util.LoadingExceptionHandler
@@ -36,7 +37,6 @@ import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.itemsApi
 import org.jellyfin.sdk.api.client.extensions.liveTvApi
-import org.jellyfin.sdk.api.client.extensions.playStateApi
 import org.jellyfin.sdk.api.client.extensions.tvShowsApi
 import org.jellyfin.sdk.api.client.extensions.userLibraryApi
 import org.jellyfin.sdk.api.client.extensions.userViewsApi
@@ -61,20 +61,21 @@ class HomeViewModel
         val navigationManager: NavigationManager,
         val serverRepository: ServerRepository,
         val navDrawerItemRepository: NavDrawerItemRepository,
+        private val favoriteWatchManager: FavoriteWatchManager,
     ) : ViewModel() {
         val loadingState = MutableLiveData<LoadingState>(LoadingState.Pending)
+        val refreshState = MutableLiveData<LoadingState>(LoadingState.Pending)
         val watchingRows = MutableLiveData<List<HomeRowLoadingState>>(listOf())
         val latestRows = MutableLiveData<List<HomeRowLoadingState>>(listOf())
 
         private lateinit var preferences: UserPreferences
 
-        fun init(
-            firstLoad: Boolean,
-            preferences: UserPreferences,
-        ): Job {
-            if (firstLoad) {
+        fun init(preferences: UserPreferences): Job {
+            val reload = loadingState.value != LoadingState.Success
+            if (reload) {
                 loadingState.value = LoadingState.Loading
             }
+            refreshState.value = LoadingState.Loading
             this.preferences = preferences
             val prefs = preferences.appPreferences.homePagePreferences
             val limit = prefs.maxItemsPerRow
@@ -87,7 +88,7 @@ class HomeViewModel
             ) {
                 Timber.d("init HomeViewModel")
 
-                serverRepository.currentUserDto?.let { userDto ->
+                serverRepository.currentUserDto.value?.let { userDto ->
                     val includedIds =
                         navDrawerItemRepository
                             .getFilteredNavDrawerItems(navDrawerItemRepository.getNavDrawerItems())
@@ -137,12 +138,13 @@ class HomeViewModel
 
                     withContext(Dispatchers.Main) {
                         this@HomeViewModel.watchingRows.value = watching
-                        if (firstLoad) {
+                        if (reload) {
                             this@HomeViewModel.latestRows.value = pendingLatest
                         }
                         loadingState.value = LoadingState.Success
                     }
                     loadLatest(latest)
+                    refreshState.setValueOnMain(LoadingState.Success)
                 }
             }
         }
@@ -332,13 +334,9 @@ class HomeViewModel
             itemId: UUID,
             played: Boolean,
         ) = viewModelScope.launch(ExceptionHandler() + Dispatchers.IO) {
-            if (played) {
-                api.playStateApi.markPlayedItem(itemId)
-            } else {
-                api.playStateApi.markUnplayedItem(itemId)
-            }
+            favoriteWatchManager.setWatched(itemId, played)
             withContext(Dispatchers.Main) {
-                init(false, preferences)
+                init(preferences)
             }
         }
 
@@ -346,13 +344,9 @@ class HomeViewModel
             itemId: UUID,
             favorite: Boolean,
         ) = viewModelScope.launch(ExceptionHandler() + Dispatchers.IO) {
-            if (favorite) {
-                api.userLibraryApi.markFavoriteItem(itemId)
-            } else {
-                api.userLibraryApi.unmarkFavoriteItem(itemId)
-            }
+            favoriteWatchManager.setFavorite(itemId, favorite)
             withContext(Dispatchers.Main) {
-                init(false, preferences)
+                init(preferences)
             }
         }
     }

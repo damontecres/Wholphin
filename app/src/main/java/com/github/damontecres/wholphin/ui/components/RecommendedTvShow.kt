@@ -2,25 +2,19 @@ package com.github.damontecres.wholphin.ui.components
 
 import android.content.Context
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Modifier
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.ServerRepository
-import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.preferences.UserPreferences
-import com.github.damontecres.wholphin.ui.OneTimeLaunchedEffect
 import com.github.damontecres.wholphin.ui.SlimItemFields
 import com.github.damontecres.wholphin.ui.data.RowColumn
 import com.github.damontecres.wholphin.ui.launchIO
-import com.github.damontecres.wholphin.ui.main.HomePageContent
+import com.github.damontecres.wholphin.ui.nav.NavigationManager
 import com.github.damontecres.wholphin.util.ApiRequestPager
 import com.github.damontecres.wholphin.util.ExceptionHandler
+import com.github.damontecres.wholphin.util.FavoriteWatchManager
 import com.github.damontecres.wholphin.util.GetItemsRequestHandler
 import com.github.damontecres.wholphin.util.GetNextUpRequestHandler
 import com.github.damontecres.wholphin.util.GetResumeItemsRequestHandler
@@ -56,15 +50,15 @@ class RecommendedTvShowViewModel
         private val api: ApiClient,
         private val serverRepository: ServerRepository,
         @Assisted val parentId: UUID,
-    ) : ViewModel() {
+        navigationManager: NavigationManager,
+        favoriteWatchManager: FavoriteWatchManager,
+    ) : RecommendedViewModel(navigationManager, favoriteWatchManager) {
         @AssistedFactory
         interface Factory {
             fun create(parentId: UUID): RecommendedTvShowViewModel
         }
 
-        val loading = MutableLiveData<LoadingState>(LoadingState.Loading)
-
-        val rows =
+        override val rows =
             MutableStateFlow<MutableList<HomeRowLoadingState>>(
                 rowTitles
                     .map {
@@ -74,7 +68,7 @@ class RecommendedTvShowViewModel
                     }.toMutableList(),
             )
 
-        fun init() {
+        override fun init() {
             viewModelScope.launch(Dispatchers.IO + ExceptionHandler()) {
                 try {
                     val resumeItemsRequest =
@@ -167,7 +161,7 @@ class RecommendedTvShowViewModel
 
                 val suggestionsRequest =
                     GetSuggestionsRequest(
-                        userId = serverRepository.currentUser?.id,
+                        userId = serverRepository.currentUser.value?.id,
                         type = listOf(BaseItemKind.SERIES),
                     )
                 val suggestedItems = ApiRequestPager(api, suggestionsRequest, GetSuggestionsRequestHandler, viewModelScope)
@@ -240,7 +234,6 @@ class RecommendedTvShowViewModel
 fun RecommendedTvShow(
     preferences: UserPreferences,
     parentId: UUID,
-    onClickItem: (BaseItem) -> Unit,
     onFocusPosition: (RowColumn) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: RecommendedTvShowViewModel =
@@ -248,28 +241,10 @@ fun RecommendedTvShow(
             creationCallback = { it.create(parentId) },
         ),
 ) {
-    OneTimeLaunchedEffect {
-        viewModel.init()
-    }
-
-    val loading by viewModel.loading.observeAsState(LoadingState.Loading)
-    val rows by viewModel.rows.collectAsState(listOf())
-
-    when (val state = loading) {
-        is LoadingState.Error -> ErrorMessage(state)
-
-        LoadingState.Loading,
-        LoadingState.Pending,
-        -> LoadingPage()
-
-        LoadingState.Success ->
-            HomePageContent(
-                homeRows = rows,
-                onClickItem = onClickItem,
-                onLongClickItem = {},
-                onFocusPosition = onFocusPosition,
-                showClock = preferences.appPreferences.interfacePreferences.showClock,
-                modifier = modifier,
-            )
-    }
+    RecommendedContent(
+        preferences = preferences,
+        viewModel = viewModel,
+        onFocusPosition = onFocusPosition,
+        modifier = modifier,
+    )
 }

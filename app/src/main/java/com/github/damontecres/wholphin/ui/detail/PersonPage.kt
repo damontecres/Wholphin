@@ -26,9 +26,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -186,8 +183,8 @@ fun PersonPage(
                     movies = movies,
                     series = series,
                     episodes = episodes,
-                    onClickItem = {
-                        viewModel.navigationManager.navigateTo(it.destination())
+                    onClickItem = { index, item ->
+                        viewModel.navigationManager.navigateTo(item.destination())
                     },
                     overviewOnClick = { showOverviewDialog = true },
                     modifier = modifier,
@@ -226,7 +223,7 @@ fun PersonPageContent(
     movies: RowLoadingState,
     series: RowLoadingState,
     episodes: RowLoadingState,
-    onClickItem: (BaseItem) -> Unit,
+    onClickItem: (Int, BaseItem) -> Unit,
     overviewOnClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {

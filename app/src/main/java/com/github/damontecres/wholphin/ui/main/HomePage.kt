@@ -58,6 +58,7 @@ import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.data.AddPlaylistViewModel
 import com.github.damontecres.wholphin.ui.data.RowColumn
 import com.github.damontecres.wholphin.ui.data.RowColumnSaver
+import com.github.damontecres.wholphin.ui.detail.MoreDialogActions
 import com.github.damontecres.wholphin.ui.detail.PlaylistDialog
 import com.github.damontecres.wholphin.ui.detail.PlaylistLoadingState
 import com.github.damontecres.wholphin.ui.detail.buildMoreDialogItemsForHome
@@ -75,7 +76,6 @@ import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.MediaType
 import org.jellyfin.sdk.model.extensions.ticks
 import java.util.UUID
-import kotlin.time.Duration
 
 @Composable
 fun HomePage(
@@ -87,10 +87,11 @@ fun HomePage(
     val context = LocalContext.current
     var firstLoad by rememberSaveable { mutableStateOf(true) }
     LaunchedEffect(Unit) {
-        viewModel.init(firstLoad, preferences).join()
+        viewModel.init(preferences).join()
         firstLoad = false
     }
     val loading by viewModel.loadingState.observeAsState(LoadingState.Loading)
+    val refreshing by viewModel.refreshState.observeAsState(LoadingState.Loading)
     val watchingRows by viewModel.watchingRows.observeAsState(listOf())
     val latestRows by viewModel.latestRows.observeAsState(listOf())
     LaunchedEffect(loading) {
@@ -107,7 +108,7 @@ fun HomePage(
         }
     }
 
-    when (val state = if (firstLoad) loading else LoadingState.Success) {
+    when (val state = loading) {
         is LoadingState.Error -> ErrorMessage(state)
 
         LoadingState.Loading,
@@ -120,42 +121,41 @@ fun HomePage(
             val playlistState by playlistViewModel.playlistState.observeAsState(PlaylistLoadingState.Pending)
             HomePageContent(
                 watchingRows + latestRows,
-                onClickItem = {
-                    viewModel.navigationManager.navigateTo(it.destination())
+                onClickItem = { position, item ->
+                    viewModel.navigationManager.navigateTo(item.destination())
                 },
-                onLongClickItem = {
+                onLongClickItem = { position, item ->
                     val dialogItems =
                         buildMoreDialogItemsForHome(
                             context = context,
-                            item = it,
-                            seriesId = it.data.seriesId,
-                            playbackPosition =
-                                it.data.userData
-                                    ?.playbackPositionTicks
-                                    ?.ticks
-                                    ?: Duration.ZERO,
-                            watched = it.data.userData?.played ?: false,
-                            favorite = it.data.userData?.isFavorite ?: false,
-                            navigateTo = viewModel.navigationManager::navigateTo,
-                            onClickWatch = { itemId, played ->
-                                viewModel.setWatched(itemId, played)
-                            },
-                            onClickFavorite = { itemId, favorite ->
-                                viewModel.setFavorite(itemId, favorite)
-                            },
-                            onClickAddPlaylist = { itemId ->
-                                playlistViewModel.loadPlaylists(MediaType.VIDEO)
-                                showPlaylistDialog = itemId
-                            },
+                            item = item,
+                            seriesId = item.data.seriesId,
+                            playbackPosition = item.playbackPosition,
+                            watched = item.played,
+                            favorite = item.favorite,
+                            actions =
+                                MoreDialogActions(
+                                    navigateTo = viewModel.navigationManager::navigateTo,
+                                    onClickWatch = { itemId, played ->
+                                        viewModel.setWatched(itemId, played)
+                                    },
+                                    onClickFavorite = { itemId, favorite ->
+                                        viewModel.setFavorite(itemId, favorite)
+                                    },
+                                    onClickAddPlaylist = { itemId ->
+                                        playlistViewModel.loadPlaylists(MediaType.VIDEO)
+                                        showPlaylistDialog = itemId
+                                    },
+                                ),
                         )
                     dialog =
                         DialogParams(
-                            title = it.title ?: "",
+                            title = item.title ?: "",
                             fromLongClick = true,
                             items = dialogItems,
                         )
                 },
-                loadingState = loading,
+                loadingState = refreshing,
                 showClock = preferences.appPreferences.interfacePreferences.showClock,
                 modifier = modifier,
             )
@@ -189,8 +189,8 @@ fun HomePage(
 @Composable
 fun HomePageContent(
     homeRows: List<HomeRowLoadingState>,
-    onClickItem: (BaseItem) -> Unit,
-    onLongClickItem: (BaseItem) -> Unit,
+    onClickItem: (RowColumn, BaseItem) -> Unit,
+    onLongClickItem: (RowColumn, BaseItem) -> Unit,
     showClock: Boolean,
     modifier: Modifier = Modifier,
     onFocusPosition: ((RowColumn) -> Unit)? = null,
@@ -316,14 +316,18 @@ fun HomePageContent(
                                 ItemRow(
                                     title = row.title,
                                     items = row.items,
-                                    onClickItem = onClickItem,
+                                    onClickItem = { index, item ->
+                                        onClickItem.invoke(RowColumn(rowIndex, index), item)
+                                    },
                                     cardOnFocus = { isFocused, index ->
                                         if (isFocused) {
                                             focusedItem = row.items.getOrNull(index)
                                             position = RowColumn(rowIndex, index)
                                         }
                                     },
-                                    onLongClickItem = onLongClickItem,
+                                    onLongClickItem = { index, item ->
+                                        onLongClickItem.invoke(RowColumn(rowIndex, index), item)
+                                    },
                                     modifier =
                                         Modifier
                                             .fillMaxWidth()
@@ -338,6 +342,7 @@ fun HomePageContent(
                                                 item?.data?.indexNumber?.let { "E$it" }
                                                     ?: item?.data?.childCount?.let { if (it > 0) it.toString() else null },
                                             played = item?.data?.userData?.played ?: false,
+                                            favorite = item?.favorite ?: false,
                                             playPercent =
                                                 item?.data?.userData?.playedPercentage
                                                     ?: 0.0,

@@ -1,3 +1,5 @@
+@file:UseSerializers(UUIDSerializer::class)
+
 package com.github.damontecres.wholphin.data.model
 
 import androidx.room.ColumnInfo
@@ -8,9 +10,13 @@ import androidx.room.Index
 import androidx.room.PrimaryKey
 import androidx.room.Relation
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.UseSerializers
+import org.jellyfin.sdk.model.serializer.UUIDSerializer
 import java.util.UUID
 
 @Entity(tableName = "servers")
+@Serializable
 data class JellyfinServer(
     @PrimaryKey val id: UUID,
     val name: String?,

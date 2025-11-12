@@ -60,10 +60,17 @@ import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.ExpandableFaButton
 import com.github.damontecres.wholphin.ui.components.ExpandablePlayButton
 import com.github.damontecres.wholphin.ui.components.LoadingPage
+import com.github.damontecres.wholphin.ui.components.Optional
 import com.github.damontecres.wholphin.ui.components.OverviewText
 import com.github.damontecres.wholphin.ui.components.SimpleStarRating
+import com.github.damontecres.wholphin.ui.data.AddPlaylistViewModel
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialog
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialogInfo
+import com.github.damontecres.wholphin.ui.detail.MoreDialogActions
+import com.github.damontecres.wholphin.ui.detail.PlaylistDialog
+import com.github.damontecres.wholphin.ui.detail.PlaylistLoadingState
+import com.github.damontecres.wholphin.ui.detail.buildMoreDialogItemsForHome
+import com.github.damontecres.wholphin.ui.detail.buildMoreDialogItemsForPerson
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.letNotEmpty
 import com.github.damontecres.wholphin.ui.nav.Destination
@@ -74,7 +81,9 @@ import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
 import kotlinx.coroutines.launch
 import org.jellyfin.sdk.model.api.BaseItemKind
+import org.jellyfin.sdk.model.api.MediaType
 import org.jellyfin.sdk.model.extensions.ticks
+import java.util.UUID
 import kotlin.time.Duration
 
 @Composable
@@ -83,6 +92,7 @@ fun SeriesDetails(
     destination: Destination.MediaItem,
     modifier: Modifier = Modifier,
     viewModel: SeriesViewModel = hiltViewModel(),
+    playlistViewModel: AddPlaylistViewModel = hiltViewModel(),
 ) {
     val context = LocalContext.current
     LaunchedEffect(Unit) {
@@ -98,6 +108,8 @@ fun SeriesDetails(
     var overviewDialog by remember { mutableStateOf<ItemDetailsDialogInfo?>(null) }
     var showWatchConfirmation by remember { mutableStateOf(false) }
     var seasonDialog by remember { mutableStateOf<DialogParams?>(null) }
+    var showPlaylistDialog by remember { mutableStateOf<Optional<UUID>>(Optional.absent()) }
+    val playlistState by playlistViewModel.playlistState.observeAsState(PlaylistLoadingState.Pending)
 
     when (val state = loading) {
         is LoadingState.Error -> ErrorMessage(state)
@@ -126,7 +138,9 @@ fun SeriesDetails(
                     played = played,
                     favorite = item.data.userData?.isFavorite ?: false,
                     modifier = modifier,
-                    onClickItem = { viewModel.navigateTo(it.destination()) },
+                    onClickItem = { index, item ->
+                        viewModel.navigateTo(item.destination())
+                    },
                     onClickPerson = {
                         viewModel.navigateTo(
                             Destination.MediaItem(
@@ -135,7 +149,7 @@ fun SeriesDetails(
                             ),
                         )
                     },
-                    onLongClickItem = { season ->
+                    onLongClickItem = { index, season ->
                         seasonDialog =
                             buildDialogForSeason(
                                 context = context,
@@ -160,6 +174,20 @@ fun SeriesDetails(
                         val favorite = item.data.userData?.isFavorite ?: false
                         viewModel.setFavorite(item.id, !favorite, null)
                     },
+                    moreActions =
+                        MoreDialogActions(
+                            navigateTo = { viewModel.navigateTo(it) },
+                            onClickWatch = { itemId, played ->
+                                viewModel.setWatched(itemId, played, null)
+                            },
+                            onClickFavorite = { itemId, played ->
+                                viewModel.setFavorite(itemId, played, null)
+                            },
+                            onClickAddPlaylist = { itemId ->
+                                playlistViewModel.loadPlaylists(MediaType.VIDEO)
+                                showPlaylistDialog.makePresent(itemId)
+                            },
+                        ),
                 )
                 if (showWatchConfirmation) {
                     ConfirmDialog(
@@ -194,6 +222,23 @@ fun SeriesDetails(
             onDismissRequest = { seasonDialog = null },
         )
     }
+    showPlaylistDialog.compose { itemId ->
+        PlaylistDialog(
+            title = stringResource(R.string.add_to_playlist),
+            state = playlistState,
+            onDismissRequest = { showPlaylistDialog.makeAbsent() },
+            onClick = {
+                playlistViewModel.addToPlaylist(it.id, itemId)
+                showPlaylistDialog.makeAbsent()
+            },
+            createEnabled = true,
+            onCreatePlaylist = {
+                playlistViewModel.createPlaylistAndAddItem(it, itemId)
+                showPlaylistDialog.makeAbsent()
+            },
+            elevation = 3.dp,
+        )
+    }
 }
 
 private const val HEADER_ROW = 0
@@ -210,15 +255,17 @@ fun SeriesDetailsContent(
     people: List<Person>,
     played: Boolean,
     favorite: Boolean,
-    onClickItem: (BaseItem) -> Unit,
+    onClickItem: (Int, BaseItem) -> Unit,
     onClickPerson: (Person) -> Unit,
-    onLongClickItem: (BaseItem) -> Unit,
+    onLongClickItem: (Int, BaseItem) -> Unit,
     overviewOnClick: () -> Unit,
     playOnClick: () -> Unit,
     watchOnClick: () -> Unit,
     favoriteOnClick: () -> Unit,
+    moreActions: MoreDialogActions,
     modifier: Modifier = Modifier,
 ) {
+    val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val bringIntoViewRequester = remember { BringIntoViewRequester() }
 
@@ -227,6 +274,7 @@ fun SeriesDetailsContent(
     LaunchedEffect(Unit) {
         focusRequesters.getOrNull(position)?.tryRequestFocus()
     }
+    var moreDialog by remember { mutableStateOf<DialogParams?>(null) }
 
     Box(
         modifier = modifier,
@@ -349,11 +397,14 @@ fun SeriesDetailsContent(
                     ItemRow(
                         title = stringResource(R.string.tv_seasons),
                         items = seasons,
-                        onClickItem = {
+                        onClickItem = { index, item ->
                             position = SEASONS_ROW
-                            onClickItem.invoke(it)
+                            onClickItem.invoke(index, item)
                         },
-                        onLongClickItem = onLongClickItem,
+                        onLongClickItem = { index, item ->
+                            position = SEASONS_ROW
+                            onLongClickItem.invoke(index, item)
+                        },
                         modifier =
                             Modifier
                                 .fillMaxWidth()
@@ -379,7 +430,21 @@ fun SeriesDetailsContent(
                                 position = PEOPLE_ROW
                                 onClickPerson.invoke(it)
                             },
-                            onLongClick = {},
+                            onLongClick = { index, person ->
+                                position = PEOPLE_ROW
+                                val items =
+                                    buildMoreDialogItemsForPerson(
+                                        context = context,
+                                        person = person,
+                                        actions = moreActions,
+                                    )
+                                moreDialog =
+                                    DialogParams(
+                                        fromLongClick = true,
+                                        title = person.name ?: "",
+                                        items = items,
+                                    )
+                            },
                             modifier =
                                 Modifier
                                     .fillMaxWidth()
@@ -392,11 +457,29 @@ fun SeriesDetailsContent(
                         ItemRow(
                             title = stringResource(R.string.more_like_this),
                             items = similar,
-                            onClickItem = {
+                            onClickItem = { index, item ->
                                 position = SIMILAR_ROW
-                                onClickItem.invoke(it)
+                                onClickItem.invoke(index, item)
                             },
-                            onLongClickItem = {},
+                            onLongClickItem = { index, item ->
+                                position = SIMILAR_ROW
+                                val items =
+                                    buildMoreDialogItemsForHome(
+                                        context = context,
+                                        item = item,
+                                        seriesId = null,
+                                        playbackPosition = item.playbackPosition,
+                                        watched = item.played,
+                                        favorite = item.favorite,
+                                        actions = moreActions,
+                                    )
+                                moreDialog =
+                                    DialogParams(
+                                        fromLongClick = true,
+                                        title = item.name ?: "",
+                                        items = items,
+                                    )
+                            },
                             cardContent = { index, item, mod, onClick, onLongClick ->
                                 SeasonCard(
                                     item = item,
@@ -417,6 +500,16 @@ fun SeriesDetailsContent(
                 }
             }
         }
+    }
+    moreDialog?.let { params ->
+        DialogPopup(
+            showDialog = true,
+            title = params.title,
+            dialogItems = params.items,
+            onDismissRequest = { moreDialog = null },
+            dismissOnClick = true,
+            waitToLoad = params.fromLongClick,
+        )
     }
 }
 

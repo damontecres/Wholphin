@@ -61,7 +61,7 @@ class DebugViewModel
 
         init {
             viewModelScope.launchIO {
-                serverRepository.currentUser?.rowId?.let {
+                serverRepository.currentUser.value?.rowId?.let {
                     val results = itemPlaybackDao.getItems(it)
                     withContext(Dispatchers.Main) {
                         itemPlaybacks.value = results

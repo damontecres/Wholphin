@@ -11,6 +11,8 @@ import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.preferences.updateInterfacePreferences
 import com.github.damontecres.wholphin.util.ExceptionHandler
+import com.github.damontecres.wholphin.util.FavoriteWatchManager
+import com.github.damontecres.wholphin.util.FavoriteWatchManagerImpl
 import com.github.damontecres.wholphin.util.RememberTabManager
 import dagger.Module
 import dagger.Provides
@@ -23,6 +25,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import okhttp3.OkHttpClient
 import org.jellyfin.sdk.Jellyfin
+import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.util.AuthorizationHeaderBuilder
 import org.jellyfin.sdk.api.okhttp.OkHttpFactory
 import org.jellyfin.sdk.createJellyfin
@@ -92,7 +95,7 @@ object AppModule {
         .addInterceptor {
             val request = it.request()
             val newRequest =
-                serverRepository.currentUser?.accessToken?.let { token ->
+                serverRepository.currentUser.value?.accessToken?.let { token ->
                     request
                         .newBuilder()
                         .addHeader(
@@ -102,7 +105,7 @@ object AppModule {
                                 clientVersion = clientInfo.version,
                                 deviceId = deviceInfo.id,
                                 deviceName = deviceInfo.name,
-                                accessToken = serverRepository.currentUser?.accessToken,
+                                accessToken = token,
                             ),
                         ).build()
                 }
@@ -146,7 +149,7 @@ object AppModule {
         appPreference: DataStore<AppPreferences>,
         @IoCoroutineScope scope: CoroutineScope,
     ) = object : RememberTabManager {
-        fun key(itemId: String) = "${serverRepository.currentServer?.id}_${serverRepository.currentUser?.id}_$itemId"
+        fun key(itemId: String) = "${serverRepository.currentServer.value?.id}_${serverRepository.currentUser.value?.id}_$itemId"
 
         override fun getRememberedTab(
             preferences: UserPreferences,
@@ -182,4 +185,8 @@ object AppModule {
     @Singleton
     @IoCoroutineScope
     fun ioCoroutineScope(): CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
+    @Provides
+    @Singleton
+    fun favoriteWatchManager(api: ApiClient): FavoriteWatchManager = FavoriteWatchManagerImpl(api)
 }

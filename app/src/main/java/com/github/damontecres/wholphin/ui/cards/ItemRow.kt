@@ -28,8 +28,8 @@ import com.github.damontecres.wholphin.util.FocusPair
 fun ItemRow(
     title: String,
     items: List<BaseItem?>,
-    onClickItem: (BaseItem) -> Unit,
-    onLongClickItem: (BaseItem) -> Unit,
+    onClickItem: (Int, BaseItem) -> Unit,
+    onLongClickItem: (Int, BaseItem) -> Unit,
     cardContent: @Composable (
         index: Int,
         item: BaseItem?,
@@ -83,8 +83,8 @@ fun ItemRow(
                     index,
                     item,
                     cardModifier,
-                    { if (item != null) onClickItem.invoke(item) },
-                    { if (item != null) onLongClickItem.invoke(item) },
+                    { if (item != null) onClickItem.invoke(index, item) },
+                    { if (item != null) onLongClickItem.invoke(index, item) },
                 )
             }
         }
@@ -95,8 +95,8 @@ fun ItemRow(
 fun BannerItemRow(
     title: String,
     items: List<BaseItem?>,
-    onClickItem: (BaseItem) -> Unit,
-    onLongClickItem: (BaseItem) -> Unit,
+    onClickItem: (Int, BaseItem) -> Unit,
+    onLongClickItem: (Int, BaseItem) -> Unit,
     modifier: Modifier = Modifier,
     focusPair: FocusPair? = null,
     cardOnFocus: ((isFocused: Boolean, index: Int) -> Unit)? = null,

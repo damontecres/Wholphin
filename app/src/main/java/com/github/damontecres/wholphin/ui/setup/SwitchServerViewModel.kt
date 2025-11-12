@@ -1,0 +1,214 @@
+package com.github.damontecres.wholphin.ui.setup
+
+import android.content.Context
+import android.widget.Toast
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.github.damontecres.wholphin.R
+import com.github.damontecres.wholphin.data.JellyfinServerDao
+import com.github.damontecres.wholphin.data.ServerRepository
+import com.github.damontecres.wholphin.data.model.JellyfinServer
+import com.github.damontecres.wholphin.ui.launchIO
+import com.github.damontecres.wholphin.ui.nav.Destination
+import com.github.damontecres.wholphin.ui.nav.NavigationManager
+import com.github.damontecres.wholphin.ui.showToast
+import com.github.damontecres.wholphin.util.LoadingState
+import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.withContext
+import org.jellyfin.sdk.Jellyfin
+import org.jellyfin.sdk.api.client.HttpClientOptions
+import org.jellyfin.sdk.api.client.extensions.quickConnectApi
+import org.jellyfin.sdk.api.client.extensions.systemApi
+import org.jellyfin.sdk.model.serializer.toUUID
+import org.jellyfin.sdk.model.serializer.toUUIDOrNull
+import timber.log.Timber
+import java.util.UUID
+import javax.inject.Inject
+import kotlin.time.Duration.Companion.seconds
+
+@HiltViewModel
+class SwitchServerViewModel
+    @Inject
+    constructor(
+        @param:ApplicationContext private val context: Context,
+        val jellyfin: Jellyfin,
+        val serverRepository: ServerRepository,
+        val serverDao: JellyfinServerDao,
+        val navigationManager: NavigationManager,
+    ) : ViewModel() {
+        val servers = MutableLiveData<List<JellyfinServer>>(listOf())
+        val serverStatus = MutableLiveData<Map<UUID, ServerConnectionStatus>>(mapOf())
+        val serverQuickConnect = MutableLiveData<Map<UUID, Boolean>>(mapOf())
+
+        val discoveredServers = MutableLiveData<List<JellyfinServer>>(listOf())
+
+        val addServerState = MutableLiveData<LoadingState>(LoadingState.Pending)
+
+        fun clearAddServerState() {
+            addServerState.value = LoadingState.Pending
+        }
+
+        init {
+            init()
+        }
+
+        fun init() {
+            viewModelScope.launchIO {
+                withContext(Dispatchers.Main) {
+                    serverStatus.value = mapOf()
+                    serverQuickConnect.value = mapOf()
+                }
+
+                val allServers =
+                    serverDao
+                        .getServers()
+                        .map { it.server }
+                        .sortedWith(compareBy<JellyfinServer> { it.name }.thenBy { it.url })
+                withContext(Dispatchers.Main) {
+                    servers.value = allServers
+                }
+                allServers.forEach { server ->
+                    internalTestServer(server)
+                }
+            }
+        }
+
+        fun testServer(server: JellyfinServer) {
+            serverStatus.value =
+                serverStatus.value!!.toMutableMap().apply {
+                    put(
+                        server.id,
+                        ServerConnectionStatus.Pending,
+                    )
+                }
+            viewModelScope.launchIO {
+                delay(1000)
+                val result = internalTestServer(server)
+                if (result == ServerConnectionStatus.Success) {
+                    showToast(context, context.getString(R.string.success), Toast.LENGTH_SHORT)
+                } else if (result is ServerConnectionStatus.Error) {
+                    showToast(context, result.message ?: "Error", Toast.LENGTH_SHORT)
+                }
+            }
+        }
+
+        private suspend fun internalTestServer(server: JellyfinServer): ServerConnectionStatus =
+            try {
+                jellyfin
+                    .createApi(
+                        server.url,
+                        httpClientOptions =
+                            HttpClientOptions(
+                                requestTimeout = 6.seconds,
+                                connectTimeout = 6.seconds,
+                                socketTimeout = 6.seconds,
+                            ),
+                    ).systemApi
+                    .getPublicSystemInfo()
+                withContext(Dispatchers.Main) {
+                    serverStatus.value =
+                        serverStatus.value!!.toMutableMap().apply {
+                            put(
+                                server.id,
+                                ServerConnectionStatus.Success,
+                            )
+                        }
+                }
+                ServerConnectionStatus.Success
+            } catch (ex: Exception) {
+                val status = ServerConnectionStatus.Error(ex.localizedMessage)
+                Timber.w(ex, "Error checking server ${server.url}")
+                withContext(Dispatchers.Main) {
+                    serverStatus.value =
+                        serverStatus.value!!.toMutableMap().apply {
+                            put(
+                                server.id,
+                                status,
+                            )
+                        }
+                }
+                status
+            }
+
+        fun addServer(serverUrl: String) {
+            addServerState.value = LoadingState.Loading
+            viewModelScope.launchIO {
+                try {
+                    val serverInfo by jellyfin
+                        .createApi(serverUrl)
+                        .systemApi
+                        .getPublicSystemInfo()
+                    val id = serverInfo.id?.toUUIDOrNull()
+                    if (id != null && serverInfo.startupWizardCompleted == true) {
+                        val server =
+                            JellyfinServer(
+                                id = id,
+                                name = serverInfo.serverName,
+                                url = serverUrl,
+                            )
+                        serverRepository.addAndChangeServer(server)
+                        val quickConnect =
+                            jellyfin
+                                .createApi(serverUrl)
+                                .quickConnectApi
+                                .getQuickConnectEnabled()
+                                .content
+                        withContext(Dispatchers.Main) {
+                            serverQuickConnect.value =
+                                serverQuickConnect.value!!.toMutableMap().apply {
+                                    put(id, quickConnect)
+                                }
+                        }
+                        withContext(Dispatchers.Main) {
+                            addServerState.value = LoadingState.Success
+                            navigationManager.navigateTo(Destination.UserList(server))
+                        }
+                    } else {
+                        withContext(Dispatchers.Main) {
+                            addServerState.value =
+                                LoadingState.Error("Server returned invalid response")
+                        }
+                    }
+                } catch (ex: Exception) {
+                    Timber.w(ex, "Error creating API for $serverUrl")
+                    withContext(Dispatchers.Main) {
+                        addServerState.value =
+                            LoadingState.Error(exception = ex)
+                    }
+                }
+            }
+        }
+
+        fun removeServer(server: JellyfinServer) {
+            viewModelScope.launchIO {
+                serverRepository.removeServer(server)
+                init()
+            }
+        }
+
+        fun discoverServers() {
+            viewModelScope.launchIO {
+                jellyfin.discovery.discoverLocalServers().collect { server ->
+                    val newServerList =
+                        discoveredServers.value!!
+                            .toMutableList()
+                            .apply {
+                                add(
+                                    JellyfinServer(
+                                        server.id.toUUID(),
+                                        server.name,
+                                        server.address,
+                                    ),
+                                )
+                            }
+                    withContext(Dispatchers.Main) {
+                        discoveredServers.value = newServerList
+                    }
+                }
+            }
+        }
+    }
