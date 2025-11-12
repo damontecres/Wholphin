@@ -49,6 +49,7 @@ fun ServerList(
     servers: List<JellyfinServer>,
     connectionStatus: Map<UUID, ServerConnectionStatus>,
     onSwitchServer: (JellyfinServer) -> Unit,
+    onTestServer: (JellyfinServer) -> Unit,
     onAddServer: () -> Unit,
     onRemoveServer: (JellyfinServer) -> Unit,
     allowAdd: Boolean,
@@ -61,7 +62,7 @@ fun ServerList(
         items(servers) { server ->
             val status = connectionStatus[server.id] ?: ServerConnectionStatus.Pending
             ListItem(
-                enabled = status == ServerConnectionStatus.Success,
+                enabled = true,
                 selected = false,
                 headlineContent = { Text(text = server.name?.ifBlank { null } ?: server.url) },
                 supportingContent = { if (server.name.isNotNullOrBlank()) Text(text = server.url) },
@@ -77,12 +78,18 @@ fun ServerList(
                             Icon(
                                 imageVector = Icons.Default.Warning,
                                 contentDescription = status.message,
-                                tint = MaterialTheme.colorScheme.error,
+                                tint = MaterialTheme.colorScheme.errorContainer,
                             )
                         }
                     }
                 },
-                onClick = { onSwitchServer.invoke(server) },
+                onClick = {
+                    when (status) {
+                        ServerConnectionStatus.Success -> onSwitchServer.invoke(server)
+                        ServerConnectionStatus.Pending -> {}
+                        is ServerConnectionStatus.Error -> onTestServer.invoke(server)
+                    }
+                },
                 onLongClick = {
                     if (allowDelete) {
                         showDeleteDialog = server

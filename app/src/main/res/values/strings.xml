@@ -147,6 +147,7 @@
     <string name="italic_font">Italicize font</string>
     <string name="font">Font</string>
     <string name="background">Background</string>
+    <string name="success">Success</string>
 
     <plurals name="downloads">
         <item quantity="zero">%s downloads</item>
