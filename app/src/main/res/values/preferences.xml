@@ -11,7 +11,7 @@
     <string name="auto_play_next_delay">Delay before playing next up</string>
     <string name="auto_play_next">Auto play next up</string>
     <string name="check_for_updates">Check for updates</string>
-    <string name="combine_continue_next_summary">Applies to TV Series only</string>
+    <string name="combine_continue_next_summary">Ordered by last played</string>
     <string name="combine_continue_next"><![CDATA[Combine Continue Watching & Next Up]]></string>
     <string name="direct_play_ass">Direct play ASS subtitles</string>
     <string name="direct_play_pgs">Direct play PGS subtitles</string>

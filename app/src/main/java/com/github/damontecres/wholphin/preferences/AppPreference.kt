@@ -216,7 +216,7 @@ sealed interface AppPreference<T> {
                 },
                 displayValues = R.array.theme_song_volume,
                 indexToValue = { ThemeSongVolume.forNumber(it) },
-                valueToIndex = { it.number },
+                valueToIndex = { if (it != ThemeSongVolume.UNRECOGNIZED) it.number else 0 },
             )
 
         val PlaybackDebugInfo =
@@ -432,7 +432,7 @@ sealed interface AppPreference<T> {
                 },
                 displayValues = R.array.app_theme_colors,
                 indexToValue = { AppThemeColors.forNumber(it) },
-                valueToIndex = { it.number },
+                valueToIndex = { if (it != AppThemeColors.UNRECOGNIZED) it.number else 0 },
             )
 
         val InstalledVersion =
@@ -494,7 +494,7 @@ sealed interface AppPreference<T> {
                 },
                 displayValues = R.array.skip_behaviors,
                 indexToValue = { SkipSegmentBehavior.forNumber(it) },
-                valueToIndex = { it.number },
+                valueToIndex = { if (it != SkipSegmentBehavior.UNRECOGNIZED) it.number else 0 },
             )
 
         val SkipOutros =
@@ -507,7 +507,7 @@ sealed interface AppPreference<T> {
                 },
                 displayValues = R.array.skip_behaviors,
                 indexToValue = { SkipSegmentBehavior.forNumber(it) },
-                valueToIndex = { it.number },
+                valueToIndex = { if (it != SkipSegmentBehavior.UNRECOGNIZED) it.number else 0 },
             )
 
         val SkipCommercials =
@@ -520,7 +520,7 @@ sealed interface AppPreference<T> {
                 },
                 displayValues = R.array.skip_behaviors,
                 indexToValue = { SkipSegmentBehavior.forNumber(it) },
-                valueToIndex = { it.number },
+                valueToIndex = { if (it != SkipSegmentBehavior.UNRECOGNIZED) it.number else 0 },
             )
 
         val SkipPreviews =
@@ -533,7 +533,7 @@ sealed interface AppPreference<T> {
                 },
                 displayValues = R.array.skip_behaviors,
                 indexToValue = { SkipSegmentBehavior.forNumber(it) },
-                valueToIndex = { it.number },
+                valueToIndex = { if (it != SkipSegmentBehavior.UNRECOGNIZED) it.number else 0 },
             )
 
         val SkipRecaps =
@@ -546,7 +546,7 @@ sealed interface AppPreference<T> {
                 },
                 displayValues = R.array.skip_behaviors,
                 indexToValue = { SkipSegmentBehavior.forNumber(it) },
-                valueToIndex = { it.number },
+                valueToIndex = { if (it != SkipSegmentBehavior.UNRECOGNIZED) it.number else 0 },
             )
 
         val GlobalContentScale =
@@ -559,7 +559,7 @@ sealed interface AppPreference<T> {
                 },
                 displayValues = R.array.content_scale,
                 indexToValue = { PrefContentScale.forNumber(it) },
-                valueToIndex = { it.number },
+                valueToIndex = { if (it != PrefContentScale.UNRECOGNIZED) it.number else 0 },
             )
 
         val FfmpegPreference =
@@ -572,7 +572,7 @@ sealed interface AppPreference<T> {
                 },
                 displayValues = R.array.ffmpeg_extension_options,
                 indexToValue = { MediaExtensionStatus.forNumber(it) },
-                valueToIndex = { it.number },
+                valueToIndex = { if (it != MediaExtensionStatus.UNRECOGNIZED) it.number else 0 },
             )
 
         val ClearImageCache =
@@ -640,7 +640,7 @@ sealed interface AppPreference<T> {
                 },
                 displayValues = R.array.show_next_up_when_options,
                 indexToValue = { ShowNextUpWhen.forNumber(it) },
-                valueToIndex = { it.number },
+                valueToIndex = { if (it != ShowNextUpWhen.UNRECOGNIZED) it.number else 0 },
             )
 
         val ShowClock =
@@ -682,6 +682,7 @@ val basicPreferences =
             preferences =
                 listOf(
                     AppPreference.HomePageItems,
+                    AppPreference.CombineContinueNext,
                     AppPreference.RewatchNextUp,
                     AppPreference.PlayThemeMusic,
                     AppPreference.RememberSelectedTab,
@@ -741,7 +742,6 @@ val advancedPreferences =
             preferences =
                 listOf(
                     AppPreference.ShowClock,
-                    AppPreference.CombineContinueNext,
                     // Temporarily disabled, see https://github.com/damontecres/Wholphin/pull/127#issuecomment-3478058418
 //                    AppPreference.NavDrawerSwitchOnFocus,
                     AppPreference.ControllerTimeout,
