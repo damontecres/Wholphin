@@ -227,7 +227,7 @@ class MpvPlayer(
     }
 
     override fun setPlayWhenReady(playWhenReady: Boolean) {
-        throwIfReleased()
+        if (isReleased) return
         if (DEBUG) Timber.v("setPlayWhenReady")
         if (playWhenReady) {
             MPVLib.setPropertyBoolean("pause", false)
@@ -282,7 +282,7 @@ class MpvPlayer(
 
     override fun stop() {
         if (DEBUG) Timber.v("stop")
-        throwIfReleased()
+        if (isReleased) return
         pause()
         mediaItem = null
         positionMs = -1L
@@ -304,7 +304,7 @@ class MpvPlayer(
 
     override fun getCurrentTracks(): Tracks {
         if (DEBUG) Timber.v("getCurrentTracks")
-        throwIfReleased()
+        if (isReleased) return Tracks.EMPTY
         return getTracks()
     }
 
@@ -318,7 +318,7 @@ class MpvPlayer(
 
     override fun setTrackSelectionParameters(parameters: TrackSelectionParameters) {
         Timber.v("TrackSelection: setTrackSelectionParameters %s", parameters)
-        throwIfReleased()
+        if (isReleased) return
         val tracks = getTracks()
         if (C.TRACK_TYPE_TEXT in parameters.disabledTrackTypes) {
             // Subtitles disabled
@@ -482,8 +482,8 @@ class MpvPlayer(
     override fun clearVideoTextureView(textureView: TextureView?): Unit = throw UnsupportedOperationException()
 
     override fun getVideoSize(): VideoSize {
-        throwIfReleased()
         if (DEBUG) Timber.v("getVideoSize")
+        if (isReleased) return VideoSize.UNKNOWN
         val width = MPVLib.getPropertyInt("width")
         val height = MPVLib.getPropertyInt("height")
         return if (width != null && height != null) {
@@ -543,8 +543,11 @@ class MpvPlayer(
         seekCommand: Int,
         isRepeatingCurrentItem: Boolean,
     ) {
-        throwIfReleased()
         if (DEBUG) Timber.v("seekTo")
+        if (isReleased) {
+            Timber.w("seekTo called after release")
+            return
+        }
         if (mediaItemIndex == C.INDEX_UNSET) {
             return
         }
@@ -786,11 +789,11 @@ class MpvPlayer(
 
     var subtitleDelay: Double
         get() {
-            throwIfReleased()
+            if (isReleased) return 0.0
             return MPVLib.getPropertyDouble("sub-delay") ?: 0.0
         }
         set(value) {
-            throwIfReleased()
+            if (isReleased) return
             MPVLib.setPropertyDouble("sub-delay", value)
         }
 }
