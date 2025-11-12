@@ -49,7 +49,7 @@ class PreferencesViewModel
 
         init {
             viewModelScope.launchIO {
-                serverRepository.currentUser?.let { user ->
+                serverRepository.currentUser.value?.let { user ->
                     allNavDrawerItems = navDrawerItemRepository.getNavDrawerItems()
                     val pins = serverPreferencesDao.getNavDrawerPinnedItems(user)
                     val navDrawerPins = allNavDrawerItems.associateWith { pins.isPinned(it.id) }
@@ -60,7 +60,7 @@ class PreferencesViewModel
 
         fun updatePins(newSelectedItems: List<NavDrawerItem>) {
             viewModelScope.launchIO(ExceptionHandler(true)) {
-                serverRepository.currentUser?.let { user ->
+                serverRepository.currentUser.value?.let { user ->
                     val disabledItems =
                         mutableListOf<NavDrawerItem>().apply {
                             addAll(allNavDrawerItems)

@@ -12,6 +12,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -109,9 +110,9 @@ class MainActivity : AppCompatActivity() {
                             }
                             isRestoringSession = false
                         }
-                        val server = serverRepository.currentServer
-                        val user = serverRepository.currentUser
-                        val userDto = serverRepository.currentUserDto
+                        val server by serverRepository.currentServer.observeAsState()
+                        val user by serverRepository.currentUser.observeAsState()
+                        val userDto by serverRepository.currentUserDto.observeAsState()
 
                         val preferences =
                             UserPreferences(
@@ -139,8 +140,6 @@ class MainActivity : AppCompatActivity() {
                                 val initialDestination =
                                     if (server != null && user != null) {
                                         Destination.Home()
-                                    } else if (server != null) {
-                                        Destination.UserList
                                     } else {
                                         Destination.ServerList
                                     }
@@ -154,9 +153,6 @@ class MainActivity : AppCompatActivity() {
                                             Timber.w(ex, "Failed to check for update")
                                         }
                                     }
-                                }
-                                LaunchedEffect(server, user) {
-                                    serverEventListener.init(server, user)
                                 }
                                 ApplicationContent(
                                     user = user,

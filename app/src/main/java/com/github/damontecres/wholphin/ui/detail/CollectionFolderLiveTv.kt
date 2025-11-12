@@ -66,7 +66,7 @@ class LiveTvCollectionViewModel
             viewModelScope.launchIO {
                 val folders =
                     api.liveTvApi
-                        .getRecordingFolders(userId = serverRepository.currentUser?.id)
+                        .getRecordingFolders(userId = serverRepository.currentUser.value?.id)
                         .content.items
                         .map { TabId(it.name ?: "Recordings", it.id) }
                 this@LiveTvCollectionViewModel.recordingFolders.setValueOnMain(folders)

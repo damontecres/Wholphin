@@ -2,12 +2,17 @@ package com.github.damontecres.wholphin.util
 
 import android.content.Context
 import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.DefaultLifecycleObserver
+import androidx.lifecycle.LifecycleOwner
+import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.JellyfinServer
 import com.github.damontecres.wholphin.data.model.JellyfinUser
 import com.github.damontecres.wholphin.hilt.IoCoroutineScope
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.showToast
-import dagger.hilt.android.qualifiers.ApplicationContext
+import dagger.hilt.android.qualifiers.ActivityContext
+import dagger.hilt.android.scopes.ActivityScoped
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.launchIn
@@ -20,17 +25,30 @@ import org.jellyfin.sdk.model.api.GeneralCommandType
 import org.jellyfin.sdk.model.api.MediaType
 import timber.log.Timber
 import javax.inject.Inject
-import javax.inject.Singleton
 
-@Singleton
+@ActivityScoped
 class ServerEventListener
     @Inject
     constructor(
-        @param:ApplicationContext private val context: Context,
+        @param:ActivityContext private val context: Context,
         private val api: ApiClient,
         @param:IoCoroutineScope private val scope: CoroutineScope,
-    ) {
+        private val serverRepository: ServerRepository,
+    ) : DefaultLifecycleObserver {
         private var listenJob: Job? = null
+
+        init {
+            val activity = (context as AppCompatActivity)
+            activity.lifecycle.addObserver(this)
+            serverRepository.current.observe(activity) {
+                Timber.d("New user/server: %s", it)
+                if (it == null) {
+                    listenJob?.cancel()
+                } else {
+                    init(it.server, it.user)
+                }
+            }
+        }
 
         fun init(
             server: JellyfinServer?,
@@ -53,6 +71,7 @@ class ServerEventListener
         }
 
         fun setupListeners() {
+            serverRepository.currentUser
             Timber.v("Subscribing to WebSocket")
             listenJob?.cancel()
             listenJob =
@@ -74,5 +93,15 @@ class ServerEventListener
                             showToast(context, toast, Toast.LENGTH_LONG)
                         }
                     }.launchIn(scope)
+        }
+
+        override fun onPause(owner: LifecycleOwner) {
+            Timber.v("Cancelling WebSocket")
+            listenJob?.cancel()
+        }
+
+        override fun onStop(owner: LifecycleOwner) {
+            Timber.v("Cancelling WebSocket")
+            listenJob?.cancel()
         }
     }

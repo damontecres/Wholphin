@@ -198,8 +198,8 @@ data class ServerNavDrawerItem(
 fun NavDrawer(
     destination: Destination,
     preferences: UserPreferences,
-    user: JellyfinUser?,
-    server: JellyfinServer?,
+    user: JellyfinUser,
+    server: JellyfinServer,
     deviceProfile: DeviceProfile,
     modifier: Modifier = Modifier,
     viewModel: NavDrawerViewModel =
@@ -319,7 +319,7 @@ fun NavDrawer(
                             selected = false,
                             interactionSource = interactionSource,
                             onClick = {
-                                viewModel.navigationManager.navigateTo(Destination.UserList)
+                                viewModel.navigationManager.navigateTo(Destination.UserList(server))
                             },
                             modifier = Modifier.animateItem(),
                         )

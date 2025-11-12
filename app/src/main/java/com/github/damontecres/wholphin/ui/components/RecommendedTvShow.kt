@@ -167,7 +167,7 @@ class RecommendedTvShowViewModel
 
                 val suggestionsRequest =
                     GetSuggestionsRequest(
-                        userId = serverRepository.currentUser?.id,
+                        userId = serverRepository.currentUser.value?.id,
                         type = listOf(BaseItemKind.SERIES),
                     )
                 val suggestedItems = ApiRequestPager(api, suggestionsRequest, GetSuggestionsRequestHandler, viewModelScope)

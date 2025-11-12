@@ -257,7 +257,7 @@ fun MovieDetails(
         ItemDetailsDialog(
             info = info,
             showFilePath =
-                viewModel.serverRepository.currentUserDto
+                viewModel.serverRepository.currentUserDto.value
                     ?.policy
                     ?.isAdministrator == true,
             onDismissRequest = { overviewDialog = null },

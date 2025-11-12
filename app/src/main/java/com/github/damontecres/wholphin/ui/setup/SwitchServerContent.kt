@@ -43,7 +43,7 @@ import com.github.damontecres.wholphin.util.LoadingState
 @Composable
 fun SwitchServerContent(
     modifier: Modifier = Modifier,
-    viewModel: SwitchUserViewModel = hiltViewModel(),
+    viewModel: SwitchServerViewModel = hiltViewModel(),
 ) {
     val currentServer = viewModel.serverRepository.currentServer
     val servers by viewModel.servers.observeAsState(listOf())

@@ -54,7 +54,7 @@ fun DestinationContent(
             )
 
         Destination.ServerList -> SwitchServerContent(modifier)
-        Destination.UserList -> SwitchUserContent(modifier)
+        is Destination.UserList -> SwitchUserContent(destination.server, modifier)
 
         is Destination.Settings ->
             PreferencesPage(

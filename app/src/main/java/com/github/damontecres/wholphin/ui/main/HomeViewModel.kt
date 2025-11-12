@@ -76,7 +76,7 @@ class HomeViewModel
             ) {
                 Timber.d("init HomeViewModel")
 
-                serverRepository.currentUserDto?.let { userDto ->
+                serverRepository.currentUserDto.value?.let { userDto ->
                     val includedIds =
                         navDrawerItemRepository
                             .getFilteredNavDrawerItems(navDrawerItemRepository.getNavDrawerItems())
