@@ -95,7 +95,9 @@ fun CollectionFolderTv(
                 RecommendedTvShow(
                     preferences = preferences,
                     parentId = destination.itemId,
-                    onClickItem = onClickItem,
+                    onClickItem = { _, item ->
+                        preferencesViewModel.navigationManager.navigateTo(item.destination())
+                    },
                     onFocusPosition = { pos ->
                         showHeader = pos.row < 1
                     },
@@ -125,7 +127,9 @@ fun CollectionFolderTv(
                     positionCallback = { columns, position ->
                         showHeader = position < columns
                     },
-                    onClickItem = { _, item -> onClickItem.invoke(item) },
+                    onClickItem = { _, item ->
+                        preferencesViewModel.navigationManager.navigateTo(item.destination())
+                    },
                 )
             }
             2 -> {

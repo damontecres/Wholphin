@@ -211,7 +211,7 @@ class RecommendedMovieViewModel
 fun RecommendedMovie(
     preferences: UserPreferences,
     parentId: UUID,
-    onClickItem: (BaseItem) -> Unit,
+    onClickItem: (RowColumn, BaseItem) -> Unit,
     onFocusPosition: (RowColumn) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: RecommendedMovieViewModel =
@@ -236,7 +236,7 @@ fun RecommendedMovie(
             HomePageContent(
                 homeRows = rows,
                 onClickItem = onClickItem,
-                onLongClickItem = {},
+                onLongClickItem = { _, _ -> },
                 onFocusPosition = onFocusPosition,
                 showClock = preferences.appPreferences.interfacePreferences.showClock,
                 modifier = modifier,

@@ -126,7 +126,9 @@ fun SeriesDetails(
                     played = played,
                     favorite = item.data.userData?.isFavorite ?: false,
                     modifier = modifier,
-                    onClickItem = { viewModel.navigateTo(it.destination()) },
+                    onClickItem = { index, item ->
+                        viewModel.navigateTo(item.destination())
+                    },
                     onClickPerson = {
                         viewModel.navigateTo(
                             Destination.MediaItem(
@@ -135,7 +137,7 @@ fun SeriesDetails(
                             ),
                         )
                     },
-                    onLongClickItem = { season ->
+                    onLongClickItem = { index, season ->
                         seasonDialog =
                             buildDialogForSeason(
                                 context = context,
@@ -210,9 +212,9 @@ fun SeriesDetailsContent(
     people: List<Person>,
     played: Boolean,
     favorite: Boolean,
-    onClickItem: (BaseItem) -> Unit,
+    onClickItem: (Int, BaseItem) -> Unit,
     onClickPerson: (Person) -> Unit,
-    onLongClickItem: (BaseItem) -> Unit,
+    onLongClickItem: (Int, BaseItem) -> Unit,
     overviewOnClick: () -> Unit,
     playOnClick: () -> Unit,
     watchOnClick: () -> Unit,
@@ -349,9 +351,9 @@ fun SeriesDetailsContent(
                     ItemRow(
                         title = stringResource(R.string.tv_seasons),
                         items = seasons,
-                        onClickItem = {
+                        onClickItem = { index, item ->
                             position = SEASONS_ROW
-                            onClickItem.invoke(it)
+                            onClickItem.invoke(index, item)
                         },
                         onLongClickItem = onLongClickItem,
                         modifier =
@@ -392,11 +394,11 @@ fun SeriesDetailsContent(
                         ItemRow(
                             title = stringResource(R.string.more_like_this),
                             items = similar,
-                            onClickItem = {
+                            onClickItem = { index, item ->
                                 position = SIMILAR_ROW
-                                onClickItem.invoke(it)
+                                onClickItem.invoke(index, item)
                             },
-                            onLongClickItem = {},
+                            onLongClickItem = { _, _ -> },
                             cardContent = { index, item, mod, onClick, onLongClick ->
                                 SeasonCard(
                                     item = item,

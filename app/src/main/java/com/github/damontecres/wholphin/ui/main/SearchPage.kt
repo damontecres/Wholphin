@@ -174,6 +174,9 @@ fun SearchPage(
     LaunchedEffect(Unit) {
         focusRequester.tryRequestFocus()
     }
+    val onClickItem = { index: Int, item: BaseItem ->
+        viewModel.navigationManager.navigateTo(item.destination())
+    }
 
     LazyColumn(
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 44.dp),
@@ -207,7 +210,7 @@ fun SearchPage(
             rowIndex = MOVIE_ROW,
             position = position,
             focusRequester = focusRequester,
-            onClickItem = { viewModel.navigationManager.navigateTo(it.destination()) },
+            onClickItem = onClickItem,
             onClickPosition = { position = it },
             modifier = Modifier.fillMaxWidth(),
         )
@@ -217,7 +220,7 @@ fun SearchPage(
             rowIndex = COLLECTION_ROW,
             position = position,
             focusRequester = focusRequester,
-            onClickItem = { viewModel.navigationManager.navigateTo(it.destination()) },
+            onClickItem = onClickItem,
             onClickPosition = { position = it },
             modifier = Modifier.fillMaxWidth(),
         )
@@ -227,7 +230,7 @@ fun SearchPage(
             rowIndex = SERIES_ROW,
             position = position,
             focusRequester = focusRequester,
-            onClickItem = { viewModel.navigationManager.navigateTo(it.destination()) },
+            onClickItem = onClickItem,
             onClickPosition = { position = it },
             modifier = Modifier.fillMaxWidth(),
         )
@@ -237,7 +240,7 @@ fun SearchPage(
             rowIndex = EPISODE_ROW,
             position = position,
             focusRequester = focusRequester,
-            onClickItem = { viewModel.navigationManager.navigateTo(it.destination()) },
+            onClickItem = onClickItem,
             onClickPosition = { position = it },
             modifier = Modifier.fillMaxWidth(),
             cardContent = @Composable { index, item, mod, onClick, onLongClick ->
@@ -268,7 +271,7 @@ fun LazyListScope.searchResultRow(
     rowIndex: Int,
     position: RowColumn,
     focusRequester: FocusRequester,
-    onClickItem: (BaseItem) -> Unit,
+    onClickItem: (Int, BaseItem) -> Unit,
     onClickPosition: (RowColumn) -> Unit,
     modifier: Modifier = Modifier,
     cardContent: @Composable (
@@ -328,7 +331,7 @@ fun LazyListScope.searchResultRow(
                         title = title,
                         items = r.items,
                         onClickItem = onClickItem,
-                        onLongClickItem = {},
+                        onLongClickItem = { _, _ -> },
                         modifier = modifier,
                         cardContent = cardContent,
                     )

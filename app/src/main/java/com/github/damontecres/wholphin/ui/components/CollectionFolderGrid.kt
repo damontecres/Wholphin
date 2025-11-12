@@ -69,11 +69,9 @@ import org.jellyfin.sdk.model.api.ItemSortBy
 import org.jellyfin.sdk.model.api.MediaType
 import org.jellyfin.sdk.model.api.SortOrder
 import org.jellyfin.sdk.model.api.request.GetItemsRequest
-import org.jellyfin.sdk.model.extensions.ticks
 import org.jellyfin.sdk.model.serializer.toUUIDOrNull
 import java.util.UUID
 import javax.inject.Inject
-import kotlin.time.Duration
 
 @HiltViewModel
 class CollectionFolderViewModel
@@ -358,13 +356,9 @@ fun CollectionFolderGrid(
                     context = context,
                     item = item,
                     seriesId = null,
-                    playbackPosition =
-                        item.data.userData
-                            ?.playbackPositionTicks
-                            ?.ticks
-                            ?: Duration.ZERO,
-                    watched = item.data.userData?.played ?: false,
-                    favorite = item.data.userData?.isFavorite ?: false,
+                    playbackPosition = item.playbackPosition,
+                    watched = item.played,
+                    favorite = item.favorite,
                     actions =
                         MoreDialogActions(
                             navigateTo = { viewModel.navigationManager.navigateTo(it) },

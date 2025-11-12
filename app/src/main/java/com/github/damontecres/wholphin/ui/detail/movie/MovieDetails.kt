@@ -140,8 +140,8 @@ fun MovieDetails(
                     chapters = chapters,
                     trailers = trailers,
                     similar = similar,
-                    onClickItem = {
-                        viewModel.navigateTo(it.destination())
+                    onClickItem = { index, item ->
+                        viewModel.navigateTo(item.destination())
                     },
                     onClickPerson = {
                         viewModel.navigateTo(
@@ -331,7 +331,7 @@ fun MovieDetailsContent(
     watchOnClick: () -> Unit,
     favoriteOnClick: () -> Unit,
     moreOnClick: () -> Unit,
-    onClickItem: (BaseItem) -> Unit,
+    onClickItem: (Int, BaseItem) -> Unit,
     onClickPerson: (Person) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -474,11 +474,11 @@ fun MovieDetailsContent(
                     ItemRow(
                         title = stringResource(R.string.more_like_this),
                         items = similar,
-                        onClickItem = {
+                        onClickItem = { index, item ->
                             position = SIMILAR_ROW
-                            onClickItem.invoke(it)
+                            onClickItem.invoke(index, item)
                         },
-                        onLongClickItem = {},
+                        onLongClickItem = { _, _ -> },
                         cardContent = { index, item, mod, onClick, onLongClick ->
                             SeasonCard(
                                 item = item,

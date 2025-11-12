@@ -76,7 +76,6 @@ import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.MediaType
 import org.jellyfin.sdk.model.extensions.ticks
 import java.util.UUID
-import kotlin.time.Duration
 
 @Composable
 fun HomePage(
@@ -122,22 +121,18 @@ fun HomePage(
             val playlistState by playlistViewModel.playlistState.observeAsState(PlaylistLoadingState.Pending)
             HomePageContent(
                 watchingRows + latestRows,
-                onClickItem = {
-                    viewModel.navigationManager.navigateTo(it.destination())
+                onClickItem = { position, item ->
+                    viewModel.navigationManager.navigateTo(item.destination())
                 },
-                onLongClickItem = {
+                onLongClickItem = { position, item ->
                     val dialogItems =
                         buildMoreDialogItemsForHome(
                             context = context,
-                            item = it,
-                            seriesId = it.data.seriesId,
-                            playbackPosition =
-                                it.data.userData
-                                    ?.playbackPositionTicks
-                                    ?.ticks
-                                    ?: Duration.ZERO,
-                            watched = it.data.userData?.played ?: false,
-                            favorite = it.data.userData?.isFavorite ?: false,
+                            item = item,
+                            seriesId = item.data.seriesId,
+                            playbackPosition = item.playbackPosition,
+                            watched = item.played,
+                            favorite = item.favorite,
                             actions =
                                 MoreDialogActions(
                                     navigateTo = viewModel.navigationManager::navigateTo,
@@ -155,7 +150,7 @@ fun HomePage(
                         )
                     dialog =
                         DialogParams(
-                            title = it.title ?: "",
+                            title = item.title ?: "",
                             fromLongClick = true,
                             items = dialogItems,
                         )
@@ -194,8 +189,8 @@ fun HomePage(
 @Composable
 fun HomePageContent(
     homeRows: List<HomeRowLoadingState>,
-    onClickItem: (BaseItem) -> Unit,
-    onLongClickItem: (BaseItem) -> Unit,
+    onClickItem: (RowColumn, BaseItem) -> Unit,
+    onLongClickItem: (RowColumn, BaseItem) -> Unit,
     showClock: Boolean,
     modifier: Modifier = Modifier,
     onFocusPosition: ((RowColumn) -> Unit)? = null,
@@ -321,14 +316,18 @@ fun HomePageContent(
                                 ItemRow(
                                     title = row.title,
                                     items = row.items,
-                                    onClickItem = onClickItem,
+                                    onClickItem = { index, item ->
+                                        onClickItem.invoke(RowColumn(rowIndex, index), item)
+                                    },
                                     cardOnFocus = { isFocused, index ->
                                         if (isFocused) {
                                             focusedItem = row.items.getOrNull(index)
                                             position = RowColumn(rowIndex, index)
                                         }
                                     },
-                                    onLongClickItem = onLongClickItem,
+                                    onLongClickItem = { index, item ->
+                                        onLongClickItem.invoke(RowColumn(rowIndex, index), item)
+                                    },
                                     modifier =
                                         Modifier
                                             .fillMaxWidth()
