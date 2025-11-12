@@ -319,7 +319,11 @@ fun NavDrawer(
                             selected = false,
                             interactionSource = interactionSource,
                             onClick = {
-                                viewModel.navigationManager.navigateTo(Destination.UserList(server))
+                                viewModel.navigationManager.navigateToFromDrawer(
+                                    Destination.UserList(
+                                        server,
+                                    ),
+                                )
                             },
                             modifier = Modifier.animateItem(),
                         )

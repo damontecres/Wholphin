@@ -28,7 +28,12 @@ class NavigationManager
          */
         fun navigateToFromDrawer(destination: Destination) {
             goToHome()
-            backStack.add(destination)
+            if (destination == Destination.ServerList || destination is Destination.UserList) {
+                backStack.add(destination)
+                (0..<backStack.size - 1).forEach { _ -> backStack.removeAt(0) }
+            } else {
+                backStack.add(destination)
+            }
             log()
         }
 
