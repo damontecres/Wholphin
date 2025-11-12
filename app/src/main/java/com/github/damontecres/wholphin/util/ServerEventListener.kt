@@ -5,15 +5,14 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.lifecycleScope
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.JellyfinServer
 import com.github.damontecres.wholphin.data.model.JellyfinUser
-import com.github.damontecres.wholphin.hilt.IoCoroutineScope
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.showToast
 import dagger.hilt.android.qualifiers.ActivityContext
 import dagger.hilt.android.scopes.ActivityScoped
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
@@ -32,19 +31,18 @@ class ServerEventListener
     constructor(
         @param:ActivityContext private val context: Context,
         private val api: ApiClient,
-        @param:IoCoroutineScope private val scope: CoroutineScope,
         private val serverRepository: ServerRepository,
     ) : DefaultLifecycleObserver {
+        private val activity = (context as AppCompatActivity)
+
         private var listenJob: Job? = null
 
         init {
-            val activity = (context as AppCompatActivity)
             activity.lifecycle.addObserver(this)
             serverRepository.current.observe(activity) {
                 Timber.d("New user/server: %s", it)
-                if (it == null) {
-                    listenJob?.cancel()
-                } else {
+                listenJob?.cancel()
+                if (it != null) {
                     init(it.server, it.user)
                 }
             }
@@ -55,7 +53,7 @@ class ServerEventListener
             user: JellyfinUser?,
         ) {
             if (server != null && user != null && api.baseUrl != null && api.accessToken != null) {
-                scope.launchIO {
+                (context as AppCompatActivity).lifecycleScope.launchIO {
                     api.sessionApi.postCapabilities(
                         playableMediaTypes = listOf(MediaType.VIDEO),
                         supportedCommands =
@@ -92,7 +90,11 @@ class ServerEventListener
                                     .joinToString("\n")
                             showToast(context, toast, Toast.LENGTH_LONG)
                         }
-                    }.launchIn(scope)
+                    }.launchIn(activity.lifecycleScope)
+        }
+
+        override fun onResume(owner: LifecycleOwner) {
+            serverRepository.current.value?.let { init(it.server, it.user) }
         }
 
         override fun onPause(owner: LifecycleOwner) {
