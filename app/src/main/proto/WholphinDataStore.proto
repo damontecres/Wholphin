@@ -92,6 +92,8 @@ enum AppThemeColors {
   BLUE = 1;
   GREEN = 2;
   ORANGE = 3;
+  BOLD_BLUE = 4;
+  OLED_BLACK = 5;
 }
 
 enum EdgeStyle{
