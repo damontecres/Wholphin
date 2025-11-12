@@ -43,9 +43,8 @@ import com.github.damontecres.wholphin.util.LoadingState
 @Composable
 fun SwitchServerContent(
     modifier: Modifier = Modifier,
-    viewModel: SwitchUserViewModel = hiltViewModel(),
+    viewModel: SwitchServerViewModel = hiltViewModel(),
 ) {
-    val currentServer = viewModel.serverRepository.currentServer
     val servers by viewModel.servers.observeAsState(listOf())
     val serverStatus by viewModel.serverStatus.observeAsState(mapOf())
 
@@ -89,6 +88,9 @@ fun SwitchServerContent(
                     connectionStatus = serverStatus,
                     onSwitchServer = {
                         viewModel.addServer(it.url)
+                    },
+                    onTestServer = {
+                        viewModel.testServer(it)
                     },
                     onAddServer = {
                         showAddServer = true
@@ -141,6 +143,9 @@ fun SwitchServerContent(
                                 .associateWith { ServerConnectionStatus.Success },
                         onSwitchServer = {
                             viewModel.addServer(it.url)
+                        },
+                        onTestServer = {
+                            viewModel.testServer(it)
                         },
                         onAddServer = {},
                         onRemoveServer = {},

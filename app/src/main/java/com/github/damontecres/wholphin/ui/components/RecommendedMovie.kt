@@ -133,7 +133,7 @@ class RecommendedMovieViewModel
 
                 val suggestionsRequest =
                     GetSuggestionsRequest(
-                        userId = serverRepository.currentUser?.id,
+                        userId = serverRepository.currentUser.value?.id,
                         type = listOf(BaseItemKind.MOVIE),
                     )
                 val suggestedItems = ApiRequestPager(api, suggestionsRequest, GetSuggestionsRequestHandler, viewModelScope)

@@ -25,7 +25,7 @@ class ItemPlaybackRepository
             itemId: UUID,
             item: BaseItem,
         ): ChosenStreams? =
-            serverRepository.currentUser?.let { user ->
+            serverRepository.currentUser.value?.let { user ->
                 val itemPlayback = itemPlaybackDao.getItem(user = user, itemId = itemId)
                 if (itemPlayback != null) {
                     Timber.v("Got itemPlayback for %s", itemId)
@@ -72,7 +72,7 @@ class ItemPlaybackRepository
             sourceId: UUID,
         ): ItemPlayback? =
             withContext(Dispatchers.IO) {
-                serverRepository.currentUser?.let { user ->
+                serverRepository.currentUser.value?.let { user ->
                     val itemPlayback =
                         ItemPlayback(
                             userId = user.rowId,
@@ -89,7 +89,7 @@ class ItemPlaybackRepository
             itemPlayback: ItemPlayback?,
             trackIndex: Int,
             type: MediaStreamType,
-        ) = serverRepository.currentUser?.let { user ->
+        ) = serverRepository.currentUser.value?.let { user ->
             var toSave =
                 itemPlayback ?: ItemPlayback(
                     userId = user.rowId,
@@ -113,7 +113,9 @@ class ItemPlaybackRepository
             val toSave =
                 if (itemPlayback.userId < 0) {
                     val userRowId =
-                        serverRepository.currentUser?.rowId?.takeIf { it >= 0 }
+                        serverRepository.currentUser.value
+                            ?.rowId
+                            ?.takeIf { it >= 0 }
                             ?: throw IllegalStateException("Trying to save an ItemPlayback without a user, but there is no current user")
                     itemPlayback.copy(userId = userRowId)
                 } else {

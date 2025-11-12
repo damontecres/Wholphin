@@ -145,7 +145,7 @@ class PlaylistCreator
             name: String,
             initialItems: List<UUID>,
         ): UUID? =
-            serverRepository.currentUser?.let { user ->
+            serverRepository.currentUser.value?.let { user ->
                 api.playlistsApi
                     .createPlaylist(
                         CreatePlaylistDto(

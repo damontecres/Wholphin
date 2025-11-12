@@ -108,7 +108,7 @@ class CollectionFolderViewModel
 
                 val sortAndDirection =
                     if (initialSortAndDirection == null) {
-                        serverRepository.currentUser?.let { user ->
+                        serverRepository.currentUser.value?.let { user ->
                             libraryDisplayInfoDao.getItem(user, itemId)?.sortAndDirection
                         } ?: SortAndDirection.DEFAULT
                     } else {
@@ -123,7 +123,7 @@ class CollectionFolderViewModel
             recursive: Boolean,
             filter: GetItemsFilter,
         ) {
-            serverRepository.currentUser?.let { user ->
+            serverRepository.currentUser.value?.let { user ->
                 viewModelScope.launch(Dispatchers.IO) {
                     val libraryDisplayInfo =
                         LibraryDisplayInfo(

@@ -39,6 +39,7 @@ import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import androidx.tv.material3.surfaceColorAtElevation
 import com.github.damontecres.wholphin.R
+import com.github.damontecres.wholphin.data.model.JellyfinServer
 import com.github.damontecres.wholphin.ui.components.BasicDialog
 import com.github.damontecres.wholphin.ui.components.CircularProgress
 import com.github.damontecres.wholphin.ui.components.EditTextBox
@@ -49,17 +50,20 @@ import com.github.damontecres.wholphin.util.LoadingState
 
 @Composable
 fun SwitchUserContent(
+    currentServer: JellyfinServer,
     modifier: Modifier = Modifier,
-    viewModel: SwitchUserViewModel = hiltViewModel(),
+    viewModel: SwitchUserViewModel =
+        hiltViewModel<SwitchUserViewModel, SwitchUserViewModel.Factory>(
+            creationCallback = { it.create(currentServer) },
+        ),
 ) {
     val context = LocalContext.current
 
-    val currentServer = viewModel.serverRepository.currentServer
-    val currentUser = viewModel.serverRepository.currentUser
+//    val currentServer by viewModel.serverRepository.currentServer.observeAsState()
+    val currentUser by viewModel.serverRepository.currentUser.observeAsState()
     val users by viewModel.users.observeAsState(listOf())
 
-    val serverQuickConnect by viewModel.serverQuickConnect.observeAsState(mapOf())
-    val quickConnectEnabled = currentServer?.let { serverQuickConnect[it.id] ?: false } ?: false
+    val quickConnectEnabled by viewModel.serverQuickConnect.observeAsState(false)
     val quickConnect by viewModel.quickConnectState.observeAsState(null)
     var showAddUser by remember { mutableStateOf(false) }
 
@@ -109,7 +113,7 @@ fun SwitchUserContent(
                     users = users,
                     currentUser = currentUser,
                     onSwitchUser = { user ->
-                        viewModel.switchUser(server, user)
+                        viewModel.switchUser(user)
                     },
                     onAddUser = { showAddUser = true },
                     onRemoveUser = { user ->
