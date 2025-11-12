@@ -16,6 +16,7 @@ class PlaybackLifecycleObserver
     constructor(
         private val navigationManager: NavigationManager,
         private val playerFactory: PlayerFactory,
+        private val themeSongPlayer: ThemeSongPlayer,
     ) : DefaultLifecycleObserver {
         private var wasPlaying: Boolean? = null
 
@@ -36,11 +37,13 @@ class PlaybackLifecycleObserver
                 wasPlaying = it.isPlaying
                 it.pause()
             }
+            themeSongPlayer.stop()
         }
 
         override fun onStop(owner: LifecycleOwner) {
             if (navigationManager.backStack.lastOrNull() is Destination.Playback) {
                 navigationManager.goBack()
             }
+            themeSongPlayer.stop()
         }
     }

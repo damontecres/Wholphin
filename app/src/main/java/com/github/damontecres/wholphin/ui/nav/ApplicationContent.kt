@@ -11,7 +11,6 @@ import com.github.damontecres.wholphin.data.model.JellyfinServer
 import com.github.damontecres.wholphin.data.model.JellyfinUser
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import org.jellyfin.sdk.model.api.DeviceProfile
-import timber.log.Timber
 
 /**
  * This is generally the root composable of the of the app
@@ -38,7 +37,6 @@ fun ApplicationContent(
         entryProvider = { key ->
             key as Destination
             val contentKey = "${key}_${server?.id}_${user?.id}"
-            Timber.d("Navigate: %s", key)
             NavEntry(key, contentKey = contentKey) {
                 if (key.fullScreen) {
                     DestinationContent(
