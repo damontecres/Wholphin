@@ -115,6 +115,7 @@ class ServerRepository
             userId: UUID?,
         ): Boolean {
             if (serverId == null || userId == null) {
+                _current.setValueOnMain(null)
                 return false
             }
             val serverAndUsers =
@@ -208,6 +209,18 @@ class ServerRepository
             }
             withContext(Dispatchers.IO) {
                 serverDao.deleteServer(server.id)
+            }
+        }
+
+        suspend fun switchServerOrUser() {
+            apiClient.update(baseUrl = null, accessToken = null)
+            userPreferencesDataStore.updateData {
+                it
+                    .toBuilder()
+                    .apply {
+                        currentServerId = ""
+                        currentUserId = ""
+                    }.build()
             }
         }
 

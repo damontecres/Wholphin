@@ -10,6 +10,7 @@ import com.github.damontecres.wholphin.data.model.JellyfinUser
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.nav.NavigationManager
 import com.github.damontecres.wholphin.ui.setValueOnMain
+import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
@@ -18,6 +19,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.Jellyfin
 import org.jellyfin.sdk.api.client.HttpClientOptions
@@ -44,6 +46,12 @@ class SwitchUserViewModel
         @AssistedFactory
         interface Factory {
             fun create(server: JellyfinServer): SwitchUserViewModel
+        }
+
+        init {
+            viewModelScope.launch(Dispatchers.Main + ExceptionHandler()) {
+                serverRepository.switchServerOrUser()
+            }
         }
 
         val serverQuickConnect = MutableLiveData<Boolean>(false)

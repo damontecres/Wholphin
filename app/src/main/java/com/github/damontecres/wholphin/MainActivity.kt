@@ -97,16 +97,13 @@ class MainActivity : AppCompatActivity() {
                     ) {
                         var isRestoringSession by remember { mutableStateOf(true) }
                         LaunchedEffect(Unit) {
-                            if (appPreferences.currentServerId.isNotBlank() && appPreferences.currentUserId.isNotBlank()) {
-                                try {
-                                    serverRepository.restoreSession(
-                                        appPreferences.currentServerId?.toUUIDOrNull(),
-                                        appPreferences.currentUserId?.toUUIDOrNull(),
-                                    )
-                                } catch (ex: Exception) {
-                                    Timber.e(ex, "Exception restoring session")
-                                }
-                                Timber.d("MainActivity session restored")
+                            try {
+                                serverRepository.restoreSession(
+                                    appPreferences.currentServerId?.toUUIDOrNull(),
+                                    appPreferences.currentUserId?.toUUIDOrNull(),
+                                )
+                            } catch (ex: Exception) {
+                                Timber.e(ex, "Exception restoring session")
                             }
                             isRestoringSession = false
                         }
