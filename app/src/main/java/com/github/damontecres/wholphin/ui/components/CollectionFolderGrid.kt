@@ -38,10 +38,13 @@ import com.github.damontecres.wholphin.data.model.LibraryDisplayInfo
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.OneTimeLaunchedEffect
 import com.github.damontecres.wholphin.ui.SlimItemFields
+import com.github.damontecres.wholphin.ui.data.AddPlaylistViewModel
 import com.github.damontecres.wholphin.ui.data.SortAndDirection
 import com.github.damontecres.wholphin.ui.detail.CardGrid
 import com.github.damontecres.wholphin.ui.detail.ItemViewModel
 import com.github.damontecres.wholphin.ui.detail.MoreDialogActions
+import com.github.damontecres.wholphin.ui.detail.PlaylistDialog
+import com.github.damontecres.wholphin.ui.detail.PlaylistLoadingState
 import com.github.damontecres.wholphin.ui.detail.buildMoreDialogItemsForHome
 import com.github.damontecres.wholphin.ui.nav.NavigationManager
 import com.github.damontecres.wholphin.ui.toServerString
@@ -63,6 +66,7 @@ import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.CollectionType
 import org.jellyfin.sdk.model.api.ImageType
 import org.jellyfin.sdk.model.api.ItemSortBy
+import org.jellyfin.sdk.model.api.MediaType
 import org.jellyfin.sdk.model.api.SortOrder
 import org.jellyfin.sdk.model.api.request.GetItemsRequest
 import org.jellyfin.sdk.model.extensions.ticks
@@ -298,6 +302,7 @@ fun CollectionFolderGrid(
     sortOptions: List<ItemSortBy>,
     modifier: Modifier = Modifier,
     viewModel: CollectionFolderViewModel = hiltViewModel(),
+    playlistViewModel: AddPlaylistViewModel = hiltViewModel(),
     initialSortAndDirection: SortAndDirection? = null,
     showTitle: Boolean = true,
     positionCallback: ((columns: Int, position: Int) -> Unit)? = null,
@@ -312,7 +317,9 @@ fun CollectionFolderGrid(
     val item by viewModel.item.observeAsState()
     val pager by viewModel.pager.observeAsState()
 
-    var moreDialog by remember { mutableStateOf<PositionItem?>(null) }
+    var moreDialog by remember { mutableStateOf<Optional<PositionItem>>(Optional.absent()) }
+    var showPlaylistDialog by remember { mutableStateOf<Optional<UUID>>(Optional.absent()) }
+    val playlistState by playlistViewModel.playlistState.observeAsState(PlaylistLoadingState.Pending)
 
     when (val state = loading) {
         is LoadingState.Error -> ErrorMessage(state)
@@ -329,7 +336,7 @@ fun CollectionFolderGrid(
                     modifier = modifier,
                     onClickItem = onClickItem,
                     onLongClickItem = { position, item ->
-                        moreDialog = PositionItem(position, item)
+                        moreDialog.makePresent(PositionItem(position, item))
                     },
                     onSortChange = {
                         viewModel.onSortChange(it, recursive, filter)
@@ -342,40 +349,58 @@ fun CollectionFolderGrid(
             }
         }
     }
-    if (moreDialog != null) {
-        moreDialog?.let { (position, item) ->
-            DialogPopup(
-                showDialog = true,
-                title = item.title ?: "",
-                dialogItems =
-                    buildMoreDialogItemsForHome(
-                        context = context,
-                        item = item,
-                        seriesId = null,
-                        playbackPosition =
-                            item.data.userData
-                                ?.playbackPositionTicks
-                                ?.ticks
-                                ?: Duration.ZERO,
-                        watched = item.data.userData?.played ?: false,
-                        favorite = item.data.userData?.isFavorite ?: false,
-                        actions =
-                            MoreDialogActions(
-                                navigateTo = { viewModel.navigationManager.navigateTo(it) },
-                                onClickWatch = { itemId, watched ->
-                                    viewModel.setWatched(position, itemId, watched)
-                                },
-                                onClickFavorite = { itemId, watched ->
-                                    viewModel.setFavorite(position, itemId, watched)
-                                },
-                                onClickAddPlaylist = { },
-                            ),
-                    ),
-                onDismissRequest = { moreDialog = null },
-                dismissOnClick = true,
-                waitToLoad = true,
-            )
-        }
+    moreDialog.compose { (position, item) ->
+        DialogPopup(
+            showDialog = true,
+            title = item.title ?: "",
+            dialogItems =
+                buildMoreDialogItemsForHome(
+                    context = context,
+                    item = item,
+                    seriesId = null,
+                    playbackPosition =
+                        item.data.userData
+                            ?.playbackPositionTicks
+                            ?.ticks
+                            ?: Duration.ZERO,
+                    watched = item.data.userData?.played ?: false,
+                    favorite = item.data.userData?.isFavorite ?: false,
+                    actions =
+                        MoreDialogActions(
+                            navigateTo = { viewModel.navigationManager.navigateTo(it) },
+                            onClickWatch = { itemId, watched ->
+                                viewModel.setWatched(position, itemId, watched)
+                            },
+                            onClickFavorite = { itemId, watched ->
+                                viewModel.setFavorite(position, itemId, watched)
+                            },
+                            onClickAddPlaylist = {
+                                playlistViewModel.loadPlaylists(MediaType.VIDEO)
+                                showPlaylistDialog.makePresent(it)
+                            },
+                        ),
+                ),
+            onDismissRequest = { moreDialog.makeAbsent() },
+            dismissOnClick = true,
+            waitToLoad = true,
+        )
+    }
+    showPlaylistDialog.compose { itemId ->
+        PlaylistDialog(
+            title = stringResource(R.string.add_to_playlist),
+            state = playlistState,
+            onDismissRequest = { showPlaylistDialog.makeAbsent() },
+            onClick = {
+                playlistViewModel.addToPlaylist(it.id, itemId)
+                showPlaylistDialog.makeAbsent()
+            },
+            createEnabled = true,
+            onCreatePlaylist = {
+                playlistViewModel.createPlaylistAndAddItem(it, itemId)
+                showPlaylistDialog.makeAbsent()
+            },
+            elevation = 3.dp,
+        )
     }
 }
 
