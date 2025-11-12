@@ -243,8 +243,8 @@ class MpvPlayer(
     }
 
     override fun getPlayWhenReady(): Boolean {
-        throwIfReleased()
         if (DEBUG) Timber.v("getPlayWhenReady")
+        if (isReleased) return false
         val isPaused = MPVLib.getPropertyBoolean("pause") ?: this.isPaused
         return !isPaused
     }
