@@ -69,6 +69,7 @@ import com.github.damontecres.wholphin.ui.data.ItemDetailsDialogInfo
 import com.github.damontecres.wholphin.ui.detail.MoreDialogActions
 import com.github.damontecres.wholphin.ui.detail.PlaylistDialog
 import com.github.damontecres.wholphin.ui.detail.PlaylistLoadingState
+import com.github.damontecres.wholphin.ui.detail.buildMoreDialogItemsForHome
 import com.github.damontecres.wholphin.ui.detail.buildMoreDialogItemsForPerson
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.letNotEmpty
@@ -400,7 +401,10 @@ fun SeriesDetailsContent(
                             position = SEASONS_ROW
                             onClickItem.invoke(index, item)
                         },
-                        onLongClickItem = onLongClickItem,
+                        onLongClickItem = { index, item ->
+                            position = SEASONS_ROW
+                            onLongClickItem.invoke(index, item)
+                        },
                         modifier =
                             Modifier
                                 .fillMaxWidth()
@@ -427,6 +431,7 @@ fun SeriesDetailsContent(
                                 onClickPerson.invoke(it)
                             },
                             onLongClick = { index, person ->
+                                position = PEOPLE_ROW
                                 val items =
                                     buildMoreDialogItemsForPerson(
                                         context = context,
@@ -456,7 +461,25 @@ fun SeriesDetailsContent(
                                 position = SIMILAR_ROW
                                 onClickItem.invoke(index, item)
                             },
-                            onLongClickItem = { _, _ -> },
+                            onLongClickItem = { index, item ->
+                                position = SIMILAR_ROW
+                                val items =
+                                    buildMoreDialogItemsForHome(
+                                        context = context,
+                                        item = item,
+                                        seriesId = null,
+                                        playbackPosition = item.playbackPosition,
+                                        watched = item.played,
+                                        favorite = item.favorite,
+                                        actions = moreActions,
+                                    )
+                                moreDialog =
+                                    DialogParams(
+                                        fromLongClick = true,
+                                        title = item.name ?: "",
+                                        items = items,
+                                    )
+                            },
                             cardContent = { index, item, mod, onClick, onLongClick ->
                                 SeasonCard(
                                     item = item,

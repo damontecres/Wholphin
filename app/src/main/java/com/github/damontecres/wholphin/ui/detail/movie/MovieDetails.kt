@@ -470,7 +470,10 @@ fun MovieDetailsContent(
                             position = PEOPLE_ROW
                             onClickPerson.invoke(it)
                         },
-                        onLongClick = onLongClickPerson,
+                        onLongClick = { index, person ->
+                            position = PEOPLE_ROW
+                            onLongClickPerson.invoke(index, person)
+                        },
                         modifier =
                             Modifier
                                 .fillMaxWidth()
@@ -518,7 +521,10 @@ fun MovieDetailsContent(
                             position = SIMILAR_ROW
                             onClickItem.invoke(index, item)
                         },
-                        onLongClickItem = onLongClickSimilar,
+                        onLongClickItem = { index, similar ->
+                            position = SIMILAR_ROW
+                            onLongClickSimilar.invoke(index, similar)
+                        },
                         cardContent = { index, item, mod, onClick, onLongClick ->
                             SeasonCard(
                                 item = item,
