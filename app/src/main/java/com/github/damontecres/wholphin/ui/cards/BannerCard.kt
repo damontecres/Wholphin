@@ -21,16 +21,21 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.tv.material3.Card
 import androidx.tv.material3.CardDefaults
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import coil3.compose.AsyncImage
+import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.ui.AppColors
 import com.github.damontecres.wholphin.ui.Cards
+import com.github.damontecres.wholphin.ui.FontAwesome
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 
 /**
@@ -45,6 +50,7 @@ fun BannerCard(
     modifier: Modifier = Modifier,
     cornerText: String? = null,
     played: Boolean = false,
+    favorite: Boolean = false,
     playPercent: Double = 0.0,
     cardHeight: Dp = 140.dp * .85f,
     aspectRatio: Float = 16f / 9,
@@ -117,6 +123,18 @@ fun BannerCard(
                         }
                     }
                 }
+            }
+            if (favorite) {
+                Text(
+                    modifier =
+                        Modifier
+                            .align(Alignment.TopStart)
+                            .padding(8.dp),
+                    color = colorResource(android.R.color.holo_red_light),
+                    text = stringResource(R.string.fa_heart),
+                    fontSize = 16.sp,
+                    fontFamily = FontAwesome,
+                )
             }
             if (playPercent > 0 && playPercent < 100) {
                 Box(

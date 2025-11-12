@@ -9,6 +9,7 @@ import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.ui.graphics.Color
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.BaseItem
+import com.github.damontecres.wholphin.data.model.Person
 import com.github.damontecres.wholphin.ui.components.DialogItem
 import com.github.damontecres.wholphin.ui.letNotEmpty
 import com.github.damontecres.wholphin.ui.nav.Destination
@@ -282,4 +283,32 @@ fun buildMoreDialogItemsForHome(
                 },
             )
         }
+    }
+
+fun buildMoreDialogItemsForPerson(
+    context: Context,
+    person: Person,
+//    favorite: Boolean,
+    actions: MoreDialogActions,
+): List<DialogItem> =
+    buildList {
+        val itemId = person.id
+        add(
+            DialogItem(
+                context.getString(R.string.go_to),
+                Icons.Default.ArrowForward,
+            ) {
+                actions.navigateTo(Destination.MediaItem(itemId, BaseItemKind.PERSON))
+            },
+        )
+        // TODO need way to get person's favorite status
+//        add(
+//            DialogItem(
+//                text = if (favorite) R.string.remove_favorite else R.string.add_favorite,
+//                iconStringRes = R.string.fa_heart,
+//                iconColor = if (favorite) Color.Red else Color.Unspecified,
+//            ) {
+//                actions.onClickFavorite.invoke(itemId, !favorite)
+//            },
+//        )
     }

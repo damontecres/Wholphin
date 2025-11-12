@@ -342,6 +342,7 @@ fun HomePageContent(
                                                 item?.data?.indexNumber?.let { "E$it" }
                                                     ?: item?.data?.childCount?.let { if (it > 0) it.toString() else null },
                                             played = item?.data?.userData?.played ?: false,
+                                            favorite = item?.favorite ?: false,
                                             playPercent =
                                                 item?.data?.userData?.playedPercentage
                                                     ?: 0.0,

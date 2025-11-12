@@ -158,17 +158,21 @@ class MovieViewModel
                 }
             }
 
-        fun setWatched(played: Boolean) =
-            viewModelScope.launch(ExceptionHandler() + Dispatchers.IO) {
-                favoriteWatchManager.setWatched(itemId, played)
-                fetchAndSetItem()
-            }
+        fun setWatched(
+            itemId: UUID,
+            played: Boolean,
+        ) = viewModelScope.launch(ExceptionHandler() + Dispatchers.IO) {
+            favoriteWatchManager.setWatched(itemId, played)
+            fetchAndSetItem()
+        }
 
-        fun setFavorite(favorite: Boolean) =
-            viewModelScope.launch(ExceptionHandler() + Dispatchers.IO) {
-                favoriteWatchManager.setFavorite(itemId, favorite)
-                fetchAndSetItem()
-            }
+        fun setFavorite(
+            itemId: UUID,
+            favorite: Boolean,
+        ) = viewModelScope.launch(ExceptionHandler() + Dispatchers.IO) {
+            favoriteWatchManager.setFavorite(itemId, favorite)
+            fetchAndSetItem()
+        }
 
         fun savePlayVersion(
             item: BaseItem,

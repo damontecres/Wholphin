@@ -51,7 +51,7 @@ abstract class RecommendedViewModel(
         itemId: UUID,
     ) {
         viewModelScope.launchIO {
-            val row = rows.value.orEmpty().getOrNull(position.row)
+            val row = rows.value.getOrNull(position.row)
             if (row is HomeRowLoadingState.Success) {
                 (row.items as? ApiRequestPager<*>)?.refreshItem(position.column, itemId)
             }
