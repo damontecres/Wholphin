@@ -64,14 +64,18 @@ import com.github.damontecres.wholphin.ui.components.DialogPopup
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.ExpandablePlayButtons
 import com.github.damontecres.wholphin.ui.components.LoadingPage
+import com.github.damontecres.wholphin.ui.components.Optional
 import com.github.damontecres.wholphin.ui.components.chooseStream
 import com.github.damontecres.wholphin.ui.components.chooseVersionParams
 import com.github.damontecres.wholphin.ui.data.AddPlaylistViewModel
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialog
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialogInfo
+import com.github.damontecres.wholphin.ui.detail.MoreDialogActions
 import com.github.damontecres.wholphin.ui.detail.PlaylistDialog
 import com.github.damontecres.wholphin.ui.detail.PlaylistLoadingState
 import com.github.damontecres.wholphin.ui.detail.buildMoreDialogItems
+import com.github.damontecres.wholphin.ui.detail.buildMoreDialogItemsForHome
+import com.github.damontecres.wholphin.ui.detail.buildMoreDialogItemsForPerson
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.rememberInt
@@ -83,6 +87,7 @@ import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.MediaType
 import org.jellyfin.sdk.model.extensions.ticks
 import org.jellyfin.sdk.model.serializer.toUUID
+import java.util.UUID
 import kotlin.time.Duration
 
 @Composable
@@ -112,8 +117,23 @@ fun MovieDetails(
     var overviewDialog by remember { mutableStateOf<ItemDetailsDialogInfo?>(null) }
     var moreDialog by remember { mutableStateOf<DialogParams?>(null) }
     var chooseVersion by remember { mutableStateOf<DialogParams?>(null) }
-    var showPlaylistDialog by remember { mutableStateOf(false) }
+    var showPlaylistDialog by remember { mutableStateOf<Optional<UUID>>(Optional.absent()) }
     val playlistState by playlistViewModel.playlistState.observeAsState(PlaylistLoadingState.Pending)
+
+    val moreActions =
+        MoreDialogActions(
+            navigateTo = viewModel::navigateTo,
+            onClickWatch = { itemId, watched ->
+                viewModel.setWatched(itemId, watched)
+            },
+            onClickFavorite = { itemId, favorite ->
+                viewModel.setFavorite(itemId, favorite)
+            },
+            onClickAddPlaylist = { itemId ->
+                playlistViewModel.loadPlaylists(MediaType.VIDEO)
+                showPlaylistDialog.makePresent(itemId)
+            },
+        )
 
     when (val state = loading) {
         is LoadingState.Error -> ErrorMessage(state)
@@ -139,8 +159,8 @@ fun MovieDetails(
                     chapters = chapters,
                     trailers = trailers,
                     similar = similar,
-                    onClickItem = {
-                        viewModel.navigateTo(it.destination())
+                    onClickItem = { index, item ->
+                        viewModel.navigateTo(item.destination())
                     },
                     onClickPerson = {
                         viewModel.navigateTo(
@@ -180,9 +200,7 @@ fun MovieDetails(
                                         favorite = movie.data.userData?.isFavorite ?: false,
                                         series = null,
                                         sourceId = chosenStreams?.sourceId,
-                                        navigateTo = viewModel::navigateTo,
-                                        onClickWatch = viewModel::setWatched,
-                                        onClickFavorite = viewModel::setFavorite,
+                                        actions = moreActions,
                                         onChooseVersion = {
                                             chooseVersion =
                                                 chooseVersionParams(
@@ -218,18 +236,46 @@ fun MovieDetails(
                                                     )
                                             }
                                         },
-                                        onClickAddPlaylist = {
-                                            playlistViewModel.loadPlaylists(MediaType.VIDEO)
-                                            showPlaylistDialog = true
-                                        },
                                     ),
                             )
                     },
                     watchOnClick = {
-                        viewModel.setWatched((movie.data.userData?.played ?: false).not())
+                        viewModel.setWatched(movie.id, !movie.played)
                     },
                     favoriteOnClick = {
-                        viewModel.setFavorite((movie.data.userData?.isFavorite ?: false).not())
+                        viewModel.setFavorite(movie.id, !movie.favorite)
+                    },
+                    onLongClickPerson = { index, person ->
+                        val items =
+                            buildMoreDialogItemsForPerson(
+                                context = context,
+                                person = person,
+                                actions = moreActions,
+                            )
+                        moreDialog =
+                            DialogParams(
+                                fromLongClick = true,
+                                title = person.name ?: "",
+                                items = items,
+                            )
+                    },
+                    onLongClickSimilar = { index, similar ->
+                        val items =
+                            buildMoreDialogItemsForHome(
+                                context = context,
+                                item = similar,
+                                seriesId = null,
+                                playbackPosition = similar.playbackPosition,
+                                watched = similar.played,
+                                favorite = similar.favorite,
+                                actions = moreActions,
+                            )
+                        moreDialog =
+                            DialogParams(
+                                fromLongClick = true,
+                                title = similar.title ?: "",
+                                items = items,
+                            )
                     },
                     trailerOnClick = { trailer ->
                         when (trailer) {
@@ -283,19 +329,19 @@ fun MovieDetails(
             waitToLoad = params.fromLongClick,
         )
     }
-    if (showPlaylistDialog) {
+    showPlaylistDialog.compose { itemId ->
         PlaylistDialog(
             title = stringResource(R.string.add_to_playlist),
             state = playlistState,
-            onDismissRequest = { showPlaylistDialog = false },
+            onDismissRequest = { showPlaylistDialog.makeAbsent() },
             onClick = {
-                playlistViewModel.addToPlaylist(it.id, destination.itemId)
-                showPlaylistDialog = false
+                playlistViewModel.addToPlaylist(it.id, itemId)
+                showPlaylistDialog.makeAbsent()
             },
             createEnabled = true,
             onCreatePlaylist = {
-                playlistViewModel.createPlaylistAndAddItem(it, destination.itemId)
-                showPlaylistDialog = false
+                playlistViewModel.createPlaylistAndAddItem(it, itemId)
+                showPlaylistDialog.makeAbsent()
             },
             elevation = 3.dp,
         )
@@ -323,8 +369,10 @@ fun MovieDetailsContent(
     watchOnClick: () -> Unit,
     favoriteOnClick: () -> Unit,
     moreOnClick: () -> Unit,
-    onClickItem: (BaseItem) -> Unit,
+    onClickItem: (Int, BaseItem) -> Unit,
     onClickPerson: (Person) -> Unit,
+    onLongClickPerson: (Int, Person) -> Unit,
+    onLongClickSimilar: (Int, BaseItem) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val scope = rememberCoroutineScope()
@@ -422,7 +470,10 @@ fun MovieDetailsContent(
                             position = PEOPLE_ROW
                             onClickPerson.invoke(it)
                         },
-                        onLongClick = {},
+                        onLongClick = { index, person ->
+                            position = PEOPLE_ROW
+                            onLongClickPerson.invoke(index, person)
+                        },
                         modifier =
                             Modifier
                                 .fillMaxWidth()
@@ -466,11 +517,14 @@ fun MovieDetailsContent(
                     ItemRow(
                         title = stringResource(R.string.more_like_this),
                         items = similar,
-                        onClickItem = {
+                        onClickItem = { index, item ->
                             position = SIMILAR_ROW
-                            onClickItem.invoke(it)
+                            onClickItem.invoke(index, item)
                         },
-                        onLongClickItem = {},
+                        onLongClickItem = { index, similar ->
+                            position = SIMILAR_ROW
+                            onLongClickSimilar.invoke(index, similar)
+                        },
                         cardContent = { index, item, mod, onClick, onLongClick ->
                             SeasonCard(
                                 item = item,

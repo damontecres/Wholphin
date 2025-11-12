@@ -106,7 +106,7 @@ fun CollectionFolderLiveTv(
         logTab("livetv", selectedTabIndex)
         viewModel.saveRememberedTab(preferences, destination.itemId, selectedTabIndex)
     }
-    val onClickItem = { item: BaseItem ->
+    val onClickItem = { position: Int, item: BaseItem ->
         viewModel.navigationManager.navigateTo(item.destination())
     }
 

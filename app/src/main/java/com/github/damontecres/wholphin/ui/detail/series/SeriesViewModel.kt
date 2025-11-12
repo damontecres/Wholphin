@@ -23,6 +23,7 @@ import com.github.damontecres.wholphin.ui.setValueOnMain
 import com.github.damontecres.wholphin.ui.showToast
 import com.github.damontecres.wholphin.util.ApiRequestPager
 import com.github.damontecres.wholphin.util.ExceptionHandler
+import com.github.damontecres.wholphin.util.FavoriteWatchManager
 import com.github.damontecres.wholphin.util.GetEpisodesRequestHandler
 import com.github.damontecres.wholphin.util.GetItemsRequestHandler
 import com.github.damontecres.wholphin.util.LoadingExceptionHandler
@@ -36,9 +37,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.libraryApi
-import org.jellyfin.sdk.api.client.extensions.playStateApi
 import org.jellyfin.sdk.api.client.extensions.tvShowsApi
-import org.jellyfin.sdk.api.client.extensions.userLibraryApi
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.ItemFields
 import org.jellyfin.sdk.model.api.ItemSortBy
@@ -61,6 +60,7 @@ class SeriesViewModel
         private val navigationManager: NavigationManager,
         private val itemPlaybackRepository: ItemPlaybackRepository,
         private val themeSongPlayer: ThemeSongPlayer,
+        private val favoriteWatchManager: FavoriteWatchManager,
     ) : ItemViewModel(api) {
         private lateinit var seriesId: UUID
         private lateinit var prefs: UserPreferences
@@ -240,11 +240,7 @@ class SeriesViewModel
             played: Boolean,
             listIndex: Int?,
         ) = viewModelScope.launch(Dispatchers.IO + ExceptionHandler()) {
-            if (played) {
-                api.playStateApi.markPlayedItem(itemId)
-            } else {
-                api.playStateApi.markUnplayedItem(itemId)
-            }
+            favoriteWatchManager.setWatched(itemId, played)
             listIndex?.let {
                 refreshEpisode(itemId, listIndex)
             }
@@ -255,11 +251,7 @@ class SeriesViewModel
             favorite: Boolean,
             listIndex: Int?,
         ) = viewModelScope.launch(ExceptionHandler() + Dispatchers.IO) {
-            if (favorite) {
-                api.userLibraryApi.markFavoriteItem(itemId)
-            } else {
-                api.userLibraryApi.unmarkFavoriteItem(itemId)
-            }
+            favoriteWatchManager.setFavorite(itemId, favorite)
             if (listIndex != null) {
                 refreshEpisode(itemId, listIndex)
             } else {
@@ -279,11 +271,7 @@ class SeriesViewModel
 
         fun setWatchedSeries(played: Boolean) =
             viewModelScope.launch(ExceptionHandler() + Dispatchers.IO) {
-                if (played) {
-                    api.playStateApi.markPlayedItem(seriesId)
-                } else {
-                    api.playStateApi.markUnplayedItem(seriesId)
-                }
+                favoriteWatchManager.setWatched(seriesId, played)
                 val series = fetchItem(seriesId)
                 val seasons = getSeasons(series)
                 this@SeriesViewModel.seasons.setValueOnMain(seasons)

@@ -28,7 +28,7 @@ fun PersonRow(
     people: List<Person>,
     onClick: (Person) -> Unit,
     modifier: Modifier = Modifier,
-    onLongClick: ((Person) -> Unit)? = null,
+    onLongClick: ((Int, Person) -> Unit)? = null,
 ) {
     val firstFocus = remember { FocusRequester() }
     Column(
@@ -54,7 +54,7 @@ fun PersonRow(
                 PersonCard(
                     item = item,
                     onClick = { onClick.invoke(item) },
-                    onLongClick = { onLongClick?.invoke(item) },
+                    onLongClick = { onLongClick?.invoke(index, item) },
                     modifier =
                         Modifier
                             .width(120.dp)

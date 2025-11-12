@@ -23,6 +23,7 @@ import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.nav.NavigationManager
 import com.github.damontecres.wholphin.ui.setValueOnMain
 import com.github.damontecres.wholphin.util.ExceptionHandler
+import com.github.damontecres.wholphin.util.FavoriteWatchManager
 import com.github.damontecres.wholphin.util.LoadingExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
 import com.github.damontecres.wholphin.util.ThemeSongPlayer
@@ -39,7 +40,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.libraryApi
-import org.jellyfin.sdk.api.client.extensions.playStateApi
 import org.jellyfin.sdk.api.client.extensions.userLibraryApi
 import org.jellyfin.sdk.model.api.MediaStreamType
 import org.jellyfin.sdk.model.api.request.GetSimilarItemsRequest
@@ -55,6 +55,7 @@ class MovieViewModel
         val serverRepository: ServerRepository,
         val itemPlaybackRepository: ItemPlaybackRepository,
         private val themeSongPlayer: ThemeSongPlayer,
+        private val favoriteWatchManager: FavoriteWatchManager,
         @Assisted val itemId: UUID,
     ) : ViewModel() {
         @AssistedFactory
@@ -157,25 +158,21 @@ class MovieViewModel
                 }
             }
 
-        fun setWatched(played: Boolean) =
-            viewModelScope.launch(ExceptionHandler() + Dispatchers.IO) {
-                if (played) {
-                    api.playStateApi.markPlayedItem(itemId)
-                } else {
-                    api.playStateApi.markUnplayedItem(itemId)
-                }
-                fetchAndSetItem()
-            }
+        fun setWatched(
+            itemId: UUID,
+            played: Boolean,
+        ) = viewModelScope.launch(ExceptionHandler() + Dispatchers.IO) {
+            favoriteWatchManager.setWatched(itemId, played)
+            fetchAndSetItem()
+        }
 
-        fun setFavorite(favorite: Boolean) =
-            viewModelScope.launch(ExceptionHandler() + Dispatchers.IO) {
-                if (favorite) {
-                    api.userLibraryApi.markFavoriteItem(itemId)
-                } else {
-                    api.userLibraryApi.unmarkFavoriteItem(itemId)
-                }
-                fetchAndSetItem()
-            }
+        fun setFavorite(
+            itemId: UUID,
+            favorite: Boolean,
+        ) = viewModelScope.launch(ExceptionHandler() + Dispatchers.IO) {
+            favoriteWatchManager.setFavorite(itemId, favorite)
+            fetchAndSetItem()
+        }
 
         fun savePlayVersion(
             item: BaseItem,
