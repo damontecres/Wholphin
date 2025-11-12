@@ -91,9 +91,6 @@ fun CollectionFolderMovie(
             0 -> {
                 RecommendedMovie(
                     preferences = preferences,
-                    onClickItem = { position, item ->
-                        preferencesViewModel.navigationManager.navigateTo(item.destination())
-                    },
                     parentId = destination.itemId,
                     onFocusPosition = { pos ->
                         showHeader = pos.row < 1
