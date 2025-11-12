@@ -16,6 +16,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
@@ -50,6 +51,7 @@ import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.components.TabRow
 import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
+import com.github.damontecres.wholphin.ui.logTab
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.formatDateTime
 import kotlin.time.Duration
@@ -77,6 +79,9 @@ fun SeriesOverviewContent(
 ) {
     val bringIntoViewRequester = remember { BringIntoViewRequester() }
     var selectedTabIndex by rememberSaveable(position) { mutableIntStateOf(position.seasonTabIndex) }
+    LaunchedEffect(selectedTabIndex) {
+        logTab("series_overview", selectedTabIndex)
+    }
     val tabRowFocusRequester = remember { FocusRequester() }
 
     val focusedEpisode =

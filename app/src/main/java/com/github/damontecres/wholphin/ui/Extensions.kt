@@ -38,6 +38,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.acra.ACRA
 import org.jellyfin.sdk.model.api.BaseItemDto
 import org.jellyfin.sdk.model.extensions.ticks
 import timber.log.Timber
@@ -380,3 +381,12 @@ fun equalsNotNull(
     a: Any?,
     b: Any?,
 ) = a != null && b != null && a == b
+
+fun logTab(
+    name: String,
+    tabIndex: Int,
+) {
+    val info = "$tabIndex, $name"
+    Timber.i("Current tab: $info")
+    ACRA.errorReporter.putCustomData("tabInfo", info)
+}
