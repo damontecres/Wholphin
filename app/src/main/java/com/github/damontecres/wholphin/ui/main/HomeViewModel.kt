@@ -51,6 +51,7 @@ import timber.log.Timber
 import java.time.LocalDateTime
 import java.util.UUID
 import javax.inject.Inject
+import kotlin.time.Duration.Companion.milliseconds
 
 @HiltViewModel
 class HomeViewModel
@@ -282,31 +283,34 @@ class HomeViewModel
                 .maximumSize(AppPreference.HomePageItems.max)
                 .build<SeriesItemId, LocalDateTime?>(
                     object :
-                        CacheLoader<SeriesItemId, LocalDateTime?>() {
-                        override fun load(key: SeriesItemId): LocalDateTime? {
-                            val request =
-                                GetEpisodesRequest(
-                                    seriesId = key.seriesId!!,
-                                    adjacentTo = key.itemId,
-                                    limit = 1,
-                                )
-                            val result =
-                                runBlocking {
-                                    GetEpisodesRequestHandler
-                                        .execute(
-                                            api,
-                                            request,
-                                        ).content.items
-                                }
-                            return result.firstOrNull()?.userData?.lastPlayedDate
-                        }
+                        CacheLoader<SeriesItemId, LocalDateTime>() {
+                        override fun load(key: SeriesItemId): LocalDateTime = getLastPlayed(key)
                     },
                 )
+
+        private fun getLastPlayed(key: SeriesItemId): LocalDateTime {
+            val request =
+                GetEpisodesRequest(
+                    seriesId = key.seriesId,
+                    adjacentTo = key.itemId,
+                    limit = 1,
+                )
+            val result =
+                runBlocking {
+                    GetEpisodesRequestHandler
+                        .execute(
+                            api,
+                            request,
+                        ).content.items
+                }
+            return result.firstOrNull()?.userData?.lastPlayedDate ?: LocalDateTime.MIN
+        }
 
         private suspend fun buildCombined(
             resume: List<BaseItem>,
             nextUp: List<BaseItem>,
         ): List<BaseItem> {
+            val start = System.currentTimeMillis()
             val semaphore = Semaphore(3)
             val deferred =
                 nextUp
@@ -315,7 +319,8 @@ class HomeViewModel
                         semaphore.withPermit {
                             viewModelScope.async {
                                 try {
-                                    datePlayedCache.get(SeriesItemId(item.data.seriesId!!, item.id))
+//                                    datePlayedCache.get(SeriesItemId(item.data.seriesId!!, item.id))
+                                    getLastPlayed(SeriesItemId(item.data.seriesId!!, item.id))
                                 } catch (ex: Exception) {
                                     Timber.e(ex, "Error fetching %s", item.id)
                                     null
@@ -327,7 +332,10 @@ class HomeViewModel
             val timestamps = mutableMapOf<UUID, LocalDateTime?>()
             nextUp.map { it.id }.zip(nextUpLastPlayed).toMap(timestamps)
             resume.forEach { timestamps[it.id] = it.data.userData?.lastPlayedDate }
-            return (resume + nextUp).sortedByDescending { timestamps[it.id] }
+            val result = (resume + nextUp).sortedByDescending { timestamps[it.id] }
+            val duration = (System.currentTimeMillis() - start).milliseconds
+            Timber.v("buildCombined took %s", duration)
+            return result
         }
 
         fun setWatched(
