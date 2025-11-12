@@ -20,6 +20,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -40,9 +41,14 @@ import com.github.damontecres.wholphin.ui.SlimItemFields
 import com.github.damontecres.wholphin.ui.data.SortAndDirection
 import com.github.damontecres.wholphin.ui.detail.CardGrid
 import com.github.damontecres.wholphin.ui.detail.ItemViewModel
+import com.github.damontecres.wholphin.ui.detail.MoreDialogActions
+import com.github.damontecres.wholphin.ui.detail.buildMoreDialogItemsForHome
+import com.github.damontecres.wholphin.ui.nav.NavigationManager
 import com.github.damontecres.wholphin.ui.toServerString
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.ApiRequestPager
+import com.github.damontecres.wholphin.util.ExceptionHandler
+import com.github.damontecres.wholphin.util.FavoriteWatchManager
 import com.github.damontecres.wholphin.util.GetItemsRequestHandler
 import com.github.damontecres.wholphin.util.LoadingExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
@@ -59,9 +65,11 @@ import org.jellyfin.sdk.model.api.ImageType
 import org.jellyfin.sdk.model.api.ItemSortBy
 import org.jellyfin.sdk.model.api.SortOrder
 import org.jellyfin.sdk.model.api.request.GetItemsRequest
+import org.jellyfin.sdk.model.extensions.ticks
 import org.jellyfin.sdk.model.serializer.toUUIDOrNull
 import java.util.UUID
 import javax.inject.Inject
+import kotlin.time.Duration
 
 @HiltViewModel
 class CollectionFolderViewModel
@@ -71,6 +79,8 @@ class CollectionFolderViewModel
         @param:ApplicationContext private val context: Context,
         private val serverRepository: ServerRepository,
         private val libraryDisplayInfoDao: LibraryDisplayInfoDao,
+        private val favoriteWatchManager: FavoriteWatchManager,
+        val navigationManager: NavigationManager,
     ) : ItemViewModel(api) {
         val loading = MutableLiveData<LoadingState>(LoadingState.Loading)
         val pager = MutableLiveData<List<BaseItem?>>(listOf())
@@ -228,6 +238,24 @@ class CollectionFolderViewModel
                     result.totalRecordCount
                 }
             }
+
+        fun setWatched(
+            position: Int,
+            itemId: UUID,
+            played: Boolean,
+        ) = viewModelScope.launch(ExceptionHandler() + Dispatchers.IO) {
+            favoriteWatchManager.setWatched(itemId, played)
+            (pager.value as? ApiRequestPager<*>)?.refreshItem(position, itemId)
+        }
+
+        fun setFavorite(
+            position: Int,
+            itemId: UUID,
+            favorite: Boolean,
+        ) = viewModelScope.launch(ExceptionHandler() + Dispatchers.IO) {
+            favoriteWatchManager.setFavorite(itemId, favorite)
+            (pager.value as? ApiRequestPager<*>)?.refreshItem(position, itemId)
+        }
     }
 
 /**
@@ -241,7 +269,7 @@ fun CollectionFolderGrid(
     itemId: UUID,
     initialFilter: GetItemsFilter,
     recursive: Boolean,
-    onClickItem: (BaseItem) -> Unit,
+    onClickItem: (Int, BaseItem) -> Unit,
     sortOptions: List<ItemSortBy>,
     modifier: Modifier = Modifier,
     initialSortAndDirection: SortAndDirection? = null,
@@ -266,7 +294,7 @@ fun CollectionFolderGrid(
     itemId: String,
     initialFilter: GetItemsFilter,
     recursive: Boolean,
-    onClickItem: (BaseItem) -> Unit,
+    onClickItem: (Int, BaseItem) -> Unit,
     sortOptions: List<ItemSortBy>,
     modifier: Modifier = Modifier,
     viewModel: CollectionFolderViewModel = hiltViewModel(),
@@ -274,6 +302,7 @@ fun CollectionFolderGrid(
     showTitle: Boolean = true,
     positionCallback: ((columns: Int, position: Int) -> Unit)? = null,
 ) {
+    val context = LocalContext.current
     OneTimeLaunchedEffect {
         viewModel.init(itemId, initialSortAndDirection, recursive, initialFilter)
     }
@@ -282,6 +311,8 @@ fun CollectionFolderGrid(
     val loading by viewModel.loading.observeAsState(LoadingState.Loading)
     val item by viewModel.item.observeAsState()
     val pager by viewModel.pager.observeAsState()
+
+    var moreDialog by remember { mutableStateOf<PositionItem?>(null) }
 
     when (val state = loading) {
         is LoadingState.Error -> ErrorMessage(state)
@@ -297,6 +328,9 @@ fun CollectionFolderGrid(
                     sortAndDirection = sortAndDirection!!,
                     modifier = modifier,
                     onClickItem = onClickItem,
+                    onLongClickItem = { position, item ->
+                        moreDialog = PositionItem(position, item)
+                    },
                     onSortChange = {
                         viewModel.onSortChange(it, recursive, filter)
                     },
@@ -308,6 +342,41 @@ fun CollectionFolderGrid(
             }
         }
     }
+    if (moreDialog != null) {
+        moreDialog?.let { (position, item) ->
+            DialogPopup(
+                showDialog = true,
+                title = item.title ?: "",
+                dialogItems =
+                    buildMoreDialogItemsForHome(
+                        context = context,
+                        item = item,
+                        seriesId = null,
+                        playbackPosition =
+                            item.data.userData
+                                ?.playbackPositionTicks
+                                ?.ticks
+                                ?: Duration.ZERO,
+                        watched = item.data.userData?.played ?: false,
+                        favorite = item.data.userData?.isFavorite ?: false,
+                        actions =
+                            MoreDialogActions(
+                                navigateTo = { viewModel.navigationManager.navigateTo(it) },
+                                onClickWatch = { itemId, watched ->
+                                    viewModel.setWatched(position, itemId, watched)
+                                },
+                                onClickFavorite = { itemId, watched ->
+                                    viewModel.setFavorite(position, itemId, watched)
+                                },
+                                onClickAddPlaylist = { },
+                            ),
+                    ),
+                onDismissRequest = { moreDialog = null },
+                dismissOnClick = true,
+                waitToLoad = true,
+            )
+        }
+    }
 }
 
 @Composable
@@ -316,7 +385,8 @@ fun CollectionFolderGridContent(
     item: BaseItem?,
     pager: List<BaseItem?>,
     sortAndDirection: SortAndDirection,
-    onClickItem: (BaseItem) -> Unit,
+    onClickItem: (Int, BaseItem) -> Unit,
+    onLongClickItem: (Int, BaseItem) -> Unit,
     onSortChange: (SortAndDirection) -> Unit,
     letterPosition: suspend (Char) -> Int,
     sortOptions: List<ItemSortBy>,
@@ -358,7 +428,7 @@ fun CollectionFolderGridContent(
         CardGrid(
             pager = pager,
             onClickItem = onClickItem,
-            onLongClickItem = {},
+            onLongClickItem = onLongClickItem,
             letterPosition = letterPosition,
             gridFocusRequester = gridFocusRequester,
             showJumpButtons = false, // TODO add preference
@@ -372,3 +442,8 @@ fun CollectionFolderGridContent(
         )
     }
 }
+
+data class PositionItem(
+    val position: Int,
+    val item: BaseItem,
+)

@@ -99,7 +99,7 @@ fun FavoritesPage(
             0 -> {
                 CollectionFolderGrid(
                     preferences = preferences,
-                    onClickItem = onClickItem,
+                    onClickItem = { _, item -> onClickItem.invoke(item) },
                     itemId = "${NavDrawerItem.Favorites.id}_movies",
                     initialFilter =
                         GetItemsFilter(
@@ -122,7 +122,7 @@ fun FavoritesPage(
             1 -> {
                 CollectionFolderGrid(
                     preferences = preferences,
-                    onClickItem = onClickItem,
+                    onClickItem = { _, item -> onClickItem.invoke(item) },
                     itemId = "${NavDrawerItem.Favorites.id}_series",
                     initialFilter =
                         GetItemsFilter(
@@ -145,7 +145,7 @@ fun FavoritesPage(
             2 -> {
                 CollectionFolderGrid(
                     preferences = preferences,
-                    onClickItem = onClickItem,
+                    onClickItem = { _, item -> onClickItem.invoke(item) },
                     itemId = "${NavDrawerItem.Favorites.id}_episodes",
                     initialFilter =
                         GetItemsFilter(

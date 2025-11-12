@@ -111,7 +111,7 @@ fun CollectionFolderMovie(
             1 -> {
                 CollectionFolderGrid(
                     preferences = preferences,
-                    onClickItem = onClickItem,
+                    onClickItem = { _, item -> onClickItem.invoke(item) },
                     itemId = destination.itemId,
                     initialFilter =
                         GetItemsFilter(
@@ -133,7 +133,7 @@ fun CollectionFolderMovie(
             2 -> {
                 CollectionFolderGrid(
                     preferences = preferences,
-                    onClickItem = onClickItem,
+                    onClickItem = { _, item -> onClickItem.invoke(item) },
                     itemId = destination.itemId,
                     initialFilter =
                         GetItemsFilter(

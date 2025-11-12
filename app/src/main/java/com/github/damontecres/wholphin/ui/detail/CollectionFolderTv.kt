@@ -125,7 +125,7 @@ fun CollectionFolderTv(
                     positionCallback = { columns, position ->
                         showHeader = position < columns
                     },
-                    onClickItem = onClickItem,
+                    onClickItem = { _, item -> onClickItem.invoke(item) },
                 )
             }
             2 -> {
