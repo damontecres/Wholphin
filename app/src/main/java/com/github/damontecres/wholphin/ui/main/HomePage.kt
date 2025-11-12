@@ -58,6 +58,7 @@ import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.data.AddPlaylistViewModel
 import com.github.damontecres.wholphin.ui.data.RowColumn
 import com.github.damontecres.wholphin.ui.data.RowColumnSaver
+import com.github.damontecres.wholphin.ui.detail.MoreDialogActions
 import com.github.damontecres.wholphin.ui.detail.PlaylistDialog
 import com.github.damontecres.wholphin.ui.detail.PlaylistLoadingState
 import com.github.damontecres.wholphin.ui.detail.buildMoreDialogItemsForHome
@@ -137,17 +138,20 @@ fun HomePage(
                                     ?: Duration.ZERO,
                             watched = it.data.userData?.played ?: false,
                             favorite = it.data.userData?.isFavorite ?: false,
-                            navigateTo = viewModel.navigationManager::navigateTo,
-                            onClickWatch = { itemId, played ->
-                                viewModel.setWatched(itemId, played)
-                            },
-                            onClickFavorite = { itemId, favorite ->
-                                viewModel.setFavorite(itemId, favorite)
-                            },
-                            onClickAddPlaylist = { itemId ->
-                                playlistViewModel.loadPlaylists(MediaType.VIDEO)
-                                showPlaylistDialog = itemId
-                            },
+                            actions =
+                                MoreDialogActions(
+                                    navigateTo = viewModel.navigationManager::navigateTo,
+                                    onClickWatch = { itemId, played ->
+                                        viewModel.setWatched(itemId, played)
+                                    },
+                                    onClickFavorite = { itemId, favorite ->
+                                        viewModel.setFavorite(itemId, favorite)
+                                    },
+                                    onClickAddPlaylist = { itemId ->
+                                        playlistViewModel.loadPlaylists(MediaType.VIDEO)
+                                        showPlaylistDialog = itemId
+                                    },
+                                ),
                         )
                     dialog =
                         DialogParams(

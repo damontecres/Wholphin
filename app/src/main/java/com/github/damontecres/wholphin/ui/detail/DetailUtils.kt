@@ -20,6 +20,13 @@ import org.jellyfin.sdk.model.serializer.toUUIDOrNull
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
+data class MoreDialogActions(
+    val navigateTo: (Destination) -> Unit = {},
+    var onClickWatch: (UUID, Boolean) -> Unit = { _, _ -> },
+    var onClickFavorite: (UUID, Boolean) -> Unit = { _, _ -> },
+    var onClickAddPlaylist: (UUID) -> Unit = {},
+)
+
 /**
  * Build the [DialogItem]s when clicking "More"
  *
@@ -179,10 +186,7 @@ fun buildMoreDialogItemsForHome(
     playbackPosition: Duration,
     watched: Boolean,
     favorite: Boolean,
-    navigateTo: (Destination) -> Unit,
-    onClickWatch: (UUID, Boolean) -> Unit,
-    onClickFavorite: (UUID, Boolean) -> Unit,
-    onClickAddPlaylist: (UUID) -> Unit,
+    actions: MoreDialogActions,
 ): List<DialogItem> =
     buildList {
         val itemId = item.id
@@ -191,7 +195,7 @@ fun buildMoreDialogItemsForHome(
                 context.getString(R.string.go_to),
                 Icons.Default.ArrowForward,
             ) {
-                navigateTo(item.destination())
+                actions.navigateTo(item.destination())
             },
         )
         if (item.type in supportedPlayableTypes) {
@@ -202,7 +206,7 @@ fun buildMoreDialogItemsForHome(
                         Icons.Default.PlayArrow,
                         iconColor = Color.Green.copy(alpha = .8f),
                     ) {
-                        navigateTo(
+                        actions.navigateTo(
                             Destination.Playback(
                                 itemId,
                                 playbackPosition.inWholeMilliseconds,
@@ -216,7 +220,7 @@ fun buildMoreDialogItemsForHome(
                         Icons.Default.Refresh,
 //                    iconColor = Color.Green.copy(alpha = .8f),
                     ) {
-                        navigateTo(
+                        actions.navigateTo(
                             Destination.Playback(
                                 itemId,
                                 0L,
@@ -231,7 +235,7 @@ fun buildMoreDialogItemsForHome(
                         Icons.Default.PlayArrow,
                         iconColor = Color.Green.copy(alpha = .8f),
                     ) {
-                        navigateTo(
+                        actions.navigateTo(
                             Destination.Playback(
                                 itemId,
                                 0L,
@@ -246,7 +250,7 @@ fun buildMoreDialogItemsForHome(
                 text = R.string.add_to_playlist,
                 iconStringRes = R.string.fa_list_ul,
             ) {
-                onClickAddPlaylist.invoke(itemId)
+                actions.onClickAddPlaylist.invoke(itemId)
             },
         )
         add(
@@ -254,7 +258,7 @@ fun buildMoreDialogItemsForHome(
                 text = if (watched) R.string.mark_unwatched else R.string.mark_watched,
                 iconStringRes = if (watched) R.string.fa_eye else R.string.fa_eye_slash,
             ) {
-                onClickWatch.invoke(itemId, !watched)
+                actions.onClickWatch.invoke(itemId, !watched)
             },
         )
         add(
@@ -263,7 +267,7 @@ fun buildMoreDialogItemsForHome(
                 iconStringRes = R.string.fa_heart,
                 iconColor = if (favorite) Color.Red else Color.Unspecified,
             ) {
-                onClickFavorite.invoke(itemId, !favorite)
+                actions.onClickFavorite.invoke(itemId, !favorite)
             },
         )
         seriesId?.let {
@@ -272,7 +276,7 @@ fun buildMoreDialogItemsForHome(
                     context.getString(R.string.go_to_series),
                     Icons.AutoMirrored.Filled.ArrowForward,
                 ) {
-                    navigateTo(
+                    actions.navigateTo(
                         Destination.MediaItem(
                             it,
                             BaseItemKind.SERIES,
