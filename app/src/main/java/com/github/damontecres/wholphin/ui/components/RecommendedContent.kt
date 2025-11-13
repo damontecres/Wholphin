@@ -42,7 +42,7 @@ abstract class RecommendedViewModel(
 ) : ViewModel() {
     abstract fun init()
 
-    abstract val rows: MutableStateFlow<MutableList<HomeRowLoadingState>>
+    abstract val rows: MutableStateFlow<List<HomeRowLoadingState>>
 
     val loading = MutableLiveData<LoadingState>(LoadingState.Loading)
 

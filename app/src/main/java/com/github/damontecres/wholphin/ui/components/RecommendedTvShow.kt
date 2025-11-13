@@ -59,13 +59,13 @@ class RecommendedTvShowViewModel
         }
 
         override val rows =
-            MutableStateFlow<MutableList<HomeRowLoadingState>>(
+            MutableStateFlow<List<HomeRowLoadingState>>(
                 rowTitles
                     .map {
                         HomeRowLoadingState.Pending(
                             context.getString(it),
                         )
-                    }.toMutableList(),
+                    },
             )
 
         override fun init() {
@@ -210,7 +210,7 @@ class RecommendedTvShowViewModel
             row: HomeRowLoadingState,
         ) {
             rows.update { current ->
-                current.apply { set(position, row) }
+                current.toMutableList().apply { set(position, row) }
             }
         }
 

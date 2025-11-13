@@ -57,13 +57,13 @@ class RecommendedMovieViewModel
         }
 
         override val rows =
-            MutableStateFlow<MutableList<HomeRowLoadingState>>(
+            MutableStateFlow<List<HomeRowLoadingState>>(
                 rowTitles
                     .map {
                         HomeRowLoadingState.Pending(
                             context.getString(it),
                         )
-                    }.toMutableList(),
+                    },
             )
 
         override fun init() {
@@ -166,6 +166,9 @@ class RecommendedMovieViewModel
                         val result =
                             try {
                                 pager.init()
+                                if (pager.isNotEmpty()) {
+                                    pager.getBlocking(0)
+                                }
                                 HomeRowLoadingState.Success(title, pager)
                             } catch (ex: Exception) {
                                 Timber.e(ex, "Error fetching %s", title)
@@ -182,7 +185,7 @@ class RecommendedMovieViewModel
             row: HomeRowLoadingState,
         ) {
             rows.update { current ->
-                current.apply { set(position, row) }
+                current.toMutableList().apply { set(position, row) }
             }
         }
 
