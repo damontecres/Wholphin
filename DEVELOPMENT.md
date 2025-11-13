@@ -25,6 +25,15 @@ After forking and cloning your fork, you can import the project into Android Stu
 
 You need a compatible Android Studio version for the configured AGP. This is generally `Narwhal 3 Feature Drop | 2025.1.3` or newer. See https://developer.android.com/build/releases/gradle-plugin and [`libs.versions.toml](./gradle/libs.versions.toml).
 
+### Code organization
+
+Code is split into several packages:
+- `data` - app-specific data models and services
+- `preferences` - Non-UI related code for user settings and preferences
+- `services` - hilt injectable services often used by ViewModels for API calls
+- `ui` - User interface code and ViewModels
+- `util` - Utility classes and functions
+
 ### FFmpeg decoder module
 
 The app ships with [media3 ffmpeg decoder module](https://github.com/androidx/media/blob/release/libraries/decoder_ffmpeg/README.md).
