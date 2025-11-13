@@ -236,7 +236,7 @@ class UpdateChecker
                             val targetFile = fallbackDownload(it, callback)
                             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
                                 val intent = Intent(Intent.ACTION_INSTALL_PACKAGE)
-                                intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
                                 intent.data =
                                     FileProvider.getUriForFile(
                                         context,
