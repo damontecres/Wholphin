@@ -171,7 +171,14 @@ class MovieViewModel
             favorite: Boolean,
         ) = viewModelScope.launch(ExceptionHandler() + Dispatchers.IO) {
             favoriteWatchManager.setFavorite(itemId, favorite)
+            val item = item.value
             fetchAndSetItem()
+            if (item != null && itemId != item.id) {
+                viewModelScope.launchIO {
+                    val people = peopleFavorites.getPeopleFor(item)
+                    this@MovieViewModel.people.setValueOnMain(people)
+                }
+            }
         }
 
         fun savePlayVersion(

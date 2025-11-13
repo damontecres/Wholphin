@@ -255,7 +255,11 @@ class SeriesViewModel
             if (listIndex != null) {
                 refreshEpisode(itemId, listIndex)
             } else {
-                fetchItem(seriesId)
+                val item = fetchItem(seriesId)
+                viewModelScope.launchIO {
+                    val people = peopleFavorites.getPeopleFor(item)
+                    this@SeriesViewModel.people.setValueOnMain(people)
+                }
             }
         }
 
