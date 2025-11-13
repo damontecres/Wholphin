@@ -8,6 +8,7 @@ import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.NavDrawerItemRepository
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.BaseItem
+import com.github.damontecres.wholphin.preferences.AppPreference
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.SlimItemFields
 import com.github.damontecres.wholphin.ui.nav.NavigationManager
@@ -15,15 +16,23 @@ import com.github.damontecres.wholphin.ui.nav.ServerNavDrawerItem
 import com.github.damontecres.wholphin.ui.setValueOnMain
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.FavoriteWatchManager
+import com.github.damontecres.wholphin.util.GetEpisodesRequestHandler
 import com.github.damontecres.wholphin.util.HomeRowLoadingState
 import com.github.damontecres.wholphin.util.LoadingExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
 import com.github.damontecres.wholphin.util.supportItemKinds
+import com.google.common.cache.CacheBuilder
+import com.google.common.cache.CacheLoader
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.itemsApi
@@ -34,12 +43,15 @@ import org.jellyfin.sdk.api.client.extensions.userViewsApi
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.CollectionType
 import org.jellyfin.sdk.model.api.UserDto
+import org.jellyfin.sdk.model.api.request.GetEpisodesRequest
 import org.jellyfin.sdk.model.api.request.GetLatestMediaRequest
 import org.jellyfin.sdk.model.api.request.GetNextUpRequest
 import org.jellyfin.sdk.model.api.request.GetResumeItemsRequest
 import timber.log.Timber
+import java.time.LocalDateTime
 import java.util.UUID
 import javax.inject.Inject
+import kotlin.time.Duration.Companion.milliseconds
 
 @HiltViewModel
 class HomeViewModel
@@ -84,31 +96,41 @@ class HomeViewModel
                             .filter { it is ServerNavDrawerItem }
                             .map { (it as ServerNavDrawerItem).itemId }
                     // TODO data is fetched all together which may be slow for large servers
-                    val resume = getResume(userDto.id, limit, !prefs.combineContinueNext)
+                    val resume = getResume(userDto.id, limit, true)
                     val nextUp =
                         getNextUp(
                             userDto.id,
                             limit,
                             prefs.enableRewatchingNextUp,
-                            prefs.combineContinueNext,
+                            false,
                         )
                     val watching =
                         buildList {
-                            if (resume.isNotEmpty()) {
+                            if (prefs.combineContinueNext) {
+                                val items = buildCombined(resume, nextUp)
                                 add(
                                     HomeRowLoadingState.Success(
                                         title = context.getString(R.string.continue_watching),
-                                        items = resume,
+                                        items = items,
                                     ),
                                 )
-                            }
-                            if (nextUp.isNotEmpty()) {
-                                add(
-                                    HomeRowLoadingState.Success(
-                                        title = context.getString(R.string.next_up),
-                                        items = nextUp,
-                                    ),
-                                )
+                            } else {
+                                if (resume.isNotEmpty()) {
+                                    add(
+                                        HomeRowLoadingState.Success(
+                                            title = context.getString(R.string.continue_watching),
+                                            items = resume,
+                                        ),
+                                    )
+                                }
+                                if (nextUp.isNotEmpty()) {
+                                    add(
+                                        HomeRowLoadingState.Success(
+                                            title = context.getString(R.string.next_up),
+                                            items = nextUp,
+                                        ),
+                                    )
+                                }
                             }
                         }
 
@@ -255,6 +277,67 @@ class HomeViewModel
             latestRows.setValueOnMain(rows)
         }
 
+        private val datePlayedCache =
+            CacheBuilder
+                .newBuilder()
+                .maximumSize(AppPreference.HomePageItems.max)
+                .build<SeriesItemId, LocalDateTime?>(
+                    object :
+                        CacheLoader<SeriesItemId, LocalDateTime>() {
+                        override fun load(key: SeriesItemId): LocalDateTime = getLastPlayed(key)
+                    },
+                )
+
+        private fun getLastPlayed(key: SeriesItemId): LocalDateTime {
+            val request =
+                GetEpisodesRequest(
+                    seriesId = key.seriesId,
+                    adjacentTo = key.itemId,
+                    limit = 1,
+                )
+            val result =
+                runBlocking {
+                    GetEpisodesRequestHandler
+                        .execute(
+                            api,
+                            request,
+                        ).content.items
+                }
+            return result.firstOrNull()?.userData?.lastPlayedDate ?: LocalDateTime.MIN
+        }
+
+        private suspend fun buildCombined(
+            resume: List<BaseItem>,
+            nextUp: List<BaseItem>,
+        ): List<BaseItem> {
+            val start = System.currentTimeMillis()
+            val semaphore = Semaphore(3)
+            val deferred =
+                nextUp
+                    .filter { it.data.seriesId != null }
+                    .map { item ->
+                        semaphore.withPermit {
+                            viewModelScope.async {
+                                try {
+//                                    datePlayedCache.get(SeriesItemId(item.data.seriesId!!, item.id))
+                                    getLastPlayed(SeriesItemId(item.data.seriesId!!, item.id))
+                                } catch (ex: Exception) {
+                                    Timber.e(ex, "Error fetching %s", item.id)
+                                    null
+                                }
+                            }
+                        }
+                    }
+            val nextUpLastPlayed = deferred.awaitAll()
+            val timestamps = mutableMapOf<UUID, LocalDateTime?>()
+            nextUp.map { it.id }.zip(nextUpLastPlayed).toMap(timestamps)
+            resume.forEach { timestamps[it.id] = it.data.userData?.lastPlayedDate }
+            val result = (resume + nextUp).sortedByDescending { timestamps[it.id] }
+            val duration = (System.currentTimeMillis() - start).milliseconds
+            Timber.v("buildCombined took %s", duration)
+            return result
+        }
+
         fun setWatched(
             itemId: UUID,
             played: Boolean,
@@ -286,4 +369,9 @@ val supportedLatestCollectionTypes =
 data class LatestData(
     val title: String,
     val request: GetLatestMediaRequest,
+)
+
+data class SeriesItemId(
+    val seriesId: UUID,
+    val itemId: UUID,
 )
