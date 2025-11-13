@@ -174,7 +174,7 @@ class ServerRepository
         }
 
         suspend fun removeUser(user: JellyfinUser) {
-            if (currentUser == user) {
+            if (currentUser.value?.id == user.id) {
                 withContext(Dispatchers.Main) {
                     _current.value = null
                 }
@@ -193,7 +193,7 @@ class ServerRepository
         }
 
         suspend fun removeServer(server: JellyfinServer) {
-            if (currentServer == server) {
+            if (currentServer.value?.id == server.id) {
                 withContext(Dispatchers.Main) {
                     _current.value = null
                 }
