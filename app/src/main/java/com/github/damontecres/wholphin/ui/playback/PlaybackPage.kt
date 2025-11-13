@@ -257,7 +257,7 @@ fun PlaybackPage(
                                 .matchParentSize()
                                 .background(Color.Black),
                         ) {
-                            LoadingPage()
+                            LoadingPage(focusEnabled = false)
                         }
                     }
 
