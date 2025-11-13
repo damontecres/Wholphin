@@ -63,28 +63,20 @@ class AppUpgradeHandler
 
         fun copySubfont(overwrite: Boolean) {
             try {
-                listOf("Roboto-Regular", "Roboto-Bold")
-                    .forEach { font ->
-                        val fontFileName = "font-roboto/$font.ttf"
-                        val outputDir = File(context.filesDir, "fonts")
-                        if (!outputDir.exists()) {
-                            outputDir.mkdir()
-                        }
-                        val outputFile = File(outputDir, "$font.ttf")
-                        if (!outputFile.exists() || overwrite) {
-                            context.assets.open(fontFileName).use { input ->
-                                outputFile.outputStream().use { output ->
-                                    input.copyTo(output)
-                                }
-                            }
-                            Timber.i("Wrote font %s to local", fontFileName)
+                val fontFileName = "subfont.ttf"
+                val outputFile = File(context.filesDir, fontFileName)
+                if (!outputFile.exists() || overwrite) {
+                    context.assets.open(fontFileName).use { input ->
+                        outputFile.outputStream().use { output ->
+                            input.copyTo(output)
                         }
                     }
-                val oldFont = File(context.filesDir, "subfont.ttf")
-                if (oldFont.exists()) {
-                    Timber.w("Old subfont.tff exists, will delete it")
-                    oldFont.delete()
+                    Timber.i("Wrote font %s to local", fontFileName)
                 }
+//                val oldFontDir = File(context.filesDir, "fonts")
+//                if (oldFontDir.exists()) {
+//                    oldFontDir.deleteRecursively()
+//                }
             } catch (ex: Exception) {
                 Timber.e(ex, "Exception copying subfont.tff")
             }

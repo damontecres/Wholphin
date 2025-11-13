@@ -281,11 +281,11 @@ object SubtitleSettings {
             }
         }
 
-        if (fontBold) {
-            MPVLib.setPropertyString("sub-font", "Roboto Bold")
-        } else {
-            MPVLib.setPropertyString("sub-font", "Roboto Regular")
-        }
+//        if (fontBold) {
+//            MPVLib.setPropertyString("sub-font", "Roboto Bold")
+//        } else {
+//            MPVLib.setPropertyString("sub-font", "Roboto Regular")
+//        }
         MPVLib.setPropertyBoolean("sub-bold", fontBold)
         MPVLib.setPropertyBoolean("sub-italic", fontItalic)
 
