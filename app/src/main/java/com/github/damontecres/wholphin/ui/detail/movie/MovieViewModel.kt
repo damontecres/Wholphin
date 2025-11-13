@@ -18,7 +18,6 @@ import com.github.damontecres.wholphin.data.model.Trailer
 import com.github.damontecres.wholphin.preferences.ThemeSongVolume
 import com.github.damontecres.wholphin.ui.SlimItemFields
 import com.github.damontecres.wholphin.ui.launchIO
-import com.github.damontecres.wholphin.ui.letNotEmpty
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.nav.NavigationManager
 import com.github.damontecres.wholphin.ui.setValueOnMain
@@ -26,6 +25,7 @@ import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.FavoriteWatchManager
 import com.github.damontecres.wholphin.util.LoadingExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
+import com.github.damontecres.wholphin.util.PeopleFavorites
 import com.github.damontecres.wholphin.util.ThemeSongPlayer
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
@@ -56,6 +56,7 @@ class MovieViewModel
         val itemPlaybackRepository: ItemPlaybackRepository,
         private val themeSongPlayer: ThemeSongPlayer,
         private val favoriteWatchManager: FavoriteWatchManager,
+        private val peopleFavorites: PeopleFavorites,
         @Assisted val itemId: UUID,
     ) : ViewModel() {
         @AssistedFactory
@@ -134,12 +135,11 @@ class MovieViewModel
                         this@MovieViewModel.trailers.value = localTrailers + remoteTrailers
                     }
                 }
+                viewModelScope.launchIO {
+                    val people = peopleFavorites.getPeopleFor(item)
+                    this@MovieViewModel.people.setValueOnMain(people)
+                }
                 withContext(Dispatchers.Main) {
-                    people.value =
-                        item.data.people
-                            ?.letNotEmpty { people ->
-                                people.map { Person.fromDto(it, api) }
-                            }.orEmpty()
                     chapters.value = Chapter.fromDto(item.data, api)
                 }
                 if (!similar.isInitialized) {

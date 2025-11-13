@@ -135,6 +135,7 @@
     <string name="version">Version</string>
     <string name="video_scale">Video Scale</string>
     <string name="video">Video</string>
+    <string name="videos">Videos</string>
     <string name="watch_live">Watch live</string>
     <string name="years_old">%1$d years old</string>
     <string name="play_with_transcoding">Play with transcoding</string>
