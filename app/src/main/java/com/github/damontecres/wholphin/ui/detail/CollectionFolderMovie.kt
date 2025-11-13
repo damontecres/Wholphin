@@ -23,7 +23,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.github.damontecres.wholphin.R
-import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.GetItemsFilter
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.components.CollectionFolderGrid
@@ -33,6 +32,7 @@ import com.github.damontecres.wholphin.ui.components.RecommendedMovie
 import com.github.damontecres.wholphin.ui.components.TabRow
 import com.github.damontecres.wholphin.ui.data.MovieSortOptions
 import com.github.damontecres.wholphin.ui.data.VideoSortOptions
+import com.github.damontecres.wholphin.ui.logTab
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.preferences.PreferencesViewModel
 import com.github.damontecres.wholphin.ui.tryRequestFocus
@@ -62,14 +62,11 @@ fun CollectionFolderMovie(
     LaunchedEffect(Unit) { firstTabFocusRequester.tryRequestFocus() }
 
     LaunchedEffect(selectedTabIndex) {
+        logTab("movie", selectedTabIndex)
         preferencesViewModel.saveRememberedTab(preferences, destination.itemId, selectedTabIndex)
     }
 
     var showHeader by rememberSaveable { mutableStateOf(true) }
-
-    val onClickItem = { item: BaseItem ->
-        preferencesViewModel.navigationManager.navigateTo(item.destination())
-    }
 
     LaunchedEffect(Unit) { focusRequester.tryRequestFocus() }
     Column(
@@ -94,7 +91,6 @@ fun CollectionFolderMovie(
             0 -> {
                 RecommendedMovie(
                     preferences = preferences,
-                    onClickItem = onClickItem,
                     parentId = destination.itemId,
                     onFocusPosition = { pos ->
                         showHeader = pos.row < 1
@@ -109,7 +105,9 @@ fun CollectionFolderMovie(
             1 -> {
                 CollectionFolderGrid(
                     preferences = preferences,
-                    onClickItem = onClickItem,
+                    onClickItem = { _, item ->
+                        preferencesViewModel.navigationManager.navigateTo(item.destination())
+                    },
                     itemId = destination.itemId,
                     initialFilter =
                         GetItemsFilter(
@@ -131,7 +129,9 @@ fun CollectionFolderMovie(
             2 -> {
                 CollectionFolderGrid(
                     preferences = preferences,
-                    onClickItem = onClickItem,
+                    onClickItem = { _, item ->
+                        preferencesViewModel.navigationManager.navigateTo(item.destination())
+                    },
                     itemId = destination.itemId,
                     initialFilter =
                         GetItemsFilter(

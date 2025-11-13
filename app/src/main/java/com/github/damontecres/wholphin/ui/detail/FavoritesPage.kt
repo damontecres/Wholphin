@@ -32,6 +32,7 @@ import com.github.damontecres.wholphin.ui.components.TabRow
 import com.github.damontecres.wholphin.ui.data.EpisodeSortOptions
 import com.github.damontecres.wholphin.ui.data.MovieSortOptions
 import com.github.damontecres.wholphin.ui.data.SeriesSortOptions
+import com.github.damontecres.wholphin.ui.logTab
 import com.github.damontecres.wholphin.ui.nav.NavDrawerItem
 import com.github.damontecres.wholphin.ui.preferences.PreferencesViewModel
 import com.github.damontecres.wholphin.ui.tryRequestFocus
@@ -63,6 +64,7 @@ fun FavoritesPage(
     val focusRequester = remember { FocusRequester() }
 
     LaunchedEffect(selectedTabIndex) {
+        logTab("favorites", selectedTabIndex)
         preferencesViewModel.saveRememberedTab(
             preferences,
             NavDrawerItem.Favorites.id,
@@ -97,7 +99,7 @@ fun FavoritesPage(
             0 -> {
                 CollectionFolderGrid(
                     preferences = preferences,
-                    onClickItem = onClickItem,
+                    onClickItem = { _, item -> onClickItem.invoke(item) },
                     itemId = "${NavDrawerItem.Favorites.id}_movies",
                     initialFilter =
                         GetItemsFilter(
@@ -120,7 +122,7 @@ fun FavoritesPage(
             1 -> {
                 CollectionFolderGrid(
                     preferences = preferences,
-                    onClickItem = onClickItem,
+                    onClickItem = { _, item -> onClickItem.invoke(item) },
                     itemId = "${NavDrawerItem.Favorites.id}_series",
                     initialFilter =
                         GetItemsFilter(
@@ -143,7 +145,7 @@ fun FavoritesPage(
             2 -> {
                 CollectionFolderGrid(
                     preferences = preferences,
-                    onClickItem = onClickItem,
+                    onClickItem = { _, item -> onClickItem.invoke(item) },
                     itemId = "${NavDrawerItem.Favorites.id}_episodes",
                     initialFilter =
                         GetItemsFilter(

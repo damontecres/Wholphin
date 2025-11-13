@@ -32,6 +32,7 @@ import com.github.damontecres.wholphin.ui.components.GenreCardGrid
 import com.github.damontecres.wholphin.ui.components.RecommendedTvShow
 import com.github.damontecres.wholphin.ui.components.TabRow
 import com.github.damontecres.wholphin.ui.data.SeriesSortOptions
+import com.github.damontecres.wholphin.ui.logTab
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.preferences.PreferencesViewModel
 import com.github.damontecres.wholphin.ui.tryRequestFocus
@@ -60,6 +61,7 @@ fun CollectionFolderTv(
     LaunchedEffect(Unit) { firstTabFocusRequester.tryRequestFocus() }
 
     LaunchedEffect(selectedTabIndex) {
+        logTab("tv", selectedTabIndex)
         preferencesViewModel.saveRememberedTab(preferences, destination.itemId, selectedTabIndex)
     }
 
@@ -93,7 +95,6 @@ fun CollectionFolderTv(
                 RecommendedTvShow(
                     preferences = preferences,
                     parentId = destination.itemId,
-                    onClickItem = onClickItem,
                     onFocusPosition = { pos ->
                         showHeader = pos.row < 1
                     },
@@ -123,7 +124,9 @@ fun CollectionFolderTv(
                     positionCallback = { columns, position ->
                         showHeader = position < columns
                     },
-                    onClickItem = onClickItem,
+                    onClickItem = { _, item ->
+                        preferencesViewModel.navigationManager.navigateTo(item.destination())
+                    },
                 )
             }
             2 -> {

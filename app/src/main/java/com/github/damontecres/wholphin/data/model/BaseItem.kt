@@ -11,6 +11,7 @@ import org.jellyfin.sdk.model.api.BaseItemDto
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.ImageType
 import org.jellyfin.sdk.model.extensions.ticks
+import kotlin.time.Duration
 
 @Serializable
 data class BaseItem(
@@ -18,28 +19,28 @@ data class BaseItem(
     val imageUrl: String?,
     val backdropImageUrl: String? = null,
 ) {
-    @Transient val id = data.id
+    val id get() = data.id
 
-    @Transient val type = data.type
+    val type get() = data.type
 
-    @Transient val name = data.name
+    val name get() = data.name
 
-    @Transient
-    val title = if (type == BaseItemKind.EPISODE) data.seriesName else name
+    val title get() = if (type == BaseItemKind.EPISODE) data.seriesName else name
 
-    @Transient
-    val subtitle =
-        if (type == BaseItemKind.EPISODE) data.seasonEpisode + " - " + name else data.productionYear?.toString()
-
-    @Transient
-    val resumeMs =
-        data.userData
-            ?.playbackPositionTicks
-            ?.ticks
-            ?.inWholeMilliseconds
+    val subtitle
+        get() =
+            if (type == BaseItemKind.EPISODE) data.seasonEpisode + " - " + name else data.productionYear?.toString()
 
     @Transient
     val indexNumber = data.indexNumber ?: dateAsIndex()
+
+    val playbackPosition get() = data.userData?.playbackPositionTicks?.ticks ?: Duration.ZERO
+
+    val resumeMs get() = playbackPosition.inWholeMilliseconds
+
+    val played get() = data.userData?.played ?: false
+
+    val favorite get() = data.userData?.isFavorite ?: false
 
     private fun dateAsIndex(): Int? =
         data.premiereDate

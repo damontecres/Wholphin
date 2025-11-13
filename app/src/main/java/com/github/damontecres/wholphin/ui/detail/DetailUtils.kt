@@ -9,6 +9,7 @@ import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.ui.graphics.Color
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.BaseItem
+import com.github.damontecres.wholphin.data.model.Person
 import com.github.damontecres.wholphin.ui.components.DialogItem
 import com.github.damontecres.wholphin.ui.letNotEmpty
 import com.github.damontecres.wholphin.ui.nav.Destination
@@ -19,6 +20,13 @@ import org.jellyfin.sdk.model.api.MediaStreamType
 import org.jellyfin.sdk.model.serializer.toUUIDOrNull
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
+
+data class MoreDialogActions(
+    val navigateTo: (Destination) -> Unit,
+    var onClickWatch: (UUID, Boolean) -> Unit,
+    var onClickFavorite: (UUID, Boolean) -> Unit,
+    var onClickAddPlaylist: (UUID) -> Unit,
+)
 
 /**
  * Build the [DialogItem]s when clicking "More"
@@ -43,12 +51,9 @@ fun buildMoreDialogItems(
     sourceId: UUID?,
     watched: Boolean,
     favorite: Boolean,
-    navigateTo: (Destination) -> Unit,
-    onClickWatch: (Boolean) -> Unit,
-    onClickFavorite: (Boolean) -> Unit,
+    actions: MoreDialogActions,
     onChooseVersion: () -> Unit,
     onChooseTracks: (MediaStreamType) -> Unit,
-    onClickAddPlaylist: () -> Unit,
 ): List<DialogItem> =
     buildList {
         add(
@@ -57,7 +62,7 @@ fun buildMoreDialogItems(
                 Icons.Default.PlayArrow,
                 iconColor = Color.Green.copy(alpha = .8f),
             ) {
-                navigateTo(
+                actions.navigateTo(
                     Destination.Playback(
                         item.id,
                         item.resumeMs ?: 0L,
@@ -119,7 +124,7 @@ fun buildMoreDialogItems(
                 text = R.string.add_to_playlist,
                 iconStringRes = R.string.fa_list_ul,
             ) {
-                onClickAddPlaylist.invoke()
+                actions.onClickAddPlaylist.invoke(item.id)
             },
         )
         add(
@@ -127,7 +132,7 @@ fun buildMoreDialogItems(
                 text = if (watched) R.string.mark_unwatched else R.string.mark_watched,
                 iconStringRes = if (watched) R.string.fa_eye else R.string.fa_eye_slash,
             ) {
-                onClickWatch.invoke(!watched)
+                actions.onClickWatch.invoke(item.id, !watched)
             },
         )
         add(
@@ -136,7 +141,7 @@ fun buildMoreDialogItems(
                 iconStringRes = R.string.fa_heart,
                 iconColor = if (favorite) Color.Red else Color.Unspecified,
             ) {
-                onClickFavorite.invoke(!favorite)
+                actions.onClickFavorite.invoke(item.id, !favorite)
             },
         )
         series?.let {
@@ -145,7 +150,7 @@ fun buildMoreDialogItems(
                     context.getString(R.string.go_to_series),
                     Icons.AutoMirrored.Filled.ArrowForward,
                 ) {
-                    navigateTo(
+                    actions.navigateTo(
                         Destination.MediaItem(
                             series.id,
                             BaseItemKind.SERIES,
@@ -160,7 +165,7 @@ fun buildMoreDialogItems(
                 context.getString(R.string.play_with_transcoding),
                 Icons.Default.PlayArrow,
             ) {
-                navigateTo(
+                actions.navigateTo(
                     Destination.Playback(
                         item.id,
                         item.resumeMs ?: 0L,
@@ -179,10 +184,7 @@ fun buildMoreDialogItemsForHome(
     playbackPosition: Duration,
     watched: Boolean,
     favorite: Boolean,
-    navigateTo: (Destination) -> Unit,
-    onClickWatch: (UUID, Boolean) -> Unit,
-    onClickFavorite: (UUID, Boolean) -> Unit,
-    onClickAddPlaylist: (UUID) -> Unit,
+    actions: MoreDialogActions,
 ): List<DialogItem> =
     buildList {
         val itemId = item.id
@@ -191,7 +193,7 @@ fun buildMoreDialogItemsForHome(
                 context.getString(R.string.go_to),
                 Icons.Default.ArrowForward,
             ) {
-                navigateTo(item.destination())
+                actions.navigateTo(item.destination())
             },
         )
         if (item.type in supportedPlayableTypes) {
@@ -202,7 +204,7 @@ fun buildMoreDialogItemsForHome(
                         Icons.Default.PlayArrow,
                         iconColor = Color.Green.copy(alpha = .8f),
                     ) {
-                        navigateTo(
+                        actions.navigateTo(
                             Destination.Playback(
                                 itemId,
                                 playbackPosition.inWholeMilliseconds,
@@ -216,7 +218,7 @@ fun buildMoreDialogItemsForHome(
                         Icons.Default.Refresh,
 //                    iconColor = Color.Green.copy(alpha = .8f),
                     ) {
-                        navigateTo(
+                        actions.navigateTo(
                             Destination.Playback(
                                 itemId,
                                 0L,
@@ -231,7 +233,7 @@ fun buildMoreDialogItemsForHome(
                         Icons.Default.PlayArrow,
                         iconColor = Color.Green.copy(alpha = .8f),
                     ) {
-                        navigateTo(
+                        actions.navigateTo(
                             Destination.Playback(
                                 itemId,
                                 0L,
@@ -246,7 +248,7 @@ fun buildMoreDialogItemsForHome(
                 text = R.string.add_to_playlist,
                 iconStringRes = R.string.fa_list_ul,
             ) {
-                onClickAddPlaylist.invoke(itemId)
+                actions.onClickAddPlaylist.invoke(itemId)
             },
         )
         add(
@@ -254,7 +256,7 @@ fun buildMoreDialogItemsForHome(
                 text = if (watched) R.string.mark_unwatched else R.string.mark_watched,
                 iconStringRes = if (watched) R.string.fa_eye else R.string.fa_eye_slash,
             ) {
-                onClickWatch.invoke(itemId, !watched)
+                actions.onClickWatch.invoke(itemId, !watched)
             },
         )
         add(
@@ -263,7 +265,7 @@ fun buildMoreDialogItemsForHome(
                 iconStringRes = R.string.fa_heart,
                 iconColor = if (favorite) Color.Red else Color.Unspecified,
             ) {
-                onClickFavorite.invoke(itemId, !favorite)
+                actions.onClickFavorite.invoke(itemId, !favorite)
             },
         )
         seriesId?.let {
@@ -272,7 +274,7 @@ fun buildMoreDialogItemsForHome(
                     context.getString(R.string.go_to_series),
                     Icons.AutoMirrored.Filled.ArrowForward,
                 ) {
-                    navigateTo(
+                    actions.navigateTo(
                         Destination.MediaItem(
                             it,
                             BaseItemKind.SERIES,
@@ -281,4 +283,32 @@ fun buildMoreDialogItemsForHome(
                 },
             )
         }
+    }
+
+fun buildMoreDialogItemsForPerson(
+    context: Context,
+    person: Person,
+//    favorite: Boolean,
+    actions: MoreDialogActions,
+): List<DialogItem> =
+    buildList {
+        val itemId = person.id
+        add(
+            DialogItem(
+                context.getString(R.string.go_to),
+                Icons.Default.ArrowForward,
+            ) {
+                actions.navigateTo(Destination.MediaItem(itemId, BaseItemKind.PERSON))
+            },
+        )
+        // TODO need way to get person's favorite status
+//        add(
+//            DialogItem(
+//                text = if (favorite) R.string.remove_favorite else R.string.add_favorite,
+//                iconStringRes = R.string.fa_heart,
+//                iconColor = if (favorite) Color.Red else Color.Unspecified,
+//            ) {
+//                actions.onClickFavorite.invoke(itemId, !favorite)
+//            },
+//        )
     }

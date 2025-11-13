@@ -103,7 +103,7 @@ fun GenreCardGrid(
                 LaunchedEffect(Unit) { gridFocusRequester.tryRequestFocus() }
                 CardGrid(
                     pager = genres,
-                    onClickItem = { genre ->
+                    onClickItem = { _, genre ->
                         viewModel.navigationManager.navigateTo(
                             Destination.FilteredCollection(
                                 itemId = itemId,
@@ -112,7 +112,7 @@ fun GenreCardGrid(
                             ),
                         )
                     },
-                    onLongClickItem = {},
+                    onLongClickItem = { _, _ -> },
                     letterPosition = { viewModel.positionOfLetter(it) },
                     gridFocusRequester = gridFocusRequester,
                     showJumpButtons = false,

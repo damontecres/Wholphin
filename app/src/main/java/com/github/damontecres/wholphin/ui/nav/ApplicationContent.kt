@@ -10,8 +10,8 @@ import androidx.navigation3.ui.NavDisplay
 import com.github.damontecres.wholphin.data.model.JellyfinServer
 import com.github.damontecres.wholphin.data.model.JellyfinUser
 import com.github.damontecres.wholphin.preferences.UserPreferences
+import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import org.jellyfin.sdk.model.api.DeviceProfile
-import timber.log.Timber
 
 /**
  * This is generally the root composable of the of the app
@@ -38,7 +38,6 @@ fun ApplicationContent(
         entryProvider = { key ->
             key as Destination
             val contentKey = "${key}_${server?.id}_${user?.id}"
-            Timber.d("Navigate: %s", key)
             NavEntry(key, contentKey = contentKey) {
                 if (key.fullScreen) {
                     DestinationContent(
@@ -47,7 +46,7 @@ fun ApplicationContent(
                         deviceProfile = deviceProfile,
                         modifier = modifier.fillMaxSize(),
                     )
-                } else {
+                } else if (user != null && server != null) {
                     NavDrawer(
                         destination = key,
                         preferences = preferences,
@@ -56,6 +55,8 @@ fun ApplicationContent(
                         server = server,
                         modifier = modifier,
                     )
+                } else {
+                    ErrorMessage("Trying to go to $key without a user logged in", null)
                 }
             }
         },

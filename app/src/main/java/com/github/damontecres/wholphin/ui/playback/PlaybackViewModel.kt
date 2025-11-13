@@ -272,13 +272,14 @@ class PlaybackViewModel
                     if (itemPlayback != null) {
                         itemPlayback
                     } else {
-                        val user = serverRepository.currentUser!!
-                        itemPlaybackDao.getItem(user, base.id)?.let {
-                            Timber.v("Fetched itemPlayback from DB: %s", it)
-                            if (it.sourceId != null) {
-                                it
-                            } else {
-                                null
+                        serverRepository.currentUser.value?.let { user ->
+                            itemPlaybackDao.getItem(user, base.id)?.let {
+                                Timber.v("Fetched itemPlayback from DB: %s", it)
+                                if (it.sourceId != null) {
+                                    it
+                                } else {
+                                    null
+                                }
                             }
                         }
                     }

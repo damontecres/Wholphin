@@ -30,7 +30,7 @@ fun CollectionFolderGeneric(
     var showHeader by remember { mutableStateOf(true) }
     CollectionFolderGrid(
         preferences = preferences,
-        onClickItem = { preferencesViewModel.navigationManager.navigateTo(it.destination()) },
+        onClickItem = { _, item -> preferencesViewModel.navigationManager.navigateTo(item.destination()) },
         itemId = itemId,
         initialFilter = filter,
         showTitle = showHeader,

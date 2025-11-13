@@ -78,7 +78,6 @@ class ThemeSongPlayer
             volumeLevel: ThemeSongVolume,
             url: String,
         ) {
-            stop()
             val volumeLevel =
                 when (volumeLevel) {
                     ThemeSongVolume.UNRECOGNIZED,
@@ -92,6 +91,7 @@ class ThemeSongPlayer
                     ThemeSongVolume.HIGHEST -> 75f
                 }
             player.apply {
+                stop()
                 volume = volumeLevel
                 setMediaItem(MediaItem.fromUri(url))
                 prepare()

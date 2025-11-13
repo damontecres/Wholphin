@@ -2,14 +2,15 @@ package com.github.damontecres.wholphin.data
 
 import android.content.Context
 import android.content.SharedPreferences
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.core.content.edit
 import androidx.datastore.core.DataStore
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.map
 import com.github.damontecres.wholphin.data.model.JellyfinServer
 import com.github.damontecres.wholphin.data.model.JellyfinUser
 import com.github.damontecres.wholphin.preferences.AppPreferences
+import com.github.damontecres.wholphin.ui.setValueOnMain
 import com.github.damontecres.wholphin.ui.toServerString
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -41,12 +42,12 @@ class ServerRepository
     ) {
         private val sharedPreferences = getServerSharedPreferences(context)
 
-        private var _currentServer by mutableStateOf<JellyfinServer?>(null)
-        val currentServer get() = _currentServer
-        private var _currentUser by mutableStateOf<JellyfinUser?>(null)
-        val currentUser get() = _currentUser
-        private var _currentUserDto by mutableStateOf<UserDto?>(null)
-        val currentUserDto get() = _currentUserDto
+        private var _current = MutableLiveData<CurrentUser?>(null)
+        val current: LiveData<CurrentUser?> = _current
+
+        val currentServer: LiveData<JellyfinServer?> get() = _current.map { it?.server }
+        val currentUser: LiveData<JellyfinUser?> get() = _current.map { it?.user }
+        val currentUserDto: LiveData<UserDto?> get() = _current.map { it?.userDto }
 
         /**
          * Adds a server to the app database and updated the [ApiClient] to the server's URL
@@ -57,19 +58,8 @@ class ServerRepository
             withContext(Dispatchers.IO) {
                 serverDao.addOrUpdateServer(server)
             }
-            changeServer(server)
-        }
-
-        /**
-         * Updates the [ApiClient] to the server's URL
-         *
-         * The current user is removed
-         */
-        fun changeServer(server: JellyfinServer) {
             apiClient.update(baseUrl = server.url, accessToken = null)
-            _currentServer = server
-            _currentUser = null
-            _currentUserDto = null
+            _current.setValueOnMain(null)
         }
 
         /**
@@ -109,9 +99,7 @@ class ServerRepository
                     }.build()
             }
             withContext(Dispatchers.Main) {
-                _currentUserDto = userDto
-                _currentServer = updatedServer
-                _currentUser = updatedUser
+                _current.value = CurrentUser(updatedServer, updatedUser, userDto)
             }
             sharedPreferences.edit(true) {
                 putString(SERVER_URL_KEY, updatedServer.url)
@@ -127,6 +115,7 @@ class ServerRepository
             userId: UUID?,
         ): Boolean {
             if (serverId == null || userId == null) {
+                _current.setValueOnMain(null)
                 return false
             }
             val serverAndUsers =
@@ -185,9 +174,10 @@ class ServerRepository
         }
 
         suspend fun removeUser(user: JellyfinUser) {
-            if (currentUser == user) {
-                _currentUser = null
-                _currentUserDto = null
+            if (currentUser.value?.id == user.id) {
+                withContext(Dispatchers.Main) {
+                    _current.value = null
+                }
                 userPreferencesDataStore.updateData {
                     it
                         .toBuilder()
@@ -203,10 +193,10 @@ class ServerRepository
         }
 
         suspend fun removeServer(server: JellyfinServer) {
-            if (currentServer == server) {
-                _currentServer = null
-                _currentUser = null
-                _currentUserDto = null
+            if (currentServer.value?.id == server.id) {
+                withContext(Dispatchers.Main) {
+                    _current.value = null
+                }
                 userPreferencesDataStore.updateData {
                     it
                         .toBuilder()
@@ -222,6 +212,18 @@ class ServerRepository
             }
         }
 
+        suspend fun switchServerOrUser() {
+            apiClient.update(baseUrl = null, accessToken = null)
+            userPreferencesDataStore.updateData {
+                it
+                    .toBuilder()
+                    .apply {
+                        currentServerId = ""
+                        currentUserId = ""
+                    }.build()
+            }
+        }
+
         companion object {
             fun getServerSharedPreferences(context: Context): SharedPreferences =
                 context.getSharedPreferences(
@@ -233,3 +235,9 @@ class ServerRepository
             const val ACCESS_TOKEN_KEY = "current.accessToken"
         }
     }
+
+data class CurrentUser(
+    val server: JellyfinServer,
+    val user: JellyfinUser,
+    val userDto: UserDto,
+)

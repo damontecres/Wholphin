@@ -71,8 +71,8 @@ private const val DEBUG = false
 @Composable
 fun CardGrid(
     pager: List<BaseItem?>,
-    onClickItem: (BaseItem) -> Unit,
-    onLongClickItem: (BaseItem) -> Unit,
+    onClickItem: (Int, BaseItem) -> Unit,
+    onLongClickItem: (Int, BaseItem) -> Unit,
     letterPosition: suspend (Char) -> Int,
     gridFocusRequester: FocusRequester,
     showJumpButtons: Boolean,
@@ -270,10 +270,10 @@ fun CardGrid(
                         {
                             if (item != null) {
                                 focusedIndex = index
-                                onClickItem.invoke(item)
+                                onClickItem.invoke(index, item)
                             }
                         },
-                        { if (item != null) onLongClickItem.invoke(item) },
+                        { if (item != null) onLongClickItem.invoke(index, item) },
                         mod
                             .ifElse(index == 0, Modifier.focusRequester(zeroFocus))
                             .onFocusChanged { focusState ->

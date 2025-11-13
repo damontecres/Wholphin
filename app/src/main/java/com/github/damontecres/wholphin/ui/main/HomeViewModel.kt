@@ -14,6 +14,7 @@ import com.github.damontecres.wholphin.ui.nav.NavigationManager
 import com.github.damontecres.wholphin.ui.nav.ServerNavDrawerItem
 import com.github.damontecres.wholphin.ui.setValueOnMain
 import com.github.damontecres.wholphin.util.ExceptionHandler
+import com.github.damontecres.wholphin.util.FavoriteWatchManager
 import com.github.damontecres.wholphin.util.HomeRowLoadingState
 import com.github.damontecres.wholphin.util.LoadingExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
@@ -27,7 +28,6 @@ import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.itemsApi
 import org.jellyfin.sdk.api.client.extensions.liveTvApi
-import org.jellyfin.sdk.api.client.extensions.playStateApi
 import org.jellyfin.sdk.api.client.extensions.tvShowsApi
 import org.jellyfin.sdk.api.client.extensions.userLibraryApi
 import org.jellyfin.sdk.api.client.extensions.userViewsApi
@@ -50,6 +50,7 @@ class HomeViewModel
         val navigationManager: NavigationManager,
         val serverRepository: ServerRepository,
         val navDrawerItemRepository: NavDrawerItemRepository,
+        private val favoriteWatchManager: FavoriteWatchManager,
     ) : ViewModel() {
         val loadingState = MutableLiveData<LoadingState>(LoadingState.Pending)
         val refreshState = MutableLiveData<LoadingState>(LoadingState.Pending)
@@ -76,7 +77,7 @@ class HomeViewModel
             ) {
                 Timber.d("init HomeViewModel")
 
-                serverRepository.currentUserDto?.let { userDto ->
+                serverRepository.currentUserDto.value?.let { userDto ->
                     val includedIds =
                         navDrawerItemRepository
                             .getFilteredNavDrawerItems(navDrawerItemRepository.getNavDrawerItems())
@@ -258,11 +259,7 @@ class HomeViewModel
             itemId: UUID,
             played: Boolean,
         ) = viewModelScope.launch(ExceptionHandler() + Dispatchers.IO) {
-            if (played) {
-                api.playStateApi.markPlayedItem(itemId)
-            } else {
-                api.playStateApi.markUnplayedItem(itemId)
-            }
+            favoriteWatchManager.setWatched(itemId, played)
             withContext(Dispatchers.Main) {
                 init(preferences)
             }
@@ -272,11 +269,7 @@ class HomeViewModel
             itemId: UUID,
             favorite: Boolean,
         ) = viewModelScope.launch(ExceptionHandler() + Dispatchers.IO) {
-            if (favorite) {
-                api.userLibraryApi.markFavoriteItem(itemId)
-            } else {
-                api.userLibraryApi.unmarkFavoriteItem(itemId)
-            }
+            favoriteWatchManager.setFavorite(itemId, favorite)
             withContext(Dispatchers.Main) {
                 init(preferences)
             }

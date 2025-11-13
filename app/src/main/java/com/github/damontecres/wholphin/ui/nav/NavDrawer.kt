@@ -84,7 +84,6 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.model.api.CollectionType
 import org.jellyfin.sdk.model.api.DeviceProfile
-import timber.log.Timber
 import java.time.LocalTime
 import java.util.UUID
 import javax.inject.Inject
@@ -141,7 +140,7 @@ class NavDrawerViewModel
                                     null
                                 }
                             }
-                        Timber.v("Found $index => $key")
+//                        Timber.v("Found $index => $key")
                         if (index != null) {
                             selectedIndex.setValueOnMain(index)
                             break
@@ -198,8 +197,8 @@ data class ServerNavDrawerItem(
 fun NavDrawer(
     destination: Destination,
     preferences: UserPreferences,
-    user: JellyfinUser?,
-    server: JellyfinServer?,
+    user: JellyfinUser,
+    server: JellyfinServer,
     deviceProfile: DeviceProfile,
     modifier: Modifier = Modifier,
     viewModel: NavDrawerViewModel =
@@ -319,7 +318,11 @@ fun NavDrawer(
                             selected = false,
                             interactionSource = interactionSource,
                             onClick = {
-                                viewModel.navigationManager.navigateTo(Destination.UserList)
+                                viewModel.navigationManager.navigateToFromDrawer(
+                                    Destination.UserList(
+                                        server,
+                                    ),
+                                )
                             },
                             modifier = Modifier.animateItem(),
                         )

@@ -1,6 +1,8 @@
 package com.github.damontecres.wholphin.ui.nav
 
 import androidx.navigation3.runtime.NavKey
+import org.acra.ACRA
+import timber.log.Timber
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -18,6 +20,7 @@ class NavigationManager
          */
         fun navigateTo(destination: Destination) {
             backStack.add(destination)
+            log()
         }
 
         /**
@@ -25,7 +28,13 @@ class NavigationManager
          */
         fun navigateToFromDrawer(destination: Destination) {
             goToHome()
-            backStack.add(destination)
+            if (destination == Destination.ServerList || destination is Destination.UserList) {
+                backStack.add(destination)
+                (0..<backStack.size - 1).forEach { _ -> backStack.removeAt(0) }
+            } else {
+                backStack.add(destination)
+            }
+            log()
         }
 
         /**
@@ -33,6 +42,7 @@ class NavigationManager
          */
         fun goBack() {
             backStack.removeLastOrNull()
+            log()
         }
 
         /**
@@ -45,6 +55,7 @@ class NavigationManager
             if (backStack[0] !is Destination.Home) {
                 backStack[0] = Destination.Home()
             }
+            log()
         }
 
         /**
@@ -54,5 +65,12 @@ class NavigationManager
             goToHome()
             val id = (backStack[0] as Destination.Home).id + 1
             backStack[0] = Destination.Home(id)
+            log()
+        }
+
+        private fun log() {
+            val dest = backStack.lastOrNull().toString()
+            Timber.i("Current Destination: %s", dest)
+            ACRA.errorReporter.putCustomData("destination", dest)
         }
     }

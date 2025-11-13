@@ -38,6 +38,7 @@ import com.github.damontecres.wholphin.ui.data.VideoSortOptions
 import com.github.damontecres.wholphin.ui.detail.livetv.DvrSchedule
 import com.github.damontecres.wholphin.ui.detail.livetv.TvGuideGrid
 import com.github.damontecres.wholphin.ui.launchIO
+import com.github.damontecres.wholphin.ui.logTab
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.nav.NavigationManager
 import com.github.damontecres.wholphin.ui.setValueOnMain
@@ -65,7 +66,7 @@ class LiveTvCollectionViewModel
             viewModelScope.launchIO {
                 val folders =
                     api.liveTvApi
-                        .getRecordingFolders(userId = serverRepository.currentUser?.id)
+                        .getRecordingFolders(userId = serverRepository.currentUser.value?.id)
                         .content.items
                         .map { TabId(it.name ?: "Recordings", it.id) }
                 this@LiveTvCollectionViewModel.recordingFolders.setValueOnMain(folders)
@@ -102,9 +103,10 @@ fun CollectionFolderLiveTv(
     LaunchedEffect(Unit) { firstTabFocusRequester.tryRequestFocus() }
 
     LaunchedEffect(selectedTabIndex) {
+        logTab("livetv", selectedTabIndex)
         viewModel.saveRememberedTab(preferences, destination.itemId, selectedTabIndex)
     }
-    val onClickItem = { item: BaseItem ->
+    val onClickItem = { position: Int, item: BaseItem ->
         viewModel.navigationManager.navigateTo(item.destination())
     }
 
