@@ -17,9 +17,9 @@ import com.github.damontecres.wholphin.data.model.chooseStream
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.components.ExpandablePlayButtons
 import com.github.damontecres.wholphin.ui.components.TitleValueText
+import com.github.damontecres.wholphin.ui.getAudioDisplay
+import com.github.damontecres.wholphin.ui.getSubtitleDisplay
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
-import com.github.damontecres.wholphin.util.getAudioDisplay
-import com.github.damontecres.wholphin.util.getSubtitleDisplay
 import org.jellyfin.sdk.model.api.MediaStreamType
 import org.jellyfin.sdk.model.extensions.ticks
 import kotlin.time.Duration

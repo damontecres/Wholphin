@@ -32,11 +32,11 @@ import com.github.damontecres.wholphin.ui.components.DotSeparatedRow
 import com.github.damontecres.wholphin.ui.components.OverviewText
 import com.github.damontecres.wholphin.ui.components.SimpleStarRating
 import com.github.damontecres.wholphin.ui.components.TitleValueText
+import com.github.damontecres.wholphin.ui.getAudioDisplay
+import com.github.damontecres.wholphin.ui.getSubtitleDisplay
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.roundMinutes
 import com.github.damontecres.wholphin.ui.timeRemaining
-import com.github.damontecres.wholphin.util.getAudioDisplay
-import com.github.damontecres.wholphin.util.getSubtitleDisplay
 import org.jellyfin.sdk.model.api.MediaStreamType
 import org.jellyfin.sdk.model.api.PersonKind
 import org.jellyfin.sdk.model.extensions.ticks

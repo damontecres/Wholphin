@@ -1,6 +1,6 @@
 @file:OptIn(markerClass = [UnstableApi::class])
 
-package com.github.damontecres.wholphin.util
+package com.github.damontecres.wholphin.services
 
 import android.content.Context
 import androidx.annotation.OptIn

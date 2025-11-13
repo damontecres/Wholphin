@@ -2,7 +2,7 @@ package com.github.damontecres.wholphin.util
 
 import android.content.Context
 import com.github.damontecres.wholphin.data.ServerRepository
-import com.github.damontecres.wholphin.hilt.AppModule
+import com.github.damontecres.wholphin.services.hilt.AppModule
 import com.google.auto.service.AutoService
 import kotlinx.coroutines.runBlocking
 import okhttp3.OkHttpClient

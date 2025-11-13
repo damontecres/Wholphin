@@ -1,4 +1,4 @@
-package com.github.damontecres.wholphin.util
+package com.github.damontecres.wholphin.services
 
 import android.content.Context
 import android.os.Build
@@ -11,6 +11,7 @@ import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.updateInterfacePreferences
 import com.github.damontecres.wholphin.preferences.updatePlaybackOverrides
 import com.github.damontecres.wholphin.ui.preferences.PreferencesViewModel
+import com.github.damontecres.wholphin.util.Version
 import dagger.hilt.android.qualifiers.ApplicationContext
 import timber.log.Timber
 import javax.inject.Inject
@@ -49,8 +50,8 @@ class AppUpgradeHandler
                 try {
                     upgradeApp(
                         context,
-                        Version.fromString(previousVersion ?: "0.0.0"),
-                        Version.fromString(newVersion),
+                        Version.Companion.fromString(previousVersion ?: "0.0.0"),
+                        Version.Companion.fromString(newVersion),
                         appPreferences,
                     )
                 } catch (ex: Exception) {
@@ -73,7 +74,7 @@ suspend fun upgradeApp(
     current: Version,
     appPreferences: DataStore<AppPreferences>,
 ) {
-    if (previous.isEqualOrBefore(Version.fromString("0.1.0-2-g0"))) {
+    if (previous.isEqualOrBefore(Version.Companion.fromString("0.1.0-2-g0"))) {
         appPreferences.updateData {
             it.updatePlaybackOverrides {
                 ac3Supported = AppPreference.Ac3Supported.defaultValue
@@ -83,21 +84,21 @@ suspend fun upgradeApp(
             }
         }
     }
-    if (previous.isEqualOrBefore(Version.fromString("0.2.3-6-g0"))) {
+    if (previous.isEqualOrBefore(Version.Companion.fromString("0.2.3-6-g0"))) {
         appPreferences.updateData {
             it.updateInterfacePreferences {
                 navDrawerSwitchOnFocus = AppPreference.NavDrawerSwitchOnFocus.defaultValue
             }
         }
     }
-    if (previous.isEqualOrBefore(Version.fromString("0.2.5-11-g0"))) {
+    if (previous.isEqualOrBefore(Version.Companion.fromString("0.2.5-11-g0"))) {
         appPreferences.updateData {
             it.updateInterfacePreferences {
                 showClock = AppPreference.ShowClock.defaultValue
             }
         }
     }
-    if (previous.isEqualOrBefore(Version.fromString("0.2.7-1-g0"))) {
+    if (previous.isEqualOrBefore(Version.Companion.fromString("0.2.7-1-g0"))) {
         PreferencesViewModel.resetSubtitleSettings(appPreferences)
     }
 }
