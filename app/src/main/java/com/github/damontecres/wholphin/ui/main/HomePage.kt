@@ -360,9 +360,15 @@ fun HomePageContent(
                                                         ),
                                                     ).onFocusChanged {
                                                         if (it.isFocused) {
+                                                            val nonEmptyRowBefore =
+                                                                homeRows
+                                                                    .subList(0, rowIndex)
+                                                                    .count {
+                                                                        it is HomeRowLoadingState.Success && it.items.isEmpty()
+                                                                    }
                                                             onFocusPosition?.invoke(
                                                                 RowColumn(
-                                                                    rowIndex,
+                                                                    rowIndex - nonEmptyRowBefore,
                                                                     index,
                                                                 ),
                                                             )
