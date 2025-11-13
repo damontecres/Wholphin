@@ -4,16 +4,13 @@ import android.content.Context
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.ChosenStreams
 import com.github.damontecres.wholphin.data.ItemPlaybackRepository
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.Chapter
 import com.github.damontecres.wholphin.data.model.ItemPlayback
-import com.github.damontecres.wholphin.data.model.LocalTrailer
 import com.github.damontecres.wholphin.data.model.Person
-import com.github.damontecres.wholphin.data.model.RemoteTrailer
 import com.github.damontecres.wholphin.data.model.Trailer
 import com.github.damontecres.wholphin.preferences.ThemeSongVolume
 import com.github.damontecres.wholphin.ui.SlimItemFields
@@ -27,6 +24,7 @@ import com.github.damontecres.wholphin.util.LoadingExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
 import com.github.damontecres.wholphin.util.PeopleFavorites
 import com.github.damontecres.wholphin.util.ThemeSongPlayer
+import com.github.damontecres.wholphin.util.TrailerService
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
@@ -57,6 +55,7 @@ class MovieViewModel
         private val themeSongPlayer: ThemeSongPlayer,
         private val favoriteWatchManager: FavoriteWatchManager,
         private val peopleFavorites: PeopleFavorites,
+        private val trailerService: TrailerService,
         @Assisted val itemId: UUID,
     ) : ViewModel() {
         @AssistedFactory
@@ -108,31 +107,9 @@ class MovieViewModel
                     loading.value = LoadingState.Success
                 }
                 viewModelScope.launchIO {
-                    val remoteTrailers =
-                        item.data.remoteTrailers
-                            ?.mapNotNull { t ->
-                                t.url?.let { url ->
-                                    val name =
-                                        t.name
-                                            // TODO would be nice to clean up the trailer name
-//                                                ?.replace(item.name ?: "", "")
-//                                                ?.removePrefix(" - ")
-                                            ?: context.getString(R.string.trailer)
-                                    RemoteTrailer(name, url)
-                                }
-                            }.orEmpty()
-                            .sortedBy { it.name }
-                    val localTrailerCount = item.data.localTrailerCount ?: 0
-                    val localTrailers =
-                        if (localTrailerCount > 0) {
-                            api.userLibraryApi.getLocalTrailers(itemId).content.map {
-                                LocalTrailer(BaseItem.Companion.from(it, api))
-                            }
-                        } else {
-                            listOf()
-                        }
+                    val trailers = trailerService.getTrailers(item)
                     withContext(Dispatchers.Main) {
-                        this@MovieViewModel.trailers.value = localTrailers + remoteTrailers
+                        this@MovieViewModel.trailers.value = trailers
                     }
                 }
                 viewModelScope.launchIO {

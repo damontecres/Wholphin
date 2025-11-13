@@ -10,6 +10,7 @@ import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.ItemPlayback
 import com.github.damontecres.wholphin.data.model.Person
+import com.github.damontecres.wholphin.data.model.Trailer
 import com.github.damontecres.wholphin.preferences.ThemeSongVolume
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.SlimItemFields
@@ -29,6 +30,7 @@ import com.github.damontecres.wholphin.util.LoadingExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
 import com.github.damontecres.wholphin.util.PeopleFavorites
 import com.github.damontecres.wholphin.util.ThemeSongPlayer
+import com.github.damontecres.wholphin.util.TrailerService
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -62,12 +64,14 @@ class SeriesViewModel
         private val themeSongPlayer: ThemeSongPlayer,
         private val favoriteWatchManager: FavoriteWatchManager,
         private val peopleFavorites: PeopleFavorites,
+        private val trailerService: TrailerService,
     ) : ItemViewModel(api) {
         private lateinit var seriesId: UUID
         private lateinit var prefs: UserPreferences
         val loading = MutableLiveData<LoadingState>(LoadingState.Loading)
         val seasons = MutableLiveData<List<BaseItem>>(listOf())
         val episodes = MutableLiveData<EpisodeList>(EpisodeList.Loading)
+        val trailers = MutableLiveData<List<Trailer>>(listOf())
         val people = MutableLiveData<List<Person>>(listOf())
         val similar = MutableLiveData<List<BaseItem>>()
 
@@ -110,6 +114,12 @@ class SeriesViewModel
                     this@SeriesViewModel.seasons.value = seasons
                     episodes.value = episodeInfo
                     loading.value = LoadingState.Success
+                }
+                viewModelScope.launchIO {
+                    val trailers = trailerService.getTrailers(item)
+                    withContext(Dispatchers.Main) {
+                        this@SeriesViewModel.trailers.value = trailers
+                    }
                 }
                 viewModelScope.launchIO {
                     val people = peopleFavorites.getPeopleFor(item)
