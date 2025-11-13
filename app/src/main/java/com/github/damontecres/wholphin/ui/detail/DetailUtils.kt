@@ -288,7 +288,6 @@ fun buildMoreDialogItemsForHome(
 fun buildMoreDialogItemsForPerson(
     context: Context,
     person: Person,
-//    favorite: Boolean,
     actions: MoreDialogActions,
 ): List<DialogItem> =
     buildList {
@@ -301,14 +300,13 @@ fun buildMoreDialogItemsForPerson(
                 actions.navigateTo(Destination.MediaItem(itemId, BaseItemKind.PERSON))
             },
         )
-        // TODO need way to get person's favorite status
-//        add(
-//            DialogItem(
-//                text = if (favorite) R.string.remove_favorite else R.string.add_favorite,
-//                iconStringRes = R.string.fa_heart,
-//                iconColor = if (favorite) Color.Red else Color.Unspecified,
-//            ) {
-//                actions.onClickFavorite.invoke(itemId, !favorite)
-//            },
-//        )
+        add(
+            DialogItem(
+                text = if (person.favorite) R.string.remove_favorite else R.string.add_favorite,
+                iconStringRes = R.string.fa_heart,
+                iconColor = if (person.favorite) Color.Red else Color.Unspecified,
+            ) {
+                actions.onClickFavorite.invoke(itemId, !person.favorite)
+            },
+        )
     }

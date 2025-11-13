@@ -16,7 +16,6 @@ import com.github.damontecres.wholphin.ui.SlimItemFields
 import com.github.damontecres.wholphin.ui.detail.ItemViewModel
 import com.github.damontecres.wholphin.ui.equalsNotNull
 import com.github.damontecres.wholphin.ui.launchIO
-import com.github.damontecres.wholphin.ui.letNotEmpty
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.nav.NavigationManager
 import com.github.damontecres.wholphin.ui.setValueOnMain
@@ -28,6 +27,7 @@ import com.github.damontecres.wholphin.util.GetEpisodesRequestHandler
 import com.github.damontecres.wholphin.util.GetItemsRequestHandler
 import com.github.damontecres.wholphin.util.LoadingExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
+import com.github.damontecres.wholphin.util.PeopleFavorites
 import com.github.damontecres.wholphin.util.ThemeSongPlayer
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -61,6 +61,7 @@ class SeriesViewModel
         private val itemPlaybackRepository: ItemPlaybackRepository,
         private val themeSongPlayer: ThemeSongPlayer,
         private val favoriteWatchManager: FavoriteWatchManager,
+        private val peopleFavorites: PeopleFavorites,
     ) : ItemViewModel(api) {
         private lateinit var seriesId: UUID
         private lateinit var prefs: UserPreferences
@@ -109,11 +110,10 @@ class SeriesViewModel
                     this@SeriesViewModel.seasons.value = seasons
                     episodes.value = episodeInfo
                     loading.value = LoadingState.Success
-                    people.value =
-                        item.data.people
-                            ?.letNotEmpty { people ->
-                                people.map { Person.fromDto(it, api) }
-                            }.orEmpty()
+                }
+                viewModelScope.launchIO {
+                    val people = peopleFavorites.getPeopleFor(item)
+                    this@SeriesViewModel.people.setValueOnMain(people)
                 }
                 if (!similar.isInitialized) {
                     viewModelScope.launchIO {
@@ -255,7 +255,11 @@ class SeriesViewModel
             if (listIndex != null) {
                 refreshEpisode(itemId, listIndex)
             } else {
-                fetchItem(seriesId)
+                val item = fetchItem(seriesId)
+                viewModelScope.launchIO {
+                    val people = peopleFavorites.getPeopleFor(item)
+                    this@SeriesViewModel.people.setValueOnMain(people)
+                }
             }
         }
 

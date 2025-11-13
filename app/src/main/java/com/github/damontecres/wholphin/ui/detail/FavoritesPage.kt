@@ -25,6 +25,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.GetItemsFilter
+import com.github.damontecres.wholphin.data.model.GetItemsFilterOverride
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.components.CollectionFolderGrid
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
@@ -32,11 +33,15 @@ import com.github.damontecres.wholphin.ui.components.TabRow
 import com.github.damontecres.wholphin.ui.data.EpisodeSortOptions
 import com.github.damontecres.wholphin.ui.data.MovieSortOptions
 import com.github.damontecres.wholphin.ui.data.SeriesSortOptions
+import com.github.damontecres.wholphin.ui.data.SortAndDirection
+import com.github.damontecres.wholphin.ui.data.VideoSortOptions
 import com.github.damontecres.wholphin.ui.logTab
 import com.github.damontecres.wholphin.ui.nav.NavDrawerItem
 import com.github.damontecres.wholphin.ui.preferences.PreferencesViewModel
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import org.jellyfin.sdk.model.api.BaseItemKind
+import org.jellyfin.sdk.model.api.ItemSortBy
+import org.jellyfin.sdk.model.api.SortOrder
 
 @Composable
 fun FavoritesPage(
@@ -59,6 +64,9 @@ fun FavoritesPage(
             stringResource(R.string.movies),
             stringResource(R.string.tv_shows),
             stringResource(R.string.episodes),
+            stringResource(R.string.videos),
+            stringResource(R.string.playlists),
+            stringResource(R.string.people),
         )
     var selectedTabIndex by rememberSaveable { mutableIntStateOf(rememberedTabIndex) }
     val focusRequester = remember { FocusRequester() }
@@ -155,6 +163,81 @@ fun FavoritesPage(
                     showTitle = false,
                     recursive = true,
                     sortOptions = EpisodeSortOptions,
+                    modifier =
+                        Modifier
+                            .padding(start = 16.dp)
+                            .fillMaxSize()
+                            .focusRequester(focusRequester),
+                    positionCallback = { columns, position ->
+                        showHeader = position < columns
+                    },
+                )
+            }
+            3 -> {
+                CollectionFolderGrid(
+                    preferences = preferences,
+                    onClickItem = { _, item -> onClickItem.invoke(item) },
+                    itemId = "${NavDrawerItem.Favorites.id}_videos",
+                    initialFilter =
+                        GetItemsFilter(
+                            favorite = true,
+                            includeItemTypes = listOf(BaseItemKind.VIDEO),
+                        ),
+                    showTitle = false,
+                    recursive = true,
+                    sortOptions = VideoSortOptions,
+                    modifier =
+                        Modifier
+                            .padding(start = 16.dp)
+                            .fillMaxSize()
+                            .focusRequester(focusRequester),
+                    positionCallback = { columns, position ->
+                        showHeader = position < columns
+                    },
+                )
+            }
+            4 -> {
+                CollectionFolderGrid(
+                    preferences = preferences,
+                    onClickItem = { _, item -> onClickItem.invoke(item) },
+                    itemId = "${NavDrawerItem.Favorites.id}_playlists",
+                    initialFilter =
+                        GetItemsFilter(
+                            favorite = true,
+                            includeItemTypes = listOf(BaseItemKind.PLAYLIST),
+                        ),
+                    showTitle = false,
+                    recursive = true,
+                    sortOptions = VideoSortOptions,
+                    modifier =
+                        Modifier
+                            .padding(start = 16.dp)
+                            .fillMaxSize()
+                            .focusRequester(focusRequester),
+                    positionCallback = { columns, position ->
+                        showHeader = position < columns
+                    },
+                )
+            }
+
+            5 -> {
+                CollectionFolderGrid(
+                    preferences = preferences,
+                    onClickItem = { _, item -> onClickItem.invoke(item) },
+                    itemId = "${NavDrawerItem.Favorites.id}_people",
+                    initialFilter =
+                        GetItemsFilter(
+                            favorite = true,
+                            override = GetItemsFilterOverride.PERSON,
+                        ),
+                    initialSortAndDirection =
+                        SortAndDirection(
+                            ItemSortBy.DEFAULT,
+                            SortOrder.ASCENDING,
+                        ),
+                    showTitle = false,
+                    recursive = true,
+                    sortOptions = listOf(),
                     modifier =
                         Modifier
                             .padding(start = 16.dp)

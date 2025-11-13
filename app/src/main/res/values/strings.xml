@@ -82,6 +82,7 @@
     <string name="playback_speed">Playback Speed</string>
     <string name="playback">Playback</string>
     <string name="playlist">Playlist</string>
+    <string name="playlists">Playlists</string>
     <string name="preview">Preview</string>
     <string name="profile_specific_settings">User Profile Settings</string>
     <string name="queue">Queue</string>
@@ -135,6 +136,7 @@
     <string name="version">Version</string>
     <string name="video_scale">Video Scale</string>
     <string name="video">Video</string>
+    <string name="videos">Videos</string>
     <string name="watch_live">Watch live</string>
     <string name="years_old">%1$d years old</string>
     <string name="play_with_transcoding">Play with transcoding</string>

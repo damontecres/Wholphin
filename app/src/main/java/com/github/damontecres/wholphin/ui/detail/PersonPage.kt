@@ -26,6 +26,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -43,11 +45,13 @@ import com.github.damontecres.wholphin.ui.OneTimeLaunchedEffect
 import com.github.damontecres.wholphin.ui.PreviewTvSpec
 import com.github.damontecres.wholphin.ui.SlimItemFields
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
+import com.github.damontecres.wholphin.ui.components.ExpandableFaButton
 import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.components.LoadingRow
 import com.github.damontecres.wholphin.ui.components.OverviewText
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialog
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialogInfo
+import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.nav.NavigationManager
@@ -56,6 +60,7 @@ import com.github.damontecres.wholphin.ui.setValueOnMain
 import com.github.damontecres.wholphin.ui.theme.WholphinTheme
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.ApiRequestPager
+import com.github.damontecres.wholphin.util.FavoriteWatchManager
 import com.github.damontecres.wholphin.util.GetItemsRequestHandler
 import com.github.damontecres.wholphin.util.LoadingExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
@@ -78,6 +83,7 @@ class PersonViewModel
     constructor(
         api: ApiClient,
         val navigationManager: NavigationManager,
+        private val favoriteWatchManager: FavoriteWatchManager,
     ) : LoadingItemViewModel(api) {
         val movies = MutableLiveData<RowLoadingState>(RowLoadingState.Pending)
         val series = MutableLiveData<RowLoadingState>(RowLoadingState.Pending)
@@ -144,6 +150,13 @@ class PersonViewModel
                 }
             }
         }
+
+        fun setFavorite(favorite: Boolean) {
+            viewModelScope.launchIO {
+                favoriteWatchManager.setFavorite(itemUuid, favorite)
+                fetchAndSetItem(itemUuid)
+            }
+        }
     }
 
 @Composable
@@ -180,6 +193,7 @@ fun PersonPage(
                     birthdate = person.data.premiereDate?.toLocalDate(),
                     deathdate = person.data.endDate?.toLocalDate(),
                     birthPlace = person.data.productionLocations?.firstOrNull(),
+                    favorite = person.favorite,
                     movies = movies,
                     series = series,
                     episodes = episodes,
@@ -187,6 +201,9 @@ fun PersonPage(
                         viewModel.navigationManager.navigateTo(item.destination())
                     },
                     overviewOnClick = { showOverviewDialog = true },
+                    favoriteOnClick = {
+                        viewModel.setFavorite(!person.favorite)
+                    },
                     modifier = modifier,
                 )
                 AnimatedVisibility(showOverviewDialog) {
@@ -220,11 +237,13 @@ fun PersonPageContent(
     birthdate: LocalDate?,
     deathdate: LocalDate?,
     birthPlace: String?,
+    favorite: Boolean,
     movies: RowLoadingState,
     series: RowLoadingState,
     episodes: RowLoadingState,
     onClickItem: (Int, BaseItem) -> Unit,
     overviewOnClick: () -> Unit,
+    favoriteOnClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val focusRequester = remember { FocusRequester() }
@@ -237,8 +256,10 @@ fun PersonPageContent(
             headerFocusRequester.tryRequestFocus()
         }
     }
+    var focusedOnHeader by remember { mutableStateOf(true) }
     LazyColumn(
         verticalArrangement = Arrangement.spacedBy(16.dp),
+        userScrollEnabled = !focusedOnHeader,
         modifier =
             modifier
                 .padding(start = 16.dp),
@@ -251,13 +272,18 @@ fun PersonPageContent(
                 birthdate = birthdate,
                 birthPlace = birthPlace,
                 deathdate = deathdate,
+                favorite = favorite,
                 overviewOnClick = overviewOnClick,
+                favoriteOnClick = favoriteOnClick,
                 modifier =
                     Modifier
                         .fillMaxWidth()
                         .heightIn(max = 480.dp)
                         .padding(top = 16.dp, bottom = 40.dp)
-                        .focusRequester(headerFocusRequester),
+                        .focusRequester(headerFocusRequester)
+                        .onFocusChanged {
+                            focusedOnHeader = it.hasFocus
+                        },
             )
         }
         item {
@@ -321,7 +347,9 @@ fun PersonHeader(
     birthdate: LocalDate?,
     deathdate: LocalDate?,
     birthPlace: String?,
+    favorite: Boolean,
     overviewOnClick: () -> Unit,
+    favoriteOnClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val bringIntoViewRequester = remember { BringIntoViewRequester() }
@@ -380,9 +408,9 @@ fun PersonHeader(
                     overflow = TextOverflow.Ellipsis,
                 )
             }
-            birthPlace?.let {
+            if (birthPlace.isNotNullOrBlank()) {
                 Text(
-                    text = stringResource(R.string.birthplace) + ": $it",
+                    text = stringResource(R.string.birthplace) + ": $birthPlace",
                     color = MaterialTheme.colorScheme.onSurface,
                     style = MaterialTheme.typography.titleSmall,
                     maxLines = 1,
@@ -411,9 +439,12 @@ fun PersonHeader(
                 )
             }
             val interactionSource = remember { MutableInteractionSource() }
-            val focused by interactionSource.collectIsFocusedAsState()
-            if (focused) {
-                LaunchedEffect(Unit) {
+            val buttonInteractionSource = remember { MutableInteractionSource() }
+            val focused =
+                interactionSource.collectIsFocusedAsState().value ||
+                    buttonInteractionSource.collectIsFocusedAsState().value
+            LaunchedEffect(focused) {
+                if (focused) {
                     bringIntoViewRequester.bringIntoView()
                 }
             }
@@ -423,6 +454,14 @@ fun PersonHeader(
                 onClick = overviewOnClick,
                 interactionSource = interactionSource,
                 modifier = Modifier.padding(top = 8.dp),
+            )
+            ExpandableFaButton(
+                title = if (favorite) R.string.remove_favorite else R.string.add_favorite,
+                iconStringRes = R.string.fa_heart,
+                onClick = favoriteOnClick,
+                iconColor = if (favorite) Color.Red else Color.Unspecified,
+                interactionSource = buttonInteractionSource,
+                modifier = Modifier,
             )
         }
     }
@@ -440,6 +479,8 @@ private fun PersonPreview() {
             birthPlace = "Phoenix, Arizona, USA",
             deathdate = LocalDate.of(2025, 2, 1),
             overviewOnClick = {},
+            favorite = true,
+            favoriteOnClick = {},
             modifier = Modifier.fillMaxWidth(),
         )
     }
