@@ -51,9 +51,11 @@ import com.github.damontecres.wholphin.data.model.LocalTrailer
 import com.github.damontecres.wholphin.data.model.Person
 import com.github.damontecres.wholphin.data.model.RemoteTrailer
 import com.github.damontecres.wholphin.data.model.Trailer
+import com.github.damontecres.wholphin.data.model.aspectRatioFloat
 import com.github.damontecres.wholphin.data.model.chooseSource
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.TrailerService
+import com.github.damontecres.wholphin.ui.AspectRatios
 import com.github.damontecres.wholphin.ui.Cards
 import com.github.damontecres.wholphin.ui.cards.ChapterRow
 import com.github.damontecres.wholphin.ui.cards.ItemRow
@@ -486,6 +488,7 @@ fun MovieDetailsContent(
                 item {
                     ChapterRow(
                         chapters = chapters,
+                        aspectRatio = movie.data.aspectRatioFloat ?: AspectRatios.WIDE,
                         onClick = {
                             position = CHAPTER_ROW
                             playOnClick.invoke(it.position)

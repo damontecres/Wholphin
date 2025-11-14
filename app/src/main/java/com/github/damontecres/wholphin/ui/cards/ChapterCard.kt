@@ -19,6 +19,7 @@ import androidx.tv.material3.Text
 import coil3.compose.AsyncImage
 import com.github.damontecres.wholphin.ui.AppColors
 import com.github.damontecres.wholphin.ui.roundSeconds
+import com.github.damontecres.wholphin.util.DEFAULT_ASPECT_RATIO
 import kotlin.time.Duration
 
 /**
@@ -32,7 +33,7 @@ fun ChapterCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     cardHeight: Dp = 140.dp * .85f,
-    aspectRatio: Float = 16f / 9,
+    aspectRatio: Float = DEFAULT_ASPECT_RATIO,
     onLongClick: (() -> Unit)? = null,
     interactionSource: MutableInteractionSource? = null,
 ) {

@@ -46,6 +46,7 @@ import coil3.compose.AsyncImage
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.preferences.UserPreferences
+import com.github.damontecres.wholphin.ui.AspectRatios
 import com.github.damontecres.wholphin.ui.Cards
 import com.github.damontecres.wholphin.ui.cards.BannerCard
 import com.github.damontecres.wholphin.ui.cards.ItemRow
@@ -353,11 +354,10 @@ fun HomePageContent(
                                             .fillMaxWidth()
                                             .animateItem(),
                                     cardContent = { index, item, cardModifier, onClick, onLongClick ->
-                                        // TODO better aspect ration handling?
                                         BannerCard(
                                             name = item?.data?.seriesName ?: item?.name,
                                             imageUrl = item?.imageUrl,
-                                            aspectRatio = (2f / 3f),
+                                            aspectRatio = AspectRatios.TALL,
                                             cornerText =
                                                 item?.data?.indexNumber?.let { "E$it" }
                                                     ?: item?.data?.childCount?.let { if (it > 0) it.toString() else null },
