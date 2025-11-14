@@ -197,8 +197,20 @@ fun HomePageContent(
     loadingState: LoadingState? = null,
 ) {
     val scope = rememberCoroutineScope()
+    val firstRow =
+        remember {
+            homeRows
+                .indexOfFirst {
+                    when (it) {
+                        is HomeRowLoadingState.Error -> false
+                        is HomeRowLoadingState.Loading -> true
+                        is HomeRowLoadingState.Pending -> true
+                        is HomeRowLoadingState.Success -> it.items.isNotEmpty()
+                    }
+                }.coerceAtLeast(0)
+        }
     var position by rememberSaveable(stateSaver = RowColumnSaver) {
-        mutableStateOf(RowColumn(0, 0))
+        mutableStateOf(RowColumn(firstRow, 0))
     }
     var focusedItem =
         position.let {
@@ -208,11 +220,19 @@ fun HomePageContent(
     val listState = rememberLazyListState()
     val focusRequester = remember { FocusRequester() }
     val positionFocusRequester = remember { FocusRequester() }
-    LaunchedEffect(Unit) {
-        positionFocusRequester.tryRequestFocus()
-        // Hacky, but mostly works
-        delay(50)
-        listState.animateScrollToItem(position.row)
+    var focused by remember { mutableStateOf(false) }
+    LaunchedEffect(homeRows) {
+        if (!focused) {
+            homeRows
+                .indexOfFirst { it is HomeRowLoadingState.Success && it.items.isNotEmpty() }
+                .takeIf { it >= 0 }
+                ?.let {
+                    positionFocusRequester.tryRequestFocus()
+                    delay(50)
+                    listState.animateScrollToItem(position.row)
+                    focused = true
+                }
+        }
     }
     LaunchedEffect(position) {
         listState.animateScrollToItem(position.row)
