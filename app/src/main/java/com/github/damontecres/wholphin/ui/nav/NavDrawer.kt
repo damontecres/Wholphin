@@ -51,6 +51,7 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.findViewTreeViewModelStoreOwner
 import androidx.lifecycle.viewModelScope
+import androidx.tv.material3.DrawerState
 import androidx.tv.material3.DrawerValue
 import androidx.tv.material3.Icon
 import androidx.tv.material3.LocalContentColor
@@ -305,7 +306,7 @@ fun NavDrawer(
                                     focusRequester.tryRequestFocus()
                                 }
                             }.fillMaxHeight()
-                            .background(MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp)),
+                            .background(MaterialTheme.colorScheme.surface),
                 ) {
                     item {
                         // Even though some must be clicked, focusing on it should clear other focused items
@@ -317,6 +318,7 @@ fun NavDrawer(
                             subtext = server?.name ?: server?.url,
                             icon = Icons.Default.AccountCircle,
                             selected = false,
+                            drawerOpen = drawerState.isOpen,
                             interactionSource = interactionSource,
                             onClick = {
                                 viewModel.navigationManager.navigateToFromDrawer(
@@ -336,6 +338,7 @@ fun NavDrawer(
                             text = stringResource(R.string.search),
                             icon = Icons.Default.Search,
                             selected = selectedIndex == -2,
+                            drawerOpen = drawerState.isOpen,
                             interactionSource = interactionSource,
                             onClick = {
                                 viewModel.setIndex(-2)
@@ -357,6 +360,7 @@ fun NavDrawer(
                             text = stringResource(R.string.home),
                             icon = Icons.Default.Home,
                             selected = selectedIndex == -1,
+                            drawerOpen = drawerState.isOpen,
                             interactionSource = interactionSource,
                             onClick = {
                                 viewModel.setIndex(-1)
@@ -382,6 +386,7 @@ fun NavDrawer(
                             library = it,
                             selected = selectedIndex == index,
                             moreExpanded = showMore,
+                            drawerOpen = drawerState.isOpen,
                             interactionSource = interactionSource,
                             onClick = {
                                 onClick.invoke(index, it)
@@ -405,6 +410,7 @@ fun NavDrawer(
                                 library = it,
                                 selected = selectedIndex == adjustedIndex,
                                 moreExpanded = showMore,
+                                drawerOpen = drawerState.isOpen,
                                 onClick = { onClick.invoke(adjustedIndex, it) },
                                 containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp),
                                 interactionSource = interactionSource,
@@ -425,6 +431,7 @@ fun NavDrawer(
                             text = stringResource(R.string.settings),
                             icon = Icons.Default.Settings,
                             selected = false,
+                            drawerOpen = drawerState.isOpen,
                             interactionSource = interactionSource,
                             onClick = {
                                 viewModel.navigationManager.navigateTo(
@@ -479,6 +486,7 @@ fun NavigationDrawerScope.IconNavItem(
     icon: ImageVector,
     onClick: () -> Unit,
     selected: Boolean,
+    drawerOpen: Boolean,
     modifier: Modifier = Modifier,
     subtext: String? = null,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
@@ -494,7 +502,7 @@ fun NavigationDrawerScope.IconNavItem(
                     selected -> MaterialTheme.colorScheme.border
                     isFocused -> LocalContentColor.current
                     else -> LocalContentColor.current
-                }
+                }.copy(alpha = if (drawerOpen) .75f else .1f)
             Icon(
                 icon,
                 contentDescription = null,
@@ -526,6 +534,7 @@ fun NavigationDrawerScope.NavItem(
     onClick: () -> Unit,
     selected: Boolean,
     moreExpanded: Boolean,
+    drawerOpen: Boolean,
     modifier: Modifier = Modifier,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
     containerColor: Color = Color.Unspecified,
@@ -549,6 +558,13 @@ fun NavigationDrawerScope.NavItem(
                     else -> R.string.fa_film
                 }
         }
+    val focused by interactionSource.collectIsFocusedAsState()
+    val color =
+        when {
+            focused -> LocalContentColor.current
+            selected -> MaterialTheme.colorScheme.border
+            else -> MaterialTheme.colorScheme.onSurface
+        }.copy(alpha = if (drawerOpen) .75f else .1f)
     NavigationDrawerItem(
         modifier = modifier,
         selected = false,
@@ -565,13 +581,13 @@ fun NavigationDrawerScope.NavItem(
                         textAlign = TextAlign.Center,
                         fontSize = 16.sp,
                         fontFamily = FontAwesome,
-                        color = if (selected) MaterialTheme.colorScheme.border else LocalContentColor.current,
+                        color = color,
                     )
                 } else {
                     Icon(
                         painter = painterResource(icon),
                         contentDescription = null,
-                        tint = if (selected) MaterialTheme.colorScheme.border else LocalContentColor.current,
+                        tint = color,
                     )
                 }
             }
@@ -593,3 +609,5 @@ fun NavigationDrawerScope.NavItem(
         )
     }
 }
+
+val DrawerState.isOpen: Boolean get() = this.currentValue == DrawerValue.Open
