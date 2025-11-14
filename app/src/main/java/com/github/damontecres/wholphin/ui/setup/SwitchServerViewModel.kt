@@ -52,10 +52,6 @@ class SwitchServerViewModel
             addServerState.value = LoadingState.Pending
         }
 
-        init {
-            init()
-        }
-
         fun init() {
             viewModelScope.launchIO {
                 withContext(Dispatchers.Main) {

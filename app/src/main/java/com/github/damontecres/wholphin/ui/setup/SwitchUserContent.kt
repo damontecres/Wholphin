@@ -58,6 +58,9 @@ fun SwitchUserContent(
         ),
 ) {
     val context = LocalContext.current
+    LaunchedEffect(Unit) {
+        viewModel.init()
+    }
 
 //    val currentServer by viewModel.serverRepository.currentServer.observeAsState()
     val currentUser by viewModel.serverRepository.currentUser.observeAsState()

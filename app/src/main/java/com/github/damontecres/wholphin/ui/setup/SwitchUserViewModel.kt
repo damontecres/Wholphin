@@ -48,12 +48,6 @@ class SwitchUserViewModel
             fun create(server: JellyfinServer): SwitchUserViewModel
         }
 
-        init {
-            viewModelScope.launch(Dispatchers.Main + ExceptionHandler()) {
-                serverRepository.switchServerOrUser()
-            }
-        }
-
         val serverQuickConnect = MutableLiveData<Boolean>(false)
 
         val users = MutableLiveData<List<JellyfinUser>>(listOf())
@@ -78,6 +72,9 @@ class SwitchUserViewModel
         }
 
         fun init() {
+            viewModelScope.launch(Dispatchers.Main + ExceptionHandler()) {
+                serverRepository.switchServerOrUser()
+            }
             quickConnectJob?.cancel()
             viewModelScope.launchIO {
                 users.setValueOnMain(listOf())
