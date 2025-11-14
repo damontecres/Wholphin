@@ -26,6 +26,7 @@ import androidx.tv.material3.Card
 import androidx.tv.material3.CardDefaults
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.data.model.BaseItem
+import com.github.damontecres.wholphin.ui.AspectRatios
 import com.github.damontecres.wholphin.ui.enableMarquee
 import kotlinx.coroutines.delay
 
@@ -42,7 +43,7 @@ fun SeasonCard(
     imageWidth: Dp = Dp.Unspecified,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
     showImageOverlay: Boolean = false,
-    aspectRatio: Float = item?.data?.primaryImageAspectRatio?.toFloat() ?: (2f / 3f),
+    aspectRatio: Float = item?.data?.primaryImageAspectRatio?.toFloat() ?: AspectRatios.TALL,
 ) = SeasonCard(
     title = item?.title,
     subtitle = item?.subtitle,
@@ -82,7 +83,7 @@ fun SeasonCard(
     imageWidth: Dp = Dp.Unspecified,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
     showImageOverlay: Boolean = false,
-    aspectRatio: Float = (2f / 3f),
+    aspectRatio: Float = AspectRatios.TALL,
 ) {
     val focused by interactionSource.collectIsFocusedAsState()
     val spaceBetween by animateDpAsState(if (focused) 12.dp else 4.dp)
@@ -102,7 +103,6 @@ fun SeasonCard(
     } else {
         focusedAfterDelay = false
     }
-//    val aspectRatio = dto?.primaryImageAspectRatio?.toFloat() ?: (2f / 3f)
     val width = imageHeight * aspectRatio
     val height = imageWidth * (1f / aspectRatio)
     Column(

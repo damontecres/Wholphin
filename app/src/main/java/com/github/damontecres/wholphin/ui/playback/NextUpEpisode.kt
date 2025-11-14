@@ -45,6 +45,7 @@ import coil3.compose.AsyncImagePreviewHandler
 import coil3.compose.LocalAsyncImagePreviewHandler
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.ui.AppColors
+import com.github.damontecres.wholphin.ui.AspectRatios
 import com.github.damontecres.wholphin.ui.PreviewTvSpec
 import com.github.damontecres.wholphin.ui.theme.WholphinTheme
 import com.github.damontecres.wholphin.ui.tryRequestFocus
@@ -62,7 +63,7 @@ fun NextUpEpisode(
     onClick: () -> Unit,
     timeLeft: Duration?,
     modifier: Modifier = Modifier,
-    aspectRatio: Float = 16f / 9,
+    aspectRatio: Float = AspectRatios.WIDE,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val focusRequester = remember { FocusRequester() }
@@ -202,7 +203,7 @@ private fun NextUpEpisodePreview() {
                         "But it just keeps going and going.",
                 imageUrl = "",
                 onClick = {},
-                aspectRatio = 4f / 3,
+                aspectRatio = AspectRatios.FOUR_THREE,
                 timeLeft = 30.seconds,
                 modifier =
                     Modifier

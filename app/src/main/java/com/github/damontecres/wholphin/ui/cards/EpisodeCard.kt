@@ -30,6 +30,7 @@ import androidx.tv.material3.CardDefaults
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.ui.AppColors
+import com.github.damontecres.wholphin.ui.AspectRatios
 import com.github.damontecres.wholphin.ui.enableMarquee
 import com.github.damontecres.wholphin.ui.seasonEpisode
 import kotlinx.coroutines.delay
@@ -63,7 +64,7 @@ fun EpisodeCard(
     } else {
         focusedAfterDelay = false
     }
-    val aspectRatio = dto?.primaryImageAspectRatio?.toFloat() ?: (2f / 3f)
+    val aspectRatio = dto?.primaryImageAspectRatio?.toFloat() ?: AspectRatios.TALL
     val width = imageHeight * aspectRatio
     val height = imageWidth * (1f / aspectRatio)
     Column(

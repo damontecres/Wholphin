@@ -34,6 +34,7 @@ import androidx.tv.material3.Text
 import coil3.compose.AsyncImage
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.ui.AppColors
+import com.github.damontecres.wholphin.ui.AspectRatios
 import com.github.damontecres.wholphin.ui.Cards
 import com.github.damontecres.wholphin.ui.FontAwesome
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
@@ -53,7 +54,7 @@ fun BannerCard(
     favorite: Boolean = false,
     playPercent: Double = 0.0,
     cardHeight: Dp = 140.dp * .85f,
-    aspectRatio: Float = 16f / 9,
+    aspectRatio: Float = AspectRatios.WIDE,
     interactionSource: MutableInteractionSource? = null,
 ) {
     var imageError by remember { mutableStateOf(false) }

@@ -50,7 +50,9 @@ import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.Chapter
 import com.github.damontecres.wholphin.data.model.ItemPlayback
 import com.github.damontecres.wholphin.data.model.Playlist
+import com.github.damontecres.wholphin.data.model.aspectRatioFloat
 import com.github.damontecres.wholphin.ui.AppColors
+import com.github.damontecres.wholphin.ui.AspectRatios
 import com.github.damontecres.wholphin.ui.TimeFormatter
 import com.github.damontecres.wholphin.ui.cards.ChapterCard
 import com.github.damontecres.wholphin.ui.cards.SeasonCard
@@ -75,6 +77,7 @@ private val subtitleTextSize = 18.sp
  */
 @Composable
 fun PlaybackOverlay(
+    item: BaseItem?,
     title: String?,
     subtitleStreams: List<SubtitleStream>,
     chapters: List<Chapter>,
@@ -236,6 +239,7 @@ fun PlaybackOverlay(
                                 name = chapter.name,
                                 position = chapter.position,
                                 imageUrl = chapter.imageUrl,
+                                aspectRatio = item?.data?.aspectRatioFloat ?: AspectRatios.WIDE,
                                 onClick = {
                                     playerControls.seekTo(chapter.position.inWholeMilliseconds)
                                     controllerViewState.hideControls()

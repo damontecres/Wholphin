@@ -22,6 +22,7 @@ import androidx.tv.material3.Card
 import androidx.tv.material3.CardDefaults
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.data.model.Person
+import com.github.damontecres.wholphin.ui.AspectRatios
 import com.github.damontecres.wholphin.ui.enableMarquee
 import kotlinx.coroutines.delay
 
@@ -81,7 +82,7 @@ fun PersonCard(
                 modifier =
                     Modifier
                         .fillMaxWidth()
-                        .aspectRatio(2f / 3f), // TODO,
+                        .aspectRatio(AspectRatios.TALL), // TODO,
             )
         }
         Column(
