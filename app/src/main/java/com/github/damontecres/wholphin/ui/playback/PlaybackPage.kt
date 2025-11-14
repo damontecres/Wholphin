@@ -321,6 +321,7 @@ fun PlaybackPage(
                                     .padding(WindowInsets.systemBars.asPaddingValues())
                                     .fillMaxSize()
                                     .background(Color.Transparent),
+                            item = currentPlayback?.item,
                             title = title,
                             subtitle = subtitle,
                             subtitleStreams = subtitleStreams,
