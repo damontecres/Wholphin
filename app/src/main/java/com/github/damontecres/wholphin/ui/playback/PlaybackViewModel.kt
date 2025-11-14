@@ -75,7 +75,6 @@ import org.jellyfin.sdk.api.client.extensions.trickplayApi
 import org.jellyfin.sdk.api.client.extensions.userLibraryApi
 import org.jellyfin.sdk.api.client.extensions.videosApi
 import org.jellyfin.sdk.api.sockets.subscribe
-import org.jellyfin.sdk.model.api.BaseItemDto
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.DeviceProfile
 import org.jellyfin.sdk.model.api.MediaSegmentDto
@@ -142,7 +141,7 @@ class PlaybackViewModel
         private lateinit var preferences: UserPreferences
         private lateinit var deviceProfile: DeviceProfile
         private lateinit var itemId: UUID
-        private lateinit var dto: BaseItemDto
+        private lateinit var item: BaseItem
         private var activityListener: TrackActivityPlaybackListener? = null
 
         val nextUp = MutableLiveData<BaseItem?>()
@@ -204,10 +203,11 @@ class PlaybackViewModel
                     } else {
                         queriedItem
                     }
+                val item = BaseItem.from(base, api)
 
                 val played =
                     play(
-                        base,
+                        item,
                         destination.positionMs,
                         destination.itemPlayback,
                         destination.forceTranscoding,
@@ -228,25 +228,25 @@ class PlaybackViewModel
         }
 
         private suspend fun play(
-            base: BaseItemDto,
+            item: BaseItem,
             positionMs: Long,
             itemPlayback: ItemPlayback? = null,
             forceTranscoding: Boolean = false,
         ): Boolean =
             withContext(Dispatchers.IO) {
-                Timber.i("Playing ${base.id}")
+                Timber.i("Playing ${item.id}")
                 autoSkippedSegments.clear()
-                if (base.type !in supportItemKinds) {
+                if (item.type !in supportItemKinds) {
                     showToast(
                         context,
-                        "Unsupported type '${base.type}', skipping...",
+                        "Unsupported type '${item.type}', skipping...",
                         Toast.LENGTH_SHORT,
                     )
                     return@withContext false
                 }
-                val isLiveTv = base.type == BaseItemKind.TV_CHANNEL
+                val isLiveTv = item.type == BaseItemKind.TV_CHANNEL
 
-                dto = base
+                val base = item.data
                 val title =
                     if (base.type == BaseItemKind.EPISODE) {
                         base.seriesName
@@ -358,7 +358,7 @@ class PlaybackViewModel
                     this@PlaybackViewModel.subtitleStreams.value = subtitleStreams
 
                     changeStreams(
-                        base,
+                        item,
                         itemPlaybackToUse,
                         audioIndex,
                         subtitleIndex,
@@ -379,7 +379,7 @@ class PlaybackViewModel
 
         @OptIn(UnstableApi::class)
         private suspend fun changeStreams(
-            item: BaseItemDto,
+            item: BaseItem,
             currentItemPlayback: ItemPlayback = this@PlaybackViewModel.currentItemPlayback.value!!,
             audioIndex: Int?,
             subtitleIndex: Int?,
@@ -392,7 +392,7 @@ class PlaybackViewModel
             val playerBackend = preferences.appPreferences.playbackPreferences.playerBackend
 
             val currentPlayback = this@PlaybackViewModel.currentPlayback.value
-            if (currentPlayback != null && currentPlayback.itemId == item.id && currentPlayback.playMethod == PlayMethod.DIRECT_PLAY) {
+            if (currentPlayback != null && currentPlayback.item.id == item.id && currentPlayback.playMethod == PlayMethod.DIRECT_PLAY) {
                 // If direct playing, can try to switch tracks without playback restarting
                 // Except for external subtitles
                 // TODO there's probably no reason why we can't add external subtitles?
@@ -549,9 +549,9 @@ class PlaybackViewModel
 
                 val playback =
                     CurrentPlayback(
-                        itemId = item.id,
-                        backend = preferences.appPreferences.playbackPreferences.playerBackend,
+                        item = item,
                         tracks = listOf(),
+                        backend = preferences.appPreferences.playbackPreferences.playerBackend,
                         playMethod = transcodeType,
                         playSessionId = response.playSessionId,
                         liveStreamId = source.liveStreamId,
@@ -623,7 +623,7 @@ class PlaybackViewModel
                     }
                 }
                 val trickPlayInfo =
-                    item.trickplay
+                    item.data.trickplay
                         ?.get(source.id)
                         ?.values
                         ?.firstOrNull()
@@ -637,7 +637,7 @@ class PlaybackViewModel
         fun changeAudioStream(index: Int) {
             viewModelScope.launchIO {
                 changeStreams(
-                    dto,
+                    item,
                     currentItemPlayback.value!!,
                     index,
                     currentItemPlayback.value?.subtitleIndex,
@@ -650,7 +650,7 @@ class PlaybackViewModel
         fun changeSubtitleStream(index: Int?): Job =
             viewModelScope.launchIO {
                 changeStreams(
-                    dto,
+                    item,
                     currentItemPlayback.value!!,
                     currentItemPlayback.value?.audioIndex,
                     index,
@@ -660,7 +660,7 @@ class PlaybackViewModel
             }
 
         fun getTrickplayUrl(index: Int): String? {
-            val itemId = dto.id
+            val itemId = item.id
             val mediaSourceId = currentItemPlayback.value?.sourceId
             val trickPlayInfo = trickplay.value ?: return null
             return api.trickplayApi.getTrickplayTileImageUrl(
@@ -792,7 +792,7 @@ class PlaybackViewModel
                     viewModelScope.launchIO {
                         cancelUpNextEpisode()
                         val item = it.getAndAdvance()
-                        val played = play(item.data, 0)
+                        val played = play(item, 0)
                         if (!played) {
                             playNextUp()
                         }
@@ -807,7 +807,7 @@ class PlaybackViewModel
                     viewModelScope.launchIO {
                         cancelUpNextEpisode()
                         val item = it.getPreviousAndReverse()
-                        val played = play(item.data, 0)
+                        val played = play(item, 0)
                         if (!played) {
                             playPrevious()
                         }
@@ -825,7 +825,7 @@ class PlaybackViewModel
                 viewModelScope.launchIO {
                     val toPlay = playlist.advanceTo(item.id)
                     if (toPlay != null) {
-                        val played = play(toPlay.data, 0)
+                        val played = play(toPlay, 0)
                         if (!played) {
                             playNextUp()
                         }
@@ -859,7 +859,7 @@ class PlaybackViewModel
                         PlayMethod.DIRECT_STREAM, PlayMethod.DIRECT_PLAY -> {
                             Timber.w("Playback error during ${it.playMethod}, falling back to transcoding")
                             changeStreams(
-                                dto,
+                                item,
                                 currentItemPlayback.value!!,
                                 currentItemPlayback.value?.audioIndex,
                                 currentItemPlayback.value?.subtitleIndex,
@@ -978,8 +978,12 @@ class PlaybackViewModel
                             while (maxAttempts > 0 && subtitleCount == newCount) {
                                 maxAttempts--
                                 delay(1500)
-                                dto = api.userLibraryApi.getItem(itemId = dto.id).content
-                                val mediaSource = chooseSource(dto, it)
+                                item =
+                                    BaseItem.from(
+                                        api.userLibraryApi.getItem(itemId = item.id).content,
+                                        api,
+                                    )
+                                val mediaSource = chooseSource(item.data, it)
                                 if (mediaSource == null) {
                                     // This shouldn't happen, but just in case
                                     showToast(
@@ -1036,7 +1040,7 @@ class PlaybackViewModel
                                         audioIndex += 1
                                     }
                                     changeStreams(
-                                        dto,
+                                        item,
                                         currentItemPlayback.value!!,
                                         audioIndex,
                                         newStream.index,
@@ -1066,9 +1070,9 @@ class PlaybackViewModel
     }
 
 data class CurrentPlayback(
-    val itemId: UUID,
-    val backend: PlayerBackend,
+    val item: BaseItem,
     val tracks: List<TrackSupport>,
+    val backend: PlayerBackend,
     val playMethod: PlayMethod,
     val playSessionId: String?,
     val liveStreamId: String?,

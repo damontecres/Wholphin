@@ -5,13 +5,13 @@ import android.content.SharedPreferences
 import androidx.core.content.edit
 import androidx.datastore.core.DataStore
 import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.map
 import com.github.damontecres.wholphin.data.model.JellyfinServer
 import com.github.damontecres.wholphin.data.model.JellyfinUser
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.ui.setValueOnMain
 import com.github.damontecres.wholphin.ui.toServerString
+import com.github.damontecres.wholphin.util.EqualityMutableLiveData
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -42,7 +42,7 @@ class ServerRepository
     ) {
         private val sharedPreferences = getServerSharedPreferences(context)
 
-        private var _current = MutableLiveData<CurrentUser?>(null)
+        private var _current = EqualityMutableLiveData<CurrentUser?>(null)
         val current: LiveData<CurrentUser?> = _current
 
         val currentServer: LiveData<JellyfinServer?> get() = _current.map { it?.server }

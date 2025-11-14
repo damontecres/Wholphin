@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.dp
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.data.model.BaseItem
+import com.github.damontecres.wholphin.ui.AspectRatios
 import com.github.damontecres.wholphin.util.FocusPair
 
 @Composable
@@ -112,7 +113,8 @@ fun BannerItemRow(
             name = title,
             imageUrl = item?.imageUrl,
             aspectRatio =
-                aspectRatioOverride ?: item?.data?.primaryImageAspectRatio?.toFloat() ?: (16f / 9),
+                aspectRatioOverride ?: item?.data?.primaryImageAspectRatio?.toFloat()
+                    ?: AspectRatios.WIDE,
             cornerText = item?.data?.indexNumber?.let { "E$it" },
             played = item?.data?.userData?.played ?: false,
             playPercent = item?.data?.userData?.playedPercentage ?: 0.0,

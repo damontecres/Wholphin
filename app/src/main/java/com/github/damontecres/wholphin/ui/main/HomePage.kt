@@ -46,6 +46,7 @@ import coil3.compose.AsyncImage
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.preferences.UserPreferences
+import com.github.damontecres.wholphin.ui.AspectRatios
 import com.github.damontecres.wholphin.ui.Cards
 import com.github.damontecres.wholphin.ui.cards.BannerCard
 import com.github.damontecres.wholphin.ui.cards.ItemRow
@@ -197,8 +198,20 @@ fun HomePageContent(
     loadingState: LoadingState? = null,
 ) {
     val scope = rememberCoroutineScope()
+    val firstRow =
+        remember {
+            homeRows
+                .indexOfFirst {
+                    when (it) {
+                        is HomeRowLoadingState.Error -> false
+                        is HomeRowLoadingState.Loading -> true
+                        is HomeRowLoadingState.Pending -> true
+                        is HomeRowLoadingState.Success -> it.items.isNotEmpty()
+                    }
+                }.coerceAtLeast(0)
+        }
     var position by rememberSaveable(stateSaver = RowColumnSaver) {
-        mutableStateOf(RowColumn(0, 0))
+        mutableStateOf(RowColumn(firstRow, 0))
     }
     var focusedItem =
         position.let {
@@ -208,11 +221,19 @@ fun HomePageContent(
     val listState = rememberLazyListState()
     val focusRequester = remember { FocusRequester() }
     val positionFocusRequester = remember { FocusRequester() }
-    LaunchedEffect(Unit) {
-        positionFocusRequester.tryRequestFocus()
-        // Hacky, but mostly works
-        delay(50)
-        listState.animateScrollToItem(position.row)
+    var focused by remember { mutableStateOf(false) }
+    LaunchedEffect(homeRows) {
+        if (!focused) {
+            homeRows
+                .indexOfFirst { it is HomeRowLoadingState.Success && it.items.isNotEmpty() }
+                .takeIf { it >= 0 }
+                ?.let {
+                    positionFocusRequester.tryRequestFocus()
+                    delay(50)
+                    listState.animateScrollToItem(position.row)
+                    focused = true
+                }
+        }
     }
     LaunchedEffect(position) {
         listState.animateScrollToItem(position.row)
@@ -333,11 +354,10 @@ fun HomePageContent(
                                             .fillMaxWidth()
                                             .animateItem(),
                                     cardContent = { index, item, cardModifier, onClick, onLongClick ->
-                                        // TODO better aspect ration handling?
                                         BannerCard(
                                             name = item?.data?.seriesName ?: item?.name,
                                             imageUrl = item?.imageUrl,
-                                            aspectRatio = (2f / 3f),
+                                            aspectRatio = AspectRatios.TALL,
                                             cornerText =
                                                 item?.data?.indexNumber?.let { "E$it" }
                                                     ?: item?.data?.childCount?.let { if (it > 0) it.toString() else null },

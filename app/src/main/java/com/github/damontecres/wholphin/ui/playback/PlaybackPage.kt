@@ -69,6 +69,7 @@ import com.github.damontecres.wholphin.data.model.Playlist
 import com.github.damontecres.wholphin.preferences.PlayerBackend
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.preferences.skipBackOnResume
+import com.github.damontecres.wholphin.ui.AspectRatios
 import com.github.damontecres.wholphin.ui.OneTimeLaunchedEffect
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.LoadingPage
@@ -332,6 +333,7 @@ fun PlaybackPage(
                                     .padding(WindowInsets.systemBars.asPaddingValues())
                                     .fillMaxSize()
                                     .background(Color.Transparent),
+                            item = currentPlayback?.item,
                             title = title,
                             subtitle = subtitle,
                             subtitleStreams = subtitleStreams,
@@ -488,7 +490,9 @@ fun PlaybackPage(
                                 ).joinToString(" - "),
                             description = it.data.overview,
                             imageUrl = it.imageUrl,
-                            aspectRatio = it.data.primaryImageAspectRatio?.toFloat() ?: (16f / 9),
+                            aspectRatio =
+                                it.data.primaryImageAspectRatio?.toFloat()
+                                    ?: AspectRatios.WIDE,
                             onClick = {
                                 viewModel.reportInteraction()
                                 viewModel.playNextUp()

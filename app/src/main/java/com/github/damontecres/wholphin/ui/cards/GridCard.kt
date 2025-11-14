@@ -25,6 +25,7 @@ import androidx.tv.material3.CardDefaults
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.data.model.BaseItem
+import com.github.damontecres.wholphin.ui.AspectRatios
 import com.github.damontecres.wholphin.ui.enableMarquee
 import kotlinx.coroutines.delay
 
@@ -38,7 +39,7 @@ fun GridCard(
     onLongClick: () -> Unit,
     modifier: Modifier = Modifier,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
-    imageAspectRatio: Float = 2f / 3f,
+    imageAspectRatio: Float = AspectRatios.TALL,
 ) {
     val dto = item?.data
     val focused by interactionSource.collectIsFocusedAsState()

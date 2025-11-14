@@ -42,8 +42,8 @@ import coil3.compose.AsyncImage
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.ChosenStreams
 import com.github.damontecres.wholphin.data.model.BaseItem
-import com.github.damontecres.wholphin.data.model.aspectRatioFloat
 import com.github.damontecres.wholphin.preferences.UserPreferences
+import com.github.damontecres.wholphin.ui.AspectRatios
 import com.github.damontecres.wholphin.ui.OneTimeLaunchedEffect
 import com.github.damontecres.wholphin.ui.cards.BannerCard
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
@@ -216,10 +216,8 @@ fun SeriesOverviewContent(
                                                 ?.data
                                                 ?.primaryImageAspectRatio
                                                 ?.toFloat()
-                                                ?.coerceAtLeast(
-                                                    episode.data.aspectRatioFloat ?: (4f / 3f),
-                                                )
-                                                ?: (16f / 9), // TODO some episode images don't match the file's aspect ratio
+                                                ?.coerceAtLeast(AspectRatios.FOUR_THREE)
+                                                ?: (AspectRatios.WIDE),
                                         cornerText = cornerText,
                                         played = episode?.data?.userData?.played ?: false,
                                         playPercent =

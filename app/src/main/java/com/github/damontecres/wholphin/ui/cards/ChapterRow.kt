@@ -21,6 +21,7 @@ import com.github.damontecres.wholphin.data.model.Chapter
 @Composable
 fun ChapterRow(
     chapters: List<Chapter>,
+    aspectRatio: Float,
     onClick: (Chapter) -> Unit,
     modifier: Modifier = Modifier,
     onLongClick: ((Chapter) -> Unit)? = null,
@@ -50,6 +51,7 @@ fun ChapterRow(
                     position = item.position,
                     imageUrl = item.imageUrl,
                     onClick = { onClick(item) },
+                    aspectRatio = aspectRatio,
                     modifier = Modifier,
                     onLongClick = onLongClick?.let { { it(item) } },
                 )
