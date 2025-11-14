@@ -253,12 +253,15 @@ fun PlaybackPage(
                         modifier = scaledModifier,
                     )
                     if (presentationState.coverSurface) {
+                        val isLoading by rememberPlayerLoadingState(player)
                         Box(
                             Modifier
                                 .matchParentSize()
                                 .background(Color.Black),
                         ) {
-                            LoadingPage(focusEnabled = false)
+                            if (isLoading) {
+                                LoadingPage(focusEnabled = false)
+                            }
                         }
                     }
 

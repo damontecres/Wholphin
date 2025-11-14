@@ -89,6 +89,9 @@ class MpvPlayer(
     var isReleased = false
         private set
 
+    @Volatile
+    private var isLoadingFile = false
+
     init {
         Timber.v("config-dir=${context.filesDir.path}")
         MPVLib.create(context)
@@ -260,7 +263,7 @@ class MpvPlayer(
 
     override fun getShuffleModeEnabled(): Boolean = false
 
-    override fun isLoading(): Boolean = false
+    override fun isLoading(): Boolean = isLoadingFile
 
     override fun getSeekBackIncrement(): Long = 10_000
 
@@ -602,6 +605,8 @@ class MpvPlayer(
 //            MPV_EVENT_START_FILE -> {
 //            }
             MPV_EVENT_FILE_LOADED -> {
+                isLoadingFile = false
+                notifyListeners(EVENT_IS_LOADING_CHANGED) { onIsLoadingChanged(false) }
                 Timber.d("event: MPV_EVENT_FILE_LOADED")
                 mediaItem!!.localConfiguration?.subtitleConfigurations?.forEach {
                     val url = it.uri.toString()
@@ -685,6 +690,8 @@ class MpvPlayer(
     }
 
     private fun loadFile() {
+        isLoadingFile = true
+        notifyListeners(EVENT_IS_LOADING_CHANGED) { onIsLoadingChanged(true) }
         val url = mediaItem!!.localConfiguration?.uri.toString()
         if (startPositionMs > 0) {
             MPVLib.command(
