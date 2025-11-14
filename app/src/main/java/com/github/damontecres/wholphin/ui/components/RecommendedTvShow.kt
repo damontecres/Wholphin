@@ -12,7 +12,7 @@ import com.github.damontecres.wholphin.services.FavoriteWatchManager
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.ui.SlimItemFields
 import com.github.damontecres.wholphin.ui.data.RowColumn
-import com.github.damontecres.wholphin.ui.launchIO
+import com.github.damontecres.wholphin.ui.setValueOnMain
 import com.github.damontecres.wholphin.util.ApiRequestPager
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.GetItemsRequestHandler
@@ -27,6 +27,8 @@ import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -123,8 +125,8 @@ class RecommendedTvShowViewModel
                         ),
                     )
 
-                    withContext(Dispatchers.Main) {
-                        loading.value = LoadingState.Success
+                    if (resumeItems.isNotEmpty() || nextUpItems.isNotEmpty()) {
+                        loading.setValueOnMain(LoadingState.Success)
                     }
                 } catch (ex: Exception) {
                     Timber.e(ex, "Exception fetching tv recommendations")
@@ -188,19 +190,31 @@ class RecommendedTvShowViewModel
                         R.string.top_unwatched to unwatchedTopRatedItems,
                     )
 
-                rows.forEachIndexed { index, (title, pager) ->
-                    viewModelScope.launchIO {
-                        val title = context.getString(title)
-                        val result =
-                            try {
-                                pager.init()
-                                HomeRowLoadingState.Success(title, pager)
-                            } catch (ex: Exception) {
-                                Timber.e(ex, "Error fetching %s", title)
-                                HomeRowLoadingState.Error(title, null, ex)
+                rows
+                    .mapIndexed { index, (title, pager) ->
+                        viewModelScope.async(Dispatchers.IO + ExceptionHandler()) {
+                            val title = context.getString(title)
+                            val result =
+                                try {
+                                    pager.init()
+                                    if (pager.isNotEmpty()) {
+                                        pager.getBlocking(0)
+                                    }
+                                    HomeRowLoadingState.Success(title, pager)
+                                } catch (ex: Exception) {
+                                    Timber.e(ex, "Error fetching %s", title)
+                                    HomeRowLoadingState.Error(title, null, ex)
+                                }
+                            update(index + 2, result)
+                            if (result is HomeRowLoadingState.Success && result.items.isNotEmpty() &&
+                                (loading.value == LoadingState.Loading || loading.value == LoadingState.Pending)
+                            ) {
+                                loading.setValueOnMain(LoadingState.Success)
                             }
-                        update(index + 2, result)
-                    }
+                        }
+                    }.awaitAll()
+                if (loading.value == LoadingState.Loading || loading.value == LoadingState.Pending) {
+                    loading.setValueOnMain(LoadingState.Success)
                 }
             }
         }
