@@ -1,4 +1,4 @@
-package com.github.damontecres.wholphin.util
+package com.github.damontecres.wholphin.services
 
 import android.content.Context
 import androidx.annotation.OptIn
@@ -8,8 +8,8 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.okhttp.OkHttpDataSource
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
-import com.github.damontecres.wholphin.hilt.AuthOkHttpClient
 import com.github.damontecres.wholphin.preferences.ThemeSongVolume
+import com.github.damontecres.wholphin.services.hilt.AuthOkHttpClient
 import com.github.damontecres.wholphin.util.profile.Codec
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers

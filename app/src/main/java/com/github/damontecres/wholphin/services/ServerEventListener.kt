@@ -1,4 +1,4 @@
-package com.github.damontecres.wholphin.util
+package com.github.damontecres.wholphin.services
 
 import android.content.Context
 import android.widget.Toast

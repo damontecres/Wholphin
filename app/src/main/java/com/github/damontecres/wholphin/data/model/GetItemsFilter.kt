@@ -6,6 +6,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.UseSerializers
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.request.GetItemsRequest
+import org.jellyfin.sdk.model.api.request.GetPersonsRequest
 import org.jellyfin.sdk.model.serializer.UUIDSerializer
 import java.util.UUID
 
@@ -19,6 +20,7 @@ data class GetItemsFilter(
     val studios: List<UUID>? = null,
     val tags: List<String>? = null,
     val includeItemTypes: List<BaseItemKind>? = null,
+    val override: GetItemsFilterOverride = GetItemsFilterOverride.NONE,
 ) {
     fun applyTo(req: GetItemsRequest) =
         req.copy(
@@ -31,4 +33,14 @@ data class GetItemsFilter(
             studioIds = studios,
             tags = tags,
         )
+
+    fun applyTo(req: GetPersonsRequest) =
+        req.copy(
+            isFavorite = favorite,
+        )
+}
+
+enum class GetItemsFilterOverride {
+    NONE,
+    PERSON,
 }

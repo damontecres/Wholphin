@@ -8,13 +8,13 @@ import androidx.lifecycle.viewModelScope
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.preferences.UserPreferences
+import com.github.damontecres.wholphin.services.FavoriteWatchManager
+import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.ui.SlimItemFields
 import com.github.damontecres.wholphin.ui.data.RowColumn
 import com.github.damontecres.wholphin.ui.launchIO
-import com.github.damontecres.wholphin.ui.nav.NavigationManager
 import com.github.damontecres.wholphin.util.ApiRequestPager
 import com.github.damontecres.wholphin.util.ExceptionHandler
-import com.github.damontecres.wholphin.util.FavoriteWatchManager
 import com.github.damontecres.wholphin.util.GetItemsRequestHandler
 import com.github.damontecres.wholphin.util.GetNextUpRequestHandler
 import com.github.damontecres.wholphin.util.GetResumeItemsRequestHandler
@@ -59,13 +59,13 @@ class RecommendedTvShowViewModel
         }
 
         override val rows =
-            MutableStateFlow<MutableList<HomeRowLoadingState>>(
+            MutableStateFlow<List<HomeRowLoadingState>>(
                 rowTitles
                     .map {
                         HomeRowLoadingState.Pending(
                             context.getString(it),
                         )
-                    }.toMutableList(),
+                    },
             )
 
         override fun init() {
@@ -210,7 +210,7 @@ class RecommendedTvShowViewModel
             row: HomeRowLoadingState,
         ) {
             rows.update { current ->
-                current.apply { set(position, row) }
+                current.toMutableList().apply { set(position, row) }
             }
         }
 

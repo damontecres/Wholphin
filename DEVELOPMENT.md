@@ -25,13 +25,16 @@ After forking and cloning your fork, you can import the project into Android Stu
 
 You need a compatible Android Studio version for the configured AGP. This is generally `Narwhal 3 Feature Drop | 2025.1.3` or newer. See https://developer.android.com/build/releases/gradle-plugin and [`libs.versions.toml](./gradle/libs.versions.toml).
 
+### Code organization
+
+Code is split into several packages:
+- `data` - app-specific data models and services
+- `preferences` - Non-UI related code for user settings and preferences
+- `services` - hilt injectable services often used by ViewModels for API calls
+- `ui` - User interface code and ViewModels
+- `util` - Utility classes and functions
+
 ### Native components
-
-Wholphin includes some optional native components that are compiled outside of the normal Android gradle build process.
-
-These components are not generally required to build or test the app during development.
-
-If you want to build any of them locally, you must have the [Android NDK](https://developer.android.com/ndk) installed.
 
 #### FFmpeg decoder module
 

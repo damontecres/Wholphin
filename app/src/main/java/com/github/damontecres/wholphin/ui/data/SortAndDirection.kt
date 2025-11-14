@@ -79,5 +79,6 @@ fun getStringRes(sort: ItemSortBy): Int =
         ItemSortBy.CRITIC_RATING -> R.string.critic_rating
         ItemSortBy.PLAY_COUNT -> R.string.play_count
         ItemSortBy.AIRED_EPISODE_ORDER -> R.string.aired_episode_order
+        ItemSortBy.DEFAULT -> R.string.default_track
         else -> throw IllegalArgumentException("Unsupported sort option: $sort")
     }

@@ -1,4 +1,4 @@
-package com.github.damontecres.wholphin.util
+package com.github.damontecres.wholphin.services
 
 import android.Manifest
 import android.content.ContentValues
@@ -15,9 +15,10 @@ import androidx.core.content.FileProvider
 import androidx.core.content.edit
 import androidx.preference.PreferenceManager
 import com.github.damontecres.wholphin.R
-import com.github.damontecres.wholphin.hilt.StandardOkHttpClient
+import com.github.damontecres.wholphin.services.hilt.StandardOkHttpClient
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.showToast
+import com.github.damontecres.wholphin.util.Version
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -110,7 +111,7 @@ class UpdateChecker
 
         fun getInstalledVersion(): Version {
             val pkgInfo = context.packageManager.getPackageInfo(context.packageName, 0)
-            return Version.fromString(pkgInfo.versionName!!)
+            return Version.Companion.fromString(pkgInfo.versionName!!)
         }
 
         suspend fun getLatestRelease(updateUrl: String): Release? {
@@ -135,7 +136,7 @@ class UpdateChecker
                     if (it.isSuccessful && it.body != null) {
                         val result = Json.parseToJsonElement(it.body!!.string())
                         val name = result.jsonObject["name"]?.jsonPrimitive?.contentOrNull
-                        val version = Version.tryFromString(name)
+                        val version = Version.Companion.tryFromString(name)
                         val publishedAt =
                             result.jsonObject["published_at"]?.jsonPrimitive?.contentOrNull
                         val body = result.jsonObject["body"]?.jsonPrimitive?.contentOrNull
@@ -236,7 +237,7 @@ class UpdateChecker
                             val targetFile = fallbackDownload(it, callback)
                             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
                                 val intent = Intent(Intent.ACTION_INSTALL_PACKAGE)
-                                intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
                                 intent.data =
                                     FileProvider.getUriForFile(
                                         context,

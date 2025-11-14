@@ -2,7 +2,7 @@ package com.github.damontecres.wholphin.data.model
 
 import com.github.damontecres.wholphin.ui.detail.series.SeasonEpisodeIds
 import com.github.damontecres.wholphin.ui.nav.Destination
-import com.github.damontecres.wholphin.util.seasonEpisode
+import com.github.damontecres.wholphin.ui.seasonEpisode
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import org.jellyfin.sdk.api.client.ApiClient

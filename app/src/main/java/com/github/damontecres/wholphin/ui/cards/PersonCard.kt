@@ -72,8 +72,8 @@ fun PersonCard(
             ItemCardImage(
                 imageUrl = item.imageUrl,
                 name = item.name,
-                showOverlay = false,
-                favorite = false,
+                showOverlay = true,
+                favorite = item.favorite,
                 watched = false,
                 unwatchedCount = -1,
                 watchedPercent = null,

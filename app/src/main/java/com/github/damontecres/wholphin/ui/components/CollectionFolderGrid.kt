@@ -34,8 +34,11 @@ import com.github.damontecres.wholphin.data.LibraryDisplayInfoDao
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.GetItemsFilter
+import com.github.damontecres.wholphin.data.model.GetItemsFilterOverride
 import com.github.damontecres.wholphin.data.model.LibraryDisplayInfo
 import com.github.damontecres.wholphin.preferences.UserPreferences
+import com.github.damontecres.wholphin.services.FavoriteWatchManager
+import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.ui.OneTimeLaunchedEffect
 import com.github.damontecres.wholphin.ui.SlimItemFields
 import com.github.damontecres.wholphin.ui.data.AddPlaylistViewModel
@@ -46,13 +49,12 @@ import com.github.damontecres.wholphin.ui.detail.MoreDialogActions
 import com.github.damontecres.wholphin.ui.detail.PlaylistDialog
 import com.github.damontecres.wholphin.ui.detail.PlaylistLoadingState
 import com.github.damontecres.wholphin.ui.detail.buildMoreDialogItemsForHome
-import com.github.damontecres.wholphin.ui.nav.NavigationManager
 import com.github.damontecres.wholphin.ui.toServerString
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.ApiRequestPager
 import com.github.damontecres.wholphin.util.ExceptionHandler
-import com.github.damontecres.wholphin.util.FavoriteWatchManager
 import com.github.damontecres.wholphin.util.GetItemsRequestHandler
+import com.github.damontecres.wholphin.util.GetPersonsHandler
 import com.github.damontecres.wholphin.util.LoadingExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -69,6 +71,7 @@ import org.jellyfin.sdk.model.api.ItemSortBy
 import org.jellyfin.sdk.model.api.MediaType
 import org.jellyfin.sdk.model.api.SortOrder
 import org.jellyfin.sdk.model.api.request.GetItemsRequest
+import org.jellyfin.sdk.model.api.request.GetPersonsRequest
 import org.jellyfin.sdk.model.serializer.toUUIDOrNull
 import java.util.UUID
 import javax.inject.Inject
@@ -107,13 +110,12 @@ class CollectionFolderViewModel
                 }
 
                 val sortAndDirection =
-                    if (initialSortAndDirection == null) {
-                        serverRepository.currentUser.value?.let { user ->
-                            libraryDisplayInfoDao.getItem(user, itemId)?.sortAndDirection
-                        } ?: SortAndDirection.DEFAULT
-                    } else {
-                        SortAndDirection.DEFAULT
-                    }
+                    initialSortAndDirection
+                        ?: (
+                            serverRepository.currentUser.value?.let { user ->
+                                libraryDisplayInfoDao.getItem(user, itemId)?.sortAndDirection
+                            } ?: SortAndDirection.DEFAULT
+                        )
 
                 loadResults(sortAndDirection, recursive, filter)
             }
@@ -143,7 +145,6 @@ class CollectionFolderViewModel
             recursive: Boolean,
             filter: GetItemsFilter,
         ) {
-            val item = item.value
             viewModelScope.launch(Dispatchers.IO) {
                 withContext(Dispatchers.Main) {
                     pager.value = listOf()
@@ -151,67 +152,99 @@ class CollectionFolderViewModel
                     this@CollectionFolderViewModel.sortAndDirection.value = sortAndDirection
                     this@CollectionFolderViewModel.filter.value = filter
                 }
-                val includeItemTypes =
-                    when (item?.data?.collectionType) {
-                        CollectionType.MOVIES -> listOf(BaseItemKind.MOVIE)
-                        CollectionType.TVSHOWS -> listOf(BaseItemKind.SERIES)
-                        CollectionType.HOMEVIDEOS -> listOf(BaseItemKind.VIDEO)
-                        CollectionType.MUSIC ->
-                            listOf(
-                                BaseItemKind.AUDIO,
-                                BaseItemKind.MUSIC_ARTIST,
-                                BaseItemKind.MUSIC_ALBUM,
-                            )
-
-                        CollectionType.BOXSETS -> listOf(BaseItemKind.BOX_SET)
-                        CollectionType.PLAYLISTS -> listOf(BaseItemKind.PLAYLIST)
-
-                        else -> listOf()
-                    }
-                val request =
-                    filter.applyTo(
-                        GetItemsRequest(
-                            parentId = item?.id,
-                            enableImageTypes = listOf(ImageType.PRIMARY, ImageType.THUMB),
-                            includeItemTypes = includeItemTypes,
-                            recursive = recursive,
-                            excludeItemIds = item?.let { listOf(item.id) },
-                            sortBy =
-                                buildList {
-                                    add(sortAndDirection.sort)
-                                    if (sortAndDirection.sort != ItemSortBy.SORT_NAME) {
-                                        add(ItemSortBy.SORT_NAME)
-                                    }
-                                    if (item?.data?.collectionType == CollectionType.MOVIES) {
-                                        add(ItemSortBy.PRODUCTION_YEAR)
-                                    }
-                                },
-                            sortOrder =
-                                buildList {
-                                    add(sortAndDirection.direction)
-                                    if (sortAndDirection.sort != ItemSortBy.SORT_NAME) {
-                                        add(SortOrder.ASCENDING)
-                                    }
-                                    if (item?.data?.collectionType == CollectionType.MOVIES) {
-                                        add(SortOrder.ASCENDING)
-                                    }
-                                },
-                            fields = SlimItemFields,
-                        ),
-                    )
-                val newPager =
-                    ApiRequestPager(
-                        api,
-                        request,
-                        GetItemsRequestHandler,
-                        viewModelScope,
-                        useSeriesForPrimary = true,
-                    )
+                val newPager = createPager(sortAndDirection, recursive, filter)
                 newPager.init()
                 if (newPager.isNotEmpty()) newPager.getBlocking(0)
                 withContext(Dispatchers.Main) {
                     pager.value = newPager
                     loading.value = LoadingState.Success
+                }
+            }
+        }
+
+        private fun createPager(
+            sortAndDirection: SortAndDirection,
+            recursive: Boolean,
+            filter: GetItemsFilter,
+        ): ApiRequestPager<out Any> {
+            val item = item.value
+            return when (filter.override) {
+                GetItemsFilterOverride.NONE -> {
+                    val includeItemTypes =
+                        when (item?.data?.collectionType) {
+                            CollectionType.MOVIES -> listOf(BaseItemKind.MOVIE)
+                            CollectionType.TVSHOWS -> listOf(BaseItemKind.SERIES)
+                            CollectionType.HOMEVIDEOS -> listOf(BaseItemKind.VIDEO)
+                            CollectionType.MUSIC ->
+                                listOf(
+                                    BaseItemKind.AUDIO,
+                                    BaseItemKind.MUSIC_ARTIST,
+                                    BaseItemKind.MUSIC_ALBUM,
+                                )
+
+                            CollectionType.BOXSETS -> listOf(BaseItemKind.BOX_SET)
+                            CollectionType.PLAYLISTS -> listOf(BaseItemKind.PLAYLIST)
+
+                            else -> listOf()
+                        }
+                    val request =
+                        filter.applyTo(
+                            GetItemsRequest(
+                                parentId = item?.id,
+                                enableImageTypes = listOf(ImageType.PRIMARY, ImageType.THUMB),
+                                includeItemTypes = includeItemTypes,
+                                recursive = recursive,
+                                excludeItemIds = item?.let { listOf(item.id) },
+                                sortBy =
+                                    buildList {
+                                        add(sortAndDirection.sort)
+                                        if (sortAndDirection.sort != ItemSortBy.SORT_NAME) {
+                                            add(ItemSortBy.SORT_NAME)
+                                        }
+                                        if (item?.data?.collectionType == CollectionType.MOVIES) {
+                                            add(ItemSortBy.PRODUCTION_YEAR)
+                                        }
+                                    },
+                                sortOrder =
+                                    buildList {
+                                        add(sortAndDirection.direction)
+                                        if (sortAndDirection.sort != ItemSortBy.SORT_NAME) {
+                                            add(SortOrder.ASCENDING)
+                                        }
+                                        if (item?.data?.collectionType == CollectionType.MOVIES) {
+                                            add(SortOrder.ASCENDING)
+                                        }
+                                    },
+                                fields = SlimItemFields,
+                            ),
+                        )
+                    val newPager =
+                        ApiRequestPager(
+                            api,
+                            request,
+                            GetItemsRequestHandler,
+                            viewModelScope,
+                            useSeriesForPrimary = true,
+                        )
+                    newPager
+                }
+
+                GetItemsFilterOverride.PERSON -> {
+                    val request =
+                        filter.applyTo(
+                            GetPersonsRequest(
+                                enableImageTypes = listOf(ImageType.PRIMARY, ImageType.THUMB),
+                            ),
+                        )
+                    val newPager =
+                        ApiRequestPager(
+                            api,
+                            request,
+                            GetPersonsHandler,
+                            viewModelScope,
+                            useSeriesForPrimary = true,
+                        )
+                    newPager
                 }
             }
         }
@@ -437,12 +470,14 @@ fun CollectionFolderGridContent(
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
-            SortByButton(
-                sortOptions = sortOptions,
-                current = sortAndDirection,
-                onSortChange = onSortChange,
-                modifier = Modifier,
-            )
+            if (sortOptions.isNotEmpty()) {
+                SortByButton(
+                    sortOptions = sortOptions,
+                    current = sortAndDirection,
+                    onSortChange = onSortChange,
+                    modifier = Modifier,
+                )
+            }
         }
         CardGrid(
             pager = pager,

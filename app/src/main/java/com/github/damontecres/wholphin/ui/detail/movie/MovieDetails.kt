@@ -1,6 +1,5 @@
 package com.github.damontecres.wholphin.ui.detail.movie
 
-import android.content.Intent
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -54,6 +53,7 @@ import com.github.damontecres.wholphin.data.model.RemoteTrailer
 import com.github.damontecres.wholphin.data.model.Trailer
 import com.github.damontecres.wholphin.data.model.chooseSource
 import com.github.damontecres.wholphin.preferences.UserPreferences
+import com.github.damontecres.wholphin.services.TrailerService
 import com.github.damontecres.wholphin.ui.Cards
 import com.github.damontecres.wholphin.ui.cards.ChapterRow
 import com.github.damontecres.wholphin.ui.cards.ItemRow
@@ -277,22 +277,8 @@ fun MovieDetails(
                                 items = items,
                             )
                     },
-                    trailerOnClick = { trailer ->
-                        when (trailer) {
-                            is LocalTrailer ->
-                                viewModel.navigateTo(
-                                    Destination.Playback(
-                                        itemId = trailer.baseItem.id,
-                                        item = trailer.baseItem,
-                                        positionMs = 0L,
-                                    ),
-                                )
-
-                            is RemoteTrailer -> {
-                                val intent = Intent(Intent.ACTION_VIEW, trailer.url.toUri())
-                                context.startActivity(intent)
-                            }
-                        }
+                    trailerOnClick = {
+                        TrailerService.onClick(context, it, viewModel::navigateTo)
                     },
                     modifier = modifier,
                 )
@@ -567,7 +553,7 @@ fun TrailerRow(
         LazyRow(
             state = state,
             horizontalArrangement = Arrangement.spacedBy(16.dp),
-            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+            contentPadding = PaddingValues(horizontal = 24.dp, vertical = 8.dp),
             modifier =
                 Modifier
                     .fillMaxWidth()

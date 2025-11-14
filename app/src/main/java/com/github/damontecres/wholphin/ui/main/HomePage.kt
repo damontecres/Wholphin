@@ -62,15 +62,15 @@ import com.github.damontecres.wholphin.ui.detail.MoreDialogActions
 import com.github.damontecres.wholphin.ui.detail.PlaylistDialog
 import com.github.damontecres.wholphin.ui.detail.PlaylistLoadingState
 import com.github.damontecres.wholphin.ui.detail.buildMoreDialogItemsForHome
+import com.github.damontecres.wholphin.ui.formatDateTime
 import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.roundMinutes
+import com.github.damontecres.wholphin.ui.seasonEpisode
 import com.github.damontecres.wholphin.ui.timeRemaining
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.HomeRowLoadingState
 import com.github.damontecres.wholphin.util.LoadingState
-import com.github.damontecres.wholphin.util.formatDateTime
-import com.github.damontecres.wholphin.util.seasonEpisode
 import kotlinx.coroutines.delay
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.MediaType
@@ -360,9 +360,15 @@ fun HomePageContent(
                                                         ),
                                                     ).onFocusChanged {
                                                         if (it.isFocused) {
+                                                            val nonEmptyRowBefore =
+                                                                homeRows
+                                                                    .subList(0, rowIndex)
+                                                                    .count {
+                                                                        it is HomeRowLoadingState.Success && it.items.isEmpty()
+                                                                    }
                                                             onFocusPosition?.invoke(
                                                                 RowColumn(
-                                                                    rowIndex,
+                                                                    rowIndex - nonEmptyRowBefore,
                                                                     index,
                                                                 ),
                                                             )
