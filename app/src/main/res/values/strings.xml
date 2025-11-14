@@ -151,6 +151,80 @@
     <string name="background">Background</string>
     <string name="success">Success</string>
 
+    <string name="extras">Extras</string>
+    <string name="other_extras">Other</string>
+    <string name="behind_the_scenes">Behind the Scenes</string>
+    <string name="theme_songs">Theme Songs</string>
+    <string name="theme_videos">Theme Videos</string>
+    <string name="clips">Clips</string>
+    <string name="deleted_scenes">Deleted Scenes</string>
+    <string name="interviews">Interviews</string>
+    <string name="scenes">Scenes</string>
+    <string name="samples">Samples</string>
+    <string name="featurettes">Featurettes</string>
+    <string name="shorts">Shorts</string>
+
+    <plurals name="trailers">
+        <item quantity="zero">Trailers</item>
+        <item quantity="one">Trailer</item>
+        <item quantity="other">Trailers</item>
+    </plurals>
+    <plurals name="other_extras">
+        <item quantity="zero">Other</item>
+        <item quantity="one">Other</item>
+        <item quantity="other">Other</item>
+    </plurals>
+    <plurals name="behind_the_scenes">
+        <item quantity="zero">Behind the scenes</item>
+        <item quantity="one">Behind the scenes</item>
+        <item quantity="other">Behind the scenes</item>
+    </plurals>
+    <plurals name="theme_songs">
+        <item quantity="zero">Theme songs</item>
+        <item quantity="one">Theme song</item>
+        <item quantity="other">Theme songs</item>
+    </plurals>
+    <plurals name="theme_videos">
+        <item quantity="zero">Theme videos</item>
+        <item quantity="one">Theme video</item>
+        <item quantity="other">Theme videos</item>
+    </plurals>
+    <plurals name="clips">
+        <item quantity="zero">Clips</item>
+        <item quantity="one">Clip</item>
+        <item quantity="other">Clips</item>
+    </plurals>
+    <plurals name="deleted_scenes">
+        <item quantity="zero">Deleted scenes</item>
+        <item quantity="one">Deleted scene</item>
+        <item quantity="other">Deleted scenes</item>
+    </plurals>
+    <plurals name="interviews">
+        <item quantity="zero">Interviews</item>
+        <item quantity="one">Interview</item>
+        <item quantity="other">Interviews</item>
+    </plurals>
+    <plurals name="scenes">
+        <item quantity="zero">Scenes</item>
+        <item quantity="one">Scene</item>
+        <item quantity="other">Scenes</item>
+    </plurals>
+    <plurals name="samples">
+        <item quantity="zero">Samples</item>
+        <item quantity="one">Sample</item>
+        <item quantity="other">Samples</item>
+    </plurals>
+    <plurals name="featurettes">
+        <item quantity="zero">Featurettes</item>
+        <item quantity="one">Featurette</item>
+        <item quantity="other">Featurettes</item>
+    </plurals>
+    <plurals name="shorts">
+        <item quantity="zero">Shorts</item>
+        <item quantity="one">Short</item>
+        <item quantity="other">Shorts</item>
+    </plurals>
+
     <plurals name="downloads">
         <item quantity="zero">%s downloads</item>
         <item quantity="one">%s download</item>

@@ -45,6 +45,7 @@ import androidx.tv.material3.Text
 import coil3.compose.AsyncImage
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.ChosenStreams
+import com.github.damontecres.wholphin.data.ExtrasItem
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.Chapter
 import com.github.damontecres.wholphin.data.model.LocalTrailer
@@ -58,6 +59,7 @@ import com.github.damontecres.wholphin.services.TrailerService
 import com.github.damontecres.wholphin.ui.AspectRatios
 import com.github.damontecres.wholphin.ui.Cards
 import com.github.damontecres.wholphin.ui.cards.ChapterRow
+import com.github.damontecres.wholphin.ui.cards.ExtrasRow
 import com.github.damontecres.wholphin.ui.cards.ItemRow
 import com.github.damontecres.wholphin.ui.cards.PersonRow
 import com.github.damontecres.wholphin.ui.cards.SeasonCard
@@ -112,6 +114,7 @@ fun MovieDetails(
     val people by viewModel.people.observeAsState(listOf())
     val chapters by viewModel.chapters.observeAsState(listOf())
     val trailers by viewModel.trailers.observeAsState(listOf())
+    val extras by viewModel.extras.observeAsState(listOf())
     val similar by viewModel.similar.observeAsState(listOf())
     val loading by viewModel.loading.observeAsState(LoadingState.Loading)
     val chosenStreams by viewModel.chosenStreams.observeAsState(null)
@@ -159,6 +162,7 @@ fun MovieDetails(
                     chosenStreams = chosenStreams,
                     people = people,
                     chapters = chapters,
+                    extras = extras,
                     trailers = trailers,
                     similar = similar,
                     onClickItem = { index, item ->
@@ -282,6 +286,9 @@ fun MovieDetails(
                     trailerOnClick = {
                         TrailerService.onClick(context, it, viewModel::navigateTo)
                     },
+                    onClickExtra = { index, extra ->
+                        viewModel.navigateTo(extra.destination)
+                    },
                     modifier = modifier,
                 )
             }
@@ -340,7 +347,8 @@ private const val HEADER_ROW = 0
 private const val PEOPLE_ROW = HEADER_ROW + 1
 private const val TRAILER_ROW = PEOPLE_ROW + 1
 private const val CHAPTER_ROW = TRAILER_ROW + 1
-private const val SIMILAR_ROW = CHAPTER_ROW + 1
+private const val EXTRAS_ROW = CHAPTER_ROW + 1
+private const val SIMILAR_ROW = EXTRAS_ROW + 1
 
 @Composable
 fun MovieDetailsContent(
@@ -350,6 +358,7 @@ fun MovieDetailsContent(
     people: List<Person>,
     chapters: List<Chapter>,
     trailers: List<Trailer>,
+    extras: List<ExtrasItem>,
     similar: List<BaseItem>,
     playOnClick: (Duration) -> Unit,
     trailerOnClick: (Trailer) -> Unit,
@@ -361,8 +370,10 @@ fun MovieDetailsContent(
     onClickPerson: (Person) -> Unit,
     onLongClickPerson: (Int, Person) -> Unit,
     onLongClickSimilar: (Int, BaseItem) -> Unit,
+    onClickExtra: (Int, ExtrasItem) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var position by rememberInt(0)
     val focusRequesters = remember { List(SIMILAR_ROW + 1) { FocusRequester() } }
@@ -498,6 +509,22 @@ fun MovieDetailsContent(
                             Modifier
                                 .fillMaxWidth()
                                 .focusRequester(focusRequesters[CHAPTER_ROW]),
+                    )
+                }
+            }
+            if (extras.isNotEmpty()) {
+                item {
+                    ExtrasRow(
+                        extras = extras,
+                        onClickItem = { index, item ->
+                            position = EXTRAS_ROW
+                            onClickExtra.invoke(index, item)
+                        },
+                        onLongClickItem = { _, _ -> },
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .focusRequester(focusRequesters[EXTRAS_ROW]),
                     )
                 }
             }
