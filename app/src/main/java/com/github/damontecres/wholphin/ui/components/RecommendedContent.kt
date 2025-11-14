@@ -18,6 +18,8 @@ import androidx.lifecycle.viewModelScope
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.preferences.UserPreferences
+import com.github.damontecres.wholphin.services.FavoriteWatchManager
+import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.ui.OneTimeLaunchedEffect
 import com.github.damontecres.wholphin.ui.data.AddPlaylistViewModel
 import com.github.damontecres.wholphin.ui.data.RowColumn
@@ -27,9 +29,7 @@ import com.github.damontecres.wholphin.ui.detail.PlaylistLoadingState
 import com.github.damontecres.wholphin.ui.detail.buildMoreDialogItemsForHome
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.main.HomePageContent
-import com.github.damontecres.wholphin.ui.nav.NavigationManager
 import com.github.damontecres.wholphin.util.ApiRequestPager
-import com.github.damontecres.wholphin.util.FavoriteWatchManager
 import com.github.damontecres.wholphin.util.HomeRowLoadingState
 import com.github.damontecres.wholphin.util.LoadingState
 import kotlinx.coroutines.flow.MutableStateFlow

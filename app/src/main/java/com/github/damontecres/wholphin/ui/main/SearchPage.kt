@@ -33,6 +33,7 @@ import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.preferences.UserPreferences
+import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.ui.Cards
 import com.github.damontecres.wholphin.ui.SlimItemFields
 import com.github.damontecres.wholphin.ui.cards.EpisodeCard
@@ -42,7 +43,6 @@ import com.github.damontecres.wholphin.ui.components.SearchEditTextBox
 import com.github.damontecres.wholphin.ui.data.RowColumn
 import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
-import com.github.damontecres.wholphin.ui.nav.NavigationManager
 import com.github.damontecres.wholphin.ui.rememberPosition
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.ApiRequestPager

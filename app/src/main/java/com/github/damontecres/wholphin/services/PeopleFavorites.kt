@@ -1,4 +1,4 @@
-package com.github.damontecres.wholphin.util
+package com.github.damontecres.wholphin.services
 
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.Person

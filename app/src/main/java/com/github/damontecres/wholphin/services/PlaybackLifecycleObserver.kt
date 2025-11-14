@@ -1,9 +1,8 @@
-package com.github.damontecres.wholphin.util
+package com.github.damontecres.wholphin.services
 
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import com.github.damontecres.wholphin.ui.nav.Destination
-import com.github.damontecres.wholphin.ui.nav.NavigationManager
 import dagger.hilt.android.scopes.ActivityRetainedScoped
 import javax.inject.Inject
 

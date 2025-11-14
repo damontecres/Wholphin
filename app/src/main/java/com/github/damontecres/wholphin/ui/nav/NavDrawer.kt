@@ -68,7 +68,9 @@ import com.github.damontecres.wholphin.data.NavDrawerItemRepository
 import com.github.damontecres.wholphin.data.model.JellyfinServer
 import com.github.damontecres.wholphin.data.model.JellyfinUser
 import com.github.damontecres.wholphin.preferences.UserPreferences
+import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.ui.FontAwesome
+import com.github.damontecres.wholphin.ui.TimeFormatter
 import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.preferences.PreferenceScreenOption
@@ -76,7 +78,6 @@ import com.github.damontecres.wholphin.ui.setValueOnMain
 import com.github.damontecres.wholphin.ui.spacedByWithFooter
 import com.github.damontecres.wholphin.ui.toServerString
 import com.github.damontecres.wholphin.ui.tryRequestFocus
-import com.github.damontecres.wholphin.util.TimeFormatter
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay

@@ -1,4 +1,4 @@
-package com.github.damontecres.wholphin.hilt
+package com.github.damontecres.wholphin.services.hilt
 
 import android.content.Context
 import androidx.datastore.core.DataStore

@@ -39,13 +39,13 @@ import androidx.tv.material3.Text
 import androidx.tv.material3.surfaceColorAtElevation
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.ui.AppColors
+import com.github.damontecres.wholphin.ui.abbreviateNumber
 import com.github.damontecres.wholphin.ui.components.DialogItem
 import com.github.damontecres.wholphin.ui.components.DialogItemDivider
 import com.github.damontecres.wholphin.ui.components.EditTextBox
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.tryRequestFocus
-import com.github.damontecres.wholphin.util.abbreviateNumber
 import org.jellyfin.sdk.model.api.RemoteSubtitleInfo
 
 @Composable

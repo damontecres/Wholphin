@@ -1,4 +1,4 @@
-package com.github.damontecres.wholphin.util
+package com.github.damontecres.wholphin.services
 
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.playStateApi

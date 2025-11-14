@@ -53,6 +53,7 @@ import com.github.damontecres.wholphin.data.model.RemoteTrailer
 import com.github.damontecres.wholphin.data.model.Trailer
 import com.github.damontecres.wholphin.data.model.chooseSource
 import com.github.damontecres.wholphin.preferences.UserPreferences
+import com.github.damontecres.wholphin.services.TrailerService
 import com.github.damontecres.wholphin.ui.Cards
 import com.github.damontecres.wholphin.ui.cards.ChapterRow
 import com.github.damontecres.wholphin.ui.cards.ItemRow
@@ -81,7 +82,6 @@ import com.github.damontecres.wholphin.ui.rememberInt
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
-import com.github.damontecres.wholphin.util.TrailerService
 import kotlinx.coroutines.launch
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.MediaType

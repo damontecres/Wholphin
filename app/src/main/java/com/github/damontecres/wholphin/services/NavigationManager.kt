@@ -1,6 +1,7 @@
-package com.github.damontecres.wholphin.ui.nav
+package com.github.damontecres.wholphin.services
 
 import androidx.navigation3.runtime.NavKey
+import com.github.damontecres.wholphin.ui.nav.Destination
 import org.acra.ACRA
 import timber.log.Timber
 import javax.inject.Inject
@@ -16,7 +17,7 @@ class NavigationManager
         var backStack: MutableList<NavKey> = mutableListOf()
 
         /**
-         * Go to the specified [Destination]
+         * Go to the specified [com.github.damontecres.wholphin.ui.nav.Destination]
          */
         fun navigateTo(destination: Destination) {
             backStack.add(destination)
@@ -70,7 +71,7 @@ class NavigationManager
 
         private fun log() {
             val dest = backStack.lastOrNull().toString()
-            Timber.i("Current Destination: %s", dest)
+            Timber.Forest.i("Current Destination: %s", dest)
             ACRA.errorReporter.putCustomData("destination", dest)
         }
     }

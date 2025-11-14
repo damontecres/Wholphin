@@ -14,11 +14,11 @@ import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.ProvideTextStyle
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.R
+import com.github.damontecres.wholphin.ui.byteRateSuffixes
 import com.github.damontecres.wholphin.ui.components.ScrollableDialog
+import com.github.damontecres.wholphin.ui.formatBytes
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.letNotEmpty
-import com.github.damontecres.wholphin.util.byteRateSuffixes
-import com.github.damontecres.wholphin.util.formatBytes
 import com.github.damontecres.wholphin.util.languageName
 import org.jellyfin.sdk.model.api.AudioSpatialFormat
 import org.jellyfin.sdk.model.api.MediaSourceInfo

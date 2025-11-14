@@ -5,7 +5,7 @@ import android.widget.Toast
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.github.damontecres.wholphin.data.model.PlaylistCreator
+import com.github.damontecres.wholphin.services.PlaylistCreator
 import com.github.damontecres.wholphin.ui.detail.PlaylistLoadingState
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.setValueOnMain
