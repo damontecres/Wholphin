@@ -170,9 +170,9 @@ class MpvPlayer(
         if (DEBUG) Timber.v("setMediaItems")
         mediaItems.firstOrNull()?.let {
             mediaItem = it
-        }
-        if (surface != null) {
-            loadFile()
+            if (surface != null) {
+                loadFile(it)
+            }
         }
     }
 
@@ -465,7 +465,10 @@ class MpvPlayer(
             MPVLib.attachSurface(surface)
             MPVLib.setOptionString("force-window", "yes")
             Timber.d("Attached surface")
-            loadFile()
+            mediaItem?.let(::loadFile)
+            if (mediaItem == null) {
+                Timber.w("mediaItem is null in setVideoSurfaceView")
+            }
         } else {
             clearVideoSurfaceView(null)
         }
@@ -608,11 +611,13 @@ class MpvPlayer(
                 isLoadingFile = false
                 notifyListeners(EVENT_IS_LOADING_CHANGED) { onIsLoadingChanged(false) }
                 Timber.d("event: MPV_EVENT_FILE_LOADED")
-                mediaItem!!.localConfiguration?.subtitleConfigurations?.forEach {
-                    val url = it.uri.toString()
-                    val title = it.label ?: "External Subtitles"
-                    Timber.v("Adding external subtitle track '$title'")
-                    MPVLib.command(arrayOf("sub-add", url, "auto", title))
+                mediaItem?.let {
+                    it.localConfiguration?.subtitleConfigurations?.forEach {
+                        val url = it.uri.toString()
+                        val title = it.label ?: "External Subtitles"
+                        Timber.v("Adding external subtitle track '$title'")
+                        MPVLib.command(arrayOf("sub-add", url, "auto", title))
+                    }
                 }
                 notifyListeners(EVENT_RENDERED_FIRST_FRAME) { onRenderedFirstFrame() }
                 notifyListeners(EVENT_IS_PLAYING_CHANGED) { onIsPlayingChanged(true) }
@@ -689,10 +694,10 @@ class MpvPlayer(
         }
     }
 
-    private fun loadFile() {
+    private fun loadFile(mediaItem: MediaItem) {
         isLoadingFile = true
         notifyListeners(EVENT_IS_LOADING_CHANGED) { onIsLoadingChanged(true) }
-        val url = mediaItem!!.localConfiguration?.uri.toString()
+        val url = mediaItem.localConfiguration?.uri.toString()
         if (startPositionMs > 0) {
             MPVLib.command(
                 arrayOf(
