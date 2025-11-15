@@ -150,6 +150,8 @@
     <string name="font">Font</string>
     <string name="background">Background</string>
     <string name="success">Success</string>
+    <string name="official_rating">Parental Rating</string>
+    <string name="runtime_sort">Runtime</string>
 
     <plurals name="downloads">
         <item quantity="zero">%s downloads</item>
