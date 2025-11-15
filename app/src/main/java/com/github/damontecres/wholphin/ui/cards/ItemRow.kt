@@ -26,14 +26,14 @@ import com.github.damontecres.wholphin.ui.AspectRatios
 import com.github.damontecres.wholphin.util.FocusPair
 
 @Composable
-fun ItemRow(
+fun <T> ItemRow(
     title: String,
-    items: List<BaseItem?>,
-    onClickItem: (Int, BaseItem) -> Unit,
-    onLongClickItem: (Int, BaseItem) -> Unit,
+    items: List<T?>,
+    onClickItem: (Int, T) -> Unit,
+    onLongClickItem: (Int, T) -> Unit,
     cardContent: @Composable (
         index: Int,
-        item: BaseItem?,
+        item: T?,
         modifier: Modifier,
         onClick: () -> Unit,
         onLongClick: () -> Unit,

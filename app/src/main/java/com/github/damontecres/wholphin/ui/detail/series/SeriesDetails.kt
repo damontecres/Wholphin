@@ -44,12 +44,14 @@ import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import coil3.compose.AsyncImage
 import com.github.damontecres.wholphin.R
+import com.github.damontecres.wholphin.data.ExtrasItem
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.Person
 import com.github.damontecres.wholphin.data.model.Trailer
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.TrailerService
 import com.github.damontecres.wholphin.ui.Cards
+import com.github.damontecres.wholphin.ui.cards.ExtrasRow
 import com.github.damontecres.wholphin.ui.cards.ItemRow
 import com.github.damontecres.wholphin.ui.cards.PersonRow
 import com.github.damontecres.wholphin.ui.cards.SeasonCard
@@ -99,13 +101,14 @@ fun SeriesDetails(
 ) {
     val context = LocalContext.current
     LaunchedEffect(Unit) {
-        viewModel.init(preferences, destination.itemId, destination.item, null)
+        viewModel.init(preferences, destination.itemId, null, true)
     }
     val loading by viewModel.loading.observeAsState(LoadingState.Loading)
 
     val item by viewModel.item.observeAsState()
     val seasons by viewModel.seasons.observeAsState(listOf())
     val trailers by viewModel.trailers.observeAsState(listOf())
+    val extras by viewModel.extras.observeAsState(listOf())
     val people by viewModel.people.observeAsState(listOf())
     val similar by viewModel.similar.observeAsState(listOf())
 
@@ -138,6 +141,7 @@ fun SeriesDetails(
                     series = item,
                     seasons = seasons,
                     trailers = trailers,
+                    extras = extras,
                     people = people,
                     similar = similar,
                     played = played,
@@ -181,6 +185,9 @@ fun SeriesDetails(
                     },
                     trailerOnClick = {
                         TrailerService.onClick(context, it, viewModel::navigateTo)
+                    },
+                    onClickExtra = { _, extra ->
+                        viewModel.navigateTo(extra.destination)
                     },
                     moreActions =
                         MoreDialogActions(
@@ -253,7 +260,8 @@ private const val HEADER_ROW = 0
 private const val SEASONS_ROW = HEADER_ROW + 1
 private const val PEOPLE_ROW = SEASONS_ROW + 1
 private const val TRAILER_ROW = PEOPLE_ROW + 1
-private const val SIMILAR_ROW = TRAILER_ROW + 1
+private const val EXTRAS_ROW = TRAILER_ROW + 1
+private const val SIMILAR_ROW = EXTRAS_ROW + 1
 
 @Composable
 fun SeriesDetailsContent(
@@ -262,6 +270,7 @@ fun SeriesDetailsContent(
     seasons: List<BaseItem>,
     similar: List<BaseItem>,
     trailers: List<Trailer>,
+    extras: List<ExtrasItem>,
     people: List<Person>,
     played: Boolean,
     favorite: Boolean,
@@ -273,6 +282,7 @@ fun SeriesDetailsContent(
     watchOnClick: () -> Unit,
     favoriteOnClick: () -> Unit,
     trailerOnClick: (Trailer) -> Unit,
+    onClickExtra: (Int, ExtrasItem) -> Unit,
     moreActions: MoreDialogActions,
     modifier: Modifier = Modifier,
 ) {
@@ -475,6 +485,22 @@ fun SeriesDetailsContent(
                                 Modifier
                                     .fillMaxWidth()
                                     .focusRequester(focusRequesters[TRAILER_ROW]),
+                        )
+                    }
+                }
+                if (extras.isNotEmpty()) {
+                    item {
+                        ExtrasRow(
+                            extras = extras,
+                            onClickItem = { index, item ->
+                                position = EXTRAS_ROW
+                                onClickExtra.invoke(index, item)
+                            },
+                            onLongClickItem = { _, _ -> },
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .focusRequester(focusRequesters[EXTRAS_ROW]),
                         )
                     }
                 }

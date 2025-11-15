@@ -92,8 +92,8 @@ fun SeriesOverview(
         viewModel.init(
             preferences,
             destination.itemId,
-            destination.item,
             initialSeasonEpisode,
+            false,
         )
         initialLoadDone = true
     }
