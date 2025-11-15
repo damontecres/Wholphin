@@ -11,8 +11,6 @@ defaults:
 
 env:
   APK_SHORT_NAME: Wholphin.apk
-  BUILD_TOOLS_VERSION: 36.0.0
-  NDK_VERSION: "29.0.14206865"
 
 jobs:
   publish:
@@ -24,24 +22,12 @@ jobs:
         uses: actions/checkout@v5
         with:
           fetch-depth: 0 # Need the tags to build
-      - name: Setup Python
-        uses: actions/setup-python@v5
+      - name: Setup
+        uses: ./.github/actions/setup
+      - name: Native build
+        uses: ./.github/actions/native-build
         with:
-          python-version: '3.12'
-      - name: Setup JDK
-        uses: actions/setup-java@v5
-        with:
-          distribution: zulu
-          java-version: '21'
-          cache: 'gradle'
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-        with:
-          packages: "tools platform-tools build-tools;${{ env.BUILD_TOOLS_VERSION }} ndk;${{ env.NDK_VERSION }}"
-      - name: Build ffmpeg decoder
-        id: ffmpeg-decoder
-        run: |
-          ./build_ffmpeg_decoder.sh "${{ env.ANDROID_SDK_ROOT }}/ndk/${{ env.NDK_VERSION }}"
+          cache: false
       - name: Build app
         id: buildapp
         env:

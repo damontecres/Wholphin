@@ -408,6 +408,12 @@ fun PlaybackOverlay(
                         .background(AppColors.TransparentBlack50),
             ) {
                 Text(
+                    text = "Backend: ${currentPlayback?.backend}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.padding(start = 8.dp),
+                )
+                Text(
                     text = "Play method: ${currentPlayback?.playMethod?.serialName}",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurface,

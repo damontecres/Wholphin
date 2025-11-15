@@ -1,0 +1,11 @@
+{
+  "uniqueId": "com.github.Mbed-TLS.mbedtls",
+  "developers": [],
+  "artifactVersion": "v3.6.4",
+  "description": "Mbed TLS is a C library that implements X.509 certificate manipulation and the TLS and DTLS protocols",
+  "name": "mbedtls",
+  "licenses": [
+    "gpl-2.0"
+  ],
+  "website": "https://github.com/Mbed-TLS/mbedtls"
+}

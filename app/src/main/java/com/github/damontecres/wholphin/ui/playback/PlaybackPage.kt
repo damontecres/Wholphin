@@ -40,6 +40,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.unit.dp
@@ -65,6 +66,7 @@ import androidx.tv.material3.surfaceColorAtElevation
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.ItemPlayback
 import com.github.damontecres.wholphin.data.model.Playlist
+import com.github.damontecres.wholphin.preferences.PlayerBackend
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.preferences.skipBackOnResume
 import com.github.damontecres.wholphin.ui.AspectRatios
@@ -72,12 +74,14 @@ import com.github.damontecres.wholphin.ui.OneTimeLaunchedEffect
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.nav.Destination
+import com.github.damontecres.wholphin.ui.preferences.subtitle.SubtitleSettings.applyToMpv
 import com.github.damontecres.wholphin.ui.preferences.subtitle.SubtitleSettings.toSubtitleStyle
 import com.github.damontecres.wholphin.ui.seasonEpisode
 import com.github.damontecres.wholphin.ui.stringRes
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.jellyfin.sdk.model.api.DeviceProfile
@@ -117,6 +121,7 @@ fun PlaybackPage(
         LoadingState.Success -> {
             val prefs = preferences.appPreferences.playbackPreferences
             val scope = rememberCoroutineScope()
+            val density = LocalDensity.current
 
             val player = viewModel.player
             val title by viewModel.title.observeAsState(null)
@@ -157,6 +162,13 @@ fun PlaybackPage(
 
             OneTimeLaunchedEffect {
                 player.addListener(cueListener)
+                if (prefs.playerBackend == PlayerBackend.MPV) {
+                    scope.launch(Dispatchers.Main + ExceptionHandler()) {
+                        preferences.appPreferences.interfacePreferences.subtitlesPreferences.applyToMpv(
+                            density,
+                        )
+                    }
+                }
             }
             DisposableEffect(Unit) {
                 onDispose { player.removeListener(cueListener) }
@@ -166,7 +178,7 @@ fun PlaybackPage(
             var playbackSpeed by remember { mutableFloatStateOf(1.0f) }
             LaunchedEffect(playbackSpeed) { player.setPlaybackSpeed(playbackSpeed) }
 
-            val presentationState = rememberPresentationState(player)
+            val presentationState = rememberPresentationState(player, false)
             val scaledModifier =
                 Modifier.resizeWithContentScale(contentScale, presentationState.videoSizeDp)
             val focusRequester = remember { FocusRequester() }
@@ -241,12 +253,15 @@ fun PlaybackPage(
                         modifier = scaledModifier,
                     )
                     if (presentationState.coverSurface) {
+                        val isLoading by rememberPlayerLoadingState(player)
                         Box(
                             Modifier
                                 .matchParentSize()
                                 .background(Color.Black),
                         ) {
-                            LoadingPage()
+                            if (isLoading) {
+                                LoadingPage(focusEnabled = false)
+                            }
                         }
                     }
 
@@ -365,7 +380,7 @@ fun PlaybackPage(
 
                                     PlaybackAction.Next -> {
                                         // TODO focus is lost
-                                        viewModel.playUpNextUp()
+                                        viewModel.playNextUp()
                                     }
 
                                     PlaybackAction.Previous -> {
@@ -458,14 +473,14 @@ fun PlaybackPage(
                         if (autoPlayEnabled) {
                             LaunchedEffect(Unit) {
                                 if (timeLeft == 0L) {
-                                    viewModel.playUpNextUp()
+                                    viewModel.playNextUp()
                                 } else {
                                     while (timeLeft > 0) {
                                         delay(1.seconds)
                                         timeLeft--
                                     }
                                     if (timeLeft == 0L && autoPlayEnabled) {
-                                        viewModel.playUpNextUp()
+                                        viewModel.playNextUp()
                                     }
                                 }
                             }
@@ -483,7 +498,7 @@ fun PlaybackPage(
                                     ?: AspectRatios.WIDE,
                             onClick = {
                                 viewModel.reportInteraction()
-                                viewModel.playUpNextUp()
+                                viewModel.playNextUp()
                             },
                             timeLeft = if (autoPlayEnabled) timeLeft.seconds else null,
                             modifier =

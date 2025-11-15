@@ -1,0 +1,11 @@
+{
+  "uniqueId": "com.github.mpv-android.mpv-android",
+  "developers": [],
+  "artifactVersion": "master",
+  "description": "mpv-android is a video player for Android based on libmpv",
+  "name": "mpv for Android",
+  "licenses": [
+    "mpv-android"
+  ],
+  "website": "https://github.com/mpv-android/mpv-android"
+}

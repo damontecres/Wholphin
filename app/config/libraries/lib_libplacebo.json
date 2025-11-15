@@ -1,0 +1,11 @@
+{
+  "uniqueId": "com.github.haasn.libplacebo",
+  "developers": [],
+  "artifactVersion": "master",
+  "description": "libplacebo is, in a nutshell, the core rendering algorithms and ideas of mpv rewritten as an independent library",
+  "name": "libplacebo",
+  "licenses": [
+    "lgpl-2.1"
+  ],
+  "website": "https://github.com/haasn/libplacebo"
+}

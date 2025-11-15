@@ -77,9 +77,12 @@ class MainActivity : AppCompatActivity() {
 
     @OptIn(ExperimentalTvMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
-        Timber.i("MainActivity.onCreate")
         super.onCreate(savedInstanceState)
+        Timber.i("MainActivity.onCreate")
         lifecycle.addObserver(playbackLifecycleObserver)
+        if (savedInstanceState == null) {
+            appUpgradeHandler.copySubfont(false)
+        }
         setContent {
             CoilConfig(okHttpClient, false)
             val appPreferences by userPreferencesDataStore.data.collectAsState(null)

@@ -8,6 +8,7 @@ import androidx.preference.PreferenceManager
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.WholphinApplication
 import com.github.damontecres.wholphin.ui.nav.Destination
+import com.github.damontecres.wholphin.ui.preferences.ConditionalPreferences
 import com.github.damontecres.wholphin.ui.preferences.PreferenceGroup
 import com.github.damontecres.wholphin.ui.preferences.PreferenceScreenOption
 import com.github.damontecres.wholphin.ui.preferences.PreferenceValidation
@@ -672,6 +673,30 @@ sealed interface AppPreference<T> {
                 title = R.string.subtitle_style,
                 destination = Destination.Settings(PreferenceScreenOption.SUBTITLES),
             )
+
+        val PlayerBackendPref =
+            AppChoicePreference<PlayerBackend>(
+                title = R.string.player_backend,
+                defaultValue = PlayerBackend.EXO_PLAYER,
+                getter = { it.playbackPreferences.playerBackend },
+                setter = { prefs, value ->
+                    prefs.updatePlaybackPreferences { playerBackend = value }
+                },
+                displayValues = R.array.player_backend_options,
+                indexToValue = { PlayerBackend.forNumber(it) },
+                valueToIndex = { it.number },
+            )
+
+        val MpvHardwareDecoding =
+            AppSwitchPreference(
+                title = R.string.mpv_hardware_decoding,
+                defaultValue = true,
+                getter = { it.playbackPreferences.mpvOptions.enableHardwareDecoding },
+                setter = { prefs, value ->
+                    prefs.updateMpvOptions { enableHardwareDecoding = value }
+                },
+                summary = R.string.disable_if_crash,
+            )
     }
 }
 
@@ -752,6 +777,7 @@ val advancedPreferences =
             preferences =
                 listOf(
                     AppPreference.OneClickPause,
+                    AppPreference.GlobalContentScale,
                     AppPreference.SkipIntros,
                     AppPreference.SkipOutros,
                     AppPreference.SkipCommercials,
@@ -762,15 +788,24 @@ val advancedPreferences =
                 ),
         ),
         PreferenceGroup(
-            title = R.string.playback_overrides,
-            preferences =
+            title = R.string.player_backend,
+            preferences = listOf(AppPreference.PlayerBackendPref),
+            conditionalPreferences =
                 listOf(
-                    AppPreference.GlobalContentScale,
-                    AppPreference.DownMixStereo,
-                    AppPreference.Ac3Supported,
-                    AppPreference.DirectPlayAss,
-                    AppPreference.DirectPlayPgs,
-                    AppPreference.FfmpegPreference,
+                    ConditionalPreferences(
+                        { it.playbackPreferences.playerBackend == PlayerBackend.EXO_PLAYER },
+                        listOf(
+                            AppPreference.FfmpegPreference,
+                            AppPreference.DownMixStereo,
+                            AppPreference.Ac3Supported,
+                            AppPreference.DirectPlayAss,
+                            AppPreference.DirectPlayPgs,
+                        ),
+                    ),
+                    ConditionalPreferences(
+                        { it.playbackPreferences.playerBackend == PlayerBackend.MPV },
+                        listOf(AppPreference.MpvHardwareDecoding),
+                    ),
                 ),
         ),
         PreferenceGroup(

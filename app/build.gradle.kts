@@ -145,6 +145,15 @@ android {
                 }
         }
     }
+
+    splits {
+        abi {
+            isEnable = false
+            reset()
+            include("armeabi-v7a", "arm64-v8a")
+            isUniversalApk = true
+        }
+    }
 }
 
 protobuf {
@@ -175,6 +184,7 @@ aboutLibraries {
         duplicationRule = DuplicateRule.SIMPLE
     }
 }
+
 dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)

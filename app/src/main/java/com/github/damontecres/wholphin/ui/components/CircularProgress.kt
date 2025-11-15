@@ -30,7 +30,10 @@ fun CircularProgress(modifier: Modifier = Modifier) {
  * Fill the space with a loading indicator and take focus
  */
 @Composable
-fun LoadingPage(modifier: Modifier = Modifier) {
+fun LoadingPage(
+    modifier: Modifier = Modifier,
+    focusEnabled: Boolean = true,
+) {
     val focusRequester = remember { FocusRequester() }
     LaunchedEffect(Unit) { focusRequester.tryRequestFocus() }
     Box(
@@ -39,7 +42,7 @@ fun LoadingPage(modifier: Modifier = Modifier) {
             modifier
                 .fillMaxSize()
                 .focusRequester(focusRequester)
-                .focusable(),
+                .focusable(focusEnabled),
     ) {
         CircularProgressIndicator(
             color = MaterialTheme.colorScheme.border,

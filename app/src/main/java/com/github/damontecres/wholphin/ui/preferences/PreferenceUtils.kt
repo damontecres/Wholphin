@@ -2,6 +2,7 @@ package com.github.damontecres.wholphin.ui.preferences
 
 import androidx.annotation.StringRes
 import com.github.damontecres.wholphin.preferences.AppPreference
+import com.github.damontecres.wholphin.preferences.AppPreferences
 import kotlinx.serialization.Serializable
 
 /**
@@ -9,6 +10,12 @@ import kotlinx.serialization.Serializable
  */
 data class PreferenceGroup(
     @param:StringRes val title: Int,
+    val preferences: List<AppPreference<out Any?>>,
+    val conditionalPreferences: List<ConditionalPreferences> = listOf(),
+)
+
+data class ConditionalPreferences(
+    val condition: (AppPreferences) -> Boolean,
     val preferences: List<AppPreference<out Any?>>,
 )
 
