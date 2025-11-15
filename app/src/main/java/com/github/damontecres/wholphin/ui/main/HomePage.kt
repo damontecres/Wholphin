@@ -30,6 +30,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -290,7 +291,7 @@ fun HomePageContent(
                         top = 0.dp,
                         bottom = Cards.height2x3,
                     ),
-                modifier = Modifier,
+                modifier = Modifier.focusRestorer(),
             ) {
                 itemsIndexed(homeRows) { rowIndex, row ->
                     when (val r = row) {
