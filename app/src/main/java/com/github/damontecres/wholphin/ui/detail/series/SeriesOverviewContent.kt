@@ -1,5 +1,7 @@
 package com.github.damontecres.wholphin.ui.detail.series
 
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
@@ -15,11 +17,13 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.relocation.bringIntoViewRequester
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -30,6 +34,7 @@ import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusRestorer
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -86,6 +91,9 @@ fun SeriesOverviewContent(
 
     val focusedEpisode =
         (episodes as? EpisodeList.Success)?.episodes?.getOrNull(position.episodeRowIndex)
+    var pageHasFocus by remember { mutableStateOf(false) }
+    var cardRowHasFocus by remember { mutableStateOf(false) }
+    val dimming by animateFloatAsState(if (pageHasFocus && !cardRowHasFocus) .33f else 1f)
 
     Box(
         modifier =
@@ -127,7 +135,7 @@ fun SeriesOverviewContent(
         LazyColumn(
             verticalArrangement = Arrangement.spacedBy(8.dp),
             contentPadding = PaddingValues(16.dp),
-            modifier = Modifier,
+            modifier = Modifier.onFocusChanged { pageHasFocus = it.hasFocus },
         ) {
             item {
                 val paddingValues =
@@ -193,7 +201,10 @@ fun SeriesOverviewContent(
                                 modifier =
                                     Modifier
                                         .focusRestorer(firstItemFocusRequester)
-                                        .focusRequester(episodeRowFocusRequester),
+                                        .focusRequester(episodeRowFocusRequester)
+                                        .onFocusChanged {
+                                            cardRowHasFocus = it.hasFocus
+                                        },
                             ) {
                                 itemsIndexed(eps.episodes) { episodeIndex, episode ->
                                     val interactionSource = remember { MutableInteractionSource() }
@@ -232,10 +243,18 @@ fun SeriesOverviewContent(
                                             }
                                         },
                                         modifier =
-                                            Modifier.ifElse(
-                                                episodeIndex == position.episodeRowIndex,
-                                                Modifier.focusRequester(firstItemFocusRequester),
-                                            ),
+                                            Modifier
+                                                .ifElse(
+                                                    episodeIndex == position.episodeRowIndex,
+                                                    Modifier.focusRequester(firstItemFocusRequester),
+                                                ).ifElse(
+                                                    episodeIndex != position.episodeRowIndex,
+                                                    Modifier
+                                                        .background(
+                                                            Color.Black,
+                                                            shape = RoundedCornerShape(8.dp),
+                                                        ).alpha(dimming),
+                                                ),
                                         interactionSource = interactionSource,
                                         cardHeight = 120.dp,
                                     )
