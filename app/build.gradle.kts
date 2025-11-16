@@ -142,7 +142,6 @@ android {
                     val abi = output.getFilter("ABI").let { if (it != null) "-$it" else "" }
                     val outputFileName =
                         "Wholphin-${variant.baseName}-${variant.versionName}-${variant.versionCode}$abi.apk"
-                    println(outputFileName)
                     output.outputFileName = outputFileName
                 }
         }
