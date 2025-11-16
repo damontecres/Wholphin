@@ -44,6 +44,7 @@ jobs:
         run: |
           ./gradlew clean assembleDebug
           apks=$(find app/build/outputs/apk -name '*.apk' -print0 | tr '\0' ',' | sed 's/,$//')
+          echo "apks=$apks" >> "$GITHUB_OUTPUT"
       - name: Tar build dirs
         run: |
           tar -czf build.tgz ./app/.

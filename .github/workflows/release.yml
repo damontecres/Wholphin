@@ -47,8 +47,8 @@ jobs:
         run: |
           find app/build/outputs/apk -name '*.apk' -print0 |
             while IFS= read -r -d '' line; do
-              # Wholphin-debug-0.2.9-62-g5c12e03-16-arm64-v8a.apk => Wholphin-debug-arm64-v8a.apk
-              short_name="$(echo $line | sed -E 's/-[0-9]+\.[0-9]+\.[0-9]+-[0-9]+-g[a-fA-F0-9]+-[0-9]+//')"
+              # Wholphin-release-0.2.9-62-g5c12e03-16-arm64-v8a.apk => Wholphin-arm64-v8a.apk
+              short_name="$(echo $line | sed -E 's/-release-[0-9]+\.[0-9]+\.[0-9]+-[0-9]+-g[a-fA-F0-9]+-[0-9]+//')"
               echo "$line => $short_name"
               #cp "$line" "$short_name"
             done
