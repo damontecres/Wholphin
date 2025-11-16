@@ -24,6 +24,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
@@ -51,9 +53,8 @@ class UpdateChecker
     ) {
         companion object {
             // TODO apk names
-            private const val ASSET_NAME = "Wholphin.apk"
-            private const val DEBUG_ASSET_NAME = "Wholphin-debug.apk"
-            private const val RELEASE_ASSET_NAME = "Wholphin-release.apk"
+            private const val ASSET_NAME = "Wholphin"
+            private const val APK_NAME = "$ASSET_NAME.apk"
 
             private const val APK_MIME_TYPE = "application/vnd.android.package-archive"
 
@@ -116,15 +117,10 @@ class UpdateChecker
 
         suspend fun getLatestRelease(updateUrl: String): Release? {
             return withContext(Dispatchers.IO) {
-                val preferredAsset =
-                    if (PreferenceManager
-                            .getDefaultSharedPreferences(context)
-                            .getBoolean("updatePreferRelease", true)
-                    ) {
-                        RELEASE_ASSET_NAME
-                    } else {
-                        DEBUG_ASSET_NAME
-                    }
+                val preferRelease =
+                    PreferenceManager
+                        .getDefaultSharedPreferences(context)
+                        .getBoolean("updatePreferRelease", true)
 
                 val request =
                     Request
@@ -136,21 +132,15 @@ class UpdateChecker
                     if (it.isSuccessful && it.body != null) {
                         val result = Json.parseToJsonElement(it.body!!.string())
                         val name = result.jsonObject["name"]?.jsonPrimitive?.contentOrNull
-                        val version = Version.Companion.tryFromString(name)
+                        val version = Version.tryFromString(name)
                         val publishedAt =
                             result.jsonObject["published_at"]?.jsonPrimitive?.contentOrNull
                         val body = result.jsonObject["body"]?.jsonPrimitive?.contentOrNull
                         val downloadUrl =
                             result.jsonObject["assets"]
                                 ?.jsonArray
-                                ?.firstOrNull { asset ->
-                                    val assetName =
-                                        asset.jsonObject["name"]?.jsonPrimitive?.contentOrNull
-                                    assetName == ASSET_NAME || assetName == preferredAsset
-                                }?.jsonObject
-                                ?.get("browser_download_url")
-                                ?.jsonPrimitive
-                                ?.contentOrNull
+                                ?.let { assets -> getDownloadUrl(assets, preferRelease) }
+                        Timber.v("version=$version, downloadUrl=$downloadUrl")
                         if (version != null) {
                             val notes =
                                 if (body.isNotNullOrBlank()) {
@@ -174,6 +164,35 @@ class UpdateChecker
             }
         }
 
+        private fun getDownloadUrl(
+            assets: JsonArray,
+            preferRelease: Boolean,
+        ): String? {
+            val abiSuffix = Build.SUPPORTED_ABIS.firstOrNull().let { if (it != null) "-$it" else "" }
+            val releaseSuffix = if (preferRelease) "-release" else "-debug"
+            val preferredNames =
+                listOf(
+                    "$ASSET_NAME${releaseSuffix}$abiSuffix.apk",
+                    "$ASSET_NAME$releaseSuffix.apk",
+                    "$ASSET_NAME.apk",
+                )
+            var preferredAsset: JsonObject? = null
+            outer@ for (name in preferredNames) {
+                for (asset in assets) {
+                    val assetName =
+                        asset.jsonObject["name"]?.jsonPrimitive?.contentOrNull
+                    if (name == assetName) {
+                        preferredAsset = asset.jsonObject
+                        break@outer
+                    }
+                }
+            }
+            return preferredAsset
+                ?.get("browser_download_url")
+                ?.jsonPrimitive
+                ?.contentOrNull
+        }
+
         suspend fun installRelease(
             release: Release,
             callback: DownloadCallback,
@@ -195,7 +214,7 @@ class UpdateChecker
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                             val contentValues =
                                 ContentValues().apply {
-                                    put(MediaStore.MediaColumns.DISPLAY_NAME, ASSET_NAME)
+                                    put(MediaStore.MediaColumns.DISPLAY_NAME, APK_NAME)
                                     put(MediaStore.MediaColumns.MIME_TYPE, APK_MIME_TYPE)
                                     put(
                                         MediaStore.MediaColumns.RELATIVE_PATH,
@@ -267,7 +286,7 @@ class UpdateChecker
             val downloadDir =
                 Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
             downloadDir.mkdirs()
-            val targetFile = File(downloadDir, ASSET_NAME)
+            val targetFile = File(downloadDir, APK_NAME)
             targetFile.outputStream().use { output ->
                 response.body!!.byteStream().use { input ->
                     copyTo(input, output, callback = callback)
@@ -320,7 +339,7 @@ class UpdateChecker
                 } else {
                     val downloadDir =
                         Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
-                    val targetFile = File(downloadDir, ASSET_NAME)
+                    val targetFile = File(downloadDir, APK_NAME)
                     if (targetFile.exists()) {
                         targetFile.delete()
                     }

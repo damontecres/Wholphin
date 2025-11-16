@@ -139,8 +139,10 @@ android {
             variant.outputs
                 .map { it as com.android.build.gradle.internal.api.BaseVariantOutputImpl }
                 .forEach { output ->
+                    val abi = output.getFilter("ABI").let { if (it != null) "-$it" else "" }
                     val outputFileName =
-                        "Wholphin-${variant.baseName}-${variant.versionName}-${variant.versionCode}.apk"
+                        "Wholphin-${variant.baseName}-${variant.versionName}-${variant.versionCode}$abi.apk"
+                    println(outputFileName)
                     output.outputFileName = outputFileName
                 }
         }
@@ -148,7 +150,7 @@ android {
 
     splits {
         abi {
-            isEnable = false
+            isEnable = true
             reset()
             include("armeabi-v7a", "arm64-v8a")
             isUniversalApk = true

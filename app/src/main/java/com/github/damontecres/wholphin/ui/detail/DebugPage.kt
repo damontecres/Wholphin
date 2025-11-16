@@ -1,6 +1,7 @@
 package com.github.damontecres.wholphin.ui.detail
 
 import android.content.Context
+import android.os.Build
 import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusable
@@ -224,6 +225,11 @@ fun DebugPage(
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurface,
                 )
+                Text(
+                    text = "ABIs: ${Build.SUPPORTED_ABIS.toList()}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
             }
         }
         item {
@@ -237,12 +243,12 @@ fun DebugPage(
                     color = MaterialTheme.colorScheme.onSurface,
                 )
                 Text(
-                    text = "Current server: ${viewModel.serverRepository.currentServer}",
+                    text = "Current server: ${viewModel.serverRepository.currentServer.value}",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurface,
                 )
                 Text(
-                    text = "Current user: ${viewModel.serverRepository.currentUser}",
+                    text = "Current user: ${viewModel.serverRepository.currentUser.value}",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurface,
                 )
