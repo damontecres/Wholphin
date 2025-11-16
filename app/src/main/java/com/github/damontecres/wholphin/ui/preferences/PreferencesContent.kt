@@ -43,9 +43,11 @@ import coil3.SingletonImageLoader
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.preferences.AppPreference
 import com.github.damontecres.wholphin.preferences.AppPreferences
+import com.github.damontecres.wholphin.preferences.PlayerBackend
 import com.github.damontecres.wholphin.preferences.advancedPreferences
 import com.github.damontecres.wholphin.preferences.basicPreferences
 import com.github.damontecres.wholphin.preferences.uiPreferences
+import com.github.damontecres.wholphin.preferences.updatePlaybackPreferences
 import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.playOnClickSound
@@ -53,9 +55,11 @@ import com.github.damontecres.wholphin.ui.playSoundOnFocus
 import com.github.damontecres.wholphin.ui.preferences.subtitle.SubtitleSettings
 import com.github.damontecres.wholphin.ui.preferences.subtitle.SubtitleStylePage
 import com.github.damontecres.wholphin.ui.setup.UpdateViewModel
+import com.github.damontecres.wholphin.ui.showToast
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import kotlinx.coroutines.launch
+import timber.log.Timber
 
 @Composable
 fun PreferencesContent(
@@ -110,6 +114,22 @@ fun PreferencesContent(
     LaunchedEffect(Unit) {
         // Forces the animated to trigger
         visible = true
+    }
+
+    LaunchedEffect(preferences.playbackPreferences.playerBackend) {
+        if (preferences.playbackPreferences.playerBackend == PlayerBackend.MPV) {
+            Timber.d("Checking for libmpv")
+            try {
+                System.loadLibrary("mpv")
+                System.loadLibrary("player")
+            } catch (ex: Exception) {
+                Timber.w(ex, "Could not load libmpv")
+                showToast(context, "MPV is not supported on this device")
+                viewModel.preferenceDataStore.updateData {
+                    it.updatePlaybackPreferences { playerBackend = PlayerBackend.EXO_PLAYER }
+                }
+            }
+        }
     }
 
     AnimatedVisibility(
