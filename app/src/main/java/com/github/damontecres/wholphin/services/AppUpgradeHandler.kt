@@ -14,6 +14,7 @@ import com.github.damontecres.wholphin.ui.preferences.PreferencesViewModel
 import com.github.damontecres.wholphin.util.Version
 import dagger.hilt.android.qualifiers.ApplicationContext
 import timber.log.Timber
+import java.io.File
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -48,6 +49,7 @@ class AppUpgradeHandler
                     putLong(VERSION_CODE_CURRENT_KEY, newVersionCode)
                 }
                 try {
+                    copySubfont(true)
                     upgradeApp(
                         context,
                         Version.Companion.fromString(previousVersion ?: "0.0.0"),
@@ -57,6 +59,27 @@ class AppUpgradeHandler
                 } catch (ex: Exception) {
                     Timber.e(ex, "Exception during app upgrade")
                 }
+            }
+        }
+
+        fun copySubfont(overwrite: Boolean) {
+            try {
+                val fontFileName = "subfont.ttf"
+                val outputFile = File(context.filesDir, fontFileName)
+                if (!outputFile.exists() || overwrite) {
+                    context.assets.open(fontFileName).use { input ->
+                        outputFile.outputStream().use { output ->
+                            input.copyTo(output)
+                        }
+                    }
+                    Timber.i("Wrote font %s to local", fontFileName)
+                }
+//                val oldFontDir = File(context.filesDir, "fonts")
+//                if (oldFontDir.exists()) {
+//                    oldFontDir.deleteRecursively()
+//                }
+            } catch (ex: Exception) {
+                Timber.e(ex, "Exception copying subfont.tff")
             }
         }
 

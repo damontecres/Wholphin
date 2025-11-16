@@ -1,0 +1,11 @@
+{
+  "uniqueId": "com.github.adah1972.libunibreak",
+  "developers": [],
+  "artifactVersion": "6.1",
+  "description": "an implementation of the line breaking and word/grapheme breaking algorithms as described in Unicode Standard Annex 14 (UAX #14) and Unicode Standard Annex 29 (UAX #29)",
+  "name": "libunibreak",
+  "licenses": [
+    "libunibreak"
+  ],
+  "website": "https://github.com/adah1972/libunibreak"
+}

@@ -15,11 +15,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  APK_SHORT_NAME: Wholphin-release.apk
-  APK_DEBUG_SHORT_NAME: Wholphin-debug.apk
   BRANCH_NAME: ${{ github.ref_name }}
-  BUILD_TOOLS_VERSION: 36.0.0
-  NDK_VERSION: "29.0.14206865"
 
 jobs:
   build:
@@ -31,17 +27,12 @@ jobs:
         uses: actions/checkout@v5
         with:
           fetch-depth: 0 # Need the tags to build
-      # Setup the SDKs
-      - name: Setup JDK
-        uses: actions/setup-java@v5
+      - name: Setup
+        uses: ./.github/actions/setup
+      - name: Native build
+        uses: ./.github/actions/native-build
         with:
-          distribution: zulu
-          java-version: '21'
-          cache: 'gradle'
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-        with:
-          packages: "tools platform-tools build-tools;${{ env.BUILD_TOOLS_VERSION }} ndk;${{ env.NDK_VERSION }}"
+          cache: true
 
       - name: Get version names
         run: |
@@ -56,25 +47,6 @@ jobs:
           echo "LATEST_TAG=$LATEST_TAG" >> "$GITHUB_ENV"
           echo "VERSION_NAME=$VERSION_NAME" >> "$GITHUB_ENV"
           echo "TAG_NAME=$TAG_NAME" >> "$GITHUB_ENV"
-      - name: Load ffmpeg module cache
-        id: cache_ffmpeg_module
-        uses: actions/cache/restore@v4
-        with:
-          path: |
-            app/libs
-          key: ${{ runner.os }}-ffmpeg-${{ hashFiles('**/libs.versions.toml', '**/build_ffmpeg_decoder.sh') }}
-      - name: Build ffmpeg decoder
-        id: ffmpeg-decoder
-        if: steps.cache_ffmpeg_module.outputs.cache-hit != 'true'
-        run: |
-          ./build_ffmpeg_decoder.sh "${{ env.ANDROID_SDK_ROOT }}/ndk/${{ env.NDK_VERSION }}"
-      - name: Save ffmpeg module cache
-        id: cache_ffmpeg_module_save
-        uses: actions/cache/save@v4
-        with:
-          path: |
-            app/libs
-          key: ${{ steps.cache_ffmpeg_module.outputs.cache-primary-key }}
       - name: Build release app
         id: build
         env:
@@ -84,23 +56,27 @@ jobs:
           SIGNING_KEY: "${{ secrets.SIGNING_KEY }}"
         run: |
           ./gradlew clean assembleRelease assembleDebug
-          echo "apk=$(ls app/build/outputs/apk/release/Wholphin-release*.apk)" >> "$GITHUB_OUTPUT"
-          echo "apk_debug=$(ls app/build/outputs/apk/debug/Wholphin-debug*.apk)" >> "$GITHUB_OUTPUT"
-      - name: Verify signature
+      - name: Verify signatures
         run: |
-          echo "Verify release APK"
-          ${{env.ANDROID_SDK_ROOT}}/build-tools/${{ env.BUILD_TOOLS_VERSION }}/apksigner verify --verbose --print-certs "${{ steps.build.outputs.apk }}"
-          echo "Verify debug APK"
-          ${{env.ANDROID_SDK_ROOT}}/build-tools/${{ env.BUILD_TOOLS_VERSION }}/apksigner verify --verbose --print-certs "${{ steps.build.outputs.apk_debug }}"
-      - name: Copy APK to ${{ env.APK_SHORT_NAME }}
+          echo "Verify APK signatures"
+          find app/build/outputs/apk -name '*.apk'
+          find app/build/outputs/apk -name '*.apk' -print0 | xargs -t -0 -n1 ${{env.ANDROID_SDK_ROOT}}/build-tools/${{ env.BUILD_TOOLS_VERSION }}/apksigner verify --verbose --print-certs
+      - name: Copy APK to shorter names
+        id: apks
         run: |
-          cp "${{ steps.build.outputs.apk }}" "${{ env.APK_SHORT_NAME }}"
-          cp "${{ steps.build.outputs.apk_debug }}" "${{ env.APK_DEBUG_SHORT_NAME }}"
+          find app/build/outputs/apk -name '*.apk' -print0 |
+            while IFS= read -r -d '' line; do
+              # Wholphin-release-0.2.9-62-g5c12e03-16-arm64-v8a.apk => Wholphin-arm64-v8a.apk
+              short_name="$(echo $line | sed -E 's/-[0-9]+\.[0-9]+\.[0-9]+-[0-9]+-g[a-fA-F0-9]+-[0-9]+//')"
+              echo "$line => $short_name"
+              cp "$line" "$short_name"
+            done
+          apks=$(find app/build/outputs/apk -name '*.apk' -print0 | tr '\0' ',' | sed 's/,$//')
+          echo "apks=$apks" >> "$GITHUB_OUTPUT"
       - name: Checksums
         run: |
           echo "SHA256 checksums:"
-          sha256sum "${{ steps.build.outputs.apk }}" "${{ env.APK_SHORT_NAME }}"
-          sha256sum "${{ steps.build.outputs.apk_debug }}" "${{ env.APK_DEBUG_SHORT_NAME }}"
+          find app/build/outputs/apk -name '*.apk' -print0 | xargs -0 sha256sum
       - name: Delete ${{ env.TAG_NAME }} tag and release
         uses: dev-drprasad/delete-tag-and-release@v1.1
         with:
@@ -125,7 +101,7 @@ jobs:
         with:
           allowUpdates: true
           artifactErrorsFailBuild: true
-          artifacts: "${{ steps.build.outputs.apk_debug }},${{ steps.build.outputs.apk }},${{ env.APK_DEBUG_SHORT_NAME }},${{ env.APK_SHORT_NAME }}"
+          artifacts: "${{ steps.apks.outputs.apks }}"
           draft: false
           generateReleaseNotes: false
           makeLatest: false

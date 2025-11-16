@@ -22,7 +22,7 @@ private val downmixSupportedAudioCodecs =
         Codec.Audio.MP3,
     )
 
-private val supportedAudioCodecs =
+val supportedAudioCodecs =
     arrayOf(
         Codec.Audio.AAC,
         Codec.Audio.AAC_LATM,
@@ -495,7 +495,7 @@ fun createDeviceProfile(
 }
 
 // Little helper function to more easily define subtitle profiles
-private fun DeviceProfileBuilder.subtitleProfile(
+fun DeviceProfileBuilder.subtitleProfile(
     format: String,
     embedded: Boolean = false,
     external: Boolean = false,

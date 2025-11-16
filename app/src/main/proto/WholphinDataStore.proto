@@ -29,6 +29,15 @@ enum MediaExtensionStatus{
   MES_DISABLED = 2;
 }
 
+enum PlayerBackend{
+  EXO_PLAYER = 0;
+  MPV = 1;
+}
+
+message MpvOptions{
+  bool enable_hardware_decoding = 1;
+}
+
 message PlaybackOverrides{
   bool ac3_supported = 1;
   bool downmix_stereo = 2;
@@ -59,6 +68,8 @@ message PlaybackPreferences {
   PrefContentScale global_content_scale = 17;
   ShowNextUpWhen show_next_up_when = 18;
   bool one_click_pause = 19;
+  PlayerBackend player_backend = 20;
+  MpvOptions mpv_options = 21;
 }
 
 message HomePagePreferences{

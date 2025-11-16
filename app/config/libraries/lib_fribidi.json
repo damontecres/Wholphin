@@ -1,0 +1,11 @@
+{
+  "uniqueId": "com.github.fribidi.fribidi",
+  "developers": [],
+  "artifactVersion": "1.0.16",
+  "description": "The Free Implementation of the Unicode Bidirectional Algorithm",
+  "name": "fribidi",
+  "licenses": [
+    "lgpl-2.1"
+  ],
+  "website": "https://github.com/fribidi/fribidi"
+}

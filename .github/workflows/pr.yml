@@ -8,10 +8,7 @@ defaults:
     shell: bash
 
 env:
-  BUILD_TOOLS_VERSION: 36.0.0
   BUILD_DIRS_ARTIFACT: build-dirs
-  NDK_VERSION: "29.0.14206865"
-
 
 jobs:
   pre-commit:
@@ -36,45 +33,21 @@ jobs:
         uses: actions/checkout@v5
         with:
           fetch-depth: 0 # Need the tags to build
-      - name: Setup JDK
-        uses: actions/setup-java@v5
+      - name: Setup
+        uses: ./.github/actions/setup
+      - name: Native build
+        uses: ./.github/actions/native-build
         with:
-          distribution: zulu
-          java-version: '21'
-          cache: 'gradle'
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-        with:
-          packages: "tools platform-tools build-tools;${{ env.BUILD_TOOLS_VERSION }} ndk;${{ env.NDK_VERSION }}"
-
-      - name: Load ffmpeg module cache
-        id: cache_ffmpeg_module
-        uses: actions/cache/restore@v4
-        with:
-          path: |
-            app/libs
-          key: ${{ runner.os }}-ffmpeg-${{ hashFiles('**/libs.versions.toml', '**/build_ffmpeg_decoder.sh') }}
-      - name: Build ffmpeg decoder
-        id: ffmpeg-decoder
-        if: steps.cache_ffmpeg_module.outputs.cache-hit != 'true'
-        run: |
-          ./build_ffmpeg_decoder.sh "${{ env.ANDROID_SDK_ROOT }}/ndk/${{ env.NDK_VERSION }}"
-      - name: Save ffmpeg module cache
-        id: cache_ffmpeg_module_save
-        uses: actions/cache/save@v4
-        with:
-          path: |
-            app/libs
-          key: ${{ steps.cache_ffmpeg_module.outputs.cache-primary-key }}
-
+          cache: true
       - name: Build app
         id: buildapp
         run: |
-          ./gradlew clean build
-          echo "apk=$(ls app/build/outputs/apk/debug/Wholphin-debug*.apk)" >> "$GITHUB_OUTPUT"
+          ./gradlew clean assembleDebug
+          apks=$(find app/build/outputs/apk -name '*.apk' -print0 | tr '\0' ',' | sed 's/,$//')
+          echo "apks=$apks" >> "$GITHUB_OUTPUT"
       - name: Tar build dirs
         run: |
-          tar -czf build.tgz */build/.
+          tar -czf build.tgz ./app/.
       - uses: actions/upload-artifact@v5
         id: upload-build-dirs
         with:
@@ -83,6 +56,6 @@ jobs:
           if-no-files-found: error
       - uses: actions/upload-artifact@v5
         with:
-          name: Wholphin-debug.apk
-          path: "${{ steps.buildapp.outputs.apk }}"
+          name: APKs
+          path: "${{ steps.buildapp.outputs.apks }}"
           compression-level: 0

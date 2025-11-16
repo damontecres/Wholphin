@@ -1,0 +1,11 @@
+{
+  "uniqueId": "com.github.mpv-player.mpv",
+  "developers": [],
+  "artifactVersion": "master",
+  "description": "mpv is a free (as in freedom) media player for the command line",
+  "name": "mpv",
+  "licenses": [
+    "gpl-2.0"
+  ],
+  "website": "https://github.com/mpv-player/mpv"
+}
