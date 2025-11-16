@@ -135,7 +135,10 @@ fun SeriesOverviewContent(
         LazyColumn(
             verticalArrangement = Arrangement.spacedBy(8.dp),
             contentPadding = PaddingValues(16.dp),
-            modifier = Modifier.onFocusChanged { pageHasFocus = it.hasFocus },
+            modifier =
+                Modifier
+                    .focusRestorer(episodeRowFocusRequester)
+                    .onFocusChanged { pageHasFocus = it.hasFocus },
         ) {
             item {
                 val paddingValues =
@@ -158,6 +161,7 @@ fun SeriesOverviewContent(
                     modifier =
                         Modifier
                             .focusRequester(tabRowFocusRequester)
+                            .focusRestorer()
                             .padding(paddingValues)
                             .fillMaxWidth(),
                 )
