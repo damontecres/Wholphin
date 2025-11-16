@@ -56,26 +56,27 @@ jobs:
           SIGNING_KEY: "${{ secrets.SIGNING_KEY }}"
         run: |
           ./gradlew clean assembleRelease assembleDebug
-          echo "apks=$(find app/build/outputs/apk -name '*.apk' | sort)" >> "$GITHUB_OUTPUT"
       - name: Verify signatures
         run: |
           echo "Verify APK signatures"
-          while IFS= read -r line; do
-            ${{env.ANDROID_SDK_ROOT}}/build-tools/${{ env.BUILD_TOOLS_VERSION }}/apksigner verify --verbose --print-certs "$line"
-          done <<< "${{ steps.build.outputs.apks }}"
+          find app/build/outputs/apk -name '*.apk'
+          find app/build/outputs/apk -name '*.apk' -print0 | xargs -t -0 -n1 ${{env.ANDROID_SDK_ROOT}}/build-tools/${{ env.BUILD_TOOLS_VERSION }}/apksigner verify --verbose --print-certs
       - name: Copy APK to shorter names
         id: apks
         run: |
-          while IFS= read -r line; do
-            # Wholphin-debug-0.2.9-62-g5c12e03-16-arm64-v8a.apk => Wholphin-debug-arm64-v8a.apk
-            short_name="$(echo $line | sed -E 's/-[0-9]+\.[0-9]+\.[0-9]+-[0-9]+-g[a-fA-F0-9]+-[0-9]+//')"
-            echo "$line => $short_name"
-            cp "$line" "$short_name"
-          done <<< "${{ steps.build.outputs.apks }}"
+          find app/build/outputs/apk -name '*.apk' -print0 |
+            while IFS= read -r -d '' line; do
+              # Wholphin-debug-0.2.9-62-g5c12e03-16-arm64-v8a.apk => Wholphin-debug-arm64-v8a.apk
+              short_name="$(echo $line | sed -E 's/-[0-9]+\.[0-9]+\.[0-9]+-[0-9]+-g[a-fA-F0-9]+-[0-9]+//')"
+              echo "$line => $short_name"
+              cp "$line" "$short_name"
+            done
+          apks=$(find app/build/outputs/apk -name '*.apk' -print0 | tr '\0' ',' | sed 's/,$//')
+          echo "apks=$apks" >> "$GITHUB_OUTPUT"
       - name: Checksums
         run: |
           echo "SHA256 checksums:"
-          find app/build/outputs/apk -name '*.apk' | xargs sha256sum
+          find app/build/outputs/apk -name '*.apk' -print0 | xargs -0 sha256sum
       - name: Delete ${{ env.TAG_NAME }} tag and release
         uses: dev-drprasad/delete-tag-and-release@v1.1
         with:
