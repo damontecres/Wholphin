@@ -43,7 +43,7 @@ jobs:
         id: buildapp
         run: |
           ./gradlew clean assembleDebug
-          echo "apk=$(ls app/build/outputs/apk/debug/Wholphin-debug*.apk)" >> "$GITHUB_OUTPUT"
+          apks=$(find app/build/outputs/apk -name '*.apk' -print0 | tr '\0' ',' | sed 's/,$//')
       - name: Tar build dirs
         run: |
           tar -czf build.tgz ./app/.
@@ -55,6 +55,6 @@ jobs:
           if-no-files-found: error
       - uses: actions/upload-artifact@v5
         with:
-          name: Wholphin-debug.apk
-          path: "${{ steps.buildapp.outputs.apk }}"
+          name: APKs
+          path: "${{ steps.buildapp.outputs.apks }}"
           compression-level: 0
