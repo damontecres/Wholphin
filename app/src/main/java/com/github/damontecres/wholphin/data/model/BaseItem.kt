@@ -111,7 +111,7 @@ data class BaseItem(
                     api.imageApi.getItemImageUrl(dto.id, ImageType.PRIMARY)
                 }
             val logoImageUrl =
-                if (useSeriesForPrimary && (dto.type == BaseItemKind.EPISODE || dto.type == BaseItemKind.SEASON)) {
+                if (dto.type == BaseItemKind.EPISODE || dto.type == BaseItemKind.SEASON) {
                     val seriesId = dto.seriesId
                     if (seriesId != null) {
                         api.imageApi.getItemImageUrl(seriesId, ImageType.LOGO)
