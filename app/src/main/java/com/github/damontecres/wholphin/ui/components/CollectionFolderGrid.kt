@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -28,7 +29,11 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -41,6 +46,9 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
+import coil3.compose.AsyncImage
+import coil3.request.ImageRequest
+import coil3.request.transitionFactory
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.LibraryDisplayInfoDao
 import com.github.damontecres.wholphin.data.ServerRepository
@@ -64,6 +72,7 @@ import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.FavoriteWatchManager
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.ui.AspectRatios
+import com.github.damontecres.wholphin.ui.CrossFadeFactory
 import com.github.damontecres.wholphin.ui.OneTimeLaunchedEffect
 import com.github.damontecres.wholphin.ui.SlimItemFields
 import com.github.damontecres.wholphin.ui.cards.GridCard
@@ -75,7 +84,10 @@ import com.github.damontecres.wholphin.ui.detail.MoreDialogActions
 import com.github.damontecres.wholphin.ui.detail.PlaylistDialog
 import com.github.damontecres.wholphin.ui.detail.PlaylistLoadingState
 import com.github.damontecres.wholphin.ui.detail.buildMoreDialogItemsForHome
+import com.github.damontecres.wholphin.ui.main.HomePageHeader
 import com.github.damontecres.wholphin.ui.nav.Destination
+import com.github.damontecres.wholphin.ui.playback.scale
+import com.github.damontecres.wholphin.ui.rememberInt
 import com.github.damontecres.wholphin.ui.toServerString
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.ApiRequestPager
@@ -88,6 +100,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
@@ -108,6 +121,7 @@ import java.util.TreeSet
 import java.util.UUID
 import javax.inject.Inject
 import kotlin.time.Duration
+import kotlin.time.Duration.Companion.milliseconds
 
 @HiltViewModel
 class CollectionFolderViewModel
@@ -662,24 +676,72 @@ fun CollectionFolderGridContent(
     onFilterChange: (GetItemsFilter) -> Unit = {},
     getPossibleFilterValues: suspend (ItemFilterBy<*>) -> List<FilterValueOption>,
 ) {
+    val context = LocalContext.current
     val title = item?.name ?: item?.data?.collectionType?.name ?: stringResource(R.string.collection)
 
     var showHeader by rememberSaveable { mutableStateOf(true) }
+    var showViewOptions by rememberSaveable { mutableStateOf(false) }
+    var viewOptions by remember { mutableStateOf(ViewOptions(params.columns)) }
 
     val gridFocusRequester = remember { FocusRequester() }
     LaunchedEffect(Unit) { gridFocusRequester.tryRequestFocus() }
-    Column(
-        verticalArrangement = Arrangement.spacedBy(0.dp),
-        modifier = modifier,
-    ) {
-        AnimatedVisibility(
-            showHeader,
-            enter = slideInVertically() + fadeIn(),
-            exit = slideOutVertically() + fadeOut(),
+    var backdropImageUrl by remember { mutableStateOf<String?>(null) }
+
+    var position by rememberInt(0)
+    val focusedItem = pager.getOrNull(position)
+
+    if (viewOptions.showDetails) {
+        LaunchedEffect(focusedItem) {
+            backdropImageUrl = null
+            delay(150)
+            backdropImageUrl = focusedItem?.backdropImageUrl
+        }
+    }
+    Box(modifier = modifier) {
+        if (viewOptions.showDetails) {
+            val gradientColor = MaterialTheme.colorScheme.background
+            AsyncImage(
+                model =
+                    ImageRequest
+                        .Builder(context)
+                        .data(backdropImageUrl)
+                        .transitionFactory(CrossFadeFactory(250.milliseconds))
+                        .build(),
+                contentDescription = null,
+                contentScale = ContentScale.Fit,
+                alignment = Alignment.TopEnd,
+                modifier =
+                    Modifier
+                        .fillMaxHeight(.7f)
+                        .fillMaxWidth(.7f)
+                        .alpha(.75f)
+                        .align(Alignment.TopEnd)
+                        .drawWithContent {
+                            drawContent()
+                            drawRect(
+                                Brush.verticalGradient(
+                                    colors = listOf(Color.Transparent, gradientColor),
+                                    startY = size.height * .33f,
+                                ),
+                            )
+                            drawRect(
+                                Brush.horizontalGradient(
+                                    colors = listOf(gradientColor, Color.Transparent),
+                                    startX = 0f,
+                                    endX = size.width * .5f,
+                                ),
+                            )
+                        },
+            )
+        }
+        Column(
+            verticalArrangement = Arrangement.spacedBy(0.dp),
+            modifier = Modifier.fillMaxSize(),
         ) {
-            Column(
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.fillMaxWidth(),
+            AnimatedVisibility(
+                showHeader,
+                enter = slideInVertically() + fadeIn(),
+                exit = slideOutVertically() + fadeOut(),
             ) {
                 if (showTitle) {
                     Text(
@@ -725,6 +787,12 @@ fun CollectionFolderGridContent(
                                     modifier = Modifier,
                                 )
                             }
+                            ExpandableFaButton(
+                                title = R.string.view_options,
+                                iconStringRes = R.string.fa_eye,
+                                onClick = { showViewOptions = true },
+                                modifier = Modifier,
+                            )
                         }
                     }
                     if (playEnabled) {
@@ -748,25 +816,52 @@ fun CollectionFolderGridContent(
                     }
                 }
             }
+            AnimatedVisibility(viewOptions.showDetails) {
+                HomePageHeader(
+                    item = focusedItem,
+                    modifier =
+                        Modifier
+                            .fillMaxWidth(.6f)
+                            .fillMaxHeight(.33f)
+                            .padding(16.dp),
+                )
+            }
+            CardGrid(
+                pager = pager,
+                onClickItem = onClickItem,
+                onLongClickItem = onLongClickItem,
+                letterPosition = letterPosition,
+                gridFocusRequester = gridFocusRequester,
+                showJumpButtons = false, // TODO add preference
+                showLetterButtons = sortAndDirection.sort == ItemSortBy.SORT_NAME,
+                modifier = Modifier.fillMaxSize(),
+                initialPosition = 0,
+                positionCallback = { columns, newPosition ->
+                    showHeader = newPosition < columns
+                    position = newPosition
+                    positionCallback?.invoke(columns, newPosition)
+                },
+                cardContent = { item, onClick, onLongClick, mod ->
+                    GridCard(
+                        item = item,
+                        onClick = onClick,
+                        onLongClick = onLongClick,
+                        imageContentScale = viewOptions.contentScale.scale,
+                        imageAspectRatio = viewOptions.aspectRatio.ratio,
+                        modifier = mod,
+                    )
+                },
+                columns = viewOptions.columns,
+                spacing = viewOptions.spacing.dp,
+            )
+            AnimatedVisibility(showViewOptions) {
+                ViewOptionsDialog(
+                    viewOptions = viewOptions,
+                    onDismissRequest = { showViewOptions = false },
+                    onViewOptionsChange = { viewOptions = it },
+                )
+            }
         }
-        CardGrid(
-            pager = pager,
-            onClickItem = onClickItem,
-            onLongClickItem = onLongClickItem,
-            letterPosition = letterPosition,
-            gridFocusRequester = gridFocusRequester,
-            showJumpButtons = false, // TODO add preference
-            showLetterButtons = sortAndDirection.sort == ItemSortBy.SORT_NAME,
-            modifier = Modifier.fillMaxSize(),
-            initialPosition = 0,
-            positionCallback = { columns, position ->
-                showHeader = position < columns
-                positionCallback?.invoke(columns, position)
-            },
-            cardContent = params.cardContent,
-            columns = params.columns,
-            spacing = params.spacing,
-        )
     }
 }
 

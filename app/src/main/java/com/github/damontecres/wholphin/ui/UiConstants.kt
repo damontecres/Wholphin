@@ -81,6 +81,14 @@ object AspectRatios {
     const val SQUARE = 1f
 }
 
+enum class AspectRatio(
+    val ratio: Float,
+) {
+    TALL(AspectRatios.TALL),
+    WIDE(AspectRatios.WIDE),
+    FOUR_THREE(AspectRatios.FOUR_THREE),
+}
+
 @Preview(
     device = "spec:parent=tv_1080p",
     backgroundColor = 0xFF383535,

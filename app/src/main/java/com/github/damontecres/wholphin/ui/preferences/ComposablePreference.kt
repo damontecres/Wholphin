@@ -42,7 +42,6 @@ import com.github.damontecres.wholphin.preferences.AppClickablePreference
 import com.github.damontecres.wholphin.preferences.AppDestinationPreference
 import com.github.damontecres.wholphin.preferences.AppMultiChoicePreference
 import com.github.damontecres.wholphin.preferences.AppPreference
-import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.AppSliderPreference
 import com.github.damontecres.wholphin.preferences.AppStringPreference
 import com.github.damontecres.wholphin.preferences.AppSwitchPreference
@@ -58,7 +57,7 @@ import java.util.SortedSet
 @Suppress("UNCHECKED_CAST")
 @Composable
 fun <T> ComposablePreference(
-    preference: AppPreference<AppPreferences, T>,
+    preference: AppPreference<*, T>,
     value: T?,
     onValueChange: (T) -> Unit,
     onNavigate: (Destination) -> Unit,
