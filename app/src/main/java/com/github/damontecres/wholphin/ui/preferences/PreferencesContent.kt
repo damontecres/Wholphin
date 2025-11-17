@@ -219,7 +219,7 @@ fun PreferencesContent(
                             .map { it.preferences }
                             .flatten()
                 groupPreferences.forEachIndexed { prefIndex, pref ->
-                    pref as AppPreference<Any>
+                    pref as AppPreference<AppPreferences, Any>
                     item {
                         val interactionSource = remember { MutableInteractionSource() }
                         val focused = interactionSource.collectIsFocusedAsState().value
