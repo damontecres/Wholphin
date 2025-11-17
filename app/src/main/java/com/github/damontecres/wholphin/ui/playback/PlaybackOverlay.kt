@@ -291,6 +291,8 @@ fun PlaybackOverlay(
                                         state = OverlayViewState.CONTROLLER
                                     }
                                     true
+                                } else if (isDown(e)) {
+                                    true
                                 } else {
                                     false
                                 }
