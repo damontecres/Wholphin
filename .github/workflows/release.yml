@@ -11,6 +11,7 @@ defaults:
 
 env:
   APK_SHORT_NAME: Wholphin.apk
+  GRADLE_OPTS: "-Dorg.gradle.jvmargs='-Xmx4g -XX:MaxMetaspaceSize=512m'"
 
 jobs:
   publish:
@@ -36,7 +37,7 @@ jobs:
           KEY_STORE_PASSWORD: "${{ secrets.KEY_STORE_PASSWORD }}"
           SIGNING_KEY: "${{ secrets.SIGNING_KEY }}"
         run: |
-          ./gradlew clean assembleRelease
+          ./gradlew clean assembleRelease --no-daemon
       - name: Verify signatures
         run: |
           echo "Verify APK signatures"
