@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.preferences.UserPreferences
+import com.github.damontecres.wholphin.ui.components.ItemGrid
 import com.github.damontecres.wholphin.ui.components.LicenseInfo
 import com.github.damontecres.wholphin.ui.detail.CollectionFolderGeneric
 import com.github.damontecres.wholphin.ui.detail.CollectionFolderLiveTv
@@ -209,6 +210,12 @@ fun DestinationContent(
                 filter = destination.filter,
                 recursive = destination.recursive,
                 modifier = modifier,
+            )
+
+        is Destination.ItemGrid ->
+            ItemGrid(
+                destination,
+                modifier,
             )
 
         Destination.Favorites ->

@@ -74,6 +74,12 @@ object Cards {
     val playedPercentHeight = 6.dp
 }
 
+object AspectRatios {
+    const val WIDE = 16f / 9f
+    const val FOUR_THREE = 4f / 3f
+    const val TALL = 2f / 3f
+}
+
 @Preview(
     device = "spec:parent=tv_1080p",
     backgroundColor = 0xFF383535,

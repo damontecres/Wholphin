@@ -20,6 +20,9 @@ This is not a fork of the [official client](https://github.com/jellyfin/jellyfin
 - Other (subjective) enhancements:
   - Subtly show playback position along the bottom of the screen while seeking w/ D-Pad
   - Force Continue Watching & Next Up TV episodes to use their Series posters
+- Different media playback engines, including:
+  - Default ExoPlayer/Media3
+  - Experimental MPV
 
 ### Roadmap
 

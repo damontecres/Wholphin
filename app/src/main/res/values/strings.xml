@@ -82,6 +82,7 @@
     <string name="playback_speed">Playback Speed</string>
     <string name="playback">Playback</string>
     <string name="playlist">Playlist</string>
+    <string name="playlists">Playlists</string>
     <string name="preview">Preview</string>
     <string name="profile_specific_settings">User Profile Settings</string>
     <string name="queue">Queue</string>
@@ -135,6 +136,7 @@
     <string name="version">Version</string>
     <string name="video_scale">Video Scale</string>
     <string name="video">Video</string>
+    <string name="videos">Videos</string>
     <string name="watch_live">Watch live</string>
     <string name="years_old">%1$d years old</string>
     <string name="play_with_transcoding">Play with transcoding</string>
@@ -148,6 +150,82 @@
     <string name="font">Font</string>
     <string name="background">Background</string>
     <string name="success">Success</string>
+    <string name="official_rating">Parental Rating</string>
+    <string name="runtime_sort">Runtime</string>
+
+    <string name="extras">Extras</string>
+    <string name="other_extras">Other</string>
+    <string name="behind_the_scenes">Behind the Scenes</string>
+    <string name="theme_songs">Theme Songs</string>
+    <string name="theme_videos">Theme Videos</string>
+    <string name="clips">Clips</string>
+    <string name="deleted_scenes">Deleted Scenes</string>
+    <string name="interviews">Interviews</string>
+    <string name="scenes">Scenes</string>
+    <string name="samples">Samples</string>
+    <string name="featurettes">Featurettes</string>
+    <string name="shorts">Shorts</string>
+
+    <plurals name="trailers">
+        <item quantity="zero">Trailers</item>
+        <item quantity="one">Trailer</item>
+        <item quantity="other">Trailers</item>
+    </plurals>
+    <plurals name="other_extras">
+        <item quantity="zero">Other</item>
+        <item quantity="one">Other</item>
+        <item quantity="other">Other</item>
+    </plurals>
+    <plurals name="behind_the_scenes">
+        <item quantity="zero">Behind the scenes</item>
+        <item quantity="one">Behind the scenes</item>
+        <item quantity="other">Behind the scenes</item>
+    </plurals>
+    <plurals name="theme_songs">
+        <item quantity="zero">Theme songs</item>
+        <item quantity="one">Theme song</item>
+        <item quantity="other">Theme songs</item>
+    </plurals>
+    <plurals name="theme_videos">
+        <item quantity="zero">Theme videos</item>
+        <item quantity="one">Theme video</item>
+        <item quantity="other">Theme videos</item>
+    </plurals>
+    <plurals name="clips">
+        <item quantity="zero">Clips</item>
+        <item quantity="one">Clip</item>
+        <item quantity="other">Clips</item>
+    </plurals>
+    <plurals name="deleted_scenes">
+        <item quantity="zero">Deleted scenes</item>
+        <item quantity="one">Deleted scene</item>
+        <item quantity="other">Deleted scenes</item>
+    </plurals>
+    <plurals name="interviews">
+        <item quantity="zero">Interviews</item>
+        <item quantity="one">Interview</item>
+        <item quantity="other">Interviews</item>
+    </plurals>
+    <plurals name="scenes">
+        <item quantity="zero">Scenes</item>
+        <item quantity="one">Scene</item>
+        <item quantity="other">Scenes</item>
+    </plurals>
+    <plurals name="samples">
+        <item quantity="zero">Samples</item>
+        <item quantity="one">Sample</item>
+        <item quantity="other">Samples</item>
+    </plurals>
+    <plurals name="featurettes">
+        <item quantity="zero">Featurettes</item>
+        <item quantity="one">Featurette</item>
+        <item quantity="other">Featurettes</item>
+    </plurals>
+    <plurals name="shorts">
+        <item quantity="zero">Shorts</item>
+        <item quantity="one">Short</item>
+        <item quantity="other">Shorts</item>
+    </plurals>
 
     <plurals name="downloads">
         <item quantity="zero">%s downloads</item>
@@ -169,5 +247,143 @@
         <item quantity="one">%d second</item>
         <item quantity="other">%d seconds</item>
     </plurals>
+
+    <!-- Preferences/Setting specific strings -->
+    <string name="pref_key_update_last_check_threshold" translatable="false">preference.update.threshold</string>
+    <string name="pref_key_update_last_check" translatable="false">preference.update.lastTimestamp</string>
+
+    <string name="ac3_supported">Device supports AC3/Dolby Digital</string>
+    <string name="advanced_settings">Advanced Settings</string>
+    <string name="advanced_ui">Advanced UI</string>
+    <string name="app_theme">Application Theme</string>
+    <string name="auto_check_for_updates">Automatically check for updates</string>
+    <string name="auto_play_next_delay">Delay before playing next up</string>
+    <string name="auto_play_next">Auto play next up</string>
+    <string name="check_for_updates">Check for updates</string>
+    <string name="combine_continue_next_summary">Applies to TV Series only</string>
+    <string name="combine_continue_next"><![CDATA[Combine Continue Watching & Next Up]]></string>
+    <string name="direct_play_ass">Direct play ASS subtitles</string>
+    <string name="direct_play_pgs">Direct play PGS subtitles</string>
+    <string name="downmix_stereo">Always downmix to stereo</string>
+    <string name="ffmpeg_extension_pref">Use FFmpeg decoder module</string>
+    <string name="global_content_scale">Default content scale</string>
+    <string name="install_update">Install update</string>
+    <string name="installed_version">Installed version</string>
+    <string name="max_homepage_items">Max items on home page rows</string>
+    <string name="nav_drawer_pins_summary">Choose the default items to show, others will be hidden</string>
+    <string name="nav_drawer_pins">Customize Navigation Drawer Items</string>
+    <string name="nav_drawer_switch_on_focus_summary_off">Click to switch pages</string>
+    <string name="nav_drawer_switch_on_focus">Switch nav drawer pages on focus</string>
+    <string name="pass_out_protection">Passout Protection</string>
+    <string name="play_theme_music">Play theme music</string>
+    <string name="playback_overrides">Playback overrides</string>
+    <string name="remember_selected_tab">Remember selected tabs</string>
+    <string name="rewatch_next_up">Enable rewatching in next up</string>
+    <string name="seek_bar_steps">Seek bar steps</string>
+    <string name="send_app_logs_summary">Useful for debugging</string>
+    <string name="send_app_logs">Send app logs to current server</string>
+    <string name="send_crash_reports_summary">Will try to send to last connected server</string>
+    <string name="send_crash_reports">Send Crash Reports</string>
+    <string name="settings">Settings</string>
+    <string name="skip_back_on_resume_preference">Skip back when resuming playback</string>
+    <string name="skip_back_preference">Skip back</string>
+    <string name="skip_commercials_behavior">Skip commercials behavior</string>
+    <string name="skip_forward_preference">Skip forward</string>
+    <string name="skip_intro_behavior">Skip intro behavior</string>
+    <string name="skip_outro_behavior">Skip outro behavior</string>
+    <string name="skip_previews_behavior">Skip previews behavior</string>
+    <string name="skip_recap_behavior">Skip recap behavior</string>
+    <string name="update_available">Update available</string>
+    <string name="update_url_summary">URL used to check for app updates</string>
+    <string name="update_url">Update URL</string>
+    <string name="font_size">Font size</string>
+    <string name="font_color">Font color</string>
+    <string name="font_opacity">Font opacity</string>
+    <string name="edge_style">Edge style</string>
+    <string name="edge_color">Edge color</string>
+    <string name="background_opacity">Background opacity</string>
+    <string name="background_style">Background style</string>
+    <string name="subtitle_style">Subtitle style</string>
+    <string name="background_color">Background color</string>
+    <string name="reset">Reset</string>
+    <string name="bold_font">Bold font</string>
+
+    <string name="player_backend">Playback Backend</string>
+    <string name="mpv_hardware_decoding">MPV: Use hardware decoding</string>
+    <string name="disable_if_crash">Disable if you experience crashes</string>
+    <string name="mpv_options">MPV Options</string>
+    <string name="exoplayer_options">ExoPlayer Options</string>
+
+    <string-array name="theme_song_volume">
+        <item>Disabled</item>
+        <item>Lowest</item>
+        <item>Low</item>
+        <item>Medium</item>
+        <item>High</item>
+        <item>Full</item>
+    </string-array>
+
+    <string-array name="app_theme_colors">
+        <item>Purple</item>
+        <item>Blue</item>
+        <item>Green</item>
+        <item>Orange</item>
+    </string-array>
+
+    <string-array name="skip_behaviors">
+        <item>Ignore</item>
+        <item>Skip automatically</item>
+        <item>Ask to skip</item>
+    </string-array>
+
+    <string-array name="content_scale">
+        <item>Fit</item>
+        <item>None</item>
+        <item>Crop</item>
+        <item>Fill</item>
+        <item>Fill Width</item>
+        <item>Fill Height</item>
+    </string-array>
+
+    <string-array name="ffmpeg_extension_options">
+        <item>Only use FFmpeg if no built-in decoder exists</item>
+        <item>Prefer to use FFmpeg over built-in decoders</item>
+        <item>Never use FFmpeg decoders</item>
+    </string-array>
+
+    <string-array name="show_next_up_when_options">
+        <item>At the end of playback</item>
+        <item>During end credits/outro</item>
+    </string-array>
+
+    <string-array name="font_colors">
+        <item>White</item>
+        <item>Black</item>
+        <item>Light Gray</item>
+        <item>Dark Gray</item>
+        <item>Red</item>
+        <item>Yellow</item>
+        <item>Green</item>
+        <item>Cyan</item>
+        <item>Blue</item>
+        <item>Magenta</item>
+    </string-array>
+
+    <string-array name="subtitle_edge">
+        <item>None</item>
+        <item>Outline</item>
+        <item>Shadow</item>
+    </string-array>
+
+    <string-array name="background_style">
+        <item>None</item>
+        <item>Wrap</item>
+        <item>Boxed</item>
+    </string-array>
+
+    <string-array name="player_backend_options">
+        <item>ExoPlayer (default)</item>
+        <item>MPV (Experimental)</item>
+    </string-array>
 
 </resources>

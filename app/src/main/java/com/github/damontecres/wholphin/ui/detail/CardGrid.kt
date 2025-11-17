@@ -42,8 +42,10 @@ import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.type
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.tv.material3.Button
 import androidx.tv.material3.LocalContentColor
@@ -90,12 +92,14 @@ fun CardGrid(
             item = item,
             onClick = onClick,
             onLongClick = onLongClick,
+            imageContentScale = ContentScale.FillBounds,
             modifier = mod,
         )
     },
+    columns: Int = 6,
+    spacing: Dp = 16.dp,
 ) {
     val startPosition = initialPosition.coerceIn(0, (pager.size - 1).coerceAtLeast(0))
-    val columns = 6
 
     val fractionCacheWindow = LazyLayoutCacheWindow(aheadFraction = 1f, behindFraction = 0.5f)
     val gridState = rememberLazyGridState(cacheWindow = fractionCacheWindow)
@@ -232,8 +236,8 @@ fun CardGrid(
         ) {
             LazyVerticalGrid(
                 columns = GridCells.Fixed(columns),
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
+                horizontalArrangement = Arrangement.spacedBy(spacing),
+                verticalArrangement = Arrangement.spacedBy(spacing),
                 state = gridState,
                 contentPadding = PaddingValues(16.dp),
                 modifier =

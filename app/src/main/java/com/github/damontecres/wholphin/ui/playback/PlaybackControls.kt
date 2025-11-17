@@ -65,9 +65,9 @@ import com.github.damontecres.wholphin.ui.AppColors
 import com.github.damontecres.wholphin.ui.indexOfFirstOrNull
 import com.github.damontecres.wholphin.ui.seekBack
 import com.github.damontecres.wholphin.ui.seekForward
+import com.github.damontecres.wholphin.ui.stringRes
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.ExceptionHandler
-import com.github.damontecres.wholphin.util.stringRes
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -274,7 +274,7 @@ fun SeekBar(
             modifier = Modifier.fillMaxWidth(),
             interactionSource = interactionSource,
             enabled = isEnabled,
-            durationMs = player.contentDuration,
+            durationMs = player.duration,
             seekBack = seekBack,
             seekForward = seekForward,
         )

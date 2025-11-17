@@ -8,13 +8,13 @@ import androidx.lifecycle.viewModelScope
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.preferences.UserPreferences
+import com.github.damontecres.wholphin.services.FavoriteWatchManager
+import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.ui.SlimItemFields
 import com.github.damontecres.wholphin.ui.data.RowColumn
-import com.github.damontecres.wholphin.ui.launchIO
-import com.github.damontecres.wholphin.ui.nav.NavigationManager
+import com.github.damontecres.wholphin.ui.setValueOnMain
 import com.github.damontecres.wholphin.util.ApiRequestPager
 import com.github.damontecres.wholphin.util.ExceptionHandler
-import com.github.damontecres.wholphin.util.FavoriteWatchManager
 import com.github.damontecres.wholphin.util.GetItemsRequestHandler
 import com.github.damontecres.wholphin.util.GetResumeItemsRequestHandler
 import com.github.damontecres.wholphin.util.GetSuggestionsRequestHandler
@@ -26,6 +26,8 @@ import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -57,13 +59,13 @@ class RecommendedMovieViewModel
         }
 
         override val rows =
-            MutableStateFlow<MutableList<HomeRowLoadingState>>(
+            MutableStateFlow<List<HomeRowLoadingState>>(
                 rowTitles
                     .map {
                         HomeRowLoadingState.Pending(
                             context.getString(it),
                         )
-                    }.toMutableList(),
+                    },
             )
 
         override fun init() {
@@ -95,8 +97,8 @@ class RecommendedMovieViewModel
                         ),
                     )
 
-                    withContext(Dispatchers.Main) {
-                        loading.value = LoadingState.Success
+                    if (resumeItems.isNotEmpty()) {
+                        loading.setValueOnMain(LoadingState.Success)
                     }
                 } catch (ex: Exception) {
                     Timber.e(ex, "Exception fetching movie recommendations")
@@ -159,20 +161,31 @@ class RecommendedMovieViewModel
                         R.string.suggestions to suggestedItems,
                         R.string.top_unwatched to unwatchedTopRatedItems,
                     )
-
-                rows.forEachIndexed { index, (title, pager) ->
-                    viewModelScope.launchIO {
-                        val title = context.getString(title)
-                        val result =
-                            try {
-                                pager.init()
-                                HomeRowLoadingState.Success(title, pager)
-                            } catch (ex: Exception) {
-                                Timber.e(ex, "Error fetching %s", title)
-                                HomeRowLoadingState.Error(title, null, ex)
+                rows
+                    .mapIndexed { index, (title, pager) ->
+                        viewModelScope.async(Dispatchers.IO + ExceptionHandler()) {
+                            val title = context.getString(title)
+                            val result =
+                                try {
+                                    pager.init()
+                                    if (pager.isNotEmpty()) {
+                                        pager.getBlocking(0)
+                                    }
+                                    HomeRowLoadingState.Success(title, pager)
+                                } catch (ex: Exception) {
+                                    Timber.e(ex, "Error fetching %s", title)
+                                    HomeRowLoadingState.Error(title, null, ex)
+                                }
+                            update(index + 1, result)
+                            if (result is HomeRowLoadingState.Success && result.items.isNotEmpty() &&
+                                (loading.value == LoadingState.Loading || loading.value == LoadingState.Pending)
+                            ) {
+                                loading.setValueOnMain(LoadingState.Success)
                             }
-                        update(index + 1, result)
-                    }
+                        }
+                    }.awaitAll()
+                if (loading.value == LoadingState.Loading || loading.value == LoadingState.Pending) {
+                    loading.setValueOnMain(LoadingState.Success)
                 }
             }
         }
@@ -182,7 +195,7 @@ class RecommendedMovieViewModel
             row: HomeRowLoadingState,
         ) {
             rows.update { current ->
-                current.apply { set(position, row) }
+                current.toMutableList().apply { set(position, row) }
             }
         }
 

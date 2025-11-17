@@ -1,5 +1,7 @@
 package com.github.damontecres.wholphin.ui.detail.series
 
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
@@ -15,11 +17,13 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.relocation.bringIntoViewRequester
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -30,6 +34,7 @@ import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusRestorer
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -42,18 +47,18 @@ import coil3.compose.AsyncImage
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.ChosenStreams
 import com.github.damontecres.wholphin.data.model.BaseItem
-import com.github.damontecres.wholphin.data.model.aspectRatioFloat
 import com.github.damontecres.wholphin.preferences.UserPreferences
+import com.github.damontecres.wholphin.ui.AspectRatios
 import com.github.damontecres.wholphin.ui.OneTimeLaunchedEffect
 import com.github.damontecres.wholphin.ui.cards.BannerCard
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.components.TabRow
+import com.github.damontecres.wholphin.ui.formatDateTime
 import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.logTab
 import com.github.damontecres.wholphin.ui.tryRequestFocus
-import com.github.damontecres.wholphin.util.formatDateTime
 import kotlin.time.Duration
 
 @Composable
@@ -86,6 +91,9 @@ fun SeriesOverviewContent(
 
     val focusedEpisode =
         (episodes as? EpisodeList.Success)?.episodes?.getOrNull(position.episodeRowIndex)
+    var pageHasFocus by remember { mutableStateOf(false) }
+    var cardRowHasFocus by remember { mutableStateOf(false) }
+    val dimming by animateFloatAsState(if (pageHasFocus && !cardRowHasFocus) .4f else 1f)
 
     Box(
         modifier =
@@ -127,7 +135,10 @@ fun SeriesOverviewContent(
         LazyColumn(
             verticalArrangement = Arrangement.spacedBy(8.dp),
             contentPadding = PaddingValues(16.dp),
-            modifier = Modifier,
+            modifier =
+                Modifier
+                    .focusRestorer(episodeRowFocusRequester)
+                    .onFocusChanged { pageHasFocus = it.hasFocus },
         ) {
             item {
                 val paddingValues =
@@ -150,6 +161,7 @@ fun SeriesOverviewContent(
                     modifier =
                         Modifier
                             .focusRequester(tabRowFocusRequester)
+                            .focusRestorer()
                             .padding(paddingValues)
                             .fillMaxWidth(),
                 )
@@ -193,7 +205,10 @@ fun SeriesOverviewContent(
                                 modifier =
                                     Modifier
                                         .focusRestorer(firstItemFocusRequester)
-                                        .focusRequester(episodeRowFocusRequester),
+                                        .focusRequester(episodeRowFocusRequester)
+                                        .onFocusChanged {
+                                            cardRowHasFocus = it.hasFocus
+                                        },
                             ) {
                                 itemsIndexed(eps.episodes) { episodeIndex, episode ->
                                     val interactionSource = remember { MutableInteractionSource() }
@@ -216,10 +231,8 @@ fun SeriesOverviewContent(
                                                 ?.data
                                                 ?.primaryImageAspectRatio
                                                 ?.toFloat()
-                                                ?.coerceAtLeast(
-                                                    episode.data.aspectRatioFloat ?: (4f / 3f),
-                                                )
-                                                ?: (16f / 9), // TODO some episode images don't match the file's aspect ratio
+                                                ?.coerceAtLeast(AspectRatios.FOUR_THREE)
+                                                ?: (AspectRatios.WIDE),
                                         cornerText = cornerText,
                                         played = episode?.data?.userData?.played ?: false,
                                         playPercent =
@@ -234,10 +247,18 @@ fun SeriesOverviewContent(
                                             }
                                         },
                                         modifier =
-                                            Modifier.ifElse(
-                                                episodeIndex == position.episodeRowIndex,
-                                                Modifier.focusRequester(firstItemFocusRequester),
-                                            ),
+                                            Modifier
+                                                .ifElse(
+                                                    episodeIndex == position.episodeRowIndex,
+                                                    Modifier.focusRequester(firstItemFocusRequester),
+                                                ).ifElse(
+                                                    episodeIndex != position.episodeRowIndex,
+                                                    Modifier
+                                                        .background(
+                                                            Color.Black,
+                                                            shape = RoundedCornerShape(8.dp),
+                                                        ).alpha(dimming),
+                                                ),
                                         interactionSource = interactionSource,
                                         cardHeight = 120.dp,
                                     )

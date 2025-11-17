@@ -4,29 +4,29 @@ import android.content.Context
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.ChosenStreams
+import com.github.damontecres.wholphin.data.ExtrasItem
 import com.github.damontecres.wholphin.data.ItemPlaybackRepository
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.Chapter
 import com.github.damontecres.wholphin.data.model.ItemPlayback
-import com.github.damontecres.wholphin.data.model.LocalTrailer
 import com.github.damontecres.wholphin.data.model.Person
-import com.github.damontecres.wholphin.data.model.RemoteTrailer
 import com.github.damontecres.wholphin.data.model.Trailer
 import com.github.damontecres.wholphin.preferences.ThemeSongVolume
+import com.github.damontecres.wholphin.services.ExtrasService
+import com.github.damontecres.wholphin.services.FavoriteWatchManager
+import com.github.damontecres.wholphin.services.NavigationManager
+import com.github.damontecres.wholphin.services.PeopleFavorites
+import com.github.damontecres.wholphin.services.ThemeSongPlayer
+import com.github.damontecres.wholphin.services.TrailerService
 import com.github.damontecres.wholphin.ui.SlimItemFields
 import com.github.damontecres.wholphin.ui.launchIO
-import com.github.damontecres.wholphin.ui.letNotEmpty
 import com.github.damontecres.wholphin.ui.nav.Destination
-import com.github.damontecres.wholphin.ui.nav.NavigationManager
 import com.github.damontecres.wholphin.ui.setValueOnMain
 import com.github.damontecres.wholphin.util.ExceptionHandler
-import com.github.damontecres.wholphin.util.FavoriteWatchManager
 import com.github.damontecres.wholphin.util.LoadingExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
-import com.github.damontecres.wholphin.util.ThemeSongPlayer
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
@@ -56,6 +56,9 @@ class MovieViewModel
         val itemPlaybackRepository: ItemPlaybackRepository,
         private val themeSongPlayer: ThemeSongPlayer,
         private val favoriteWatchManager: FavoriteWatchManager,
+        private val peopleFavorites: PeopleFavorites,
+        private val trailerService: TrailerService,
+        private val extrasService: ExtrasService,
         @Assisted val itemId: UUID,
     ) : ViewModel() {
         @AssistedFactory
@@ -68,6 +71,7 @@ class MovieViewModel
         val trailers = MutableLiveData<List<Trailer>>(listOf())
         val people = MutableLiveData<List<Person>>(listOf())
         val chapters = MutableLiveData<List<Chapter>>(listOf())
+        val extras = MutableLiveData<List<ExtrasItem>>(listOf())
         val similar = MutableLiveData<List<BaseItem>>()
         val chosenStreams = MutableLiveData<ChosenStreams?>(null)
 
@@ -107,39 +111,21 @@ class MovieViewModel
                     loading.value = LoadingState.Success
                 }
                 viewModelScope.launchIO {
-                    val remoteTrailers =
-                        item.data.remoteTrailers
-                            ?.mapNotNull { t ->
-                                t.url?.let { url ->
-                                    val name =
-                                        t.name
-                                            // TODO would be nice to clean up the trailer name
-//                                                ?.replace(item.name ?: "", "")
-//                                                ?.removePrefix(" - ")
-                                            ?: context.getString(R.string.trailer)
-                                    RemoteTrailer(name, url)
-                                }
-                            }.orEmpty()
-                            .sortedBy { it.name }
-                    val localTrailerCount = item.data.localTrailerCount ?: 0
-                    val localTrailers =
-                        if (localTrailerCount > 0) {
-                            api.userLibraryApi.getLocalTrailers(itemId).content.map {
-                                LocalTrailer(BaseItem.Companion.from(it, api))
-                            }
-                        } else {
-                            listOf()
-                        }
+                    val trailers = trailerService.getTrailers(item)
                     withContext(Dispatchers.Main) {
-                        this@MovieViewModel.trailers.value = localTrailers + remoteTrailers
+                        this@MovieViewModel.trailers.value = trailers
                     }
                 }
+                viewModelScope.launchIO {
+                    val people = peopleFavorites.getPeopleFor(item)
+                    this@MovieViewModel.people.setValueOnMain(people)
+                }
+                viewModelScope.launchIO {
+                    val extras = extrasService.getExtras(item.id)
+                    this@MovieViewModel.extras.setValueOnMain(extras)
+                }
+
                 withContext(Dispatchers.Main) {
-                    people.value =
-                        item.data.people
-                            ?.letNotEmpty { people ->
-                                people.map { Person.fromDto(it, api) }
-                            }.orEmpty()
                     chapters.value = Chapter.fromDto(item.data, api)
                 }
                 if (!similar.isInitialized) {
@@ -171,7 +157,14 @@ class MovieViewModel
             favorite: Boolean,
         ) = viewModelScope.launch(ExceptionHandler() + Dispatchers.IO) {
             favoriteWatchManager.setFavorite(itemId, favorite)
+            val item = item.value
             fetchAndSetItem()
+            if (item != null && itemId != item.id) {
+                viewModelScope.launchIO {
+                    val people = peopleFavorites.getPeopleFor(item)
+                    this@MovieViewModel.people.setValueOnMain(people)
+                }
+            }
         }
 
         fun savePlayVersion(

@@ -16,10 +16,10 @@ import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.ui.components.DotSeparatedRow
 import com.github.damontecres.wholphin.ui.components.OverviewText
 import com.github.damontecres.wholphin.ui.components.SimpleStarRating
+import com.github.damontecres.wholphin.ui.formatDateTime
 import com.github.damontecres.wholphin.ui.roundMinutes
+import com.github.damontecres.wholphin.ui.seasonEpisode
 import com.github.damontecres.wholphin.ui.timeRemaining
-import com.github.damontecres.wholphin.util.formatDateTime
-import com.github.damontecres.wholphin.util.seasonEpisode
 import org.jellyfin.sdk.model.extensions.ticks
 
 @Composable

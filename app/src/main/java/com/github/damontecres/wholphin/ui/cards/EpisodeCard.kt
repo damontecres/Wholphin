@@ -30,8 +30,9 @@ import androidx.tv.material3.CardDefaults
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.ui.AppColors
+import com.github.damontecres.wholphin.ui.AspectRatios
 import com.github.damontecres.wholphin.ui.enableMarquee
-import com.github.damontecres.wholphin.util.seasonEpisode
+import com.github.damontecres.wholphin.ui.seasonEpisode
 import kotlinx.coroutines.delay
 
 @Composable
@@ -63,7 +64,7 @@ fun EpisodeCard(
     } else {
         focusedAfterDelay = false
     }
-    val aspectRatio = dto?.primaryImageAspectRatio?.toFloat() ?: (2f / 3f)
+    val aspectRatio = dto?.primaryImageAspectRatio?.toFloat() ?: AspectRatios.TALL
     val width = imageHeight * aspectRatio
     val height = imageWidth * (1f / aspectRatio)
     Column(
@@ -105,7 +106,10 @@ fun EpisodeCard(
                     modifier =
                         Modifier
                             .align(Alignment.TopEnd)
-                            .background(AppColors.TransparentBlack50, shape = RoundedCornerShape(8.dp)),
+                            .background(
+                                AppColors.TransparentBlack50,
+                                shape = RoundedCornerShape(8.dp),
+                            ),
                 ) {
                     Text(
                         text = dto?.seasonEpisode ?: "",
@@ -116,7 +120,10 @@ fun EpisodeCard(
         }
         Column(
             verticalArrangement = Arrangement.spacedBy(0.dp),
-            modifier = Modifier.padding(bottom = spaceBelow).fillMaxWidth(),
+            modifier =
+                Modifier
+                    .padding(bottom = spaceBelow)
+                    .fillMaxWidth(),
         ) {
             Text(
                 text = dto?.seriesName ?: "",

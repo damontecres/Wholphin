@@ -46,6 +46,7 @@ class AppPreferencesSerializer
                                 passOutProtectionMs =
                                     AppPreference.PassOutProtection.defaultValue.hours.inWholeMilliseconds
                                 showNextUpWhen = AppPreference.ShowNextUpTiming.defaultValue
+                                playerBackend = AppPreference.PlayerBackendPref.defaultValue
 
                                 overrides =
                                     PlaybackOverrides
@@ -57,6 +58,14 @@ class AppPreferencesSerializer
                                             directPlayPgs = AppPreference.DirectPlayPgs.defaultValue
                                             mediaExtensionsEnabled =
                                                 AppPreference.FfmpegPreference.defaultValue
+                                        }.build()
+
+                                mpvOptions =
+                                    MpvOptions
+                                        .newBuilder()
+                                        .apply {
+                                            enableHardwareDecoding =
+                                                AppPreference.MpvHardwareDecoding.defaultValue
                                         }.build()
                             }.build()
                     homePagePreferences =
@@ -110,6 +119,11 @@ inline fun AppPreferences.updatePlaybackPreferences(block: PlaybackPreferences.B
 inline fun AppPreferences.updatePlaybackOverrides(block: PlaybackOverrides.Builder.() -> Unit): AppPreferences =
     updatePlaybackPreferences {
         overrides = overrides.toBuilder().apply(block).build()
+    }
+
+inline fun AppPreferences.updateMpvOptions(block: MpvOptions.Builder.() -> Unit): AppPreferences =
+    updatePlaybackPreferences {
+        mpvOptions = mpvOptions.toBuilder().apply(block).build()
     }
 
 inline fun AppPreferences.updateHomePagePreferences(block: HomePagePreferences.Builder.() -> Unit): AppPreferences =

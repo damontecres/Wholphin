@@ -9,9 +9,9 @@ import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.JellyfinServerDao
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.JellyfinServer
+import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.nav.Destination
-import com.github.damontecres.wholphin.ui.nav.NavigationManager
 import com.github.damontecres.wholphin.ui.showToast
 import com.github.damontecres.wholphin.util.LoadingState
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -50,10 +50,6 @@ class SwitchServerViewModel
 
         fun clearAddServerState() {
             addServerState.value = LoadingState.Pending
-        }
-
-        init {
-            init()
         }
 
         fun init() {

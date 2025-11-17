@@ -2,7 +2,7 @@ package com.github.damontecres.wholphin.data.model
 
 import com.github.damontecres.wholphin.ui.detail.series.SeasonEpisodeIds
 import com.github.damontecres.wholphin.ui.nav.Destination
-import com.github.damontecres.wholphin.util.seasonEpisode
+import com.github.damontecres.wholphin.ui.seasonEpisode
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import org.jellyfin.sdk.api.client.ApiClient
@@ -18,6 +18,7 @@ data class BaseItem(
     val data: BaseItemDto,
     val imageUrl: String?,
     val backdropImageUrl: String? = null,
+    val logoImageUrl: String? = null,
 ) {
     val id get() = data.id
 
@@ -109,10 +110,22 @@ data class BaseItem(
                 } else {
                     api.imageApi.getItemImageUrl(dto.id, ImageType.PRIMARY)
                 }
+            val logoImageUrl =
+                if (dto.type == BaseItemKind.EPISODE || dto.type == BaseItemKind.SEASON) {
+                    val seriesId = dto.seriesId
+                    if (seriesId != null) {
+                        api.imageApi.getItemImageUrl(seriesId, ImageType.LOGO)
+                    } else {
+                        api.imageApi.getItemImageUrl(dto.id, ImageType.LOGO)
+                    }
+                } else {
+                    api.imageApi.getItemImageUrl(dto.id, ImageType.LOGO)
+                }
             return BaseItem(
                 dto,
                 primaryImageUrl,
                 backdropImageUrl,
+                logoImageUrl,
             )
         }
     }

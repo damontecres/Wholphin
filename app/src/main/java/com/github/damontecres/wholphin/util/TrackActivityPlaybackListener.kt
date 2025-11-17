@@ -4,10 +4,10 @@ import androidx.annotation.OptIn
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import com.github.damontecres.wholphin.data.model.ItemPlayback
+import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.playback.CurrentPlayback
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.playStateApi
@@ -49,7 +49,7 @@ class TrackActivityPlaybackListener(
     private var initialized = false
 
     fun init() {
-        coroutineScope.launch(Dispatchers.IO + ExceptionHandler()) {
+        launch("reportPlaybackStart") {
             Timber.v("reportPlaybackStart for ${itemPlayback.itemId}")
             api.playStateApi.reportPlaybackStart(
                 PlaybackStartInfo(
@@ -77,7 +77,7 @@ class TrackActivityPlaybackListener(
         task.cancel()
         TIMER.purge()
         val position = player.currentPosition.milliseconds
-        coroutineScope.launch(Dispatchers.IO + ExceptionHandler()) {
+        launch("reportPlaybackStopped") {
             Timber.v("reportPlaybackStopped for ${itemPlayback.itemId} at $position")
             api.playStateApi.reportPlaybackStopped(
                 PlaybackStopInfo(
@@ -107,7 +107,7 @@ class TrackActivityPlaybackListener(
     }
 
     private fun saveActivity(position: Long) {
-        coroutineScope.launch(Dispatchers.IO + ExceptionHandler()) {
+        launch("saveActivity") {
             val calcPosition =
                 withContext(Dispatchers.Main) {
                     (if (position >= 0) position else player.currentPosition)
@@ -131,6 +131,19 @@ class TrackActivityPlaybackListener(
                         liveStreamId = playback.liveStreamId,
                     ),
                 )
+            }
+        }
+    }
+
+    private fun launch(
+        name: String,
+        block: suspend CoroutineScope.() -> Unit,
+    ) {
+        coroutineScope.launchIO {
+            try {
+                block.invoke(this)
+            } catch (ex: Exception) {
+                Timber.w(ex, "Exception during %s for %s", name, itemPlayback.itemId)
             }
         }
     }

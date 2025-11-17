@@ -2,6 +2,7 @@
 
 package com.github.damontecres.wholphin.ui.nav
 
+import androidx.annotation.StringRes
 import androidx.navigation3.runtime.NavKey
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.GetItemsFilter
@@ -88,6 +89,13 @@ sealed class Destination(
         val itemId: UUID,
         val filter: GetItemsFilter,
         val recursive: Boolean,
+    ) : Destination(false)
+
+    @Serializable
+    data class ItemGrid(
+        val title: String?,
+        @param:StringRes val titleRes: Int?,
+        val itemIds: List<UUID>,
     ) : Destination(false)
 
     @Serializable

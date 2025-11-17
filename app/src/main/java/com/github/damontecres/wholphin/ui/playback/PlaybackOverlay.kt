@@ -45,19 +45,22 @@ import androidx.compose.ui.unit.sp
 import androidx.media3.common.Player
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
+import coil3.compose.AsyncImage
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.Chapter
 import com.github.damontecres.wholphin.data.model.ItemPlayback
 import com.github.damontecres.wholphin.data.model.Playlist
+import com.github.damontecres.wholphin.data.model.aspectRatioFloat
 import com.github.damontecres.wholphin.ui.AppColors
+import com.github.damontecres.wholphin.ui.AspectRatios
+import com.github.damontecres.wholphin.ui.TimeFormatter
 import com.github.damontecres.wholphin.ui.cards.ChapterCard
 import com.github.damontecres.wholphin.ui.cards.SeasonCard
 import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.letNotEmpty
 import com.github.damontecres.wholphin.ui.tryRequestFocus
-import com.github.damontecres.wholphin.util.TimeFormatter
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import org.jellyfin.sdk.model.api.MediaSegmentDto
@@ -75,6 +78,7 @@ private val subtitleTextSize = 18.sp
  */
 @Composable
 fun PlaybackOverlay(
+    item: BaseItem?,
     title: String?,
     subtitleStreams: List<SubtitleStream>,
     chapters: List<Chapter>,
@@ -236,6 +240,7 @@ fun PlaybackOverlay(
                                 name = chapter.name,
                                 position = chapter.position,
                                 imageUrl = chapter.imageUrl,
+                                aspectRatio = item?.data?.aspectRatioFloat ?: AspectRatios.WIDE,
                                 onClick = {
                                     playerControls.seekTo(chapter.position.inWholeMilliseconds)
                                     controllerViewState.hideControls()
@@ -286,6 +291,8 @@ fun PlaybackOverlay(
                                     } else {
                                         state = OverlayViewState.CONTROLLER
                                     }
+                                    true
+                                } else if (isDown(e)) {
                                     true
                                 } else {
                                     false
@@ -390,6 +397,21 @@ fun PlaybackOverlay(
             }
         }
         AnimatedVisibility(
+            !showDebugInfo && item?.logoImageUrl.isNotNullOrBlank() && controllerViewState.controlsVisible,
+            modifier =
+                Modifier
+                    .align(Alignment.TopStart),
+        ) {
+            AsyncImage(
+                model = item?.logoImageUrl,
+                contentDescription = "Logo",
+                modifier =
+                    Modifier
+                        .fillMaxWidth(.33f)
+                        .padding(32.dp),
+            )
+        }
+        AnimatedVisibility(
             showDebugInfo && controllerViewState.controlsVisible,
             modifier =
                 Modifier
@@ -403,6 +425,12 @@ fun PlaybackOverlay(
                         .padding(16.dp)
                         .background(AppColors.TransparentBlack50),
             ) {
+                Text(
+                    text = "Backend: ${currentPlayback?.backend}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.padding(start = 8.dp),
+                )
                 Text(
                     text = "Play method: ${currentPlayback?.playMethod?.serialName}",
                     style = MaterialTheme.typography.bodySmall,

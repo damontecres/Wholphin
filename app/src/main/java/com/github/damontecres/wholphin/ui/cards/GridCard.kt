@@ -17,6 +17,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -25,6 +26,7 @@ import androidx.tv.material3.CardDefaults
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.data.model.BaseItem
+import com.github.damontecres.wholphin.ui.AspectRatios
 import com.github.damontecres.wholphin.ui.enableMarquee
 import kotlinx.coroutines.delay
 
@@ -38,7 +40,8 @@ fun GridCard(
     onLongClick: () -> Unit,
     modifier: Modifier = Modifier,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
-    imageAspectRatio: Float = 2f / 3f,
+    imageAspectRatio: Float = AspectRatios.TALL,
+    imageContentScale: ContentScale = ContentScale.Fit,
 ) {
     val dto = item?.data
     val focused by interactionSource.collectIsFocusedAsState()
@@ -84,6 +87,7 @@ fun GridCard(
                 unwatchedCount = dto?.userData?.unplayedItemCount ?: -1,
                 watchedPercent = dto?.userData?.playedPercentage,
                 useFallbackText = false,
+                contentScale = imageContentScale,
                 modifier =
                     Modifier
                         .fillMaxWidth()

@@ -53,6 +53,7 @@ fun SwitchServerContent(
     var showAddServer by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
+        viewModel.init()
         viewModel.discoverServers()
     }
 

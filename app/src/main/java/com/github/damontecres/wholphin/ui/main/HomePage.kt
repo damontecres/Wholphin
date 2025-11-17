@@ -30,6 +30,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -43,10 +44,14 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import coil3.compose.AsyncImage
+import coil3.request.ImageRequest
+import coil3.request.transitionFactory
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.preferences.UserPreferences
+import com.github.damontecres.wholphin.ui.AspectRatios
 import com.github.damontecres.wholphin.ui.Cards
+import com.github.damontecres.wholphin.ui.CrossFadeFactory
 import com.github.damontecres.wholphin.ui.cards.BannerCard
 import com.github.damontecres.wholphin.ui.cards.ItemRow
 import com.github.damontecres.wholphin.ui.components.CircularProgress
@@ -62,20 +67,21 @@ import com.github.damontecres.wholphin.ui.detail.MoreDialogActions
 import com.github.damontecres.wholphin.ui.detail.PlaylistDialog
 import com.github.damontecres.wholphin.ui.detail.PlaylistLoadingState
 import com.github.damontecres.wholphin.ui.detail.buildMoreDialogItemsForHome
+import com.github.damontecres.wholphin.ui.formatDateTime
 import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.roundMinutes
+import com.github.damontecres.wholphin.ui.seasonEpisode
 import com.github.damontecres.wholphin.ui.timeRemaining
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.HomeRowLoadingState
 import com.github.damontecres.wholphin.util.LoadingState
-import com.github.damontecres.wholphin.util.formatDateTime
-import com.github.damontecres.wholphin.util.seasonEpisode
 import kotlinx.coroutines.delay
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.MediaType
 import org.jellyfin.sdk.model.extensions.ticks
 import java.util.UUID
+import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
 fun HomePage(
@@ -196,9 +202,22 @@ fun HomePageContent(
     onFocusPosition: ((RowColumn) -> Unit)? = null,
     loadingState: LoadingState? = null,
 ) {
+    val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    val firstRow =
+        remember {
+            homeRows
+                .indexOfFirst {
+                    when (it) {
+                        is HomeRowLoadingState.Error -> false
+                        is HomeRowLoadingState.Loading -> true
+                        is HomeRowLoadingState.Pending -> true
+                        is HomeRowLoadingState.Success -> it.items.isNotEmpty()
+                    }
+                }.coerceAtLeast(0)
+        }
     var position by rememberSaveable(stateSaver = RowColumnSaver) {
-        mutableStateOf(RowColumn(0, 0))
+        mutableStateOf(RowColumn(firstRow, 0))
     }
     var focusedItem =
         position.let {
@@ -208,47 +227,64 @@ fun HomePageContent(
     val listState = rememberLazyListState()
     val focusRequester = remember { FocusRequester() }
     val positionFocusRequester = remember { FocusRequester() }
-    LaunchedEffect(Unit) {
-        positionFocusRequester.tryRequestFocus()
-        // Hacky, but mostly works
-        delay(50)
-        listState.animateScrollToItem(position.row)
+    var focused by remember { mutableStateOf(false) }
+    LaunchedEffect(homeRows) {
+        if (!focused) {
+            homeRows
+                .indexOfFirst { it is HomeRowLoadingState.Success && it.items.isNotEmpty() }
+                .takeIf { it >= 0 }
+                ?.let {
+                    positionFocusRequester.tryRequestFocus()
+                    delay(50)
+                    listState.animateScrollToItem(position.row)
+                    focused = true
+                }
+        }
     }
     LaunchedEffect(position) {
         listState.animateScrollToItem(position.row)
     }
+    var backdropImageUrl by remember { mutableStateOf<String?>(null) }
+    LaunchedEffect(focusedItem) {
+        backdropImageUrl = null
+        delay(150)
+        backdropImageUrl = focusedItem?.backdropImageUrl
+    }
     Box(modifier = modifier) {
-        if (focusedItem?.backdropImageUrl.isNotNullOrBlank()) {
-            val gradientColor = MaterialTheme.colorScheme.background
-            AsyncImage(
-                model = focusedItem?.backdropImageUrl,
-                contentDescription = null,
-                contentScale = ContentScale.Fit,
-                alignment = Alignment.TopEnd,
-                modifier =
-                    Modifier
-                        .fillMaxHeight(.7f)
-                        .fillMaxWidth(.7f)
-                        .alpha(.75f)
-                        .align(Alignment.TopEnd)
-                        .drawWithContent {
-                            drawContent()
-                            drawRect(
-                                Brush.verticalGradient(
-                                    colors = listOf(Color.Transparent, gradientColor),
-                                    startY = size.height * .33f,
-                                ),
-                            )
-                            drawRect(
-                                Brush.horizontalGradient(
-                                    colors = listOf(gradientColor, Color.Transparent),
-                                    startX = 0f,
-                                    endX = size.width * .5f,
-                                ),
-                            )
-                        },
-            )
-        }
+        val gradientColor = MaterialTheme.colorScheme.background
+        AsyncImage(
+            model =
+                ImageRequest
+                    .Builder(context)
+                    .data(backdropImageUrl)
+                    .transitionFactory(CrossFadeFactory(250.milliseconds))
+                    .build(),
+            contentDescription = null,
+            contentScale = ContentScale.Fit,
+            alignment = Alignment.TopEnd,
+            modifier =
+                Modifier
+                    .fillMaxHeight(.7f)
+                    .fillMaxWidth(.7f)
+                    .alpha(.75f)
+                    .align(Alignment.TopEnd)
+                    .drawWithContent {
+                        drawContent()
+                        drawRect(
+                            Brush.verticalGradient(
+                                colors = listOf(Color.Transparent, gradientColor),
+                                startY = size.height * .33f,
+                            ),
+                        )
+                        drawRect(
+                            Brush.horizontalGradient(
+                                colors = listOf(gradientColor, Color.Transparent),
+                                startX = 0f,
+                                endX = size.width * .5f,
+                            ),
+                        )
+                    },
+        )
 
         Column(modifier = Modifier.fillMaxSize()) {
             HomePageHeader(
@@ -269,7 +305,7 @@ fun HomePageContent(
                         top = 0.dp,
                         bottom = Cards.height2x3,
                     ),
-                modifier = Modifier,
+                modifier = Modifier.focusRestorer(),
             ) {
                 itemsIndexed(homeRows) { rowIndex, row ->
                     when (val r = row) {
@@ -333,11 +369,10 @@ fun HomePageContent(
                                             .fillMaxWidth()
                                             .animateItem(),
                                     cardContent = { index, item, cardModifier, onClick, onLongClick ->
-                                        // TODO better aspect ration handling?
                                         BannerCard(
                                             name = item?.data?.seriesName ?: item?.name,
                                             imageUrl = item?.imageUrl,
-                                            aspectRatio = (2f / 3f),
+                                            aspectRatio = AspectRatios.TALL,
                                             cornerText =
                                                 item?.data?.indexNumber?.let { "E$it" }
                                                     ?: item?.data?.childCount?.let { if (it > 0) it.toString() else null },
@@ -360,9 +395,15 @@ fun HomePageContent(
                                                         ),
                                                     ).onFocusChanged {
                                                         if (it.isFocused) {
+                                                            val nonEmptyRowBefore =
+                                                                homeRows
+                                                                    .subList(0, rowIndex)
+                                                                    .count {
+                                                                        it is HomeRowLoadingState.Success && it.items.isEmpty()
+                                                                    }
                                                             onFocusPosition?.invoke(
                                                                 RowColumn(
-                                                                    rowIndex,
+                                                                    rowIndex - nonEmptyRowBefore,
                                                                     index,
                                                                 ),
                                                             )

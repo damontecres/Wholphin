@@ -5,30 +5,34 @@ import android.widget.Toast
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import com.github.damontecres.wholphin.data.ChosenStreams
+import com.github.damontecres.wholphin.data.ExtrasItem
 import com.github.damontecres.wholphin.data.ItemPlaybackRepository
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.ItemPlayback
 import com.github.damontecres.wholphin.data.model.Person
+import com.github.damontecres.wholphin.data.model.Trailer
 import com.github.damontecres.wholphin.preferences.ThemeSongVolume
 import com.github.damontecres.wholphin.preferences.UserPreferences
+import com.github.damontecres.wholphin.services.ExtrasService
+import com.github.damontecres.wholphin.services.FavoriteWatchManager
+import com.github.damontecres.wholphin.services.NavigationManager
+import com.github.damontecres.wholphin.services.PeopleFavorites
+import com.github.damontecres.wholphin.services.ThemeSongPlayer
+import com.github.damontecres.wholphin.services.TrailerService
 import com.github.damontecres.wholphin.ui.SlimItemFields
 import com.github.damontecres.wholphin.ui.detail.ItemViewModel
 import com.github.damontecres.wholphin.ui.equalsNotNull
 import com.github.damontecres.wholphin.ui.launchIO
-import com.github.damontecres.wholphin.ui.letNotEmpty
 import com.github.damontecres.wholphin.ui.nav.Destination
-import com.github.damontecres.wholphin.ui.nav.NavigationManager
 import com.github.damontecres.wholphin.ui.setValueOnMain
 import com.github.damontecres.wholphin.ui.showToast
 import com.github.damontecres.wholphin.util.ApiRequestPager
 import com.github.damontecres.wholphin.util.ExceptionHandler
-import com.github.damontecres.wholphin.util.FavoriteWatchManager
 import com.github.damontecres.wholphin.util.GetEpisodesRequestHandler
 import com.github.damontecres.wholphin.util.GetItemsRequestHandler
 import com.github.damontecres.wholphin.util.LoadingExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
-import com.github.damontecres.wholphin.util.ThemeSongPlayer
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -61,20 +65,26 @@ class SeriesViewModel
         private val itemPlaybackRepository: ItemPlaybackRepository,
         private val themeSongPlayer: ThemeSongPlayer,
         private val favoriteWatchManager: FavoriteWatchManager,
+        private val peopleFavorites: PeopleFavorites,
+        private val trailerService: TrailerService,
+        private val extrasService: ExtrasService,
     ) : ItemViewModel(api) {
         private lateinit var seriesId: UUID
         private lateinit var prefs: UserPreferences
         val loading = MutableLiveData<LoadingState>(LoadingState.Loading)
         val seasons = MutableLiveData<List<BaseItem>>(listOf())
         val episodes = MutableLiveData<EpisodeList>(EpisodeList.Loading)
+
+        val trailers = MutableLiveData<List<Trailer>>(listOf())
+        val extras = MutableLiveData<List<ExtrasItem>>(listOf())
         val people = MutableLiveData<List<Person>>(listOf())
         val similar = MutableLiveData<List<BaseItem>>()
 
         fun init(
             prefs: UserPreferences,
             itemId: UUID,
-            potential: BaseItem?,
             seasonEpisodeIds: SeasonEpisodeIds?,
+            loadAdditionalDetails: Boolean,
         ) {
             this.seriesId = itemId
             this.prefs = prefs
@@ -109,26 +119,37 @@ class SeriesViewModel
                     this@SeriesViewModel.seasons.value = seasons
                     episodes.value = episodeInfo
                     loading.value = LoadingState.Success
-                    people.value =
-                        item.data.people
-                            ?.letNotEmpty { people ->
-                                people.map { Person.fromDto(it, api) }
-                            }.orEmpty()
                 }
-                if (!similar.isInitialized) {
+                if (loadAdditionalDetails) {
                     viewModelScope.launchIO {
-                        val similar =
-                            api.libraryApi
-                                .getSimilarItems(
-                                    GetSimilarItemsRequest(
-                                        userId = serverRepository.currentUser.value?.id,
-                                        itemId = itemId,
-                                        fields = SlimItemFields,
-                                        limit = 25,
-                                    ),
-                                ).content.items
-                                .map { BaseItem.from(it, api, true) }
-                        this@SeriesViewModel.similar.setValueOnMain(similar)
+                        val trailers = trailerService.getTrailers(item)
+                        withContext(Dispatchers.Main) {
+                            this@SeriesViewModel.trailers.value = trailers
+                        }
+                    }
+                    viewModelScope.launchIO {
+                        val people = peopleFavorites.getPeopleFor(item)
+                        this@SeriesViewModel.people.setValueOnMain(people)
+                    }
+                    viewModelScope.launchIO {
+                        val extras = extrasService.getExtras(item.id)
+                        this@SeriesViewModel.extras.setValueOnMain(extras)
+                    }
+                    if (!similar.isInitialized) {
+                        viewModelScope.launchIO {
+                            val similar =
+                                api.libraryApi
+                                    .getSimilarItems(
+                                        GetSimilarItemsRequest(
+                                            userId = serverRepository.currentUser.value?.id,
+                                            itemId = itemId,
+                                            fields = SlimItemFields,
+                                            limit = 25,
+                                        ),
+                                    ).content.items
+                                    .map { BaseItem.from(it, api, true) }
+                            this@SeriesViewModel.similar.setValueOnMain(similar)
+                        }
                     }
                 }
             }
@@ -255,7 +276,11 @@ class SeriesViewModel
             if (listIndex != null) {
                 refreshEpisode(itemId, listIndex)
             } else {
-                fetchItem(seriesId)
+                val item = fetchItem(seriesId)
+                viewModelScope.launchIO {
+                    val people = peopleFavorites.getPeopleFor(item)
+                    this@SeriesViewModel.people.setValueOnMain(people)
+                }
             }
         }
 
