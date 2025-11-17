@@ -1,0 +1,11 @@
+{
+  "uniqueId": "org.freetype",
+  "developers": [],
+  "artifactVersion": "2.14.1",
+  "description": "FreeType is a freely available software library to render fonts",
+  "name": "freetype",
+  "licenses": [
+    "gpl-2.0"
+  ],
+  "website": "https://freetype.org"
+}

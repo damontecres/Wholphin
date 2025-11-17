@@ -274,7 +274,7 @@ fun SeekBar(
             modifier = Modifier.fillMaxWidth(),
             interactionSource = interactionSource,
             enabled = isEnabled,
-            durationMs = player.contentDuration,
+            durationMs = player.duration,
             seekBack = seekBack,
             seekForward = seekForward,
         )

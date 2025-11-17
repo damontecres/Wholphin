@@ -4,6 +4,8 @@ import android.graphics.Typeface
 import androidx.annotation.OptIn
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.sp
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.ui.CaptionStyleCompat
 import com.github.damontecres.wholphin.R
@@ -17,6 +19,8 @@ import com.github.damontecres.wholphin.preferences.SubtitlePreferences
 import com.github.damontecres.wholphin.preferences.updateSubtitlePreferences
 import com.github.damontecres.wholphin.ui.indexOfFirstOrNull
 import com.github.damontecres.wholphin.ui.preferences.PreferenceGroup
+import com.github.damontecres.wholphin.util.mpv.MPVLib
+import com.github.damontecres.wholphin.util.mpv.setPropertyColor
 
 object SubtitleSettings {
     val FontSize =
@@ -244,5 +248,57 @@ object SubtitleSettings {
                 else -> Typeface.DEFAULT
             },
         )
+    }
+
+    fun SubtitlePreferences.applyToMpv(density: Density) {
+        val fo = (fontOpacity / 100.0 * 255).toInt().shl(24)
+        val fc = Color(fo.or(fontColor))
+        val bg = Color((backgroundOpacity / 100.0 * 255).toInt().shl(24).or(backgroundColor))
+        val edge = Color(fo.or(edgeColor))
+
+        // TODO weird, but seems to get the size to be very close to matching sizes between renderers
+        val fontSizePx = with(density) { fontSize.sp.toPx() * .8 }.toInt()
+        MPVLib.setPropertyInt("sub-font-size", fontSizePx)
+        MPVLib.setPropertyColor("sub-color", fc)
+        MPVLib.setPropertyColor("sub-outline-color", edge)
+
+        when (edgeStyle) {
+            EdgeStyle.EDGE_NONE,
+            EdgeStyle.UNRECOGNIZED,
+            -> {
+                MPVLib.setPropertyInt("sub-shadow-offset", 0)
+                MPVLib.setPropertyDouble("sub-outline-size", 0.0)
+            }
+
+            EdgeStyle.EDGE_SOLID -> {
+                MPVLib.setPropertyInt("sub-shadow-offset", 0)
+                MPVLib.setPropertyDouble("sub-outline-size", 1.15)
+            }
+
+            EdgeStyle.EDGE_SHADOW -> {
+                MPVLib.setPropertyInt("sub-shadow-offset", 4)
+                MPVLib.setPropertyDouble("sub-outline-size", 0.0)
+            }
+        }
+
+//        if (fontBold) {
+//            MPVLib.setPropertyString("sub-font", "Roboto Bold")
+//        } else {
+//            MPVLib.setPropertyString("sub-font", "Roboto Regular")
+//        }
+        MPVLib.setPropertyBoolean("sub-bold", fontBold)
+        MPVLib.setPropertyBoolean("sub-italic", fontItalic)
+
+        MPVLib.setPropertyColor("sub-back-color", bg)
+        val borderStyle =
+            when (backgroundStyle) {
+                BackgroundStyle.UNRECOGNIZED,
+                BackgroundStyle.BG_NONE,
+                -> "outline-and-shadow"
+
+                BackgroundStyle.BG_WRAP -> "opaque-box"
+                BackgroundStyle.BG_BOXED -> "background-box"
+            }
+        MPVLib.setPropertyString("sub-border-style", borderStyle)
     }
 }
