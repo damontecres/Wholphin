@@ -18,6 +18,7 @@ data class BaseItem(
     val data: BaseItemDto,
     val imageUrl: String?,
     val backdropImageUrl: String? = null,
+    val logoImageUrl: String? = null,
 ) {
     val id get() = data.id
 
@@ -109,10 +110,22 @@ data class BaseItem(
                 } else {
                     api.imageApi.getItemImageUrl(dto.id, ImageType.PRIMARY)
                 }
+            val logoImageUrl =
+                if (dto.type == BaseItemKind.EPISODE || dto.type == BaseItemKind.SEASON) {
+                    val seriesId = dto.seriesId
+                    if (seriesId != null) {
+                        api.imageApi.getItemImageUrl(seriesId, ImageType.LOGO)
+                    } else {
+                        api.imageApi.getItemImageUrl(dto.id, ImageType.LOGO)
+                    }
+                } else {
+                    api.imageApi.getItemImageUrl(dto.id, ImageType.LOGO)
+                }
             return BaseItem(
                 dto,
                 primaryImageUrl,
                 backdropImageUrl,
+                logoImageUrl,
             )
         }
     }

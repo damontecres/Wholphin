@@ -102,7 +102,6 @@ fun PlaybackOverlay(
     currentItemPlayback: ItemPlayback,
     audioStreams: List<AudioStream>,
     currentSegment: MediaSegmentDto?,
-    logoImageUrl: String?,
     modifier: Modifier = Modifier,
     subtitle: String? = null,
     trickplayInfo: TrickplayInfo? = null,
@@ -398,13 +397,13 @@ fun PlaybackOverlay(
             }
         }
         AnimatedVisibility(
-            !showDebugInfo && logoImageUrl.isNotNullOrBlank() && controllerViewState.controlsVisible,
+            !showDebugInfo && item?.logoImageUrl.isNotNullOrBlank() && controllerViewState.controlsVisible,
             modifier =
                 Modifier
                     .align(Alignment.TopStart),
         ) {
             AsyncImage(
-                model = logoImageUrl,
+                model = item?.logoImageUrl,
                 contentDescription = "Logo",
                 modifier =
                     Modifier
