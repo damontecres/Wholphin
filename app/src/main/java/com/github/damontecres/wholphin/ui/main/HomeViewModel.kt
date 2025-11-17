@@ -8,21 +8,18 @@ import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.NavDrawerItemRepository
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.BaseItem
-import com.github.damontecres.wholphin.preferences.AppPreference
 import com.github.damontecres.wholphin.preferences.UserPreferences
+import com.github.damontecres.wholphin.services.DatePlayedService
 import com.github.damontecres.wholphin.services.FavoriteWatchManager
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.ui.SlimItemFields
 import com.github.damontecres.wholphin.ui.nav.ServerNavDrawerItem
 import com.github.damontecres.wholphin.ui.setValueOnMain
 import com.github.damontecres.wholphin.util.ExceptionHandler
-import com.github.damontecres.wholphin.util.GetEpisodesRequestHandler
 import com.github.damontecres.wholphin.util.HomeRowLoadingState
 import com.github.damontecres.wholphin.util.LoadingExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
 import com.github.damontecres.wholphin.util.supportItemKinds
-import com.google.common.cache.CacheBuilder
-import com.google.common.cache.CacheLoader
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -30,7 +27,6 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
@@ -43,7 +39,6 @@ import org.jellyfin.sdk.api.client.extensions.userViewsApi
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.CollectionType
 import org.jellyfin.sdk.model.api.UserDto
-import org.jellyfin.sdk.model.api.request.GetEpisodesRequest
 import org.jellyfin.sdk.model.api.request.GetLatestMediaRequest
 import org.jellyfin.sdk.model.api.request.GetNextUpRequest
 import org.jellyfin.sdk.model.api.request.GetResumeItemsRequest
@@ -63,6 +58,7 @@ class HomeViewModel
         val serverRepository: ServerRepository,
         val navDrawerItemRepository: NavDrawerItemRepository,
         private val favoriteWatchManager: FavoriteWatchManager,
+        private val datePlayedService: DatePlayedService,
     ) : ViewModel() {
         val loadingState = MutableLiveData<LoadingState>(LoadingState.Pending)
         val refreshState = MutableLiveData<LoadingState>(LoadingState.Pending)
@@ -70,6 +66,10 @@ class HomeViewModel
         val latestRows = MutableLiveData<List<HomeRowLoadingState>>(listOf())
 
         private lateinit var preferences: UserPreferences
+
+        init {
+            datePlayedService.invalidateAll()
+        }
 
         fun init(preferences: UserPreferences): Job {
             val reload = loadingState.value != LoadingState.Success
@@ -277,35 +277,6 @@ class HomeViewModel
             latestRows.setValueOnMain(rows)
         }
 
-        private val datePlayedCache =
-            CacheBuilder
-                .newBuilder()
-                .maximumSize(AppPreference.HomePageItems.max)
-                .build<SeriesItemId, LocalDateTime?>(
-                    object :
-                        CacheLoader<SeriesItemId, LocalDateTime>() {
-                        override fun load(key: SeriesItemId): LocalDateTime = getLastPlayed(key)
-                    },
-                )
-
-        private fun getLastPlayed(key: SeriesItemId): LocalDateTime {
-            val request =
-                GetEpisodesRequest(
-                    seriesId = key.seriesId,
-                    adjacentTo = key.itemId,
-                    limit = 1,
-                )
-            val result =
-                runBlocking {
-                    GetEpisodesRequestHandler
-                        .execute(
-                            api,
-                            request,
-                        ).content.items
-                }
-            return result.firstOrNull()?.userData?.lastPlayedDate ?: LocalDateTime.MIN
-        }
-
         private suspend fun buildCombined(
             resume: List<BaseItem>,
             nextUp: List<BaseItem>,
@@ -319,8 +290,7 @@ class HomeViewModel
                         semaphore.withPermit {
                             viewModelScope.async {
                                 try {
-//                                    datePlayedCache.get(SeriesItemId(item.data.seriesId!!, item.id))
-                                    getLastPlayed(SeriesItemId(item.data.seriesId!!, item.id))
+                                    datePlayedService.getLastPlayed(item)
                                 } catch (ex: Exception) {
                                     Timber.e(ex, "Error fetching %s", item.id)
                                     null
@@ -369,9 +339,4 @@ val supportedLatestCollectionTypes =
 data class LatestData(
     val title: String,
     val request: GetLatestMediaRequest,
-)
-
-data class SeriesItemId(
-    val seriesId: UUID,
-    val itemId: UUID,
 )
