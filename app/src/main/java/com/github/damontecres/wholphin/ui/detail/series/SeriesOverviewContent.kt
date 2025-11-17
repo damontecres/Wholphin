@@ -93,7 +93,7 @@ fun SeriesOverviewContent(
         (episodes as? EpisodeList.Success)?.episodes?.getOrNull(position.episodeRowIndex)
     var pageHasFocus by remember { mutableStateOf(false) }
     var cardRowHasFocus by remember { mutableStateOf(false) }
-    val dimming by animateFloatAsState(if (pageHasFocus && !cardRowHasFocus) .33f else 1f)
+    val dimming by animateFloatAsState(if (pageHasFocus && !cardRowHasFocus) .4f else 1f)
 
     Box(
         modifier =
