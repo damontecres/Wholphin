@@ -42,6 +42,7 @@ import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.type
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
@@ -91,6 +92,7 @@ fun CardGrid(
             item = item,
             onClick = onClick,
             onLongClick = onLongClick,
+            imageContentScale = ContentScale.FillBounds,
             modifier = mod,
         )
     },

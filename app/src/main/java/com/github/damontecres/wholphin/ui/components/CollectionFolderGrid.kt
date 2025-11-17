@@ -20,9 +20,11 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.MutableLiveData
@@ -41,6 +43,7 @@ import com.github.damontecres.wholphin.services.FavoriteWatchManager
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.ui.OneTimeLaunchedEffect
 import com.github.damontecres.wholphin.ui.SlimItemFields
+import com.github.damontecres.wholphin.ui.cards.GridCard
 import com.github.damontecres.wholphin.ui.data.AddPlaylistViewModel
 import com.github.damontecres.wholphin.ui.data.SortAndDirection
 import com.github.damontecres.wholphin.ui.detail.CardGrid
@@ -310,6 +313,7 @@ fun CollectionFolderGrid(
     initialSortAndDirection: SortAndDirection? = null,
     showTitle: Boolean = true,
     positionCallback: ((columns: Int, position: Int) -> Unit)? = null,
+    params: CollectionFolderGridParameters = CollectionFolderGridParameters(),
 ) = CollectionFolderGrid(
     preferences,
     itemId.toServerString(),
@@ -321,6 +325,7 @@ fun CollectionFolderGrid(
     initialSortAndDirection = initialSortAndDirection,
     showTitle = showTitle,
     positionCallback = positionCallback,
+    params = params,
 )
 
 @Composable
@@ -337,6 +342,7 @@ fun CollectionFolderGrid(
     initialSortAndDirection: SortAndDirection? = null,
     showTitle: Boolean = true,
     positionCallback: ((columns: Int, position: Int) -> Unit)? = null,
+    params: CollectionFolderGridParameters = CollectionFolderGridParameters(),
 ) {
     val context = LocalContext.current
     OneTimeLaunchedEffect {
@@ -376,6 +382,7 @@ fun CollectionFolderGrid(
                     sortOptions = sortOptions,
                     positionCallback = positionCallback,
                     letterPosition = { viewModel.positionOfLetter(it) ?: -1 },
+                    params = params,
                 )
             }
         }
@@ -445,6 +452,7 @@ fun CollectionFolderGridContent(
     modifier: Modifier = Modifier,
     showTitle: Boolean = true,
     positionCallback: ((columns: Int, position: Int) -> Unit)? = null,
+    params: CollectionFolderGridParameters = CollectionFolderGridParameters(),
 ) {
     val title = item?.name ?: item?.data?.collectionType?.name ?: stringResource(R.string.collection)
 
@@ -493,6 +501,9 @@ fun CollectionFolderGridContent(
                 showHeader = position < columns
                 positionCallback?.invoke(columns, position)
             },
+            cardContent = params.cardContent,
+            columns = params.columns,
+            spacing = params.spacing,
         )
     }
 }
@@ -500,4 +511,23 @@ fun CollectionFolderGridContent(
 data class PositionItem(
     val position: Int,
     val item: BaseItem,
+)
+
+data class CollectionFolderGridParameters(
+    val columns: Int = 6,
+    val spacing: Dp = 16.dp,
+    val cardContent: @Composable (
+        item: BaseItem?,
+        onClick: () -> Unit,
+        onLongClick: () -> Unit,
+        mod: Modifier,
+    ) -> Unit = { item, onClick, onLongClick, mod ->
+        GridCard(
+            item = item,
+            onClick = onClick,
+            onLongClick = onLongClick,
+            imageContentScale = ContentScale.FillBounds,
+            modifier = mod,
+        )
+    },
 )

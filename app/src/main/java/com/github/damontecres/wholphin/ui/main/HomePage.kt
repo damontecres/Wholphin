@@ -44,11 +44,14 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import coil3.compose.AsyncImage
+import coil3.request.ImageRequest
+import coil3.request.transitionFactory
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.AspectRatios
 import com.github.damontecres.wholphin.ui.Cards
+import com.github.damontecres.wholphin.ui.CrossFadeFactory
 import com.github.damontecres.wholphin.ui.cards.BannerCard
 import com.github.damontecres.wholphin.ui.cards.ItemRow
 import com.github.damontecres.wholphin.ui.components.CircularProgress
@@ -78,6 +81,7 @@ import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.MediaType
 import org.jellyfin.sdk.model.extensions.ticks
 import java.util.UUID
+import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
 fun HomePage(
@@ -198,6 +202,7 @@ fun HomePageContent(
     onFocusPosition: ((RowColumn) -> Unit)? = null,
     loadingState: LoadingState? = null,
 ) {
+    val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val firstRow =
         remember {
@@ -239,38 +244,47 @@ fun HomePageContent(
     LaunchedEffect(position) {
         listState.animateScrollToItem(position.row)
     }
+    var backdropImageUrl by remember { mutableStateOf<String?>(null) }
+    LaunchedEffect(focusedItem) {
+        backdropImageUrl = null
+        delay(150)
+        backdropImageUrl = focusedItem?.backdropImageUrl
+    }
     Box(modifier = modifier) {
-        if (focusedItem?.backdropImageUrl.isNotNullOrBlank()) {
-            val gradientColor = MaterialTheme.colorScheme.background
-            AsyncImage(
-                model = focusedItem?.backdropImageUrl,
-                contentDescription = null,
-                contentScale = ContentScale.Fit,
-                alignment = Alignment.TopEnd,
-                modifier =
-                    Modifier
-                        .fillMaxHeight(.7f)
-                        .fillMaxWidth(.7f)
-                        .alpha(.75f)
-                        .align(Alignment.TopEnd)
-                        .drawWithContent {
-                            drawContent()
-                            drawRect(
-                                Brush.verticalGradient(
-                                    colors = listOf(Color.Transparent, gradientColor),
-                                    startY = size.height * .33f,
-                                ),
-                            )
-                            drawRect(
-                                Brush.horizontalGradient(
-                                    colors = listOf(gradientColor, Color.Transparent),
-                                    startX = 0f,
-                                    endX = size.width * .5f,
-                                ),
-                            )
-                        },
-            )
-        }
+        val gradientColor = MaterialTheme.colorScheme.background
+        AsyncImage(
+            model =
+                ImageRequest
+                    .Builder(context)
+                    .data(backdropImageUrl)
+                    .transitionFactory(CrossFadeFactory(250.milliseconds))
+                    .build(),
+            contentDescription = null,
+            contentScale = ContentScale.Fit,
+            alignment = Alignment.TopEnd,
+            modifier =
+                Modifier
+                    .fillMaxHeight(.7f)
+                    .fillMaxWidth(.7f)
+                    .alpha(.75f)
+                    .align(Alignment.TopEnd)
+                    .drawWithContent {
+                        drawContent()
+                        drawRect(
+                            Brush.verticalGradient(
+                                colors = listOf(Color.Transparent, gradientColor),
+                                startY = size.height * .33f,
+                            ),
+                        )
+                        drawRect(
+                            Brush.horizontalGradient(
+                                colors = listOf(gradientColor, Color.Transparent),
+                                startX = 0f,
+                                endX = size.width * .5f,
+                            ),
+                        )
+                    },
+        )
 
         Column(modifier = Modifier.fillMaxSize()) {
             HomePageHeader(
