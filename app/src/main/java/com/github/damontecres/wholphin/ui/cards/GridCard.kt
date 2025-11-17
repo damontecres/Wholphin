@@ -17,6 +17,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -40,6 +41,7 @@ fun GridCard(
     modifier: Modifier = Modifier,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
     imageAspectRatio: Float = AspectRatios.TALL,
+    imageContentScale: ContentScale = ContentScale.Fit,
 ) {
     val dto = item?.data
     val focused by interactionSource.collectIsFocusedAsState()
@@ -85,6 +87,7 @@ fun GridCard(
                 unwatchedCount = dto?.userData?.unplayedItemCount ?: -1,
                 watchedPercent = dto?.userData?.playedPercentage,
                 useFallbackText = false,
+                contentScale = imageContentScale,
                 modifier =
                     Modifier
                         .fillMaxWidth()

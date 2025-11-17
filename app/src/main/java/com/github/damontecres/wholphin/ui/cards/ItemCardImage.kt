@@ -52,6 +52,7 @@ fun ItemCardImage(
     watchedPercent: Double?,
     modifier: Modifier = Modifier,
     useFallbackText: Boolean = true,
+    contentScale: ContentScale = ContentScale.Fit,
 ) {
     var imageError by remember { mutableStateOf(false) }
     Box(modifier = modifier) {
@@ -59,7 +60,7 @@ fun ItemCardImage(
             AsyncImage(
                 model = imageUrl,
                 contentDescription = name,
-                contentScale = ContentScale.Fit,
+                contentScale = contentScale,
                 alignment = Alignment.Center,
                 onError = {
                     logCoilError(imageUrl, it.result)
