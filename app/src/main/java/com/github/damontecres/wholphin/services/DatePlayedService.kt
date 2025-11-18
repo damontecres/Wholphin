@@ -19,6 +19,7 @@ import org.jellyfin.sdk.model.api.request.GetEpisodesRequest
 import timber.log.Timber
 import java.time.LocalDateTime
 import java.util.UUID
+import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -32,6 +33,7 @@ class DatePlayedService
             CacheBuilder
                 .newBuilder()
                 .maximumSize(AppPreference.HomePageItems.max)
+                .expireAfterWrite(2, TimeUnit.HOURS)
                 .build<SeriesItemId, LocalDateTime?>(
                     object :
                         CacheLoader<SeriesItemId, LocalDateTime>() {
