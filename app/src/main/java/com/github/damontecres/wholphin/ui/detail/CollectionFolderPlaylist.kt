@@ -17,7 +17,7 @@ import com.github.damontecres.wholphin.ui.AspectRatios
 import com.github.damontecres.wholphin.ui.cards.GridCard
 import com.github.damontecres.wholphin.ui.components.CollectionFolderGrid
 import com.github.damontecres.wholphin.ui.components.CollectionFolderGridParameters
-import com.github.damontecres.wholphin.ui.data.MovieSortOptions
+import com.github.damontecres.wholphin.ui.data.PlaylistSortOptions
 import com.github.damontecres.wholphin.ui.preferences.PreferencesViewModel
 import java.util.UUID
 
@@ -54,7 +54,7 @@ fun CollectionFolderPlaylist(
         initialFilter = filter,
         showTitle = showHeader,
         recursive = recursive,
-        sortOptions = MovieSortOptions,
+        sortOptions = PlaylistSortOptions,
         modifier =
             modifier
                 .padding(start = 16.dp),
