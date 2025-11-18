@@ -24,6 +24,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -469,22 +470,29 @@ fun CollectionFolderGridContent(
             enter = slideInVertically() + fadeIn(),
             exit = slideOutVertically() + fadeOut(),
         ) {
-            if (showTitle) {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.displayMedium,
-                    color = MaterialTheme.colorScheme.onBackground,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-            }
-            if (sortOptions.isNotEmpty()) {
-                SortByButton(
-                    sortOptions = sortOptions,
-                    current = sortAndDirection,
-                    onSortChange = onSortChange,
-                    modifier = Modifier,
-                )
+            Column(
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                if (showTitle) {
+                    Text(
+                        text = title,
+                        style = MaterialTheme.typography.displayMedium,
+                        color = MaterialTheme.colorScheme.onBackground,
+                        textAlign = TextAlign.Center,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+                if (sortOptions.isNotEmpty()) {
+                    SortByButton(
+                        sortOptions = sortOptions,
+                        current = sortAndDirection,
+                        onSortChange = onSortChange,
+                        modifier = Modifier,
+                    )
+                }
             }
         }
         CardGrid(
