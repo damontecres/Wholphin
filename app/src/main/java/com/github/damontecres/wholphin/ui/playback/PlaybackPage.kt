@@ -120,10 +120,8 @@ fun PlaybackPage(
             val density = LocalDensity.current
 
             val player = viewModel.player
-            val audioStreams by viewModel.audioStreams.observeAsState(listOf())
-            val subtitleStreams by viewModel.subtitleStreams.observeAsState(listOf())
-            val trickplay by viewModel.trickplay.observeAsState(null)
-            val chapters by viewModel.chapters.observeAsState(listOf())
+            val mediaInfo by viewModel.currentMediaInfo.observeAsState()
+
             val currentPlayback by viewModel.currentPlayback.observeAsState(null)
             val currentItemPlayback by viewModel.currentItemPlayback.observeAsState(
                 ItemPlayback(
@@ -312,7 +310,6 @@ fun PlaybackPage(
                                     .fillMaxSize()
                                     .background(Color.Transparent),
                             item = currentPlayback?.item,
-                            subtitleStreams = subtitleStreams,
                             playerControls = player,
                             controllerViewState = controllerViewState,
                             showPlay = playPauseState.showPlay,
@@ -373,10 +370,11 @@ fun PlaybackPage(
                             moreButtonOptions = MoreButtonOptions(mapOf()),
                             currentPlayback = currentPlayback,
                             currentItemPlayback = currentItemPlayback,
-                            audioStreams = audioStreams,
-                            trickplayInfo = trickplay,
+                            audioStreams = mediaInfo?.audioStreams ?: listOf(),
+                            subtitleStreams = mediaInfo?.subtitleStreams ?: listOf(),
+                            chapters = mediaInfo?.chapters ?: listOf(),
+                            trickplayInfo = mediaInfo?.trickPlayInfo,
                             trickplayUrlFor = viewModel::getTrickplayUrl,
-                            chapters = chapters,
                             playlist = playlist,
                             onClickPlaylist = {
                                 viewModel.playItemInPlaylist(it)

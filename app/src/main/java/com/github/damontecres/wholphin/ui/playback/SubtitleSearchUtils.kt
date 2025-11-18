@@ -84,7 +84,8 @@ fun PlaybackViewModel.downloadAndSwitchSubtitles(
                     )
                     val currentSubtitleStreams =
                         this@downloadAndSwitchSubtitles
-                            .subtitleStreams.value
+                            .currentMediaInfo.value
+                            ?.subtitleStreams
                             .orEmpty()
                     val subtitleCount = currentSubtitleStreams.size
                     var newCount = subtitleCount
@@ -132,7 +133,9 @@ fun PlaybackViewModel.downloadAndSwitchSubtitles(
                                         it.displayTitle,
                                     )
                                 }
-                            this@downloadAndSwitchSubtitles.subtitleStreams.setValueOnMain(newStreams)
+                            updateCurrentMedia {
+                                it.copy(subtitleStreams = newStreams)
+                            }
                         }
                     }
                     if (maxAttempts == 0) {

@@ -61,6 +61,8 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.mediaInfoApi
@@ -78,7 +80,6 @@ import org.jellyfin.sdk.model.api.PlayMethod
 import org.jellyfin.sdk.model.api.PlaybackInfoDto
 import org.jellyfin.sdk.model.api.PlaystateCommand
 import org.jellyfin.sdk.model.api.PlaystateMessage
-import org.jellyfin.sdk.model.api.TrickplayInfo
 import org.jellyfin.sdk.model.extensions.inWholeTicks
 import org.jellyfin.sdk.model.extensions.ticks
 import org.jellyfin.sdk.model.serializer.toUUIDOrNull
@@ -107,15 +108,13 @@ class PlaybackViewModel
         val player by lazy {
             playerFactory.createVideoPlayer()
         }
+        internal val mutex = Mutex()
 
         val loading = MutableLiveData<LoadingState>(LoadingState.Loading)
 
-        val audioStreams = MutableLiveData<List<AudioStream>>(listOf())
-        val subtitleStreams = MutableLiveData<List<SubtitleStream>>(listOf())
+        val currentMediaInfo = MutableLiveData<CurrentMediaInfo>(CurrentMediaInfo.EMPTY)
         val currentPlayback = MutableLiveData<CurrentPlayback?>(null)
         val currentItemPlayback = MutableLiveData<ItemPlayback>()
-        val trickplay = MutableLiveData<TrickplayInfo?>(null)
-        val chapters = MutableLiveData<List<Chapter>>(listOf())
         val currentSegment = EqualityMutableLiveData<MediaSegmentDto?>(null)
         private val autoSkippedSegments = mutableSetOf<UUID>()
 
@@ -307,9 +306,6 @@ class PlaybackViewModel
                     chooseStream(base, playbackConfig, MediaStreamType.SUBTITLE, preferences)
                         ?.index
 
-//                Timber.v("base.mediaStreams=${base.mediaStreams}")
-//                Timber.v("subtitleTracks=$subtitleStreams")
-//                Timber.v("audioStreams=$audioStreams")
                 Timber.d("Selected mediaSource=${mediaSource.id}, audioIndex=$audioIndex, subtitleIndex=$subtitleIndex")
 
                 val itemPlaybackToUse =
@@ -321,11 +317,23 @@ class PlaybackViewModel
                         audioIndex = audioIndex ?: TrackIndex.UNSPECIFIED,
                         subtitleIndex = subtitleIndex ?: TrackIndex.UNSPECIFIED,
                     )
+                val trickPlayInfo =
+                    item.data.trickplay
+                        ?.get(mediaSource.id)
+                        ?.values
+                        ?.firstOrNull()
 
+                val chapters = Chapter.fromDto(base, api)
                 withContext(Dispatchers.Main) {
                     this@PlaybackViewModel.currentItemPlayback.value = itemPlaybackToUse
-                    this@PlaybackViewModel.audioStreams.value = audioStreams
-                    this@PlaybackViewModel.subtitleStreams.value = subtitleStreams
+                    updateCurrentMedia {
+                        CurrentMediaInfo(
+                            audioStreams = audioStreams,
+                            subtitleStreams = subtitleStreams,
+                            chapters = chapters,
+                            trickPlayInfo = trickPlayInfo,
+                        )
+                    }
 
                     changeStreams(
                         item,
@@ -339,9 +347,6 @@ class PlaybackViewModel
                     )
                     player.prepare()
                     player.play()
-
-                    this@PlaybackViewModel.chapters.value = Chapter.fromDto(base, api)
-                    Timber.v("chapters=${this@PlaybackViewModel.chapters.value?.size}")
                 }
                 listenForSegments()
                 return@withContext true
@@ -590,15 +595,6 @@ class PlaybackViewModel
                         player.addListener(onTracksChangedListener)
                     }
                 }
-                val trickPlayInfo =
-                    item.data.trickplay
-                        ?.get(source.id)
-                        ?.values
-                        ?.firstOrNull()
-//                Timber.v("Trickplay info: $trickPlayInfo")
-                withContext(Dispatchers.Main) {
-                    trickplay.value = trickPlayInfo
-                }
             }
         }
 
@@ -630,7 +626,7 @@ class PlaybackViewModel
         fun getTrickplayUrl(index: Int): String? {
             val itemId = item.id
             val mediaSourceId = currentItemPlayback.value?.sourceId
-            val trickPlayInfo = trickplay.value ?: return null
+            val trickPlayInfo = currentMediaInfo.value?.trickPlayInfo ?: return null
             return api.trickplayApi.getTrickplayTileImageUrl(
                 itemId,
                 trickPlayInfo.width,
@@ -886,4 +882,12 @@ class PlaybackViewModel
                     }
                 }.launchIn(viewModelScope)
         }
+
+        internal suspend fun updateCurrentMedia(block: (CurrentMediaInfo) -> CurrentMediaInfo) =
+            withContext(Dispatchers.IO) {
+                mutex.withLock {
+                    val newMediaInfo = block.invoke(currentMediaInfo.value!!)
+                    currentMediaInfo.setValueOnMain(newMediaInfo)
+                }
+            }
     }
