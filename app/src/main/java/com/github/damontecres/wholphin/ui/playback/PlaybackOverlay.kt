@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.runtime.Composable
@@ -407,8 +408,8 @@ fun PlaybackOverlay(
                 contentDescription = "Logo",
                 modifier =
                     Modifier
-                        .fillMaxWidth(.33f)
-                        .padding(32.dp),
+                        .sizeIn(maxWidth = 180.dp, maxHeight = 100.dp)
+                        .padding(16.dp),
             )
         }
         AnimatedVisibility(
