@@ -78,6 +78,7 @@ object AspectRatios {
     const val WIDE = 16f / 9f
     const val FOUR_THREE = 4f / 3f
     const val TALL = 2f / 3f
+    const val SQUARE = 1f
 }
 
 @Preview(

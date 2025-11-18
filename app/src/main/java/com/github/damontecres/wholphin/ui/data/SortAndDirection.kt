@@ -69,6 +69,19 @@ val VideoSortOptions =
         ItemSortBy.RANDOM,
     )
 
+val PlaylistSortOptions =
+    listOf(
+        ItemSortBy.SORT_NAME,
+        ItemSortBy.PREMIERE_DATE,
+        ItemSortBy.DATE_CREATED,
+        ItemSortBy.DATE_PLAYED,
+        ItemSortBy.COMMUNITY_RATING,
+        ItemSortBy.CRITIC_RATING,
+        ItemSortBy.RUNTIME,
+        ItemSortBy.PLAY_COUNT,
+        ItemSortBy.RANDOM,
+    )
+
 @StringRes
 fun getStringRes(sort: ItemSortBy): Int =
     when (sort) {

@@ -6,9 +6,11 @@ import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.components.ItemGrid
 import com.github.damontecres.wholphin.ui.components.LicenseInfo
+import com.github.damontecres.wholphin.ui.detail.CollectionFolderBoxSet
 import com.github.damontecres.wholphin.ui.detail.CollectionFolderGeneric
 import com.github.damontecres.wholphin.ui.detail.CollectionFolderLiveTv
 import com.github.damontecres.wholphin.ui.detail.CollectionFolderMovie
+import com.github.damontecres.wholphin.ui.detail.CollectionFolderPlaylist
 import com.github.damontecres.wholphin.ui.detail.CollectionFolderTv
 import com.github.damontecres.wholphin.ui.detail.DebugPage
 import com.github.damontecres.wholphin.ui.detail.FavoritesPage
@@ -97,7 +99,7 @@ fun DestinationContent(
                     )
 
                 BaseItemKind.BOX_SET ->
-                    CollectionFolderGeneric(
+                    CollectionFolderBoxSet(
                         preferences,
                         destination.itemId,
                         destination.item,
@@ -122,7 +124,7 @@ fun DestinationContent(
                             )
 
                         CollectionType.BOXSETS ->
-                            CollectionFolderGeneric(
+                            CollectionFolderBoxSet(
                                 preferences,
                                 destination.itemId,
                                 destination.item,
@@ -167,6 +169,15 @@ fun DestinationContent(
                             CollectionFolderLiveTv(
                                 preferences,
                                 destination,
+                                modifier,
+                            )
+
+                        CollectionType.PLAYLISTS ->
+                            CollectionFolderPlaylist(
+                                preferences,
+                                destination.itemId,
+                                destination.item,
+                                true,
                                 modifier,
                             )
 
