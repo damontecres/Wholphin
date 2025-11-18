@@ -13,6 +13,8 @@ import dagger.hilt.android.scopes.ActivityScoped
 import kotlinx.coroutines.runBlocking
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.exception.InvalidStatusException
+import org.jellyfin.sdk.api.client.extensions.userLibraryApi
+import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.request.GetEpisodesRequest
 import timber.log.Timber
 import java.time.LocalDateTime
@@ -70,7 +72,21 @@ class DatePlayedService
         }
 
         fun invalidate(item: BaseItem) {
-            val seriesId = item.data.seriesId
+            item.data.seriesId?.let { seriesId ->
+                Timber.d("Invalidating %s", seriesId)
+                datePlayedCache.asMap().keys.removeIf { it.seriesId == seriesId }
+            }
+        }
+
+        suspend fun invalidate(itemId: UUID) {
+            val seriesId =
+                api.userLibraryApi.getItem(itemId = itemId).content.let {
+                    if (it.type == BaseItemKind.SERIES) {
+                        itemId
+                    } else {
+                        it.seriesId
+                    }
+                }
             if (seriesId != null) {
                 Timber.d("Invalidating %s", seriesId)
                 datePlayedCache.asMap().keys.removeIf { it.seriesId == seriesId }
