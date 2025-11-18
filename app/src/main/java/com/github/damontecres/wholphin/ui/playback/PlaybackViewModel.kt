@@ -5,7 +5,6 @@ import android.widget.Toast
 import androidx.annotation.OptIn
 import androidx.compose.ui.text.intl.Locale
 import androidx.core.net.toUri
-import androidx.datastore.core.DataStore
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -28,7 +27,6 @@ import com.github.damontecres.wholphin.data.model.TrackIndex
 import com.github.damontecres.wholphin.data.model.chooseSource
 import com.github.damontecres.wholphin.data.model.chooseStream
 import com.github.damontecres.wholphin.preferences.AppPreference
-import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.PlayerBackend
 import com.github.damontecres.wholphin.preferences.ShowNextUpWhen
 import com.github.damontecres.wholphin.preferences.SkipSegmentBehavior
@@ -50,7 +48,6 @@ import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
 import com.github.damontecres.wholphin.util.TrackActivityPlaybackListener
-import com.github.damontecres.wholphin.util.TrackSupport
 import com.github.damontecres.wholphin.util.checkForSupport
 import com.github.damontecres.wholphin.util.mpv.mpvDeviceProfile
 import com.github.damontecres.wholphin.util.subtitleMimeTypes
@@ -76,7 +73,6 @@ import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.DeviceProfile
 import org.jellyfin.sdk.model.api.MediaSegmentDto
 import org.jellyfin.sdk.model.api.MediaSegmentType
-import org.jellyfin.sdk.model.api.MediaSourceInfo
 import org.jellyfin.sdk.model.api.MediaStreamType
 import org.jellyfin.sdk.model.api.PlayMethod
 import org.jellyfin.sdk.model.api.PlaybackInfoDto
@@ -92,25 +88,18 @@ import java.util.UUID
 import javax.inject.Inject
 import kotlin.time.Duration.Companion.milliseconds
 
-data class StreamDecision(
-    val itemId: UUID,
-    val type: PlayMethod,
-    val url: String,
-)
-
 @HiltViewModel
 @OptIn(markerClass = [UnstableApi::class])
 class PlaybackViewModel
     @Inject
     constructor(
-        @param:ApplicationContext val context: Context,
-        val api: ApiClient,
-        val playlistCreator: PlaylistCreator,
+        @param:ApplicationContext internal val context: Context,
+        internal val api: ApiClient,
         val navigationManager: NavigationManager,
-        val itemPlaybackDao: ItemPlaybackDao,
-        val serverRepository: ServerRepository,
-        val itemPlaybackRepository: ItemPlaybackRepository,
-        val appPreferences: DataStore<AppPreferences>,
+        private val playlistCreator: PlaylistCreator,
+        private val itemPlaybackDao: ItemPlaybackDao,
+        private val serverRepository: ServerRepository,
+        private val itemPlaybackRepository: ItemPlaybackRepository,
         private val playerFactory: PlayerFactory,
         private val datePlayedService: DatePlayedService,
     ) : ViewModel(),
@@ -495,8 +484,7 @@ class PlaybackViewModel
                         source.supportsTranscoding -> PlayMethod.TRANSCODE
                         else -> throw Exception("No supported playback method")
                     }
-                val decision = StreamDecision(itemId, transcodeType, mediaUrl)
-                Timber.v("Playback decision: $decision")
+                Timber.v("Playback decision: $transcodeType")
 
                 val externalSubtitleCount = source.externalSubtitlesCount
 
@@ -899,13 +887,3 @@ class PlaybackViewModel
                 }.launchIn(viewModelScope)
         }
     }
-
-data class CurrentPlayback(
-    val item: BaseItem,
-    val tracks: List<TrackSupport>,
-    val backend: PlayerBackend,
-    val playMethod: PlayMethod,
-    val playSessionId: String?,
-    val liveStreamId: String?,
-    val mediaSourceInfo: MediaSourceInfo,
-)
