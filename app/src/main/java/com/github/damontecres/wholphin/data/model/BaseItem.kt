@@ -1,8 +1,10 @@
 package com.github.damontecres.wholphin.data.model
 
 import com.github.damontecres.wholphin.ui.detail.series.SeasonEpisodeIds
+import com.github.damontecres.wholphin.ui.formatDateTime
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.seasonEpisode
+import com.github.damontecres.wholphin.ui.seasonEpisodePadded
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import org.jellyfin.sdk.api.client.ApiClient
@@ -31,6 +33,18 @@ data class BaseItem(
     val subtitle
         get() =
             if (type == BaseItemKind.EPISODE) data.seasonEpisode + " - " + name else data.productionYear?.toString()
+
+    val subtitleLong: String? by lazy {
+        if (type == BaseItemKind.EPISODE) {
+            buildList {
+                add(data.seasonEpisodePadded)
+                add(data.name)
+                add(data.premiereDate?.let { formatDateTime(it) })
+            }.filterNotNull().joinToString(" - ")
+        } else {
+            data.productionYear?.toString()
+        }
+    }
 
     @Transient
     val indexNumber = data.indexNumber ?: dateAsIndex()

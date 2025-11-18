@@ -22,7 +22,6 @@ import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
@@ -49,9 +48,6 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.LifecycleStartEffect
-import androidx.media3.common.Player
-import androidx.media3.common.text.Cue
-import androidx.media3.common.text.CueGroup
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.ui.SubtitleView
 import androidx.media3.ui.compose.PlayerSurface
@@ -124,9 +120,6 @@ fun PlaybackPage(
             val density = LocalDensity.current
 
             val player = viewModel.player
-            val title by viewModel.title.observeAsState(null)
-            val subtitle by viewModel.subtitle.observeAsState(null)
-            val duration by viewModel.duration.observeAsState(null)
             val audioStreams by viewModel.audioStreams.observeAsState(listOf())
             val subtitleStreams by viewModel.subtitleStreams.observeAsState(listOf())
             val trickplay by viewModel.trickplay.observeAsState(null)
@@ -141,7 +134,7 @@ fun PlaybackPage(
             val currentSegment by viewModel.currentSegment.observeAsState(null)
             var segmentCancelled by remember(currentSegment?.id) { mutableStateOf(false) }
 
-            var cues by remember { mutableStateOf<List<Cue>>(listOf()) }
+            val cues by viewModel.subtitleCues.observeAsState(listOf())
             var showDebugInfo by remember { mutableStateOf(prefs.showDebugInfo) }
 
             val nextUp by viewModel.nextUp.observeAsState(null)
@@ -150,18 +143,7 @@ fun PlaybackPage(
             val subtitleSearch by viewModel.subtitleSearch.observeAsState(null)
             val subtitleSearchLanguage by viewModel.subtitleSearchLanguage.observeAsState(Locale.current.language)
 
-            // TODO move to viewmodel?
-            val cueListener =
-                remember {
-                    object : Player.Listener {
-                        override fun onCues(cueGroup: CueGroup) {
-                            cues = cueGroup.cues
-                        }
-                    }
-                }
-
             OneTimeLaunchedEffect {
-                player.addListener(cueListener)
                 if (prefs.playerBackend == PlayerBackend.MPV) {
                     scope.launch(Dispatchers.Main + ExceptionHandler()) {
                         preferences.appPreferences.interfacePreferences.subtitlesPreferences.applyToMpv(
@@ -169,9 +151,6 @@ fun PlaybackPage(
                         )
                     }
                 }
-            }
-            DisposableEffect(Unit) {
-                onDispose { player.removeListener(cueListener) }
             }
             AmbientPlayerListener(player)
             var contentScale by remember { mutableStateOf(prefs.globalContentScale.scale) }
@@ -280,20 +259,16 @@ fun PlaybackPage(
                         // Show a small progress bar along the bottom of the screen
                         val showSkipProgress = true // TODO get from preferences
                         if (showSkipProgress) {
-                            duration?.let {
-                                val percent = (skipPosition.milliseconds / it).toFloat()
-                                Box(
-                                    modifier =
-                                        Modifier
-                                            .align(Alignment.BottomStart)
-                                            .background(MaterialTheme.colorScheme.border)
-                                            .clip(RectangleShape)
-                                            .height(3.dp)
-                                            .fillMaxWidth(percent),
-                                ) {
-                                    // No-op
-                                }
-                            }
+                            val percent = skipPosition.toFloat() / player.duration.toFloat()
+                            Box(
+                                modifier =
+                                    Modifier
+                                        .align(Alignment.BottomStart)
+                                        .background(MaterialTheme.colorScheme.border)
+                                        .clip(RectangleShape)
+                                        .height(3.dp)
+                                        .fillMaxWidth(percent),
+                            )
                         }
                     }
 
@@ -337,8 +312,6 @@ fun PlaybackPage(
                                     .fillMaxSize()
                                     .background(Color.Transparent),
                             item = currentPlayback?.item,
-                            title = title,
-                            subtitle = subtitle,
                             subtitleStreams = subtitleStreams,
                             playerControls = player,
                             controllerViewState = controllerViewState,

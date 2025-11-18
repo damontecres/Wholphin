@@ -16,6 +16,8 @@ import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.common.TrackSelectionOverride
 import androidx.media3.common.Tracks
+import androidx.media3.common.text.Cue
+import androidx.media3.common.text.CueGroup
 import androidx.media3.common.util.UnstableApi
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.ItemPlaybackDao
@@ -38,10 +40,8 @@ import com.github.damontecres.wholphin.services.DatePlayedService
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.PlayerFactory
 import com.github.damontecres.wholphin.services.PlaylistCreator
-import com.github.damontecres.wholphin.ui.formatDateTime
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.nav.Destination
-import com.github.damontecres.wholphin.ui.seasonEpisodePadded
 import com.github.damontecres.wholphin.ui.seekBack
 import com.github.damontecres.wholphin.ui.seekForward
 import com.github.damontecres.wholphin.ui.setValueOnMain
@@ -96,7 +96,6 @@ import timber.log.Timber
 import java.util.Date
 import java.util.UUID
 import javax.inject.Inject
-import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 
 data class StreamDecision(
@@ -128,9 +127,6 @@ class PlaybackViewModel
 
         val loading = MutableLiveData<LoadingState>(LoadingState.Loading)
 
-        val title = MutableLiveData<String?>(null)
-        val subtitle = MutableLiveData<String?>(null)
-        val duration = MutableLiveData<Duration?>(null)
         val audioStreams = MutableLiveData<List<AudioStream>>(listOf())
         val subtitleStreams = MutableLiveData<List<SubtitleStream>>(listOf())
         val currentPlayback = MutableLiveData<CurrentPlayback?>(null)
@@ -139,6 +135,8 @@ class PlaybackViewModel
         val chapters = MutableLiveData<List<Chapter>>(listOf())
         val currentSegment = EqualityMutableLiveData<MediaSegmentDto?>(null)
         private val autoSkippedSegments = mutableSetOf<UUID>()
+
+        val subtitleCues = MutableLiveData<List<Cue>>(listOf())
 
         private lateinit var preferences: UserPreferences
         private lateinit var deviceProfile: DeviceProfile
@@ -239,6 +237,8 @@ class PlaybackViewModel
                 Timber.i("Playing ${item.id}")
                 datePlayedService.invalidate(item)
                 autoSkippedSegments.clear()
+                this@PlaybackViewModel.subtitleCues.setValueOnMain(listOf())
+
                 if (item.type !in supportItemKinds) {
                     showToast(
                         context,
@@ -252,26 +252,6 @@ class PlaybackViewModel
 
                 val isLiveTv = item.type == BaseItemKind.TV_CHANNEL
                 val base = item.data
-                val title =
-                    if (base.type == BaseItemKind.EPISODE) {
-                        base.seriesName
-                    } else {
-                        base.name
-                    }
-                val subtitle =
-                    if (base.type == BaseItemKind.EPISODE) {
-                        buildList {
-                            add(base.seasonEpisodePadded)
-                            add(base.name)
-                            add(base.premiereDate?.let { formatDateTime(it) })
-                        }.filterNotNull().joinToString(" - ")
-                    } else {
-                        base.productionYear?.toString()
-                    }
-                withContext(Dispatchers.Main) {
-                    this@PlaybackViewModel.title.value = title
-                    this@PlaybackViewModel.subtitle.value = subtitle
-                }
 
                 val playbackConfig =
                     if (itemPlayback != null) {
@@ -595,7 +575,6 @@ class PlaybackViewModel
                     player.addListener(activityListener)
                     this@PlaybackViewModel.activityListener = activityListener
 
-                    duration.value = source.runTimeTicks?.ticks
                     loading.value = LoadingState.Success
                     this@PlaybackViewModel.currentPlayback.value = playback
                     this@PlaybackViewModel.currentItemPlayback.value = itemPlayback
@@ -846,6 +825,10 @@ class PlaybackViewModel
                 currentPlayback.value?.copy(
                     tracks = checkForSupport(tracks),
                 )
+        }
+
+        override fun onCues(cueGroup: CueGroup) {
+            subtitleCues.value = cueGroup.cues
         }
 
         override fun onPlayerError(error: PlaybackException) {
