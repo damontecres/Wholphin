@@ -6,7 +6,7 @@ Wholphin is an open-source Android TV client for Jellyfin. It aims to provide a 
 
 This is not a fork of the [official client](https://github.com/jellyfin/jellyfin-androidtv). Wholphin's user interface and controls have been written completely from scratch. Wholphin uses the same media player (media3/ExoPlayer) as the official client.
 
-<img width="1280" height="771" alt="0 1 0_01_home" src="https://github.com/user-attachments/assets/599d7f06-d3b5-4553-b37f-19a9726f058f" />
+<img width="1280" height="771" alt="0 3 0_home" src="https://github.com/user-attachments/assets/23be4786-a4c3-45e5-a710-8d1ade2be2a3" />
 
 ## Features
 
@@ -72,10 +72,10 @@ If you plan to contribute, please read the [contributing guide](CONTRIBUTING.md)
 ## Additional screenshots
 
 ### Movie library browsing
-<img width="1280" height="771" alt="0 1 0_02_movies" src="https://github.com/user-attachments/assets/0ea18f12-4b0a-49bd-b3c6-df45f97511f3" />
+<img width="1280" height="771" alt="0 3 0_movies" src="https://github.com/user-attachments/assets/a49829b5-bc2c-4af9-8d5d-2f7d0973ce01" />
 
 ### Series page
-<img width="1280" height="771" alt="0 1 0_03_series" src="https://github.com/user-attachments/assets/dc47cd0e-2cd2-4090-8f8e-3f776f67f465" />
+<img width="1280" height="771" alt="0 3 0_series_overview" src="https://github.com/user-attachments/assets/2d26f34e-3ee8-4599-ba59-32524637dab7" />
 
 ### Playlist
-<img width="1280" height="771" alt="0 1 0_04_playlist" src="https://github.com/user-attachments/assets/d33451cd-2be0-46c0-a7de-2064e2615d84" />
+<img width="1280" height="771" alt="0 3 0_playlist" src="https://github.com/user-attachments/assets/7ca589ab-9c88-483a-b769-35ffb5663d9e" />

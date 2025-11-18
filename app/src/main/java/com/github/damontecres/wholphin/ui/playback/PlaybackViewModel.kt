@@ -247,8 +247,10 @@ class PlaybackViewModel
                     )
                     return@withContext false
                 }
-                val isLiveTv = item.type == BaseItemKind.TV_CHANNEL
+                this@PlaybackViewModel.item = item
+                this@PlaybackViewModel.itemId = item.id
 
+                val isLiveTv = item.type == BaseItemKind.TV_CHANNEL
                 val base = item.data
                 val title =
                     if (base.type == BaseItemKind.EPISODE) {
@@ -983,7 +985,7 @@ class PlaybackViewModel
                                 delay(1500)
                                 item =
                                     BaseItem.from(
-                                        api.userLibraryApi.getItem(itemId = item.id).content,
+                                        api.userLibraryApi.getItem(itemId = it.itemId).content,
                                         api,
                                     )
                                 val mediaSource = chooseSource(item.data, it)
