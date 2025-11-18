@@ -10,8 +10,6 @@ import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.preferences.updateInterfacePreferences
-import com.github.damontecres.wholphin.services.FavoriteWatchManager
-import com.github.damontecres.wholphin.services.FavoriteWatchManagerImpl
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.RememberTabManager
 import dagger.Module
@@ -25,7 +23,6 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import okhttp3.OkHttpClient
 import org.jellyfin.sdk.Jellyfin
-import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.util.AuthorizationHeaderBuilder
 import org.jellyfin.sdk.api.okhttp.OkHttpFactory
 import org.jellyfin.sdk.createJellyfin
@@ -185,8 +182,4 @@ object AppModule {
     @Singleton
     @IoCoroutineScope
     fun ioCoroutineScope(): CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-
-    @Provides
-    @Singleton
-    fun favoriteWatchManager(api: ApiClient): FavoriteWatchManager = FavoriteWatchManagerImpl(api)
 }

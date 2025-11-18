@@ -34,6 +34,7 @@ import com.github.damontecres.wholphin.preferences.PlayerBackend
 import com.github.damontecres.wholphin.preferences.ShowNextUpWhen
 import com.github.damontecres.wholphin.preferences.SkipSegmentBehavior
 import com.github.damontecres.wholphin.preferences.UserPreferences
+import com.github.damontecres.wholphin.services.DatePlayedService
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.PlayerFactory
 import com.github.damontecres.wholphin.services.PlaylistCreator
@@ -118,6 +119,7 @@ class PlaybackViewModel
         val itemPlaybackRepository: ItemPlaybackRepository,
         val appPreferences: DataStore<AppPreferences>,
         private val playerFactory: PlayerFactory,
+        private val datePlayedService: DatePlayedService,
     ) : ViewModel(),
         Player.Listener {
         val player by lazy {
@@ -235,6 +237,7 @@ class PlaybackViewModel
         ): Boolean =
             withContext(Dispatchers.IO) {
                 Timber.i("Playing ${item.id}")
+                datePlayedService.invalidate(item)
                 autoSkippedSegments.clear()
                 if (item.type !in supportItemKinds) {
                     showToast(
