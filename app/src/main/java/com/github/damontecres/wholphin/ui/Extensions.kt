@@ -390,3 +390,5 @@ fun logTab(
     Timber.i("Current tab: $info")
     ACRA.errorReporter.putCustomData("tabInfo", info)
 }
+
+suspend fun <T> onMain(block: suspend CoroutineScope.() -> T) = withContext(Dispatchers.Main, block)
