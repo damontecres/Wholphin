@@ -1,3 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="about">Rakenduse teave</string>
+    <string name="active_recordings">Aktiivsed salvestused</string>
+    <string name="add_favorite">Lemmik</string>
+    <string name="add_server">Lisa server</string>
+    <string name="add_user">Lisa kasutaja</string>
+    <string name="audio">Heli</string>
+    <string name="birthplace">Sünnikoht</string>
+    <string name="bitrate">Bitikiirus</string>
 </resources>
