@@ -14,4 +14,6 @@ data class CurrentPlayback(
     val playSessionId: String?,
     val liveStreamId: String?,
     val mediaSourceInfo: MediaSourceInfo,
+    val videoDecoder: String? = null,
+    val audioDecoder: String? = null,
 )
