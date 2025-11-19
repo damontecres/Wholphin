@@ -5,6 +5,7 @@ import com.github.damontecres.wholphin.preferences.PlayerBackend
 import com.github.damontecres.wholphin.util.TrackSupport
 import org.jellyfin.sdk.model.api.MediaSourceInfo
 import org.jellyfin.sdk.model.api.PlayMethod
+import org.jellyfin.sdk.model.api.TranscodingInfo
 
 data class CurrentPlayback(
     val item: BaseItem,
@@ -14,4 +15,7 @@ data class CurrentPlayback(
     val playSessionId: String?,
     val liveStreamId: String?,
     val mediaSourceInfo: MediaSourceInfo,
+    val videoDecoder: String? = null,
+    val audioDecoder: String? = null,
+    val transcodeInfo: TranscodingInfo? = null,
 )

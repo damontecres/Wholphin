@@ -60,7 +60,6 @@ import com.github.damontecres.wholphin.ui.cards.ChapterCard
 import com.github.damontecres.wholphin.ui.cards.SeasonCard
 import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
-import com.github.damontecres.wholphin.ui.letNotEmpty
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -416,32 +415,14 @@ fun PlaybackOverlay(
                 Modifier
                     .align(Alignment.TopStart),
         ) {
-            Column(
-                verticalArrangement = Arrangement.spacedBy(8.dp),
+            PlaybackDebugOverlay(
+                currentPlayback = currentPlayback,
                 modifier =
                     Modifier
                         .align(Alignment.TopStart)
-                        .padding(16.dp)
+                        .padding(8.dp)
                         .background(AppColors.TransparentBlack50),
-            ) {
-                Text(
-                    text = "Backend: ${currentPlayback?.backend}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.padding(start = 8.dp),
-                )
-                Text(
-                    text = "Play method: ${currentPlayback?.playMethod?.serialName}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.padding(start = 8.dp),
-                )
-                currentPlayback?.tracks?.letNotEmpty {
-                    PlaybackTrackInfo(
-                        trackSupport = it,
-                    )
-                }
-            }
+            )
         }
     }
 }
