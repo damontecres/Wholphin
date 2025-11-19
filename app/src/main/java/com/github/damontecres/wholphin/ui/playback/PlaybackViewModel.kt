@@ -441,7 +441,7 @@ class PlaybackViewModel
                             audioStreamIndex = audioIndex,
                             subtitleStreamIndex = subtitleIndex,
                             mediaSourceId = currentItemPlayback.sourceId?.toServerString(),
-                            alwaysBurnInSubtitleWhenTranscoding = true,
+                            alwaysBurnInSubtitleWhenTranscoding = subtitleIndex != null && subtitleIndex >= 0,
                             maxStreamingBitrate = maxBitrate.toInt(),
                             enableDirectPlay = enableDirectPlay,
                             enableDirectStream = enableDirectStream,
