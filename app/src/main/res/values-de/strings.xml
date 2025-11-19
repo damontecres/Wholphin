@@ -1,3 +1,27 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="about">Über</string>
+    <string name="active_recordings">laufende Aufnahmen</string>
+    <string name="add_favorite">Favoriten</string>
+    <string name="add_server">Server hinzufügen</string>
+    <string name="add_user">Benutzer hinzufügen</string>
+    <string name="audio">Audio</string>
+    <string name="birthplace">Geburtsort</string>
+    <string name="bitrate">Bitrate</string>
+    <string name="born">Geburtsdatum</string>
+    <string name="cancel_recording">Aufnahme abbrechen</string>
+    <string name="cancel_series_recording">Serienaufnahme abbrechen</string>
+    <string name="cancel">Abbrechen</string>
+    <string name="chapters">Kapitel</string>
+    <string name="collection">Sammlung</string>
+    <string name="collections">Sammlungen</string>
+    <string name="commercial">Werbung</string>
+    <string name="confirm">Bestätigen</string>
+    <string name="continue_watching">Weiterschauen</string>
+    <string name="critic_rating">Kritikerbewertung</string>
+    <string name="decimal_seconds">%.1f Sekunden</string>
+    <string name="default_track">Standard</string>
+    <string name="delete">Löschen</string>
+    <string name="died">Gestorben</string>
+    <string name="director">Regisseur</string>
 </resources>
