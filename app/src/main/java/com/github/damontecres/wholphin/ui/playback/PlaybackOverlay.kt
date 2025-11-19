@@ -80,7 +80,6 @@ private val subtitleTextSize = 18.sp
 @Composable
 fun PlaybackOverlay(
     item: BaseItem?,
-    title: String?,
     subtitleStreams: List<SubtitleStream>,
     chapters: List<Chapter>,
     playerControls: Player,
@@ -104,7 +103,6 @@ fun PlaybackOverlay(
     audioStreams: List<AudioStream>,
     currentSegment: MediaSegmentDto?,
     modifier: Modifier = Modifier,
-    subtitle: String? = null,
     trickplayInfo: TrickplayInfo? = null,
     trickplayUrlFor: (Int) -> String? = { null },
     playlist: Playlist = Playlist(listOf(), 0),
@@ -123,11 +121,11 @@ fun PlaybackOverlay(
 
     val titleHeight =
         remember {
-            if (title.isNotNullOrBlank()) with(density) { titleTextSize.toDp() } else 0.dp
+            if (item?.title.isNotNullOrBlank()) with(density) { titleTextSize.toDp() } else 0.dp
         }
     val subtitleHeight =
         remember {
-            if (subtitle.isNotNullOrBlank()) with(density) { subtitleTextSize.toDp() } else 0.dp
+            if (item?.subtitleLong.isNotNullOrBlank()) with(density) { subtitleTextSize.toDp() } else 0.dp
         }
 
     // This will be calculated after composition
@@ -152,7 +150,8 @@ fun PlaybackOverlay(
                     null
                 }
             Controller(
-                title = title,
+                title = item?.title,
+                subtitle = item?.subtitleLong,
                 subtitleStreams = subtitleStreams,
                 playerControls = playerControls,
                 controllerViewState = controllerViewState,
@@ -176,7 +175,6 @@ fun PlaybackOverlay(
                 currentPlayback = currentPlayback,
                 currentItemPlayback = currentItemPlayback,
                 audioStreams = audioStreams,
-                subtitle = subtitle,
                 seekBarInteractionSource = seekBarInteractionSource,
                 nextState = nextState,
                 onNextStateFocus = {

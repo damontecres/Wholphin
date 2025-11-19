@@ -2,6 +2,7 @@ package com.github.damontecres.wholphin.ui.playback
 
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.WholphinApplication
+import org.jellyfin.sdk.model.api.MediaStream
 
 data class SubtitleStream(
     val index: Int,
@@ -22,6 +23,21 @@ data class SubtitleStream(
                 codec,
             ).joinToString(" - ")
                 .ifBlank { WholphinApplication.instance.getString(R.string.unknown) }
+
+    companion object {
+        fun from(it: MediaStream): SubtitleStream =
+            SubtitleStream(
+                it.index,
+                it.language,
+                it.title,
+                it.codec,
+                it.codecTag,
+                it.isExternal,
+                it.isForced,
+                it.isDefault,
+                it.displayTitle,
+            )
+    }
 }
 
 data class AudioStream(
@@ -41,4 +57,17 @@ data class AudioStream(
                 codec,
                 channelLayout?.ifBlank { null } ?: channels?.let { "$it ch" },
             ).joinToString(" - ").ifBlank { "Unknown" }
+
+    companion object {
+        fun from(it: MediaStream): AudioStream =
+            AudioStream(
+                it.index,
+                it.language,
+                it.title,
+                it.codec,
+                it.codecTag,
+                it.channels,
+                it.channelLayout,
+            )
+    }
 }
