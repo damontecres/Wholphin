@@ -59,10 +59,12 @@ import com.github.damontecres.wholphin.util.subtitleMimeTypes
 import com.github.damontecres.wholphin.util.supportItemKinds
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
@@ -74,10 +76,12 @@ import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.mediaInfoApi
 import org.jellyfin.sdk.api.client.extensions.mediaSegmentsApi
+import org.jellyfin.sdk.api.client.extensions.sessionApi
 import org.jellyfin.sdk.api.client.extensions.trickplayApi
 import org.jellyfin.sdk.api.client.extensions.userLibraryApi
 import org.jellyfin.sdk.api.client.extensions.videosApi
 import org.jellyfin.sdk.api.sockets.subscribe
+import org.jellyfin.sdk.model.DeviceInfo
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.DeviceProfile
 import org.jellyfin.sdk.model.api.MediaSegmentDto
@@ -95,6 +99,7 @@ import java.util.Date
 import java.util.UUID
 import javax.inject.Inject
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 
 /**
  * This [ViewModel] is responsible for playing media including moving through playlists (including next up episodes)
@@ -113,6 +118,7 @@ class PlaybackViewModel
         private val itemPlaybackRepository: ItemPlaybackRepository,
         private val playerFactory: PlayerFactory,
         private val datePlayedService: DatePlayedService,
+        private val deviceInfo: DeviceInfo,
     ) : ViewModel(),
         Player.Listener,
         AnalyticsListener {
@@ -157,6 +163,7 @@ class PlaybackViewModel
             }
             addCloseable { player.release() }
             subscribe()
+            listenForTranscodeReason()
         }
 
         /**
@@ -728,6 +735,39 @@ class PlaybackViewModel
                         }
                     }
                 }
+        }
+
+        private fun listenForTranscodeReason() {
+            viewModelScope.launchIO {
+                currentPlayback.collectLatest {
+                    if (it != null) {
+                        try {
+                            var transcodeInfo = it.transcodeInfo
+                            while (isActive && it.playMethod == PlayMethod.TRANSCODE && transcodeInfo == null) {
+                                delay(2.seconds)
+                                transcodeInfo =
+                                    api.sessionApi
+                                        .getSessions(deviceId = deviceInfo.id)
+                                        .content
+                                        .firstOrNull()
+                                        ?.transcodingInfo
+                                if (transcodeInfo == null) delay(3.seconds)
+                            }
+                            Timber.v("transcodeInfo=$transcodeInfo")
+                            currentPlayback.update { current ->
+                                current?.copy(transcodeInfo = transcodeInfo)
+                            }
+                        } catch (ex: Exception) {
+                            if (ex !is CancellationException) {
+                                Timber.w(ex, "Exception trying to get session info")
+                                currentPlayback.update { current ->
+                                    current?.copy(transcodeInfo = null)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         private var lastInteractionDate: Date = Date()
