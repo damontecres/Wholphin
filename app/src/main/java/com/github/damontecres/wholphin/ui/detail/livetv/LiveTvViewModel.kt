@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.WholphinApplication
+import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.ui.AppColors
@@ -56,6 +57,7 @@ class LiveTvViewModel
         @param:ApplicationContext private val context: Context,
         val api: ApiClient,
         val navigationManager: NavigationManager,
+        private val serverRepository: ServerRepository,
     ) : ViewModel() {
         val loading = MutableLiveData<LoadingState>(LoadingState.Pending)
 
@@ -88,6 +90,9 @@ class LiveTvViewModel
                 val channelData by api.liveTvApi.getLiveTvChannels(
                     GetLiveTvChannelsRequest(
                         startIndex = 0,
+                        userId = serverRepository.currentUser.value?.id,
+                        enableFavoriteSorting = true,
+                        addCurrentProgram = false,
                     ),
                 )
                 val channels =
@@ -103,8 +108,8 @@ class LiveTvViewModel
                 Timber.d("Got ${channels.size} channels")
                 channelsIdToIndex =
                     channels.withIndex().associateBy({ it.value.id }, { it.index })
-                // Initially, quickly load the first 10 channels (only ~6 are visible immediately), then below will load more
-                // This makes the guide appear faster, and load more useable data in the background
+                // Initially, quickly load the first 10 channels (only some are visible immediately), then below will load more
+                // This makes the guide appear faster, and load more usable data in the background
                 val initial = 10
                 fetchPrograms(channels, 0..<initial.coerceAtMost(channels.size))
 
