@@ -212,9 +212,6 @@ class LiveTvViewModel
                             }
                             listing.add(p)
                         } else if (index > 0) {
-                            if (channelId == UUID.fromString("638232b7-7ef7-7e98-903d-2249ee3fd2cd")) {
-                                Timber.v("Found ")
-                            }
                             var previous = listing.last()
                             while (previous.endHours < p.startHours) {
                                 // Fill gaps between programs
