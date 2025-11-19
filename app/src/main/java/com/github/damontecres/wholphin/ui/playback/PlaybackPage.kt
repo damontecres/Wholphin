@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableFloatStateOf
@@ -122,7 +123,7 @@ fun PlaybackPage(
             val player = viewModel.player
             val mediaInfo by viewModel.currentMediaInfo.observeAsState()
 
-            val currentPlayback by viewModel.currentPlayback.observeAsState(null)
+            val currentPlayback by viewModel.currentPlayback.collectAsState()
             val currentItemPlayback by viewModel.currentItemPlayback.observeAsState(
                 ItemPlayback(
                     userId = -1,

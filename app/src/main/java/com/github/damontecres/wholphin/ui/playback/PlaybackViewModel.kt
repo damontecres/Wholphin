@@ -9,6 +9,7 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.media3.common.C
+import androidx.media3.common.Format
 import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
@@ -16,6 +17,10 @@ import androidx.media3.common.Tracks
 import androidx.media3.common.text.Cue
 import androidx.media3.common.text.CueGroup
 import androidx.media3.common.util.UnstableApi
+import androidx.media3.exoplayer.DecoderCounters
+import androidx.media3.exoplayer.DecoderReuseEvaluation
+import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.exoplayer.analytics.AnalyticsListener
 import com.github.damontecres.wholphin.data.ItemPlaybackDao
 import com.github.damontecres.wholphin.data.ItemPlaybackRepository
 import com.github.damontecres.wholphin.data.ServerRepository
@@ -54,11 +59,15 @@ import com.github.damontecres.wholphin.util.subtitleMimeTypes
 import com.github.damontecres.wholphin.util.supportItemKinds
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
@@ -67,10 +76,12 @@ import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.mediaInfoApi
 import org.jellyfin.sdk.api.client.extensions.mediaSegmentsApi
+import org.jellyfin.sdk.api.client.extensions.sessionApi
 import org.jellyfin.sdk.api.client.extensions.trickplayApi
 import org.jellyfin.sdk.api.client.extensions.userLibraryApi
 import org.jellyfin.sdk.api.client.extensions.videosApi
 import org.jellyfin.sdk.api.sockets.subscribe
+import org.jellyfin.sdk.model.DeviceInfo
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.DeviceProfile
 import org.jellyfin.sdk.model.api.MediaSegmentDto
@@ -88,6 +99,7 @@ import java.util.Date
 import java.util.UUID
 import javax.inject.Inject
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 
 /**
  * This [ViewModel] is responsible for playing media including moving through playlists (including next up episodes)
@@ -106,8 +118,10 @@ class PlaybackViewModel
         private val itemPlaybackRepository: ItemPlaybackRepository,
         private val playerFactory: PlayerFactory,
         private val datePlayedService: DatePlayedService,
+        private val deviceInfo: DeviceInfo,
     ) : ViewModel(),
-        Player.Listener {
+        Player.Listener,
+        AnalyticsListener {
         val player by lazy {
             playerFactory.createVideoPlayer()
         }
@@ -116,7 +130,7 @@ class PlaybackViewModel
         val loading = MutableLiveData<LoadingState>(LoadingState.Loading)
 
         val currentMediaInfo = MutableLiveData<CurrentMediaInfo>(CurrentMediaInfo.EMPTY)
-        val currentPlayback = MutableLiveData<CurrentPlayback?>(null)
+        val currentPlayback = MutableStateFlow<CurrentPlayback?>(null)
         val currentItemPlayback = MutableLiveData<ItemPlayback>()
         val currentSegment = EqualityMutableLiveData<MediaSegmentDto?>(null)
         private val autoSkippedSegments = mutableSetOf<UUID>()
@@ -139,7 +153,9 @@ class PlaybackViewModel
 
         init {
             player.addListener(this)
+            (player as? ExoPlayer)?.addAnalyticsListener(this)
             addCloseable { player.removeListener(this@PlaybackViewModel) }
+            addCloseable { (player as? ExoPlayer)?.removeAnalyticsListener(this@PlaybackViewModel) }
             addCloseable {
                 this@PlaybackViewModel.activityListener?.let {
                     it.release()
@@ -148,6 +164,7 @@ class PlaybackViewModel
             }
             addCloseable { player.release() }
             subscribe()
+            listenForTranscodeReason()
         }
 
         /**
@@ -403,10 +420,12 @@ class PlaybackViewModel
                             }
                         }
                         withContext(Dispatchers.Main) {
-                            this@PlaybackViewModel.currentPlayback.value =
-                                currentPlayback.copy(
+                            this@PlaybackViewModel.currentPlayback.update {
+                                (it ?: currentPlayback).copy(
                                     tracks = checkForSupport(player.currentTracks),
                                 )
+                            }
+
                             this@PlaybackViewModel.currentItemPlayback.value = itemPlayback
                         }
 
@@ -561,7 +580,7 @@ class PlaybackViewModel
                     this@PlaybackViewModel.activityListener = activityListener
 
                     loading.value = LoadingState.Success
-                    this@PlaybackViewModel.currentPlayback.value = playback
+                    this@PlaybackViewModel.currentPlayback.update { playback }
                     this@PlaybackViewModel.currentItemPlayback.value = itemPlayback
                     player.setMediaItem(
                         mediaItem,
@@ -720,6 +739,39 @@ class PlaybackViewModel
                 }
         }
 
+        private fun listenForTranscodeReason() {
+            viewModelScope.launchIO {
+                currentPlayback.collectLatest {
+                    if (it != null) {
+                        try {
+                            var transcodeInfo = it.transcodeInfo
+                            while (isActive && it.playMethod == PlayMethod.TRANSCODE && transcodeInfo == null) {
+                                delay(2.seconds)
+                                transcodeInfo =
+                                    api.sessionApi
+                                        .getSessions(deviceId = deviceInfo.id)
+                                        .content
+                                        .firstOrNull()
+                                        ?.transcodingInfo
+                                if (transcodeInfo == null) delay(3.seconds)
+                            }
+                            Timber.v("transcodeInfo=$transcodeInfo")
+                            currentPlayback.update { current ->
+                                current?.copy(transcodeInfo = transcodeInfo)
+                            }
+                        } catch (ex: Exception) {
+                            if (ex !is CancellationException) {
+                                Timber.w(ex, "Exception trying to get session info")
+                                currentPlayback.update { current ->
+                                    current?.copy(transcodeInfo = null)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         private var lastInteractionDate: Date = Date()
 
         /**
@@ -791,10 +843,11 @@ class PlaybackViewModel
         }
 
         override fun onTracksChanged(tracks: Tracks) {
-            currentPlayback.value =
-                currentPlayback.value?.copy(
+            currentPlayback.update {
+                it?.copy(
                     tracks = checkForSupport(tracks),
                 )
+            }
         }
 
         override fun onCues(cueGroup: CueGroup) {
@@ -891,4 +944,66 @@ class PlaybackViewModel
                     currentMediaInfo.setValueOnMain(newMediaInfo)
                 }
             }
+
+        override fun onVideoDecoderInitialized(
+            eventTime: AnalyticsListener.EventTime,
+            decoderName: String,
+            initializedTimestampMs: Long,
+            initializationDurationMs: Long,
+        ) {
+            Timber.v("onVideoDecoderInitialized: decoder=$decoderName")
+            currentPlayback.update { it?.copy(videoDecoder = decoderName) }
+        }
+
+        override fun onVideoDisabled(
+            eventTime: AnalyticsListener.EventTime,
+            decoderCounters: DecoderCounters,
+        ) {
+            Timber.d("onVideoDisabled")
+            currentPlayback.update { it?.copy(videoDecoder = null) }
+        }
+
+        override fun onVideoInputFormatChanged(
+            eventTime: AnalyticsListener.EventTime,
+            format: Format,
+            decoderReuseEvaluation: DecoderReuseEvaluation?,
+        ) {
+            decoderReuseEvaluation?.let { decoder ->
+                if (decoder.result != DecoderReuseEvaluation.REUSE_RESULT_NO) {
+                    Timber.d("onVideoInputFormatChanged: decoder=${decoder.decoderName}")
+                    currentPlayback.update { it?.copy(videoDecoder = decoder.decoderName) }
+                }
+            }
+        }
+
+        override fun onAudioDecoderInitialized(
+            eventTime: AnalyticsListener.EventTime,
+            decoderName: String,
+            initializedTimestampMs: Long,
+            initializationDurationMs: Long,
+        ) {
+            Timber.d("decoder: onAudioDecoderInitialized: decoder=$decoderName")
+            currentPlayback.update { it?.copy(audioDecoder = decoderName) }
+        }
+
+        override fun onAudioInputFormatChanged(
+            eventTime: AnalyticsListener.EventTime,
+            format: Format,
+            decoderReuseEvaluation: DecoderReuseEvaluation?,
+        ) {
+            decoderReuseEvaluation?.let { decoder ->
+                if (decoder.result != DecoderReuseEvaluation.REUSE_RESULT_NO) {
+                    Timber.d("decoder: onAudioInputFormatChanged: decoder=${decoder.decoderName}")
+                    currentPlayback.update { it?.copy(audioDecoder = decoder.decoderName) }
+                }
+            }
+        }
+
+        override fun onAudioDisabled(
+            eventTime: AnalyticsListener.EventTime,
+            decoderCounters: DecoderCounters,
+        ) {
+            Timber.d("decoder: onAudioDisabled")
+            currentPlayback.update { it?.copy(audioDecoder = null) }
+        }
     }
