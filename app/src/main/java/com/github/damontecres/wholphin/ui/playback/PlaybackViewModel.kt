@@ -89,6 +89,9 @@ import java.util.UUID
 import javax.inject.Inject
 import kotlin.time.Duration.Companion.milliseconds
 
+/**
+ * This [ViewModel] is responsible for playing media including moving through playlists (including next up episodes)
+ */
 @HiltViewModel
 @OptIn(markerClass = [UnstableApi::class])
 class PlaybackViewModel
@@ -146,6 +149,9 @@ class PlaybackViewModel
             subscribe()
         }
 
+        /**
+         * Initialize from the UI to start playback
+         */
         fun init(
             destination: Destination.Playback,
             deviceProfile: DeviceProfile,
@@ -207,10 +213,17 @@ class PlaybackViewModel
                         this@PlaybackViewModel.playlist.value = playlist
                     }
                 }
-                maybeSetupPlaylistListener()
             }
         }
 
+        /**
+         * Play an item
+         *
+         * @param item the item to play
+         * @param positionMs the starting playback position in milliseconds
+         * @param itemPlayback the parameters for playback such chosen subtitle or audio streams
+         * @param forceTranscoding whether the user has requested to force playback via transcoding
+         */
         private suspend fun play(
             item: BaseItem,
             positionMs: Long,
@@ -219,7 +232,10 @@ class PlaybackViewModel
         ): Boolean =
             withContext(Dispatchers.IO) {
                 Timber.i("Playing ${item.id}")
+
+                // Starting playback, so want to invalidate the last played timestamp for this item
                 datePlayedService.invalidate(item)
+                // New item, so we can clear the media segment tracker & subtitle cues
                 autoSkippedSegments.clear()
                 this@PlaybackViewModel.subtitleCues.setValueOnMain(listOf())
 
@@ -237,11 +253,10 @@ class PlaybackViewModel
                 val isLiveTv = item.type == BaseItemKind.TV_CHANNEL
                 val base = item.data
 
+                // Use the provided playback parameters or else check if the database has some
                 val playbackConfig =
-                    if (itemPlayback != null) {
-                        itemPlayback
-                    } else {
-                        serverRepository.currentUser.value?.let { user ->
+                    itemPlayback
+                        ?: serverRepository.currentUser.value?.let { user ->
                             itemPlaybackDao.getItem(user, base.id)?.let {
                                 Timber.v("Fetched itemPlayback from DB: %s", it)
                                 if (it.sourceId != null) {
@@ -251,7 +266,6 @@ class PlaybackViewModel
                                 }
                             }
                         }
-                    }
                 val mediaSource = chooseSource(base, playbackConfig)
 
                 if (mediaSource == null) {
@@ -263,39 +277,16 @@ class PlaybackViewModel
                     return@withContext false
                 }
 
-//                mediaSource.mediaStreams
-//                    ?.filter { it.type == MediaStreamType.VIDEO }
-//                    ?.forEach { Timber.v("${it.videoRangeType}, ${it.videoRange}") }
                 val subtitleStreams =
                     mediaSource.mediaStreams
                         ?.filter { it.type == MediaStreamType.SUBTITLE }
-                        ?.map {
-                            SubtitleStream(
-                                it.index,
-                                it.language,
-                                it.title,
-                                it.codec,
-                                it.codecTag,
-                                it.isExternal,
-                                it.isForced,
-                                it.isDefault,
-                                it.displayTitle,
-                            )
-                        }.orEmpty()
+                        ?.map(SubtitleStream::from)
+                        .orEmpty()
                 val audioStreams =
                     mediaSource.mediaStreams
                         ?.filter { it.type == MediaStreamType.AUDIO }
-                        ?.map {
-                            AudioStream(
-                                it.index,
-                                it.language,
-                                it.title,
-                                it.codec,
-                                it.codecTag,
-                                it.channels,
-                                it.channelLayout,
-                            )
-                        }?.sortedWith(compareBy<AudioStream> { it.language }.thenByDescending { it.channels })
+                        ?.map(AudioStream::from)
+                        ?.sortedWith(compareBy<AudioStream> { it.language }.thenByDescending { it.channels })
                         .orEmpty()
 
                 val audioIndex =
@@ -352,6 +343,9 @@ class PlaybackViewModel
                 return@withContext true
             }
 
+        /**
+         * Change which streams (ie audio or subtitle) are active
+         */
         @OptIn(UnstableApi::class)
         internal suspend fun changeStreams(
             item: BaseItem,
@@ -635,32 +629,23 @@ class PlaybackViewModel
             )
         }
 
-        private fun maybeSetupPlaylistListener() {
-            playlist.value?.let { playlist ->
-                if (playlist.hasNext()) {
-                    Timber.v("Adding lister for playlist with ${playlist.items.size} items")
-                    val listener =
-                        object : Player.Listener {
-                            override fun onPlaybackStateChanged(playbackState: Int) {
-                                if (playbackState == Player.STATE_ENDED) {
-                                    viewModelScope.launchIO {
-                                        val nextItem = playlist.peek()
-                                        Timber.v("Setting next up to ${nextItem?.id}")
-                                        withContext(Dispatchers.Main) {
-                                            nextUp.value = nextItem
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    player.addListener(listener)
-                    addCloseable { player.removeListener(listener) }
+        override fun onPlaybackStateChanged(playbackState: Int) {
+            if (playbackState == Player.STATE_ENDED) {
+                viewModelScope.launchIO {
+                    val nextItem = playlist.value?.peek()
+                    Timber.v("Setting next up to ${nextItem?.id}")
+                    withContext(Dispatchers.Main) {
+                        nextUp.value = nextItem
+                    }
                 }
             }
         }
 
         private var segmentJob: Job? = null
 
+        /**
+         * This sets up a coroutine to periodically check whether the current playback progress is within a media segment (intro, outro, etc)
+         */
         private fun listenForSegments() {
             segmentJob?.cancel()
             segmentJob =
@@ -735,6 +720,9 @@ class PlaybackViewModel
 
         private var lastInteractionDate: Date = Date()
 
+        /**
+         * Tracks interactions with the UI for passout protection
+         */
         fun reportInteraction() {
 //            Timber.v("reportInteraction")
             lastInteractionDate = Date()
@@ -856,33 +844,44 @@ class PlaybackViewModel
                 .subscribe<PlaystateMessage>()
                 .onEach { message ->
                     message.data?.let {
-                        when (it.command) {
-                            PlaystateCommand.STOP -> {
-                                release()
-                                navigationManager.goBack()
+                        withContext(Dispatchers.Main) {
+                            when (it.command) {
+                                PlaystateCommand.STOP -> {
+                                    release()
+                                    navigationManager.goBack()
+                                }
+
+                                PlaystateCommand.PAUSE -> player.pause()
+                                PlaystateCommand.UNPAUSE -> player.play()
+                                PlaystateCommand.NEXT_TRACK -> playNextUp()
+                                PlaystateCommand.PREVIOUS_TRACK -> playPrevious()
+                                PlaystateCommand.SEEK ->
+                                    it.seekPositionTicks?.ticks?.let {
+                                        player.seekTo(
+                                            it.inWholeMilliseconds,
+                                        )
+                                    }
+
+                                PlaystateCommand.REWIND ->
+                                    player.seekBack(
+                                        preferences.appPreferences.playbackPreferences.skipBackMs.milliseconds,
+                                    )
+
+                                PlaystateCommand.FAST_FORWARD ->
+                                    player.seekForward(
+                                        preferences.appPreferences.playbackPreferences.skipForwardMs.milliseconds,
+                                    )
+
+                                PlaystateCommand.PLAY_PAUSE -> if (player.isPlaying) player.pause() else player.play()
                             }
-
-                            PlaystateCommand.PAUSE -> player.pause()
-                            PlaystateCommand.UNPAUSE -> player.play()
-                            PlaystateCommand.NEXT_TRACK -> playNextUp()
-                            PlaystateCommand.PREVIOUS_TRACK -> playPrevious()
-                            PlaystateCommand.SEEK -> it.seekPositionTicks?.ticks?.let { player.seekTo(it.inWholeMilliseconds) }
-                            PlaystateCommand.REWIND ->
-                                player.seekBack(
-                                    preferences.appPreferences.playbackPreferences.skipBackMs.milliseconds,
-                                )
-
-                            PlaystateCommand.FAST_FORWARD ->
-                                player.seekForward(
-                                    preferences.appPreferences.playbackPreferences.skipForwardMs.milliseconds,
-                                )
-
-                            PlaystateCommand.PLAY_PAUSE -> if (player.isPlaying) player.pause() else player.play()
                         }
                     }
                 }.launchIn(viewModelScope)
         }
 
+        /**
+         * Atomically update [currentMediaInfo]
+         */
         internal suspend fun updateCurrentMedia(block: (CurrentMediaInfo) -> CurrentMediaInfo) =
             withContext(Dispatchers.IO) {
                 mutex.withLock {

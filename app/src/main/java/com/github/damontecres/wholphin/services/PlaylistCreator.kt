@@ -38,6 +38,9 @@ class PlaylistCreator
         private val api: ApiClient,
         private val serverRepository: ServerRepository,
     ) {
+        /**
+         * Creates a playlist of next up episodes for the given series starting with the given episode
+         */
         suspend fun createFromEpisode(
             seriesId: UUID,
             episodeId: UUID,
@@ -47,13 +50,13 @@ class PlaylistCreator
                     seriesId = seriesId,
                     fields = DefaultItemFields,
                     startItemId = episodeId,
-                    limit = Playlist.Companion.MAX_SIZE,
+                    limit = Playlist.MAX_SIZE,
                 )
             val episodes = GetEpisodesRequestHandler.execute(api, request).content.items
             val startIndex =
                 episodes.indexOfFirstOrNull { it.id == episodeId }
                     ?: throw IllegalStateException("Episode $episodeId was not returned")
-            return Playlist(episodes.map { BaseItem.Companion.from(it, api) }, startIndex)
+            return Playlist(episodes.map { BaseItem.from(it, api) }, startIndex)
         }
 
         suspend fun createFromPlaylistId(
@@ -66,10 +69,10 @@ class PlaylistCreator
                     playlistId = playlistId,
                     fields = DefaultItemFields,
                     startIndex = startIndex,
-                    limit = Playlist.Companion.MAX_SIZE,
+                    limit = Playlist.MAX_SIZE,
                 )
             val items = GetPlaylistItemsRequestHandler.execute(api, request).content.items
-            var baseItems = items.map { BaseItem.Companion.from(it, api) }
+            var baseItems = items.map { BaseItem.from(it, api) }
             if (shuffled) {
                 baseItems = baseItems.shuffled()
             }
