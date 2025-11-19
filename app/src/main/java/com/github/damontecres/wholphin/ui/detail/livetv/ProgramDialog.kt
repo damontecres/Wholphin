@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
@@ -20,6 +21,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -35,6 +37,7 @@ import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.ui.components.CircularProgress
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
+import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.seasonEpisode
 import com.github.damontecres.wholphin.ui.tryRequestFocus
@@ -141,86 +144,10 @@ fun ProgramDialog(
                                         .padding(top = 8.dp)
                                         .fillMaxWidth(),
                             ) {
-                                if (canRecord) {
-                                    Row(
-                                        horizontalArrangement = Arrangement.spacedBy(16.dp),
-                                    ) {
-                                        if (dto.isSeries ?: false) {
-                                            Button(
-                                                onClick = {
-                                                    if (isSeriesRecording) {
-                                                        onCancelRecord.invoke(true)
-                                                    } else {
-                                                        onRecord.invoke(true)
-                                                    }
-                                                },
-                                            ) {
-                                                Row(
-                                                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                                                    verticalAlignment = Alignment.CenterVertically,
-                                                ) {
-                                                    if (isSeriesRecording) {
-                                                        Icon(
-                                                            imageVector = Icons.Default.Close,
-                                                            contentDescription = null,
-                                                            tint = Color.Red,
-                                                        )
-                                                    }
-                                                    Text(
-                                                        text =
-                                                            if (isSeriesRecording) {
-                                                                stringResource(
-                                                                    R.string.cancel_series_recording,
-                                                                )
-                                                            } else {
-                                                                stringResource(R.string.record_series)
-                                                            },
-                                                    )
-                                                }
-                                            }
-                                        }
-                                        if (dto.endDate?.isAfter(LocalDateTime.now()) ?: true) {
-                                            // Only show program specific recording button if it hasn't finished yet
-                                            Button(
-                                                onClick = {
-                                                    if (isRecording) {
-                                                        onCancelRecord.invoke(false)
-                                                    } else {
-                                                        onRecord.invoke(false)
-                                                    }
-                                                },
-                                            ) {
-                                                Row(
-                                                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                                                    verticalAlignment = Alignment.CenterVertically,
-                                                ) {
-                                                    if (isRecording) {
-                                                        Icon(
-                                                            imageVector = Icons.Default.Close,
-                                                            contentDescription = null,
-                                                            tint = Color.Red,
-                                                        )
-                                                    }
-                                                    Text(
-                                                        text =
-                                                            if (isRecording) {
-                                                                stringResource(
-                                                                    R.string.cancel_recording,
-                                                                )
-                                                            } else {
-                                                                stringResource(
-                                                                    R.string.record_program,
-                                                                )
-                                                            },
-                                                    )
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
                                 if (now.isAfter(dto.startDate!!) && now.isBefore(dto.endDate!!)) {
                                     Button(
                                         onClick = onWatch,
+                                        modifier = Modifier,
                                     ) {
                                         Row(
                                             horizontalArrangement = Arrangement.spacedBy(4.dp),
@@ -234,6 +161,111 @@ fun ProgramDialog(
                                             Text(
                                                 text = stringResource(R.string.watch_live),
                                             )
+                                        }
+                                    }
+                                }
+                                if (canRecord) {
+                                    val recordFocusRequester = remember { FocusRequester() }
+                                    LazyRow(
+                                        horizontalArrangement =
+                                            Arrangement.spacedBy(
+                                                16.dp,
+                                                Alignment.CenterHorizontally,
+                                            ),
+                                        modifier =
+                                            Modifier
+                                                .fillMaxWidth()
+                                                .focusRestorer(recordFocusRequester),
+                                    ) {
+                                        if (dto.isSeries ?: false) {
+                                            item {
+                                                Button(
+                                                    onClick = {
+                                                        if (isSeriesRecording) {
+                                                            onCancelRecord.invoke(true)
+                                                        } else {
+                                                            onRecord.invoke(true)
+                                                        }
+                                                    },
+                                                    modifier =
+                                                        Modifier.focusRequester(recordFocusRequester),
+                                                ) {
+                                                    Row(
+                                                        horizontalArrangement =
+                                                            Arrangement.spacedBy(
+                                                                4.dp,
+                                                            ),
+                                                        verticalAlignment = Alignment.CenterVertically,
+                                                    ) {
+                                                        if (isSeriesRecording) {
+                                                            Icon(
+                                                                imageVector = Icons.Default.Close,
+                                                                contentDescription = null,
+                                                                tint = Color.Red,
+                                                            )
+                                                        }
+                                                        Text(
+                                                            text =
+                                                                if (isSeriesRecording) {
+                                                                    stringResource(
+                                                                        R.string.cancel_series_recording,
+                                                                    )
+                                                                } else {
+                                                                    stringResource(R.string.record_series)
+                                                                },
+                                                        )
+                                                    }
+                                                }
+                                            }
+                                        }
+                                        if (dto.endDate?.isAfter(LocalDateTime.now()) ?: true) {
+                                            // Only show program specific recording button if it hasn't finished yet
+                                            item {
+                                                Button(
+                                                    onClick = {
+                                                        if (isRecording) {
+                                                            onCancelRecord.invoke(false)
+                                                        } else {
+                                                            onRecord.invoke(false)
+                                                        }
+                                                    },
+                                                    modifier =
+                                                        Modifier.ifElse(
+                                                            !(dto.isSeries ?: false),
+                                                            Modifier.focusRequester(
+                                                                recordFocusRequester,
+                                                            ),
+                                                        ),
+                                                ) {
+                                                    Row(
+                                                        horizontalArrangement =
+                                                            Arrangement.spacedBy(
+                                                                4.dp,
+                                                            ),
+                                                        verticalAlignment = Alignment.CenterVertically,
+                                                    ) {
+                                                        if (isRecording) {
+                                                            Icon(
+                                                                imageVector = Icons.Default.Close,
+                                                                contentDescription = null,
+                                                                tint = Color.Red,
+                                                            )
+                                                        }
+                                                        Text(
+                                                            text =
+                                                                if (isRecording) {
+                                                                    stringResource(
+                                                                        R.string.cancel_recording,
+                                                                    )
+                                                                } else {
+                                                                    stringResource(
+                                                                        R.string.record_program,
+                                                                    )
+                                                                },
+                                                        )
+                                                    }
+                                                }
+                                            }
                                         }
                                     }
                                 }

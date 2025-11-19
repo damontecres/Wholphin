@@ -135,6 +135,9 @@ fun CollectionFolderLiveTv(
             0 -> {
                 TvGuideGrid(
                     true,
+                    onRowPosition = {
+                        showHeader = it <= 0
+                    },
                     Modifier
                         .fillMaxSize()
                         .focusRequester(focusRequester),

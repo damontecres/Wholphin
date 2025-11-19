@@ -4,16 +4,12 @@ import android.text.format.DateUtils
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -42,14 +38,10 @@ import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Surface
 import androidx.tv.material3.SurfaceDefaults
 import androidx.tv.material3.Text
-import androidx.tv.material3.contentColorFor
-import androidx.tv.material3.surfaceColorAtElevation
-import coil3.compose.AsyncImage
 import com.github.damontecres.wholphin.ui.components.CircularProgress
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.data.RowColumn
-import com.github.damontecres.wholphin.ui.enableMarquee
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.rememberPosition
 import com.github.damontecres.wholphin.ui.tryRequestFocus
@@ -69,6 +61,7 @@ import kotlin.math.abs
 @Composable
 fun TvGuideGrid(
     requestFocusAfterLoading: Boolean,
+    onRowPosition: (Int) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: LiveTvViewModel = hiltViewModel(),
 ) {
@@ -101,7 +94,7 @@ fun TvGuideGrid(
                 }
             }
             Column(modifier = modifier) {
-                TvGuideGrid(
+                TvGuideGridContent(
                     loading = state is LoadingState.Loading,
                     channels = channels,
                     programs = programs,
@@ -115,7 +108,10 @@ fun TvGuideGrid(
                             ),
                         )
                     },
-                    onFocus = viewModel::onFocusChannel,
+                    onFocus = {
+                        onRowPosition.invoke(it.row)
+                        viewModel.onFocusChannel(it)
+                    },
                     onClickProgram = { index, program ->
                         if (program.isFake) {
                             val now = LocalDateTime.now()
@@ -186,7 +182,7 @@ fun TvGuideGrid(
 }
 
 @Composable
-fun TvGuideGrid(
+fun TvGuideGridContent(
     loading: Boolean,
     channels: List<TvChannel>,
     programs: FetchedPrograms,
@@ -207,7 +203,7 @@ fun TvGuideGrid(
     val focusedProgramIndex =
         remember(programs.range, focusedItem) {
             focusedItem.let { focus ->
-                (programs.range.start..<focus.row).sumOf {
+                (programs.range.first..<focus.row).sumOf {
                     val channelId = channels[it].id
                     channelProgramCount[channelId] ?: 0
                 } + focus.column
@@ -225,7 +221,7 @@ fun TvGuideGrid(
             timelineHourWidth = 240.dp,
             timelineHeight = 32.dp,
             channelWidth = 120.dp,
-            channelHeight = 80.dp,
+            channelHeight = 64.dp,
             currentTimeWidth = 2.dp,
         )
     var gridHasFocus by rememberSaveable { mutableStateOf(false) }
@@ -251,6 +247,8 @@ fun TvGuideGrid(
                                     if (item.column > 0) {
                                         // Not at beginning of row, so move to beginning
                                         item.copy(column = 0)
+                                    } else if (item.row > 0) {
+                                        item.copy(row = 0)
                                     } else {
                                         // At beginning, so allow normal back button behavior
                                         return@onPreviewKeyEvent false
@@ -496,56 +494,7 @@ fun TvGuideGrid(
                 val program = programs.programs[programIndex]
                 val focused =
                     gridHasFocus && !channelColumnFocused && programIndex == focusedProgramIndex
-                val background =
-                    if (focused) {
-                        MaterialTheme.colorScheme.inverseSurface
-                    } else {
-                        program.category?.color
-                            ?: MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp)
-                    }
-                val textColor = MaterialTheme.colorScheme.contentColorFor(background)
-                Box(
-                    modifier =
-                        Modifier
-                            .padding(2.dp)
-                            .fillMaxSize()
-                            .background(
-                                background,
-                                shape = RoundedCornerShape(4.dp),
-                            ),
-                ) {
-                    Column(
-                        verticalArrangement = Arrangement.spacedBy(4.dp),
-                        modifier =
-                            Modifier
-                                .fillMaxSize()
-                                .padding(4.dp),
-                    ) {
-                        Text(
-                            text = program.name ?: program.id.toString(),
-                            color = textColor,
-                            maxLines = 1,
-                            modifier = Modifier.enableMarquee(focused),
-                        )
-                        listOfNotNull(
-                            program.seasonEpisode?.let { "S${it.season} E${it.episode}" },
-                            program.subtitle,
-                        ).joinToString(" - ")
-                            .ifBlank { null }
-                            ?.let {
-                                Text(
-                                    text = it,
-                                    color = textColor,
-                                    modifier = Modifier,
-                                )
-                            }
-                    }
-                    RecordingMarker(
-                        isRecording = program.isRecording,
-                        isSeriesRecording = program.isSeriesRecording,
-                        modifier = Modifier.align(Alignment.BottomEnd),
-                    )
-                }
+                Program(program, focused, Modifier)
             }
 
             channels(
@@ -557,42 +506,12 @@ fun TvGuideGrid(
                 val channel = channels[channelIndex]
                 val focused =
                     gridHasFocus && channelColumnFocused && focusedChannelIndex == channelIndex
-                val background =
-                    if (focused) {
-                        MaterialTheme.colorScheme.inverseSurface
-                    } else {
-                        MaterialTheme.colorScheme.surface
-                    }
-                val textColor = MaterialTheme.colorScheme.contentColorFor(background)
-                Box(
-                    modifier =
-                        Modifier
-                            .fillMaxSize()
-                            .background(
-                                background,
-                                shape = RoundedCornerShape(4.dp),
-                            ),
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        modifier =
-                            Modifier
-                                .padding(4.dp)
-                                .fillMaxSize(),
-                    ) {
-                        Text(
-                            text = channel.number ?: channel.name ?: channelIndex.toString(),
-                            color = textColor,
-                            modifier = Modifier,
-                        )
-                        AsyncImage(
-                            model = channel.imageUrl,
-                            contentDescription = null,
-                            modifier = Modifier.fillMaxHeight(.66f),
-                        )
-                    }
-                }
+                Channel(
+                    channel = channel,
+                    channelIndex = channelIndex,
+                    focused = focused,
+                    modifier = Modifier,
+                )
             }
 
             topCorner {
