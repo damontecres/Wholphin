@@ -4,7 +4,7 @@
 
 Wholphin is an open-source Android TV client for Jellyfin. It aims to provide a different app UI that's inspired by Plex for users interested in migrating to Jellyfin.
 
-This is not a fork of the [official client](https://github.com/jellyfin/jellyfin-androidtv). Wholphin's user interface and controls have been written completely from scratch. Wholphin uses the same media player (media3/ExoPlayer) as the official client.
+This is not a fork of the [official client](https://github.com/jellyfin/jellyfin-androidtv). Wholphin's user interface and controls have been written completely from scratch. Wholphin `v0.3.0+` supports playing media using either ExoPlayer/Media3 or MPV (experimental).
 
 <img width="1280" height="771" alt="0 3 0_home" src="https://github.com/user-attachments/assets/23be4786-a4c3-45e5-a710-8d1ade2be2a3" />
 
