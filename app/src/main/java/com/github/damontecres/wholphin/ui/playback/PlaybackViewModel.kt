@@ -127,6 +127,7 @@ class PlaybackViewModel
         private lateinit var deviceProfile: DeviceProfile
         internal lateinit var itemId: UUID
         internal lateinit var item: BaseItem
+        internal var forceTranscoding: Boolean = false
         private var activityListener: TrackActivityPlaybackListener? = null
 
         val nextUp = MutableLiveData<BaseItem?>()
@@ -160,6 +161,7 @@ class PlaybackViewModel
             nextUp.value = null
             this.preferences = preferences
             this.deviceProfile = deviceProfile
+            this.forceTranscoding = destination.forceTranscoding
             val itemId = destination.itemId
             this.itemId = itemId
             val item = destination.item
@@ -228,7 +230,7 @@ class PlaybackViewModel
             item: BaseItem,
             positionMs: Long,
             itemPlayback: ItemPlayback? = null,
-            forceTranscoding: Boolean = false,
+            forceTranscoding: Boolean = this.forceTranscoding,
         ): Boolean =
             withContext(Dispatchers.IO) {
                 Timber.i("Playing ${item.id}")
@@ -354,8 +356,8 @@ class PlaybackViewModel
             subtitleIndex: Int?,
             positionMs: Long = 0,
             userInitiated: Boolean,
-            enableDirectPlay: Boolean = true,
-            enableDirectStream: Boolean = true,
+            enableDirectPlay: Boolean = !this.forceTranscoding,
+            enableDirectStream: Boolean = !this.forceTranscoding,
         ) = withContext(Dispatchers.IO) {
             val itemId = item.id
             val playerBackend = preferences.appPreferences.playbackPreferences.playerBackend
