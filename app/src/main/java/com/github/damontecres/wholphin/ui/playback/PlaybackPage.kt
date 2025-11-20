@@ -142,6 +142,8 @@ fun PlaybackPage(
             val subtitleSearch by viewModel.subtitleSearch.observeAsState(null)
             val subtitleSearchLanguage by viewModel.subtitleSearchLanguage.observeAsState(Locale.current.language)
 
+            var playbackDialog by remember { mutableStateOf<PlaybackDialogType?>(null) }
+
             OneTimeLaunchedEffect {
                 if (prefs.playerBackend == PlayerBackend.MPV) {
                     scope.launch(Dispatchers.Main + ExceptionHandler()) {
@@ -202,7 +204,57 @@ fun PlaybackPage(
                     skipBackOnResume = preferences.appPreferences.playbackPreferences.skipBackOnResume,
                     onInteraction = viewModel::reportInteraction,
                     oneClickPause = preferences.appPreferences.playbackPreferences.oneClickPause,
+                    onStop = {
+                        player.stop()
+                        viewModel.navigationManager.goBack()
+                    },
+                    onPlaybackDialogTypeClick = { playbackDialog = it },
                 )
+
+            val onPlaybackActionClick: (PlaybackAction) -> Unit = {
+                when (it) {
+                    is PlaybackAction.PlaybackSpeed -> {
+                        playbackSpeed = it.value
+                    }
+
+                    is PlaybackAction.Scale -> {
+                        contentScale = it.scale
+                    }
+
+                    PlaybackAction.ShowDebug -> {
+                        showDebugInfo = !showDebugInfo
+                    }
+
+                    PlaybackAction.ShowPlaylist -> TODO()
+                    PlaybackAction.ShowVideoFilterDialog -> TODO()
+                    is PlaybackAction.ToggleAudio -> {
+                        viewModel.changeAudioStream(it.index)
+                    }
+
+                    is PlaybackAction.ToggleCaptions -> {
+                        viewModel.changeSubtitleStream(it.index)
+                    }
+
+                    PlaybackAction.SearchCaptions -> {
+                        controllerViewState.hideControls()
+                        viewModel.searchForSubtitles()
+                    }
+
+                    PlaybackAction.Next -> {
+                        // TODO focus is lost
+                        viewModel.playNextUp()
+                    }
+
+                    PlaybackAction.Previous -> {
+                        val pos = player.currentPosition
+                        if (pos < player.maxSeekToPreviousPosition && playlist.hasPrevious()) {
+                            viewModel.playPrevious()
+                        } else {
+                            player.seekToPrevious()
+                        }
+                    }
+                }
+            }
 
             val showSegment =
                 !segmentCancelled && currentSegment != null &&
@@ -320,59 +372,11 @@ fun PlaybackPage(
                             seekForward = preferences.appPreferences.playbackPreferences.skipForwardMs.milliseconds,
                             seekBack = preferences.appPreferences.playbackPreferences.skipBackMs.milliseconds,
                             skipBackOnResume = preferences.appPreferences.playbackPreferences.skipBackOnResume,
-                            onPlaybackActionClick = {
-                                when (it) {
-                                    is PlaybackAction.PlaybackSpeed -> {
-                                        playbackSpeed = it.value
-                                    }
-
-                                    is PlaybackAction.Scale -> {
-                                        contentScale = it.scale
-                                    }
-
-                                    PlaybackAction.ShowDebug -> {
-                                        showDebugInfo = !showDebugInfo
-                                    }
-
-                                    PlaybackAction.ShowPlaylist -> TODO()
-                                    PlaybackAction.ShowVideoFilterDialog -> TODO()
-                                    is PlaybackAction.ToggleAudio -> {
-                                        viewModel.changeAudioStream(it.index)
-                                    }
-
-                                    is PlaybackAction.ToggleCaptions -> {
-                                        viewModel.changeSubtitleStream(it.index)
-                                    }
-
-                                    PlaybackAction.SearchCaptions -> {
-                                        controllerViewState.hideControls()
-                                        viewModel.searchForSubtitles()
-                                    }
-
-                                    PlaybackAction.Next -> {
-                                        // TODO focus is lost
-                                        viewModel.playNextUp()
-                                    }
-
-                                    PlaybackAction.Previous -> {
-                                        val pos = player.currentPosition
-                                        if (pos < player.maxSeekToPreviousPosition && playlist.hasPrevious()) {
-                                            viewModel.playPrevious()
-                                        } else {
-                                            player.seekToPrevious()
-                                        }
-                                    }
-                                }
-                            },
+                            onPlaybackActionClick = onPlaybackActionClick,
+                            onClickPlaybackDialogType = { playbackDialog = it },
                             onSeekBarChange = seekBarState::onValueChange,
                             showDebugInfo = showDebugInfo,
-                            scale = contentScale,
-                            playbackSpeed = playbackSpeed,
-                            moreButtonOptions = MoreButtonOptions(mapOf()),
                             currentPlayback = currentPlayback,
-                            currentItemPlayback = currentItemPlayback,
-                            audioStreams = mediaInfo?.audioStreams ?: listOf(),
-                            subtitleStreams = mediaInfo?.subtitleStreams ?: listOf(),
                             chapters = mediaInfo?.chapters ?: listOf(),
                             trickplayInfo = mediaInfo?.trickPlayInfo,
                             trickplayUrlFor = viewModel::getTrickplayUrl,
@@ -523,6 +527,33 @@ fun PlaybackPage(
                                 .heightIn(max = 400.dp),
                     )
                 }
+            }
+
+            playbackDialog?.let { type ->
+                PlaybackDialog(
+                    type = type,
+                    settings =
+                        PlaybackSettings(
+                            showDebugInfo = showDebugInfo,
+                            audioIndex = currentItemPlayback?.audioIndex,
+                            audioStreams = mediaInfo?.audioStreams.orEmpty(),
+                            subtitleIndex = currentItemPlayback?.subtitleIndex,
+                            subtitleStreams = mediaInfo?.subtitleStreams.orEmpty(),
+                            playbackSpeed = playbackSpeed,
+                            contentScale = contentScale,
+                        ),
+                    onDismissRequest = {
+                        playbackDialog = null
+                        if (controllerViewState.controlsVisible) {
+                            controllerViewState.pulseControls()
+                        }
+                    },
+                    onControllerInteraction = {
+                        controllerViewState.pulseControls(Long.MAX_VALUE)
+                    },
+                    onClickPlaybackDialogType = { playbackDialog = it },
+                    onPlaybackActionClick = onPlaybackActionClick,
+                )
             }
         }
     }

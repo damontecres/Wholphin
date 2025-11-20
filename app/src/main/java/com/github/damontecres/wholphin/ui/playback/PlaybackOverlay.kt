@@ -37,7 +37,6 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
@@ -50,7 +49,6 @@ import coil3.compose.AsyncImage
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.Chapter
-import com.github.damontecres.wholphin.data.model.ItemPlayback
 import com.github.damontecres.wholphin.data.model.Playlist
 import com.github.damontecres.wholphin.data.model.aspectRatioFloat
 import com.github.damontecres.wholphin.ui.AppColors
@@ -79,7 +77,6 @@ private val subtitleTextSize = 18.sp
 @Composable
 fun PlaybackOverlay(
     item: BaseItem?,
-    subtitleStreams: List<SubtitleStream>,
     chapters: List<Chapter>,
     playerControls: Player,
     controllerViewState: ControllerViewState,
@@ -92,14 +89,10 @@ fun PlaybackOverlay(
     skipBackOnResume: Duration?,
     seekForward: Duration,
     onPlaybackActionClick: (PlaybackAction) -> Unit,
+    onClickPlaybackDialogType: (PlaybackDialogType) -> Unit,
     onSeekBarChange: (Long) -> Unit,
     showDebugInfo: Boolean,
-    scale: ContentScale,
-    playbackSpeed: Float,
-    moreButtonOptions: MoreButtonOptions,
     currentPlayback: CurrentPlayback?,
-    currentItemPlayback: ItemPlayback,
-    audioStreams: List<AudioStream>,
     currentSegment: MediaSegmentDto?,
     modifier: Modifier = Modifier,
     trickplayInfo: TrickplayInfo? = null,
@@ -151,7 +144,6 @@ fun PlaybackOverlay(
             Controller(
                 title = item?.title,
                 subtitle = item?.subtitleLong,
-                subtitleStreams = subtitleStreams,
                 playerControls = playerControls,
                 controllerViewState = controllerViewState,
                 showPlay = showPlay,
@@ -163,17 +155,11 @@ fun PlaybackOverlay(
                 skipBackOnResume = skipBackOnResume,
                 seekForward = seekForward,
                 onPlaybackActionClick = onPlaybackActionClick,
+                onClickPlaybackDialogType = onClickPlaybackDialogType,
                 onSeekProgress = {
                     onSeekBarChange(it)
                     seekProgressMs = it
                 },
-                showDebugInfo = showDebugInfo,
-                scale = scale,
-                playbackSpeed = playbackSpeed,
-                moreButtonOptions = moreButtonOptions,
-                currentPlayback = currentPlayback,
-                currentItemPlayback = currentItemPlayback,
-                audioStreams = audioStreams,
                 seekBarInteractionSource = seekBarInteractionSource,
                 nextState = nextState,
                 onNextStateFocus = {
@@ -442,7 +428,6 @@ enum class OverlayViewState {
 @Composable
 fun Controller(
     title: String?,
-    subtitleStreams: List<SubtitleStream>,
     playerControls: Player,
     controllerViewState: ControllerViewState,
     showClock: Boolean,
@@ -454,14 +439,8 @@ fun Controller(
     skipBackOnResume: Duration?,
     seekForward: Duration,
     onPlaybackActionClick: (PlaybackAction) -> Unit,
+    onClickPlaybackDialogType: (PlaybackDialogType) -> Unit,
     onSeekProgress: (Long) -> Unit,
-    showDebugInfo: Boolean,
-    scale: ContentScale,
-    playbackSpeed: Float,
-    moreButtonOptions: MoreButtonOptions,
-    currentPlayback: CurrentPlayback?,
-    currentItemPlayback: ItemPlayback,
-    audioStreams: List<AudioStream>,
     nextState: OverlayViewState?,
     currentSegment: MediaSegmentDto?,
     modifier: Modifier = Modifier,
@@ -520,13 +499,15 @@ fun Controller(
                 }
             }
         }
+        // TODO need to move these up a level?
+        val moreFocusRequester = remember { FocusRequester() }
+        val captionFocusRequester = remember { FocusRequester() }
+        val settingsFocusRequester = remember { FocusRequester() }
         PlaybackControls(
             modifier = Modifier.fillMaxWidth(),
-            subtitleStreams = subtitleStreams,
             playerControls = playerControls,
             onPlaybackActionClick = onPlaybackActionClick,
             controllerViewState = controllerViewState,
-            showDebugInfo = showDebugInfo,
             onSeekProgress = {
                 onSeekProgress(it)
             },
@@ -535,17 +516,15 @@ fun Controller(
             nextEnabled = nextEnabled,
             seekEnabled = seekEnabled,
             seekBarInteractionSource = seekBarInteractionSource,
-            moreButtonOptions = moreButtonOptions,
-            subtitleIndex = currentItemPlayback.subtitleIndex,
-            audioIndex = currentItemPlayback.audioIndex,
-            audioStreams = audioStreams,
-            playbackSpeed = playbackSpeed,
-            scale = scale,
             seekBarIntervals = 16,
             seekBack = seekBack,
             seekForward = seekForward,
             skipBackOnResume = skipBackOnResume,
             currentSegment = currentSegment,
+            onClickPlaybackDialogType = onClickPlaybackDialogType,
+            moreFocusRequester = moreFocusRequester,
+            captionFocusRequester = captionFocusRequester,
+            settingsFocusRequester = settingsFocusRequester,
         )
         when (nextState) {
             OverlayViewState.CHAPTERS ->

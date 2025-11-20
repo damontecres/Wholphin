@@ -1,0 +1,174 @@
+package com.github.damontecres.wholphin.ui.playback
+
+import android.view.Gravity
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
+import com.github.damontecres.wholphin.R
+import com.github.damontecres.wholphin.data.model.TrackIndex
+import com.github.damontecres.wholphin.ui.indexOfFirstOrNull
+import timber.log.Timber
+
+enum class PlaybackDialogType {
+    MORE,
+    CAPTIONS,
+    SETTINGS,
+    AUDIO,
+    PLAYBACK_SPEED,
+    VIDEO_SCALE,
+}
+
+data class PlaybackSettings(
+    val showDebugInfo: Boolean,
+    val audioIndex: Int?,
+    val audioStreams: List<AudioStream>,
+    val subtitleIndex: Int?,
+    val subtitleStreams: List<SubtitleStream>,
+    val playbackSpeed: Float,
+    val contentScale: ContentScale,
+)
+
+@Composable
+fun PlaybackDialog(
+    type: PlaybackDialogType,
+    settings: PlaybackSettings,
+    onDismissRequest: () -> Unit,
+    onControllerInteraction: () -> Unit,
+    onClickPlaybackDialogType: (PlaybackDialogType) -> Unit,
+    onPlaybackActionClick: (PlaybackAction) -> Unit,
+) {
+    when (type) {
+        PlaybackDialogType.MORE -> {
+            val options =
+                buildList {
+                    add(stringResource(if (settings.showDebugInfo) R.string.hide_debug_info else R.string.show_debug_info))
+                }
+            BottomDialog(
+                choices = options,
+                onDismissRequest = {
+                    onDismissRequest.invoke()
+//                    focusRequester.tryRequestFocus()
+                },
+                onSelectChoice = { index, choice ->
+                    onPlaybackActionClick.invoke(PlaybackAction.ShowDebug)
+                },
+                gravity = Gravity.START,
+            )
+        }
+
+        PlaybackDialogType.CAPTIONS -> {
+            val subtitleStreams = settings.subtitleStreams
+            val options = subtitleStreams.map { it.displayName }
+            Timber.v("subtitleIndex=${settings.subtitleIndex}, options=$options")
+            val currentChoice =
+                subtitleStreams.indexOfFirstOrNull { it.index == settings.subtitleIndex } ?: subtitleStreams.size
+            BottomDialog(
+                choices =
+                    options +
+                        listOf(
+                            stringResource(R.string.none),
+                            stringResource(R.string.search_and_download),
+                        ),
+                currentChoice = currentChoice,
+                onDismissRequest = {
+                    onControllerInteraction.invoke()
+                    onDismissRequest.invoke()
+//                    scope.launch {
+//                        // TODO this is hacky, but playback changes force refocus and this is a workaround
+//                        delay(250L)
+//                        captionFocusRequester.tryRequestFocus()
+//                    }
+                },
+                onSelectChoice = { index, _ ->
+                    if (index in subtitleStreams.indices) {
+                        onPlaybackActionClick.invoke(PlaybackAction.ToggleCaptions(subtitleStreams[index].index))
+                    } else {
+                        val idx = index - subtitleStreams.size
+                        if (idx == 0) {
+                            onPlaybackActionClick.invoke(PlaybackAction.ToggleCaptions(TrackIndex.DISABLED))
+                        } else {
+                            onPlaybackActionClick.invoke(PlaybackAction.SearchCaptions)
+                        }
+                    }
+                },
+                gravity = Gravity.END,
+            )
+        }
+
+        PlaybackDialogType.SETTINGS -> {
+            val options =
+                listOf(
+                    stringResource(R.string.audio),
+                    stringResource(R.string.playback_speed),
+                    stringResource(R.string.video_scale),
+                )
+            BottomDialog(
+                choices = options,
+                currentChoice = null,
+                onDismissRequest = onDismissRequest,
+                onSelectChoice = { index, _ ->
+                    when (index) {
+                        0 -> onClickPlaybackDialogType(PlaybackDialogType.AUDIO)
+                        1 -> onClickPlaybackDialogType(PlaybackDialogType.PLAYBACK_SPEED)
+                        2 -> onClickPlaybackDialogType(PlaybackDialogType.VIDEO_SCALE)
+                    }
+                },
+                gravity = Gravity.END,
+            )
+        }
+
+        PlaybackDialogType.AUDIO ->
+            BottomDialog(
+                choices = settings.audioStreams.map { it.displayName },
+                currentChoice = settings.audioStreams.indexOfFirstOrNull { it.index == settings.audioIndex },
+                onDismissRequest = {
+                    onControllerInteraction.invoke()
+                    onDismissRequest.invoke()
+//                    scope.launch {
+//                        delay(250L)
+//                        settingsFocusRequester.tryRequestFocus()
+//                    }
+                },
+                onSelectChoice = { index, _ ->
+                    onPlaybackActionClick.invoke(PlaybackAction.ToggleAudio(settings.audioStreams[index].index))
+                },
+                gravity = Gravity.END,
+            )
+
+        PlaybackDialogType.PLAYBACK_SPEED ->
+            BottomDialog(
+                choices = playbackSpeedOptions,
+                currentChoice = playbackSpeedOptions.indexOf(settings.playbackSpeed.toString()),
+                onDismissRequest = {
+                    onControllerInteraction.invoke()
+                    onDismissRequest.invoke()
+//                scope.launch {
+//                    delay(250L)
+//                    settingsFocusRequester.tryRequestFocus()
+//                }
+                },
+                onSelectChoice = { _, value ->
+                    onPlaybackActionClick.invoke(PlaybackAction.PlaybackSpeed(value.toFloat()))
+                },
+                gravity = Gravity.END,
+            )
+
+        PlaybackDialogType.VIDEO_SCALE ->
+            BottomDialog(
+                choices = playbackScaleOptions.values.toList(),
+                currentChoice = playbackScaleOptions.keys.toList().indexOf(settings.contentScale),
+                onDismissRequest = {
+                    onControllerInteraction.invoke()
+                    onDismissRequest.invoke()
+//                scope.launch {
+//                    delay(250L)
+//                    settingsFocusRequester.tryRequestFocus()
+//                }
+                },
+                onSelectChoice = { index, _ ->
+                    onPlaybackActionClick.invoke(PlaybackAction.Scale(playbackScaleOptions.keys.toList()[index]))
+                },
+                gravity = Gravity.END,
+            )
+    }
+}
