@@ -9,6 +9,7 @@ import com.github.damontecres.wholphin.ui.nav.ServerNavDrawerItem
 import com.github.damontecres.wholphin.util.supportedCollectionTypes
 import dagger.hilt.android.qualifiers.ApplicationContext
 import org.jellyfin.sdk.api.client.ApiClient
+import org.jellyfin.sdk.api.client.extensions.liveTvApi
 import org.jellyfin.sdk.api.client.extensions.userViewsApi
 import org.jellyfin.sdk.model.api.CollectionType
 import javax.inject.Inject
@@ -24,16 +25,22 @@ class NavDrawerItemRepository
         private val serverPreferencesDao: ServerPreferencesDao,
     ) {
         suspend fun getNavDrawerItems(): List<NavDrawerItem> {
-            val user = serverRepository.currentUser
+            val user = serverRepository.currentUser?.value
             val userViews =
                 api.userViewsApi
-                    .getUserViews(userId = user.value?.id)
+                    .getUserViews(userId = user?.id)
                     .content.items
+            val recordingFolders =
+                api.liveTvApi
+                    .getRecordingFolders(userId = user?.id)
+                    .content.items
+                    .map { it.id }
+                    .toSet()
 
             val builtins = listOf(NavDrawerItem.Favorites)
             val libraries =
                 userViews
-                    .filter { it.collectionType in supportedCollectionTypes }
+                    .filter { it.collectionType in supportedCollectionTypes || it.id in recordingFolders }
                     .map {
                         ServerNavDrawerItem(
                             itemId = it.id,
