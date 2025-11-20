@@ -36,12 +36,12 @@ class PlaybackKeyHandler(
             result = false
         } else if (it.type != KeyEventType.KeyUp) {
             result = false
-        } else if (isDirectionalDpad(it) || isEnterKey(it)) {
+        } else if (isDirectionalDpad(it) || isEnterKey(it) || isControllerMedia(it)) {
             if (!controllerViewState.controlsVisible) {
-                if (skipWithLeftRight && it.key == Key.DirectionLeft) {
+                if (skipWithLeftRight && isSkipBack(it)) {
                     updateSkipIndicator(-seekBack.inWholeMilliseconds)
                     player.seekBack(seekBack)
-                } else if (skipWithLeftRight && it.key == Key.DirectionRight) {
+                } else if (skipWithLeftRight && isSkipForward(it)) {
                     player.seekForward(seekForward)
                     updateSkipIndicator(seekForward.inWholeMilliseconds)
                 } else if (oneClickPause && isEnterKey(it)) {
@@ -103,9 +103,9 @@ class PlaybackKeyHandler(
 
                 else -> result = false
             }
-        } else if (it.key == Key.Enter && !controllerViewState.controlsVisible) {
+        } else if (isEnterKey(it) && !controllerViewState.controlsVisible) {
             controllerViewState.showControls()
-        } else if (it.key == Key.Back && controllerViewState.controlsVisible) {
+        } else if (isBackKey(it) && controllerViewState.controlsVisible) {
             // TODO change this to a BackHandler?
             controllerViewState.hideControls()
         } else {
