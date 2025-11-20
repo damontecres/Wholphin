@@ -329,7 +329,7 @@
         <item>Green</item>
         <item>Orange</item>
         <item>Bold Blue</item>
-        <item>OLED Black</item>
+        <item>Black</item>
     </string-array>
 
     <string-array name="skip_behaviors">
