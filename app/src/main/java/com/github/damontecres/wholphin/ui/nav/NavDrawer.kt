@@ -218,14 +218,14 @@ fun NavDrawer(
     val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
-    val drawerFocusRequester = remember { FocusRequester() }
+
     val focusRequester = remember { FocusRequester() }
     val searchFocusRequester = remember { FocusRequester() }
 
     // If the user presses back while on the home page, open the nav drawer, another back press will quit the app
     BackHandler(enabled = (drawerState.currentValue == DrawerValue.Closed && destination is Destination.Home)) {
         drawerState.setValue(DrawerValue.Open)
-        drawerFocusRequester.requestFocus()
+        focusRequester.requestFocus()
     }
     val moreLibraries by viewModel.moreLibraries.observeAsState(listOf())
     val libraries by viewModel.libraries.observeAsState(listOf())
@@ -305,9 +305,7 @@ fun NavDrawer(
     )
     val spacedBy = 4.dp
     NavigationDrawer(
-        modifier =
-            modifier
-                .focusRequester(drawerFocusRequester),
+        modifier = modifier,
         drawerState = drawerState,
         drawerContent = {
             ProvideTextStyle(MaterialTheme.typography.labelMedium) {
