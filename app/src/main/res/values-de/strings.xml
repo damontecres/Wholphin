@@ -157,15 +157,15 @@
     <string name="official_rating">FSK-Freigabe</string>
     <plurals name="other_extras">
         <item quantity="one">Anderes</item>
-        <item quantity="other"></item>
+        <item quantity="other"/>
     </plurals>
     <plurals name="behind_the_scenes">
         <item quantity="one">Hinter den Kulissen</item>
-        <item quantity="other"></item>
+        <item quantity="other"/>
     </plurals>
     <plurals name="deleted_scenes">
         <item quantity="one">Entfernte Szenen</item>
-        <item quantity="other"></item>
+        <item quantity="other"/>
     </plurals>
     <plurals name="items">
         <item quantity="one">%d Eintrag</item>
@@ -198,4 +198,79 @@
     <string name="one_click_pause_summary_on">Drücke mittlere D-Pad Taste zum Pausieren/Wiedergabe</string>
     <string name="italic_font">Kursivschrift</string>
     <string name="runtime_sort">Dauer</string>
+    <plurals name="theme_songs">
+        <item quantity="one">Titelsongs</item>
+        <item quantity="other"></item>
+    </plurals>
+    <plurals name="theme_videos">
+        <item quantity="one">Themenvideos</item>
+        <item quantity="other"></item>
+    </plurals>
+    <plurals name="clips">
+        <item quantity="one">Clips</item>
+        <item quantity="other"></item>
+    </plurals>
+    <plurals name="interviews">
+        <item quantity="one">Interviews</item>
+        <item quantity="other"></item>
+    </plurals>
+    <plurals name="samples">
+        <item quantity="one">Beispiele</item>
+        <item quantity="other"></item>
+    </plurals>
+    <plurals name="featurettes">
+        <item quantity="one">Begleitfilme</item>
+        <item quantity="other"></item>
+    </plurals>
+    <plurals name="shorts">
+        <item quantity="one">Kurzfilme</item>
+        <item quantity="other"></item>
+    </plurals>
+    <string name="combine_continue_next_summary">Betrifft nur TV Serien</string>
+    <string name="direct_play_ass">Direkte Wiedergabe von ASS-Untertiteln</string>
+    <string name="direct_play_pgs">Direkte Wiedergabe von PGS-Untertiteln</string>
+    <string name="downmix_stereo">Immer zu stereo downmixen</string>
+    <string name="ffmpeg_extension_pref">Benutze FFmpeg Dekodierer</string>
+    <string name="global_content_scale">Standard Inhaltsskalierung</string>
+    <string name="nav_drawer_switch_on_focus_summary_off">Klicke, um Seiten zu wechseln</string>
+    <string name="pass_out_protection">Schutz vor Inaktivität</string>
+    <string name="play_theme_music">Titelmusik abspielen</string>
+    <string name="remember_selected_tab">Ausgewählte Tabs merken</string>
+    <string name="send_app_logs_summary">Nützlich für die Diagnose</string>
+    <string name="send_crash_reports">Absturzbericht senden</string>
+    <string name="skip_back_on_resume_preference">Zurückspulen beim Fortsetzen der Wiedergabe</string>
+    <string name="skip_commercials_behavior">Verhalten beim Überspringen von Werbung</string>
+    <string name="skip_forward_preference">Vorspulen</string>
+    <string name="skip_intro_behavior">Verhalten Intro überspringen</string>
+    <string name="skip_outro_behavior">Verhalten Outro überspringen</string>
+    <string name="skip_previews_behavior">Verhalten Vorschau überspringen</string>
+    <string name="skip_recap_behavior">Verhalten Rückschau überspringen</string>
+    <string name="update_available">Update verfügbar</string>
+    <string name="update_url_summary">URL die zur Suche von Aktualisierungen verwendet wird</string>
+    <string name="update_url">Aktualisierungs-URL</string>
+    <string name="font_size">Schriftgröße</string>
+    <string name="font_color">Schriftfarbe</string>
+    <string name="font_opacity">Schrift Transparenz</string>
+    <string name="edge_style">Kantenstil</string>
+    <string name="edge_color">Kantenfarbe</string>
+    <string name="background_opacity">Hintergrund Transparenz</string>
+    <string name="background_style">Hintergrund Stil</string>
+    <string name="subtitle_style">Untertitel Stil</string>
+    <string name="background_color">Hintergrundfarbe</string>
+    <string name="reset">Zurücksetzen</string>
+    <string name="bold_font">Fett</string>
+    <string name="mpv_hardware_decoding">MPV: Verwende Hardware Dekodierung</string>
+    <string name="disable_if_crash">Deaktivieren bei Abstürzen</string>
+    <string name="mpv_options">MPV Optionen</string>
+    <string name="exoplayer_options">ExoPlayer Optionen</string>
+    <string name="combine_continue_next"><![CDATA[Kombiniere Weiterschauen & Als nächstes]]></string>
+    <string name="nav_drawer_pins_summary">Wähle standardmäßig anzuzeigenden Elemente aus, andere werden ausgeblendet</string>
+    <string name="nav_drawer_pins">Elemente der Navigationsleiste anpassen</string>
+    <string name="nav_drawer_switch_on_focus">Navigationsmenüseiten beim Fokus wechseln</string>
+    <string name="playback_overrides">Wiedergabeüberschreibungen</string>
+    <string name="seek_bar_steps">Sprungintervall</string>
+    <string name="send_app_logs">Sende Logs zum aktuellen Server</string>
+    <string name="send_crash_reports_summary">Versucht zum zuletzt verbundenen Server zu senden</string>
+    <string name="skip_back_preference">Zurückspringen</string>
+    <string name="player_backend">Wiedergabe-Backend</string>
 </resources>
