@@ -57,4 +57,133 @@
     <string name="loading">Laadin…</string>
     <string name="mark_entire_series_as_played">Kas märgid kogu telesarja esitatuks?</string>
     <string name="mark_entire_series_as_unplayed">Kas märgid kogu telesarja mitteesitatuks?</string>
+    <string name="mark_unwatched">Märgi mittevaadatuks</string>
+    <string name="mark_watched">Märgi vaadatuks</string>
+    <string name="max_bitrate">Suurim bitikiirus</string>
+    <string name="more_like_this">Veel sarnaseid</string>
+    <string name="more">Veel</string>
+    <string name="movies">Filmid</string>
+    <string name="name">Nimi</string>
+    <string name="next_up">Järgmisena tulekul</string>
+    <string name="no_data">Andmed puuduvad</string>
+    <string name="no_results">Tulemusi pole</string>
+    <string name="no_scheduled_recordings">Ajastatud salvestusi pole</string>
+    <string name="no_update_available">Uuendusi pole saadaval</string>
+    <string name="none">Määramata</string>
+    <string name="outro">Väljajuhatus</string>
+    <string name="path">Rada</string>
+    <string name="people">Inimesed</string>
+    <string name="play_count">Esitusi</string>
+    <string name="play_from_here">Esita siit kohast</string>
+    <string name="play">Esita</string>
+    <string name="playback_debug_info">Näita taasesituse silumisteavet</string>
+    <string name="playback_speed">Taasesituse kiirus</string>
+    <string name="playback">Taasesitus</string>
+    <string name="playlist">Esitusloend</string>
+    <string name="playlists">Esitusloendid</string>
+    <string name="preview">Eelvaade</string>
+    <string name="profile_specific_settings">Kasutajaprofiili seadistused</string>
+    <string name="queue">Esitusjärjekord</string>
+    <string name="recap">Kokkuvõte</string>
+    <string name="recently_added_in">Hiljuti lisatud: %1$s</string>
+    <string name="recently_added">Hiljuti lisatud</string>
+    <string name="recently_recorded">Hiljuti salvestatud</string>
+    <string name="recently_released">Hiljuti avaldatud</string>
+    <string name="recommended">Soovitatud</string>
+    <string name="remove_favorite">Eemalda lemmikute seast</string>
+    <string name="restart">Käivita uuesti</string>
+    <string name="resume">Jätka</string>
+    <string name="save">Salvesta</string>
+    <string name="search_and_download"><![CDATA[Otsi ja laadi alla]]></string>
+    <string name="search">Otsi</string>
+    <string name="searching">Otsin…</string>
+    <string name="select_server">Vali server</string>
+    <string name="select_user">Vali kasutaja</string>
+    <string name="show_debug_info">Näita silumisteavet</string>
+    <string name="show_next_up_when">Näita järgmiseks esitatavat</string>
+    <string name="show">Näita</string>
+    <string name="shuffle">Sega</string>
+    <string name="skip">Jäta vahele</string>
+    <string name="sort_by_date_added">Lisamise kuupäev</string>
+    <string name="sort_by_date_episode_added">Osa lisamise kuupäev</string>
+    <string name="sort_by_date_played">Esitamise kuupäev</string>
+    <string name="sort_by_date_released">Avaldamise kuupäev</string>
+    <string name="sort_by_name">Nimi</string>
+    <string name="sort_by_random">Juhuslik</string>
+    <string name="studios">Stuudiod</string>
+    <string name="submit">Saada</string>
+    <string name="subtitle_download_too_long">Allalaadimiseks tundub kuluvat liiga palju aega, pead vist taasesituse uuesti alustama</string>
+    <string name="subtitle">Subtiiter</string>
+    <string name="subtitles">Subtiitrid</string>
+    <string name="suggestions">Soovitused</string>
+    <string name="switch_servers">Vaheta servereid</string>
+    <string name="switch_user">Vaheta</string>
+    <string name="font">Kirjatüüp</string>
+    <string name="background">Taust</string>
+    <string name="success">Valmis</string>
+    <string name="official_rating">Vanemlik hinnang</string>
+    <string name="runtime_sort">Kestus</string>
+    <string name="extras">Lisad</string>
+    <plurals name="other_extras">
+        <item quantity="one">Muu</item>
+        <item quantity="other"></item>
+    </plurals>
+    <plurals name="behind_the_scenes">
+        <item quantity="one">Kaadri taga</item>
+        <item quantity="other"></item>
+    </plurals>
+    <plurals name="theme_songs">
+        <item quantity="one">Tunnuslood</item>
+        <item quantity="other"></item>
+    </plurals>
+    <plurals name="theme_videos">
+        <item quantity="one">Tunnusvideod</item>
+        <item quantity="other"></item>
+    </plurals>
+    <plurals name="clips">
+        <item quantity="one">Klipid</item>
+        <item quantity="other"></item>
+    </plurals>
+    <plurals name="deleted_scenes">
+        <item quantity="one">Väljajäetud lõigud</item>
+        <item quantity="other"></item>
+    </plurals>
+    <plurals name="interviews">
+        <item quantity="one">Intervjuud</item>
+        <item quantity="other"></item>
+    </plurals>
+    <plurals name="scenes">
+        <item quantity="one">Stseenid</item>
+        <item quantity="other"></item>
+    </plurals>
+    <plurals name="samples">
+        <item quantity="one">Näited</item>
+        <item quantity="other"></item>
+    </plurals>
+    <plurals name="featurettes">
+        <item quantity="one">Keskmise pikkusega filmid</item>
+        <item quantity="other"></item>
+    </plurals>
+    <plurals name="shorts">
+        <item quantity="one">Lühifilmid</item>
+        <item quantity="other"></item>
+    </plurals>
+    <plurals name="downloads">
+        <item quantity="one">%s allalaadimine</item>
+        <item quantity="other">%s allalaadimist</item>
+    </plurals>
+    <plurals name="hours">
+        <item quantity="one">%d tund</item>
+        <item quantity="other">%d tundi</item>
+    </plurals>
+    <plurals name="items">
+        <item quantity="one">%d objekt</item>
+        <item quantity="other">%d objekti</item>
+    </plurals>
+    <plurals name="seconds">
+        <item quantity="one">%d sekund</item>
+        <item quantity="other">%d sekundit</item>
+    </plurals>
+    <string name="mpv_options">MPV valikud</string>
+    <string name="exoplayer_options">ExoPlayeri valikud</string>
 </resources>
