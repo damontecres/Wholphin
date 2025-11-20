@@ -1,7 +1,7 @@
 title: Wholphin
 author: ''
-description: ''
+description: 'Wholphin is an OSS Android TV client for Jellyfin'
 baseurl: ""
-theme: minima
+remote_theme: pages-themes/minimal@v0.2.0
 plugins:
-  - jekyll-feed
+  - jekyll-remote-theme
