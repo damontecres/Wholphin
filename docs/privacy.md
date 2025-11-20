@@ -4,8 +4,6 @@ title: Privacy Policy
 permalink: /privacy-policy/
 ---
 
-# Privacy Policy
-
 Wholphin does not collect any personal information. Wholphin does not store or transmit your personal details. Wholphin does not include any advertising or analytics software that communicate with third parties.
 
 ## Wholphin logs
