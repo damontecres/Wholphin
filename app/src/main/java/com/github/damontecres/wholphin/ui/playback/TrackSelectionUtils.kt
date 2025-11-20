@@ -10,6 +10,7 @@ import com.github.damontecres.wholphin.preferences.PlayerBackend
 import org.jellyfin.sdk.model.api.MediaSourceInfo
 import org.jellyfin.sdk.model.api.MediaStream
 import org.jellyfin.sdk.model.api.MediaStreamType
+import org.jellyfin.sdk.model.api.SubtitleDeliveryMethod
 import timber.log.Timber
 
 object TrackSelectionUtils {
@@ -211,12 +212,16 @@ val MediaSourceInfo.audioStreamCount: Int
             ?.count { it.type == MediaStreamType.AUDIO } ?: 0
 
 /**
- * Returns the [MediaStream] for the given subtitle index iff it is external
+ * Returns the [MediaStream] for the given subtitle index iff it is delivered external
  */
-fun MediaSourceInfo.findExternalSubtitle(subtitleIndex: Int?): MediaStream? =
+fun MediaSourceInfo.findExternalSubtitle(subtitleIndex: Int?): MediaStream? = mediaStreams?.findExternalSubtitle(subtitleIndex)
+
+fun List<MediaStream>.findExternalSubtitle(subtitleIndex: Int?): MediaStream? =
     subtitleIndex?.let {
-        mediaStreams
-            ?.firstOrNull { it.type == MediaStreamType.SUBTITLE && it.isExternal && it.index == subtitleIndex }
+        firstOrNull {
+            it.type == MediaStreamType.SUBTITLE && it.deliveryMethod == SubtitleDeliveryMethod.EXTERNAL &&
+                it.index == subtitleIndex
+        }
     }
 
 data class TrackSelectionResult(
