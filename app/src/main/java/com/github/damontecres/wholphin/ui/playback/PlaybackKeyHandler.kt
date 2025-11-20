@@ -25,6 +25,8 @@ class PlaybackKeyHandler(
     private val skipBackOnResume: Duration?,
     private val oneClickPause: Boolean,
     private val onInteraction: () -> Unit,
+    private val onStop: () -> Unit,
+    private val onPlaybackDialogTypeClick: (PlaybackDialogType) -> Unit,
 ) {
     fun onKeyEvent(it: KeyEvent): Boolean {
         if (it.type == KeyEventType.KeyUp) onInteraction.invoke()
@@ -94,6 +96,11 @@ class PlaybackKeyHandler(
 
                 Key.MediaNext -> if (player.isCommandAvailable(Player.COMMAND_SEEK_TO_NEXT)) player.seekToNext()
                 Key.MediaPrevious -> if (player.isCommandAvailable(Player.COMMAND_SEEK_TO_PREVIOUS)) player.seekToPrevious()
+
+                Key.Captions -> onPlaybackDialogTypeClick.invoke(PlaybackDialogType.CAPTIONS)
+                Key.MediaAudioTrack -> onPlaybackDialogTypeClick.invoke(PlaybackDialogType.AUDIO)
+                Key.MediaStop -> onStop.invoke()
+
                 else -> result = false
             }
         } else if (it.key == Key.Enter && !controllerViewState.controlsVisible) {

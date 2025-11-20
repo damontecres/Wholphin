@@ -31,7 +31,10 @@ fun isMedia(event: KeyEvent): Boolean =
         event.key == Key.MediaRewind ||
         event.key == Key.MediaSkipBackward ||
         event.key == Key.MediaNext ||
-        event.key == Key.MediaPrevious
+        event.key == Key.MediaPrevious ||
+        event.key == Key.Captions ||
+        event.key == Key.MediaAudioTrack ||
+        event.key == Key.MediaStop
 
 fun isBackwardButton(event: KeyEvent): Boolean =
     event.key == Key.PageUp ||

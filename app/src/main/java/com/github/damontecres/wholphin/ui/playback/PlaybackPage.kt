@@ -204,6 +204,11 @@ fun PlaybackPage(
                     skipBackOnResume = preferences.appPreferences.playbackPreferences.skipBackOnResume,
                     onInteraction = viewModel::reportInteraction,
                     oneClickPause = preferences.appPreferences.playbackPreferences.oneClickPause,
+                    onStop = {
+                        player.stop()
+                        viewModel.navigationManager.goBack()
+                    },
+                    onPlaybackDialogTypeClick = { playbackDialog = it },
                 )
 
             val onPlaybackActionClick: (PlaybackAction) -> Unit = {
