@@ -29,6 +29,7 @@ val supportedCollectionTypes =
         CollectionType.PLAYLISTS,
         CollectionType.BOXSETS,
         CollectionType.LIVETV,
+        null, // Mixed
     )
 
 val supportedPlayableTypes =

@@ -114,14 +114,33 @@ fun DestinationContent(
                         modifier = modifier,
                     )
 
-                BaseItemKind.COLLECTION_FOLDER,
-                BaseItemKind.USER_VIEW,
-                BaseItemKind.FOLDER,
-                ->
+                BaseItemKind.COLLECTION_FOLDER ->
                     CollectionFolder(
                         preferences = preferences,
                         destination = destination,
                         collectionType = destination.item?.data?.collectionType,
+                        usePostersOverride = null,
+                        recursiveOverride = null,
+                        modifier = modifier,
+                    )
+
+                BaseItemKind.FOLDER ->
+                    CollectionFolder(
+                        preferences = preferences,
+                        destination = destination,
+                        collectionType = destination.item?.data?.collectionType,
+                        usePostersOverride = true,
+                        recursiveOverride = null,
+                        modifier = modifier,
+                    )
+
+                BaseItemKind.USER_VIEW ->
+                    CollectionFolder(
+                        preferences = preferences,
+                        destination = destination,
+                        collectionType = destination.item?.data?.collectionType,
+                        usePostersOverride = null,
+                        recursiveOverride = true,
                         modifier = modifier,
                     )
 
@@ -187,6 +206,8 @@ fun CollectionFolder(
     preferences: UserPreferences,
     destination: Destination.MediaItem,
     collectionType: CollectionType?,
+    usePostersOverride: Boolean?,
+    recursiveOverride: Boolean?,
     modifier: Modifier = Modifier,
 ) {
     when (collectionType) {
@@ -238,8 +259,8 @@ fun CollectionFolder(
             CollectionFolderGeneric(
                 preferences,
                 destination.itemId,
-                usePosters = false,
-                recursive = false,
+                usePosters = usePostersOverride ?: false,
+                recursive = recursiveOverride ?: false,
                 modifier = modifier,
             )
 
@@ -251,8 +272,8 @@ fun CollectionFolder(
             CollectionFolderGeneric(
                 preferences,
                 destination.itemId,
-                usePosters = true,
-                recursive = false,
+                usePosters = usePostersOverride ?: false,
+                recursive = recursiveOverride ?: false,
                 modifier = modifier,
             )
     }

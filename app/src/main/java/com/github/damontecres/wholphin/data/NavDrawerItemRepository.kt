@@ -26,7 +26,7 @@ class NavDrawerItemRepository
         private val serverPreferencesDao: ServerPreferencesDao,
     ) {
         suspend fun getNavDrawerItems(): List<NavDrawerItem> {
-            val user = serverRepository.currentUser?.value
+            val user = serverRepository.currentUser.value
             val userViews =
                 api.userViewsApi
                     .getUserViews(userId = user?.id)

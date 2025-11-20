@@ -7,14 +7,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.GetItemsFilter
 import com.github.damontecres.wholphin.preferences.UserPreferences
-import com.github.damontecres.wholphin.ui.AspectRatios
-import com.github.damontecres.wholphin.ui.cards.GridCard
 import com.github.damontecres.wholphin.ui.components.CollectionFolderGrid
 import com.github.damontecres.wholphin.ui.components.CollectionFolderGridParameters
 import com.github.damontecres.wholphin.ui.data.MovieSortOptions
@@ -32,21 +29,6 @@ fun CollectionFolderBoxSet(
     preferencesViewModel: PreferencesViewModel = hiltViewModel(),
 ) {
     var showHeader by remember { mutableStateOf(true) }
-    val params =
-        CollectionFolderGridParameters(
-            columns = 6,
-            spacing = 16.dp,
-            cardContent = { item, onClick, onLongClick, mod ->
-                GridCard(
-                    item = item,
-                    onClick = onClick,
-                    onLongClick = onLongClick,
-                    imageContentScale = ContentScale.FillBounds,
-                    imageAspectRatio = AspectRatios.TALL,
-                    modifier = mod,
-                )
-            },
-        )
     CollectionFolderGrid(
         preferences = preferences,
         onClickItem = { _, item -> preferencesViewModel.navigationManager.navigateTo(item.destination()) },
@@ -61,6 +43,6 @@ fun CollectionFolderBoxSet(
         positionCallback = { columns, position ->
             showHeader = position < columns
         },
-        params = params,
+        params = CollectionFolderGridParameters.POSTER,
     )
 }

@@ -28,6 +28,7 @@ import com.github.damontecres.wholphin.data.model.GetItemsFilter
 import com.github.damontecres.wholphin.data.model.GetItemsFilterOverride
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.components.CollectionFolderGrid
+import com.github.damontecres.wholphin.ui.components.CollectionFolderGridParameters
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.TabRow
 import com.github.damontecres.wholphin.ui.data.EpisodeSortOptions
@@ -163,6 +164,8 @@ fun FavoritesPage(
                     showTitle = false,
                     recursive = true,
                     sortOptions = EpisodeSortOptions,
+                    params = CollectionFolderGridParameters.WIDE,
+                    useSeriesForPrimary = false,
                     modifier =
                         Modifier
                             .padding(start = 16.dp)
@@ -186,6 +189,7 @@ fun FavoritesPage(
                     showTitle = false,
                     recursive = true,
                     sortOptions = VideoSortOptions,
+                    params = CollectionFolderGridParameters.WIDE,
                     modifier =
                         Modifier
                             .padding(start = 16.dp)
@@ -209,6 +213,7 @@ fun FavoritesPage(
                     showTitle = false,
                     recursive = true,
                     sortOptions = VideoSortOptions,
+                    params = CollectionFolderGridParameters.SQUARE,
                     modifier =
                         Modifier
                             .padding(start = 16.dp)
