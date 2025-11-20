@@ -1,34 +1,41 @@
-name: "Bug Report"
-description: Report a bug
+name: "Playback Problem"
+description: Report an issue with playback
 title: "[BUG] - <title>"
 labels: [
-  "bug"
+  "bug", "playback"
 ]
 body:
   - type: textarea
     id: description
     attributes:
       label: "Description"
-      description: Please enter a description of the bug
+      description: Please enter a description of the playback issue
     validations:
       required: true
   - type: textarea
-    id: reprod
+    id: mediainfo
     attributes:
-      label: "Reproduction steps"
-      description: Please enter the steps to reproduce
-      value: |
-        1. Click on '...'
-        2. Scroll to '....'
-        3. See error
+      label: "Media info"
+      description: Please enter details about what media you are trying to play (video or audio codecs, container, etc)
     validations:
-      required: false
+      required: true
+  - type: dropdown
+    id: player
+    attributes:
+      label: Player backend
+      description: Which player(s) cause the issue?
+      multiple: true
+      options:
+        - ExoPlayer (default)
+        - MPV
+    validations:
+      required: true
   - type: input
     id: app-version
     attributes:
       label: "App Version"
       description: What version of the app?
-      placeholder: "v0.1.0"
+      placeholder: "v0.3.0"
     validations:
       required: true
   - type: input
@@ -36,7 +43,7 @@ body:
     attributes:
       label: "Server Version"
       description: What version of the server?
-      placeholder: "10.10.7"
+      placeholder: "10.11.3"
     validations:
       required: true
   - type: input
