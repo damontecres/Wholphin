@@ -1,0 +1,7 @@
+title: Wholphin
+author: ''
+description: ''
+baseurl: ""
+theme: minima
+plugins:
+  - jekyll-feed
