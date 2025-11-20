@@ -16,15 +16,14 @@ import com.github.damontecres.wholphin.ui.AspectRatios
 import com.github.damontecres.wholphin.ui.cards.GridCard
 import com.github.damontecres.wholphin.ui.components.CollectionFolderGrid
 import com.github.damontecres.wholphin.ui.components.CollectionFolderGridParameters
-import com.github.damontecres.wholphin.ui.data.VideoSortOptions
+import com.github.damontecres.wholphin.ui.data.MovieSortOptions
 import com.github.damontecres.wholphin.ui.preferences.PreferencesViewModel
 import java.util.UUID
 
 @Composable
-fun CollectionFolderGeneric(
+fun CollectionFolderRecordings(
     preferences: UserPreferences,
     itemId: UUID,
-    usePosters: Boolean,
     recursive: Boolean,
     modifier: Modifier = Modifier,
     filter: GetItemsFilter = GetItemsFilter(),
@@ -32,26 +31,20 @@ fun CollectionFolderGeneric(
 ) {
     var showHeader by remember { mutableStateOf(true) }
     val params =
-        remember(usePosters) {
-            if (usePosters) {
-                CollectionFolderGridParameters()
-            } else {
-                CollectionFolderGridParameters(
-                    columns = 4,
-                    spacing = 24.dp,
-                    cardContent = { item, onClick, onLongClick, mod ->
-                        GridCard(
-                            item = item,
-                            onClick = onClick,
-                            onLongClick = onLongClick,
-                            imageContentScale = ContentScale.Crop,
-                            imageAspectRatio = AspectRatios.WIDE,
-                            modifier = mod,
-                        )
-                    },
+        CollectionFolderGridParameters(
+            columns = 6,
+            spacing = 16.dp,
+            cardContent = { item, onClick, onLongClick, mod ->
+                GridCard(
+                    item = item,
+                    onClick = onClick,
+                    onLongClick = onLongClick,
+                    imageContentScale = ContentScale.FillBounds,
+                    imageAspectRatio = AspectRatios.TALL,
+                    modifier = mod,
                 )
-            }
-        }
+            },
+        )
     CollectionFolderGrid(
         preferences = preferences,
         onClickItem = { _, item -> preferencesViewModel.navigationManager.navigateTo(item.destination()) },
@@ -59,7 +52,7 @@ fun CollectionFolderGeneric(
         initialFilter = filter,
         showTitle = showHeader,
         recursive = recursive,
-        sortOptions = VideoSortOptions,
+        sortOptions = MovieSortOptions,
         modifier =
             modifier
                 .padding(start = 16.dp),

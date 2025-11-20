@@ -4,6 +4,7 @@ import android.content.Context
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.NavDrawerPinnedItem
 import com.github.damontecres.wholphin.data.model.NavPinType
+import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.nav.NavDrawerItem
 import com.github.damontecres.wholphin.ui.nav.ServerNavDrawerItem
 import com.github.damontecres.wholphin.util.supportedCollectionTypes
@@ -42,10 +43,16 @@ class NavDrawerItemRepository
                 userViews
                     .filter { it.collectionType in supportedCollectionTypes || it.id in recordingFolders }
                     .map {
+                        val destination =
+                            if (it.id in recordingFolders) {
+                                Destination.Recordings(it.id)
+                            } else {
+                                BaseItem.from(it, api).destination()
+                            }
                         ServerNavDrawerItem(
                             itemId = it.id,
                             name = it.name ?: it.id.toString(),
-                            destination = BaseItem.from(it, api).destination(),
+                            destination = destination,
                             type = it.collectionType ?: CollectionType.UNKNOWN,
                         )
                     }

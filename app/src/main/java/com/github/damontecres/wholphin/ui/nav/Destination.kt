@@ -70,6 +70,11 @@ sealed class Destination(
     }
 
     @Serializable
+    data class Recordings(
+        val itemId: UUID,
+    ) : Destination()
+
+    @Serializable
     data class Playback(
         val itemId: UUID,
         val positionMs: Long,
