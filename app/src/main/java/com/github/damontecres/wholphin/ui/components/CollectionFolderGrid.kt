@@ -42,6 +42,7 @@ import com.github.damontecres.wholphin.data.model.LibraryDisplayInfo
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.FavoriteWatchManager
 import com.github.damontecres.wholphin.services.NavigationManager
+import com.github.damontecres.wholphin.ui.AspectRatios
 import com.github.damontecres.wholphin.ui.OneTimeLaunchedEffect
 import com.github.damontecres.wholphin.ui.SlimItemFields
 import com.github.damontecres.wholphin.ui.cards.GridCard
@@ -96,11 +97,14 @@ class CollectionFolderViewModel
         val sortAndDirection = MutableLiveData<SortAndDirection>()
         val filter = MutableLiveData<GetItemsFilter>(GetItemsFilter())
 
+        private var useSeriesForPrimary: Boolean = true
+
         fun init(
             itemId: String,
             initialSortAndDirection: SortAndDirection?,
             recursive: Boolean,
             filter: GetItemsFilter,
+            useSeriesForPrimary: Boolean,
         ): Job =
             viewModelScope.launch(
                 LoadingExceptionHandler(
@@ -108,6 +112,7 @@ class CollectionFolderViewModel
                     context.getString(R.string.error_loading_collection, itemId),
                 ) + Dispatchers.IO,
             ) {
+                this@CollectionFolderViewModel.useSeriesForPrimary = useSeriesForPrimary
                 this@CollectionFolderViewModel.itemId = itemId
                 itemId?.toUUIDOrNull()?.let {
                     fetchItem(it)
@@ -121,7 +126,7 @@ class CollectionFolderViewModel
                             } ?: SortAndDirection.DEFAULT
                         )
 
-                loadResults(sortAndDirection, recursive, filter)
+                loadResults(sortAndDirection, recursive, filter, useSeriesForPrimary)
             }
 
         fun onSortChange(
@@ -141,13 +146,14 @@ class CollectionFolderViewModel
                     libraryDisplayInfoDao.saveItem(libraryDisplayInfo)
                 }
             }
-            loadResults(sortAndDirection, recursive, filter)
+            loadResults(sortAndDirection, recursive, filter, useSeriesForPrimary)
         }
 
         private fun loadResults(
             sortAndDirection: SortAndDirection,
             recursive: Boolean,
             filter: GetItemsFilter,
+            useSeriesForPrimary: Boolean,
         ) {
             viewModelScope.launch(Dispatchers.IO) {
                 withContext(Dispatchers.Main) {
@@ -156,7 +162,7 @@ class CollectionFolderViewModel
                     this@CollectionFolderViewModel.sortAndDirection.value = sortAndDirection
                     this@CollectionFolderViewModel.filter.value = filter
                 }
-                val newPager = createPager(sortAndDirection, recursive, filter)
+                val newPager = createPager(sortAndDirection, recursive, filter, useSeriesForPrimary)
                 newPager.init()
                 if (newPager.isNotEmpty()) newPager.getBlocking(0)
                 withContext(Dispatchers.Main) {
@@ -170,6 +176,7 @@ class CollectionFolderViewModel
             sortAndDirection: SortAndDirection,
             recursive: Boolean,
             filter: GetItemsFilter,
+            useSeriesForPrimary: Boolean,
         ): ApiRequestPager<out Any> {
             val item = item.value
             return when (filter.override) {
@@ -228,7 +235,7 @@ class CollectionFolderViewModel
                             request,
                             GetItemsRequestHandler,
                             viewModelScope,
-                            useSeriesForPrimary = true,
+                            useSeriesForPrimary = useSeriesForPrimary,
                         )
                     newPager
                 }
@@ -246,7 +253,7 @@ class CollectionFolderViewModel
                             request,
                             GetPersonsHandler,
                             viewModelScope,
-                            useSeriesForPrimary = true,
+                            useSeriesForPrimary = useSeriesForPrimary,
                         )
                     newPager
                 }
@@ -344,10 +351,17 @@ fun CollectionFolderGrid(
     showTitle: Boolean = true,
     positionCallback: ((columns: Int, position: Int) -> Unit)? = null,
     params: CollectionFolderGridParameters = CollectionFolderGridParameters(),
+    useSeriesForPrimary: Boolean = true,
 ) {
     val context = LocalContext.current
     OneTimeLaunchedEffect {
-        viewModel.init(itemId, initialSortAndDirection, recursive, initialFilter)
+        viewModel.init(
+            itemId,
+            initialSortAndDirection,
+            recursive,
+            initialFilter,
+            useSeriesForPrimary,
+        )
     }
     val sortAndDirection by viewModel.sortAndDirection.observeAsState()
     val filter by viewModel.filter.observeAsState(initialFilter)
@@ -538,4 +552,52 @@ data class CollectionFolderGridParameters(
             modifier = mod,
         )
     },
-)
+) {
+    companion object {
+        val POSTER =
+            CollectionFolderGridParameters(
+                columns = 6,
+                spacing = 16.dp,
+                cardContent = { item, onClick, onLongClick, mod ->
+                    GridCard(
+                        item = item,
+                        onClick = onClick,
+                        onLongClick = onLongClick,
+                        imageContentScale = ContentScale.FillBounds,
+                        imageAspectRatio = AspectRatios.TALL,
+                        modifier = mod,
+                    )
+                },
+            )
+        val WIDE =
+            CollectionFolderGridParameters(
+                columns = 4,
+                spacing = 24.dp,
+                cardContent = { item, onClick, onLongClick, mod ->
+                    GridCard(
+                        item = item,
+                        onClick = onClick,
+                        onLongClick = onLongClick,
+                        imageContentScale = ContentScale.Crop,
+                        imageAspectRatio = AspectRatios.WIDE,
+                        modifier = mod,
+                    )
+                },
+            )
+        val SQUARE =
+            CollectionFolderGridParameters(
+                columns = 6,
+                spacing = 16.dp,
+                cardContent = { item, onClick, onLongClick, mod ->
+                    GridCard(
+                        item = item,
+                        onClick = onClick,
+                        onLongClick = onLongClick,
+                        imageContentScale = ContentScale.FillBounds,
+                        imageAspectRatio = AspectRatios.SQUARE,
+                        modifier = mod,
+                    )
+                },
+            )
+    }
+}

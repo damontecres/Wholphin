@@ -9,20 +9,18 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.GetItemsFilter
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.components.CollectionFolderGrid
 import com.github.damontecres.wholphin.ui.components.CollectionFolderGridParameters
-import com.github.damontecres.wholphin.ui.data.PlaylistSortOptions
+import com.github.damontecres.wholphin.ui.data.MovieSortOptions
 import com.github.damontecres.wholphin.ui.preferences.PreferencesViewModel
 import java.util.UUID
 
 @Composable
-fun CollectionFolderPlaylist(
+fun CollectionFolderRecordings(
     preferences: UserPreferences,
     itemId: UUID,
-    item: BaseItem?,
     recursive: Boolean,
     modifier: Modifier = Modifier,
     filter: GetItemsFilter = GetItemsFilter(),
@@ -36,13 +34,13 @@ fun CollectionFolderPlaylist(
         initialFilter = filter,
         showTitle = showHeader,
         recursive = recursive,
-        sortOptions = PlaylistSortOptions,
+        sortOptions = MovieSortOptions,
         modifier =
             modifier
                 .padding(start = 16.dp),
         positionCallback = { columns, position ->
             showHeader = position < columns
         },
-        params = CollectionFolderGridParameters.SQUARE,
+        params = CollectionFolderGridParameters.POSTER,
     )
 }

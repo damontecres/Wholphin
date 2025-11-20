@@ -11,6 +11,7 @@ import com.github.damontecres.wholphin.ui.detail.CollectionFolderGeneric
 import com.github.damontecres.wholphin.ui.detail.CollectionFolderLiveTv
 import com.github.damontecres.wholphin.ui.detail.CollectionFolderMovie
 import com.github.damontecres.wholphin.ui.detail.CollectionFolderPlaylist
+import com.github.damontecres.wholphin.ui.detail.CollectionFolderRecordings
 import com.github.damontecres.wholphin.ui.detail.CollectionFolderTv
 import com.github.damontecres.wholphin.ui.detail.DebugPage
 import com.github.damontecres.wholphin.ui.detail.FavoritesPage
@@ -107,97 +108,40 @@ fun DestinationContent(
                         modifier,
                     )
 
-                BaseItemKind.COLLECTION_FOLDER -> {
-                    when (destination.item?.data?.collectionType) {
-                        CollectionType.TVSHOWS ->
-                            CollectionFolderTv(
-                                preferences,
-                                destination,
-                                modifier,
-                            )
-
-                        CollectionType.MOVIES ->
-                            CollectionFolderMovie(
-                                preferences,
-                                destination,
-                                modifier,
-                            )
-
-                        CollectionType.BOXSETS ->
-                            CollectionFolderBoxSet(
-                                preferences,
-                                destination.itemId,
-                                destination.item,
-                                false,
-                                modifier,
-                            )
-
-                        else ->
-                            CollectionFolderGeneric(
-                                preferences,
-                                destination.itemId,
-                                destination.item,
-                                false,
-                                modifier,
-                            )
-                    }
-                }
-
                 BaseItemKind.PLAYLIST ->
                     PlaylistDetails(
                         destination = destination,
                         modifier = modifier,
                     )
 
-                BaseItemKind.USER_VIEW ->
-                    when (destination.item?.data?.collectionType) {
-                        CollectionType.TVSHOWS ->
-                            CollectionFolderTv(
-                                preferences,
-                                destination,
-                                modifier,
-                            )
-
-                        CollectionType.MOVIES ->
-                            CollectionFolderMovie(
-                                preferences,
-                                destination,
-                                modifier,
-                            )
-
-                        CollectionType.LIVETV ->
-                            CollectionFolderLiveTv(
-                                preferences,
-                                destination,
-                                modifier,
-                            )
-
-                        CollectionType.PLAYLISTS ->
-                            CollectionFolderPlaylist(
-                                preferences,
-                                destination.itemId,
-                                destination.item,
-                                true,
-                                modifier,
-                            )
-
-                        else ->
-                            CollectionFolderGeneric(
-                                preferences,
-                                destination.itemId,
-                                destination.item,
-                                true,
-                                modifier,
-                            )
-                    }
+                BaseItemKind.COLLECTION_FOLDER ->
+                    CollectionFolder(
+                        preferences = preferences,
+                        destination = destination,
+                        collectionType = destination.item?.data?.collectionType,
+                        usePostersOverride = null,
+                        recursiveOverride = null,
+                        modifier = modifier,
+                    )
 
                 BaseItemKind.FOLDER ->
-                    CollectionFolderGeneric(
-                        preferences,
-                        destination.itemId,
-                        destination.item,
-                        false,
-                        modifier,
+                    CollectionFolder(
+                        preferences = preferences,
+                        destination = destination,
+                        collectionType = destination.item?.data?.collectionType,
+                        usePostersOverride = true,
+                        recursiveOverride = null,
+                        modifier = modifier,
+                    )
+
+                BaseItemKind.USER_VIEW ->
+                    CollectionFolder(
+                        preferences = preferences,
+                        destination = destination,
+                        collectionType = destination.item?.data?.collectionType,
+                        usePostersOverride = null,
+                        recursiveOverride = true,
+                        modifier = modifier,
                     )
 
                 BaseItemKind.PERSON ->
@@ -217,10 +161,18 @@ fun DestinationContent(
             CollectionFolderGeneric(
                 preferences = preferences,
                 itemId = destination.itemId,
-                item = null,
                 filter = destination.filter,
                 recursive = destination.recursive,
+                usePosters = true,
                 modifier = modifier,
+            )
+
+        is Destination.Recordings ->
+            CollectionFolderRecordings(
+                preferences,
+                destination.itemId,
+                false,
+                modifier,
             )
 
         is Destination.ItemGrid ->
@@ -246,5 +198,83 @@ fun DestinationContent(
             )
 
         Destination.Debug -> DebugPage(preferences, modifier)
+    }
+}
+
+@Composable
+fun CollectionFolder(
+    preferences: UserPreferences,
+    destination: Destination.MediaItem,
+    collectionType: CollectionType?,
+    usePostersOverride: Boolean?,
+    recursiveOverride: Boolean?,
+    modifier: Modifier = Modifier,
+) {
+    when (collectionType) {
+        CollectionType.TVSHOWS ->
+            CollectionFolderTv(
+                preferences,
+                destination,
+                modifier,
+            )
+
+        CollectionType.MOVIES ->
+            CollectionFolderMovie(
+                preferences,
+                destination,
+                modifier,
+            )
+
+        CollectionType.BOXSETS ->
+            CollectionFolderBoxSet(
+                preferences,
+                destination.itemId,
+                destination.item,
+                false,
+                modifier,
+            )
+
+        CollectionType.PLAYLISTS ->
+            CollectionFolderPlaylist(
+                preferences,
+                destination.itemId,
+                destination.item,
+                true,
+                modifier,
+            )
+
+        CollectionType.LIVETV ->
+            CollectionFolderLiveTv(
+                preferences = preferences,
+                destination = destination,
+                modifier = modifier,
+            )
+
+        CollectionType.HOMEVIDEOS,
+        CollectionType.MUSICVIDEOS,
+        CollectionType.MUSIC,
+        CollectionType.BOOKS,
+        CollectionType.PHOTOS,
+        ->
+            CollectionFolderGeneric(
+                preferences,
+                destination.itemId,
+                usePosters = usePostersOverride ?: false,
+                recursive = recursiveOverride ?: false,
+                modifier = modifier,
+            )
+
+        CollectionType.FOLDERS,
+        CollectionType.TRAILERS,
+        CollectionType.UNKNOWN,
+        null,
+        ->
+            CollectionFolderGeneric(
+                preferences,
+                destination.itemId,
+                usePosters = usePostersOverride ?: false,
+                recursive = recursiveOverride ?: false,
+                modifier = modifier,
+            )
     }
 }

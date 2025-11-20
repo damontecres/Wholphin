@@ -160,7 +160,7 @@ fun CollectionFolderLiveTv(
                         onClickItem = onClickItem,
                         itemId = folders[folderIndex].id,
                         initialFilter = GetItemsFilter(),
-                        showTitle = showHeader,
+                        showTitle = false,
                         recursive = false,
                         sortOptions = VideoSortOptions,
                         modifier =

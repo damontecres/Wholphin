@@ -217,14 +217,12 @@ class HomeViewModel
                 views.items
                     .filter {
                         it.id in includedIds && it.id !in excluded &&
-                            it.collectionType in supportedLatestCollectionTypes
+                            // Exclude Live TV because a recording folder view will be used instead
+                            it.collectionType != CollectionType.LIVETV
                     }.mapNotNull { view ->
                         val title =
-                            if (view.collectionType == CollectionType.LIVETV) {
-                                context.getString(R.string.recently_recorded)
-                            } else {
-                                view.name?.let { context.getString(R.string.recently_added_in, it) }
-                            } ?: context.getString(R.string.recently_added)
+                            view.name?.let { context.getString(R.string.recently_added_in, it) }
+                                ?: context.getString(R.string.recently_added)
                         val viewId =
                             if (view.collectionType == CollectionType.LIVETV) {
                                 api.liveTvApi

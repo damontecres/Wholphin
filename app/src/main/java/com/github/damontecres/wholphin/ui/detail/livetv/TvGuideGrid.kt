@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -453,8 +454,16 @@ fun TvGuideGridContent(
                 Box(
                     modifier =
                         Modifier
+                            // Intentionally set background twice
+                            // The second is padded so there are gaps between times
+                            // The first covers those gaps
+                            .background(MaterialTheme.colorScheme.background)
+                            .padding(horizontal = 2.dp)
                             .fillMaxSize()
-                            .background(MaterialTheme.colorScheme.surface),
+                            .background(
+                                MaterialTheme.colorScheme.surfaceVariant,
+                                shape = RoundedCornerShape(4.dp),
+                            ),
                 ) {
                     val differentDay =
                         start.toLocalDate() !=
@@ -472,7 +481,8 @@ fun TvGuideGridContent(
                         )
                     Text(
                         text = time.toString(),
-                        modifier = Modifier.background(MaterialTheme.colorScheme.background),
+                        color = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.padding(2.dp),
                     )
                 }
             }
