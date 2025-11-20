@@ -49,7 +49,7 @@
     <string name="trailer">Trailer</string>
     <plurals name="trailers">
         <item quantity="one">Trailer</item>
-        <item quantity="other"></item>
+        <item quantity="other"/>
     </plurals>
     <string name="tv_season">Staffel</string>
     <string name="tv_seasons">Staffeln</string>
@@ -60,4 +60,25 @@
     <string name="version">Version</string>
     <string name="watch_live">Live ansehen</string>
     <string name="years_old">%1$d Jahre alt</string>
+    <string name="extras">Extras</string>
+    <plurals name="scenes">
+        <item quantity="one">Szenen</item>
+        <item quantity="other"></item>
+    </plurals>
+    <plurals name="downloads">
+        <item quantity="one">%s Download</item>
+        <item quantity="other">%s Downloads</item>
+    </plurals>
+    <plurals name="hours">
+        <item quantity="one">%d Stunde</item>
+        <item quantity="other">%d Stunden</item>
+    </plurals>
+    <plurals name="seconds">
+        <item quantity="one">%d Sekunde</item>
+        <item quantity="other">%d Sekunden</item>
+    </plurals>
+    <string name="ac3_supported">Gerät unterstützt AC3/Dolby Digital</string>
+    <string name="auto_check_for_updates">Automatisch nach Updates suchen</string>
+    <string name="check_for_updates">Nach Updates suchen</string>
+    <string name="settings">Einstellungen</string>
 </resources>
