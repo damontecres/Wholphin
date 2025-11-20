@@ -29,6 +29,8 @@ val supportedCollectionTypes =
         CollectionType.PLAYLISTS,
         CollectionType.BOXSETS,
         CollectionType.LIVETV,
+        CollectionType.MUSICVIDEOS,
+        CollectionType.FOLDERS,
         null, // Mixed
     )
 
