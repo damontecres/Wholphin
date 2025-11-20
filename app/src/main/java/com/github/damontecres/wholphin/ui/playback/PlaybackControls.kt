@@ -32,7 +32,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableLongStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
@@ -60,9 +59,7 @@ import androidx.tv.material3.ListItem
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.R
-import com.github.damontecres.wholphin.data.model.TrackIndex
 import com.github.damontecres.wholphin.ui.AppColors
-import com.github.damontecres.wholphin.ui.indexOfFirstOrNull
 import com.github.damontecres.wholphin.ui.seekBack
 import com.github.damontecres.wholphin.ui.seekForward
 import com.github.damontecres.wholphin.ui.stringRes
@@ -73,7 +70,6 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import org.jellyfin.sdk.model.api.MediaSegmentDto
 import org.jellyfin.sdk.model.extensions.ticks
-import timber.log.Timber
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
@@ -110,22 +106,18 @@ sealed interface PlaybackAction {
 @OptIn(UnstableApi::class)
 @Composable
 fun PlaybackControls(
-    subtitleStreams: List<SubtitleStream>,
     playerControls: Player,
     controllerViewState: ControllerViewState,
     onPlaybackActionClick: (PlaybackAction) -> Unit,
-    showDebugInfo: Boolean,
+    onClickPlaybackDialogType: (PlaybackDialogType) -> Unit,
+    moreFocusRequester: FocusRequester,
+    captionFocusRequester: FocusRequester,
+    settingsFocusRequester: FocusRequester,
     onSeekProgress: (Long) -> Unit,
     showPlay: Boolean,
     previousEnabled: Boolean,
     nextEnabled: Boolean,
     seekEnabled: Boolean,
-    moreButtonOptions: MoreButtonOptions,
-    subtitleIndex: Int?,
-    audioIndex: Int?,
-    audioStreams: List<AudioStream>,
-    playbackSpeed: Float,
-    scale: ContentScale,
     seekBarIntervals: Int,
     seekBack: Duration,
     skipBackOnResume: Duration?,
@@ -143,12 +135,6 @@ fun PlaybackControls(
             bringIntoViewRequester.bringIntoView()
         }
         controllerViewState.pulseControls()
-    }
-    val onControllerInteractionForDialog = {
-        scope.launch(ExceptionHandler()) {
-            bringIntoViewRequester.bringIntoView()
-        }
-        controllerViewState.pulseControls(Long.MAX_VALUE)
     }
     LaunchedEffect(controllerViewState.controlsVisible) {
         if (controllerViewState.controlsVisible) {
@@ -181,10 +167,9 @@ fun PlaybackControls(
                     .fillMaxWidth(),
         ) {
             LeftPlaybackButtons(
+                moreFocusRequester = moreFocusRequester,
                 onControllerInteraction = onControllerInteraction,
-                onPlaybackActionClick = onPlaybackActionClick,
-                showDebugInfo = showDebugInfo,
-                moreButtonOptions = moreButtonOptions,
+                onClickPlaybackDialogType = onClickPlaybackDialogType,
                 modifier = Modifier.align(Alignment.CenterStart),
             )
             PlaybackButtons(
@@ -219,15 +204,10 @@ fun PlaybackControls(
                     }
                 }
                 RightPlaybackButtons(
-                    subtitleStreams = subtitleStreams,
+                    captionFocusRequester = captionFocusRequester,
+                    settingsFocusRequester = settingsFocusRequester,
                     onControllerInteraction = onControllerInteraction,
-                    onControllerInteractionForDialog = onControllerInteractionForDialog,
-                    onPlaybackActionClick = onPlaybackActionClick,
-                    subtitleIndex = subtitleIndex,
-                    audioStreams = audioStreams,
-                    audioIndex = audioIndex,
-                    playbackSpeed = playbackSpeed,
-                    scale = scale,
+                    onClickPlaybackDialogType = onClickPlaybackDialogType,
                     modifier = Modifier,
                 )
             }
@@ -307,14 +287,11 @@ private val buttonSpacing = 4.dp
 
 @Composable
 fun LeftPlaybackButtons(
+    moreFocusRequester: FocusRequester,
     onControllerInteraction: () -> Unit,
-    onPlaybackActionClick: (PlaybackAction) -> Unit,
-    showDebugInfo: Boolean,
-    moreButtonOptions: MoreButtonOptions,
+    onClickPlaybackDialogType: (PlaybackDialogType) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var showMoreOptions by remember { mutableStateOf(false) }
-    val focusRequester = remember { FocusRequester() }
     Row(
         modifier = modifier.focusGroup(),
         horizontalArrangement = Arrangement.spacedBy(buttonSpacing),
@@ -324,58 +301,23 @@ fun LeftPlaybackButtons(
             iconRes = R.drawable.baseline_more_vert_96,
             onClick = {
                 onControllerInteraction.invoke()
-                showMoreOptions = true
+                onClickPlaybackDialogType.invoke(PlaybackDialogType.MORE)
             },
             enabled = true,
             onControllerInteraction = onControllerInteraction,
-            modifier = Modifier.focusRequester(focusRequester),
-        )
-    }
-    if (showMoreOptions) {
-        val options =
-            buildList {
-                addAll(moreButtonOptions.options.keys)
-                add(stringResource(if (showDebugInfo) R.string.hide_debug_info else R.string.show_debug_info))
-            }
-        BottomDialog(
-            choices = options,
-            onDismissRequest = {
-                showMoreOptions = false
-                focusRequester.tryRequestFocus()
-            },
-            onSelectChoice = { index, choice ->
-                val action = moreButtonOptions.options[choice] ?: PlaybackAction.ShowDebug
-                onPlaybackActionClick.invoke(action)
-            },
-            gravity = Gravity.START,
+            modifier = Modifier.focusRequester(moreFocusRequester),
         )
     }
 }
 
-private val speedOptions = listOf(".25", ".5", ".75", "1.0", "1.25", "1.5", "1.75", "2.0")
-
 @Composable
 fun RightPlaybackButtons(
-    subtitleStreams: List<SubtitleStream>,
+    captionFocusRequester: FocusRequester,
+    settingsFocusRequester: FocusRequester,
     onControllerInteraction: () -> Unit,
-    onControllerInteractionForDialog: () -> Unit,
-    onPlaybackActionClick: (PlaybackAction) -> Unit,
-    subtitleIndex: Int?,
-    audioStreams: List<AudioStream>,
-    audioIndex: Int?,
-    playbackSpeed: Float,
-    scale: ContentScale,
+    onClickPlaybackDialogType: (PlaybackDialogType) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var showCaptionDialog by remember { mutableStateOf(false) }
-    var showOptionsDialog by remember { mutableStateOf(false) }
-    var showAudioDialog by remember { mutableStateOf(false) }
-    var showSpeedDialog by remember { mutableStateOf(false) }
-    var showScaleDialog by remember { mutableStateOf(false) }
-
-    val captionFocusRequester = remember { FocusRequester() }
-    val settingsFocusRequester = remember { FocusRequester() }
-
     Row(
         modifier = modifier.focusGroup(),
         horizontalArrangement = Arrangement.spacedBy(buttonSpacing),
@@ -385,8 +327,8 @@ fun RightPlaybackButtons(
             enabled = true,
             iconRes = R.drawable.captions_svgrepo_com,
             onClick = {
-                onControllerInteractionForDialog.invoke()
-                showCaptionDialog = true
+                onControllerInteraction.invoke()
+                onClickPlaybackDialogType.invoke(PlaybackDialogType.CAPTIONS)
             },
             onControllerInteraction = onControllerInteraction,
             modifier = Modifier.focusRequester(captionFocusRequester),
@@ -395,129 +337,12 @@ fun RightPlaybackButtons(
         PlaybackButton(
             iconRes = R.drawable.vector_settings,
             onClick = {
-                onControllerInteractionForDialog.invoke()
-                showOptionsDialog = true
+                onControllerInteraction.invoke()
+                onClickPlaybackDialogType.invoke(PlaybackDialogType.SETTINGS)
             },
             enabled = true,
             onControllerInteraction = onControllerInteraction,
             modifier = Modifier.focusRequester(settingsFocusRequester),
-        )
-    }
-    val scope = rememberCoroutineScope()
-    if (showCaptionDialog) {
-        val options = subtitleStreams.map { it.displayName }
-        Timber.v("subtitleIndex=$subtitleIndex, options=$options")
-        val currentChoice =
-            subtitleStreams.indexOfFirstOrNull { it.index == subtitleIndex } ?: subtitleStreams.size
-        BottomDialog(
-            choices =
-                options +
-                    listOf(
-                        stringResource(R.string.none),
-                        stringResource(R.string.search_and_download),
-                    ),
-            currentChoice = currentChoice,
-            onDismissRequest = {
-                onControllerInteraction.invoke()
-                showCaptionDialog = false
-                scope.launch {
-                    // TODO this is hacky, but playback changes force refocus and this is a workaround
-                    delay(250L)
-                    captionFocusRequester.tryRequestFocus()
-                }
-            },
-            onSelectChoice = { index, _ ->
-                if (index in subtitleStreams.indices) {
-                    onPlaybackActionClick.invoke(PlaybackAction.ToggleCaptions(subtitleStreams[index].index))
-                } else {
-                    val idx = index - subtitleStreams.size
-                    if (idx == 0) {
-                        onPlaybackActionClick.invoke(PlaybackAction.ToggleCaptions(TrackIndex.DISABLED))
-                    } else {
-                        onPlaybackActionClick.invoke(PlaybackAction.SearchCaptions)
-                    }
-                }
-            },
-            gravity = Gravity.END,
-        )
-    }
-    if (showOptionsDialog) {
-        val options =
-            listOf(
-                stringResource(R.string.audio),
-                stringResource(R.string.playback_speed),
-                stringResource(R.string.video_scale),
-            )
-        BottomDialog(
-            choices = options,
-            currentChoice = null,
-            onDismissRequest = {
-                onControllerInteraction.invoke()
-                showOptionsDialog = false
-            },
-            onSelectChoice = { index, _ ->
-                onControllerInteractionForDialog.invoke()
-                when (index) {
-                    0 -> showAudioDialog = true
-                    1 -> showSpeedDialog = true
-                    2 -> showScaleDialog = true
-                }
-            },
-            gravity = Gravity.END,
-        )
-    }
-    if (showAudioDialog) {
-        BottomDialog(
-            choices = audioStreams.map { it.displayName },
-            currentChoice = audioStreams.indexOfFirstOrNull { it.index == audioIndex },
-            onDismissRequest = {
-                onControllerInteraction.invoke()
-                showAudioDialog = false
-                scope.launch {
-                    delay(250L)
-                    settingsFocusRequester.tryRequestFocus()
-                }
-            },
-            onSelectChoice = { index, _ ->
-                onPlaybackActionClick.invoke(PlaybackAction.ToggleAudio(audioStreams[index].index))
-            },
-            gravity = Gravity.END,
-        )
-    }
-    if (showSpeedDialog) {
-        BottomDialog(
-            choices = speedOptions,
-            currentChoice = speedOptions.indexOf(playbackSpeed.toString()),
-            onDismissRequest = {
-                onControllerInteraction.invoke()
-                showSpeedDialog = false
-                scope.launch {
-                    delay(250L)
-                    settingsFocusRequester.tryRequestFocus()
-                }
-            },
-            onSelectChoice = { _, value ->
-                onPlaybackActionClick.invoke(PlaybackAction.PlaybackSpeed(value.toFloat()))
-            },
-            gravity = Gravity.END,
-        )
-    }
-    if (showScaleDialog) {
-        BottomDialog(
-            choices = playbackScaleOptions.values.toList(),
-            currentChoice = playbackScaleOptions.keys.toList().indexOf(scale),
-            onDismissRequest = {
-                onControllerInteraction.invoke()
-                showScaleDialog = false
-                scope.launch {
-                    delay(250L)
-                    settingsFocusRequester.tryRequestFocus()
-                }
-            },
-            onSelectChoice = { index, _ ->
-                onPlaybackActionClick.invoke(PlaybackAction.Scale(playbackScaleOptions.keys.toList()[index]))
-            },
-            gravity = Gravity.END,
         )
     }
 }
@@ -629,7 +454,7 @@ fun PlaybackButton(
 }
 
 @Composable
-private fun BottomDialog(
+fun BottomDialog(
     choices: List<String>,
     onDismissRequest: () -> Unit,
     onSelectChoice: (Int, String) -> Unit,
