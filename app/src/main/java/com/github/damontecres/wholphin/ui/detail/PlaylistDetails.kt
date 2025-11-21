@@ -148,18 +148,17 @@ fun PlaylistDetails(
                     focusRequester = focusRequester,
                     onClickIndex = { index, _ ->
                         viewModel.navigationManager.navigateTo(
-                            Destination.Playback(
+                            Destination.PlaybackList(
                                 itemId = it.id,
-                                positionMs = 0L,
                                 startIndex = index,
+                                shuffle = false,
                             ),
                         )
                     },
                     onClickPlay = { shuffle ->
                         viewModel.navigationManager.navigateTo(
-                            Destination.Playback(
+                            Destination.PlaybackList(
                                 itemId = it.id,
-                                positionMs = 0L,
                                 startIndex = 0,
                                 shuffle = shuffle,
                             ),
@@ -183,10 +182,10 @@ fun PlaylistDetails(
                                             Icons.Default.PlayArrow,
                                         ) {
                                             viewModel.navigationManager.navigateTo(
-                                                Destination.Playback(
+                                                Destination.PlaybackList(
                                                     itemId = it.id,
-                                                    positionMs = it.resumeMs ?: 0L,
                                                     startIndex = index,
+                                                    shuffle = false,
                                                 ),
                                             )
                                         },

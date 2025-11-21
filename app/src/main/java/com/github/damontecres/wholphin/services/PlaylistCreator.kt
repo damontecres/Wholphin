@@ -4,10 +4,10 @@ import android.content.Context
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.BaseItem
+import com.github.damontecres.wholphin.data.model.GetItemsFilter
 import com.github.damontecres.wholphin.data.model.Playlist
 import com.github.damontecres.wholphin.data.model.PlaylistInfo
 import com.github.damontecres.wholphin.ui.DefaultItemFields
-import com.github.damontecres.wholphin.ui.SlimItemFields
 import com.github.damontecres.wholphin.ui.components.baseItemKinds
 import com.github.damontecres.wholphin.ui.data.SortAndDirection
 import com.github.damontecres.wholphin.ui.indexOfFirstOrNull
@@ -21,6 +21,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.playlistsApi
+import org.jellyfin.sdk.model.api.BaseItemDto
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.CreatePlaylistDto
 import org.jellyfin.sdk.model.api.ImageType
@@ -90,24 +91,27 @@ class PlaylistCreator
         }
 
         private suspend fun createFromCollection(
-            item: BaseItem,
+            item: BaseItemDto,
             startIndex: Int = 0,
-            sortAndDirection: SortAndDirection,
+            sortAndDirection: SortAndDirection?,
+            recursive: Boolean,
+            filter: GetItemsFilter,
         ): Playlist {
-            val includeItemTypes = item.data.collectionType?.baseItemKinds
-            val recursive = false
+            val includeItemTypes = item.collectionType?.baseItemKinds
             val request =
-                GetItemsRequest(
-                    parentId = item.id,
-                    enableImageTypes = listOf(ImageType.PRIMARY, ImageType.THUMB),
-                    includeItemTypes = includeItemTypes,
-                    recursive = recursive,
-                    excludeItemIds = listOf(item.id),
-                    sortBy = listOf(sortAndDirection.sort),
-                    sortOrder = listOf(sortAndDirection.direction),
-                    fields = SlimItemFields,
-                    startIndex = startIndex,
-                    limit = Playlist.MAX_SIZE,
+                filter.applyTo(
+                    GetItemsRequest(
+                        parentId = item.id,
+                        enableImageTypes = listOf(ImageType.PRIMARY, ImageType.THUMB),
+                        includeItemTypes = includeItemTypes,
+                        recursive = recursive,
+                        excludeItemIds = listOf(item.id),
+                        sortBy = sortAndDirection?.let { listOf(sortAndDirection.sort) },
+                        sortOrder = sortAndDirection?.let { listOf(sortAndDirection.direction) },
+                        fields = DefaultItemFields,
+                        startIndex = startIndex,
+                        limit = Playlist.MAX_SIZE,
+                    ),
                 )
             val items =
                 GetItemsRequestHandler.execute(api, request).content.items.map {
@@ -117,10 +121,12 @@ class PlaylistCreator
         }
 
         suspend fun createFrom(
-            item: BaseItem,
+            item: BaseItemDto,
             startIndex: Int = 0,
-            sortAndDirection: SortAndDirection,
+            sortAndDirection: SortAndDirection?,
             shuffled: Boolean,
+            recursive: Boolean,
+            filter: GetItemsFilter,
         ): PlaylistCreationResult =
             when (item.type) {
                 BaseItemKind.BOX_SET,
@@ -129,18 +135,21 @@ class PlaylistCreator
                 ->
                     PlaylistCreationResult.Success(
                         createFromCollection(
-                            item,
-                            startIndex,
-                            if (shuffled) {
-                                SortAndDirection(ItemSortBy.RANDOM, SortOrder.ASCENDING)
-                            } else {
-                                sortAndDirection
-                            },
+                            item = item,
+                            startIndex = startIndex,
+                            sortAndDirection =
+                                if (shuffled) {
+                                    SortAndDirection(ItemSortBy.RANDOM, SortOrder.ASCENDING)
+                                } else {
+                                    sortAndDirection
+                                },
+                            recursive = recursive,
+                            filter = filter,
                         ),
                     )
 
                 BaseItemKind.EPISODE -> {
-                    val seriesId = item.data.seriesId
+                    val seriesId = item.seriesId
                     if (seriesId != null) {
                         PlaylistCreationResult.Success(
                             createFromEpisode(
@@ -156,7 +165,7 @@ class PlaylistCreator
                 }
 
                 BaseItemKind.SEASON -> {
-                    val seriesId = item.data.seriesId
+                    val seriesId = item.seriesId
                     if (seriesId != null) {
                         PlaylistCreationResult.Success(
                             createFromEpisode(
@@ -259,7 +268,7 @@ class PlaylistCreator
         }
     }
 
-interface PlaylistCreationResult {
+sealed interface PlaylistCreationResult {
     data class Success(
         val playlist: Playlist,
     ) : PlaylistCreationResult

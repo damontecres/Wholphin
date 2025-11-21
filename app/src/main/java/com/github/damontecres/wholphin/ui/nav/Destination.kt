@@ -8,6 +8,7 @@ import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.GetItemsFilter
 import com.github.damontecres.wholphin.data.model.ItemPlayback
 import com.github.damontecres.wholphin.data.model.JellyfinServer
+import com.github.damontecres.wholphin.ui.data.SortAndDirection
 import com.github.damontecres.wholphin.ui.detail.series.SeasonEpisode
 import com.github.damontecres.wholphin.ui.detail.series.SeasonEpisodeIds
 import com.github.damontecres.wholphin.ui.preferences.PreferenceScreenOption
@@ -79,14 +80,24 @@ sealed class Destination(
         val itemId: UUID,
         val positionMs: Long,
         @Transient val item: BaseItem? = null,
-        val startIndex: Int? = null,
-        val shuffle: Boolean = false,
         val itemPlayback: ItemPlayback? = null,
         val forceTranscoding: Boolean = false,
     ) : Destination(true) {
         override fun toString(): String = "Playback(itemId=$itemId, positionMs=$positionMs)"
 
-        constructor(item: BaseItem) : this(item.id, item.resumeMs ?: 0, item)
+        constructor(item: BaseItem) : this(item.id, item.resumeMs, item)
+    }
+
+    @Serializable
+    data class PlaybackList(
+        val itemId: UUID,
+        val filter: GetItemsFilter = GetItemsFilter(),
+        val startIndex: Int? = null,
+        val shuffle: Boolean = false,
+        val recursive: Boolean = false,
+        val sortAndDirection: SortAndDirection? = null,
+    ) : Destination(true) {
+        override fun toString(): String = "PlaybackList(itemId=$itemId)"
     }
 
     @Serializable

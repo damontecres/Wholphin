@@ -39,6 +39,7 @@ import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.DatePlayedService
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.PlayerFactory
+import com.github.damontecres.wholphin.services.PlaylistCreationResult
 import com.github.damontecres.wholphin.services.PlaylistCreator
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.nav.Destination
@@ -171,54 +172,93 @@ class PlaybackViewModel
          * Initialize from the UI to start playback
          */
         fun init(
-            destination: Destination.Playback,
+            destination: Destination,
             deviceProfile: DeviceProfile,
             preferences: UserPreferences,
         ) {
             nextUp.value = null
             this.preferences = preferences
             this.deviceProfile = deviceProfile
-            this.forceTranscoding = destination.forceTranscoding
-            val itemId = destination.itemId
+            this.forceTranscoding =
+                (destination as? Destination.Playback)?.forceTranscoding ?: false
+            val positionMs: Long
+            val itemPlayback: ItemPlayback?
+            val forceTranscoding: Boolean
+
+            val itemId =
+                when (val d = destination) {
+                    is Destination.Playback -> {
+                        positionMs = d.positionMs
+                        itemPlayback = d.itemPlayback
+                        forceTranscoding = d.forceTranscoding
+                        d.itemId
+                    }
+
+                    is Destination.PlaybackList -> {
+                        positionMs = 0
+                        itemPlayback = null
+                        forceTranscoding = false
+                        d.itemId
+                    }
+
+                    else -> throw IllegalArgumentException("Destination not supported: $destination")
+                }
             this.itemId = itemId
-            val item = destination.item
             viewModelScope.launch(
                 Dispatchers.IO +
                     LoadingExceptionHandler(
                         loading,
-                        "Error preparing for playback for ${destination.itemId}",
+                        "Error preparing for playback for $itemId",
                     ),
             ) {
-                val queriedItem = item?.data ?: api.userLibraryApi.getItem(itemId).content
+                val queriedItem =
+                    (destination as? Destination.Playback)?.item?.data
+                        ?: api.userLibraryApi.getItem(itemId).content
                 val base =
-                    if (queriedItem.type == BaseItemKind.PLAYLIST) {
-                        isPlaylist = true
-                        val playlist =
-                            playlistCreator.createFromPlaylistId(
-                                queriedItem.id,
-                                destination.startIndex,
-                                destination.shuffle,
-                            )
-                        if (playlist.items.isEmpty()) {
-                            showToast(context, "Playlist is empty", Toast.LENGTH_SHORT)
-                            navigationManager.goBack()
-                            return@launch
-                        }
-                        withContext(Dispatchers.Main) {
-                            this@PlaybackViewModel.playlist.value = playlist
-                        }
-                        playlist.items.first().data
-                    } else {
+                    if (queriedItem.type.playable) {
                         queriedItem
+                    } else if (destination is Destination.PlaybackList) {
+                        isPlaylist = true
+                        val playlistResult =
+                            playlistCreator.createFrom(
+                                item = queriedItem,
+                                startIndex = destination.startIndex ?: 0,
+                                sortAndDirection = destination.sortAndDirection,
+                                shuffled = destination.shuffle,
+                                recursive = destination.recursive,
+                                filter = destination.filter,
+                            )
+                        when (val r = playlistResult) {
+                            is PlaylistCreationResult.Error -> {
+                                loading.setValueOnMain(LoadingState.Error(r.message, r.ex))
+                                return@launch
+                            }
+
+                            is PlaylistCreationResult.Success -> {
+                                if (r.playlist.items.isEmpty()) {
+                                    showToast(context, "Playlist is empty", Toast.LENGTH_SHORT)
+                                    navigationManager.goBack()
+                                    return@launch
+                                }
+                                withContext(Dispatchers.Main) {
+                                    this@PlaybackViewModel.playlist.value = r.playlist
+                                }
+                                r.playlist.items
+                                    .first()
+                                    .data
+                            }
+                        }
+                    } else {
+                        throw IllegalArgumentException("Item is not playable and not PlaybackList")
                     }
                 val item = BaseItem.from(base, api)
 
                 val played =
                     play(
                         item,
-                        destination.positionMs,
-                        destination.itemPlayback,
-                        destination.forceTranscoding,
+                        positionMs,
+                        itemPlayback,
+                        forceTranscoding,
                     )
                 if (!played) {
                     playNextUp()

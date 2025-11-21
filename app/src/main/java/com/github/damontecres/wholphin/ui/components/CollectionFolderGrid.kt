@@ -400,11 +400,13 @@ fun CollectionFolderGrid(
                     onClickPlay = { shuffle ->
                         itemId.toUUIDOrNull()?.let {
                             viewModel.navigationManager.navigateTo(
-                                Destination.Playback(
+                                Destination.PlaybackList(
                                     itemId = it,
-                                    positionMs = 0L,
                                     startIndex = 0,
                                     shuffle = shuffle,
+                                    recursive = recursive,
+                                    sortAndDirection = sortAndDirection,
+                                    filter = filter,
                                 ),
                             )
                         }

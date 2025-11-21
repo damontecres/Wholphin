@@ -95,16 +95,16 @@ import kotlin.time.Duration.Companion.seconds
 fun PlaybackPage(
     preferences: UserPreferences,
     deviceProfile: DeviceProfile,
-    destination: Destination.Playback,
+    destination: Destination,
     modifier: Modifier = Modifier,
     viewModel: PlaybackViewModel = hiltViewModel(),
 ) {
-    LifecycleStartEffect(destination.itemId) {
+    LifecycleStartEffect(destination) {
         onStopOrDispose {
             viewModel.release()
         }
     }
-    LaunchedEffect(destination.itemId) {
+    LaunchedEffect(destination) {
         viewModel.init(destination, deviceProfile, preferences)
     }
 

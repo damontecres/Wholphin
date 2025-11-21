@@ -2,9 +2,11 @@ package com.github.damontecres.wholphin.ui.data
 
 import androidx.annotation.StringRes
 import com.github.damontecres.wholphin.R
+import kotlinx.serialization.Serializable
 import org.jellyfin.sdk.model.api.ItemSortBy
 import org.jellyfin.sdk.model.api.SortOrder
 
+@Serializable
 data class SortAndDirection(
     val sort: ItemSortBy,
     val direction: SortOrder,
