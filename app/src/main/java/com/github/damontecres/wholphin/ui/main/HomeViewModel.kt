@@ -32,7 +32,6 @@ import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.itemsApi
-import org.jellyfin.sdk.api.client.extensions.liveTvApi
 import org.jellyfin.sdk.api.client.extensions.tvShowsApi
 import org.jellyfin.sdk.api.client.extensions.userLibraryApi
 import org.jellyfin.sdk.api.client.extensions.userViewsApi
@@ -219,33 +218,20 @@ class HomeViewModel
                         it.id in includedIds && it.id !in excluded &&
                             // Exclude Live TV because a recording folder view will be used instead
                             it.collectionType != CollectionType.LIVETV
-                    }.mapNotNull { view ->
+                    }.map { view ->
                         val title =
                             view.name?.let { context.getString(R.string.recently_added_in, it) }
                                 ?: context.getString(R.string.recently_added)
-                        val viewId =
-                            if (view.collectionType == CollectionType.LIVETV) {
-                                api.liveTvApi
-                                    .getRecordingFolders(
-                                        userId = user.id,
-                                    ).content.items
-                                    .firstOrNull()
-                                    ?.id
-                            } else {
-                                view.id
-                            }
-                        viewId?.let {
-                            val request =
-                                GetLatestMediaRequest(
-                                    fields = SlimItemFields,
-                                    imageTypeLimit = 1,
-                                    parentId = viewId,
-                                    groupItems = true,
-                                    limit = limit,
-                                    isPlayed = null, // Server will handle user's preference
-                                )
-                            LatestData(title, request)
-                        }
+                        val request =
+                            GetLatestMediaRequest(
+                                fields = SlimItemFields,
+                                imageTypeLimit = 1,
+                                parentId = view.id,
+                                groupItems = true,
+                                limit = limit,
+                                isPlayed = null, // Server will handle user's preference
+                            )
+                        LatestData(title, request)
                     }
 
             return latestData
