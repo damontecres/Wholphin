@@ -98,4 +98,4 @@ jobs:
 
            gh release create "${{ env.TAG_NAME }}" \
             --latest=false --prerelease --title "${{ env.TAG_NAME }}" --target "${{ env.BRANCH_NAME }}" -F ci_release_note.txt \
-            "app/build/outputs/apk/*.apk"
+            "app/build/outputs/apk/**/*.apk"
