@@ -60,9 +60,9 @@ jobs:
           echo "SHA256 checksums:"
           find app/build/outputs/apk -name '*.apk' -print0 | xargs -0 sha256sum
       - name: Create GitHub release
-        uses: ncipollo/release-action@v1
-        with:
-          artifacts: "${{ steps.apks.outputs.apks }}"
-          makeLatest: true
-          prerelease: false
-          generateReleaseNotes: false
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "${{ env.TAG_NAME }}" \
+            --latest --title "${{ env.TAG_NAME }}" --verify-tag -n "Placeholder" --draft \
+            "app/build/outputs/apk/**/*.apk"

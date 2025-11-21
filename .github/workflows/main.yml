@@ -79,47 +79,23 @@ jobs:
           echo "SHA256 checksums:"
           find app/build/outputs/apk -name '*.apk' -print0 | xargs -0 sha256sum
       - name: Delete ${{ env.TAG_NAME }} tag and release
-        uses: dev-drprasad/delete-tag-and-release@v1.1
-        with:
-          tag_name: "${{ env.TAG_NAME }}"
-          delete_release: true
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release delete "${{ env.TAG_NAME }}" --cleanup-tag -y || true
 
-      - name: Advance ${{ env.TAG_NAME }} tag
-        uses: actions/github-script@v8
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            await github.rest.git.createRef({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              ref: "refs/tags/${{ env.TAG_NAME }}",
-              sha: context.sha
-            })
 
-      - name: Create GitHub release
-        uses: ncipollo/release-action@v1
-        with:
-          allowUpdates: true
-          artifactErrorsFailBuild: true
-          artifacts: "${{ steps.apks.outputs.apks }}"
-          draft: false
-          generateReleaseNotes: false
-          makeLatest: false
-          name: "${{ env.VERSION_NAME }}"
-          prerelease: true
-          removeArtifacts: true
-          replacesArtifacts: true
-          updateOnlyUnreleased: true
-          tag: "${{ env.TAG_NAME }}"
+          echo '### `${{ env.BRANCH_NAME }}` development build
 
-          body: |
-            ### `${{ env.BRANCH_NAME }}` development build
+          This pre-release tracks the development build of Wholphin from the `${{ env.BRANCH_NAME }}` unstable branch.
 
-            This pre-release tracks the development build of Wholphin from the `${{ env.BRANCH_NAME }}` unstable branch.
+          See https://github.com/damontecres/Wholphin/releases/latest for the latest stable release.
 
-            See https://github.com/damontecres/Wholphin/releases/latest for the latest stable release.
+          If you want to update to this version in-app, change Settings->Advanced->Update URL to https://api.github.com/repos/damontecres/Wholphin/releases/tags/${{ env.TAG_NAME }} (replace `latest` with `tags/${{ env.TAG_NAME }}`).
 
-            If you want to update to this version in-app, change Settings->Advanced->Update URL to https://api.github.com/repos/damontecres/Wholphin/releases/tags/${{ env.TAG_NAME }} (replace `latest` with `tags/${{ env.TAG_NAME }}`).
+          [See changes since `${{ env.LATEST_TAG }}`](https://github.com/damontecres/Wholphin/compare/${{ env.LATEST_TAG }}...${{ env.TAG_NAME }})' > ci_release_note.txt
 
-            [See changes since `${{ env.LATEST_TAG }}`](https://github.com/damontecres/Wholphin/compare/${{ env.LATEST_TAG }}...${{ env.TAG_NAME }})
+
+           gh release create "${{ env.TAG_NAME }}" \
+            --latest=false --prerelease --title "${{ env.TAG_NAME }}" --target "${{ env.BRANCH_NAME }}" -F ci_release_note.txt \
+            "app/build/outputs/apk/**/*.apk"
