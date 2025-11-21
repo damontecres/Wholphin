@@ -177,7 +177,18 @@ fun SeriesDetails(
                                 files = listOf(),
                             )
                     },
-                    playOnClick = { viewModel.playNextUp() },
+                    playOnClick = { shuffle ->
+                        if (shuffle) {
+                            viewModel.navigateTo(
+                                Destination.PlaybackList(
+                                    itemId = item.id,
+                                    shuffle = true,
+                                ),
+                            )
+                        } else {
+                            viewModel.playNextUp()
+                        }
+                    },
                     watchOnClick = { showWatchConfirmation = true },
                     favoriteOnClick = {
                         val favorite = item.data.userData?.isFavorite ?: false
@@ -278,7 +289,7 @@ fun SeriesDetailsContent(
     onClickPerson: (Person) -> Unit,
     onLongClickItem: (Int, BaseItem) -> Unit,
     overviewOnClick: () -> Unit,
-    playOnClick: () -> Unit,
+    playOnClick: (Boolean) -> Unit,
     watchOnClick: () -> Unit,
     favoriteOnClick: () -> Unit,
     trailerOnClick: (Trailer) -> Unit,
@@ -344,16 +355,7 @@ fun SeriesDetailsContent(
                 item {
                     SeriesDetailsHeader(
                         series = series,
-                        played = played,
-                        favorite = favorite,
                         overviewOnClick = overviewOnClick,
-                        playOnClick = {
-                            position = HEADER_ROW
-                            playOnClick.invoke()
-                        },
-                        watchOnClick = watchOnClick,
-                        favoriteOnClick = favoriteOnClick,
-                        bringIntoViewRequester = bringIntoViewRequester,
                         modifier =
                             Modifier
                                 .fillMaxWidth(.7f)
@@ -374,7 +376,23 @@ fun SeriesDetailsContent(
                             icon = Icons.Default.PlayArrow,
                             onClick = {
                                 position = HEADER_ROW
-                                playOnClick.invoke()
+                                playOnClick.invoke(false)
+                            },
+                            modifier =
+                                Modifier.onFocusChanged {
+                                    if (it.isFocused) {
+                                        scope.launch(ExceptionHandler()) {
+                                            bringIntoViewRequester.bringIntoView()
+                                        }
+                                    }
+                                },
+                        )
+                        ExpandableFaButton(
+                            title = R.string.shuffle,
+                            iconStringRes = R.string.fa_shuffle,
+                            onClick = {
+                                position = HEADER_ROW
+                                playOnClick.invoke(true)
                             },
                             modifier =
                                 Modifier.onFocusChanged {
@@ -568,13 +586,7 @@ fun SeriesDetailsContent(
 @Composable
 fun SeriesDetailsHeader(
     series: BaseItem,
-    played: Boolean,
-    favorite: Boolean,
-    bringIntoViewRequester: BringIntoViewRequester,
     overviewOnClick: () -> Unit,
-    playOnClick: () -> Unit,
-    watchOnClick: () -> Unit,
-    favoriteOnClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val scope = rememberCoroutineScope()

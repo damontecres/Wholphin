@@ -65,8 +65,7 @@ class PlaylistCreator
                 )
             val episodes = GetEpisodesRequestHandler.execute(api, request).content.items
             val startIndex =
-                episodes.indexOfFirstOrNull { it.id == episodeId }
-                    ?: throw IllegalStateException("Episode $episodeId was not returned")
+                episodeId?.let { episodes.indexOfFirstOrNull { it.id == episodeId } } ?: 0
             return Playlist(episodes.map { BaseItem.from(it, api) }, startIndex)
         }
 
