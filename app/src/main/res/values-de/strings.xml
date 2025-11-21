@@ -176,7 +176,7 @@
     <string name="app_theme">Design</string>
     <string name="auto_play_next_delay">Verzögerung vor dem nächsten Titel</string>
     <string name="auto_play_next">Automatisch als nächstes wiedergeben</string>
-    <string name="install_update">Update installieren</string>
+    <string name="install_update">Aktualisierung installieren</string>
     <string name="installed_version">Installierte Version</string>
     <string name="max_homepage_items">Max. Anzahl Objekte auf der Startseite</string>
     <string name="jump_letters">#ABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÜ</string>
