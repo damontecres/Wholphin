@@ -2,19 +2,9 @@ package com.github.damontecres.wholphin.ui
 
 import android.os.Build
 import androidx.annotation.StringRes
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.res.stringResource
 import com.github.damontecres.wholphin.R
-import com.github.damontecres.wholphin.data.ChosenStreams
-import com.github.damontecres.wholphin.data.model.ItemPlayback
-import com.github.damontecres.wholphin.data.model.chooseSource
-import com.github.damontecres.wholphin.data.model.chooseStream
-import com.github.damontecres.wholphin.preferences.UserPreferences
-import com.github.damontecres.wholphin.util.languageName
 import org.jellyfin.sdk.model.api.BaseItemDto
 import org.jellyfin.sdk.model.api.MediaSegmentType
-import org.jellyfin.sdk.model.api.MediaStream
-import org.jellyfin.sdk.model.api.MediaStreamType
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -80,53 +70,6 @@ val BaseItemDto.seasonEpisodePadded: String?
         } else {
             null
         }
-
-fun formatSubtitleLang(mediaStreams: List<MediaStream>?): String? =
-    mediaStreams
-        ?.filter { it.type == MediaStreamType.SUBTITLE && it.language.isNotNullOrBlank() }
-        ?.mapNotNull { it.language }
-        ?.distinct()
-        ?.joinToString(", ") { languageName(it) }
-
-/**
- * Gets the selected audio display title for the given item & chosen streams
- */
-fun getAudioDisplay(
-    item: BaseItemDto,
-    chosenStreams: ChosenStreams?,
-    preferences: UserPreferences,
-) = getAudioDisplay(item, chosenStreams?.itemPlayback, preferences)
-
-/**
- * Gets the selected audio display title for the given item & chosen streams
- */
-fun getAudioDisplay(
-    item: BaseItemDto,
-    itemPlayback: ItemPlayback?,
-    preferences: UserPreferences,
-) = chooseStream(item, itemPlayback, MediaStreamType.AUDIO, preferences)
-    ?.displayTitle
-    ?.replace(" - Default", "")
-    ?.ifBlank { null }
-
-/**
- * Gets the selected subtitle language for the given item & chosen streams
- *
- * If none are chosen, returns a concatenated list of languages available
- */
-@Composable
-fun getSubtitleDisplay(
-    item: BaseItemDto,
-    chosenStreams: ChosenStreams?,
-) = if (chosenStreams?.subtitlesDisabled == true) {
-    stringResource(R.string.disabled)
-} else if (chosenStreams?.subtitleStream != null) {
-    languageName(chosenStreams.subtitleStream.language)
-} else {
-    chooseSource(item, chosenStreams?.itemPlayback)?.let {
-        formatSubtitleLang(it.mediaStreams)
-    }
-}
 
 private val abbrevSuffixes = listOf("", "K", "M", "B")
 
