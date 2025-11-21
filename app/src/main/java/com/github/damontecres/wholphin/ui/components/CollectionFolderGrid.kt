@@ -8,8 +8,11 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -18,6 +21,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.layout.ContentScale
@@ -54,6 +58,7 @@ import com.github.damontecres.wholphin.ui.detail.MoreDialogActions
 import com.github.damontecres.wholphin.ui.detail.PlaylistDialog
 import com.github.damontecres.wholphin.ui.detail.PlaylistLoadingState
 import com.github.damontecres.wholphin.ui.detail.buildMoreDialogItemsForHome
+import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.toServerString
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.ApiRequestPager
@@ -80,6 +85,7 @@ import org.jellyfin.sdk.model.api.request.GetPersonsRequest
 import org.jellyfin.sdk.model.serializer.toUUIDOrNull
 import java.util.UUID
 import javax.inject.Inject
+import kotlin.time.Duration
 
 @HiltViewModel
 class CollectionFolderViewModel
@@ -182,22 +188,11 @@ class CollectionFolderViewModel
             return when (filter.override) {
                 GetItemsFilterOverride.NONE -> {
                     val includeItemTypes =
-                        when (item?.data?.collectionType) {
-                            CollectionType.MOVIES -> listOf(BaseItemKind.MOVIE)
-                            CollectionType.TVSHOWS -> listOf(BaseItemKind.SERIES)
-                            CollectionType.HOMEVIDEOS -> listOf(BaseItemKind.VIDEO)
-                            CollectionType.MUSIC ->
-                                listOf(
-                                    BaseItemKind.AUDIO,
-                                    BaseItemKind.MUSIC_ARTIST,
-                                    BaseItemKind.MUSIC_ALBUM,
-                                )
-
-                            CollectionType.BOXSETS -> listOf(BaseItemKind.BOX_SET)
-                            CollectionType.PLAYLISTS -> listOf(BaseItemKind.PLAYLIST)
-
-                            else -> listOf()
-                        }
+                        item
+                            ?.data
+                            ?.collectionType
+                            ?.baseItemKinds
+                            .orEmpty()
                     val request =
                         filter.applyTo(
                             GetItemsRequest(
@@ -317,6 +312,7 @@ fun CollectionFolderGrid(
     recursive: Boolean,
     onClickItem: (Int, BaseItem) -> Unit,
     sortOptions: List<ItemSortBy>,
+    playEnabled: Boolean,
     modifier: Modifier = Modifier,
     initialSortAndDirection: SortAndDirection? = null,
     showTitle: Boolean = true,
@@ -329,6 +325,7 @@ fun CollectionFolderGrid(
     recursive,
     onClickItem,
     sortOptions,
+    playEnabled,
     modifier,
     initialSortAndDirection = initialSortAndDirection,
     showTitle = showTitle,
@@ -344,6 +341,7 @@ fun CollectionFolderGrid(
     recursive: Boolean,
     onClickItem: (Int, BaseItem) -> Unit,
     sortOptions: List<ItemSortBy>,
+    playEnabled: Boolean,
     modifier: Modifier = Modifier,
     viewModel: CollectionFolderViewModel = hiltViewModel(),
     playlistViewModel: AddPlaylistViewModel = hiltViewModel(),
@@ -398,6 +396,19 @@ fun CollectionFolderGrid(
                     positionCallback = positionCallback,
                     letterPosition = { viewModel.positionOfLetter(it) ?: -1 },
                     params = params,
+                    playEnabled = playEnabled,
+                    onClickPlay = { shuffle ->
+                        itemId.toUUIDOrNull()?.let {
+                            viewModel.navigationManager.navigateTo(
+                                Destination.Playback(
+                                    itemId = it,
+                                    positionMs = 0L,
+                                    startIndex = 0,
+                                    shuffle = shuffle,
+                                ),
+                            )
+                        }
+                    },
                 )
             }
         }
@@ -464,6 +475,8 @@ fun CollectionFolderGridContent(
     onSortChange: (SortAndDirection) -> Unit,
     letterPosition: suspend (Char) -> Int,
     sortOptions: List<ItemSortBy>,
+    playEnabled: Boolean,
+    onClickPlay: (shuffle: Boolean) -> Unit,
     modifier: Modifier = Modifier,
     showTitle: Boolean = true,
     positionCallback: ((columns: Int, position: Int) -> Unit)? = null,
@@ -499,13 +512,32 @@ fun CollectionFolderGridContent(
                         modifier = Modifier.fillMaxWidth(),
                     )
                 }
-                if (sortOptions.isNotEmpty()) {
-                    SortByButton(
-                        sortOptions = sortOptions,
-                        current = sortAndDirection,
-                        onSortChange = onSortChange,
-                        modifier = Modifier,
-                    )
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier,
+                ) {
+                    if (sortOptions.isNotEmpty()) {
+                        SortByButton(
+                            sortOptions = sortOptions,
+                            current = sortAndDirection,
+                            onSortChange = onSortChange,
+                            modifier = Modifier,
+                        )
+                    }
+                    if (playEnabled) {
+                        ExpandablePlayButton(
+                            title = R.string.play,
+                            resume = Duration.ZERO,
+                            icon = Icons.Default.PlayArrow,
+                            onClick = { onClickPlay.invoke(false) },
+                        )
+                        ExpandableFaButton(
+                            title = R.string.shuffle,
+                            iconStringRes = R.string.fa_shuffle,
+                            onClick = { onClickPlay.invoke(true) },
+                        )
+                    }
                 }
             }
         }
@@ -601,3 +633,22 @@ data class CollectionFolderGridParameters(
             )
     }
 }
+
+val CollectionType.baseItemKinds: List<BaseItemKind>
+    get() =
+        when (this) {
+            CollectionType.MOVIES -> listOf(BaseItemKind.MOVIE)
+            CollectionType.TVSHOWS -> listOf(BaseItemKind.SERIES)
+            CollectionType.HOMEVIDEOS -> listOf(BaseItemKind.VIDEO)
+            CollectionType.MUSIC ->
+                listOf(
+                    BaseItemKind.AUDIO,
+                    BaseItemKind.MUSIC_ARTIST,
+                    BaseItemKind.MUSIC_ALBUM,
+                )
+
+            CollectionType.BOXSETS -> listOf(BaseItemKind.BOX_SET)
+            CollectionType.PLAYLISTS -> listOf(BaseItemKind.PLAYLIST)
+
+            else -> listOf()
+        }

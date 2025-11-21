@@ -207,7 +207,6 @@ class PlaybackViewModel
                         withContext(Dispatchers.Main) {
                             this@PlaybackViewModel.playlist.value = playlist
                         }
-                        // TODO start index
                         playlist.items.first().data
                     } else {
                         queriedItem

@@ -91,6 +91,7 @@ fun CollectionFolderTv(
             )
         }
         when (selectedTabIndex) {
+            // Recommended
             0 -> {
                 RecommendedTvShow(
                     preferences = preferences,
@@ -105,6 +106,7 @@ fun CollectionFolderTv(
                             .focusRequester(focusRequester),
                 )
             }
+            // Library
             1 -> {
                 CollectionFolderGrid(
                     preferences = preferences,
@@ -127,8 +129,10 @@ fun CollectionFolderTv(
                     onClickItem = { _, item ->
                         preferencesViewModel.navigationManager.navigateTo(item.destination())
                     },
+                    playEnabled = false,
                 )
             }
+            // Genres
             2 -> {
                 GenreCardGrid(
                     itemId = destination.itemId,

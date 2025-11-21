@@ -51,5 +51,6 @@ fun CollectionFolderGeneric(
             showHeader = position < columns
         },
         params = params,
+        playEnabled = false,
     )
 }

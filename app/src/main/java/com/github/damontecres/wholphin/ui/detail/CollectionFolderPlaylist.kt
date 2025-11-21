@@ -44,5 +44,6 @@ fun CollectionFolderPlaylist(
             showHeader = position < columns
         },
         params = CollectionFolderGridParameters.SQUARE,
+        playEnabled = false,
     )
 }
