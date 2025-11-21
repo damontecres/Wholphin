@@ -27,16 +27,24 @@ class NavDrawerItemRepository
     ) {
         suspend fun getNavDrawerItems(): List<NavDrawerItem> {
             val user = serverRepository.currentUser.value
+            val tvAccess =
+                serverRepository.currentUserDto.value
+                    ?.policy
+                    ?.enableLiveTvAccess ?: false
             val userViews =
                 api.userViewsApi
                     .getUserViews(userId = user?.id)
                     .content.items
             val recordingFolders =
-                api.liveTvApi
-                    .getRecordingFolders(userId = user?.id)
-                    .content.items
-                    .map { it.id }
-                    .toSet()
+                if (tvAccess) {
+                    api.liveTvApi
+                        .getRecordingFolders(userId = user?.id)
+                        .content.items
+                        .map { it.id }
+                        .toSet()
+                } else {
+                    setOf()
+                }
 
             val builtins = listOf(NavDrawerItem.Favorites)
             val libraries =
