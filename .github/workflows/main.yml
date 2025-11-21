@@ -82,7 +82,9 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release delete "${{ env.TAG_NAME }}"
+          gh release delete "${{ env.TAG_NAME }}" --cleanup-tag -y || true
+
+
           echo '### `${{ env.BRANCH_NAME }}` development build
 
           This pre-release tracks the development build of Wholphin from the `${{ env.BRANCH_NAME }}` unstable branch.
