@@ -328,6 +328,8 @@
         <item>Blue</item>
         <item>Green</item>
         <item>Orange</item>
+        <item>Bold Blue</item>
+        <item>Black</item>
     </string-array>
 
     <string-array name="skip_behaviors">
