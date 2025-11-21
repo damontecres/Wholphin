@@ -6,6 +6,15 @@ Wholphin is an open-source Android TV client for Jellyfin. It aims to provide a 
 
 This is not a fork of the [official client](https://github.com/jellyfin/jellyfin-androidtv). Wholphin's user interface and controls have been written completely from scratch. Wholphin `v0.3.0+` supports playing media using either ExoPlayer/Media3 or MPV (experimental).
 
+<p align="center">
+<a href="https://github.com/damontecres/Wholphin/releases">
+<img alt="Current Release" src="https://img.shields.io/github/release/damontecres/wholphin.svg"/>
+</a>
+<a href="https://translate.codeberg.org/engage/wholphin/">
+<img src="https://translate.codeberg.org/widget/wholphin/wholphin/svg-badge.svg" alt="Translation status" />
+</a>
+</p>
+
 <img width="1280" height="771" alt="0 3 0_home" src="https://github.com/user-attachments/assets/23be4786-a4c3-45e5-a710-8d1ade2be2a3" />
 
 ## Features
@@ -61,6 +70,8 @@ The app is tested on a variety of Android TV/Fire TV OS devices, but if you enco
 Issues and pull requests are always welcome! Please check before submitting that your issue or pull request is not a duplicate.
 
 If you plan to contribute, please read the [contributing guide](CONTRIBUTING.md)!
+
+You can [help translate Wholphin](https://translate.codeberg.org/engage/wholphin/)!
 
 ## Acknowledgements
 
