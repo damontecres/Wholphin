@@ -167,6 +167,14 @@ fun SeriesDetails(
                                 markPlayed = { played ->
                                     viewModel.setSeasonWatched(season.id, played)
                                 },
+                                onClickPlay = { shuffle ->
+                                    viewModel.navigateTo(
+                                        Destination.PlaybackList(
+                                            itemId = season.id,
+                                            shuffle = shuffle,
+                                        ),
+                                    )
+                                },
                             )
                     },
                     overviewOnClick = {
@@ -644,6 +652,7 @@ fun buildDialogForSeason(
     s: BaseItem,
     onClickItem: (BaseItem) -> Unit,
     markPlayed: (Boolean) -> Unit,
+    onClickPlay: (Boolean) -> Unit,
 ): DialogParams {
     val items =
         buildList {
@@ -665,6 +674,23 @@ fun buildDialogForSeason(
                     },
                 )
             }
+            add(
+                DialogItem(
+                    context.getString(R.string.play),
+                    Icons.Default.PlayArrow,
+                    iconColor = Color.Green.copy(alpha = .8f),
+                ) {
+                    onClickPlay.invoke(false)
+                },
+            )
+            add(
+                DialogItem(
+                    context.getString(R.string.shuffle),
+                    R.string.fa_shuffle,
+                ) {
+                    onClickPlay.invoke(true)
+                },
+            )
         }
     return DialogParams(
         title = s.name ?: context.getString(R.string.tv_season),
