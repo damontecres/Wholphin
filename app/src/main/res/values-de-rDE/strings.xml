@@ -34,7 +34,7 @@
     <string name="download_and_update"><![CDATA[Herunterladen & Aktualisieren]]></string>
     <string name="downloading">Herunterladen...</string>
     <string name="enabled">Aktiviert</string>
-    <string name="enter_server_url">Serveradresse oder URL inkluse Port eingeben</string>
+    <string name="enter_server_url">Serveradresse oder URL inklusive Port eingeben</string>
     <string name="episodes">Episoden</string>
     <string name="error_loading_collection">Fehler beim Laden der Sammlung %1$s</string>
     <string name="external_track">Extern</string>
@@ -217,4 +217,5 @@
     <string name="skip_back_on_resume_preference">Zurückspringen wenn wiedergabe fortgesetzt wird</string>
     <string name="skip_back_preference">Zurückspringen</string>
     <string name="skip_commercials_behavior">Überspringe Werbung verhalten</string>
+
 </resources>
