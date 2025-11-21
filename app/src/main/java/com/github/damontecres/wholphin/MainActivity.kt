@@ -140,7 +140,7 @@ class MainActivity : AppCompatActivity() {
                                     }
                                 val backStack = rememberNavBackStack(initialDestination)
                                 navigationManager.backStack = backStack
-                                if (appPreferences.autoCheckForUpdates) {
+                                if (UpdateChecker.ACTIVE && appPreferences.autoCheckForUpdates) {
                                     LaunchedEffect(Unit) {
                                         try {
                                             updateChecker.maybeShowUpdateToast(appPreferences.updateUrl)

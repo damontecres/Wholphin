@@ -61,6 +61,8 @@ class UpdateChecker
             private const val PERMISSION_REQUEST_CODE = 123456
 
             private val NOTE_REGEX = Regex("<!-- app-note:(.+) -->")
+
+            val ACTIVE = true
         }
 
         suspend fun maybeShowUpdateToast(

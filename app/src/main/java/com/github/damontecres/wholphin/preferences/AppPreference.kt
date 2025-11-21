@@ -7,6 +7,7 @@ import androidx.core.content.edit
 import androidx.preference.PreferenceManager
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.WholphinApplication
+import com.github.damontecres.wholphin.services.UpdateChecker
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.preferences.ConditionalPreferences
 import com.github.damontecres.wholphin.ui.preferences.PreferenceGroup
@@ -745,10 +746,12 @@ val basicPreferences =
         PreferenceGroup(
             title = R.string.about,
             preferences =
-                listOf(
-                    AppPreference.InstalledVersion,
-                    AppPreference.Update,
-                ),
+                buildList {
+                    add(AppPreference.InstalledVersion)
+                    if (UpdateChecker.ACTIVE) {
+                        add(AppPreference.Update)
+                    }
+                },
         ),
         PreferenceGroup(
             title = R.string.more,
@@ -762,72 +765,84 @@ val basicPreferences =
 val uiPreferences = listOf<PreferenceGroup>()
 
 val advancedPreferences =
-    listOf(
-        PreferenceGroup(
-            title = R.string.ui_interface,
-            preferences =
-                listOf(
-                    AppPreference.ShowClock,
-                    // Temporarily disabled, see https://github.com/damontecres/Wholphin/pull/127#issuecomment-3478058418
+    buildList {
+        add(
+            PreferenceGroup(
+                title = R.string.ui_interface,
+                preferences =
+                    listOf(
+                        AppPreference.ShowClock,
+                        // Temporarily disabled, see https://github.com/damontecres/Wholphin/pull/127#issuecomment-3478058418
 //                    AppPreference.NavDrawerSwitchOnFocus,
-                    AppPreference.ControllerTimeout,
-                ),
-        ),
-        PreferenceGroup(
-            title = R.string.playback,
-            preferences =
-                listOf(
-                    AppPreference.OneClickPause,
-                    AppPreference.GlobalContentScale,
-                    AppPreference.SkipIntros,
-                    AppPreference.SkipOutros,
-                    AppPreference.SkipCommercials,
-                    AppPreference.SkipPreviews,
-                    AppPreference.SkipRecaps,
-                    AppPreference.MaxBitrate,
-                    AppPreference.PlaybackDebugInfo,
-                ),
-        ),
-        PreferenceGroup(
-            title = R.string.player_backend,
-            preferences = listOf(AppPreference.PlayerBackendPref),
-            conditionalPreferences =
-                listOf(
-                    ConditionalPreferences(
-                        { it.playbackPreferences.playerBackend == PlayerBackend.EXO_PLAYER },
-                        listOf(
-                            AppPreference.FfmpegPreference,
-                            AppPreference.DownMixStereo,
-                            AppPreference.Ac3Supported,
-                            AppPreference.DirectPlayAss,
-                            AppPreference.DirectPlayPgs,
+                        AppPreference.ControllerTimeout,
+                    ),
+            ),
+        )
+        add(
+            PreferenceGroup(
+                title = R.string.playback,
+                preferences =
+                    listOf(
+                        AppPreference.OneClickPause,
+                        AppPreference.GlobalContentScale,
+                        AppPreference.SkipIntros,
+                        AppPreference.SkipOutros,
+                        AppPreference.SkipCommercials,
+                        AppPreference.SkipPreviews,
+                        AppPreference.SkipRecaps,
+                        AppPreference.MaxBitrate,
+                        AppPreference.PlaybackDebugInfo,
+                    ),
+            ),
+        )
+        add(
+            PreferenceGroup(
+                title = R.string.player_backend,
+                preferences = listOf(AppPreference.PlayerBackendPref),
+                conditionalPreferences =
+                    listOf(
+                        ConditionalPreferences(
+                            { it.playbackPreferences.playerBackend == PlayerBackend.EXO_PLAYER },
+                            listOf(
+                                AppPreference.FfmpegPreference,
+                                AppPreference.DownMixStereo,
+                                AppPreference.Ac3Supported,
+                                AppPreference.DirectPlayAss,
+                                AppPreference.DirectPlayPgs,
+                            ),
+                        ),
+                        ConditionalPreferences(
+                            { it.playbackPreferences.playerBackend == PlayerBackend.MPV },
+                            listOf(AppPreference.MpvHardwareDecoding),
                         ),
                     ),
-                    ConditionalPreferences(
-                        { it.playbackPreferences.playerBackend == PlayerBackend.MPV },
-                        listOf(AppPreference.MpvHardwareDecoding),
+            ),
+        )
+        if (UpdateChecker.ACTIVE) {
+            add(
+                PreferenceGroup(
+                    title = R.string.updates,
+                    preferences =
+                        listOf(
+                            AppPreference.AutoCheckForUpdates,
+                            AppPreference.UpdateUrl,
+                        ),
+                ),
+            )
+        }
+        add(
+            PreferenceGroup(
+                title = R.string.more,
+                preferences =
+                    listOf(
+                        AppPreference.SendAppLogs,
+                        AppPreference.SendCrashReports,
+                        AppPreference.ClearImageCache,
+                        AppPreference.OssLicenseInfo,
                     ),
-                ),
-        ),
-        PreferenceGroup(
-            title = R.string.updates,
-            preferences =
-                listOf(
-                    AppPreference.AutoCheckForUpdates,
-                    AppPreference.UpdateUrl,
-                ),
-        ),
-        PreferenceGroup(
-            title = R.string.more,
-            preferences =
-                listOf(
-                    AppPreference.SendAppLogs,
-                    AppPreference.SendCrashReports,
-                    AppPreference.ClearImageCache,
-                    AppPreference.OssLicenseInfo,
-                ),
-        ),
-    )
+            ),
+        )
+    }
 
 data class AppSwitchPreference(
     @get:StringRes override val title: Int,
