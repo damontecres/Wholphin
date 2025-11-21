@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.runtime.Composable
@@ -514,10 +515,15 @@ fun CollectionFolderGridContent(
                         modifier = Modifier.fillMaxWidth(),
                     )
                 }
+                val endPadding =
+                    16.dp + if (sortAndDirection.sort == ItemSortBy.SORT_NAME) 24.dp else 0.dp
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier,
+                    modifier =
+                        Modifier
+                            .padding(start = 16.dp, end = endPadding)
+                            .fillMaxWidth(),
                 ) {
                     if (sortOptions.isNotEmpty()) {
                         SortByButton(
@@ -528,17 +534,23 @@ fun CollectionFolderGridContent(
                         )
                     }
                     if (playEnabled) {
-                        ExpandablePlayButton(
-                            title = R.string.play,
-                            resume = Duration.ZERO,
-                            icon = Icons.Default.PlayArrow,
-                            onClick = { onClickPlay.invoke(false) },
-                        )
-                        ExpandableFaButton(
-                            title = R.string.shuffle,
-                            iconStringRes = R.string.fa_shuffle,
-                            onClick = { onClickPlay.invoke(true) },
-                        )
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier,
+                        ) {
+                            ExpandablePlayButton(
+                                title = R.string.play,
+                                resume = Duration.ZERO,
+                                icon = Icons.Default.PlayArrow,
+                                onClick = { onClickPlay.invoke(false) },
+                            )
+                            ExpandableFaButton(
+                                title = R.string.shuffle,
+                                iconStringRes = R.string.fa_shuffle,
+                                onClick = { onClickPlay.invoke(true) },
+                            )
+                        }
                     }
                 }
             }
