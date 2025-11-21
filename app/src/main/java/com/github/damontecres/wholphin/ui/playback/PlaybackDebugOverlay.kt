@@ -10,6 +10,7 @@ import androidx.compose.ui.unit.dp
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.ProvideTextStyle
 import androidx.tv.material3.Text
+import com.github.damontecres.wholphin.preferences.PlayerBackend
 import com.github.damontecres.wholphin.ui.byteRateSuffixes
 import com.github.damontecres.wholphin.ui.formatBytes
 import com.github.damontecres.wholphin.ui.letNotEmpty
@@ -30,12 +31,14 @@ fun PlaybackDebugOverlay(
         ) {
             ProvideTextStyle(MaterialTheme.typography.bodySmall.copy(color = MaterialTheme.colorScheme.onSurface)) {
                 SimpleTable(
-                    listOf(
-                        "Backend:" to currentPlayback?.backend?.toString(),
-                        "Play method:" to currentPlayback?.playMethod?.serialName,
-                        "Video Decoder:" to currentPlayback?.videoDecoder,
-                        "Audio Decoder:" to currentPlayback?.audioDecoder,
-                    ),
+                    buildList {
+                        add("Backend:" to currentPlayback?.backend?.toString())
+                        add("Play method:" to currentPlayback?.playMethod?.serialName)
+                        if (currentPlayback?.backend == PlayerBackend.EXO_PLAYER) {
+                            add("Video Decoder:" to currentPlayback.videoDecoder)
+                            add("Audio Decoder:" to currentPlayback.audioDecoder)
+                        }
+                    },
                 )
                 currentPlayback?.transcodeInfo?.let {
                     TranscodeInfo(it, Modifier)
