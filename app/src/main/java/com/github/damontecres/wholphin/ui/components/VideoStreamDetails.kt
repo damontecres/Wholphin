@@ -82,14 +82,14 @@ fun VideoStreamDetails(
         val subtitleStream = remember(dto, itemPlayback) { chooseStream(dto, itemPlayback, MediaStreamType.SUBTITLE, preferences) }
         val subtitleCount = remember(source) { (source?.embeddedSubtitleCount ?: 0) + (source?.externalSubtitlesCount ?: 0) }
         val subtitle =
-            if (subtitleCount == 0 || subtitleStream == null) {
-                null
-            } else if (itemPlayback?.subtitleIndex == TrackIndex.DISABLED) {
+            if (itemPlayback?.subtitleIndex == TrackIndex.DISABLED) {
                 stringResource(R.string.disabled) + " (+$subtitleCount)"
+            } else if (subtitleCount == 0 || subtitleStream == null) {
+                null
             } else {
                 listOfNotNull(
                     languageName(subtitleStream.language),
-                    subtitleStream.codec,
+                    subtitleStream.codec?.uppercase(),
                     "(+${subtitleCount - 1})".takeIf { subtitleCount > 1 },
                 ).joinToString(" ")
             }
