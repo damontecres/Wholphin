@@ -319,6 +319,7 @@
     <string name="skip_segment_recap">Skip Recap</string>
     <string name="skip_segment_outro">Skip Outro</string>
     <string name="skip_segment_intro">Skip Intro</string>
+    <string name="played">Played</string>
 
     <string-array name="theme_song_volume">
         <item>Disabled</item>

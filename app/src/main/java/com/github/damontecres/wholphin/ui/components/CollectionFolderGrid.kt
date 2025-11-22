@@ -40,6 +40,10 @@ import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.LibraryDisplayInfoDao
 import com.github.damontecres.wholphin.data.ServerRepository
+import com.github.damontecres.wholphin.data.filter.FilterValueOption
+import com.github.damontecres.wholphin.data.filter.GenreFilter
+import com.github.damontecres.wholphin.data.filter.ItemFilterBy
+import com.github.damontecres.wholphin.data.filter.PlayedFilter
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.GetItemsFilter
 import com.github.damontecres.wholphin.data.model.GetItemsFilterOverride
@@ -75,6 +79,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
+import org.jellyfin.sdk.api.client.extensions.genresApi
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.CollectionType
 import org.jellyfin.sdk.model.api.ImageType
@@ -84,6 +89,7 @@ import org.jellyfin.sdk.model.api.SortOrder
 import org.jellyfin.sdk.model.api.request.GetItemsRequest
 import org.jellyfin.sdk.model.api.request.GetPersonsRequest
 import org.jellyfin.sdk.model.serializer.toUUIDOrNull
+import timber.log.Timber
 import java.util.UUID
 import javax.inject.Inject
 import kotlin.time.Duration
@@ -141,6 +147,12 @@ class CollectionFolderViewModel
             recursive: Boolean,
             filter: GetItemsFilter,
         ) {
+            Timber.v(
+                "onSortChange: sort=%s, recursive=%s, filter=%s",
+                sortAndDirection,
+                recursive,
+                filter,
+            )
             serverRepository.currentUser.value?.let { user ->
                 viewModelScope.launch(Dispatchers.IO) {
                     val libraryDisplayInfo =
@@ -256,6 +268,27 @@ class CollectionFolderViewModel
             }
         }
 
+        suspend fun getFilterOptionValues(filterOption: ItemFilterBy<*>): List<FilterValueOption> =
+            try {
+                when (filterOption) {
+                    GenreFilter -> {
+                        api.genresApi
+                            .getGenres(parentId = itemUuid)
+                            .content.items
+                            .map { FilterValueOption(it.name ?: "", it.id) }
+                    }
+
+                    PlayedFilter ->
+                        listOf(
+                            FilterValueOption("True", null),
+                            FilterValueOption("False", null),
+                        )
+                }
+            } catch (ex: Exception) {
+                Timber.e(ex, "Exception get filter value options for $filterOption")
+                listOf()
+            }
+
         suspend fun positionOfLetter(letter: Char): Int? =
             withContext(Dispatchers.IO) {
                 item.value?.let { item ->
@@ -362,7 +395,7 @@ fun CollectionFolderGrid(
             useSeriesForPrimary,
         )
     }
-    val sortAndDirection by viewModel.sortAndDirection.observeAsState()
+    val sortAndDirection by viewModel.sortAndDirection.observeAsState(SortAndDirection.DEFAULT)
     val filter by viewModel.filter.observeAsState(initialFilter)
     val loading by viewModel.loading.observeAsState(LoadingState.Loading)
     val item by viewModel.item.observeAsState()
@@ -391,6 +424,14 @@ fun CollectionFolderGrid(
                     },
                     onSortChange = {
                         viewModel.onSortChange(it, recursive, filter)
+                    },
+                    filterOptions = listOf(GenreFilter, PlayedFilter),
+                    currentFilter = filter,
+                    onFilterChange = {
+                        viewModel.onSortChange(sortAndDirection, recursive, it)
+                    },
+                    getPossibleFilterValues = {
+                        viewModel.getFilterOptionValues(it)
                     },
                     showTitle = showTitle,
                     sortOptions = sortOptions,
@@ -484,6 +525,10 @@ fun CollectionFolderGridContent(
     showTitle: Boolean = true,
     positionCallback: ((columns: Int, position: Int) -> Unit)? = null,
     params: CollectionFolderGridParameters = CollectionFolderGridParameters(),
+    currentFilter: GetItemsFilter = GetItemsFilter(),
+    filterOptions: List<ItemFilterBy<*>> = listOf(),
+    onFilterChange: (GetItemsFilter) -> Unit = {},
+    getPossibleFilterValues: suspend (ItemFilterBy<*>) -> List<FilterValueOption>,
 ) {
     val title = item?.name ?: item?.data?.collectionType?.name ?: stringResource(R.string.collection)
 
@@ -525,13 +570,30 @@ fun CollectionFolderGridContent(
                             .padding(start = 16.dp, end = endPadding)
                             .fillMaxWidth(),
                 ) {
-                    if (sortOptions.isNotEmpty()) {
-                        SortByButton(
-                            sortOptions = sortOptions,
-                            current = sortAndDirection,
-                            onSortChange = onSortChange,
+                    if (sortOptions.isNotEmpty() || filterOptions.isNotEmpty()) {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier,
-                        )
+                        ) {
+                            if (sortOptions.isNotEmpty()) {
+                                SortByButton(
+                                    sortOptions = sortOptions,
+                                    current = sortAndDirection,
+                                    onSortChange = onSortChange,
+                                    modifier = Modifier,
+                                )
+                            }
+                            if (filterOptions.isNotEmpty()) {
+                                FilterByButton(
+                                    filterOptions = filterOptions,
+                                    current = currentFilter,
+                                    onFilterChange = onFilterChange,
+                                    getPossibleValues = getPossibleFilterValues,
+                                    modifier = Modifier,
+                                )
+                            }
+                        }
                     }
                     if (playEnabled) {
                         Row(
