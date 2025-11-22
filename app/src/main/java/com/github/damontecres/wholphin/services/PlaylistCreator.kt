@@ -96,14 +96,16 @@ class PlaylistCreator
             recursive: Boolean,
             filter: GetItemsFilter,
         ): Playlist {
-            val includeItemTypes = item.collectionType?.baseItemKinds
+            val includeItemTypes =
+                item.collectionType?.baseItemKinds?.takeIf { it.isNotEmpty() }
+                    ?: listOf(BaseItemKind.MOVIE, BaseItemKind.EPISODE, BaseItemKind.VIDEO)
             val request =
                 filter.applyTo(
                     GetItemsRequest(
                         parentId = item.id,
                         enableImageTypes = listOf(ImageType.PRIMARY, ImageType.THUMB),
                         includeItemTypes = includeItemTypes,
-                        recursive = recursive,
+                        recursive = true,
                         excludeItemIds = listOf(item.id),
                         sortBy = sortAndDirection?.let { listOf(sortAndDirection.sort) },
                         sortOrder = sortAndDirection?.let { listOf(sortAndDirection.direction) },
