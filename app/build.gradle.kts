@@ -24,7 +24,7 @@ val ffmpegModuleExists = project.file("libs/lib-decoder-ffmpeg-release.aar").exi
 fun getVersionCode(): Int {
     val stdout = ByteArrayOutputStream()
     exec {
-        commandLine = listOf("git", "tag", "--list", "v*")
+        commandLine = listOf("git", "tag", "--list", "v*", "p*")
         standardOutput = stdout
     }
     return stdout

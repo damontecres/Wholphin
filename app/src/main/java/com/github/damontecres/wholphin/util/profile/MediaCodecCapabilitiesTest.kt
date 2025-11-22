@@ -1,6 +1,6 @@
 package com.github.damontecres.wholphin.util.profile
 
-// Adapted from https://github.com/jellyfin/jellyfin-androidtv/blob/c775603df457862c495b010550ae0aee1a66c0bc/app/src/main/java/org/jellyfin/androidtv/util/profile/MediaCodecCapabilitiesTest.kt
+// Copied from https://github.com/jellyfin/jellyfin-androidtv/blob/v0.19.4/app/src/main/java/org/jellyfin/androidtv/util/profile/MediaCodecCapabilitiesTest.kt
 
 import android.content.Context
 import android.media.MediaCodecInfo.CodecProfileLevel
@@ -8,7 +8,6 @@ import android.media.MediaCodecList
 import android.media.MediaFormat
 import android.os.Build
 import android.util.Size
-import android.view.Display
 import androidx.core.content.ContextCompat
 import timber.log.Timber
 
@@ -17,17 +16,6 @@ class MediaCodecCapabilitiesTest(
 ) {
     private val display by lazy { ContextCompat.getDisplayOrDefault(context) }
     private val mediaCodecList by lazy { MediaCodecList(MediaCodecList.REGULAR_CODECS) }
-
-    @Suppress("DEPRECATION")
-    private val supportedHdrTypes by lazy {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-            display.mode.supportedHdrTypes.toList()
-        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            display.hdrCapabilities.supportedHdrTypes.toList()
-        } else {
-            emptyList()
-        }
-    }
 
     // Map common Dolby Vision Profiles to their corresponding CodecProfileLevel constant
     private object DolbyVisionProfiles {
@@ -340,13 +328,4 @@ class MediaCodecCapabilitiesTest(
 
         return Size(maxWidth, maxHeight)
     }
-
-    fun supportsDolbyVision(): Boolean =
-        Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && supportedHdrTypes.contains(Display.HdrCapabilities.HDR_TYPE_DOLBY_VISION)
-
-    fun supportsHdr10(): Boolean =
-        Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && supportedHdrTypes.contains(Display.HdrCapabilities.HDR_TYPE_HDR10)
-
-    fun supportsHdr10Plus(): Boolean =
-        Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && supportedHdrTypes.contains(Display.HdrCapabilities.HDR_TYPE_HDR10_PLUS)
 }

@@ -12,6 +12,7 @@ You can contribute in several ways:
 * File bug reports
 * Request new features
 * Propose code changes via pull request
+* Submit translations to https://translate.codeberg.org/engage/wholphin/
 
 In all cases, be sure to fully explain the issue.
 

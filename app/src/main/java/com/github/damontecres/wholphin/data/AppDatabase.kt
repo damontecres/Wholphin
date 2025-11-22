@@ -19,12 +19,13 @@ import java.util.UUID
 
 @Database(
     entities = [JellyfinServer::class, JellyfinUser::class, ItemPlayback::class, NavDrawerPinnedItem::class, LibraryDisplayInfo::class],
-    version = 6,
+    version = 7,
     exportSchema = true,
     autoMigrations = [
         AutoMigration(3, 4),
         AutoMigration(4, 5),
         AutoMigration(5, 6),
+        AutoMigration(6, 7),
     ],
 )
 @TypeConverters(Converters::class)

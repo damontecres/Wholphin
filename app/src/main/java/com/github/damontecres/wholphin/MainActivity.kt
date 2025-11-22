@@ -120,11 +120,6 @@ class MainActivity : AppCompatActivity() {
                                 userDto?.configuration ?: DefaultUserConfiguration,
                             )
 
-                        val deviceProfile =
-                            remember(appPreferences) {
-                                createDeviceProfile(this@MainActivity, preferences, false)
-                            }
-
                         if (isRestoringSession) {
                             Box(
                                 modifier = Modifier.size(200.dp),
@@ -145,7 +140,7 @@ class MainActivity : AppCompatActivity() {
                                     }
                                 val backStack = rememberNavBackStack(initialDestination)
                                 navigationManager.backStack = backStack
-                                if (appPreferences.autoCheckForUpdates) {
+                                if (UpdateChecker.ACTIVE && appPreferences.autoCheckForUpdates) {
                                     LaunchedEffect(Unit) {
                                         try {
                                             updateChecker.maybeShowUpdateToast(appPreferences.updateUrl)
@@ -154,6 +149,14 @@ class MainActivity : AppCompatActivity() {
                                         }
                                     }
                                 }
+                                val deviceProfile =
+                                    remember(server, appPreferences) {
+                                        createDeviceProfile(
+                                            this@MainActivity,
+                                            preferences,
+                                            server?.serverVersion,
+                                        )
+                                    }
                                 ApplicationContent(
                                     user = user,
                                     server = server,
