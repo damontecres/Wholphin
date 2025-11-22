@@ -1,8 +1,8 @@
 package com.github.damontecres.wholphin.ui.theme
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.Immutable
-import androidx.compose.ui.graphics.Color
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.compositionLocalOf
 import androidx.tv.material3.MaterialTheme
 import com.github.damontecres.wholphin.preferences.AppThemeColors
 import com.github.damontecres.wholphin.ui.theme.colors.BlueThemeColors
@@ -12,21 +12,8 @@ import com.github.damontecres.wholphin.ui.theme.colors.OledThemeColors
 import com.github.damontecres.wholphin.ui.theme.colors.OrangeThemeColors
 import com.github.damontecres.wholphin.ui.theme.colors.PurpleThemeColors
 
-@Immutable
-data class ColorFamily(
-    val color: Color,
-    val onColor: Color,
-    val colorContainer: Color,
-    val onColorContainer: Color,
-)
-
-val unspecified_scheme =
-    ColorFamily(
-        Color.Unspecified,
-        Color.Unspecified,
-        Color.Unspecified,
-        Color.Unspecified,
-    )
+val LocalTheme =
+    compositionLocalOf<AppThemeColors> { AppThemeColors.PURPLE }
 
 @Composable
 fun WholphinTheme(
@@ -50,14 +37,16 @@ fun WholphinTheme(
             darkTheme -> themeColors.darkScheme
             else -> themeColors.lightScheme
         }
-    androidx.compose.material3.MaterialTheme(
-        colorScheme = if (darkTheme) themeColors.darkSchemeMaterial else themeColors.lightSchemeMaterial,
-        typography = androidx.compose.material3.Typography(),
-    ) {
-        MaterialTheme(
-            colorScheme = colorScheme,
-            typography = AppTypography,
-            content = content,
-        )
+    CompositionLocalProvider(LocalTheme provides appThemeColors) {
+        androidx.compose.material3.MaterialTheme(
+            colorScheme = if (darkTheme) themeColors.darkSchemeMaterial else themeColors.lightSchemeMaterial,
+            typography = androidx.compose.material3.Typography(),
+        ) {
+            MaterialTheme(
+                colorScheme = colorScheme,
+                typography = AppTypography,
+                content = content,
+            )
+        }
     }
 }

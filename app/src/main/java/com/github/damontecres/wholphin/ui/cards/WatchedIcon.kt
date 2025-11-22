@@ -13,7 +13,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.tv.material3.Icon
 import androidx.tv.material3.MaterialTheme
+import com.github.damontecres.wholphin.preferences.AppThemeColors
 import com.github.damontecres.wholphin.ui.PreviewTvSpec
+import com.github.damontecres.wholphin.ui.theme.LocalTheme
 import com.github.damontecres.wholphin.ui.theme.WholphinTheme
 
 @Composable
@@ -21,14 +23,41 @@ fun WatchedIcon(modifier: Modifier = Modifier) {
     Icon(
         imageVector = Icons.Default.Check,
         contentDescription = null,
-        tint = Color.White,
+        tint = WatchedIconColor(),
         modifier =
             modifier
-                .background(MaterialTheme.colorScheme.border.copy(alpha = 1f), shape = CircleShape)
+                .background(WatchedIconBackground(), shape = CircleShape)
                 .border(.5.dp, Color.Black, CircleShape)
                 .padding(2.dp),
     )
 }
+
+@Composable
+fun WatchedIconBackground(): Color =
+    when (LocalTheme.current) {
+        AppThemeColors.UNRECOGNIZED,
+        AppThemeColors.PURPLE,
+        AppThemeColors.BLUE,
+        AppThemeColors.GREEN,
+        AppThemeColors.ORANGE,
+        AppThemeColors.BOLD_BLUE,
+        -> MaterialTheme.colorScheme.border.copy(alpha = 1f)
+
+        AppThemeColors.OLED_BLACK -> MaterialTheme.colorScheme.secondaryContainer
+    }
+
+@Composable
+fun WatchedIconColor(): Color =
+    when (LocalTheme.current) {
+        AppThemeColors.UNRECOGNIZED,
+        AppThemeColors.PURPLE,
+        AppThemeColors.BLUE,
+        AppThemeColors.GREEN,
+        AppThemeColors.ORANGE,
+        AppThemeColors.BOLD_BLUE,
+        AppThemeColors.OLED_BLACK,
+        -> MaterialTheme.colorScheme.onSurface
+    }
 
 @PreviewTvSpec
 @Composable
