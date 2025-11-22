@@ -78,7 +78,7 @@ class ServerRepository
             val updatedServer =
                 try {
                     val sysInfo by apiClient.systemApi.getPublicSystemInfo()
-                    server.copy(name = sysInfo.serverName)
+                    server.copy(name = sysInfo.serverName, version = sysInfo.version)
                 } catch (ex: Exception) {
                     Timber.w(ex, "Exception fetching public system info")
                     server
@@ -148,6 +148,7 @@ class ServerRepository
                             id = it,
                             name = authedUser?.serverName,
                             url = serverUrl,
+                            null,
                         )
                     }
                 if (server != null) {

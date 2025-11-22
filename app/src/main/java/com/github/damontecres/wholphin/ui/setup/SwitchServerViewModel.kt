@@ -145,6 +145,7 @@ class SwitchServerViewModel
                                 id = id,
                                 name = serverInfo.serverName,
                                 url = serverUrl,
+                                version = serverInfo.version,
                             )
                         serverRepository.addAndChangeServer(server)
                         val quickConnect =
@@ -198,6 +199,7 @@ class SwitchServerViewModel
                                         server.id.toUUID(),
                                         server.name,
                                         server.address,
+                                        null,
                                     ),
                                 )
                             }

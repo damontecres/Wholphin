@@ -6,12 +6,14 @@ import androidx.room.ColumnInfo
 import androidx.room.Embedded
 import androidx.room.Entity
 import androidx.room.ForeignKey
+import androidx.room.Ignore
 import androidx.room.Index
 import androidx.room.PrimaryKey
 import androidx.room.Relation
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.UseSerializers
+import org.jellyfin.sdk.model.ServerVersion
 import org.jellyfin.sdk.model.serializer.UUIDSerializer
 import java.util.UUID
 
@@ -21,7 +23,11 @@ data class JellyfinServer(
     @PrimaryKey val id: UUID,
     val name: String?,
     val url: String,
-)
+    val version: String?,
+) {
+    @get:Ignore
+    val serverVersion: ServerVersion? by lazy { version?.let(ServerVersion::fromString) }
+}
 
 @Entity(
     tableName = "users",
