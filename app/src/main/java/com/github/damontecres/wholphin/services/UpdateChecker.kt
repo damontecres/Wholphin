@@ -61,7 +61,7 @@ class UpdateChecker
 
             private val NOTE_REGEX = Regex("<!-- app-note:(.+) -->")
 
-            val ACTIVE = true
+            val ACTIVE = false
         }
 
         suspend fun maybeShowUpdateToast(
