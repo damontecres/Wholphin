@@ -62,7 +62,7 @@ import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.ui.AppColors
 import com.github.damontecres.wholphin.ui.seekBack
 import com.github.damontecres.wholphin.ui.seekForward
-import com.github.damontecres.wholphin.ui.stringRes
+import com.github.damontecres.wholphin.ui.skipStringRes
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import kotlinx.coroutines.delay
@@ -199,7 +199,7 @@ fun PlaybackControls(
                                 .padding(end = 32.dp),
                     ) {
                         Text(
-                            text = stringResource(R.string.skip) + " " + stringResource(segment.type.stringRes),
+                            text = stringResource(segment.type.skipStringRes),
                         )
                     }
                 }
