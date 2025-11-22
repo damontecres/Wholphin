@@ -48,6 +48,7 @@ import com.github.damontecres.wholphin.preferences.advancedPreferences
 import com.github.damontecres.wholphin.preferences.basicPreferences
 import com.github.damontecres.wholphin.preferences.uiPreferences
 import com.github.damontecres.wholphin.preferences.updatePlaybackPreferences
+import com.github.damontecres.wholphin.services.UpdateChecker
 import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.playOnClickSound
@@ -86,7 +87,7 @@ fun PreferencesContent(
 
     val release by updateVM.release.observeAsState(null)
     LaunchedEffect(Unit) {
-        if (preferences.autoCheckForUpdates) {
+        if (UpdateChecker.ACTIVE && preferences.autoCheckForUpdates) {
             updateVM.init(preferences.updateUrl)
         }
     }
@@ -160,7 +161,8 @@ fun PreferencesContent(
                             .padding(vertical = 8.dp),
                 )
             }
-            if (preferenceScreenOption == PreferenceScreenOption.BASIC &&
+            if (UpdateChecker.ACTIVE &&
+                preferenceScreenOption == PreferenceScreenOption.BASIC &&
                 preferences.autoCheckForUpdates &&
                 updateAvailable
             ) {
