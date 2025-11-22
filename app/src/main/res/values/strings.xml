@@ -36,7 +36,7 @@
     <string name="download_and_update"><![CDATA[Download & Update]]></string>
     <string name="downloading">Downloading…</string>
     <string name="enabled">Enabled</string>
-    <string name="enter_server_url">Enter Server IP or URL including port</string>
+    <string name="enter_server_url">Enter Server IP or URL</string>
     <string name="episodes">Episodes</string>
     <string name="error_loading_collection">Error loading collection %1$s</string>
     <string name="external_track">External</string>
