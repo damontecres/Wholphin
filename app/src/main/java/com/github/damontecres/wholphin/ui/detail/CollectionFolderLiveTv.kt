@@ -169,6 +169,7 @@ fun CollectionFolderLiveTv(
                         positionCallback = { columns, position ->
                             showHeader = position < columns
                         },
+                        playEnabled = false,
                     )
                 } else {
                     ErrorMessage("Invalid tab index $selectedTabIndex", null)

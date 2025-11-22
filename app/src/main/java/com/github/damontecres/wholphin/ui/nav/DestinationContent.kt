@@ -48,8 +48,9 @@ fun DestinationContent(
                 preferences = preferences,
                 modifier = modifier,
             )
-
-        is Destination.Playback ->
+        is Destination.PlaybackList,
+        is Destination.Playback,
+        ->
             PlaybackPage(
                 preferences = preferences,
                 deviceProfile = deviceProfile,
@@ -164,6 +165,7 @@ fun DestinationContent(
                 filter = destination.filter,
                 recursive = destination.recursive,
                 usePosters = true,
+                playEnabled = true, // TODO only genres use this currently, so might need to change in future
                 modifier = modifier,
             )
 
@@ -261,6 +263,7 @@ fun CollectionFolder(
                 destination.itemId,
                 usePosters = usePostersOverride ?: false,
                 recursive = recursiveOverride ?: false,
+                playEnabled = true,
                 modifier = modifier,
             )
 
@@ -274,6 +277,7 @@ fun CollectionFolder(
                 destination.itemId,
                 usePosters = usePostersOverride ?: false,
                 recursive = recursiveOverride ?: false,
+                playEnabled = false,
                 modifier = modifier,
             )
     }

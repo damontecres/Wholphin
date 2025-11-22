@@ -23,6 +23,7 @@ fun CollectionFolderGeneric(
     itemId: UUID,
     usePosters: Boolean,
     recursive: Boolean,
+    playEnabled: Boolean,
     modifier: Modifier = Modifier,
     filter: GetItemsFilter = GetItemsFilter(),
     preferencesViewModel: PreferencesViewModel = hiltViewModel(),
@@ -51,5 +52,6 @@ fun CollectionFolderGeneric(
             showHeader = position < columns
         },
         params = params,
+        playEnabled = playEnabled,
     )
 }
