@@ -202,19 +202,31 @@ fun DebugPage(
                     color = MaterialTheme.colorScheme.onSurface,
                 )
                 val pkgInfo = context.packageManager.getPackageInfo(context.packageName, 0)
-                val installSource = context.packageManager.getInstallSourceInfo(context.packageName)
-                listOf(
-                    "Version Name: ${pkgInfo.versionName}",
-                    "Version Code: ${pkgInfo.versionCodeLong}",
-                    "Build type: ${BuildConfig.BUILD_TYPE}",
-                    "Debug enabled: ${BuildConfig.DEBUG}",
-                    "ABIs: ${Build.SUPPORTED_ABIS.toList()}",
-                    "Install source: ${installSource.packageSource}",
-                    "Installer: ${installSource.installingPackageName}",
-                    "Initiator: ${installSource.initiatingPackageName}",
+                val installInfo =
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                        val installSource =
+                            context.packageManager.getInstallSourceInfo(context.packageName)
+                        buildList {
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                add("Install source: ${installSource.packageSource}")
+                            }
+                            add("Installer: ${installSource.installingPackageName}")
+                            add("Initiator: ${installSource.initiatingPackageName}")
+                        }
+                    } else {
+                        listOf(context.packageManager.getInstallerPackageName(context.packageName))
+                    }
+                (
+                    listOf(
+                        "Version Name: ${pkgInfo.versionName}",
+                        "Version Code: ${pkgInfo.versionCodeLong}",
+                        "Build type: ${BuildConfig.BUILD_TYPE}",
+                        "Debug enabled: ${BuildConfig.DEBUG}",
+                        "ABIs: ${Build.SUPPORTED_ABIS.toList()}",
+                    ) + installInfo
                 ).forEach {
                     Text(
-                        text = it,
+                        text = it.toString(),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurface,
                     )
