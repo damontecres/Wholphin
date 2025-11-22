@@ -60,7 +60,6 @@ import androidx.tv.material3.Button
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import androidx.tv.material3.surfaceColorAtElevation
-import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.ItemPlayback
 import com.github.damontecres.wholphin.data.model.Playlist
 import com.github.damontecres.wholphin.preferences.PlayerBackend
@@ -74,7 +73,7 @@ import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.preferences.subtitle.SubtitleSettings.applyToMpv
 import com.github.damontecres.wholphin.ui.preferences.subtitle.SubtitleSettings.toSubtitleStyle
 import com.github.damontecres.wholphin.ui.seasonEpisode
-import com.github.damontecres.wholphin.ui.stringRes
+import com.github.damontecres.wholphin.ui.skipStringRes
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
@@ -413,7 +412,7 @@ fun PlaybackPage(
                             modifier = Modifier.focusRequester(focusRequester),
                         ) {
                             Text(
-                                text = stringResource(R.string.skip) + " " + stringResource(segment.type.stringRes),
+                                text = stringResource(segment.type.skipStringRes),
                             )
                         }
                     }

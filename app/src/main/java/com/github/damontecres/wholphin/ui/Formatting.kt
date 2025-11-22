@@ -181,3 +181,15 @@ val MediaSegmentType.stringRes: Int
             MediaSegmentType.OUTRO -> R.string.outro
             MediaSegmentType.INTRO -> R.string.intro
         }
+
+@get:StringRes
+val MediaSegmentType.skipStringRes: Int
+    get() =
+        when (this) {
+            MediaSegmentType.UNKNOWN -> R.string.skip_segment_unknown
+            MediaSegmentType.COMMERCIAL -> R.string.skip_segment_commercial
+            MediaSegmentType.PREVIEW -> R.string.skip_segment_preview
+            MediaSegmentType.RECAP -> R.string.skip_segment_recap
+            MediaSegmentType.OUTRO -> R.string.skip_segment_outro
+            MediaSegmentType.INTRO -> R.string.skip_segment_intro
+        }
