@@ -56,7 +56,7 @@ fun WatchedIconColor(): Color =
         AppThemeColors.ORANGE,
         AppThemeColors.BOLD_BLUE,
         AppThemeColors.OLED_BLACK,
-        -> MaterialTheme.colorScheme.onSurface
+        -> Color.White // MaterialTheme.colorScheme.onSurface
     }
 
 @PreviewTvSpec

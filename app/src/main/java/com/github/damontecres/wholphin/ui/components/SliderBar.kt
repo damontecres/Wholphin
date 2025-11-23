@@ -20,6 +20,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.unit.dp
 import androidx.tv.material3.MaterialTheme
 import com.github.damontecres.wholphin.preferences.AppThemeColors
@@ -131,7 +132,7 @@ fun SliderActiveColor(focused: Boolean): Color {
 
         AppThemeColors.BOLD_BLUE ->
             if (focused) {
-                MaterialTheme.colorScheme.onPrimaryContainer
+                MaterialTheme.colorScheme.border
             } else {
                 MaterialTheme.colorScheme.border
             }
@@ -151,11 +152,17 @@ fun SliderInactiveColor(focused: Boolean): Color {
     return when (theme) {
         AppThemeColors.UNRECOGNIZED,
         AppThemeColors.PURPLE,
+        ->
+            MaterialTheme.colorScheme.border
+                .copy(alpha = .25f)
+                .compositeOver(MaterialTheme.colorScheme.surfaceVariant)
+                .copy(alpha = .66f)
+
         AppThemeColors.BLUE,
         AppThemeColors.GREEN,
         AppThemeColors.ORANGE,
         AppThemeColors.BOLD_BLUE,
-        -> MaterialTheme.colorScheme.secondaryContainer
+        -> MaterialTheme.colorScheme.secondaryContainer.copy(alpha = .66f)
 
         AppThemeColors.OLED_BLACK ->
             if (focused) {
