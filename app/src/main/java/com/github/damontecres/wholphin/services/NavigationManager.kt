@@ -42,7 +42,11 @@ class NavigationManager
          * Go to the previous page
          */
         fun goBack() {
-            backStack.removeLastOrNull()
+            synchronized(this) {
+                if (backStack.size > 1) {
+                    backStack.removeLastOrNull()
+                }
+            }
             log()
         }
 
