@@ -88,6 +88,7 @@ fun CollectionFolderMovie(
             )
         }
         when (selectedTabIndex) {
+            // Recommended
             0 -> {
                 RecommendedMovie(
                     preferences = preferences,
@@ -102,6 +103,7 @@ fun CollectionFolderMovie(
                             .focusRequester(focusRequester),
                 )
             }
+            // Library
             1 -> {
                 CollectionFolderGrid(
                     preferences = preferences,
@@ -124,8 +126,10 @@ fun CollectionFolderMovie(
                     positionCallback = { columns, position ->
                         showHeader = position < columns
                     },
+                    playEnabled = true,
                 )
             }
+            // Collections
             2 -> {
                 CollectionFolderGrid(
                     preferences = preferences,
@@ -148,9 +152,10 @@ fun CollectionFolderMovie(
                     positionCallback = { columns, position ->
                         showHeader = position < columns
                     },
+                    playEnabled = false,
                 )
             }
-
+            // Genres
             3 -> {
                 GenreCardGrid(
                     itemId = destination.itemId,

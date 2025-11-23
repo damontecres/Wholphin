@@ -42,5 +42,6 @@ fun CollectionFolderRecordings(
             showHeader = position < columns
         },
         params = CollectionFolderGridParameters.POSTER,
+        playEnabled = false,
     )
 }

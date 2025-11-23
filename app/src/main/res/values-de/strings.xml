@@ -274,4 +274,10 @@
     <string name="skip_back_preference">Zurückspringen</string>
     <string name="player_backend">Wiedergabe backend</string>
     <string name="rewatch_next_up">Aktiviere erneut wiedergeben in als nächstes</string>
+    <string name="skip_segment_unknown">Segment Überspringen</string>
+    <string name="skip_segment_commercial">Werbung Überspringen</string>
+    <string name="skip_segment_preview">Vorschau Überspringen</string>
+    <string name="skip_segment_recap">Rückblick Überspringen</string>
+    <string name="skip_segment_outro">Outro Überspringen</string>
+    <string name="skip_segment_intro">Intro Überspringen</string>
 </resources>

@@ -313,6 +313,17 @@
     <string name="disable_if_crash">Disable if you experience crashes</string>
     <string name="mpv_options">MPV Options</string>
     <string name="exoplayer_options">ExoPlayer Options</string>
+    <string name="skip_segment_unknown">Skip Segment</string>
+    <string name="skip_segment_commercial">Skip Ads</string>
+    <string name="skip_segment_preview">Skip Preview</string>
+    <string name="skip_segment_recap">Skip Recap</string>
+    <string name="skip_segment_outro">Skip Outro</string>
+    <string name="skip_segment_intro">Skip Intro</string>
+    <string name="played">Played</string>
+    <string name="filter">Filter</string>
+    <string name="year">Year</string>
+    <string name="decade">Decade</string>
+    <string name="remove">Remove</string>
 
     <string-array name="theme_song_volume">
         <item>Disabled</item>

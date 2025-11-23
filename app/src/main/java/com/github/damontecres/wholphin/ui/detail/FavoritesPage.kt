@@ -23,6 +23,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.github.damontecres.wholphin.R
+import com.github.damontecres.wholphin.data.filter.DefaultForFavoritesFilterOptions
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.GetItemsFilter
 import com.github.damontecres.wholphin.data.model.GetItemsFilterOverride
@@ -104,7 +105,9 @@ fun FavoritesPage(
                 onClick = { selectedTabIndex = it },
             )
         }
+        // TODO playEnabled = true for movies & episodes
         when (selectedTabIndex) {
+            // Movies
             0 -> {
                 CollectionFolderGrid(
                     preferences = preferences,
@@ -126,8 +129,11 @@ fun FavoritesPage(
                     positionCallback = { columns, position ->
                         showHeader = position < columns
                     },
+                    playEnabled = false,
+                    filterOptions = DefaultForFavoritesFilterOptions,
                 )
             }
+            // TV
             1 -> {
                 CollectionFolderGrid(
                     preferences = preferences,
@@ -149,8 +155,11 @@ fun FavoritesPage(
                     positionCallback = { columns, position ->
                         showHeader = position < columns
                     },
+                    playEnabled = false,
+                    filterOptions = DefaultForFavoritesFilterOptions,
                 )
             }
+            // Episodes
             2 -> {
                 CollectionFolderGrid(
                     preferences = preferences,
@@ -174,8 +183,11 @@ fun FavoritesPage(
                     positionCallback = { columns, position ->
                         showHeader = position < columns
                     },
+                    playEnabled = false,
+                    filterOptions = DefaultForFavoritesFilterOptions,
                 )
             }
+            // Videos
             3 -> {
                 CollectionFolderGrid(
                     preferences = preferences,
@@ -198,8 +210,11 @@ fun FavoritesPage(
                     positionCallback = { columns, position ->
                         showHeader = position < columns
                     },
+                    playEnabled = false,
+                    filterOptions = DefaultForFavoritesFilterOptions,
                 )
             }
+            // Playlists
             4 -> {
                 CollectionFolderGrid(
                     preferences = preferences,
@@ -222,9 +237,11 @@ fun FavoritesPage(
                     positionCallback = { columns, position ->
                         showHeader = position < columns
                     },
+                    playEnabled = false,
+                    filterOptions = DefaultForFavoritesFilterOptions,
                 )
             }
-
+            // People
             5 -> {
                 CollectionFolderGrid(
                     preferences = preferences,
@@ -251,6 +268,8 @@ fun FavoritesPage(
                     positionCallback = { columns, position ->
                         showHeader = position < columns
                     },
+                    playEnabled = false,
+                    filterOptions = listOf(),
                 )
             }
             else -> ErrorMessage("Invalid tab index $selectedTabIndex", null)
