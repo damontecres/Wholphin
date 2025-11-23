@@ -60,7 +60,7 @@ fun FilterByButton(
 ) {
     var dropDown by remember { mutableStateOf(false) }
     var nestedDropDown by remember { mutableStateOf<ItemFilterBy<*>?>(null) }
-    val filterCount = remember(current) { current.filterCount }
+    val filterCount = remember(current, filterOptions) { current.countFilters(filterOptions) }
 
     Box(modifier = modifier) {
         ExpandableFilterButton(
@@ -119,7 +119,7 @@ fun FilterByButton(
                         )
                     },
                     onClick = {
-                        onFilterChange.invoke(GetItemsFilter())
+                        onFilterChange.invoke(current.delete(filterOptions))
                         dropDown = false
                     },
                     interactionSource = interactionSource,

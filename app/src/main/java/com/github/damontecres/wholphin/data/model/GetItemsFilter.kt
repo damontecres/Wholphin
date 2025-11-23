@@ -3,6 +3,7 @@
 package com.github.damontecres.wholphin.data.model
 
 import com.github.damontecres.wholphin.data.filter.FilterVideoType
+import com.github.damontecres.wholphin.data.filter.ItemFilterBy
 import com.github.damontecres.wholphin.ui.letNotEmpty
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.UseSerializers
@@ -29,25 +30,27 @@ data class GetItemsFilter(
     val decades: List<Int>? = null,
     val override: GetItemsFilterOverride = GetItemsFilterOverride.NONE,
 ) {
-    val hasFilters: Boolean
-        get() = filterCount == 0
-
-    val filterCount: Int
-        get() {
-            var count = 0
-            if (favorite != null) count++
-            if (genres != null) count++
-            if (minCriticRating != null) count++
-            if (officialRatings != null) count++
-            if (persons != null) count++
-            if (played != null) count++
-            if (studios != null) count++
-            if (tags != null) count++
-            if (videoTypes != null) count++
-            if (years != null) count++
-            if (decades != null) count++
-            return count
+    /**
+     * Returns how many of filters are actually being used in this [GetItemsFilter]
+     */
+    fun countFilters(filterOptions: List<ItemFilterBy<*>>): Int {
+        var count = 0
+        filterOptions.forEach {
+            if (it.get(this) != null) count++
         }
+        return count
+    }
+
+    /**
+     * Clear all of the values for the given filters
+     */
+    fun delete(filterOptions: List<ItemFilterBy<*>>): GetItemsFilter {
+        var newFilter = this
+        filterOptions.forEach {
+            newFilter = it.set(null, newFilter)
+        }
+        return newFilter
+    }
 
     fun applyTo(req: GetItemsRequest) =
         req.copy(
