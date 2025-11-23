@@ -485,6 +485,7 @@ fun HomePageHeader(
                     Text(
                         text = title,
                         style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.SemiBold),
+                        color = MaterialTheme.colorScheme.onBackground,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
@@ -493,6 +494,7 @@ fun HomePageHeader(
                     Text(
                         text = subtitle,
                         style = MaterialTheme.typography.headlineSmall,
+                        color = MaterialTheme.colorScheme.onBackground,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )

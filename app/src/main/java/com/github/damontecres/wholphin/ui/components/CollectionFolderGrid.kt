@@ -6,10 +6,18 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -18,6 +26,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.layout.ContentScale
@@ -35,6 +44,18 @@ import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.LibraryDisplayInfoDao
 import com.github.damontecres.wholphin.data.ServerRepository
+import com.github.damontecres.wholphin.data.filter.CommunityRatingFilter
+import com.github.damontecres.wholphin.data.filter.DecadeFilter
+import com.github.damontecres.wholphin.data.filter.DefaultFilterOptions
+import com.github.damontecres.wholphin.data.filter.FavoriteFilter
+import com.github.damontecres.wholphin.data.filter.FilterValueOption
+import com.github.damontecres.wholphin.data.filter.FilterVideoType
+import com.github.damontecres.wholphin.data.filter.GenreFilter
+import com.github.damontecres.wholphin.data.filter.ItemFilterBy
+import com.github.damontecres.wholphin.data.filter.OfficialRatingFilter
+import com.github.damontecres.wholphin.data.filter.PlayedFilter
+import com.github.damontecres.wholphin.data.filter.VideoTypeFilter
+import com.github.damontecres.wholphin.data.filter.YearFilter
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.GetItemsFilter
 import com.github.damontecres.wholphin.data.model.GetItemsFilterOverride
@@ -54,6 +75,7 @@ import com.github.damontecres.wholphin.ui.detail.MoreDialogActions
 import com.github.damontecres.wholphin.ui.detail.PlaylistDialog
 import com.github.damontecres.wholphin.ui.detail.PlaylistLoadingState
 import com.github.damontecres.wholphin.ui.detail.buildMoreDialogItemsForHome
+import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.toServerString
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.ApiRequestPager
@@ -66,9 +88,13 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
+import org.jellyfin.sdk.api.client.extensions.genresApi
+import org.jellyfin.sdk.api.client.extensions.localizationApi
+import org.jellyfin.sdk.api.client.extensions.yearsApi
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.CollectionType
 import org.jellyfin.sdk.model.api.ImageType
@@ -78,8 +104,11 @@ import org.jellyfin.sdk.model.api.SortOrder
 import org.jellyfin.sdk.model.api.request.GetItemsRequest
 import org.jellyfin.sdk.model.api.request.GetPersonsRequest
 import org.jellyfin.sdk.model.serializer.toUUIDOrNull
+import timber.log.Timber
+import java.util.TreeSet
 import java.util.UUID
 import javax.inject.Inject
+import kotlin.time.Duration
 
 @HiltViewModel
 class CollectionFolderViewModel
@@ -93,6 +122,7 @@ class CollectionFolderViewModel
         val navigationManager: NavigationManager,
     ) : ItemViewModel(api) {
         val loading = MutableLiveData<LoadingState>(LoadingState.Loading)
+        val backgroundLoading = MutableLiveData<LoadingState>(LoadingState.Loading)
         val pager = MutableLiveData<List<BaseItem?>>(listOf())
         val sortAndDirection = MutableLiveData<SortAndDirection>()
         val filter = MutableLiveData<GetItemsFilter>(GetItemsFilter())
@@ -114,26 +144,62 @@ class CollectionFolderViewModel
             ) {
                 this@CollectionFolderViewModel.useSeriesForPrimary = useSeriesForPrimary
                 this@CollectionFolderViewModel.itemId = itemId
-                itemId?.toUUIDOrNull()?.let {
+                itemId.toUUIDOrNull()?.let {
                     fetchItem(it)
                 }
 
+                val libraryDisplayInfo =
+                    serverRepository.currentUser.value?.let { user ->
+                        libraryDisplayInfoDao.getItem(user, itemId)
+                    }
+
                 val sortAndDirection =
                     initialSortAndDirection
-                        ?: (
-                            serverRepository.currentUser.value?.let { user ->
-                                libraryDisplayInfoDao.getItem(user, itemId)?.sortAndDirection
-                            } ?: SortAndDirection.DEFAULT
-                        )
+                        ?: libraryDisplayInfo?.sortAndDirection
+                        ?: SortAndDirection.DEFAULT
 
-                loadResults(sortAndDirection, recursive, filter, useSeriesForPrimary)
+                val filterToUse =
+                    if (libraryDisplayInfo?.filter != null) {
+                        filter.merge(libraryDisplayInfo.filter)
+                    } else {
+                        filter
+                    }
+
+                loadResults(true, sortAndDirection, recursive, filterToUse, useSeriesForPrimary)
             }
+
+        fun onFilterChange(
+            newFilter: GetItemsFilter,
+            recursive: Boolean,
+        ) {
+            Timber.v("onFilterChange: filter=%s", newFilter)
+            serverRepository.currentUser.value?.let { user ->
+                viewModelScope.launch(Dispatchers.IO) {
+                    val libraryDisplayInfo =
+                        LibraryDisplayInfo(
+                            userId = user.rowId,
+                            itemId = itemId,
+                            sort = sortAndDirection.value!!.sort,
+                            direction = sortAndDirection.value!!.direction,
+                            filter = newFilter,
+                        )
+                    libraryDisplayInfoDao.saveItem(libraryDisplayInfo)
+                }
+            }
+            loadResults(false, sortAndDirection.value!!, recursive, newFilter, useSeriesForPrimary)
+        }
 
         fun onSortChange(
             sortAndDirection: SortAndDirection,
             recursive: Boolean,
             filter: GetItemsFilter,
         ) {
+            Timber.v(
+                "onSortChange: sort=%s, recursive=%s, filter=%s",
+                sortAndDirection,
+                recursive,
+                filter,
+            )
             serverRepository.currentUser.value?.let { user ->
                 viewModelScope.launch(Dispatchers.IO) {
                     val libraryDisplayInfo =
@@ -142,14 +208,16 @@ class CollectionFolderViewModel
                             itemId = itemId,
                             sort = sortAndDirection.sort,
                             direction = sortAndDirection.direction,
+                            filter = filter,
                         )
                     libraryDisplayInfoDao.saveItem(libraryDisplayInfo)
                 }
             }
-            loadResults(sortAndDirection, recursive, filter, useSeriesForPrimary)
+            loadResults(true, sortAndDirection, recursive, filter, useSeriesForPrimary)
         }
 
         private fun loadResults(
+            resetState: Boolean,
             sortAndDirection: SortAndDirection,
             recursive: Boolean,
             filter: GetItemsFilter,
@@ -157,17 +225,22 @@ class CollectionFolderViewModel
         ) {
             viewModelScope.launch(Dispatchers.IO) {
                 withContext(Dispatchers.Main) {
-                    pager.value = listOf()
-                    loading.value = LoadingState.Loading
+                    if (resetState) {
+                        pager.value = listOf()
+                        loading.value = LoadingState.Loading
+                    }
+                    backgroundLoading.value = LoadingState.Loading
                     this@CollectionFolderViewModel.sortAndDirection.value = sortAndDirection
                     this@CollectionFolderViewModel.filter.value = filter
                 }
+                delay(1000)
                 val newPager = createPager(sortAndDirection, recursive, filter, useSeriesForPrimary)
                 newPager.init()
                 if (newPager.isNotEmpty()) newPager.getBlocking(0)
                 withContext(Dispatchers.Main) {
                     pager.value = newPager
                     loading.value = LoadingState.Success
+                    backgroundLoading.value = LoadingState.Success
                 }
             }
         }
@@ -182,22 +255,11 @@ class CollectionFolderViewModel
             return when (filter.override) {
                 GetItemsFilterOverride.NONE -> {
                     val includeItemTypes =
-                        when (item?.data?.collectionType) {
-                            CollectionType.MOVIES -> listOf(BaseItemKind.MOVIE)
-                            CollectionType.TVSHOWS -> listOf(BaseItemKind.SERIES)
-                            CollectionType.HOMEVIDEOS -> listOf(BaseItemKind.VIDEO)
-                            CollectionType.MUSIC ->
-                                listOf(
-                                    BaseItemKind.AUDIO,
-                                    BaseItemKind.MUSIC_ARTIST,
-                                    BaseItemKind.MUSIC_ALBUM,
-                                )
-
-                            CollectionType.BOXSETS -> listOf(BaseItemKind.BOX_SET)
-                            CollectionType.PLAYLISTS -> listOf(BaseItemKind.PLAYLIST)
-
-                            else -> listOf()
-                        }
+                        item
+                            ?.data
+                            ?.collectionType
+                            ?.baseItemKinds
+                            .orEmpty()
                     val request =
                         filter.applyTo(
                             GetItemsRequest(
@@ -260,6 +322,78 @@ class CollectionFolderViewModel
             }
         }
 
+        suspend fun getFilterOptionValues(filterOption: ItemFilterBy<*>): List<FilterValueOption> =
+            try {
+                when (filterOption) {
+                    GenreFilter -> {
+                        api.genresApi
+                            .getGenres(
+                                parentId = itemUuid,
+                                userId = serverRepository.currentUser.value?.id,
+                            ).content.items
+                            .map { FilterValueOption(it.name ?: "", it.id) }
+                    }
+
+                    FavoriteFilter,
+                    PlayedFilter,
+                    ->
+                        listOf(
+                            FilterValueOption("True", null),
+                            FilterValueOption("False", null),
+                        )
+
+                    OfficialRatingFilter -> {
+                        api.localizationApi.getParentalRatings().content.map {
+                            FilterValueOption(it.name ?: "", it.value)
+                        }
+                    }
+
+                    VideoTypeFilter ->
+                        FilterVideoType.entries.map {
+                            FilterValueOption(it.readable, it)
+                        }
+
+                    YearFilter -> {
+                        api.yearsApi
+                            .getYears(
+                                parentId = itemUuid,
+                                userId = serverRepository.currentUser.value?.id,
+                                sortBy = listOf(ItemSortBy.SORT_NAME),
+                                sortOrder = listOf(SortOrder.ASCENDING),
+                            ).content.items
+                            .mapNotNull {
+                                it.name?.toIntOrNull()?.let { FilterValueOption(it.toString(), it) }
+                            }
+                    }
+
+                    DecadeFilter -> {
+                        val items = TreeSet<Int>()
+                        api.yearsApi
+                            .getYears(
+                                parentId = itemUuid,
+                                userId = serverRepository.currentUser.value?.id,
+                                sortBy = listOf(ItemSortBy.SORT_NAME),
+                                sortOrder = listOf(SortOrder.ASCENDING),
+                            ).content.items
+                            .mapNotNullTo(items) {
+                                it.name
+                                    ?.toIntOrNull()
+                                    ?.div(10)
+                                    ?.times(10)
+                            }
+                        items.toList().sorted().map { FilterValueOption("$it's", it) }
+                    }
+
+                    CommunityRatingFilter ->
+                        (1..10).map {
+                            FilterValueOption("$it", it)
+                        }
+                }
+            } catch (ex: Exception) {
+                Timber.e(ex, "Exception get filter value options for $filterOption")
+                listOf()
+            }
+
         suspend fun positionOfLetter(letter: Char): Int? =
             withContext(Dispatchers.IO) {
                 item.value?.let { item ->
@@ -317,11 +451,14 @@ fun CollectionFolderGrid(
     recursive: Boolean,
     onClickItem: (Int, BaseItem) -> Unit,
     sortOptions: List<ItemSortBy>,
+    playEnabled: Boolean,
     modifier: Modifier = Modifier,
     initialSortAndDirection: SortAndDirection? = null,
     showTitle: Boolean = true,
     positionCallback: ((columns: Int, position: Int) -> Unit)? = null,
     params: CollectionFolderGridParameters = CollectionFolderGridParameters(),
+    useSeriesForPrimary: Boolean = true,
+    filterOptions: List<ItemFilterBy<*>> = DefaultFilterOptions,
 ) = CollectionFolderGrid(
     preferences,
     itemId.toServerString(),
@@ -329,11 +466,14 @@ fun CollectionFolderGrid(
     recursive,
     onClickItem,
     sortOptions,
+    playEnabled,
     modifier,
     initialSortAndDirection = initialSortAndDirection,
     showTitle = showTitle,
     positionCallback = positionCallback,
     params = params,
+    useSeriesForPrimary = useSeriesForPrimary,
+    filterOptions = filterOptions,
 )
 
 @Composable
@@ -344,6 +484,7 @@ fun CollectionFolderGrid(
     recursive: Boolean,
     onClickItem: (Int, BaseItem) -> Unit,
     sortOptions: List<ItemSortBy>,
+    playEnabled: Boolean,
     modifier: Modifier = Modifier,
     viewModel: CollectionFolderViewModel = hiltViewModel(),
     playlistViewModel: AddPlaylistViewModel = hiltViewModel(),
@@ -352,6 +493,7 @@ fun CollectionFolderGrid(
     positionCallback: ((columns: Int, position: Int) -> Unit)? = null,
     params: CollectionFolderGridParameters = CollectionFolderGridParameters(),
     useSeriesForPrimary: Boolean = true,
+    filterOptions: List<ItemFilterBy<*>> = DefaultFilterOptions,
 ) {
     val context = LocalContext.current
     OneTimeLaunchedEffect {
@@ -363,9 +505,10 @@ fun CollectionFolderGrid(
             useSeriesForPrimary,
         )
     }
-    val sortAndDirection by viewModel.sortAndDirection.observeAsState()
+    val sortAndDirection by viewModel.sortAndDirection.observeAsState(SortAndDirection.DEFAULT)
     val filter by viewModel.filter.observeAsState(initialFilter)
     val loading by viewModel.loading.observeAsState(LoadingState.Loading)
+    val backgroundLoading by viewModel.backgroundLoading.observeAsState(LoadingState.Loading)
     val item by viewModel.item.observeAsState()
     val pager by viewModel.pager.observeAsState()
 
@@ -380,25 +523,67 @@ fun CollectionFolderGrid(
         -> LoadingPage()
         LoadingState.Success -> {
             pager?.let { pager ->
-                CollectionFolderGridContent(
-                    preferences,
-                    item,
-                    pager,
-                    sortAndDirection = sortAndDirection!!,
-                    modifier = modifier,
-                    onClickItem = onClickItem,
-                    onLongClickItem = { position, item ->
-                        moreDialog.makePresent(PositionItem(position, item))
-                    },
-                    onSortChange = {
-                        viewModel.onSortChange(it, recursive, filter)
-                    },
-                    showTitle = showTitle,
-                    sortOptions = sortOptions,
-                    positionCallback = positionCallback,
-                    letterPosition = { viewModel.positionOfLetter(it) ?: -1 },
-                    params = params,
-                )
+                Box(modifier = modifier) {
+                    CollectionFolderGridContent(
+                        preferences,
+                        item,
+                        pager,
+                        sortAndDirection = sortAndDirection!!,
+                        modifier = Modifier.fillMaxSize(),
+                        onClickItem = onClickItem,
+                        onLongClickItem = { position, item ->
+                            moreDialog.makePresent(PositionItem(position, item))
+                        },
+                        onSortChange = {
+                            viewModel.onSortChange(it, recursive, filter)
+                        },
+                        filterOptions = filterOptions,
+                        currentFilter = filter,
+                        onFilterChange = {
+                            viewModel.onFilterChange(it, recursive)
+                        },
+                        getPossibleFilterValues = {
+                            viewModel.getFilterOptionValues(it)
+                        },
+                        showTitle = showTitle,
+                        sortOptions = sortOptions,
+                        positionCallback = positionCallback,
+                        letterPosition = { viewModel.positionOfLetter(it) ?: -1 },
+                        params = params,
+                        playEnabled = playEnabled,
+                        onClickPlay = { shuffle ->
+                            itemId.toUUIDOrNull()?.let {
+                                viewModel.navigationManager.navigateTo(
+                                    Destination.PlaybackList(
+                                        itemId = it,
+                                        startIndex = 0,
+                                        shuffle = shuffle,
+                                        recursive = recursive,
+                                        sortAndDirection = sortAndDirection,
+                                        filter = filter,
+                                    ),
+                                )
+                            }
+                        },
+                    )
+
+                    AnimatedVisibility(
+                        backgroundLoading == LoadingState.Loading,
+                        modifier =
+                            Modifier
+                                .align(Alignment.BottomEnd)
+                                .padding(16.dp),
+                    ) {
+                        CircularProgress(
+                            Modifier
+                                .background(
+                                    MaterialTheme.colorScheme.background.copy(alpha = .25f),
+                                    shape = CircleShape,
+                                ).size(64.dp)
+                                .padding(4.dp),
+                        )
+                    }
+                }
             }
         }
     }
@@ -464,10 +649,16 @@ fun CollectionFolderGridContent(
     onSortChange: (SortAndDirection) -> Unit,
     letterPosition: suspend (Char) -> Int,
     sortOptions: List<ItemSortBy>,
+    playEnabled: Boolean,
+    onClickPlay: (shuffle: Boolean) -> Unit,
     modifier: Modifier = Modifier,
     showTitle: Boolean = true,
     positionCallback: ((columns: Int, position: Int) -> Unit)? = null,
     params: CollectionFolderGridParameters = CollectionFolderGridParameters(),
+    currentFilter: GetItemsFilter = GetItemsFilter(),
+    filterOptions: List<ItemFilterBy<*>> = listOf(),
+    onFilterChange: (GetItemsFilter) -> Unit = {},
+    getPossibleFilterValues: suspend (ItemFilterBy<*>) -> List<FilterValueOption>,
 ) {
     val title = item?.name ?: item?.data?.collectionType?.name ?: stringResource(R.string.collection)
 
@@ -499,13 +690,60 @@ fun CollectionFolderGridContent(
                         modifier = Modifier.fillMaxWidth(),
                     )
                 }
-                if (sortOptions.isNotEmpty()) {
-                    SortByButton(
-                        sortOptions = sortOptions,
-                        current = sortAndDirection,
-                        onSortChange = onSortChange,
-                        modifier = Modifier,
-                    )
+                val endPadding =
+                    16.dp + if (sortAndDirection.sort == ItemSortBy.SORT_NAME) 24.dp else 0.dp
+                Row(
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier =
+                        Modifier
+                            .padding(start = 16.dp, end = endPadding)
+                            .fillMaxWidth(),
+                ) {
+                    if (sortOptions.isNotEmpty() || filterOptions.isNotEmpty()) {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier,
+                        ) {
+                            if (sortOptions.isNotEmpty()) {
+                                SortByButton(
+                                    sortOptions = sortOptions,
+                                    current = sortAndDirection,
+                                    onSortChange = onSortChange,
+                                    modifier = Modifier,
+                                )
+                            }
+                            if (filterOptions.isNotEmpty()) {
+                                FilterByButton(
+                                    filterOptions = filterOptions,
+                                    current = currentFilter,
+                                    onFilterChange = onFilterChange,
+                                    getPossibleValues = getPossibleFilterValues,
+                                    modifier = Modifier,
+                                )
+                            }
+                        }
+                    }
+                    if (playEnabled) {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier,
+                        ) {
+                            ExpandablePlayButton(
+                                title = R.string.play,
+                                resume = Duration.ZERO,
+                                icon = Icons.Default.PlayArrow,
+                                onClick = { onClickPlay.invoke(false) },
+                            )
+                            ExpandableFaButton(
+                                title = R.string.shuffle,
+                                iconStringRes = R.string.fa_shuffle,
+                                onClick = { onClickPlay.invoke(true) },
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -601,3 +839,22 @@ data class CollectionFolderGridParameters(
             )
     }
 }
+
+val CollectionType.baseItemKinds: List<BaseItemKind>
+    get() =
+        when (this) {
+            CollectionType.MOVIES -> listOf(BaseItemKind.MOVIE)
+            CollectionType.TVSHOWS -> listOf(BaseItemKind.SERIES)
+            CollectionType.HOMEVIDEOS -> listOf(BaseItemKind.VIDEO)
+            CollectionType.MUSIC ->
+                listOf(
+                    BaseItemKind.AUDIO,
+                    BaseItemKind.MUSIC_ARTIST,
+                    BaseItemKind.MUSIC_ALBUM,
+                )
+
+            CollectionType.BOXSETS -> listOf(BaseItemKind.BOX_SET)
+            CollectionType.PLAYLISTS -> listOf(BaseItemKind.PLAYLIST)
+
+            else -> listOf()
+        }

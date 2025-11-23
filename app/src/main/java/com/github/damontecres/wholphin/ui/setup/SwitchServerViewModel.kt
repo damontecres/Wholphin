@@ -12,6 +12,7 @@ import com.github.damontecres.wholphin.data.model.JellyfinServer
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.nav.Destination
+import com.github.damontecres.wholphin.ui.setValueOnMain
 import com.github.damontecres.wholphin.ui.showToast
 import com.github.damontecres.wholphin.util.LoadingState
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -23,6 +24,8 @@ import org.jellyfin.sdk.Jellyfin
 import org.jellyfin.sdk.api.client.HttpClientOptions
 import org.jellyfin.sdk.api.client.extensions.quickConnectApi
 import org.jellyfin.sdk.api.client.extensions.systemApi
+import org.jellyfin.sdk.discovery.RecommendedServerInfoScore
+import org.jellyfin.sdk.discovery.RecommendedServerIssue
 import org.jellyfin.sdk.model.serializer.toUUID
 import org.jellyfin.sdk.model.serializer.toUUIDOrNull
 import timber.log.Timber
@@ -130,47 +133,81 @@ class SwitchServerViewModel
                 status
             }
 
-        fun addServer(serverUrl: String) {
+        fun addServer(inputUrl: String) {
             addServerState.value = LoadingState.Loading
             viewModelScope.launchIO {
                 try {
-                    val serverInfo by jellyfin
-                        .createApi(serverUrl)
-                        .systemApi
-                        .getPublicSystemInfo()
-                    val id = serverInfo.id?.toUUIDOrNull()
-                    if (id != null && serverInfo.startupWizardCompleted == true) {
-                        val server =
-                            JellyfinServer(
-                                id = id,
-                                name = serverInfo.serverName,
-                                url = serverUrl,
-                            )
-                        serverRepository.addAndChangeServer(server)
-                        val quickConnect =
-                            jellyfin
-                                .createApi(serverUrl)
-                                .quickConnectApi
-                                .getQuickConnectEnabled()
-                                .content
-                        withContext(Dispatchers.Main) {
-                            serverQuickConnect.value =
-                                serverQuickConnect.value!!.toMutableMap().apply {
-                                    put(id, quickConnect)
-                                }
-                        }
-                        withContext(Dispatchers.Main) {
-                            addServerState.value = LoadingState.Success
-                            navigationManager.navigateTo(Destination.UserList(server))
+                    val scores =
+                        jellyfin.discovery.getRecommendedServers(inputUrl).sortedBy { it.score }
+                    val bestServer =
+                        scores.firstOrNull { it.score != RecommendedServerInfoScore.BAD }
+                    val serverInfo = bestServer?.systemInfo?.getOrNull()
+                    if (bestServer != null && serverInfo != null) {
+                        val serverUrl = bestServer.address
+
+                        val id = serverInfo.id?.toUUIDOrNull()
+
+                        if (id != null && serverInfo.startupWizardCompleted == true) {
+                            val server =
+                                JellyfinServer(
+                                    id = id,
+                                    name = serverInfo.serverName,
+                                    url = serverUrl,
+                                    version = serverInfo.version,
+                                )
+                            serverRepository.addAndChangeServer(server)
+                            val quickConnect =
+                                jellyfin
+                                    .createApi(serverUrl)
+                                    .quickConnectApi
+                                    .getQuickConnectEnabled()
+                                    .content
+                            withContext(Dispatchers.Main) {
+                                serverQuickConnect.value =
+                                    serverQuickConnect.value!!.toMutableMap().apply {
+                                        put(id, quickConnect)
+                                    }
+                            }
+                            withContext(Dispatchers.Main) {
+                                addServerState.value = LoadingState.Success
+                                navigationManager.navigateTo(Destination.UserList(server))
+                            }
+                        } else {
+                            withContext(Dispatchers.Main) {
+                                addServerState.value =
+                                    LoadingState.Error("Server returned invalid response")
+                            }
                         }
                     } else {
-                        withContext(Dispatchers.Main) {
-                            addServerState.value =
-                                LoadingState.Error("Server returned invalid response")
-                        }
+                        Timber.w("Error connecting with %s: %s", inputUrl, scores)
+                        // No good server candidate
+                        val errors =
+                            scores.joinToString("\n") {
+                                val issues =
+                                    it.issues.firstOrNull()?.let {
+                                        when (it) {
+                                            is RecommendedServerIssue.InvalidProductName,
+                                            is RecommendedServerIssue.MissingSystemInfo,
+                                            -> "Invalid server info"
+
+                                            is RecommendedServerIssue.SecureConnectionFailed,
+                                            is RecommendedServerIssue.ServerUnreachable,
+                                            is RecommendedServerIssue.SlowResponse,
+                                            -> "Unable to connect"
+
+                                            RecommendedServerIssue.MissingVersion,
+                                            is RecommendedServerIssue.OutdatedServerVersion,
+                                            is RecommendedServerIssue.UnsupportedServerVersion,
+                                            -> "Unsupported server version"
+                                        }
+                                    }
+                                "${it.address} - $issues"
+                            }
+                        val message = "Error, tried addresses:\n$errors"
+                        addServerState.setValueOnMain(LoadingState.Error(message))
                     }
                 } catch (ex: Exception) {
-                    Timber.w(ex, "Error creating API for $serverUrl")
+                    Timber.w(ex, "Error creating API for $inputUrl")
                     withContext(Dispatchers.Main) {
                         addServerState.value =
                             LoadingState.Error(exception = ex)
@@ -198,6 +235,7 @@ class SwitchServerViewModel
                                         server.id.toUUID(),
                                         server.name,
                                         server.address,
+                                        null,
                                     ),
                                 )
                             }

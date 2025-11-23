@@ -23,6 +23,7 @@ import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.type
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.MutableLiveData
@@ -42,6 +43,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.acra.util.versionCodeLong
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.clientLogApi
 import org.jellyfin.sdk.model.ClientInfo
@@ -151,6 +153,7 @@ fun DebugPage(
     modifier: Modifier = Modifier,
     viewModel: DebugViewModel = hiltViewModel(),
 ) {
+    val context = LocalContext.current
     val scrollAmount = 100f
     val columnState = rememberLazyListState()
     val scope = rememberCoroutineScope()
@@ -194,15 +197,40 @@ fun DebugPage(
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Text(
-                    text = "AppPreferences",
+                    text = "App Information",
                     style = MaterialTheme.typography.displaySmall,
                     color = MaterialTheme.colorScheme.onSurface,
                 )
-                Text(
-                    text = preferences.appPreferences.toString(),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
+                val pkgInfo = context.packageManager.getPackageInfo(context.packageName, 0)
+                val installInfo =
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                        val installSource =
+                            context.packageManager.getInstallSourceInfo(context.packageName)
+                        buildList {
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                add("Install source: ${installSource.packageSource}")
+                            }
+                            add("Installer: ${installSource.installingPackageName}")
+                            add("Initiator: ${installSource.initiatingPackageName}")
+                        }
+                    } else {
+                        listOf(context.packageManager.getInstallerPackageName(context.packageName))
+                    }
+                (
+                    listOf(
+                        "Version Name: ${pkgInfo.versionName}",
+                        "Version Code: ${pkgInfo.versionCodeLong}",
+                        "Build type: ${BuildConfig.BUILD_TYPE}",
+                        "Debug enabled: ${BuildConfig.DEBUG}",
+                        "ABIs: ${Build.SUPPORTED_ABIS.toList()}",
+                    ) + installInfo
+                ).forEach {
+                    Text(
+                        text = it.toString(),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
+                }
             }
         }
         item {
@@ -211,22 +239,12 @@ fun DebugPage(
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Text(
-                    text = "App Information",
+                    text = "AppPreferences",
                     style = MaterialTheme.typography.displaySmall,
                     color = MaterialTheme.colorScheme.onSurface,
                 )
                 Text(
-                    text = "Build type: ${BuildConfig.BUILD_TYPE}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
-                Text(
-                    text = "Debug enabled: ${BuildConfig.DEBUG}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
-                Text(
-                    text = "ABIs: ${Build.SUPPORTED_ABIS.toList()}",
+                    text = preferences.appPreferences.toString(),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurface,
                 )
