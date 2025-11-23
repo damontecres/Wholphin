@@ -29,6 +29,20 @@ data class GetItemsFilter(
     val decades: List<Int>? = null,
     val override: GetItemsFilterOverride = GetItemsFilterOverride.NONE,
 ) {
+    val hasFilters: Boolean
+        get() =
+            favorite != null ||
+                genres != null ||
+                minCriticRating != null ||
+                officialRatings != null ||
+                persons != null ||
+                played != null ||
+                studios != null ||
+                tags != null ||
+                videoTypes != null ||
+                years != null ||
+                decades != null
+
     fun applyTo(req: GetItemsRequest) =
         req.copy(
             includeItemTypes = includeItemTypes,

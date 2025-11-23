@@ -2,7 +2,6 @@ package com.github.damontecres.wholphin.ui.components
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -15,7 +14,6 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.withStyle
 import androidx.tv.material3.Button
-import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.ui.FontAwesome
@@ -77,19 +75,17 @@ fun SortByButton(
             sortOptions
 //                .sortedBy { it.name }
                 .forEach { sortOption ->
-                    DropdownMenuItem(
+                    TvDropdownMenuItem(
                         leadingIcon = {
                             if (sortOption == currentSort) {
                                 if (currentDirection == SortOrder.ASCENDING) {
                                     Text(
                                         text = stringResource(R.string.fa_caret_up),
-                                        color = MaterialTheme.colorScheme.onSecondaryContainer,
                                         fontFamily = FontAwesome,
                                     )
                                 } else {
                                     Text(
                                         text = stringResource(R.string.fa_caret_down),
-                                        color = MaterialTheme.colorScheme.onSecondaryContainer,
                                         fontFamily = FontAwesome,
                                     )
                                 }
@@ -98,7 +94,6 @@ fun SortByButton(
                         text = {
                             Text(
                                 text = stringResource(getStringRes(sortOption)),
-                                color = MaterialTheme.colorScheme.onSecondaryContainer,
                             )
                         },
                         onClick = {
