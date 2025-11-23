@@ -1,8 +1,11 @@
 package com.github.damontecres.wholphin.ui.components
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
@@ -20,9 +23,13 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.tv.material3.Button
 import androidx.tv.material3.Icon
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
@@ -39,6 +46,8 @@ import com.github.damontecres.wholphin.data.filter.PlayedFilter
 import com.github.damontecres.wholphin.data.filter.VideoTypeFilter
 import com.github.damontecres.wholphin.data.filter.YearFilter
 import com.github.damontecres.wholphin.data.model.GetItemsFilter
+import com.github.damontecres.wholphin.ui.DefaultButtonPadding
+import com.github.damontecres.wholphin.ui.FontAwesome
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import java.util.UUID
 
@@ -53,12 +62,11 @@ fun FilterByButton(
     var dropDown by remember { mutableStateOf(false) }
     var nestedDropDown by remember { mutableStateOf<ItemFilterBy<*>?>(null) }
     val context = LocalContext.current
-    val hasFilters = remember(current) { current.hasFilters }
+    val filterCount = remember(current) { current.filterCount }
 
     Box(modifier = modifier) {
-        ExpandableFaButton(
-            title = R.string.filter,
-            iconStringRes = R.string.fa_filter,
+        ExpandableFilterButton(
+            filterCount = filterCount,
             onClick = { dropDown = true },
             modifier = Modifier,
         )
@@ -95,7 +103,7 @@ fun FilterByButton(
                         modifier = Modifier,
                     )
                 }
-            if (hasFilters) {
+            if (filterCount > 0) {
                 HorizontalDivider()
                 val interactionSource = remember { MutableInteractionSource() }
                 val focused by interactionSource.collectIsFocusedAsState()
@@ -314,6 +322,48 @@ fun FilterByButton(
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+fun ExpandableFilterButton(
+    filterCount: Int,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
+    iconColor: Color = Color.Unspecified,
+) {
+    val resources = LocalResources.current
+    val isFocused = interactionSource.collectIsFocusedAsState().value
+    Button(
+        onClick = onClick,
+        modifier = modifier.heightIn(min = 40.dp),
+        contentPadding = DefaultButtonPadding,
+        interactionSource = interactionSource,
+    ) {
+        Text(
+            text = stringResource(R.string.fa_filter),
+            style = MaterialTheme.typography.titleSmall,
+            color = iconColor,
+            fontSize = 16.sp,
+            fontFamily = FontAwesome,
+            textAlign = TextAlign.Center,
+            modifier = Modifier,
+        )
+        AnimatedVisibility(filterCount > 0) {
+            Text(
+                text = filterCount.toString(),
+                style = MaterialTheme.typography.titleSmall,
+                modifier = Modifier.padding(start = 4.dp),
+            )
+        }
+        AnimatedVisibility(isFocused) {
+            Text(
+                text = stringResource(R.string.filter),
+                style = MaterialTheme.typography.titleSmall,
+                modifier = Modifier.padding(start = 4.dp),
+            )
         }
     }
 }

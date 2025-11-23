@@ -30,18 +30,24 @@ data class GetItemsFilter(
     val override: GetItemsFilterOverride = GetItemsFilterOverride.NONE,
 ) {
     val hasFilters: Boolean
-        get() =
-            favorite != null ||
-                genres != null ||
-                minCriticRating != null ||
-                officialRatings != null ||
-                persons != null ||
-                played != null ||
-                studios != null ||
-                tags != null ||
-                videoTypes != null ||
-                years != null ||
-                decades != null
+        get() = filterCount == 0
+
+    val filterCount: Int
+        get() {
+            var count = 0
+            if (favorite != null) count++
+            if (genres != null) count++
+            if (minCriticRating != null) count++
+            if (officialRatings != null) count++
+            if (persons != null) count++
+            if (played != null) count++
+            if (studios != null) count++
+            if (tags != null) count++
+            if (videoTypes != null) count++
+            if (years != null) count++
+            if (decades != null) count++
+            return count
+        }
 
     fun applyTo(req: GetItemsRequest) =
         req.copy(
