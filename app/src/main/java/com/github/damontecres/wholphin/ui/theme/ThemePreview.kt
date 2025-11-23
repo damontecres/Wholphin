@@ -108,7 +108,7 @@ private fun ThemeExample(theme: AppThemeColors) {
                             onClick = { },
                             onLongClick = {},
                             imageHeight = 120.dp,
-//                        interactionSource = source,
+                            interactionSource = source,
                             showImageOverlay = true,
                             aspectRatio = AspectRatios.TALL,
                         )
