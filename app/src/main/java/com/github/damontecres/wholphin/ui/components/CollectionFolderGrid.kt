@@ -137,19 +137,28 @@ class CollectionFolderViewModel
             ) {
                 this@CollectionFolderViewModel.useSeriesForPrimary = useSeriesForPrimary
                 this@CollectionFolderViewModel.itemId = itemId
-                itemId?.toUUIDOrNull()?.let {
+                itemId.toUUIDOrNull()?.let {
                     fetchItem(it)
                 }
 
+                val libraryDisplayInfo =
+                    serverRepository.currentUser.value?.let { user ->
+                        libraryDisplayInfoDao.getItem(user, itemId)
+                    }
+
                 val sortAndDirection =
                     initialSortAndDirection
-                        ?: (
-                            serverRepository.currentUser.value?.let { user ->
-                                libraryDisplayInfoDao.getItem(user, itemId)?.sortAndDirection
-                            } ?: SortAndDirection.DEFAULT
-                        )
+                        ?: libraryDisplayInfo?.sortAndDirection
+                        ?: SortAndDirection.DEFAULT
 
-                loadResults(true, sortAndDirection, recursive, filter, useSeriesForPrimary)
+                val filterToUse =
+                    if (libraryDisplayInfo?.filter != null) {
+                        filter.merge(libraryDisplayInfo.filter)
+                    } else {
+                        filter
+                    }
+
+                loadResults(true, sortAndDirection, recursive, filterToUse, useSeriesForPrimary)
             }
 
         fun onFilterChange(
@@ -157,6 +166,19 @@ class CollectionFolderViewModel
             recursive: Boolean,
         ) {
             Timber.v("onFilterChange: filter=%s", newFilter)
+            serverRepository.currentUser.value?.let { user ->
+                viewModelScope.launch(Dispatchers.IO) {
+                    val libraryDisplayInfo =
+                        LibraryDisplayInfo(
+                            userId = user.rowId,
+                            itemId = itemId,
+                            sort = sortAndDirection.value!!.sort,
+                            direction = sortAndDirection.value!!.direction,
+                            filter = newFilter,
+                        )
+                    libraryDisplayInfoDao.saveItem(libraryDisplayInfo)
+                }
+            }
             loadResults(false, sortAndDirection.value!!, recursive, newFilter, useSeriesForPrimary)
         }
 
@@ -179,6 +201,7 @@ class CollectionFolderViewModel
                             itemId = itemId,
                             sort = sortAndDirection.sort,
                             direction = sortAndDirection.direction,
+                            filter = filter,
                         )
                     libraryDisplayInfoDao.saveItem(libraryDisplayInfo)
                 }

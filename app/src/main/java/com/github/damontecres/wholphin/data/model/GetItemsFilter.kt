@@ -98,6 +98,23 @@ data class GetItemsFilter(
         req.copy(
             isFavorite = favorite,
         )
+
+    fun merge(filter: GetItemsFilter): GetItemsFilter =
+        this.copy(
+            favorite = favorite ?: filter.favorite,
+            genres = genres ?: filter.genres,
+            minCriticRating = minCriticRating ?: filter.minCriticRating,
+            officialRatings = officialRatings ?: filter.officialRatings,
+            persons = persons ?: filter.persons,
+            played = played ?: filter.played,
+            studios = studios ?: filter.studios,
+            tags = tags ?: filter.tags,
+            includeItemTypes = includeItemTypes ?: filter.includeItemTypes,
+            videoTypes = videoTypes ?: filter.videoTypes,
+            years = years ?: filter.years,
+            decades = decades ?: filter.decades,
+            override = override,
+        )
 }
 
 enum class GetItemsFilterOverride {
