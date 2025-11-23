@@ -451,6 +451,8 @@ fun CollectionFolderGrid(
     showTitle: Boolean = true,
     positionCallback: ((columns: Int, position: Int) -> Unit)? = null,
     params: CollectionFolderGridParameters = CollectionFolderGridParameters(),
+    useSeriesForPrimary: Boolean = true,
+    filterOptions: List<ItemFilterBy<*>> = DefaultFilterOptions,
 ) = CollectionFolderGrid(
     preferences,
     itemId.toServerString(),
@@ -464,6 +466,8 @@ fun CollectionFolderGrid(
     showTitle = showTitle,
     positionCallback = positionCallback,
     params = params,
+    useSeriesForPrimary = useSeriesForPrimary,
+    filterOptions = filterOptions,
 )
 
 @Composable
