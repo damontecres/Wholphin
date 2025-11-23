@@ -1,3 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="about">À propos</string>
+    <string name="add_server">Ajouter un serveur</string>
+    <string name="add_user">Ajouter un utilisateur</string>
+    <string name="audio">Audio</string>
+    <string name="cancel_recording">Annuler l\'enregistrement</string>
+    <string name="cancel">Annuler</string>
+    <string name="collection"></string>
+    <string name="confirm">Confirmer</string>
+    <string name="continue_watching">Continuer à regarder</string>
+    <string name="delete">Supprimer</string>
+    <string name="director">Réalisateur</string>
+    <string name="directed_by">Réalisé par</string>
+    <string name="episodes">Episodes</string>
+    <string name="active_recordings">Enregistrements en cours</string>
 </resources>
