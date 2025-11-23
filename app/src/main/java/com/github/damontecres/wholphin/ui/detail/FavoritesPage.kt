@@ -23,6 +23,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.github.damontecres.wholphin.R
+import com.github.damontecres.wholphin.data.filter.DefaultForFavoritesFilterOptions
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.GetItemsFilter
 import com.github.damontecres.wholphin.data.model.GetItemsFilterOverride
@@ -129,6 +130,7 @@ fun FavoritesPage(
                         showHeader = position < columns
                     },
                     playEnabled = false,
+                    filterOptions = DefaultForFavoritesFilterOptions,
                 )
             }
             // TV
@@ -154,6 +156,7 @@ fun FavoritesPage(
                         showHeader = position < columns
                     },
                     playEnabled = false,
+                    filterOptions = DefaultForFavoritesFilterOptions,
                 )
             }
             // Episodes
@@ -181,6 +184,7 @@ fun FavoritesPage(
                         showHeader = position < columns
                     },
                     playEnabled = false,
+                    filterOptions = DefaultForFavoritesFilterOptions,
                 )
             }
             // Videos
@@ -207,6 +211,7 @@ fun FavoritesPage(
                         showHeader = position < columns
                     },
                     playEnabled = false,
+                    filterOptions = DefaultForFavoritesFilterOptions,
                 )
             }
             // Playlists
@@ -233,6 +238,7 @@ fun FavoritesPage(
                         showHeader = position < columns
                     },
                     playEnabled = false,
+                    filterOptions = DefaultForFavoritesFilterOptions,
                 )
             }
             // People
@@ -263,6 +269,7 @@ fun FavoritesPage(
                         showHeader = position < columns
                     },
                     playEnabled = false,
+                    filterOptions = listOf(),
                 )
             }
             else -> ErrorMessage("Invalid tab index $selectedTabIndex", null)

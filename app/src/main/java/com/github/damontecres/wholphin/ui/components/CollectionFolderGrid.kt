@@ -6,12 +6,16 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.runtime.Composable
@@ -41,6 +45,7 @@ import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.LibraryDisplayInfoDao
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.filter.DecadeFilter
+import com.github.damontecres.wholphin.data.filter.DefaultFilterOptions
 import com.github.damontecres.wholphin.data.filter.FavoriteFilter
 import com.github.damontecres.wholphin.data.filter.FilterValueOption
 import com.github.damontecres.wholphin.data.filter.FilterVideoType
@@ -82,6 +87,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
@@ -226,6 +232,7 @@ class CollectionFolderViewModel
                     this@CollectionFolderViewModel.sortAndDirection.value = sortAndDirection
                     this@CollectionFolderViewModel.filter.value = filter
                 }
+                delay(1000)
                 val newPager = createPager(sortAndDirection, recursive, filter, useSeriesForPrimary)
                 newPager.init()
                 if (newPager.isNotEmpty()) newPager.getBlocking(0)
@@ -476,6 +483,7 @@ fun CollectionFolderGrid(
     positionCallback: ((columns: Int, position: Int) -> Unit)? = null,
     params: CollectionFolderGridParameters = CollectionFolderGridParameters(),
     useSeriesForPrimary: Boolean = true,
+    filterOptions: List<ItemFilterBy<*>> = DefaultFilterOptions,
 ) {
     val context = LocalContext.current
     OneTimeLaunchedEffect {
@@ -490,6 +498,7 @@ fun CollectionFolderGrid(
     val sortAndDirection by viewModel.sortAndDirection.observeAsState(SortAndDirection.DEFAULT)
     val filter by viewModel.filter.observeAsState(initialFilter)
     val loading by viewModel.loading.observeAsState(LoadingState.Loading)
+    val backgroundLoading by viewModel.backgroundLoading.observeAsState(LoadingState.Loading)
     val item by viewModel.item.observeAsState()
     val pager by viewModel.pager.observeAsState()
 
@@ -504,57 +513,67 @@ fun CollectionFolderGrid(
         -> LoadingPage()
         LoadingState.Success -> {
             pager?.let { pager ->
-                CollectionFolderGridContent(
-                    preferences,
-                    item,
-                    pager,
-                    sortAndDirection = sortAndDirection!!,
-                    modifier = modifier,
-                    onClickItem = onClickItem,
-                    onLongClickItem = { position, item ->
-                        moreDialog.makePresent(PositionItem(position, item))
-                    },
-                    onSortChange = {
-                        viewModel.onSortChange(it, recursive, filter)
-                    },
-                    filterOptions =
-                        listOf(
-                            GenreFilter,
-                            PlayedFilter,
-                            FavoriteFilter,
-                            OfficialRatingFilter,
-                            VideoTypeFilter,
-                            YearFilter,
-                            DecadeFilter,
-                        ),
-                    currentFilter = filter,
-                    onFilterChange = {
-                        viewModel.onFilterChange(it, recursive)
-                    },
-                    getPossibleFilterValues = {
-                        viewModel.getFilterOptionValues(it)
-                    },
-                    showTitle = showTitle,
-                    sortOptions = sortOptions,
-                    positionCallback = positionCallback,
-                    letterPosition = { viewModel.positionOfLetter(it) ?: -1 },
-                    params = params,
-                    playEnabled = playEnabled,
-                    onClickPlay = { shuffle ->
-                        itemId.toUUIDOrNull()?.let {
-                            viewModel.navigationManager.navigateTo(
-                                Destination.PlaybackList(
-                                    itemId = it,
-                                    startIndex = 0,
-                                    shuffle = shuffle,
-                                    recursive = recursive,
-                                    sortAndDirection = sortAndDirection,
-                                    filter = filter,
-                                ),
-                            )
-                        }
-                    },
-                )
+                Box(modifier = modifier) {
+                    CollectionFolderGridContent(
+                        preferences,
+                        item,
+                        pager,
+                        sortAndDirection = sortAndDirection!!,
+                        modifier = Modifier.fillMaxSize(),
+                        onClickItem = onClickItem,
+                        onLongClickItem = { position, item ->
+                            moreDialog.makePresent(PositionItem(position, item))
+                        },
+                        onSortChange = {
+                            viewModel.onSortChange(it, recursive, filter)
+                        },
+                        filterOptions = filterOptions,
+                        currentFilter = filter,
+                        onFilterChange = {
+                            viewModel.onFilterChange(it, recursive)
+                        },
+                        getPossibleFilterValues = {
+                            viewModel.getFilterOptionValues(it)
+                        },
+                        showTitle = showTitle,
+                        sortOptions = sortOptions,
+                        positionCallback = positionCallback,
+                        letterPosition = { viewModel.positionOfLetter(it) ?: -1 },
+                        params = params,
+                        playEnabled = playEnabled,
+                        onClickPlay = { shuffle ->
+                            itemId.toUUIDOrNull()?.let {
+                                viewModel.navigationManager.navigateTo(
+                                    Destination.PlaybackList(
+                                        itemId = it,
+                                        startIndex = 0,
+                                        shuffle = shuffle,
+                                        recursive = recursive,
+                                        sortAndDirection = sortAndDirection,
+                                        filter = filter,
+                                    ),
+                                )
+                            }
+                        },
+                    )
+
+                    AnimatedVisibility(
+                        backgroundLoading == LoadingState.Loading,
+                        modifier =
+                            Modifier
+                                .align(Alignment.BottomEnd)
+                                .padding(16.dp),
+                    ) {
+                        CircularProgress(
+                            Modifier
+                                .background(
+                                    MaterialTheme.colorScheme.background.copy(alpha = .25f),
+                                    shape = CircleShape,
+                                ).size(64.dp)
+                                .padding(4.dp),
+                        )
+                    }
+                }
             }
         }
     }

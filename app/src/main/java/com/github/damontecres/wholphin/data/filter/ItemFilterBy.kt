@@ -5,6 +5,27 @@ import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.GetItemsFilter
 import java.util.UUID
 
+val DefaultFilterOptions =
+    listOf(
+        PlayedFilter,
+        FavoriteFilter,
+        GenreFilter,
+        OfficialRatingFilter,
+        VideoTypeFilter,
+        YearFilter,
+        DecadeFilter,
+    )
+
+val DefaultForFavoritesFilterOptions =
+    listOf(
+        PlayedFilter,
+        GenreFilter,
+        OfficialRatingFilter,
+        VideoTypeFilter,
+        YearFilter,
+        DecadeFilter,
+    )
+
 sealed interface ItemFilterBy<T> {
     @get:StringRes
     val stringRes: Int

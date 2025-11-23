@@ -22,7 +22,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
@@ -61,7 +60,6 @@ fun FilterByButton(
 ) {
     var dropDown by remember { mutableStateOf(false) }
     var nestedDropDown by remember { mutableStateOf<ItemFilterBy<*>?>(null) }
-    val context = LocalContext.current
     val filterCount = remember(current) { current.filterCount }
 
     Box(modifier = modifier) {
@@ -80,7 +78,6 @@ fun FilterByButton(
             },
         ) {
             filterOptions
-//                .sortedBy { it.name }
                 .forEach { filterOption ->
                     val currentValue = remember(current) { filterOption.get(current) }
                     TvDropdownMenuItem(
