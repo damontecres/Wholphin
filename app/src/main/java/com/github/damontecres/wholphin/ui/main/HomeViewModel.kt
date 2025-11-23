@@ -264,33 +264,35 @@ class HomeViewModel
         private suspend fun buildCombined(
             resume: List<BaseItem>,
             nextUp: List<BaseItem>,
-        ): List<BaseItem> {
-            val start = System.currentTimeMillis()
-            val semaphore = Semaphore(3)
-            val deferred =
-                nextUp
-                    .filter { it.data.seriesId != null }
-                    .map { item ->
-                        semaphore.withPermit {
-                            viewModelScope.async {
+        ): List<BaseItem> =
+            withContext(Dispatchers.IO) {
+                val start = System.currentTimeMillis()
+                val semaphore = Semaphore(3)
+                val deferred =
+                    nextUp
+                        .filter { it.data.seriesId != null }
+                        .map { item ->
+                            viewModelScope.async(Dispatchers.IO) {
                                 try {
-                                    datePlayedService.getLastPlayed(item)
+                                    semaphore.withPermit {
+                                        datePlayedService.getLastPlayed(item)
+                                    }
                                 } catch (ex: Exception) {
                                     Timber.e(ex, "Error fetching %s", item.id)
                                     null
                                 }
                             }
                         }
-                    }
-            val nextUpLastPlayed = deferred.awaitAll()
-            val timestamps = mutableMapOf<UUID, LocalDateTime?>()
-            nextUp.map { it.id }.zip(nextUpLastPlayed).toMap(timestamps)
-            resume.forEach { timestamps[it.id] = it.data.userData?.lastPlayedDate }
-            val result = (resume + nextUp).sortedByDescending { timestamps[it.id] }
-            val duration = (System.currentTimeMillis() - start).milliseconds
-            Timber.v("buildCombined took %s", duration)
-            return result
-        }
+
+                val nextUpLastPlayed = deferred.awaitAll()
+                val timestamps = mutableMapOf<UUID, LocalDateTime?>()
+                nextUp.map { it.id }.zip(nextUpLastPlayed).toMap(timestamps)
+                resume.forEach { timestamps[it.id] = it.data.userData?.lastPlayedDate }
+                val result = (resume + nextUp).sortedByDescending { timestamps[it.id] }
+                val duration = (System.currentTimeMillis() - start).milliseconds
+                Timber.v("buildCombined took %s", duration)
+                return@withContext result
+            }
 
         fun setWatched(
             itemId: UUID,
