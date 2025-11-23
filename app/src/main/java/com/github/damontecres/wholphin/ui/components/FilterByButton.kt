@@ -23,9 +23,11 @@ import androidx.tv.material3.Icon
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.R
+import com.github.damontecres.wholphin.data.filter.FavoriteFilter
 import com.github.damontecres.wholphin.data.filter.FilterValueOption
 import com.github.damontecres.wholphin.data.filter.GenreFilter
 import com.github.damontecres.wholphin.data.filter.ItemFilterBy
+import com.github.damontecres.wholphin.data.filter.OfficialRatingFilter
 import com.github.damontecres.wholphin.data.filter.PlayedFilter
 import com.github.damontecres.wholphin.data.model.GetItemsFilter
 import com.github.damontecres.wholphin.ui.tryRequestFocus
@@ -49,7 +51,7 @@ fun FilterByButton(
             onClick = { dropDown = true },
         ) {
             Text(
-                text = stringResource(R.string.search),
+                text = stringResource(R.string.filter),
             )
         }
 
@@ -105,6 +107,22 @@ fun FilterByButton(
                     possibleValues = getPossibleValues.invoke(filterOption)
                     Timber.v("Got %s", possibleValues)
                 }
+                if (currentValue != null) {
+                    DropdownMenuItem(
+                        leadingIcon = {},
+                        text = {
+                            Text(
+                                text = stringResource(R.string.delete),
+                                color = MaterialTheme.colorScheme.error,
+                            )
+                        },
+                        onClick = {
+                            onFilterChange.invoke(filterOption.set(null, current))
+                            nestedDropDown = null
+                        },
+                        modifier = Modifier,
+                    )
+                }
                 possibleValues.forEachIndexed { index, value ->
                     val focusRequester = remember { FocusRequester() }
                     if (index == 0) {
@@ -115,10 +133,16 @@ fun FilterByButton(
                         remember(currentValue) {
                             when (filterOption) {
                                 GenreFilter -> {
-                                    (currentValue as? List<UUID>).orEmpty().contains(value.id)
+                                    (currentValue as? List<UUID>).orEmpty().contains(value.value)
                                 }
 
-                                PlayedFilter -> (currentValue as? Boolean) == value.name.toBoolean()
+                                FavoriteFilter,
+                                PlayedFilter,
+                                -> (currentValue as? Boolean) == value.name.toBoolean()
+
+                                OfficialRatingFilter -> {
+                                    (currentValue as? List<String>).orEmpty().contains(value.name)
+                                }
                             }
                         }
 
@@ -146,16 +170,34 @@ fun FilterByButton(
                                             .toMutableList()
                                             .apply {
                                                 if (isSelected) {
-                                                    remove(value.id!!)
+                                                    remove(value.value!!)
                                                 } else {
-                                                    add(value.id!!)
+                                                    add(value.value!! as UUID)
                                                 }
                                             }.takeIf { it.isNotEmpty() }
                                     onFilterChange.invoke(filterOption.set(newValue, current))
                                 }
-                                PlayedFilter -> {
+
+                                FavoriteFilter,
+                                PlayedFilter,
+                                -> {
                                     val played = value.name.toBoolean()
                                     onFilterChange.invoke(filterOption.set(played, current))
+                                }
+
+                                OfficialRatingFilter -> {
+                                    val list = (currentValue as? List<String>).orEmpty()
+                                    val newValue =
+                                        list
+                                            .toMutableList()
+                                            .apply {
+                                                if (isSelected) {
+                                                    remove(value.name)
+                                                } else {
+                                                    add(value.name)
+                                                }
+                                            }.takeIf { it.isNotEmpty() }
+                                    onFilterChange.invoke(filterOption.set(newValue, current))
                                 }
                             }
                             if (!filterOption.supportMultiple) {
@@ -163,22 +205,6 @@ fun FilterByButton(
                             }
                         },
                         modifier = Modifier.focusRequester(focusRequester),
-                    )
-                }
-                if (currentValue != null) {
-                    DropdownMenuItem(
-                        leadingIcon = {},
-                        text = {
-                            Text(
-                                text = stringResource(R.string.delete),
-                                color = MaterialTheme.colorScheme.error,
-                            )
-                        },
-                        onClick = {
-                            onFilterChange.invoke(filterOption.set(null, current))
-                            nestedDropDown = null
-                        },
-                        modifier = Modifier,
                     )
                 }
             }

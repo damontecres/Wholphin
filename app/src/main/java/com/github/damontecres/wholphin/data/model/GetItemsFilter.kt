@@ -15,6 +15,7 @@ data class GetItemsFilter(
     val favorite: Boolean? = null,
     val genres: List<UUID>? = null,
     val minCriticRating: Double? = null,
+    val officialRatings: List<String>? = null,
     val persons: List<UUID>? = null,
     val played: Boolean? = null,
     val studios: List<UUID>? = null,
@@ -32,6 +33,7 @@ data class GetItemsFilter(
             isPlayed = played,
             studioIds = studios,
             tags = tags,
+            officialRatings = officialRatings,
         )
 
     fun applyTo(req: GetPersonsRequest) =

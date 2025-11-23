@@ -44,3 +44,29 @@ data object PlayedFilter : ItemFilterBy<Boolean> {
         filter: GetItemsFilter,
     ): GetItemsFilter = filter.copy(played = value)
 }
+
+data object FavoriteFilter : ItemFilterBy<Boolean> {
+    override val stringRes: Int = R.string.favorites
+
+    override val supportMultiple: Boolean = false
+
+    override fun get(filter: GetItemsFilter): Boolean? = filter.favorite
+
+    override fun set(
+        value: Boolean?,
+        filter: GetItemsFilter,
+    ): GetItemsFilter = filter.copy(favorite = value)
+}
+
+data object OfficialRatingFilter : ItemFilterBy<List<String>> {
+    override val stringRes: Int = R.string.official_rating
+
+    override val supportMultiple: Boolean = true
+
+    override fun get(filter: GetItemsFilter): List<String>? = filter.officialRatings
+
+    override fun set(
+        value: List<String>?,
+        filter: GetItemsFilter,
+    ): GetItemsFilter = filter.copy(officialRatings = value)
+}

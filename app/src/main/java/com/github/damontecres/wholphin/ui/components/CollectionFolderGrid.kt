@@ -40,9 +40,11 @@ import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.LibraryDisplayInfoDao
 import com.github.damontecres.wholphin.data.ServerRepository
+import com.github.damontecres.wholphin.data.filter.FavoriteFilter
 import com.github.damontecres.wholphin.data.filter.FilterValueOption
 import com.github.damontecres.wholphin.data.filter.GenreFilter
 import com.github.damontecres.wholphin.data.filter.ItemFilterBy
+import com.github.damontecres.wholphin.data.filter.OfficialRatingFilter
 import com.github.damontecres.wholphin.data.filter.PlayedFilter
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.GetItemsFilter
@@ -80,6 +82,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.genresApi
+import org.jellyfin.sdk.api.client.extensions.localizationApi
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.CollectionType
 import org.jellyfin.sdk.model.api.ImageType
@@ -292,11 +295,19 @@ class CollectionFolderViewModel
                             .map { FilterValueOption(it.name ?: "", it.id) }
                     }
 
-                    PlayedFilter ->
+                    FavoriteFilter,
+                    PlayedFilter,
+                    ->
                         listOf(
                             FilterValueOption("True", null),
                             FilterValueOption("False", null),
                         )
+
+                    OfficialRatingFilter -> {
+                        api.localizationApi.getParentalRatings().content.map {
+                            FilterValueOption(it.name ?: "", it.value)
+                        }
+                    }
                 }
             } catch (ex: Exception) {
                 Timber.e(ex, "Exception get filter value options for $filterOption")
@@ -439,7 +450,13 @@ fun CollectionFolderGrid(
                     onSortChange = {
                         viewModel.onSortChange(it, recursive, filter)
                     },
-                    filterOptions = listOf(GenreFilter, PlayedFilter),
+                    filterOptions =
+                        listOf(
+                            GenreFilter,
+                            PlayedFilter,
+                            FavoriteFilter,
+                            OfficialRatingFilter,
+                        ),
                     currentFilter = filter,
                     onFilterChange = {
                         viewModel.onFilterChange(it, recursive)
