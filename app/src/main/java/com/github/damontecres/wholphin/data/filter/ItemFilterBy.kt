@@ -70,3 +70,53 @@ data object OfficialRatingFilter : ItemFilterBy<List<String>> {
         filter: GetItemsFilter,
     ): GetItemsFilter = filter.copy(officialRatings = value)
 }
+
+enum class FilterVideoType(
+    val readable: String,
+) {
+    FOUR_K("4K"),
+    HD("HD"),
+    SD("SD"),
+    THREE_D("3D"),
+    BLU_RAY("Blu-Ray"),
+    DVD("DVD"),
+}
+
+data object VideoTypeFilter : ItemFilterBy<List<FilterVideoType>> {
+    override val stringRes: Int = R.string.video
+
+    override val supportMultiple: Boolean = true
+
+    override fun get(filter: GetItemsFilter): List<FilterVideoType>? = filter.videoTypes
+
+    override fun set(
+        value: List<FilterVideoType>?,
+        filter: GetItemsFilter,
+    ): GetItemsFilter = filter.copy(videoTypes = value)
+}
+
+data object YearFilter : ItemFilterBy<List<Int>> {
+    override val stringRes: Int = R.string.year
+
+    override val supportMultiple: Boolean = true
+
+    override fun get(filter: GetItemsFilter): List<Int>? = filter.years
+
+    override fun set(
+        value: List<Int>?,
+        filter: GetItemsFilter,
+    ): GetItemsFilter = filter.copy(years = value)
+}
+
+data object DecadeFilter : ItemFilterBy<List<Int>> {
+    override val stringRes: Int = R.string.decade
+
+    override val supportMultiple: Boolean = true
+
+    override fun get(filter: GetItemsFilter): List<Int>? = filter.decades
+
+    override fun set(
+        value: List<Int>?,
+        filter: GetItemsFilter,
+    ): GetItemsFilter = filter.copy(decades = value)
+}

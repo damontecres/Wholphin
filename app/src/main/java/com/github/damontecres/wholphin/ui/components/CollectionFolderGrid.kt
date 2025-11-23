@@ -40,12 +40,16 @@ import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.LibraryDisplayInfoDao
 import com.github.damontecres.wholphin.data.ServerRepository
+import com.github.damontecres.wholphin.data.filter.DecadeFilter
 import com.github.damontecres.wholphin.data.filter.FavoriteFilter
 import com.github.damontecres.wholphin.data.filter.FilterValueOption
+import com.github.damontecres.wholphin.data.filter.FilterVideoType
 import com.github.damontecres.wholphin.data.filter.GenreFilter
 import com.github.damontecres.wholphin.data.filter.ItemFilterBy
 import com.github.damontecres.wholphin.data.filter.OfficialRatingFilter
 import com.github.damontecres.wholphin.data.filter.PlayedFilter
+import com.github.damontecres.wholphin.data.filter.VideoTypeFilter
+import com.github.damontecres.wholphin.data.filter.YearFilter
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.GetItemsFilter
 import com.github.damontecres.wholphin.data.model.GetItemsFilterOverride
@@ -83,6 +87,7 @@ import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.genresApi
 import org.jellyfin.sdk.api.client.extensions.localizationApi
+import org.jellyfin.sdk.api.client.extensions.yearsApi
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.CollectionType
 import org.jellyfin.sdk.model.api.ImageType
@@ -93,6 +98,7 @@ import org.jellyfin.sdk.model.api.request.GetItemsRequest
 import org.jellyfin.sdk.model.api.request.GetPersonsRequest
 import org.jellyfin.sdk.model.serializer.toUUIDOrNull
 import timber.log.Timber
+import java.util.TreeSet
 import java.util.UUID
 import javax.inject.Inject
 import kotlin.time.Duration
@@ -150,7 +156,7 @@ class CollectionFolderViewModel
             newFilter: GetItemsFilter,
             recursive: Boolean,
         ) {
-            Timber.v("onFilterChange: filter=%s", filter)
+            Timber.v("onFilterChange: filter=%s", newFilter)
             loadResults(false, sortAndDirection.value!!, recursive, newFilter, useSeriesForPrimary)
         }
 
@@ -290,8 +296,10 @@ class CollectionFolderViewModel
                 when (filterOption) {
                     GenreFilter -> {
                         api.genresApi
-                            .getGenres(parentId = itemUuid)
-                            .content.items
+                            .getGenres(
+                                parentId = itemUuid,
+                                userId = serverRepository.currentUser.value?.id,
+                            ).content.items
                             .map { FilterValueOption(it.name ?: "", it.id) }
                     }
 
@@ -307,6 +315,42 @@ class CollectionFolderViewModel
                         api.localizationApi.getParentalRatings().content.map {
                             FilterValueOption(it.name ?: "", it.value)
                         }
+                    }
+
+                    VideoTypeFilter ->
+                        FilterVideoType.entries.map {
+                            FilterValueOption(it.readable, it)
+                        }
+
+                    YearFilter -> {
+                        api.yearsApi
+                            .getYears(
+                                parentId = itemUuid,
+                                userId = serverRepository.currentUser.value?.id,
+                                sortBy = listOf(ItemSortBy.SORT_NAME),
+                                sortOrder = listOf(SortOrder.ASCENDING),
+                            ).content.items
+                            .mapNotNull {
+                                it.name?.toIntOrNull()?.let { FilterValueOption(it.toString(), it) }
+                            }
+                    }
+
+                    DecadeFilter -> {
+                        val items = TreeSet<Int>()
+                        api.yearsApi
+                            .getYears(
+                                parentId = itemUuid,
+                                userId = serverRepository.currentUser.value?.id,
+                                sortBy = listOf(ItemSortBy.SORT_NAME),
+                                sortOrder = listOf(SortOrder.ASCENDING),
+                            ).content.items
+                            .mapNotNullTo(items) {
+                                it.name
+                                    ?.toIntOrNull()
+                                    ?.div(10)
+                                    ?.times(10)
+                            }
+                        items.toList().sorted().map { FilterValueOption("$it's", it) }
                     }
                 }
             } catch (ex: Exception) {
@@ -456,6 +500,9 @@ fun CollectionFolderGrid(
                             PlayedFilter,
                             FavoriteFilter,
                             OfficialRatingFilter,
+                            VideoTypeFilter,
+                            YearFilter,
+                            DecadeFilter,
                         ),
                     currentFilter = filter,
                     onFilterChange = {

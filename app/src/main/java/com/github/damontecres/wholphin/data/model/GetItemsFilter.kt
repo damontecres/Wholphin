@@ -2,9 +2,12 @@
 
 package com.github.damontecres.wholphin.data.model
 
+import com.github.damontecres.wholphin.data.filter.FilterVideoType
+import com.github.damontecres.wholphin.ui.letNotEmpty
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.UseSerializers
 import org.jellyfin.sdk.model.api.BaseItemKind
+import org.jellyfin.sdk.model.api.VideoType
 import org.jellyfin.sdk.model.api.request.GetItemsRequest
 import org.jellyfin.sdk.model.api.request.GetPersonsRequest
 import org.jellyfin.sdk.model.serializer.UUIDSerializer
@@ -21,6 +24,9 @@ data class GetItemsFilter(
     val studios: List<UUID>? = null,
     val tags: List<String>? = null,
     val includeItemTypes: List<BaseItemKind>? = null,
+    val videoTypes: List<FilterVideoType>? = null,
+    val years: List<Int>? = null,
+    val decades: List<Int>? = null,
     val override: GetItemsFilterOverride = GetItemsFilterOverride.NONE,
 ) {
     fun applyTo(req: GetItemsRequest) =
@@ -34,6 +40,44 @@ data class GetItemsFilter(
             studioIds = studios,
             tags = tags,
             officialRatings = officialRatings,
+            years =
+                buildSet {
+                    years?.letNotEmpty(::addAll)
+                    decades?.forEach { addAll(it..<(it + 10)) }
+                },
+            is4k =
+                videoTypes?.letNotEmpty {
+                    videoTypes.contains(FilterVideoType.FOUR_K).takeIf { it }
+                },
+            isHd =
+                videoTypes?.letNotEmpty {
+                    if (videoTypes.contains(FilterVideoType.HD)) {
+                        true
+                    } else if (videoTypes.contains(FilterVideoType.SD)) {
+                        false
+                    } else {
+                        null
+                    }
+                },
+            is3d =
+                videoTypes?.letNotEmpty {
+                    videoTypes.contains(FilterVideoType.THREE_D).takeIf { it }
+                },
+            videoTypes =
+                videoTypes?.letNotEmpty {
+                    it.mapNotNull {
+                        when (it) {
+                            FilterVideoType.FOUR_K,
+                            FilterVideoType.HD,
+                            FilterVideoType.SD,
+                            FilterVideoType.THREE_D,
+                            -> null
+
+                            FilterVideoType.BLU_RAY -> VideoType.BLU_RAY
+                            FilterVideoType.DVD -> VideoType.DVD
+                        }
+                    }
+                },
         )
 
     fun applyTo(req: GetPersonsRequest) =

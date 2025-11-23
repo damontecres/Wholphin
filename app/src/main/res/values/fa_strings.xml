@@ -38,4 +38,5 @@
     <string name="fa_volume_low" translatable="false">&#xf027;</string>
     <string name="fa_ellipsis" translatable="false">&#xf141;</string>
     <string name="fa_ellipsis_vertical" translatable="false">&#xf142;</string>
+    <string name="fa_filter" translatable="false">&#xf0b0;</string>
 </resources>

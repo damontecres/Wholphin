@@ -321,6 +321,8 @@
     <string name="skip_segment_intro">Skip Intro</string>
     <string name="played">Played</string>
     <string name="filter">Filter</string>
+    <string name="year">Year</string>
+    <string name="decade">Decade</string>
 
     <string-array name="theme_song_volume">
         <item>Disabled</item>
