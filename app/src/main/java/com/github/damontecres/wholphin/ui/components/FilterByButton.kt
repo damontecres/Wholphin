@@ -98,7 +98,7 @@ fun FilterByButton(
         ) {
             nestedDropDown?.let { filterOption ->
                 filterOption as ItemFilterBy<Any>
-                val currentValue = filterOption.get(current)
+                val currentValue = remember(current) { filterOption.get(current) }
 
                 var possibleValues by remember { mutableStateOf<List<FilterValueOption>>(listOf()) }
                 LaunchedEffect(Unit) {
@@ -110,8 +110,27 @@ fun FilterByButton(
                     if (index == 0) {
                         LaunchedEffect(Unit) { focusRequester.tryRequestFocus() }
                     }
+
+                    val isSelected =
+                        remember(currentValue) {
+                            when (filterOption) {
+                                GenreFilter -> {
+                                    (currentValue as? List<UUID>).orEmpty().contains(value.id)
+                                }
+
+                                PlayedFilter -> (currentValue as? Boolean) == value.name.toBoolean()
+                            }
+                        }
+
                     DropdownMenuItem(
-                        leadingIcon = {},
+                        leadingIcon = {
+                            if (isSelected) {
+                                Icon(
+                                    imageVector = Icons.Default.Check,
+                                    contentDescription = "Filter active",
+                                )
+                            }
+                        },
                         text = {
                             Text(
                                 text = value.name,
@@ -122,7 +141,16 @@ fun FilterByButton(
                             when (filterOption) {
                                 GenreFilter -> {
                                     val list = (currentValue as? List<UUID>).orEmpty()
-                                    val newValue = list.toMutableList().apply { add(value.id!!) }
+                                    val newValue =
+                                        list
+                                            .toMutableList()
+                                            .apply {
+                                                if (isSelected) {
+                                                    remove(value.id!!)
+                                                } else {
+                                                    add(value.id!!)
+                                                }
+                                            }.takeIf { it.isNotEmpty() }
                                     onFilterChange.invoke(filterOption.set(newValue, current))
                                 }
                                 PlayedFilter -> {

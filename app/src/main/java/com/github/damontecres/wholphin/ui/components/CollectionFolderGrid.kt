@@ -106,6 +106,7 @@ class CollectionFolderViewModel
         val navigationManager: NavigationManager,
     ) : ItemViewModel(api) {
         val loading = MutableLiveData<LoadingState>(LoadingState.Loading)
+        val backgroundLoading = MutableLiveData<LoadingState>(LoadingState.Loading)
         val pager = MutableLiveData<List<BaseItem?>>(listOf())
         val sortAndDirection = MutableLiveData<SortAndDirection>()
         val filter = MutableLiveData<GetItemsFilter>(GetItemsFilter())
@@ -139,8 +140,16 @@ class CollectionFolderViewModel
                             } ?: SortAndDirection.DEFAULT
                         )
 
-                loadResults(sortAndDirection, recursive, filter, useSeriesForPrimary)
+                loadResults(true, sortAndDirection, recursive, filter, useSeriesForPrimary)
             }
+
+        fun onFilterChange(
+            newFilter: GetItemsFilter,
+            recursive: Boolean,
+        ) {
+            Timber.v("onFilterChange: filter=%s", filter)
+            loadResults(false, sortAndDirection.value!!, recursive, newFilter, useSeriesForPrimary)
+        }
 
         fun onSortChange(
             sortAndDirection: SortAndDirection,
@@ -165,10 +174,11 @@ class CollectionFolderViewModel
                     libraryDisplayInfoDao.saveItem(libraryDisplayInfo)
                 }
             }
-            loadResults(sortAndDirection, recursive, filter, useSeriesForPrimary)
+            loadResults(true, sortAndDirection, recursive, filter, useSeriesForPrimary)
         }
 
         private fun loadResults(
+            resetState: Boolean,
             sortAndDirection: SortAndDirection,
             recursive: Boolean,
             filter: GetItemsFilter,
@@ -176,8 +186,11 @@ class CollectionFolderViewModel
         ) {
             viewModelScope.launch(Dispatchers.IO) {
                 withContext(Dispatchers.Main) {
-                    pager.value = listOf()
-                    loading.value = LoadingState.Loading
+                    if (resetState) {
+                        pager.value = listOf()
+                        loading.value = LoadingState.Loading
+                    }
+                    backgroundLoading.value = LoadingState.Loading
                     this@CollectionFolderViewModel.sortAndDirection.value = sortAndDirection
                     this@CollectionFolderViewModel.filter.value = filter
                 }
@@ -187,6 +200,7 @@ class CollectionFolderViewModel
                 withContext(Dispatchers.Main) {
                     pager.value = newPager
                     loading.value = LoadingState.Success
+                    backgroundLoading.value = LoadingState.Success
                 }
             }
         }
@@ -428,7 +442,7 @@ fun CollectionFolderGrid(
                     filterOptions = listOf(GenreFilter, PlayedFilter),
                     currentFilter = filter,
                     onFilterChange = {
-                        viewModel.onSortChange(sortAndDirection, recursive, it)
+                        viewModel.onFilterChange(it, recursive)
                     },
                     getPossibleFilterValues = {
                         viewModel.getFilterOptionValues(it)
