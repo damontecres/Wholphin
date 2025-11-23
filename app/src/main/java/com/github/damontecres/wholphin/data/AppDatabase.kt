@@ -17,6 +17,7 @@ import kotlinx.serialization.json.Json
 import org.jellyfin.sdk.model.api.ItemSortBy
 import org.jellyfin.sdk.model.api.SortOrder
 import org.jellyfin.sdk.model.serializer.toUUID
+import timber.log.Timber
 import java.util.UUID
 
 @Database(
@@ -65,7 +66,13 @@ class Converters {
     fun convertGetItemsFilter(filter: GetItemsFilter): String = Json.encodeToString(filter)
 
     @TypeConverter
-    fun convertGetItemsFilter(filter: String): GetItemsFilter = Json.decodeFromString(filter)
+    fun convertGetItemsFilter(filter: String): GetItemsFilter =
+        try {
+            Json.decodeFromString(filter)
+        } catch (ex: Exception) {
+            Timber.e(ex, "Error parsing filter")
+            GetItemsFilter()
+        }
 }
 
 object Migrations {

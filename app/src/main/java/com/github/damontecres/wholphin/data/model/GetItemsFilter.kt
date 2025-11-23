@@ -18,7 +18,7 @@ import java.util.UUID
 data class GetItemsFilter(
     val favorite: Boolean? = null,
     val genres: List<UUID>? = null,
-    val minCriticRating: Double? = null,
+    val minCommunityRating: Double? = null,
     val officialRatings: List<String>? = null,
     val persons: List<UUID>? = null,
     val played: Boolean? = null,
@@ -57,7 +57,7 @@ data class GetItemsFilter(
             includeItemTypes = includeItemTypes,
             isFavorite = favorite,
             genreIds = genres,
-            minCriticRating = minCriticRating,
+            minCommunityRating = minCommunityRating,
             personIds = persons,
             isPlayed = played,
             studioIds = studios,
@@ -112,7 +112,7 @@ data class GetItemsFilter(
         this.copy(
             favorite = favorite ?: filter.favorite,
             genres = genres ?: filter.genres,
-            minCriticRating = minCriticRating ?: filter.minCriticRating,
+            minCommunityRating = minCommunityRating ?: filter.minCommunityRating,
             officialRatings = officialRatings ?: filter.officialRatings,
             persons = persons ?: filter.persons,
             played = played ?: filter.played,

@@ -34,6 +34,7 @@ import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import androidx.tv.material3.surfaceColorAtElevation
 import com.github.damontecres.wholphin.R
+import com.github.damontecres.wholphin.data.filter.CommunityRatingFilter
 import com.github.damontecres.wholphin.data.filter.DecadeFilter
 import com.github.damontecres.wholphin.data.filter.FavoriteFilter
 import com.github.damontecres.wholphin.data.filter.FilterValueOption
@@ -114,7 +115,7 @@ fun FilterByButton(
                     },
                     text = {
                         Text(
-                            text = stringResource(R.string.delete),
+                            text = stringResource(R.string.remove),
                             color = if (focused) MaterialTheme.colorScheme.onError else MaterialTheme.colorScheme.error,
                         )
                     },
@@ -159,7 +160,7 @@ fun FilterByButton(
                         },
                         text = {
                             Text(
-                                text = stringResource(R.string.delete),
+                                text = stringResource(R.string.remove),
                                 color = if (focused) MaterialTheme.colorScheme.onError else MaterialTheme.colorScheme.error,
                             )
                         },
@@ -216,11 +217,15 @@ fun FilterByButton(
                                         (currentValue as? List<Int>)
                                             .orEmpty()
                                             .contains(value.value)
+
+                                    CommunityRatingFilter -> (currentValue as? Int) == value.value
                                 }
                             }
-
+                        val interactionSource = remember { MutableInteractionSource() }
+                        val focused by interactionSource.collectIsFocusedAsState()
                         TvDropdownMenuItem(
-                            elevation = 5.dp,
+                            elevation = 8.dp,
+                            interactionSource = interactionSource,
                             leadingIcon = {
                                 if (isSelected) {
                                     Icon(
@@ -230,9 +235,16 @@ fun FilterByButton(
                                 }
                             },
                             text = {
-                                Text(
-                                    text = value.name,
-                                )
+                                if (filterOption == CommunityRatingFilter) {
+                                    SimpleStarRating(
+                                        "${value.name}+",
+                                        starColor = if (focused) EmptyStarColor else FilledStarColor,
+                                    )
+                                } else {
+                                    Text(
+                                        text = value.name,
+                                    )
+                                }
                             },
                             onClick = {
                                 val newFilter =
@@ -307,6 +319,12 @@ fun FilterByButton(
                                                     }.takeIf { it.isNotEmpty() }
                                             filterOption.set(newValue, current)
                                         }
+
+                                        CommunityRatingFilter ->
+                                            filterOption.set(
+                                                value.value as? Int,
+                                                current,
+                                            )
                                     }
 
                                 onFilterChange.invoke(newFilter)

@@ -38,10 +38,12 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.tv.material3.Icon
+import androidx.tv.material3.LocalContentColor
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.ui.AppColors
 import com.github.damontecres.wholphin.ui.PreviewTvSpec
+import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.playOnClickSound
 import com.github.damontecres.wholphin.ui.playSoundOnFocus
 import com.github.damontecres.wholphin.ui.theme.WholphinTheme
@@ -67,7 +69,7 @@ enum class StarRatingPrecision {
 }
 
 val FilledStarColor = Color(0xFFFFC700)
-val EmptyStarColor = Color(0x2AFFC700)
+val EmptyStarColor = Color(0xFF5D4A0A)
 
 val ratingBarHeight: Dp = 32.dp
 
@@ -75,22 +77,34 @@ val ratingBarHeight: Dp = 32.dp
 fun SimpleStarRating(
     communityRating: Float?,
     modifier: Modifier = Modifier,
+) = SimpleStarRating(
+    text = communityRating?.let { String.format(Locale.getDefault(), "%.1f", it) },
+    modifier = modifier,
+    textColor = MaterialTheme.colorScheme.onSurface,
+)
+
+@Composable
+fun SimpleStarRating(
+    text: String?,
+    modifier: Modifier = Modifier,
+    textColor: Color = LocalContentColor.current,
+    starColor: Color = FilledStarColor,
 ) {
     Row(
         horizontalArrangement = Arrangement.spacedBy(2.dp),
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier,
     ) {
-        communityRating?.let {
+        if (text.isNotNullOrBlank()) {
             Text(
-                text = String.format(Locale.getDefault(), "%.1f", it),
+                text = text,
                 fontSize = 14.sp,
-                color = MaterialTheme.colorScheme.onSurface,
+                color = textColor,
                 modifier = Modifier,
             )
             Icon(
                 imageVector = Icons.Filled.Star,
-                tint = FilledStarColor,
+                tint = starColor,
                 contentDescription = null,
                 modifier = Modifier,
             )
@@ -254,7 +268,7 @@ private fun SimpleStarRatingPreview() {
         Column {
             SimpleStarRating(7.5f, Modifier.height(32.dp))
             SimpleStarRating(7.5f, Modifier.height(20.dp))
-            SimpleStarRating(null, Modifier.height(32.dp))
+            SimpleStarRating("", Modifier.height(32.dp))
         }
     }
 }

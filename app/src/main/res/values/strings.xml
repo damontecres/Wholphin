@@ -323,6 +323,7 @@
     <string name="filter">Filter</string>
     <string name="year">Year</string>
     <string name="decade">Decade</string>
+    <string name="remove">Remove</string>
 
     <string-array name="theme_song_volume">
         <item>Disabled</item>

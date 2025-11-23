@@ -10,6 +10,7 @@ val DefaultFilterOptions =
         PlayedFilter,
         FavoriteFilter,
         GenreFilter,
+        CommunityRatingFilter,
         OfficialRatingFilter,
         VideoTypeFilter,
         YearFilter,
@@ -20,6 +21,7 @@ val DefaultForFavoritesFilterOptions =
     listOf(
         PlayedFilter,
         GenreFilter,
+        CommunityRatingFilter,
         OfficialRatingFilter,
         VideoTypeFilter,
         YearFilter,
@@ -30,6 +32,7 @@ val DefaultForGenresFilterOptions =
     listOf(
         PlayedFilter,
         FavoriteFilter,
+        CommunityRatingFilter,
         OfficialRatingFilter,
         VideoTypeFilter,
         YearFilter,
@@ -150,4 +153,17 @@ data object DecadeFilter : ItemFilterBy<List<Int>> {
         value: List<Int>?,
         filter: GetItemsFilter,
     ): GetItemsFilter = filter.copy(decades = value)
+}
+
+data object CommunityRatingFilter : ItemFilterBy<Int> {
+    override val stringRes: Int = R.string.community_rating
+
+    override val supportMultiple: Boolean = true
+
+    override fun get(filter: GetItemsFilter): Int? = filter.minCommunityRating?.toInt()
+
+    override fun set(
+        value: Int?,
+        filter: GetItemsFilter,
+    ): GetItemsFilter = filter.copy(minCommunityRating = value?.toDouble())
 }

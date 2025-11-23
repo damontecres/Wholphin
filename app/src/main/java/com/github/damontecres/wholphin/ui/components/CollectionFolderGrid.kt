@@ -44,6 +44,7 @@ import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.LibraryDisplayInfoDao
 import com.github.damontecres.wholphin.data.ServerRepository
+import com.github.damontecres.wholphin.data.filter.CommunityRatingFilter
 import com.github.damontecres.wholphin.data.filter.DecadeFilter
 import com.github.damontecres.wholphin.data.filter.DefaultFilterOptions
 import com.github.damontecres.wholphin.data.filter.FavoriteFilter
@@ -382,6 +383,11 @@ class CollectionFolderViewModel
                             }
                         items.toList().sorted().map { FilterValueOption("$it's", it) }
                     }
+
+                    CommunityRatingFilter ->
+                        (1..10).map {
+                            FilterValueOption("$it", it)
+                        }
                 }
             } catch (ex: Exception) {
                 Timber.e(ex, "Exception get filter value options for $filterOption")
