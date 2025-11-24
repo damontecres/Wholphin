@@ -326,6 +326,9 @@
     <string name="remove">Remove</string>
     <string name="dolby_vision">Dolby Vision</string>
     <string name="dolby_atmos">Dolby Atmos</string>
+    <string name="mpv_use_gpu_next">MPV: Use gpu-next</string>
+    <string name="mpv_conf">Edit mpv.conf</string>
+    <string name="discard_change">Discard changes?</string>
 
     <string-array name="theme_song_volume">
         <item>Disabled</item>

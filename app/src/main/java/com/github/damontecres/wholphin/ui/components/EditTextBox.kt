@@ -1,11 +1,13 @@
 package com.github.damontecres.wholphin.ui.components
 
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -33,7 +35,6 @@ import androidx.tv.material3.MaterialTheme
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.ui.PreviewTvSpec
 import com.github.damontecres.wholphin.ui.theme.WholphinTheme
-import com.google.protobuf.value
 
 /**
  * A modified [BasicTextField] that looks & fits better with TV material controls
@@ -49,7 +50,8 @@ fun EditTextBox(
     leadingIcon: @Composable (() -> Unit)? = null,
     enabled: Boolean = true,
     readOnly: Boolean = false,
-    height: Dp = 40.dp,
+    maxLines: Int = 1,
+    height: Dp = (40.dp + 24.dp * (maxLines - 1)),
     isInputValid: (String) -> Boolean = { true },
     supportingText: @Composable (() -> Unit)? = null,
     placeholder: @Composable (() -> Unit)? = null,
@@ -84,8 +86,8 @@ fun EditTextBox(
             keyboardOptions = keyboardOptions,
             keyboardActions = keyboardActions,
             interactionSource = interactionSource,
-            singleLine = true,
-            maxLines = 1,
+            singleLine = maxLines == 1,
+            maxLines = maxLines,
             minLines = 1,
             visualTransformation =
                 if (keyboardOptions.keyboardType == KeyboardType.Password ||
@@ -117,7 +119,7 @@ fun EditTextBox(
                         suffix = null,
                         supportingText = supportingText,
                         shape = CircleShape,
-                        singleLine = true,
+                        singleLine = maxLines == 1,
                         enabled = enabled,
                         isError = false,
                         interactionSource = interactionSource,
@@ -134,7 +136,7 @@ fun EditTextBox(
                                 interactionSource = interactionSource,
                                 modifier = Modifier,
                                 colors = colors,
-                                shape = CircleShape,
+                                shape = if (maxLines > 1) RoundedCornerShape(8.dp) else CircleShape,
                                 focusedIndicatorLineThickness = 4.dp,
                                 unfocusedIndicatorLineThickness = 0.dp,
                             )
@@ -183,7 +185,7 @@ fun SearchEditTextBox(
         },
         enabled,
         readOnly,
-        height,
+        height = height,
     )
 }
 
@@ -191,7 +193,7 @@ fun SearchEditTextBox(
 @Composable
 private fun EditTextBoxPreview() {
     WholphinTheme {
-        Column {
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             EditTextBox(
                 value = "string",
                 onValueChange = {},
@@ -200,6 +202,12 @@ private fun EditTextBoxPreview() {
                 value = "search query",
                 onValueChange = {},
                 onSearchClick = { },
+            )
+            EditTextBox(
+                value = "string\nstring\nstring",
+                onValueChange = {},
+                maxLines = 5,
+//                height = 88.dp,
             )
         }
     }
