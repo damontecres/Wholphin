@@ -95,50 +95,57 @@ fun TvGuideGrid(
                 }
             }
             Column(modifier = modifier) {
-                TvGuideGridContent(
-                    loading = state is LoadingState.Loading,
-                    channels = channels,
-                    programs = programs,
-                    channelProgramCount = viewModel.channelProgramCount,
-                    start = viewModel.guideStart,
-                    onClickChannel = { index, channel ->
-                        viewModel.navigationManager.navigateTo(
-                            Destination.Playback(
-                                itemId = channel.id,
-                                positionMs = 0L,
-                            ),
-                        )
-                    },
-                    onFocus = {
-                        onRowPosition.invoke(it.row)
-                        viewModel.onFocusChannel(it)
-                    },
-                    onClickProgram = { index, program ->
-                        if (program.isFake) {
-                            val now = LocalDateTime.now()
-                            if (now.isAfter(program.start) && now.isBefore(program.end)) {
-                                viewModel.navigationManager.navigateTo(
-                                    Destination.Playback(
-                                        itemId = program.channelId,
-                                        positionMs = 0L,
-                                    ),
-                                )
+                if (channels.isEmpty()) {
+                    ErrorMessage("Live TV is enabled, but no channels were found.", null)
+                } else {
+                    TvGuideGridContent(
+                        loading = state is LoadingState.Loading,
+                        channels = channels,
+                        programs = programs,
+                        channelProgramCount = viewModel.channelProgramCount,
+                        start = viewModel.guideStart,
+                        onClickChannel = { index, channel ->
+                            viewModel.navigationManager.navigateTo(
+                                Destination.Playback(
+                                    itemId = channel.id,
+                                    positionMs = 0L,
+                                ),
+                            )
+                        },
+                        onFocus = {
+                            onRowPosition.invoke(it.row)
+                            viewModel.onFocusChannel(it)
+                        },
+                        onClickProgram = { index, program ->
+                            if (program.isFake) {
+                                val now = LocalDateTime.now()
+                                if (now.isAfter(program.start) && now.isBefore(program.end)) {
+                                    viewModel.navigationManager.navigateTo(
+                                        Destination.Playback(
+                                            itemId = program.channelId,
+                                            positionMs = 0L,
+                                        ),
+                                    )
+                                } else {
+                                    Toast
+                                        .makeText(
+                                            context,
+                                            "No guide data found!",
+                                            Toast.LENGTH_SHORT,
+                                        ).show()
+                                }
                             } else {
-                                Toast
-                                    .makeText(context, "No guide data found!", Toast.LENGTH_SHORT)
-                                    .show()
+                                viewModel.getItem(program.id)
+                                showItemDialog = index
                             }
-                        } else {
-                            viewModel.getItem(program.id)
-                            showItemDialog = index
-                        }
-                    },
-                    modifier =
-                        Modifier
-                            .fillMaxSize()
-                            .background(MaterialTheme.colorScheme.surface)
-                            .focusRequester(focusRequester),
-                )
+                        },
+                        modifier =
+                            Modifier
+                                .fillMaxSize()
+                                .background(MaterialTheme.colorScheme.surface)
+                                .focusRequester(focusRequester),
+                    )
+                }
             }
             if (showItemDialog != null) {
                 val onDismissRequest = { showItemDialog = null }

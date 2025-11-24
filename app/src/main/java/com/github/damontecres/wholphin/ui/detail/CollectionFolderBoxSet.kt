@@ -27,6 +27,7 @@ fun CollectionFolderBoxSet(
     modifier: Modifier = Modifier,
     filter: GetItemsFilter = GetItemsFilter(),
     preferencesViewModel: PreferencesViewModel = hiltViewModel(),
+    playEnabled: Boolean = false,
 ) {
     var showHeader by remember { mutableStateOf(true) }
     CollectionFolderGrid(
@@ -44,6 +45,6 @@ fun CollectionFolderBoxSet(
             showHeader = position < columns
         },
         params = CollectionFolderGridParameters.POSTER,
-        playEnabled = true,
+        playEnabled = playEnabled,
     )
 }

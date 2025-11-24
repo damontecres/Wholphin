@@ -11,6 +11,7 @@ import com.github.damontecres.wholphin.ui.DefaultItemFields
 import com.github.damontecres.wholphin.ui.components.baseItemKinds
 import com.github.damontecres.wholphin.ui.data.SortAndDirection
 import com.github.damontecres.wholphin.ui.indexOfFirstOrNull
+import com.github.damontecres.wholphin.ui.playback.playable
 import com.github.damontecres.wholphin.ui.toServerString
 import com.github.damontecres.wholphin.util.ApiRequestPager
 import com.github.damontecres.wholphin.util.GetEpisodesRequestHandler
@@ -93,26 +94,30 @@ class PlaylistCreator
             item: BaseItemDto,
             startIndex: Int = 0,
             sortAndDirection: SortAndDirection?,
-            recursive: Boolean,
             filter: GetItemsFilter,
         ): Playlist {
             val includeItemTypes =
-                item.collectionType?.baseItemKinds?.takeIf { it.isNotEmpty() }
-                    ?: listOf(BaseItemKind.MOVIE, BaseItemKind.EPISODE, BaseItemKind.VIDEO)
+                item.collectionType
+                    ?.baseItemKinds
+                    ?.filter { it.playable }
+                    ?.takeIf { it.isNotEmpty() }
+                    ?: BaseItemKind.entries.filter { it.playable }
             val request =
                 filter.applyTo(
-                    GetItemsRequest(
-                        parentId = item.id,
-                        enableImageTypes = listOf(ImageType.PRIMARY, ImageType.THUMB),
-                        includeItemTypes = includeItemTypes,
-                        recursive = true,
-                        excludeItemIds = listOf(item.id),
-                        sortBy = sortAndDirection?.let { listOf(sortAndDirection.sort) },
-                        sortOrder = sortAndDirection?.let { listOf(sortAndDirection.direction) },
-                        fields = DefaultItemFields,
-                        startIndex = startIndex,
-                        limit = Playlist.MAX_SIZE,
-                    ),
+                    overwriteIncludeTypes = false,
+                    req =
+                        GetItemsRequest(
+                            parentId = item.id,
+                            enableImageTypes = listOf(ImageType.PRIMARY, ImageType.THUMB),
+                            includeItemTypes = includeItemTypes,
+                            recursive = true,
+                            excludeItemIds = listOf(item.id),
+                            sortBy = sortAndDirection?.let { listOf(sortAndDirection.sort) },
+                            sortOrder = sortAndDirection?.let { listOf(sortAndDirection.direction) },
+                            fields = DefaultItemFields,
+                            startIndex = startIndex,
+                            limit = Playlist.MAX_SIZE,
+                        ),
                 )
             val items =
                 GetItemsRequestHandler.execute(api, request).content.items.map {
@@ -144,7 +149,6 @@ class PlaylistCreator
                                 } else {
                                     sortAndDirection
                                 },
-                            recursive = recursive,
                             filter = filter,
                         ),
                     )
@@ -211,7 +215,7 @@ class PlaylistCreator
                 else -> PlaylistCreationResult.Error(null, "Unsupported type: ${item.type}")
             }
 
-        suspend fun getPlaylists(
+        suspend fun getServerPlaylists(
             mediaType: MediaType?,
             scope: CoroutineScope,
         ): List<PlaylistInfo?> {
@@ -234,7 +238,7 @@ class PlaylistCreator
             }
         }
 
-        suspend fun createPlaylist(
+        suspend fun createServerPlaylist(
             name: String,
             initialItems: List<UUID>,
         ): UUID? =
@@ -251,14 +255,14 @@ class PlaylistCreator
                     .toUUIDOrNull()
             }
 
-        suspend fun addToPlaylist(
+        suspend fun addToServerPlaylist(
             playlistId: UUID,
             itemId: UUID,
         ) {
             api.playlistsApi.addItemToPlaylist(playlistId, listOf(itemId))
         }
 
-        suspend fun removeFromPlaylist(
+        suspend fun removeFromServerPlaylist(
             playlistId: UUID,
             itemId: UUID,
         ) {
