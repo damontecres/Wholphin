@@ -73,6 +73,7 @@ import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.NavDrawerItemRepository
 import com.github.damontecres.wholphin.data.model.JellyfinServer
 import com.github.damontecres.wholphin.data.model.JellyfinUser
+import com.github.damontecres.wholphin.preferences.AppThemeColors
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.ui.FontAwesome
@@ -82,6 +83,7 @@ import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.preferences.PreferenceScreenOption
 import com.github.damontecres.wholphin.ui.setValueOnMain
 import com.github.damontecres.wholphin.ui.spacedByWithFooter
+import com.github.damontecres.wholphin.ui.theme.LocalTheme
 import com.github.damontecres.wholphin.ui.toServerString
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -647,17 +649,43 @@ fun navItemColor(
     focused: Boolean,
     drawerOpen: Boolean,
 ): Color {
-    val alpha =
-        when {
-            drawerOpen -> .75f
-            selected && !drawerOpen -> .5f
-            else -> .2f
+    val theme = LocalTheme.current
+    if (theme == AppThemeColors.OLED_BLACK) {
+        return when {
+            selected && focused -> Color.Black
+            selected && !drawerOpen -> Color.White.copy(alpha = .5f)
+            selected && drawerOpen -> Color.White.copy(alpha = .85f)
+            focused -> Color.Black.copy(alpha = .5f)
+            drawerOpen -> Color(0xFF707070)
+            else -> Color(0xFF505050).copy(alpha = .66f)
         }
-    return when {
-        selected -> MaterialTheme.colorScheme.border
-        focused -> LocalContentColor.current
-        else -> MaterialTheme.colorScheme.onSurface
-    }.copy(alpha = alpha)
+    } else {
+        val alpha =
+            when {
+                drawerOpen -> .85f
+                selected && !drawerOpen -> .5f
+                else -> .2f
+            }
+        return when {
+            selected && focused ->
+                when (theme) {
+                    AppThemeColors.UNRECOGNIZED,
+                    AppThemeColors.PURPLE,
+                    AppThemeColors.BLUE,
+                    AppThemeColors.GREEN,
+                    AppThemeColors.ORANGE,
+                    -> MaterialTheme.colorScheme.border
+
+                    AppThemeColors.BOLD_BLUE,
+                    AppThemeColors.OLED_BLACK,
+                    -> MaterialTheme.colorScheme.primary
+                }
+
+            selected -> MaterialTheme.colorScheme.border
+            focused -> LocalContentColor.current
+            else -> MaterialTheme.colorScheme.onSurface
+        }.copy(alpha = alpha)
+    }
 }
 
 val DrawerState.isOpen: Boolean get() = this.currentValue == DrawerValue.Open

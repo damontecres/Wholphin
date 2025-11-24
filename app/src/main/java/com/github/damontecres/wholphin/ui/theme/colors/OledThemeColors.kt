@@ -46,13 +46,13 @@ val OledThemeColors =
 
         val onDark = Color(0xC0FFFFFF)
 
-        val primaryDark = Color(0xFFFFFFFF)
-        val onPrimaryDark = Color(0xC04D4B4B)
+        val primaryDark = Color(0xC04D4B4B)
+        val onPrimaryDark = Color(0xFFFFFFFF)
         val primaryContainerDark = Color(0xFF505050)
         val onPrimaryContainerDark = onDark
         val secondaryDark = Color(0xFF808080)
         val onSecondaryDark = onDark
-        val secondaryContainerDark = Color(0xFF3E4759)
+        val secondaryContainerDark = Color(0xFF505050)
         val onSecondaryContainerDark = onDark
         val tertiaryDark = Color(0xFFDEDEDE)
         val onTertiaryDark = Color(0xFF363535)
@@ -71,7 +71,7 @@ val OledThemeColors =
         val outlineDark = Color(0xFF8E9099)
         val outlineVariantDark = Color(0xFF44474F)
         val scrimDark = Color(0xFF000000)
-        val inverseSurfaceDark = onDark
+        val inverseSurfaceDark = Color(0xFFE8E8E8)
         val inverseOnSurfaceDark = Color(0xFF000000)
         val inversePrimaryDark = Color(0xC0F9F4FF)
         val surfaceDimDark = Color(0xFF121318)
