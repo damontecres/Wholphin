@@ -5,8 +5,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.tv.material3.ListItem
+import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Switch
+import androidx.tv.material3.SwitchColors
 import androidx.tv.material3.SwitchDefaults
+import com.github.damontecres.wholphin.preferences.AppThemeColors
+import com.github.damontecres.wholphin.ui.theme.LocalTheme
 
 @Composable
 fun SwitchPreference(
@@ -52,12 +56,32 @@ fun SwitchPreference(
             Switch(
                 checked = value,
                 onCheckedChange = { onClick.invoke() },
-                colors =
-                    SwitchDefaults
-                        .colors(),
+                colors = SwitchColors(),
             )
         },
         interactionSource = interactionSource,
         modifier = modifier,
     )
+}
+
+@Composable
+fun SwitchColors(): SwitchColors {
+    val theme = LocalTheme.current
+    return when (theme) {
+        AppThemeColors.UNRECOGNIZED,
+        AppThemeColors.PURPLE,
+        AppThemeColors.BLUE,
+        ->
+            SwitchDefaults.colors()
+
+        AppThemeColors.GREEN,
+        AppThemeColors.ORANGE,
+        AppThemeColors.BOLD_BLUE,
+        AppThemeColors.OLED_BLACK,
+        ->
+            SwitchDefaults.colors(
+                checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
+                uncheckedThumbColor = MaterialTheme.colorScheme.onPrimary,
+            )
+    }
 }

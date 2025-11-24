@@ -20,9 +20,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.unit.dp
 import androidx.tv.material3.MaterialTheme
+import com.github.damontecres.wholphin.preferences.AppThemeColors
 import com.github.damontecres.wholphin.ui.handleDPadKeyEvents
+import com.github.damontecres.wholphin.ui.theme.LocalTheme
 
 /**
  * A TV capable control for choosing a value
@@ -45,6 +48,9 @@ fun SliderBar(
     )
     var currentValue by remember(value) { mutableLongStateOf(value) }
     val percent = (currentValue - min).toFloat() / (max - min)
+
+    val activeColor = SliderActiveColor(isFocused)
+    val inactiveColor = SliderInactiveColor(isFocused)
 
     val handleSeekEventModifier =
         Modifier.handleDPadKeyEvents(
@@ -85,14 +91,14 @@ fun SliderBar(
             onDraw = {
                 val yOffset = size.height.div(2)
                 drawLine(
-                    color = color.copy(alpha = 0.15f),
+                    color = inactiveColor,
                     start = Offset(x = 0f, y = yOffset),
                     end = Offset(x = size.width, y = yOffset),
                     strokeWidth = size.height,
                     cap = StrokeCap.Round,
                 )
                 drawLine(
-                    color = color,
+                    color = activeColor,
                     start = Offset(x = 0f, y = yOffset),
                     end =
                         Offset(
@@ -110,5 +116,59 @@ fun SliderBar(
                 )
             },
         )
+    }
+}
+
+@Composable
+fun SliderActiveColor(focused: Boolean): Color {
+    val theme = LocalTheme.current
+    return when (theme) {
+        AppThemeColors.UNRECOGNIZED,
+        AppThemeColors.PURPLE,
+        AppThemeColors.BLUE,
+        AppThemeColors.GREEN,
+        AppThemeColors.ORANGE,
+        -> MaterialTheme.colorScheme.border
+
+        AppThemeColors.BOLD_BLUE ->
+            if (focused) {
+                MaterialTheme.colorScheme.border
+            } else {
+                MaterialTheme.colorScheme.border
+            }
+
+        AppThemeColors.OLED_BLACK ->
+            if (focused) {
+                MaterialTheme.colorScheme.primaryContainer
+            } else {
+                MaterialTheme.colorScheme.border
+            }
+    }
+}
+
+@Composable
+fun SliderInactiveColor(focused: Boolean): Color {
+    val theme = LocalTheme.current
+    return when (theme) {
+        AppThemeColors.UNRECOGNIZED,
+        AppThemeColors.PURPLE,
+        ->
+            MaterialTheme.colorScheme.border
+                .copy(alpha = .25f)
+                .compositeOver(MaterialTheme.colorScheme.surfaceVariant)
+                .copy(alpha = .66f)
+
+        AppThemeColors.BLUE,
+        AppThemeColors.GREEN,
+        AppThemeColors.ORANGE,
+        AppThemeColors.BOLD_BLUE,
+        -> MaterialTheme.colorScheme.secondaryContainer.copy(alpha = .66f)
+
+        AppThemeColors.OLED_BLACK ->
+            if (focused) {
+                MaterialTheme.colorScheme.tertiaryContainer
+            } else {
+                MaterialTheme.colorScheme.primaryContainer
+            }
     }
 }
