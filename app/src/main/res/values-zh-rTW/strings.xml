@@ -57,4 +57,84 @@
         <item quantity="other">預告片</item>
     </plurals>
     <string name="tv_guide">指南</string>
+    <string name="updates">所有更新</string>
+    <string name="version">版本</string>
+    <string name="video_scale">影片縮放</string>
+    <string name="video">影片</string>
+    <string name="videos">所有影片</string>
+    <string name="watch_live">觀看直播</string>
+    <string name="show_clock">顯示時鐘</string>
+    <string name="create_playlist">新增播放清單</string>
+    <string name="add_to_playlist">加入播放清單</string>
+    <string name="one_click_pause">單擊暫停</string>
+    <string name="italic_font">斜體</string>
+    <string name="font">字體</string>
+    <string name="background">背景</string>
+    <string name="success">成功</string>
+    <string name="official_rating">內容分級</string>
+    <string name="runtime_sort">片長</string>
+    <plurals name="other_extras">
+        <item quantity="other">其他</item>
+    </plurals>
+    <plurals name="behind_the_scenes">
+        <item quantity="other">幕後花絮</item>
+    </plurals>
+    <plurals name="theme_songs">
+        <item quantity="other">主體曲</item>
+    </plurals>
+    <plurals name="theme_videos">
+        <item quantity="other">主題影片</item>
+    </plurals>
+    <plurals name="clips">
+        <item quantity="other">片段</item>
+    </plurals>
+    <plurals name="interviews">
+        <item quantity="other">訪談</item>
+    </plurals>
+    <plurals name="shorts">
+        <item quantity="other">短片</item>
+    </plurals>
+    <string name="ac3_supported">裝置支援 AC3/Dolby Digital</string>
+    <string name="advanced_settings">進階設定</string>
+    <string name="advanced_ui">進階UI</string>
+    <string name="app_theme">應用程式主題</string>
+    <string name="auto_check_for_updates">自動檢查更新</string>
+    <string name="auto_play_next">自動播放下一集</string>
+    <string name="check_for_updates">檢查更新</string>
+    <string name="direct_play_ass">直接播放 ASS 字幕</string>
+    <string name="direct_play_pgs">直接播放 PGS 字幕</string>
+    <string name="ffmpeg_extension_pref">使用 FFmpeg 解碼模組</string>
+    <string name="global_content_scale">預設內容縮放</string>
+    <string name="install_update">安裝更新</string>
+    <string name="installed_version">安裝版本</string>
+    <string name="max_homepage_items">首頁列項目上限</string>
+    <string name="nav_drawer_pins_summary">選擇預設顯示項目，其餘將會隱藏</string>
+    <string name="nav_drawer_pins">自訂導覽列項目</string>
+    <string name="nav_drawer_switch_on_focus_summary_off">點擊切換頁面</string>
+    <string name="play_theme_music">播放主題曲</string>
+    <string name="remember_selected_tab">記住選擇頁籤</string>
+    <string name="send_crash_reports">傳送崩潰報告</string>
+    <string name="settings">設定</string>
+    <string name="update_available">有可用更新</string>
+    <string name="update_url">更新 URL</string>
+    <string name="font_size">字體大小</string>
+    <string name="font_color">字體顏色</string>
+    <string name="font_opacity">字體透明度</string>
+    <string name="edge_style">邊框樣式</string>
+    <string name="edge_color">邊框顏色</string>
+    <string name="background_opacity">背景透明度</string>
+    <string name="background_style">背景樣式</string>
+    <string name="subtitle_style">字幕樣式</string>
+    <string name="background_color">背景顏色</string>
+    <string name="reset">重設</string>
+    <string name="bold_font">粗體</string>
+    <string name="mpv_hardware_decoding">MPV: 使用硬體解碼</string>
+    <string name="disable_if_crash">遇到崩潰時請停用</string>
+    <string name="mpv_options">MPV 選項</string>
+    <string name="exoplayer_options">ExoPlayer 選項</string>
+    <string name="skip_segment_commercial">跳過廣告</string>
+    <string name="skip_segment_preview">跳過預覽</string>
+    <string name="filter">篩選</string>
+    <string name="year">年份</string>
+    <string name="remove">移除</string>
 </resources>
