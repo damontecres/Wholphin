@@ -7,15 +7,13 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
@@ -26,18 +24,13 @@ import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.ChosenStreams
 import com.github.damontecres.wholphin.data.model.BaseItem
-import com.github.damontecres.wholphin.data.model.chooseStream
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.components.DotSeparatedRow
 import com.github.damontecres.wholphin.ui.components.OverviewText
 import com.github.damontecres.wholphin.ui.components.SimpleStarRating
-import com.github.damontecres.wholphin.ui.components.TitleValueText
-import com.github.damontecres.wholphin.ui.getAudioDisplay
-import com.github.damontecres.wholphin.ui.getSubtitleDisplay
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.roundMinutes
 import com.github.damontecres.wholphin.ui.timeRemaining
-import org.jellyfin.sdk.model.api.MediaStreamType
 import org.jellyfin.sdk.model.api.PersonKind
 import org.jellyfin.sdk.model.extensions.ticks
 
@@ -64,11 +57,12 @@ fun MovieDetailsHeader(
             style = MaterialTheme.typography.displayMedium,
             maxLines = 2,
             overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.fillMaxWidth(.75f),
         )
 
         Column(
             verticalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.alpha(0.75f),
+            modifier = Modifier.fillMaxWidth(.60f),
         ) {
             Row(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -92,10 +86,15 @@ fun MovieDetailsHeader(
                     modifier = Modifier,
                 )
             }
-            SimpleStarRating(
-                dto.communityRating,
-                Modifier.height(20.dp),
-            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                SimpleStarRating(
+                    dto.communityRating,
+                    Modifier.height(20.dp),
+                )
+            }
             dto.taglines?.firstOrNull()?.let { tagline ->
                 Text(
                     text = tagline,
@@ -128,59 +127,6 @@ fun MovieDetailsHeader(
                         color = MaterialTheme.colorScheme.onSurface,
                     )
                 }
-            // Key-Values
-            Row(
-                modifier =
-                    Modifier
-                        .padding(start = 16.dp)
-                        .fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
-            ) {
-                chooseStream(dto, chosenStreams?.itemPlayback, MediaStreamType.VIDEO, preferences)
-                    ?.displayTitle
-                    ?.let {
-                        TitleValueText(
-                            stringResource(R.string.video),
-                            it,
-                            modifier = Modifier.widthIn(max = 200.dp),
-                        )
-                    }
-                val audioDisplay = getAudioDisplay(movie.data, chosenStreams, preferences)
-                audioDisplay
-                    ?.let {
-                        TitleValueText(
-                            stringResource(R.string.audio),
-                            it,
-                            modifier = Modifier.widthIn(max = 200.dp),
-                        )
-                    }
-
-                getSubtitleDisplay(movie.data, chosenStreams)
-                    ?.let {
-                        if (it.isNotNullOrBlank()) {
-                            TitleValueText(
-                                stringResource(R.string.subtitles),
-                                it,
-                                modifier = Modifier.widthIn(max = 200.dp),
-                            )
-                        }
-                    }
-                // TODO add writers, studio, etc to overview dialog
-//                dto.studios?.letNotEmpty {
-//                    TitleValueText(
-//                        stringResource(R.string.studios),
-//                        it.joinToString(", ") { s -> s.name ?: "" },
-//                        modifier = Modifier.widthIn(max = 80.dp),
-//                    )
-//                }
-//                dto.genres?.letNotEmpty {
-//                    TitleValueText(
-//                        stringResource(R.string.genres),
-//                        it.joinToString(", "),
-//                        modifier = Modifier.widthIn(max = 80.dp),
-//                    )
-//                }
-            }
         }
     }
 }

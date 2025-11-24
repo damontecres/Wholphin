@@ -52,6 +52,7 @@ fun TitleValueText(
     playSoundOnFocus: Boolean = false,
     onClick: (() -> Unit)? = null,
     onLongClick: (() -> Unit)? = null,
+    valueTextOverflow: TextOverflow = TextOverflow.Ellipsis,
 ) {
     MaybeClickColumn(
         onClick = onClick,
@@ -70,7 +71,7 @@ fun TitleValueText(
             style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Normal),
             color = MaterialTheme.colorScheme.onSurface,
             maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
+            overflow = valueTextOverflow,
         )
     }
 }
