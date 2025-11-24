@@ -1,5 +1,6 @@
 package com.github.damontecres.wholphin.ui.components
 
+import android.content.Context
 import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -11,6 +12,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -38,6 +40,7 @@ import com.github.damontecres.wholphin.util.profile.Codec
 import org.jellyfin.sdk.model.api.BaseItemDto
 import org.jellyfin.sdk.model.api.MediaStreamType
 import org.jellyfin.sdk.model.api.VideoRange
+import org.jellyfin.sdk.model.api.VideoRangeType
 
 @Composable
 fun VideoStreamDetails(
@@ -46,6 +49,7 @@ fun VideoStreamDetails(
     itemPlayback: ItemPlayback?,
     modifier: Modifier = Modifier,
 ) {
+    val context = LocalContext.current
     Row(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         modifier = modifier,
@@ -77,11 +81,10 @@ fun VideoStreamDetails(
                             } else {
                                 null
                             }
+                        val range = formatVideoRange(context, it.videoRange, it.videoRangeType)
                         listOfNotNull(
-                            resName,
+                            resName.concatWithSpace(range),
                             it.codec?.uppercase(),
-                            it.videoDoViTitle,
-                            it.videoRange.takeIf { it == VideoRange.HDR }?.toString(),
                         )
                     }.orEmpty()
             }
@@ -105,7 +108,7 @@ fun VideoStreamDetails(
             } else {
                 listOfNotNull(
                     languageName(audioStream.language),
-                    formatAudioCodec(audioStream.codec),
+                    formatAudioCodec(context, audioStream.codec, audioStream.profile),
                     audioStream.channelLayout,
                 ).joinToString(" ")
             }
@@ -137,6 +140,7 @@ fun VideoStreamDetails(
             } else {
                 listOfNotNull(
                     languageName(subtitleStream.language),
+                    "SDH".takeIf { subtitleStream.isHearingImpaired },
                     formatSubtitleCodec(subtitleStream.codec),
                 ).joinToString(" ")
             }
@@ -201,8 +205,8 @@ fun StreamLabel(
         ProvideTextStyle(
             TextStyle(
                 color = MaterialTheme.colorScheme.onSurface,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Bold,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.SemiBold,
             ),
         ) {
             if (icon != null) {
@@ -221,6 +225,7 @@ fun StreamLabel(
             if (count > 1) {
                 Text(
                     text = "(+${count - 1})",
+                    maxLines = 1,
                     modifier = Modifier,
                 )
             }
@@ -247,16 +252,55 @@ private fun StreamLabelPreview() {
     }
 }
 
-fun formatAudioCodec(codec: String?): String? =
-    when (codec?.lowercase()) {
-        Codec.Audio.TRUEHD -> "TrueHD"
-        Codec.Audio.OGG,
-        Codec.Audio.OPUS,
-        Codec.Audio.VORBIS,
-        -> codec.replaceFirstChar { it.uppercase() }
+fun formatVideoRange(
+    context: Context,
+    videoRange: VideoRange?,
+    type: VideoRangeType?,
+): String? =
+    when (videoRange) {
+        VideoRange.UNKNOWN,
+        VideoRange.SDR, null,
+        -> null
 
-        null -> null
-        else -> codec.uppercase()
+        VideoRange.HDR ->
+            when (type) {
+                VideoRangeType.UNKNOWN,
+                VideoRangeType.SDR,
+                null,
+                -> null
+
+                VideoRangeType.HDR10 -> "HDR10"
+                VideoRangeType.HDR10_PLUS -> "HDR10+"
+                VideoRangeType.HLG -> "HLG"
+
+                VideoRangeType.DOVI,
+                VideoRangeType.DOVI_WITH_HDR10,
+                VideoRangeType.DOVI_WITH_HLG,
+                VideoRangeType.DOVI_WITH_SDR,
+                -> context.getString(R.string.dolby_vision)
+            }
+    }
+
+fun formatAudioCodec(
+    context: Context,
+    codec: String?,
+    profile: String?,
+): String? =
+    when {
+        profile?.contains("Dolby Atmos", true) == true -> context.getString(R.string.dolby_atmos)
+        profile?.contains("DTS:X", true) == true -> "DTS:X"
+        profile?.contains("DTS:HD", true) == true -> "DTS:HD"
+        else ->
+            when (codec?.lowercase()) {
+                Codec.Audio.TRUEHD -> "TrueHD"
+                Codec.Audio.OGG,
+                Codec.Audio.OPUS,
+                Codec.Audio.VORBIS,
+                -> codec.replaceFirstChar { it.uppercase() }
+
+                null -> null
+                else -> codec.uppercase()
+            }
     }
 
 fun formatSubtitleCodec(codec: String?): String? =
@@ -267,4 +311,11 @@ fun formatSubtitleCodec(codec: String?): String? =
         Codec.Subtitle.SUBRIP -> "SRT"
         null -> null
         else -> codec.uppercase()
+    }
+
+fun String?.concatWithSpace(str: String?): String? =
+    when {
+        this != null && str != null -> "$this $str"
+        this == null -> str
+        else -> this
     }

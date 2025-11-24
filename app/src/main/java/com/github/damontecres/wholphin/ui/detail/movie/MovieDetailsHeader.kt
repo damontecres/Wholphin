@@ -5,6 +5,7 @@ import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.runtime.Composable
@@ -27,7 +28,6 @@ import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.components.DotSeparatedRow
 import com.github.damontecres.wholphin.ui.components.OverviewText
 import com.github.damontecres.wholphin.ui.components.SimpleStarRating
-import com.github.damontecres.wholphin.ui.components.VideoStreamDetails
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.roundMinutes
 import com.github.damontecres.wholphin.ui.timeRemaining
@@ -57,11 +57,12 @@ fun MovieDetailsHeader(
             style = MaterialTheme.typography.displayMedium,
             maxLines = 2,
             overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.fillMaxWidth(.75f),
         )
 
         Column(
             verticalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier, // .alpha(0.75f),
+            modifier = Modifier.fillMaxWidth(.60f),
         ) {
             Row(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -92,12 +93,6 @@ fun MovieDetailsHeader(
                 SimpleStarRating(
                     dto.communityRating,
                     Modifier.height(20.dp),
-                )
-                VideoStreamDetails(
-                    preferences = preferences,
-                    dto = dto,
-                    itemPlayback = chosenStreams?.itemPlayback,
-                    modifier = Modifier,
                 )
             }
             dto.taglines?.firstOrNull()?.let { tagline ->

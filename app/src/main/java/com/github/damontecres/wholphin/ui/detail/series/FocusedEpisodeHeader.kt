@@ -18,7 +18,6 @@ import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.components.DotSeparatedRow
 import com.github.damontecres.wholphin.ui.components.OverviewText
 import com.github.damontecres.wholphin.ui.components.SimpleStarRating
-import com.github.damontecres.wholphin.ui.components.VideoStreamDetails
 import com.github.damontecres.wholphin.ui.formatDateTime
 import com.github.damontecres.wholphin.ui.roundMinutes
 import com.github.damontecres.wholphin.ui.seasonEpisode
@@ -76,14 +75,6 @@ fun FocusedEpisodeHeader(
                 dto?.communityRating,
                 Modifier.height(20.dp),
             )
-            dto?.let {
-                VideoStreamDetails(
-                    preferences = preferences,
-                    dto = dto,
-                    itemPlayback = chosenStreams?.itemPlayback,
-                    modifier = Modifier,
-                )
-            }
         }
         OverviewText(
             overview = dto?.overview ?: "",
