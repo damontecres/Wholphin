@@ -103,11 +103,12 @@ fun DestinationContent(
 
                 BaseItemKind.BOX_SET ->
                     CollectionFolderBoxSet(
-                        preferences,
-                        destination.itemId,
-                        destination.item,
-                        false,
-                        modifier,
+                        preferences = preferences,
+                        itemId = destination.itemId,
+                        item = destination.item,
+                        recursive = false,
+                        playEnabled = true,
+                        modifier = modifier,
                     )
 
                 BaseItemKind.PLAYLIST ->
