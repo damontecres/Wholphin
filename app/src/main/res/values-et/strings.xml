@@ -34,7 +34,7 @@
     <string name="download_and_update"><![CDATA[Laadi alla ja uuenda]]></string>
     <string name="downloading">Allalaadimisel…</string>
     <string name="enabled">Kasutusel</string>
-    <string name="enter_server_url">Sisesta serveri IP-aadress või võrguaadress koos pordinumbriga</string>
+    <string name="enter_server_url">Sisesta serveri IP-aadress või võrguaadress</string>
     <string name="episodes">Osad</string>
     <string name="error_loading_collection">Viga kogumiku laadimisel: %1$s</string>
     <string name="external_track">Väline</string>
@@ -186,4 +186,35 @@
     </plurals>
     <string name="mpv_options">MPV valikud</string>
     <string name="exoplayer_options">ExoPlayeri valikud</string>
+    <string name="tv_season">Hooaeg</string>
+    <string name="tv_seasons">Hooajad</string>
+    <string name="ui_interface">Kasutajaliides</string>
+    <string name="unknown">Pole teada</string>
+    <string name="updates">Uuendused</string>
+    <string name="version">Versioon</string>
+    <string name="remove">Eemalda</string>
+    <string name="decade">Dekaad</string>
+    <string name="year">Aasta</string>
+    <string name="filter">Filter</string>
+    <string name="played">Esitatud</string>
+    <string name="skip_segment_intro">Jäta sissejuhatus vahele</string>
+    <string name="skip_segment_outro">Jäta väljajuhatus vahele</string>
+    <string name="skip_segment_recap">Jäta kokkuvõte vahele</string>
+    <string name="skip_segment_preview">Jäta eelvaade vahele</string>
+    <string name="skip_segment_commercial">Jäta reklaamid vahele</string>
+    <string name="skip_segment_unknown">Jäta segment vahele</string>
+    <string name="disable_if_crash">Kui rakendus kipub kokku jooksma, siis lülita see eelistus välja</string>
+    <string name="mpv_hardware_decoding">MPV: kasuta raudvaralist dekodeerimist</string>
+    <string name="player_backend">Taasesituse taustateenus</string>
+    <string name="bold_font">Paks kirjatüüp</string>
+    <string name="reset">Lähtesta</string>
+    <string name="background_color">Taustavärv</string>
+    <string name="subtitle_style">Subtiitrite stiil</string>
+    <string name="background_style">Tausta stiil</string>
+    <string name="background_opacity">Tausta läbipaistmatus</string>
+    <string name="edge_color">Äärte värv</string>
+    <string name="edge_style">Äärte stiil</string>
+    <string name="font_opacity">Kirjatüübi läbipaistmatus</string>
+    <string name="font_color">Kirjatüübi värv</string>
+    <string name="font_size">Kirjatüübi suurus</string>
 </resources>
