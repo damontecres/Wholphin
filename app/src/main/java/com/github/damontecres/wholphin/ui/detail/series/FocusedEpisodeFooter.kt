@@ -11,7 +11,6 @@ import com.github.damontecres.wholphin.data.ChosenStreams
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.components.ExpandablePlayButtons
-import com.github.damontecres.wholphin.ui.components.VideoStreamDetails
 import org.jellyfin.sdk.model.extensions.ticks
 import kotlin.time.Duration
 
@@ -43,13 +42,6 @@ fun FocusedEpisodeFooter(
             watchOnClick = watchOnClick,
             favoriteOnClick = favoriteOnClick,
             buttonOnFocusChanged = {},
-            modifier = Modifier,
-        )
-
-        VideoStreamDetails(
-            preferences = preferences,
-            dto = dto,
-            itemPlayback = chosenStreams?.itemPlayback,
             modifier = Modifier,
         )
     }

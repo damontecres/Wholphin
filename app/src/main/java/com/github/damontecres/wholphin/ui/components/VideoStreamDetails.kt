@@ -11,12 +11,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.tv.material3.MaterialTheme
+import androidx.tv.material3.ProvideTextStyle
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.ItemPlayback
@@ -32,6 +34,7 @@ import com.github.damontecres.wholphin.ui.playback.embeddedSubtitleCount
 import com.github.damontecres.wholphin.ui.playback.externalSubtitlesCount
 import com.github.damontecres.wholphin.ui.theme.WholphinTheme
 import com.github.damontecres.wholphin.util.languageName
+import com.github.damontecres.wholphin.util.profile.Codec
 import org.jellyfin.sdk.model.api.BaseItemDto
 import org.jellyfin.sdk.model.api.MediaStreamType
 import org.jellyfin.sdk.model.api.VideoRange
@@ -49,91 +52,6 @@ fun VideoStreamDetails(
     ) {
         val source = remember(dto, itemPlayback) { chooseSource(dto, itemPlayback) }
 
-        val videoStream = remember(dto, itemPlayback) { chooseStream(dto, itemPlayback, MediaStreamType.VIDEO, preferences) }
-        val video =
-            remember(videoStream) {
-                videoStream
-                    ?.let {
-                        val width = it.width
-                        val height = it.height
-                        var resName =
-                            if (width != null && height != null) {
-                                resolutionString(
-                                    width,
-                                    height,
-                                )
-                            } else {
-                                null
-                            }
-                        resName = resName?.let { it + if (videoStream.isInterlaced) "i" else "p" }
-                        listOfNotNull(
-                            resName,
-                            it.codec?.uppercase(),
-                            it.videoDoViTitle,
-                            it.videoRange.takeIf { it == VideoRange.HDR }?.toString(),
-                        )
-                    }.orEmpty()
-            }
-        video.forEach {
-            StreamLabel(it)
-        }
-
-        val audioStream = remember(dto, itemPlayback) { chooseStream(dto, itemPlayback, MediaStreamType.AUDIO, preferences) }
-        val audioCount = remember(source) { source?.audioStreamCount ?: 0 }
-        val audio =
-            if (audioCount == 0 || audioStream == null) {
-                stringResource(R.string.none)
-            } else {
-                listOfNotNull(
-                    languageName(audioStream.language),
-                    audioStream.codec?.uppercase(),
-                    audioStream.channelLayout,
-                ).joinToString(" ")
-            }
-        StreamLabel(
-            text = audio,
-            count = audioCount,
-            icon = R.string.fa_volume_low,
-            modifier = Modifier.widthIn(max = 200.dp),
-        )
-
-        val subtitleStream = remember(dto, itemPlayback) { chooseStream(dto, itemPlayback, MediaStreamType.SUBTITLE, preferences) }
-        val subtitleCount = remember(source) { (source?.embeddedSubtitleCount ?: 0) + (source?.externalSubtitlesCount ?: 0) }
-        val subtitle =
-            if (itemPlayback?.subtitleIndex == TrackIndex.DISABLED) {
-                stringResource(R.string.disabled) + " (+$subtitleCount)"
-            } else if (subtitleCount == 0 || subtitleStream == null) {
-                null
-            } else {
-                listOfNotNull(
-                    languageName(subtitleStream.language),
-                    subtitleStream.codec?.uppercase(),
-                ).joinToString(" ")
-            }
-        subtitle?.let {
-            StreamLabel(
-                text = it,
-                count = subtitleCount,
-                icon = R.string.fa_closed_captioning,
-                modifier = Modifier.widthIn(max = 160.dp),
-            )
-        }
-    }
-}
-
-@Composable
-fun VideoStreamDetails2(
-    preferences: UserPreferences,
-    dto: BaseItemDto,
-    itemPlayback: ItemPlayback?,
-    modifier: Modifier = Modifier,
-) {
-    Row(
-        horizontalArrangement = Arrangement.spacedBy(16.dp),
-        modifier = modifier,
-    ) {
-        val source = remember(dto, itemPlayback) { chooseSource(dto, itemPlayback) }
-
         val videoStream =
             remember(dto, itemPlayback) {
                 chooseStream(
@@ -145,32 +63,31 @@ fun VideoStreamDetails2(
             }
         val video =
             remember(videoStream) {
-                videoStream?.let {
-                    val width = it.width
-                    val height = it.height
-                    var resName =
-                        if (width != null && height != null) {
-                            resolutionString(
-                                width,
-                                height,
-                            )
-                        } else {
-                            null
-                        }
-                    resName = resName?.let { it + if (videoStream.isInterlaced) "i" else "p" }
-                    listOfNotNull(
-                        resName,
-                        it.codec?.uppercase(),
-                        it.videoDoViTitle,
-                        it.videoRange.takeIf { it == VideoRange.HDR },
-                    ).joinToString(" ")
-                }
-            } ?: stringResource(R.string.none)
-        TitleValueText(
-            stringResource(R.string.video),
-            video,
-            modifier = Modifier.widthIn(max = 160.dp),
-        )
+                videoStream
+                    ?.let {
+                        val width = it.width
+                        val height = it.height
+                        val resName =
+                            if (width != null && height != null) {
+                                resolutionString(
+                                    width,
+                                    height,
+                                    videoStream.isInterlaced,
+                                )
+                            } else {
+                                null
+                            }
+                        listOfNotNull(
+                            resName,
+                            it.codec?.uppercase(),
+                            it.videoDoViTitle,
+                            it.videoRange.takeIf { it == VideoRange.HDR }?.toString(),
+                        )
+                    }.orEmpty()
+            }
+        video.forEach {
+            StreamLabel(it)
+        }
 
         val audioStream =
             remember(dto, itemPlayback) {
@@ -186,19 +103,16 @@ fun VideoStreamDetails2(
             if (audioCount == 0 || audioStream == null) {
                 stringResource(R.string.none)
             } else {
-                val title =
-                    listOfNotNull(
-                        languageName(audioStream.language),
-                        audioStream.codec?.uppercase(),
-                        audioStream.channelLayout,
-                    ).joinToString(" ")
-                listOfNotNull(title, "(+${audioCount - 1})".takeIf { audioCount > 1 }).joinToString(
-                    " ",
-                )
+                listOfNotNull(
+                    languageName(audioStream.language),
+                    formatAudioCodec(audioStream.codec),
+                    audioStream.channelLayout,
+                ).joinToString(" ")
             }
-        TitleValueText(
-            stringResource(R.string.audio),
-            audio,
+        StreamLabel(
+            text = audio,
+            count = audioCount,
+            icon = R.string.fa_volume_high,
             modifier = Modifier.widthIn(max = 200.dp),
         )
 
@@ -217,50 +131,52 @@ fun VideoStreamDetails2(
             }
         val subtitle =
             if (itemPlayback?.subtitleIndex == TrackIndex.DISABLED) {
-                stringResource(R.string.disabled) + " (+$subtitleCount)"
+                stringResource(R.string.disabled)
             } else if (subtitleCount == 0 || subtitleStream == null) {
                 null
             } else {
                 listOfNotNull(
                     languageName(subtitleStream.language),
-                    subtitleStream.codec?.uppercase(),
-                    "(+${subtitleCount - 1})".takeIf { subtitleCount > 1 },
+                    formatSubtitleCodec(subtitleStream.codec),
                 ).joinToString(" ")
             }
         subtitle?.let {
-            TitleValueText(
-                stringResource(R.string.subtitles),
-                it,
-                valueTextOverflow = TextOverflow.MiddleEllipsis,
+            StreamLabel(
+                text = it,
+                count = subtitleCount,
+                icon = R.string.fa_closed_captioning,
                 modifier = Modifier.widthIn(max = 160.dp),
             )
         }
     }
 }
 
+fun interlaced(interlaced: Boolean) = if (interlaced) "i" else "p"
+
 // Adapted from https://github.com/jellyfin/jellyfin/blob/aa4ddd139a7c01889a99561fc314121ba198dd70/MediaBrowser.Model/Entities/MediaStream.cs#L714
 fun resolutionString(
     width: Int,
     height: Int,
+    interlaced: Boolean,
 ): String =
     if (height > width) {
         // Vertical video
-        resolutionString(height, width)
+        resolutionString(height, width, interlaced)
     } else {
         when {
-            width <= 256 && height <= 144 -> "144"
-            width <= 426 && height <= 240 -> "240"
-            width <= 640 && height <= 360 -> "360"
-            width <= 682 && height <= 384 -> "384"
-            width <= 720 && height <= 404 -> "404"
-            width <= 854 && height <= 480 -> "480"
-            width <= 960 && height <= 544 -> "540"
-            width <= 1024 && height <= 576 -> "576"
-            width <= 1280 && height <= 962 -> "720"
-            width <= 2560 && height <= 1440 -> "1080"
+            width <= 256 && height <= 144 -> "144" + interlaced(interlaced)
+            width <= 426 && height <= 240 -> "240" + interlaced(interlaced)
+            width <= 640 && height <= 360 -> "360" + interlaced(interlaced)
+            width <= 682 && height <= 384 -> "384" + interlaced(interlaced)
+            width <= 720 && height <= 404 -> "404" + interlaced(interlaced)
+            width <= 854 && height <= 480 -> "480" + interlaced(interlaced)
+            width <= 960 && height <= 544 -> "540" + interlaced(interlaced)
+            width <= 1024 && height <= 576 -> "576" + interlaced(interlaced)
+            width <= 1280 && height <= 962 -> "720" + interlaced(interlaced)
+            width <= 2560 && height <= 1440 -> "1080" + interlaced(interlaced)
             width <= 4096 && height <= 3072 -> "4K"
             width <= 8192 && height <= 6144 -> "8K"
-            else -> height.toString()
+            else -> height.toString() + interlaced(interlaced)
         }
     }
 
@@ -270,7 +186,6 @@ fun StreamLabel(
     modifier: Modifier = Modifier,
     @StringRes icon: Int? = null,
     count: Int = 0,
-    textOverflow: TextOverflow = TextOverflow.Ellipsis,
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -278,38 +193,37 @@ fun StreamLabel(
         modifier =
             modifier
                 .background(
-                    MaterialTheme.colorScheme.secondaryContainer
-//                        .copy(alpha = .33f)
-                        .compositeOver(MaterialTheme.colorScheme.surfaceVariant),
+                    MaterialTheme.colorScheme.secondaryContainer,
+//                    MaterialTheme.colorScheme.surfaceVariant,
                     shape = RoundedCornerShape(4.dp),
                 ).padding(vertical = 4.dp, horizontal = 6.dp),
     ) {
-        if (icon != null) {
-            Text(
-                text = stringResource(icon),
-                fontFamily = FontAwesome,
+        ProvideTextStyle(
+            TextStyle(
                 color = MaterialTheme.colorScheme.onSurface,
-                fontSize = 10.sp,
-                modifier = Modifier,
-            )
-        }
-        Text(
-            text = text,
-            color = MaterialTheme.colorScheme.onSurface,
-            fontSize = 12.sp,
-            maxLines = 1,
-            overflow = textOverflow,
-            modifier = Modifier,
-        )
-        if (count > 1) {
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Bold,
+            ),
+        ) {
+            if (icon != null) {
+                Text(
+                    text = stringResource(icon),
+                    fontFamily = FontAwesome,
+                    modifier = Modifier,
+                )
+            }
             Text(
-                text = "(+${count - 1})",
-                color = MaterialTheme.colorScheme.onSurface,
-                fontSize = 12.sp,
+                text = text,
                 maxLines = 1,
-                overflow = textOverflow,
+                overflow = TextOverflow.Ellipsis,
                 modifier = Modifier,
             )
+            if (count > 1) {
+                Text(
+                    text = "(+${count - 1})",
+                    modifier = Modifier,
+                )
+            }
         }
     }
 }
@@ -332,3 +246,25 @@ private fun StreamLabelPreview() {
         }
     }
 }
+
+fun formatAudioCodec(codec: String?): String? =
+    when (codec?.lowercase()) {
+        Codec.Audio.TRUEHD -> "TrueHD"
+        Codec.Audio.OGG,
+        Codec.Audio.OPUS,
+        Codec.Audio.VORBIS,
+        -> codec.replaceFirstChar { it.uppercase() }
+
+        null -> null
+        else -> codec.uppercase()
+    }
+
+fun formatSubtitleCodec(codec: String?): String? =
+    when (codec?.lowercase()) {
+        Codec.Subtitle.DVBSUB -> "DVB"
+        Codec.Subtitle.DVDSUB -> "DVD"
+        Codec.Subtitle.PGSSUB -> "PGS"
+        Codec.Subtitle.SUBRIP -> "SRT"
+        null -> null
+        else -> codec.uppercase()
+    }

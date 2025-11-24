@@ -180,7 +180,9 @@ fun SeriesOverviewContent(
             item {
                 // Episode header
                 FocusedEpisodeHeader(
+                    preferences = preferences,
                     ep = focusedEpisode,
+                    chosenStreams = chosenStreams,
                     overviewOnClick = overviewOnClick,
                     modifier = Modifier.fillMaxWidth(.66f),
                 )

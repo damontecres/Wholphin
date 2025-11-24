@@ -426,7 +426,7 @@ fun MovieDetailsContent(
                     modifier =
                         Modifier
                             .bringIntoViewRequester(bringIntoViewRequester)
-                            .padding(bottom = 56.dp),
+                            .padding(bottom = 40.dp),
                 ) {
                     MovieDetailsHeader(
                         preferences = preferences,
@@ -435,8 +435,7 @@ fun MovieDetailsContent(
                         bringIntoViewRequester = bringIntoViewRequester,
                         overviewOnClick = overviewOnClick,
                         Modifier
-                            .fillMaxWidth(.75f)
-                            .padding(bottom = 8.dp),
+                            .fillMaxWidth(.75f),
                     )
                     ExpandablePlayButtons(
                         resumePosition = resumePosition,

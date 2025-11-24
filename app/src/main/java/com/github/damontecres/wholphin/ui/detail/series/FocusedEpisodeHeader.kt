@@ -12,10 +12,13 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
+import com.github.damontecres.wholphin.data.ChosenStreams
 import com.github.damontecres.wholphin.data.model.BaseItem
+import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.components.DotSeparatedRow
 import com.github.damontecres.wholphin.ui.components.OverviewText
 import com.github.damontecres.wholphin.ui.components.SimpleStarRating
+import com.github.damontecres.wholphin.ui.components.VideoStreamDetails
 import com.github.damontecres.wholphin.ui.formatDateTime
 import com.github.damontecres.wholphin.ui.roundMinutes
 import com.github.damontecres.wholphin.ui.seasonEpisode
@@ -24,14 +27,16 @@ import org.jellyfin.sdk.model.extensions.ticks
 
 @Composable
 fun FocusedEpisodeHeader(
+    preferences: UserPreferences,
     ep: BaseItem?,
+    chosenStreams: ChosenStreams?,
     overviewOnClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
     val dto = ep?.data
     Column(
-        verticalArrangement = Arrangement.spacedBy(4.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
         modifier = modifier,
     ) {
         Text(
@@ -71,6 +76,14 @@ fun FocusedEpisodeHeader(
                 dto?.communityRating,
                 Modifier.height(20.dp),
             )
+            dto?.let {
+                VideoStreamDetails(
+                    preferences = preferences,
+                    dto = dto,
+                    itemPlayback = chosenStreams?.itemPlayback,
+                    modifier = Modifier,
+                )
+            }
         }
         OverviewText(
             overview = dto?.overview ?: "",
