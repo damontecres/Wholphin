@@ -30,7 +30,7 @@ class AddPlaylistViewModel
             viewModelScope.launchIO {
                 this@AddPlaylistViewModel.playlistState.setValueOnMain(PlaylistLoadingState.Loading)
                 try {
-                    val playlists = playlistCreator.getPlaylists(mediaType, viewModelScope)
+                    val playlists = playlistCreator.getServerPlaylists(mediaType, viewModelScope)
                     this@AddPlaylistViewModel.playlistState.setValueOnMain(PlaylistLoadingState.Success(playlists))
                 } catch (ex: Exception) {
                     playlistState.setValueOnMain(PlaylistLoadingState.Error(ex))
@@ -43,7 +43,7 @@ class AddPlaylistViewModel
             itemId: UUID,
         ) {
             viewModelScope.launchIO(ExceptionHandler(autoToast = true)) {
-                playlistCreator.addToPlaylist(playlistId, itemId)
+                playlistCreator.addToServerPlaylist(playlistId, itemId)
             }
         }
 
@@ -52,7 +52,7 @@ class AddPlaylistViewModel
             itemId: UUID,
         ) {
             viewModelScope.launchIO(ExceptionHandler(autoToast = true)) {
-                val playlistId = playlistCreator.createPlaylist(playlistName, listOf(itemId))
+                val playlistId = playlistCreator.createServerPlaylist(playlistName, listOf(itemId))
                 if (playlistId == null) {
                     showToast(context, "Error creating playlist", Toast.LENGTH_LONG)
                 }

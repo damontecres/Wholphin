@@ -129,7 +129,7 @@ fun CollectionFolderTv(
                     onClickItem = { _, item ->
                         preferencesViewModel.navigationManager.navigateTo(item.destination())
                     },
-                    playEnabled = false,
+                    playEnabled = true,
                 )
             }
             // Genres

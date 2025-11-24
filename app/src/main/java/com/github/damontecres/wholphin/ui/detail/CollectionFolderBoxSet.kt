@@ -44,6 +44,6 @@ fun CollectionFolderBoxSet(
             showHeader = position < columns
         },
         params = CollectionFolderGridParameters.POSTER,
-        playEnabled = true,
+        playEnabled = false,
     )
 }

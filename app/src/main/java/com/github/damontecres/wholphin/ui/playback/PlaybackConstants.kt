@@ -37,21 +37,24 @@ val PrefContentScale.scale: ContentScale
 val BaseItemKind.playable: Boolean
     get() =
         when (this) {
+            BaseItemKind.EPISODE,
+            BaseItemKind.MOVIE,
+            BaseItemKind.MUSIC_VIDEO,
+            BaseItemKind.TRAILER,
+            BaseItemKind.VIDEO,
+            -> true
+
+            // TODO add support for these eventually
+            BaseItemKind.LIVE_TV_CHANNEL,
+            BaseItemKind.LIVE_TV_PROGRAM,
+            BaseItemKind.PROGRAM,
+            BaseItemKind.RECORDING,
+            BaseItemKind.TV_CHANNEL,
+            BaseItemKind.TV_PROGRAM,
             BaseItemKind.AUDIO_BOOK,
             BaseItemKind.AUDIO,
             BaseItemKind.CHANNEL,
-            BaseItemKind.EPISODE,
-            BaseItemKind.MOVIE,
-            BaseItemKind.LIVE_TV_CHANNEL,
-            BaseItemKind.LIVE_TV_PROGRAM,
-            BaseItemKind.MUSIC_VIDEO,
-            BaseItemKind.PROGRAM,
-            BaseItemKind.RECORDING,
-            BaseItemKind.TRAILER,
-            BaseItemKind.TV_CHANNEL,
-            BaseItemKind.TV_PROGRAM,
-            BaseItemKind.VIDEO,
-            -> true
+            -> false
 
             BaseItemKind.AGGREGATE_FOLDER,
             BaseItemKind.BASE_PLUGIN_FOLDER,
