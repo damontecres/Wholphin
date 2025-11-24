@@ -9,8 +9,8 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
@@ -84,15 +84,18 @@ fun VideoStreamDetails(
             if (audioCount == 0 || audioStream == null) {
                 stringResource(R.string.none)
             } else {
-                val title =
-                    listOfNotNull(
-                        languageName(audioStream.language),
-                        audioStream.codec?.uppercase(),
-                        audioStream.channelLayout,
-                    ).joinToString(" ")
-                listOfNotNull(title, "(+${audioCount - 1})".takeIf { audioCount > 1 }).joinToString(" ")
+                listOfNotNull(
+                    languageName(audioStream.language),
+                    audioStream.codec?.uppercase(),
+                    audioStream.channelLayout,
+                ).joinToString(" ")
             }
-        StreamLabel(audio, Modifier.widthIn(max = 200.dp))
+        StreamLabel(
+            text = audio,
+            count = audioCount,
+            icon = R.string.fa_volume_low,
+            modifier = Modifier.widthIn(max = 200.dp),
+        )
 
         val subtitleStream = remember(dto, itemPlayback) { chooseStream(dto, itemPlayback, MediaStreamType.SUBTITLE, preferences) }
         val subtitleCount = remember(source) { (source?.embeddedSubtitleCount ?: 0) + (source?.externalSubtitlesCount ?: 0) }
@@ -105,11 +108,15 @@ fun VideoStreamDetails(
                 listOfNotNull(
                     languageName(subtitleStream.language),
                     subtitleStream.codec?.uppercase(),
-                    "(+${subtitleCount - 1})".takeIf { subtitleCount > 1 },
                 ).joinToString(" ")
             }
         subtitle?.let {
-            StreamLabel(it, Modifier.widthIn(max = 160.dp))
+            StreamLabel(
+                text = it,
+                count = subtitleCount,
+                icon = R.string.fa_closed_captioning,
+                modifier = Modifier.widthIn(max = 160.dp),
+            )
         }
     }
 }
@@ -262,36 +269,48 @@ fun StreamLabel(
     text: String,
     modifier: Modifier = Modifier,
     @StringRes icon: Int? = null,
-    textOverflow: TextOverflow = TextOverflow.MiddleEllipsis,
+    count: Int = 0,
+    textOverflow: TextOverflow = TextOverflow.Ellipsis,
 ) {
     Row(
+        verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(2.dp),
         modifier =
             modifier
                 .background(
                     MaterialTheme.colorScheme.secondaryContainer
-                        .copy(alpha = .66f)
-                        .compositeOver(MaterialTheme.colorScheme.surface),
+//                        .copy(alpha = .33f)
+                        .compositeOver(MaterialTheme.colorScheme.surfaceVariant),
                     shape = RoundedCornerShape(4.dp),
-                ).padding(4.dp),
+                ).padding(vertical = 4.dp, horizontal = 6.dp),
     ) {
         if (icon != null) {
             Text(
                 text = stringResource(icon),
                 fontFamily = FontAwesome,
                 color = MaterialTheme.colorScheme.onSurface,
-                fontSize = 14.sp,
+                fontSize = 10.sp,
                 modifier = Modifier,
             )
         }
         Text(
             text = text,
             color = MaterialTheme.colorScheme.onSurface,
-            fontSize = 14.sp,
+            fontSize = 12.sp,
             maxLines = 1,
             overflow = textOverflow,
             modifier = Modifier,
         )
+        if (count > 1) {
+            Text(
+                text = "(+${count - 1})",
+                color = MaterialTheme.colorScheme.onSurface,
+                fontSize = 12.sp,
+                maxLines = 1,
+                overflow = textOverflow,
+                modifier = Modifier,
+            )
+        }
     }
 }
 
@@ -307,8 +326,9 @@ private fun StreamLabelPreview() {
                     .padding(8.dp),
         ) {
             StreamLabel("1080p")
+            StreamLabel("H264")
             StreamLabel("HDR")
-            StreamLabel("AC3 5.1", icon = R.string.fa_volume_low)
+            StreamLabel("AC3 5.1", icon = R.string.fa_volume_high, count = 2)
         }
     }
 }

@@ -12,7 +12,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
@@ -61,7 +60,7 @@ fun MovieDetailsHeader(
 
         Column(
             verticalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.alpha(0.75f),
+            modifier = Modifier, // .alpha(0.75f),
         ) {
             Row(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
