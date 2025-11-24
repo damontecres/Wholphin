@@ -26,14 +26,17 @@ import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.NavigationDrawerScope
 import androidx.tv.material3.Text
 import androidx.tv.material3.surfaceColorAtElevation
+import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.preferences.AppPreference
 import com.github.damontecres.wholphin.preferences.AppThemeColors
 import com.github.damontecres.wholphin.ui.AspectRatios
 import com.github.damontecres.wholphin.ui.cards.BannerCard
 import com.github.damontecres.wholphin.ui.cards.SeasonCard
 import com.github.damontecres.wholphin.ui.cards.WatchedIcon
+import com.github.damontecres.wholphin.ui.components.ExpandableFaButton
 import com.github.damontecres.wholphin.ui.nav.NavDrawerItem
 import com.github.damontecres.wholphin.ui.nav.NavItem
+import com.github.damontecres.wholphin.ui.playback.PlaybackButton
 import com.github.damontecres.wholphin.ui.preferences.SliderPreference
 import com.github.damontecres.wholphin.ui.preferences.SwitchPreference
 import kotlinx.coroutines.flow.Flow
@@ -234,6 +237,37 @@ private fun ThemeExample(theme: AppThemeColors) {
                                 interactionSource = source,
                             )
                         }
+                    }
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(16.dp),
+                        modifier = Modifier.background(MaterialTheme.colorScheme.surfaceVariant),
+                    ) {
+                        PlaybackButton(
+                            modifier = Modifier,
+                            iconRes = R.drawable.baseline_play_arrow_24,
+                            onClick = {},
+                            onControllerInteraction = {},
+                        )
+                        PlaybackButton(
+                            modifier = Modifier,
+                            iconRes = R.drawable.baseline_play_arrow_24,
+                            onClick = {},
+                            onControllerInteraction = {},
+                            interactionSource = source,
+                        )
+                        PlaybackButton(
+                            modifier = Modifier,
+                            iconRes = R.drawable.baseline_pause_24,
+                            onClick = {},
+                            onControllerInteraction = {},
+                        )
+                        PlaybackButton(
+                            modifier = Modifier,
+                            iconRes = R.drawable.baseline_pause_24,
+                            onClick = {},
+                            onControllerInteraction = {},
+                            interactionSource = source,
+                        )
                     }
                 }
             }

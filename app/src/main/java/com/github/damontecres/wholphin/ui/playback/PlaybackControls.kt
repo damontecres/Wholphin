@@ -56,13 +56,16 @@ import androidx.tv.material3.Button
 import androidx.tv.material3.ButtonDefaults
 import androidx.tv.material3.Icon
 import androidx.tv.material3.ListItem
+import androidx.tv.material3.LocalContentColor
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.R
+import com.github.damontecres.wholphin.preferences.AppThemeColors
 import com.github.damontecres.wholphin.ui.AppColors
 import com.github.damontecres.wholphin.ui.seekBack
 import com.github.damontecres.wholphin.ui.seekForward
 import com.github.damontecres.wholphin.ui.skipStringRes
+import com.github.damontecres.wholphin.ui.theme.LocalTheme
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import kotlinx.coroutines.delay
@@ -426,6 +429,7 @@ fun PlaybackButton(
     onControllerInteraction: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
+    interactionSource: MutableInteractionSource? = null,
 ) {
     val selectedColor = MaterialTheme.colorScheme.border
     Button(
@@ -438,6 +442,7 @@ fun PlaybackButton(
                 focusedContainerColor = selectedColor,
             ),
         contentPadding = PaddingValues(4.dp),
+        interactionSource = interactionSource,
         modifier =
             modifier
                 .padding(4.dp)
@@ -448,7 +453,12 @@ fun PlaybackButton(
             modifier = Modifier.fillMaxSize(),
             painter = painterResource(iconRes),
             contentDescription = "",
-            tint = MaterialTheme.colorScheme.onSurface,
+            tint =
+                if (LocalTheme.current == AppThemeColors.OLED_BLACK) {
+                    LocalContentColor.current
+                } else {
+                    MaterialTheme.colorScheme.onSurface
+                },
         )
     }
 }

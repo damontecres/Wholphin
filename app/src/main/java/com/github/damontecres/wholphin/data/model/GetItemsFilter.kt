@@ -52,56 +52,65 @@ data class GetItemsFilter(
         return newFilter
     }
 
-    fun applyTo(req: GetItemsRequest) =
-        req.copy(
-            includeItemTypes = includeItemTypes,
-            isFavorite = favorite,
-            genreIds = genres,
-            minCommunityRating = minCommunityRating,
-            personIds = persons,
-            isPlayed = played,
-            studioIds = studios,
-            tags = tags,
-            officialRatings = officialRatings,
-            years =
-                buildSet {
-                    years?.letNotEmpty(::addAll)
-                    decades?.forEach { addAll(it..<(it + 10)) }
-                },
-            is4k =
-                videoTypes?.letNotEmpty {
-                    videoTypes.contains(FilterVideoType.FOUR_K).takeIf { it }
-                },
-            isHd =
-                videoTypes?.letNotEmpty {
-                    if (videoTypes.contains(FilterVideoType.HD)) {
-                        true
-                    } else if (videoTypes.contains(FilterVideoType.SD)) {
-                        false
-                    } else {
-                        null
-                    }
-                },
-            is3d =
-                videoTypes?.letNotEmpty {
-                    videoTypes.contains(FilterVideoType.THREE_D).takeIf { it }
-                },
-            videoTypes =
-                videoTypes?.letNotEmpty {
-                    it.mapNotNull {
-                        when (it) {
-                            FilterVideoType.FOUR_K,
-                            FilterVideoType.HD,
-                            FilterVideoType.SD,
-                            FilterVideoType.THREE_D,
-                            -> null
+    /**
+     * Add the filtering from this into the [GetItemsRequest], overwriting the fields
+     *
+     * @param req the [GetItemsRequest]
+     * @param overwriteIncludeTypes whether the includeItemTypes field should be overwritten (used from this) or used as-is from the [GetItemsRequest]
+     *
+     */
+    fun applyTo(
+        req: GetItemsRequest,
+        overwriteIncludeTypes: Boolean = true,
+    ) = req.copy(
+        includeItemTypes = if (overwriteIncludeTypes) includeItemTypes else req.includeItemTypes,
+        isFavorite = favorite,
+        genreIds = genres,
+        minCommunityRating = minCommunityRating,
+        personIds = persons,
+        isPlayed = played,
+        studioIds = studios,
+        tags = tags,
+        officialRatings = officialRatings,
+        years =
+            buildSet {
+                years?.letNotEmpty(::addAll)
+                decades?.forEach { addAll(it..<(it + 10)) }
+            },
+        is4k =
+            videoTypes?.letNotEmpty {
+                videoTypes.contains(FilterVideoType.FOUR_K).takeIf { it }
+            },
+        isHd =
+            videoTypes?.letNotEmpty {
+                if (videoTypes.contains(FilterVideoType.HD)) {
+                    true
+                } else if (videoTypes.contains(FilterVideoType.SD)) {
+                    false
+                } else {
+                    null
+                }
+            },
+        is3d =
+            videoTypes?.letNotEmpty {
+                videoTypes.contains(FilterVideoType.THREE_D).takeIf { it }
+            },
+        videoTypes =
+            videoTypes?.letNotEmpty {
+                it.mapNotNull {
+                    when (it) {
+                        FilterVideoType.FOUR_K,
+                        FilterVideoType.HD,
+                        FilterVideoType.SD,
+                        FilterVideoType.THREE_D,
+                        -> null
 
-                            FilterVideoType.BLU_RAY -> VideoType.BLU_RAY
-                            FilterVideoType.DVD -> VideoType.DVD
-                        }
+                        FilterVideoType.BLU_RAY -> VideoType.BLU_RAY
+                        FilterVideoType.DVD -> VideoType.DVD
                     }
-                },
-        )
+                }
+            },
+    )
 
     fun applyTo(req: GetPersonsRequest) =
         req.copy(
