@@ -82,23 +82,23 @@
     <string name="background">Sfondo</string>
     <plurals name="behind_the_scenes">
         <item quantity="one">Dietro le Scene</item>
-        <item quantity="many"></item>
-        <item quantity="other"></item>
+        <item quantity="many"/>
+        <item quantity="other"/>
     </plurals>
     <plurals name="theme_songs">
         <item quantity="one">Sigle</item>
-        <item quantity="many"></item>
-        <item quantity="other"></item>
+        <item quantity="many"/>
+        <item quantity="other"/>
     </plurals>
     <plurals name="interviews">
         <item quantity="one">Interviste</item>
-        <item quantity="many"></item>
-        <item quantity="other"></item>
+        <item quantity="many"/>
+        <item quantity="other"/>
     </plurals>
     <plurals name="scenes">
         <item quantity="one">Scene</item>
-        <item quantity="many"></item>
-        <item quantity="other"></item>
+        <item quantity="many"/>
+        <item quantity="other"/>
     </plurals>
     <string name="watch_live">Guarda diretta</string>
     <string name="tv_guide">Guida TV</string>
@@ -125,7 +125,44 @@
     <string name="extras">Extra</string>
     <plurals name="other_extras">
         <item quantity="one">Altri</item>
-        <item quantity="many"></item>
-        <item quantity="other"></item>
+        <item quantity="many"/>
+        <item quantity="other"/>
     </plurals>
+    <string name="bold_font">Testo in grassetto</string>
+    <string name="player_backend">Backend di riproduzione</string>
+    <string name="mpv_hardware_decoding">MPV: Usa decodifica hardware</string>
+    <string name="disable_if_crash">Disabilita se riscontri crash</string>
+    <string name="mpv_options">Opzioni MPV</string>
+    <string name="exoplayer_options">Opzioni ExoPlayer</string>
+    <string name="skip_segment_unknown">Salta Segmento</string>
+    <string name="skip_segment_commercial">Salta Pubblicità</string>
+    <string name="skip_segment_preview">Salta Anteprima</string>
+    <string name="skip_segment_intro">Salta Intro</string>
+    <string name="played">Riprodotto</string>
+    <string name="filter">Filtra</string>
+    <string name="year">Anno</string>
+    <string name="decade">Decennio</string>
+    <string name="remove">Rimuovi</string>
+    <string name="install_update">Installa aggiornamento</string>
+    <string name="installed_version">Versione installata</string>
+    <string name="license_info">Informazioni Licenza</string>
+    <string name="intro">Intro</string>
+    <string name="jump_letters">#ABCDEFGHIJKLMNOPQRSTUVWXYZ</string>
+    <string name="mark_entire_series_as_played">Segnare tutta la serie come vista?</string>
+    <string name="mark_entire_series_as_unplayed">Segnare tutta la serie come non vista?</string>
+    <string name="home">Home</string>
+    <string name="more_like_this">Simili a questo</string>
+    <string name="more">Altro</string>
+    <string name="play_from_here">Riproduci da qui</string>
+    <string name="playback_debug_info">Mostra info debug riproduzione</string>
+    <string name="path">Percorso</string>
+    <string name="play_count">Numero di riproduzioni</string>
+    <string name="no_update_available">Nessun aggiornamento disponibile</string>
+    <string name="none">Nessuno</string>
+    <string name="outro">Outro</string>
+    <string name="no_data">Nessun dato</string>
+    <string name="name">Nome</string>
+    <string name="next_up">Prossimo Episodio</string>
+    <string name="no_scheduled_recordings">Nessuna registrazione programmata</string>
+    <string name="people">Persone</string>
 </resources>
