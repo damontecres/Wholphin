@@ -302,4 +302,5 @@
     </plurals>
     <string name="dolby_vision">Dolby Vision</string>
     <string name="dolby_atmos">Dolby Atmos</string>
+    <string name="playback_overrides">Remplacer la lecture</string>
 </resources>
