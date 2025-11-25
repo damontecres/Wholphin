@@ -571,7 +571,7 @@ fun CollectionFolderGrid(
                         backgroundLoading == LoadingState.Loading,
                         modifier =
                             Modifier
-                                .align(Alignment.BottomEnd)
+                                .align(Alignment.Center)
                                 .padding(16.dp),
                     ) {
                         CircularProgress(

@@ -21,7 +21,10 @@ fun CircularProgress(modifier: Modifier = Modifier) {
     Box(modifier = modifier) {
         CircularProgressIndicator(
             color = MaterialTheme.colorScheme.border,
-            modifier = Modifier.align(Alignment.Center),
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .align(Alignment.Center),
         )
     }
 }
