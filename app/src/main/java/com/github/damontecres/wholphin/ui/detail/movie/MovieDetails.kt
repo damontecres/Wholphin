@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -61,7 +62,6 @@ import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.ExpandablePlayButtons
 import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.components.Optional
-import com.github.damontecres.wholphin.ui.components.VideoStreamDetails
 import com.github.damontecres.wholphin.ui.components.chooseStream
 import com.github.damontecres.wholphin.ui.components.chooseVersionParams
 import com.github.damontecres.wholphin.ui.data.AddPlaylistViewModel
@@ -391,7 +391,6 @@ fun MovieDetailsContent(
                         Modifier
                             .fillMaxWidth()
                             .bringIntoViewRequester(bringIntoViewRequester),
-//                            .padding(bottom = 16.dp),
                 ) {
                     MovieDetailsHeader(
                         preferences = preferences,
@@ -399,7 +398,10 @@ fun MovieDetailsContent(
                         chosenStreams = chosenStreams,
                         bringIntoViewRequester = bringIntoViewRequester,
                         overviewOnClick = overviewOnClick,
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 8.dp),
                     )
                     ExpandablePlayButtons(
                         resumePosition = resumePosition,
@@ -423,14 +425,6 @@ fun MovieDetailsContent(
                         modifier = Modifier.focusRequester(focusRequesters[HEADER_ROW]),
                     )
                 }
-            }
-            item {
-                VideoStreamDetails(
-                    preferences = preferences,
-                    dto = dto,
-                    itemPlayback = chosenStreams?.itemPlayback,
-                    modifier = Modifier,
-                )
             }
             if (people.isNotEmpty()) {
                 item {

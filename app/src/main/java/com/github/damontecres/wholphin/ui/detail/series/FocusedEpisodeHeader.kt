@@ -2,10 +2,8 @@ package com.github.damontecres.wholphin.ui.detail.series
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
@@ -17,7 +15,7 @@ import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.components.DotSeparatedRow
 import com.github.damontecres.wholphin.ui.components.OverviewText
-import com.github.damontecres.wholphin.ui.components.SimpleStarRating
+import com.github.damontecres.wholphin.ui.components.VideoStreamDetails
 import com.github.damontecres.wholphin.ui.formatDateTime
 import com.github.damontecres.wholphin.ui.roundMinutes
 import com.github.damontecres.wholphin.ui.seasonEpisode
@@ -45,10 +43,8 @@ fun FocusedEpisodeHeader(
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier,
         )
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            val details =
+        val details =
+            remember(dto) {
                 buildList {
                     dto?.seasonEpisode?.let(::add)
                     dto?.premiereDate?.let { add(formatDateTime(it)) }
@@ -56,24 +52,23 @@ fun FocusedEpisodeHeader(
                     duration
                         ?.roundMinutes
                         ?.toString()
-                        ?.let {
-                            add(it)
-                        }
-                    dto?.officialRating?.let(::add)
+                        ?.let(::add)
                     dto?.timeRemaining?.roundMinutes?.let { add("$it left") }
+                    dto?.officialRating?.let(::add)
                 }
-            DotSeparatedRow(
-                texts = details,
-                textStyle = MaterialTheme.typography.titleSmall,
-            )
-        }
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            SimpleStarRating(
-                dto?.communityRating,
-                Modifier.height(20.dp),
+            }
+        DotSeparatedRow(
+            texts = details,
+            rating = dto?.communityRating,
+            textStyle = MaterialTheme.typography.titleSmall,
+        )
+
+        if (dto != null) {
+            VideoStreamDetails(
+                preferences = preferences,
+                dto = dto,
+                itemPlayback = chosenStreams?.itemPlayback,
+                modifier = Modifier,
             )
         }
         OverviewText(
