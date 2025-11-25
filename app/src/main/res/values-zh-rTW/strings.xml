@@ -41,9 +41,9 @@
     <string name="show">顯示</string>
     <string name="shuffle">隨機播放</string>
     <string name="skip">跳過</string>
-    <string name="sort_by_date_added">依加入時間</string>
-    <string name="sort_by_date_episode_added">依劇集加入時間</string>
-    <string name="sort_by_date_released">依發佈時間</string>
+    <string name="sort_by_date_added">加入日期</string>
+    <string name="sort_by_date_episode_added">劇集加入日期</string>
+    <string name="sort_by_date_released">發行日期</string>
     <string name="sort_by_name">名稱</string>
     <string name="sort_by_random">隨機</string>
     <string name="submit">提交</string>
@@ -57,7 +57,7 @@
         <item quantity="other">預告片</item>
     </plurals>
     <string name="tv_guide">指南</string>
-    <string name="updates">所有更新</string>
+    <string name="updates">更新</string>
     <string name="version">版本</string>
     <string name="video_scale">畫面比例</string>
     <string name="video">影片</string>
@@ -111,7 +111,7 @@
     <string name="nav_drawer_pins_summary">選擇預設顯示項目，其餘將會隱藏</string>
     <string name="nav_drawer_pins">自訂側邊選單項目</string>
     <string name="nav_drawer_switch_on_focus_summary_off">點擊切換頁面</string>
-    <string name="play_theme_music">播放主題曲</string>
+    <string name="play_theme_music">播放主題音樂</string>
     <string name="remember_selected_tab">記住選取的分頁</string>
     <string name="send_crash_reports">傳送崩潰報告</string>
     <string name="settings">設定</string>
@@ -133,7 +133,7 @@
     <string name="mpv_options">MPV 選項</string>
     <string name="exoplayer_options">ExoPlayer 選項</string>
     <string name="skip_segment_commercial">跳過廣告</string>
-    <string name="skip_segment_preview">跳過預覽</string>
+    <string name="skip_segment_preview">跳過預告</string>
     <string name="filter">篩選</string>
     <string name="year">年份</string>
     <string name="remove">移除</string>
@@ -155,11 +155,11 @@
     <string name="collection">系列</string>
     <string name="collections">系列</string>
     <string name="commercial">廣告</string>
-    <string name="community_rating">社群評分</string>
+    <string name="community_rating">IMDb 評分</string>
     <string name="compose_error_message_title">發生錯誤！請按下按鈕將日誌傳送到您的伺服器。</string>
     <string name="confirm">確認</string>
     <string name="continue_watching">繼續觀看</string>
-    <string name="critic_rating">專業評分</string>
+    <string name="critic_rating">影評人評分</string>
     <string name="decimal_seconds">%.1f 秒</string>
     <string name="default_track">預設</string>
     <string name="delete">刪除</string>
@@ -208,7 +208,7 @@
     <string name="play_with_transcoding">轉碼播放</string>
     <string name="one_click_pause_summary_on">按下方向鍵中央以暫停/播放</string>
     <plurals name="deleted_scenes">
-        <item quantity="other">刪減片段</item>
+        <item quantity="other">刪剪片段</item>
     </plurals>
     <plurals name="downloads">
         <item quantity="other">%s 次下載</item>
@@ -234,6 +234,37 @@
     <string name="skip_segment_outro">跳過片尾</string>
     <string name="skip_segment_intro">跳過片頭</string>
     <string name="player_backend">播放引擎</string>
-    <string name="subtitle_download_too_long">下載速度過慢，建議重新播放</string>
+    <string name="subtitle_download_too_long">下載時間過長，建議重新播放</string>
     <string name="update_url_summary">用於檢查程式更新的 URL</string>
+    <string name="external_track">外部</string>
+    <string name="forced_track">強制</string>
+    <string name="sort_by_date_played">播放日期</string>
+    <string name="unknown">未知</string>
+    <plurals name="scenes">
+        <item quantity="other">精選片段</item>
+    </plurals>
+    <string name="extras">特別收錄</string>
+    <plurals name="samples">
+        <item quantity="other">試看片段</item>
+    </plurals>
+    <plurals name="featurettes">
+        <item quantity="other">幕後特輯</item>
+    </plurals>
+    <string name="skip_back_preference">倒退</string>
+    <string name="skip_forward_preference">快轉</string>
+    <string name="dolby_vision">杜比視界 (Dolby Vision)</string>
+    <string name="dolby_atmos">杜比全景聲 (Dolby Atmos)</string>
+    <string name="decade">年代</string>
+    <string name="skip_segment_unknown">跳過片段</string>
+    <string name="played">已觀看</string>
+    <string name="aired_episode_order">播出順序</string>
+    <string name="tv_season">季</string>
+    <string name="tv_seasons">季數</string>
+    <string name="skip_back_on_resume_preference">繼續播放時自動倒退</string>
+    <string name="skip_commercials_behavior">跳過廣告方式</string>
+    <string name="skip_intro_behavior">跳過片頭方式</string>
+    <string name="skip_outro_behavior">跳過片尾方式</string>
+    <string name="skip_previews_behavior">跳過預告方式</string>
+    <string name="skip_recap_behavior">跳過前情提要方式</string>
+    <string name="send_crash_reports_summary">將嘗試傳送至最近連線的伺服器</string>
 </resources>
