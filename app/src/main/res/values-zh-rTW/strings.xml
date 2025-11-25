@@ -5,7 +5,7 @@
     <string name="home">首頁</string>
     <string name="immediate">立即</string>
     <string name="intro">片頭</string>
-    <string name="library">全部</string>
+    <string name="library">媒體</string>
     <string name="loading">載入中…</string>
     <string name="more_like_this">類似作品</string>
     <string name="more">更多</string>
@@ -18,7 +18,7 @@
     <string name="no_update_available">無可用更新</string>
     <string name="none">無</string>
     <string name="path">路徑</string>
-    <string name="play_count">播放數量</string>
+    <string name="play_count">播放次數</string>
     <string name="play">播放</string>
     <string name="playback_speed">播放速率</string>
     <string name="playlist">播放清單</string>
@@ -116,7 +116,7 @@
     <string name="send_crash_reports">傳送崩潰報告</string>
     <string name="settings">設定</string>
     <string name="update_available">有可用更新</string>
-    <string name="update_url">更新 URL</string>
+    <string name="update_url">更新的 URL</string>
     <string name="font_size">字體大小</string>
     <string name="font_color">字體顏色</string>
     <string name="font_opacity">字體透明度</string>
@@ -176,7 +176,7 @@
     <string name="favorites">我的最愛</string>
     <string name="go_to_series">前往劇集</string>
     <string name="go_to">前往</string>
-    <string name="hide_controller_timeout">隱藏播放控制項</string>
+    <string name="hide_controller_timeout">隱藏播放控制列</string>
     <string name="hide_debug_info">隱藏偵錯資訊</string>
     <string name="error_loading_collection">載入系列 %1$s 失敗</string>
     <string name="genres">類型</string>
@@ -252,8 +252,8 @@
     </plurals>
     <string name="skip_back_preference">倒退</string>
     <string name="skip_forward_preference">快轉</string>
-    <string name="dolby_vision">杜比視界 (Dolby Vision)</string>
-    <string name="dolby_atmos">杜比全景聲 (Dolby Atmos)</string>
+    <string name="dolby_vision">杜比視界</string>
+    <string name="dolby_atmos">杜比全景聲</string>
     <string name="decade">年代</string>
     <string name="skip_segment_unknown">跳過片段</string>
     <string name="played">已觀看</string>
@@ -267,4 +267,6 @@
     <string name="skip_previews_behavior">跳過預告方式</string>
     <string name="skip_recap_behavior">跳過前情提要方式</string>
     <string name="send_crash_reports_summary">將嘗試傳送至最近連線的伺服器</string>
+    <string name="send_app_logs">傳送程式日誌到目前伺服器</string>
+    <string name="send_app_logs_summary">有助於偵錯</string>
 </resources>
