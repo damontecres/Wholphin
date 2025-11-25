@@ -185,8 +185,8 @@
     <string name="extras">Bonus</string>
     <plurals name="behind_the_scenes">
         <item quantity="one">Dans les coulisses</item>
-        <item quantity="many"></item>
-        <item quantity="other"></item>
+        <item quantity="many"/>
+        <item quantity="other"/>
     </plurals>
     <string name="auto_play_next_delay">Délai avant de lire \"À suivre\"</string>
     <string name="auto_play_next">Lecture automatique de \"À suivre\"</string>
@@ -249,8 +249,8 @@
     <string name="top_unwatched">Les mieux notés non vus</string>
     <plurals name="shorts">
         <item quantity="one">Courts-métrages</item>
-        <item quantity="many"></item>
-        <item quantity="other"></item>
+        <item quantity="many"/>
+        <item quantity="other"/>
     </plurals>
     <plurals name="hours">
         <item quantity="one">%d heure</item>
@@ -281,13 +281,13 @@
     <string name="skip_recap_behavior">Comportement de saut du récapitulatif</string>
     <plurals name="theme_songs">
         <item quantity="one">Chanson à thème</item>
-        <item quantity="many"></item>
-        <item quantity="other"></item>
+        <item quantity="many"/>
+        <item quantity="other"/>
     </plurals>
     <plurals name="theme_videos">
         <item quantity="one">Vidéos à thème</item>
-        <item quantity="many"></item>
-        <item quantity="other"></item>
+        <item quantity="many"/>
+        <item quantity="other"/>
     </plurals>
     <string name="combine_continue_next"><![CDATA[Combiner "Continuer à regarder" & "À suivre"]]></string>
     <string name="download_and_update"><![CDATA[Télécharger & Mettre à jour]]></string>
@@ -297,7 +297,9 @@
     <string name="one_click_pause_summary_on">Appuyez au centre de la croix directionnelle pour mettre en pause/reprendre</string>
     <plurals name="featurettes">
         <item quantity="one">Featurettes</item>
-        <item quantity="many"></item>
-        <item quantity="other"></item>
+        <item quantity="many"/>
+        <item quantity="other"/>
     </plurals>
+    <string name="dolby_vision">Dolby Vision</string>
+    <string name="dolby_atmos">Dolby Atmos</string>
 </resources>
