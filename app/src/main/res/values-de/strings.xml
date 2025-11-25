@@ -119,13 +119,13 @@
     <string name="none">Keine</string>
     <string name="play_from_here">Von hier wiedergeben</string>
     <string name="play">Ansehen</string>
-    <string name="playback_speed">Wiedergabe geschwindigkeit</string>
+    <string name="playback_speed">Wiedergabegeschwindigkeit</string>
     <string name="playback">Wiedergabe</string>
     <string name="preview">Vorschau</string>
     <string name="profile_specific_settings">Benutzerprofil Einstellungen</string>
     <string name="queue">Warteschlange</string>
     <string name="recap">Rückblick</string>
-    <string name="recently_released">Zuletzt herausgebracht</string>
+    <string name="recently_released">Zuletzt veröffentlicht</string>
     <string name="record_program">Programm aufnehmen</string>
     <string name="record_series">Serie aufnehmen</string>
     <string name="remove_favorite">Nicht favorisieren</string>
@@ -184,8 +184,8 @@
     <string name="outro">Outro</string>
     <string name="play_count">Wiedergabe Anzahl</string>
     <string name="playback_debug_info">Zeige Wiedergabe Debug infos</string>
-    <string name="playlist">Playlist</string>
-    <string name="playlists">Playlisten</string>
+    <string name="playlist">Wiedergabeliste</string>
+    <string name="playlists">Wiedergabelisten</string>
     <string name="show_next_up_when">Zeige als nächstes</string>
     <string name="show">Zeigen</string>
     <string name="sort_by_name">Name</string>
@@ -280,4 +280,10 @@
     <string name="skip_segment_recap">Rückblick Überspringen</string>
     <string name="skip_segment_outro">Outro Überspringen</string>
     <string name="skip_segment_intro">Intro Überspringen</string>
+    <string name="filter">Filter</string>
+    <string name="year">Jahr</string>
+    <string name="decade">Jahrzehnt</string>
+    <string name="remove">Entfernen</string>
+    <string name="dolby_vision">Dolby Vision</string>
+    <string name="dolby_atmos">Dolby Atmos</string>
 </resources>
