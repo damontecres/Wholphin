@@ -177,8 +177,8 @@
     <string name="trailer">Trailer</string>
     <plurals name="trailers">
         <item quantity="one">I trailer</item>
-        <item quantity="many"></item>
-        <item quantity="other"></item>
+        <item quantity="many"/>
+        <item quantity="other"/>
     </plurals>
     <string name="tv_dvr_schedule">Programma DVR</string>
     <string name="video_scale">Scala Video</string>
@@ -214,18 +214,18 @@
     <string name="skip_segment_outro">Salta Outro</string>
     <plurals name="theme_videos">
         <item quantity="one">Temi Video</item>
-        <item quantity="many"></item>
-        <item quantity="other"></item>
+        <item quantity="many"/>
+        <item quantity="other"/>
     </plurals>
     <plurals name="deleted_scenes">
         <item quantity="one">Scene Eliminate</item>
-        <item quantity="many"></item>
-        <item quantity="other"></item>
+        <item quantity="many"/>
+        <item quantity="other"/>
     </plurals>
     <plurals name="shorts">
         <item quantity="one">Video brevi</item>
-        <item quantity="many"></item>
-        <item quantity="other"></item>
+        <item quantity="many"/>
+        <item quantity="other"/>
     </plurals>
     <string name="advanced_settings">Impostazioni Avanzate</string>
     <string name="check_for_updates">Cerca aggiornamenti</string>
@@ -255,13 +255,13 @@
     <string name="remember_selected_tab">Ricorda schede selezionate</string>
     <plurals name="samples">
         <item quantity="one">Campioni</item>
-        <item quantity="many"></item>
-        <item quantity="other"></item>
+        <item quantity="many"/>
+        <item quantity="other"/>
     </plurals>
     <plurals name="featurettes">
         <item quantity="one">Featurettes</item>
-        <item quantity="many"></item>
-        <item quantity="other"></item>
+        <item quantity="many"/>
+        <item quantity="other"/>
     </plurals>
     <string name="combine_continue_next"><![CDATA[Combina Continua a Guardare & Prossimo Episodio]]></string>
     <string name="downmix_stereo">Converti sempre in stereo</string>
@@ -271,13 +271,13 @@
     <string name="runtime_sort">Durata</string>
     <plurals name="clips">
         <item quantity="one">Clip</item>
-        <item quantity="many"></item>
-        <item quantity="other"></item>
+        <item quantity="many"/>
+        <item quantity="other"/>
     </plurals>
     <plurals name="downloads">
-        <item quantity="one">%s Scaricamento</item>
-        <item quantity="many">%s Scaricamenti</item>
-        <item quantity="other">%s Scaricamenti</item>
+        <item quantity="one">%s scaricamento</item>
+        <item quantity="many">%s scaricamenti</item>
+        <item quantity="other">%s scaricamenti</item>
     </plurals>
     <string name="ac3_supported">Il dispositivo supporta AC3/Dolby Digital</string>
     <string name="advanced_ui">Interfaccia avanzata</string>
