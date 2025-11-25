@@ -43,11 +43,11 @@
     <string name="playback_speed">Velocità di riproduzione</string>
     <string name="playback">Riproduzione</string>
     <string name="playlist">Playlist</string>
-    <string name="playlists">Playlist</string>
+    <string name="playlists">Le Playlist</string>
     <string name="preview">Anteprima</string>
     <string name="profile_specific_settings">Impostazioni profilo utente</string>
     <string name="queue">Coda</string>
-    <string name="recap">Recap</string>
+    <string name="recap">Riassunto</string>
     <string name="recently_added_in">Aggiunti di recente in %1$s</string>
     <string name="recently_added">Aggiunti di recente</string>
     <string name="recently_recorded">Registrati di recente</string>
@@ -78,17 +78,17 @@
     <string name="add_to_playlist">Aggiungi alla playlist</string>
     <string name="one_click_pause">Pausa con un click</string>
     <string name="show_clock">Mostra Orologio</string>
-    <string name="font">Font</string>
+    <string name="font">Carattere</string>
     <string name="background">Sfondo</string>
     <plurals name="behind_the_scenes">
-        <item quantity="one">Dietro le Scene</item>
-        <item quantity="many"/>
-        <item quantity="other"/>
+        <item quantity="one">Dietro le Scena</item>
+        <item quantity="many">Dietro le Scene</item>
+        <item quantity="other">Dietro le Scene</item>
     </plurals>
     <plurals name="theme_songs">
-        <item quantity="one">Sigle</item>
-        <item quantity="many"/>
-        <item quantity="other"/>
+        <item quantity="one">Sigla</item>
+        <item quantity="many">sigle</item>
+        <item quantity="other">sigle</item>
     </plurals>
     <plurals name="interviews">
         <item quantity="one">Interviste</item>
@@ -108,7 +108,7 @@
     <string name="commercial">Commerciale</string>
     <string name="community_rating">Valutazione community</string>
     <string name="critic_rating">Valutazione della critica</string>
-    <string name="default_track"><![CDATA[Scarica & Aggiorna]]></string>
+    <string name="default_track">Predefinita</string>
     <string name="discovered_servers">Server Scoperti</string>
     <string name="download_and_update"><![CDATA[Scarica & Aggiorna]]></string>
     <string name="downloading">Scaricando…</string>
@@ -124,9 +124,9 @@
     <string name="font_opacity">Opacità testo</string>
     <string name="extras">Extra</string>
     <plurals name="other_extras">
-        <item quantity="one">Altri</item>
-        <item quantity="many"/>
-        <item quantity="other"/>
+        <item quantity="one">Altro</item>
+        <item quantity="many">Altri</item>
+        <item quantity="other">Altri</item>
     </plurals>
     <string name="bold_font">Testo in grassetto</string>
     <string name="player_backend">Backend di riproduzione</string>
@@ -165,4 +165,142 @@
     <string name="next_up">Prossimo Episodio</string>
     <string name="no_scheduled_recordings">Nessuna registrazione programmata</string>
     <string name="people">Persone</string>
+    <string name="show_debug_info">Mostra informazioni debug</string>
+    <string name="sort_by_date_added">Data di Aggiunta</string>
+    <string name="sort_by_date_played">Data di riproduzione</string>
+    <string name="sort_by_name">Nome</string>
+    <string name="submit">Invia</string>
+    <string name="subtitle_download_too_long">Il download sta impiegando molto tempo, potrebbe essere necessario riavviare la riproduzione</string>
+    <string name="suggestions">Suggerimenti</string>
+    <string name="switch_servers">Cambia server</string>
+    <string name="switch_user">Cambia</string>
+    <string name="trailer">Trailer</string>
+    <plurals name="trailers">
+        <item quantity="one">I trailer</item>
+        <item quantity="many"></item>
+        <item quantity="other"></item>
+    </plurals>
+    <string name="tv_dvr_schedule">Programma DVR</string>
+    <string name="video_scale">Scala Video</string>
+    <string name="video">Video</string>
+    <string name="videos">I video</string>
+    <string name="years_old">%1$d anni</string>
+    <string name="play_with_transcoding">Riproduci con transcodifica</string>
+    <string name="immediate">Immediato</string>
+    <string name="show_next_up_when">Mostra prossimo</string>
+    <string name="shuffle">Mescola</string>
+    <string name="sort_by_date_episode_added">Data Aggiunta Episodio</string>
+    <string name="sort_by_date_released">Data di uscita</string>
+    <string name="studios">Studio</string>
+    <string name="top_unwatched">I Più Votati Non visti</string>
+    <string name="aired_episode_order">Ordine di trasmissione</string>
+    <string name="one_click_pause_summary_on">Premi tasto centrale D-Pad per pausa/play</string>
+    <string name="italic_font">Testo in corsivo</string>
+    <string name="success">Successo</string>
+    <string name="dolby_vision">Dolby Vision</string>
+    <string name="dolby_atmos">Dolby Atmos</string>
+    <string name="background_color">Colore sfondo</string>
+    <string name="reset">Ripristina</string>
+    <string name="subtitle_style">Stile sottotitoli</string>
+    <string name="background_style">Stile sfondo</string>
+    <string name="settings">Impostazioni</string>
+    <string name="update_url">Aggiorna URL</string>
+    <string name="font_size">Dimensione testo</string>
+    <string name="update_available">Aggiornamento disponibile</string>
+    <string name="update_url_summary">URL usato per cercare aggiornamenti dell\'app</string>
+    <string name="edge_style">Stile del bordo</string>
+    <string name="edge_color">Colore del bordo</string>
+    <string name="background_opacity">Opacità sfondo</string>
+    <string name="skip_segment_outro">Salta Outro</string>
+    <plurals name="theme_videos">
+        <item quantity="one">Temi Video</item>
+        <item quantity="many"></item>
+        <item quantity="other"></item>
+    </plurals>
+    <plurals name="deleted_scenes">
+        <item quantity="one">Scene Eliminate</item>
+        <item quantity="many"></item>
+        <item quantity="other"></item>
+    </plurals>
+    <plurals name="shorts">
+        <item quantity="one">Video brevi</item>
+        <item quantity="many"></item>
+        <item quantity="other"></item>
+    </plurals>
+    <string name="advanced_settings">Impostazioni Avanzate</string>
+    <string name="check_for_updates">Cerca aggiornamenti</string>
+    <string name="combine_continue_next_summary">Applica solo a Serie TV</string>
+    <string name="app_theme">Tema Applicazione</string>
+    <string name="auto_check_for_updates">Cerca automaticamente aggiornamenti</string>
+    <string name="auto_play_next">Riproduci automaticamente il prossimo</string>
+    <string name="direct_play_ass">Riproduzione diretta sottotitoli ASS</string>
+    <string name="direct_play_pgs">Riproduzione diretta sottotitoli PGS</string>
+    <string name="ffmpeg_extension_pref">Usa il modulo di decodifica FFmpeg</string>
+    <string name="play_theme_music">Riproduci musica tema</string>
+    <plurals name="hours">
+        <item quantity="one">%d ora</item>
+        <item quantity="many">%d ore</item>
+        <item quantity="other">%d ore</item>
+    </plurals>
+    <plurals name="items">
+        <item quantity="one">%d elemento</item>
+        <item quantity="many">%d elementi</item>
+        <item quantity="other">%d elementi</item>
+    </plurals>
+    <plurals name="seconds">
+        <item quantity="one">%d secondo</item>
+        <item quantity="many">%d secondi</item>
+        <item quantity="other">%d secondi</item>
+    </plurals>
+    <string name="remember_selected_tab">Ricorda schede selezionate</string>
+    <plurals name="samples">
+        <item quantity="one">Campioni</item>
+        <item quantity="many"></item>
+        <item quantity="other"></item>
+    </plurals>
+    <plurals name="featurettes">
+        <item quantity="one">Featurettes</item>
+        <item quantity="many"></item>
+        <item quantity="other"></item>
+    </plurals>
+    <string name="combine_continue_next"><![CDATA[Combina Continua a Guardare & Prossimo Episodio]]></string>
+    <string name="downmix_stereo">Converti sempre in stereo</string>
+    <string name="max_homepage_items">Numero massimo di elementi per riga nella home</string>
+    <string name="global_content_scale">Scala contenuti predefinita</string>
+    <string name="official_rating">Classificazione per età</string>
+    <string name="runtime_sort">Durata</string>
+    <plurals name="clips">
+        <item quantity="one">Clip</item>
+        <item quantity="many"></item>
+        <item quantity="other"></item>
+    </plurals>
+    <plurals name="downloads">
+        <item quantity="one">%s Scaricamento</item>
+        <item quantity="many">%s Scaricamenti</item>
+        <item quantity="other">%s Scaricamenti</item>
+    </plurals>
+    <string name="ac3_supported">Il dispositivo supporta AC3/Dolby Digital</string>
+    <string name="advanced_ui">Interfaccia avanzata</string>
+    <string name="auto_play_next_delay">Ritardo prima della riproduzione del prossimo episodio</string>
+    <string name="nav_drawer_pins_summary">Scegli gli elementi predefiniti da mostrare, gli altri saranno nascosti</string>
+    <string name="nav_drawer_pins">Personalizza gli elementi del menu di navigazione</string>
+    <string name="nav_drawer_switch_on_focus_summary_off">Clicca per cambiare pagina</string>
+    <string name="nav_drawer_switch_on_focus">Cambia pagina del menu di navigazione al focus</string>
+    <string name="pass_out_protection">Protezione dallo spegnimento</string>
+    <string name="seek_bar_steps">Incrementi della barra di avanzamento</string>
+    <string name="send_app_logs_summary">Utile per il debug</string>
+    <string name="send_app_logs">Invia i log dell\'app al server corrente</string>
+    <string name="send_crash_reports_summary">Proverà a inviare all\'ultimo server connesso</string>
+    <string name="send_crash_reports">Invia segnalazioni di crash</string>
+    <string name="rewatch_next_up">Abilita la ripetizione in Prossimo episodio</string>
+    <string name="skip_back_preference">Torna indietro</string>
+    <string name="skip_commercials_behavior">Comportamento salto pubblicità</string>
+    <string name="skip_forward_preference">Salta avanti</string>
+    <string name="skip_intro_behavior">Comportamento salto intro</string>
+    <string name="skip_outro_behavior">Comportamento salto outro</string>
+    <string name="skip_previews_behavior">Comportamento salto anteprime</string>
+    <string name="skip_recap_behavior">Comportamento salto riassunto</string>
+    <string name="skip_segment_recap">Salta Riassunto</string>
+    <string name="playback_overrides">Sovrascrivi riproduzione</string>
+    <string name="skip_back_on_resume_preference">Salta indietro al riavvio della riproduzione</string>
 </resources>
