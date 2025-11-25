@@ -5,6 +5,7 @@ import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -13,6 +14,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -51,16 +53,17 @@ fun MovieDetailsHeader(
         Text(
             text = movie.name ?: "",
             color = MaterialTheme.colorScheme.onSurface,
-            style = MaterialTheme.typography.displayMedium,
+            style = MaterialTheme.typography.displaySmall,
             maxLines = 2,
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.fillMaxWidth(.75f),
         )
 
         Column(
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
             modifier = Modifier.fillMaxWidth(.60f),
         ) {
+            val padding = 8.dp
             val details =
                 remember(dto) {
                     buildList {
@@ -78,19 +81,21 @@ fun MovieDetailsHeader(
                 texts = details,
                 rating = dto.communityRating,
                 textStyle = MaterialTheme.typography.titleMedium,
-                modifier = Modifier,
+                modifier = Modifier.padding(bottom = padding),
             )
 
             VideoStreamDetails(
                 preferences = preferences,
                 dto = dto,
                 itemPlayback = chosenStreams?.itemPlayback,
-                modifier = Modifier,
+                modifier = Modifier.padding(bottom = padding),
             )
             dto.taglines?.firstOrNull()?.let { tagline ->
                 Text(
                     text = tagline,
                     style = MaterialTheme.typography.bodyLarge,
+                    fontStyle = FontStyle.Italic,
+                    modifier = Modifier,
                 )
             }
 

@@ -401,7 +401,7 @@ fun MovieDetailsContent(
                         modifier =
                             Modifier
                                 .fillMaxWidth()
-                                .padding(bottom = 8.dp),
+                                .padding(top = 32.dp, bottom = 16.dp),
                     )
                     ExpandablePlayButtons(
                         resumePosition = resumePosition,
@@ -422,7 +422,10 @@ fun MovieDetailsContent(
                                 }
                             }
                         },
-                        modifier = Modifier.focusRequester(focusRequesters[HEADER_ROW]),
+                        modifier =
+                            Modifier
+                                .padding(bottom = 16.dp)
+                                .focusRequester(focusRequesters[HEADER_ROW]),
                     )
                 }
             }
