@@ -167,17 +167,8 @@ fun PlaybackPage(
             LaunchedEffect(Unit) {
                 focusRequester.tryRequestFocus()
             }
-            val controllerViewState =
-                remember {
-                    ControllerViewState(
-                        preferences.appPreferences.playbackPreferences.controllerTimeoutMs,
-                        true,
-                    )
-                }.also {
-                    LaunchedEffect(it) {
-                        it.observe()
-                    }
-                }
+            val controllerViewState = remember { viewModel.controllerViewState }
+
             var skipIndicatorDuration by remember { mutableLongStateOf(0L) }
             LaunchedEffect(controllerViewState.controlsVisible) {
                 // If controller shows/hides, immediately cancel the skip indicator
