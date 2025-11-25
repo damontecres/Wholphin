@@ -128,6 +128,12 @@ class PlaybackViewModel
         }
         internal val mutex = Mutex()
 
+        val controllerViewState =
+            ControllerViewState(
+                AppPreference.ControllerTimeout.defaultValue,
+                true,
+            )
+
         val loading = MutableLiveData<LoadingState>(LoadingState.Loading)
 
         val currentMediaInfo = MutableLiveData<CurrentMediaInfo>(CurrentMediaInfo.EMPTY)
@@ -153,6 +159,7 @@ class PlaybackViewModel
         val subtitleSearchLanguage = MutableLiveData<String>(Locale.current.language)
 
         init {
+            viewModelScope.launch(ExceptionHandler()) { controllerViewState.observe() }
             player.addListener(this)
             (player as? ExoPlayer)?.addAnalyticsListener(this)
             addCloseable { player.removeListener(this@PlaybackViewModel) }
@@ -178,6 +185,8 @@ class PlaybackViewModel
         ) {
             nextUp.value = null
             this.preferences = preferences
+            controllerViewState.hideMilliseconds =
+                preferences.appPreferences.playbackPreferences.controllerTimeoutMs
             this.deviceProfile = deviceProfile
             this.forceTranscoding =
                 (destination as? Destination.Playback)?.forceTranscoding ?: false
@@ -696,6 +705,9 @@ class PlaybackViewModel
                     Timber.v("Setting next up to ${nextItem?.id}")
                     withContext(Dispatchers.Main) {
                         nextUp.value = nextItem
+                        if (nextItem == null) {
+                            controllerViewState.showControls()
+                        }
                     }
                 }
             }
