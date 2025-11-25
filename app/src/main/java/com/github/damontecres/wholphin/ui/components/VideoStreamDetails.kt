@@ -197,7 +197,7 @@ fun StreamLabel(
         modifier =
             modifier
                 .background(
-                    MaterialTheme.colorScheme.secondaryContainer,
+                    MaterialTheme.colorScheme.secondaryContainer.copy(alpha = .5f),
 //                    MaterialTheme.colorScheme.surfaceVariant,
                     shape = RoundedCornerShape(4.dp),
                 ).padding(vertical = 4.dp, horizontal = 6.dp),
@@ -245,8 +245,8 @@ private fun StreamLabelPreview() {
                     .padding(8.dp),
         ) {
             StreamLabel("1080p")
-            StreamLabel("H264")
             StreamLabel("HDR")
+            StreamLabel("H264")
             StreamLabel("AC3 5.1", icon = R.string.fa_volume_high, count = 2)
         }
     }

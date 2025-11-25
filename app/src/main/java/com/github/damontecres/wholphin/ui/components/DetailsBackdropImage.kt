@@ -1,5 +1,6 @@
 package com.github.damontecres.wholphin.ui.components
 
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -14,7 +15,7 @@ import coil3.compose.AsyncImage
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 
 @Composable
-fun DetailsBackdropImage(
+fun BoxScope.DetailsBackdropImage(
     backdropImageUrl: String?,
     modifier: Modifier = Modifier,
 ) {
@@ -23,10 +24,11 @@ fun DetailsBackdropImage(
         AsyncImage(
             model = backdropImageUrl,
             contentDescription = null,
-            contentScale = ContentScale.Crop,
+            contentScale = ContentScale.Fit,
             alignment = Alignment.TopEnd,
             modifier =
                 modifier
+                    .align(Alignment.TopEnd)
                     .fillMaxHeight(.85f)
                     .alpha(.75f)
                     .drawWithContent {

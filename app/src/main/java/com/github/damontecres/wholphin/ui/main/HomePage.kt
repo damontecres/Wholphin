@@ -502,6 +502,7 @@ fun HomePageHeader(
                 if (details.isNotEmpty()) {
                     DotSeparatedRow(
                         texts = details,
+                        rating = item.data.communityRating,
                         textStyle = MaterialTheme.typography.bodyLarge,
                         modifier = Modifier,
                     )

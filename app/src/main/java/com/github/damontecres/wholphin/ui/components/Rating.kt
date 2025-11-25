@@ -17,6 +17,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -36,7 +37,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.tv.material3.Icon
 import androidx.tv.material3.LocalContentColor
 import androidx.tv.material3.MaterialTheme
@@ -77,17 +77,17 @@ val ratingBarHeight: Dp = 32.dp
 fun SimpleStarRating(
     communityRating: Float?,
     modifier: Modifier = Modifier,
-) = SimpleStarRating(
-    text = communityRating?.let { String.format(Locale.getDefault(), "%.1f", it) },
-    modifier = modifier,
-    textColor = MaterialTheme.colorScheme.onSurface,
-)
+) = CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onSurface) {
+    SimpleStarRating(
+        text = communityRating?.let { String.format(Locale.getDefault(), "%.1f", it) },
+        modifier = modifier,
+    )
+}
 
 @Composable
 fun SimpleStarRating(
     text: String?,
     modifier: Modifier = Modifier,
-    textColor: Color = LocalContentColor.current,
     starColor: Color = FilledStarColor,
 ) {
     Row(
@@ -98,8 +98,6 @@ fun SimpleStarRating(
         if (text.isNotNullOrBlank()) {
             Text(
                 text = text,
-                fontSize = 14.sp,
-                color = textColor,
                 modifier = Modifier,
             )
             Icon(
