@@ -360,15 +360,19 @@ fun DownloadDialog(
                 if (progress != null) {
                     CircularProgressIndicator(
                         progress = { progress },
-                        Modifier
-                            .size(48.dp)
-                            .padding(8.dp),
+                        color = MaterialTheme.colorScheme.border,
+                        modifier =
+                            Modifier
+                                .size(48.dp)
+                                .padding(8.dp),
                     )
                 } else {
                     CircularProgressIndicator(
-                        Modifier
-                            .size(48.dp)
-                            .padding(8.dp),
+                        color = MaterialTheme.colorScheme.border,
+                        modifier =
+                            Modifier
+                                .size(48.dp)
+                                .padding(8.dp),
                     )
                 }
             }
