@@ -245,4 +245,12 @@
     <string name="mpv_options">MPV inställningar</string>
     <string name="exoplayer_options">ExoPlayer inställningar</string>
     <string name="download_and_update"><![CDATA[Ladda ner och uppdatera]]></string>
+    <string name="skip_segment_intro">Hoppa över intro</string>
+    <string name="skip_segment_outro">Hoppa över eftertexter</string>
+    <string name="skip_segment_unknown">Hoppa över segment</string>
+    <string name="skip_segment_commercial">Hoppa över reklam</string>
+    <string name="skip_segment_preview">Hoppa över förhandsvisning</string>
+    <string name="subtitle_style">Utseende på text</string>
+    <string name="background_color">Bakgrundsfärg</string>
+    <string name="played">Spelad</string>
 </resources>
