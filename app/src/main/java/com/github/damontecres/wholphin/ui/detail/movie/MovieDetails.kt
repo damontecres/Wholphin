@@ -196,7 +196,7 @@ fun MovieDetails(
                                         item = movie,
                                         watched = movie.data.userData?.played ?: false,
                                         favorite = movie.data.userData?.isFavorite ?: false,
-                                        series = null,
+                                        seriesId = null,
                                         sourceId = chosenStreams?.sourceId,
                                         actions = moreActions,
                                         onChooseVersion = {

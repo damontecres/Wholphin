@@ -195,7 +195,7 @@ fun SeriesOverview(
                                 item = ep,
                                 watched = ep.data.userData?.played ?: false,
                                 favorite = ep.data.userData?.isFavorite ?: false,
-                                series = series,
+                                seriesId = series.id,
                                 sourceId = chosenStreams?.sourceId,
                                 actions =
                                     MoreDialogActions(

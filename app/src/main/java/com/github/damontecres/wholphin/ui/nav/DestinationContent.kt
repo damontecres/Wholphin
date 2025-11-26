@@ -18,6 +18,7 @@ import com.github.damontecres.wholphin.ui.detail.DebugPage
 import com.github.damontecres.wholphin.ui.detail.FavoritesPage
 import com.github.damontecres.wholphin.ui.detail.PersonPage
 import com.github.damontecres.wholphin.ui.detail.PlaylistDetails
+import com.github.damontecres.wholphin.ui.detail.episode.EpisodeDetails
 import com.github.damontecres.wholphin.ui.detail.movie.MovieDetails
 import com.github.damontecres.wholphin.ui.detail.series.SeriesDetails
 import com.github.damontecres.wholphin.ui.detail.series.SeriesOverview
@@ -96,6 +97,13 @@ fun DestinationContent(
                 BaseItemKind.VIDEO ->
                     // TODO Use VideoDetails
                     MovieDetails(
+                        preferences,
+                        destination,
+                        modifier,
+                    )
+
+                BaseItemKind.EPISODE ->
+                    EpisodeDetails(
                         preferences,
                         destination,
                         modifier,

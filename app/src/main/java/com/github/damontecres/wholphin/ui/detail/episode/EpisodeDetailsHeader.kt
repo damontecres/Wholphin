@@ -1,4 +1,4 @@
-package com.github.damontecres.wholphin.ui.detail.movie
+package com.github.damontecres.wholphin.ui.detail.episode
 
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
@@ -15,7 +15,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontStyle
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.tv.material3.MaterialTheme
@@ -24,44 +23,39 @@ import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.ChosenStreams
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.preferences.UserPreferences
-import com.github.damontecres.wholphin.ui.components.MovieQuickDetails
+import com.github.damontecres.wholphin.ui.components.EpisodeName
+import com.github.damontecres.wholphin.ui.components.EpisodeQuickDetails
 import com.github.damontecres.wholphin.ui.components.OverviewText
+import com.github.damontecres.wholphin.ui.components.SeriesName
 import com.github.damontecres.wholphin.ui.components.VideoStreamDetails
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import org.jellyfin.sdk.model.api.PersonKind
 
 @Composable
-fun MovieDetailsHeader(
+fun EpisodeDetailsHeader(
     preferences: UserPreferences,
-    movie: BaseItem,
+    ep: BaseItem,
     chosenStreams: ChosenStreams?,
     bringIntoViewRequester: BringIntoViewRequester,
     overviewOnClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val dto = movie.data
+    val dto = ep.data
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     Column(
         verticalArrangement = Arrangement.spacedBy(8.dp),
         modifier = modifier,
     ) {
-        // Title
-        Text(
-            text = movie.name ?: "",
-            color = MaterialTheme.colorScheme.onSurface,
-            style = MaterialTheme.typography.displaySmall,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.fillMaxWidth(.75f),
-        )
+        SeriesName(dto.seriesName, Modifier.fillMaxWidth(.75f))
+        EpisodeName(dto, Modifier.fillMaxWidth(.75f))
 
         Column(
             verticalArrangement = Arrangement.spacedBy(4.dp),
             modifier = Modifier.fillMaxWidth(.60f),
         ) {
             val padding = 8.dp
-            MovieQuickDetails(dto, Modifier.padding(bottom = padding))
+            EpisodeQuickDetails(dto)
 
             VideoStreamDetails(
                 preferences = preferences,
@@ -93,15 +87,9 @@ fun MovieDetailsHeader(
                     interactionSource = interactionSource,
                 )
             }
-
-            val directorName =
-                remember(movie.data.people) {
-                    movie.data.people
-                        ?.filter { it.type == PersonKind.DIRECTOR && it.name.isNotNullOrBlank() }
-                        ?.joinToString(", ") { it.name!! }
-                }
-
-            directorName
+            ep.data.people
+                ?.filter { it.type == PersonKind.DIRECTOR && it.name.isNotNullOrBlank() }
+                ?.joinToString(", ") { it.name!! }
                 ?.let {
                     Text(
                         text = stringResource(R.string.directed_by, it),
