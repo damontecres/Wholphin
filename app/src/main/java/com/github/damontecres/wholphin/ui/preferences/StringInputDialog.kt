@@ -9,7 +9,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -37,9 +37,10 @@ fun StringInputDialog(
     onDismissRequest: () -> Unit,
     elevation: Dp = 3.dp,
 ) {
-    var mutableValue by remember { mutableStateOf(input.value ?: "") }
+    val mutableValue = rememberTextFieldState(input.value ?: "")
+//    var mutableValue by remember { mutableStateOf(input.value ?: "") }
     val onDone = {
-        onSave.invoke(mutableValue)
+        onSave.invoke(mutableValue.text.toString())
     }
     var showConfirm by remember { mutableStateOf(false) }
     Dialog(
@@ -48,7 +49,7 @@ fun StringInputDialog(
                 usePlatformDefaultWidth = false,
             ),
         onDismissRequest = {
-            if (input.confirmDiscard && mutableValue != input.value) {
+            if (input.confirmDiscard && mutableValue.text.toString() != input.value) {
                 showConfirm = true
             } else {
                 onDismissRequest.invoke()
@@ -79,13 +80,11 @@ fun StringInputDialog(
                     modifier = Modifier,
                 )
                 EditTextBox(
-                    value = mutableValue,
-                    onValueChange = { mutableValue = it },
+                    state = mutableValue,
                     keyboardOptions = input.keyboardOptions,
-                    keyboardActions =
-                        KeyboardActions(
-                            onDone = { onDone.invoke() },
-                        ),
+                    onKeyboardAction = {
+                        onDone.invoke()
+                    },
                     leadingIcon = null,
                     isInputValid = { true },
                     maxLines = input.maxLines,
