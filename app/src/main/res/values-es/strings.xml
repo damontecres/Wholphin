@@ -300,4 +300,7 @@
     <string name="remove">Eliminar</string>
     <string name="dolby_vision">Dolby Vision</string>
     <string name="dolby_atmos">Dolby Atmos</string>
+    <string name="font">Fuente</string>
+    <string name="background">Fondo</string>
+    <string name="official_rating">Clasificación parental</string>
 </resources>
