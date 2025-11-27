@@ -66,8 +66,8 @@
     <string name="trailer">Tráiler</string>
     <plurals name="trailers">
         <item quantity="one">Tráilers</item>
-        <item quantity="many"></item>
-        <item quantity="other"></item>
+        <item quantity="many"/>
+        <item quantity="other"/>
     </plurals>
     <string name="tv_shows">Series</string>
     <string name="ui_interface">Interfaz</string>
@@ -86,8 +86,8 @@
     <string name="extras">Extras</string>
     <plurals name="other_extras">
         <item quantity="one">Otros</item>
-        <item quantity="many"></item>
-        <item quantity="other"></item>
+        <item quantity="many"/>
+        <item quantity="other"/>
     </plurals>
     <string name="advanced_settings">Configuración avanzada</string>
     <string name="advanced_ui">Interfaz avanzada</string>
@@ -95,4 +95,14 @@
     <string name="installed_version">Versión instalada</string>
     <string name="play_theme_music">Reproducir música temática</string>
     <string name="settings">Configuración</string>
+    <string name="critic_rating">Calificación de la crítica</string>
+    <string name="recap">Resumen</string>
+    <string name="record_program">Grabar programa</string>
+    <string name="record_series">Grabar serie</string>
+    <string name="remove_favorite">Quitar de favoritos</string>
+    <string name="show_debug_info">Mostrar información de depuración</string>
+    <string name="show">Mostrar</string>
+    <string name="shuffle">Aleatorio</string>
+    <string name="skip">Saltar</string>
+    <string name="sort_by_date_episode_added">Fecha de episodio agregado</string>
 </resources>
