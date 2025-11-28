@@ -147,11 +147,13 @@ class LiveTvViewModel
                     minEndDate = minEndDate,
                     channelIds = channelsToFetch.map { it.id },
                     sortBy = listOf(ItemSortBy.START_DATE),
+                    userId = serverRepository.currentUser.value?.id,
                 )
             val fetchedPrograms =
                 api.liveTvApi
                     .getPrograms(request)
                     .content.items
+                    .filter { it.endDate?.isAfter(guideStart) == true }
             val programsByChannel = mutableMapOf<UUID, List<TvProgram>>()
             val fetchedGroupedBy = fetchedPrograms.groupBy { it.channelId }
             fetchedGroupedBy.forEach { (channelId, programs) ->
@@ -188,7 +190,10 @@ class LiveTvViewModel
                                 subtitle = dto.episodeTitle.takeIf { dto.isSeries ?: false },
                                 seasonEpisode =
                                     if (dto.indexNumber != null && dto.parentIndexNumber != null) {
-                                        SeasonEpisode(dto.parentIndexNumber!!, dto.indexNumber!!)
+                                        SeasonEpisode(
+                                            dto.parentIndexNumber!!,
+                                            dto.indexNumber!!,
+                                        )
                                     } else {
                                         null
                                     },
@@ -216,7 +221,7 @@ class LiveTvViewModel
                                 }
                             }
                             listing.add(p)
-                        } else if (index > 0) {
+                        } else if (index > 0 && listing.isNotEmpty()) {
                             var previous = listing.last()
                             while (previous.endHours < p.startHours) {
                                 // Fill gaps between programs
