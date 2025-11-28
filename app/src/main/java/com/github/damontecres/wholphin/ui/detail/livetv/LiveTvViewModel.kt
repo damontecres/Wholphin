@@ -158,117 +158,122 @@ class LiveTvViewModel
                 if (channelId != null) {
                     val listing = mutableListOf<TvProgram>()
                     programs as MutableList<BaseItemDto>
-                    programs.forEachIndexed { index, dto ->
-                        val category =
-                            if (dto.isKids ?: false) {
-                                ProgramCategory.KIDS
-                            } else if (dto.isMovie ?: false) {
-                                ProgramCategory.MOVIE
-                            } else if (dto.isNews ?: false) {
-                                ProgramCategory.NEWS
-                            } else if (dto.isSports ?: false) {
-                                ProgramCategory.SPORTS
-                            } else {
-                                null
-                            }
-                        val p =
-                            TvProgram(
-                                id = dto.id,
-                                channelId = dto.channelId!!,
-                                start = dto.startDate!!,
-                                end = dto.endDate!!,
-                                startHours =
-                                    hoursBetween(
-                                        guideStart,
-                                        dto.startDate!!,
-                                    ).coerceAtLeast(0f),
-                                endHours = hoursBetween(guideStart, dto.endDate!!),
-                                duration = dto.runTimeTicks!!.ticks,
-                                name = dto.seriesName ?: dto.name,
-                                subtitle = dto.episodeTitle.takeIf { dto.isSeries ?: false },
-                                seasonEpisode =
-                                    if (dto.indexNumber != null && dto.parentIndexNumber != null) {
-                                        SeasonEpisode(dto.parentIndexNumber!!, dto.indexNumber!!)
-                                    } else {
-                                        null
-                                    },
-                                isRecording = dto.timerId.isNotNullOrBlank(),
-                                isSeriesRecording = dto.seriesTimerId.isNotNullOrBlank(),
-                                isRepeat = dto.isRepeat ?: false,
-                                category = category,
-                            )
-                        if (index == 0) {
-                            if (p.startHours > 0) {
-                                // Fill out before the first program
-                                var start = 0f
-                                var end = min(start + 1f, p.startHours)
-                                while (start < p.startHours) {
-                                    val fake =
-                                        TvProgram.fake(
-                                            guideStart,
-                                            channelId,
-                                            start,
-                                            end,
-                                        )
-                                    start = end
-                                    end = min(start + 1f, p.startHours)
-                                    listing.add(fake)
+                    programs
+                        .filter { it.endDate?.isAfter(guideStart) == true }
+                        .forEachIndexed { index, dto ->
+                            val category =
+                                if (dto.isKids ?: false) {
+                                    ProgramCategory.KIDS
+                                } else if (dto.isMovie ?: false) {
+                                    ProgramCategory.MOVIE
+                                } else if (dto.isNews ?: false) {
+                                    ProgramCategory.NEWS
+                                } else if (dto.isSports ?: false) {
+                                    ProgramCategory.SPORTS
+                                } else {
+                                    null
                                 }
-                            }
-                            listing.add(p)
-                        } else if (index > 0) {
-                            var previous = listing.last()
-                            while (previous.endHours < p.startHours) {
-                                // Fill gaps between programs
-                                val start = previous.endHours
-                                val duration = (p.startHours - start).coerceAtMost(1f)
-//                                Timber.v("Adding fake for $channelId: $start=>${start + duration}")
-                                previous =
-                                    TvProgram(
-                                        id = UUID.randomUUID(),
-                                        channelId = channelId,
-                                        start = previous.end,
-                                        end = previous.end.plusMinutes((duration * 60).toLong()),
-                                        startHours = start,
-                                        endHours = start + duration,
-                                        duration = (duration * 60).toInt().minutes,
-                                        name = context.getString(R.string.no_data),
-                                        subtitle = null,
-                                        seasonEpisode = null,
-                                        isRecording = false,
-                                        isSeriesRecording = false,
-                                        isRepeat = false,
-                                        category = ProgramCategory.FAKE,
-                                    )
-                                listing.add(previous)
-                            }
-                            listing.add(p)
-                        }
-                        if (index == (programs.size - 1)) {
-                            if (p.endHours < MAX_HOURS) {
-                                // Fill after the last program
-                                val end = (p.endHours + 1).toInt()
-                                listing.add(
-                                    TvProgram.fake(
-                                        guideStart,
-                                        channelId,
-                                        p.endHours,
-                                        end.toFloat(),
-                                    ),
+                            val p =
+                                TvProgram(
+                                    id = dto.id,
+                                    channelId = dto.channelId!!,
+                                    start = dto.startDate!!,
+                                    end = dto.endDate!!,
+                                    startHours =
+                                        hoursBetween(
+                                            guideStart,
+                                            dto.startDate!!,
+                                        ).coerceAtLeast(0f),
+                                    endHours = hoursBetween(guideStart, dto.endDate!!),
+                                    duration = dto.runTimeTicks!!.ticks,
+                                    name = dto.seriesName ?: dto.name,
+                                    subtitle = dto.episodeTitle.takeIf { dto.isSeries ?: false },
+                                    seasonEpisode =
+                                        if (dto.indexNumber != null && dto.parentIndexNumber != null) {
+                                            SeasonEpisode(
+                                                dto.parentIndexNumber!!,
+                                                dto.indexNumber!!,
+                                            )
+                                        } else {
+                                            null
+                                        },
+                                    isRecording = dto.timerId.isNotNullOrBlank(),
+                                    isSeriesRecording = dto.seriesTimerId.isNotNullOrBlank(),
+                                    isRepeat = dto.isRepeat ?: false,
+                                    category = category,
                                 )
-                                (end..<MAX_HOURS).forEach {
+                            if (index == 0) {
+                                if (p.startHours > 0) {
+                                    // Fill out before the first program
+                                    var start = 0f
+                                    var end = min(start + 1f, p.startHours)
+                                    while (start < p.startHours) {
+                                        val fake =
+                                            TvProgram.fake(
+                                                guideStart,
+                                                channelId,
+                                                start,
+                                                end,
+                                            )
+                                        start = end
+                                        end = min(start + 1f, p.startHours)
+                                        listing.add(fake)
+                                    }
+                                }
+                                listing.add(p)
+                            } else if (index > 0 && listing.isNotEmpty()) {
+                                var previous = listing.last()
+                                while (previous.endHours < p.startHours) {
+                                    // Fill gaps between programs
+                                    val start = previous.endHours
+                                    val duration = (p.startHours - start).coerceAtMost(1f)
+//                                Timber.v("Adding fake for $channelId: $start=>${start + duration}")
+                                    previous =
+                                        TvProgram(
+                                            id = UUID.randomUUID(),
+                                            channelId = channelId,
+                                            start = previous.end,
+                                            end = previous.end.plusMinutes((duration * 60).toLong()),
+                                            startHours = start,
+                                            endHours = start + duration,
+                                            duration = (duration * 60).toInt().minutes,
+                                            name = context.getString(R.string.no_data),
+                                            subtitle = null,
+                                            seasonEpisode = null,
+                                            isRecording = false,
+                                            isSeriesRecording = false,
+                                            isRepeat = false,
+                                            category = ProgramCategory.FAKE,
+                                        )
+                                    listing.add(previous)
+                                }
+                                listing.add(p)
+                            }
+                            if (index == (programs.size - 1)) {
+                                if (p.endHours < MAX_HOURS) {
+                                    // Fill after the last program
+                                    val end = (p.endHours + 1).toInt()
                                     listing.add(
                                         TvProgram.fake(
                                             guideStart,
                                             channelId,
-                                            it.toFloat(),
-                                            it + 1f,
+                                            p.endHours,
+                                            end.toFloat(),
                                         ),
                                     )
+                                    (end..<MAX_HOURS).forEach {
+                                        listing.add(
+                                            TvProgram.fake(
+                                                guideStart,
+                                                channelId,
+                                                it.toFloat(),
+                                                it + 1f,
+                                            ),
+                                        )
+                                    }
                                 }
                             }
                         }
-                    }
                     programsByChannel[channelId] = listing
                 }
             }
