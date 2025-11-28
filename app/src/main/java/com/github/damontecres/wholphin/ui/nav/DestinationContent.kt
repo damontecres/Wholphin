@@ -7,6 +7,7 @@ import com.github.damontecres.wholphin.data.filter.DefaultForGenresFilterOptions
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.components.ItemGrid
 import com.github.damontecres.wholphin.ui.components.LicenseInfo
+import com.github.damontecres.wholphin.ui.data.MovieSortOptions
 import com.github.damontecres.wholphin.ui.detail.CollectionFolderBoxSet
 import com.github.damontecres.wholphin.ui.detail.CollectionFolderGeneric
 import com.github.damontecres.wholphin.ui.detail.CollectionFolderLiveTv
@@ -239,12 +240,14 @@ fun CollectionFolder(
             )
 
         CollectionType.BOXSETS ->
-            CollectionFolderBoxSet(
-                preferences,
-                destination.itemId,
-                destination.item,
-                false,
-                modifier,
+            CollectionFolderGeneric(
+                preferences = preferences,
+                itemId = destination.itemId,
+                usePosters = true,
+                recursive = false,
+                playEnabled = false,
+                modifier = modifier,
+                sortOptions = MovieSortOptions,
             )
 
         CollectionType.PLAYLISTS ->

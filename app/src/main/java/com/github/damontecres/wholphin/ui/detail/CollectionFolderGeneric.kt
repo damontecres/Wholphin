@@ -17,6 +17,7 @@ import com.github.damontecres.wholphin.ui.components.CollectionFolderGrid
 import com.github.damontecres.wholphin.ui.components.CollectionFolderGridParameters
 import com.github.damontecres.wholphin.ui.data.VideoSortOptions
 import com.github.damontecres.wholphin.ui.preferences.PreferencesViewModel
+import org.jellyfin.sdk.model.api.ItemSortBy
 import java.util.UUID
 
 @Composable
@@ -29,6 +30,7 @@ fun CollectionFolderGeneric(
     modifier: Modifier = Modifier,
     filter: GetItemsFilter = GetItemsFilter(),
     filterOptions: List<ItemFilterBy<*>> = DefaultFilterOptions,
+    sortOptions: List<ItemSortBy> = VideoSortOptions,
     preferencesViewModel: PreferencesViewModel = hiltViewModel(),
 ) {
     var showHeader by remember { mutableStateOf(true) }
@@ -47,7 +49,7 @@ fun CollectionFolderGeneric(
         initialFilter = filter,
         showTitle = showHeader,
         recursive = recursive,
-        sortOptions = VideoSortOptions,
+        sortOptions = sortOptions,
         modifier =
             modifier
                 .padding(start = 16.dp),
