@@ -12,8 +12,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -207,12 +207,17 @@ fun SwitchUserContent(
                             Text(text = "Use username/password")
                         }
                     } else {
-                        var username by remember { mutableStateOf("") }
-                        var password by remember { mutableStateOf("") }
+                        val username = rememberTextFieldState()
+                        val password = rememberTextFieldState()
                         val onSubmit = {
-                            viewModel.login(server, username, password)
+                            viewModel.login(
+                                server,
+                                username.text.toString(),
+                                password.text.toString(),
+                            )
                         }
                         val focusRequester = remember { FocusRequester() }
+                        val passwordFocusRequester = remember { FocusRequester() }
                         LaunchedEffect(Unit) { focusRequester.tryRequestFocus() }
                         Text(
                             text = "Enter username/password to login to ${server.name ?: server.url}",
@@ -229,11 +234,7 @@ fun SwitchUserContent(
                                 modifier = Modifier.padding(end = 8.dp),
                             )
                             EditTextBox(
-                                value = username,
-                                onValueChange = {
-                                    username = it
-                                    viewModel.clearSwitchUserState()
-                                },
+                                state = username,
                                 keyboardOptions =
                                     KeyboardOptions(
                                         capitalization = KeyboardCapitalization.None,
@@ -241,6 +242,9 @@ fun SwitchUserContent(
                                         keyboardType = KeyboardType.Text,
                                         imeAction = ImeAction.Next,
                                     ),
+                                onKeyboardAction = {
+                                    passwordFocusRequester.tryRequestFocus()
+                                },
                                 isInputValid = { userState !is LoadingState.Error },
                                 modifier = Modifier.focusRequester(focusRequester),
                             )
@@ -253,29 +257,27 @@ fun SwitchUserContent(
                                 text = "Password",
                                 modifier = Modifier.padding(end = 8.dp),
                             )
+                            LaunchedEffect(password.text) {
+                                viewModel.clearSwitchUserState()
+                            }
                             EditTextBox(
-                                value = password,
-                                onValueChange = {
-                                    password = it
-                                    viewModel.clearSwitchUserState()
-                                },
+                                isPassword = true,
+                                state = password,
                                 keyboardOptions =
                                     KeyboardOptions(
                                         capitalization = KeyboardCapitalization.None,
                                         autoCorrectEnabled = false,
                                         keyboardType = KeyboardType.Password,
+                                        imeAction = ImeAction.Go,
                                     ),
-                                keyboardActions =
-                                    KeyboardActions(
-                                        onDone = { onSubmit.invoke() },
-                                    ),
+                                onKeyboardAction = { onSubmit.invoke() },
                                 isInputValid = { userState !is LoadingState.Error },
-                                modifier = Modifier,
+                                modifier = Modifier.focusRequester(passwordFocusRequester),
                             )
                         }
                         Button(
                             onClick = { onSubmit.invoke() },
-                            enabled = username.isNotNullOrBlank() && password.isNotNullOrBlank(),
+                            enabled = username.text.isNotNullOrBlank() && password.text.isNotNullOrBlank(),
                             modifier = Modifier.align(Alignment.CenterHorizontally),
                         ) {
                             Text("Login")

@@ -9,8 +9,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.CircularProgressIndicator
@@ -133,7 +133,7 @@ fun PlaylistList(
             properties = DialogProperties(usePlatformDefaultWidth = false),
             elevation = 10.dp,
         ) {
-            var playlistName by remember { mutableStateOf("") }
+            val playlistName = rememberTextFieldState()
             val focusRequester = remember { FocusRequester() }
             LaunchedEffect(Unit) { focusRequester.tryRequestFocus() }
             Column(
@@ -148,10 +148,7 @@ fun PlaylistList(
                     text = stringResource(R.string.name),
                 )
                 EditTextBox(
-                    value = playlistName,
-                    onValueChange = {
-                        playlistName = it
-                    },
+                    state = playlistName,
                     keyboardOptions =
                         KeyboardOptions(
                             capitalization = KeyboardCapitalization.Words,
@@ -159,13 +156,10 @@ fun PlaylistList(
                             keyboardType = KeyboardType.Text,
                             imeAction = ImeAction.Done,
                         ),
-                    keyboardActions =
-                        KeyboardActions(
-                            onDone = {
-                                showCreateDialog = false
-                                onCreatePlaylist.invoke(playlistName)
-                            },
-                        ),
+                    onKeyboardAction = {
+                        showCreateDialog = false
+                        onCreatePlaylist.invoke(playlistName.text.toString())
+                    },
                     modifier =
                         Modifier
                             .focusRequester(focusRequester)
@@ -174,9 +168,9 @@ fun PlaylistList(
                 Button(
                     onClick = {
                         showCreateDialog = false
-                        onCreatePlaylist.invoke(playlistName)
+                        onCreatePlaylist.invoke(playlistName.text.toString())
                     },
-                    enabled = playlistName.isNotNullOrBlank(),
+                    enabled = playlistName.text.isNotNullOrBlank(),
                     modifier = Modifier,
                 ) {
                     Text(text = stringResource(R.string.submit))

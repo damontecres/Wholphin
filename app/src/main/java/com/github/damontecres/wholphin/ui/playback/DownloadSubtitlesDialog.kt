@@ -11,17 +11,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
@@ -103,7 +100,7 @@ fun DownloadSubtitlesContent(
                     style = MaterialTheme.typography.titleLarge,
                     color = MaterialTheme.colorScheme.onSurface,
                 )
-                var lang by remember { mutableStateOf(language) }
+                val lang = rememberTextFieldState(language)
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically,
@@ -114,14 +111,10 @@ fun DownloadSubtitlesContent(
                         color = MaterialTheme.colorScheme.onSurface,
                     )
                     EditTextBox(
-                        value = lang,
-                        onValueChange = { lang = it },
-                        keyboardActions =
-                            KeyboardActions(
-                                onSearch = {
-                                    onSearch(lang)
-                                },
-                            ),
+                        state = lang,
+                        onKeyboardAction = {
+                            onSearch(lang.text.toString())
+                        },
                         keyboardOptions =
                             KeyboardOptions(
                                 imeAction = ImeAction.Search,

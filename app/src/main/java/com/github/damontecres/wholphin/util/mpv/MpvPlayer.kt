@@ -57,6 +57,7 @@ import kotlin.time.Duration.Companion.seconds
 class MpvPlayer(
     private val context: Context,
     enableHardwareDecoding: Boolean,
+    useGpuNext: Boolean,
 ) : BasePlayer(),
     MPVLib.EventObserver,
     TrackSelector.InvalidationListener {
@@ -100,7 +101,7 @@ class MpvPlayer(
 
         if (enableHardwareDecoding) {
             MPVLib.setOptionString("hwdec", "mediacodec,mediacodec-copy")
-            MPVLib.setOptionString("vo", "gpu")
+            MPVLib.setOptionString("vo", if (useGpuNext) "gpu-next" else "gpu")
         } else {
             MPVLib.setOptionString("hwdec", "no")
         }

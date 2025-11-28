@@ -699,6 +699,24 @@ sealed interface AppPreference<T> {
                 },
                 summary = R.string.disable_if_crash,
             )
+
+        val MpvGpuNext =
+            AppSwitchPreference(
+                title = R.string.mpv_use_gpu_next,
+                defaultValue = false,
+                getter = { it.playbackPreferences.mpvOptions.useGpuNext },
+                setter = { prefs, value ->
+                    prefs.updateMpvOptions { useGpuNext = value }
+                },
+                summaryOn = R.string.enabled,
+                summaryOff = R.string.disabled,
+            )
+
+        val MpvConfFile =
+            AppClickablePreference(
+                title = R.string.mpv_conf,
+                summary = null,
+            )
     }
 }
 
@@ -813,7 +831,11 @@ val advancedPreferences =
                         ),
                         ConditionalPreferences(
                             { it.playbackPreferences.playerBackend == PlayerBackend.MPV },
-                            listOf(AppPreference.MpvHardwareDecoding),
+                            listOf(
+                                AppPreference.MpvHardwareDecoding,
+                                AppPreference.MpvGpuNext,
+                                AppPreference.MpvConfFile,
+                            ),
                         ),
                     ),
             ),
