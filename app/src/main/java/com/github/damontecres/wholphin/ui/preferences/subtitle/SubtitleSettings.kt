@@ -250,12 +250,16 @@ object SubtitleSettings {
             ),
         )
 
+    private fun combine(
+        color: Int,
+        opacity: Int,
+    ) = ((opacity / 100.0 * 255).toInt().shl(24)).or(color.and(0x00FFFFFF))
+
     @OptIn(UnstableApi::class)
     fun SubtitlePreferences.toSubtitleStyle(): CaptionStyleCompat {
-        val fo = (fontOpacity / 100.0 * 255).toInt().shl(24)
-        val bg = (backgroundOpacity / 100.0 * 255).toInt().shl(24).or(backgroundColor)
+        val bg = combine(backgroundColor, backgroundOpacity)
         return CaptionStyleCompat(
-            fo.or(fontColor),
+            combine(fontColor, fontOpacity),
             if (backgroundStyle == BackgroundStyle.BG_WRAP)bg else 0,
             if (backgroundStyle == BackgroundStyle.BG_BOXED) bg else 0,
             when (edgeStyle) {
@@ -263,7 +267,7 @@ object SubtitleSettings {
                 EdgeStyle.EDGE_SOLID -> CaptionStyleCompat.EDGE_TYPE_OUTLINE
                 EdgeStyle.EDGE_SHADOW -> CaptionStyleCompat.EDGE_TYPE_DROP_SHADOW
             },
-            fo.or(edgeColor),
+            combine(edgeColor, fontOpacity),
             when {
                 fontBold && fontItalic -> Typeface.defaultFromStyle(Typeface.BOLD_ITALIC)
                 fontBold -> Typeface.defaultFromStyle(Typeface.BOLD)
@@ -278,9 +282,9 @@ object SubtitleSettings {
         density: Density,
     ) {
         val fo = (fontOpacity / 100.0 * 255).toInt().shl(24)
-        val fc = Color(fo.or(fontColor))
-        val bg = Color((backgroundOpacity / 100.0 * 255).toInt().shl(24).or(backgroundColor))
-        val edge = Color(fo.or(edgeColor))
+        val fc = Color(combine(fontColor, fontOpacity))
+        val bg = Color(combine(backgroundColor, backgroundOpacity))
+        val edge = Color(combine(edgeColor, fontOpacity))
 
         // TODO weird, but seems to get the size to be very close to matching sizes between renderers
         val fontSizePx = with(density) { fontSize.sp.toPx() * .8 }.toInt()
