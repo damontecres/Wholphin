@@ -76,7 +76,7 @@
     <string name="trailer">Förhandsvisning</string>
     <plurals name="trailers">
         <item quantity="one">Förhandsvisningar</item>
-        <item quantity="other"></item>
+        <item quantity="other"/>
     </plurals>
     <string name="tv_dvr_schedule">DVR-schema</string>
     <string name="tv_guide">TV Guide</string>
@@ -108,47 +108,47 @@
     <string name="extras">Extramaterial</string>
     <plurals name="other_extras">
         <item quantity="one">Annat</item>
-        <item quantity="other"></item>
+        <item quantity="other"/>
     </plurals>
     <plurals name="behind_the_scenes">
         <item quantity="one">Bakom kulisserna</item>
-        <item quantity="other"></item>
+        <item quantity="other"/>
     </plurals>
     <plurals name="theme_songs">
         <item quantity="one">Temalåtar</item>
-        <item quantity="other"></item>
+        <item quantity="other"/>
     </plurals>
     <plurals name="theme_videos">
         <item quantity="one">Temavideor</item>
-        <item quantity="other"></item>
+        <item quantity="other"/>
     </plurals>
     <plurals name="clips">
         <item quantity="one">Klipp</item>
-        <item quantity="other"></item>
+        <item quantity="other"/>
     </plurals>
     <plurals name="deleted_scenes">
         <item quantity="one">Borttagna scener</item>
-        <item quantity="other"></item>
+        <item quantity="other"/>
     </plurals>
     <plurals name="interviews">
         <item quantity="one">Intervjuer</item>
-        <item quantity="other"></item>
+        <item quantity="other"/>
     </plurals>
     <plurals name="scenes">
         <item quantity="one">Scener</item>
-        <item quantity="other"></item>
+        <item quantity="other"/>
     </plurals>
     <plurals name="samples">
         <item quantity="one">Exempel</item>
-        <item quantity="other"></item>
+        <item quantity="other"/>
     </plurals>
     <plurals name="featurettes">
         <item quantity="one">Specialinslag</item>
-        <item quantity="other"></item>
+        <item quantity="other"/>
     </plurals>
     <plurals name="shorts">
         <item quantity="one">Kortfilmer</item>
-        <item quantity="other"></item>
+        <item quantity="other"/>
     </plurals>
     <plurals name="downloads">
         <item quantity="one">%s nedladdning</item>
@@ -198,7 +198,7 @@
     <string name="mark_watched">Markera som spelad</string>
     <string name="max_bitrate">Maximal bithastighet</string>
     <string name="more_like_this">Mer liknande detta</string>
-    <string name="next_up">Nästa upp</string>
+    <string name="next_up">Näst på tur</string>
     <string name="no_data">Ingen data</string>
     <string name="no_scheduled_recordings">Inga schemalagda inspelningar</string>
     <string name="no_update_available">Ingen uppdatering tillgänglig</string>
@@ -215,7 +215,7 @@
     <string name="ac3_supported">Enheten stöder AC3/Dolby Digital</string>
     <string name="advanced_settings">Avancerade inställningar</string>
     <string name="advanced_ui">Avancerat gränssnitt</string>
-    <string name="app_theme">App-tema</string>
+    <string name="app_theme">Tema</string>
     <string name="auto_check_for_updates">Kontrollera automatiskt efter uppdateringar</string>
     <string name="auto_play_next_delay">Fördröjning innan nästa uppspelning</string>
     <string name="auto_play_next">Spela upp nästa automatiskt</string>
@@ -245,4 +245,12 @@
     <string name="mpv_options">MPV inställningar</string>
     <string name="exoplayer_options">ExoPlayer inställningar</string>
     <string name="download_and_update"><![CDATA[Ladda ner och uppdatera]]></string>
+    <string name="skip_segment_intro">Hoppa över intro</string>
+    <string name="skip_segment_outro">Hoppa över eftertexter</string>
+    <string name="skip_segment_unknown">Hoppa över segment</string>
+    <string name="skip_segment_commercial">Hoppa över reklam</string>
+    <string name="skip_segment_preview">Hoppa över förhandsvisning</string>
+    <string name="subtitle_style">Utseende på text</string>
+    <string name="background_color">Bakgrundsfärg</string>
+    <string name="played">Spelad</string>
 </resources>

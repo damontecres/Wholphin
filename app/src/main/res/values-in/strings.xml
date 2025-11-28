@@ -12,7 +12,7 @@
     <string name="cancel_recording">Batalkan Perekaman</string>
     <string name="cancel_series_recording">Batalkan Perekaman Serial</string>
     <string name="cancel">Batal</string>
-    <string name="chapters">Segmen</string>
+    <string name="chapters">Chapter</string>
     <string name="choose_stream">Pilih %1$s</string>
     <string name="clear_image_cache">Hapus cache gambar</string>
     <string name="collection">Koleksi</string>
@@ -24,22 +24,22 @@
     <string name="continue_watching">Lanjutkan menonton</string>
     <string name="critic_rating">Penilaian Kritis</string>
     <string name="decimal_seconds">%.1f detik</string>
-    <string name="default_track">Setelan Awal</string>
+    <string name="default_track">Bawaan</string>
     <string name="delete">Hapus</string>
     <string name="died">Meninggal</string>
     <string name="directed_by">Disutradarai oleh %1$s</string>
     <string name="director">Sutradara</string>
     <string name="file_size">Ukuran</string>
     <string name="downloading">Mengunduh…</string>
-    <string name="enter_server_url">Masukkan IP Server atau URL termasuk port</string>
+    <string name="enter_server_url">Masukkan IP Server atau URL</string>
     <string name="episodes">Episode</string>
     <string name="error_loading_collection">Gagal memuat koleksi %1$s</string>
     <string name="discovered_servers">Server Ditemukan</string>
     <string name="download_and_update"><![CDATA[Download & Update]]></string>
     <string name="external_track">Eksternal</string>
     <string name="favorites">Favorit</string>
-    <string name="disabled">Dinonaktifkan</string>
-    <string name="enabled">Diktifkan</string>
+    <string name="disabled">Nonaktif</string>
+    <string name="enabled">Aktif</string>
     <string name="genres">Genre</string>
     <string name="go_to_series">Masuk ke serial</string>
     <string name="go_to">Masuk ke</string>
@@ -53,7 +53,7 @@
     <string name="jump_letters">#ABCDEFGHIJKLMNOPQRSTUVWXYZ</string>
     <string name="library">Pustaka</string>
     <string name="license_info">Informasi lisensi</string>
-    <string name="live_tv">TV Live</string>
+    <string name="live_tv">Live TV</string>
     <string name="loading">Memuat…</string>
     <string name="mark_entire_series_as_played">Tandai semua episode sudah ditonton?</string>
     <string name="mark_entire_series_as_unplayed">Tandai semua episode belum ditonton?</string>
@@ -76,11 +76,11 @@
     <string name="play_count">Total Pemutaran</string>
     <string name="play_from_here">Putar dari sini</string>
     <string name="play">Putar</string>
-    <string name="playback_debug_info">Tampilkan info debug pemutaran</string>
+    <string name="playback_debug_info">Tampilkan informasi statistik pemutaran</string>
     <string name="playback_speed">Kecepatan Pemutaran</string>
     <string name="playback">Pemutaran</string>
-    <string name="playlist">Daftar Putar</string>
-    <string name="playlists">Daftar Putar</string>
+    <string name="playlist">Playlist</string>
+    <string name="playlists">Playlist</string>
     <string name="preview">Pratinjau</string>
     <string name="profile_specific_settings">Pengaturan Profil</string>
     <string name="queue">Antrean</string>
@@ -116,7 +116,7 @@
     <string name="submit">kirim</string>
     <string name="subtitle_download_too_long">Unduhan terlalu lama, coba mulai ulang pemutaran</string>
     <string name="subtitle">Subtitel</string>
-    <string name="subtitles">Subtitle</string>
+    <string name="subtitles">Subtitel</string>
     <string name="suggestions">Rekomendasi</string>
     <string name="switch_servers">Ganti Server</string>
     <string name="switch_user">Ganti</string>
@@ -127,8 +127,8 @@
     </plurals>
     <string name="tv_dvr_schedule">Jadwal DVR</string>
     <string name="tv_guide">Panduan</string>
-    <string name="tv_season">Musim</string>
-    <string name="tv_seasons">Musim</string>
+    <string name="tv_season">Season</string>
+    <string name="tv_seasons">Season</string>
     <string name="tv_shows">Acara TV</string>
     <string name="ui_interface">Antarmuka</string>
     <string name="unknown">Tidak Diketahui</string>
@@ -142,8 +142,8 @@
     <string name="play_with_transcoding">Putar dengan transcoding</string>
     <string name="show_clock">Tampilkan Jam</string>
     <string name="aired_episode_order">Urutan Episode Tayang</string>
-    <string name="create_playlist">Buat Daftar Putar Baru</string>
-    <string name="add_to_playlist">Tambahkan ke Daftar Putar</string>
+    <string name="create_playlist">Buat playlist baru</string>
+    <string name="add_to_playlist">Tambahkan ke playlist</string>
     <string name="one_click_pause">Jeda sekali klik</string>
     <string name="one_click_pause_summary_on">Tekan pusat D-Pad untuk jeda/putar</string>
     <string name="italic_font">Teks miring</string>
@@ -205,13 +205,13 @@
     <string name="check_for_updates">Periksa Pembaruan</string>
     <string name="combine_continue_next_summary">Hanya berlaku untuk Serial TV</string>
     <string name="combine_continue_next"><![CDATA[Combine Continue Watching & Next Up]]></string>
-    <string name="direct_play_ass">Putar langsung subtitle ASS</string>
-    <string name="direct_play_pgs">Putar langsung subtitle PGS</string>
+    <string name="direct_play_ass">Putar langsung subtitel ASS</string>
+    <string name="direct_play_pgs">Putar langsung subtitel PGS</string>
     <string name="downmix_stereo">Selalu downmix ke stereo</string>
     <string name="ffmpeg_extension_pref">Gunakan dekoder FFmpeg</string>
     <string name="global_content_scale">Skala konten bawaan</string>
-    <string name="install_update">Pasang Pembaruan</string>
-    <string name="installed_version">Versi Terpasang</string>
+    <string name="install_update">Pasang pembaruan</string>
+    <string name="installed_version">Versi terpasang</string>
     <string name="max_homepage_items">Maks item pada baris halaman utama</string>
     <string name="nav_drawer_pins_summary">Pilih item bawaan yang akan ditampilkan, lainnya akan disembunyikan</string>
     <string name="nav_drawer_pins">Kustomisasi Item Navigasi</string>
@@ -258,4 +258,15 @@
     <plurals name="downloads">
         <item quantity="other">%s unduhan</item>
     </plurals>
+    <string name="skip_segment_unknown">Lewati Segmen</string>
+    <string name="skip_segment_commercial">Lewati Iklan</string>
+    <string name="skip_segment_preview">Lewati Pratinjau</string>
+    <string name="skip_segment_recap">Lewati Rekap</string>
+    <string name="skip_segment_outro">Lewati Outro</string>
+    <string name="skip_segment_intro">Lewati Intro</string>
+    <string name="played">Sudah Diputar</string>
+    <string name="filter">Filter</string>
+    <string name="year">Tahun</string>
+    <string name="decade">Dekade</string>
+    <string name="remove">Hapus</string>
 </resources>

@@ -90,7 +90,7 @@
     <string name="discovered_servers">Gefundene Server</string>
     <string name="downloading">Herunterladen…</string>
     <string name="enabled">Aktiviert</string>
-    <string name="enter_server_url">Serveradresse oder URL inkluse Port eingeben</string>
+    <string name="enter_server_url">Serveradresse oder URL inklusive Port eingeben</string>
     <string name="episodes">Episoden</string>
     <string name="error_loading_collection">Fehler beim Laden der Sammlung %1$s</string>
     <string name="external_track">Extern</string>
@@ -119,13 +119,13 @@
     <string name="none">Keine</string>
     <string name="play_from_here">Von hier wiedergeben</string>
     <string name="play">Ansehen</string>
-    <string name="playback_speed">Wiedergabe geschwindigkeit</string>
+    <string name="playback_speed">Wiedergabegeschwindigkeit</string>
     <string name="playback">Wiedergabe</string>
     <string name="preview">Vorschau</string>
     <string name="profile_specific_settings">Benutzerprofil Einstellungen</string>
     <string name="queue">Warteschlange</string>
     <string name="recap">Rückblick</string>
-    <string name="recently_released">Zuletzt herausgebracht</string>
+    <string name="recently_released">Zuletzt veröffentlicht</string>
     <string name="record_program">Programm aufnehmen</string>
     <string name="record_series">Serie aufnehmen</string>
     <string name="remove_favorite">Nicht favorisieren</string>
@@ -157,7 +157,7 @@
     <string name="official_rating">Altersfreigabe</string>
     <plurals name="other_extras">
         <item quantity="one">Sonstiges</item>
-        <item quantity="other"></item>
+        <item quantity="other"/>
     </plurals>
     <plurals name="behind_the_scenes">
         <item quantity="one">Hinter den Kulissen</item>
@@ -165,7 +165,7 @@
     </plurals>
     <plurals name="deleted_scenes">
         <item quantity="one">Gelöschte Szenen</item>
-        <item quantity="other"></item>
+        <item quantity="other"/>
     </plurals>
     <plurals name="items">
         <item quantity="one">%d Eintrag</item>
@@ -184,8 +184,8 @@
     <string name="outro">Outro</string>
     <string name="play_count">Wiedergabe Anzahl</string>
     <string name="playback_debug_info">Zeige Wiedergabe Debug infos</string>
-    <string name="playlist">Playlist</string>
-    <string name="playlists">Playlisten</string>
+    <string name="playlist">Wiedergabeliste</string>
+    <string name="playlists">Wiedergabelisten</string>
     <string name="show_next_up_when">Zeige als nächstes</string>
     <string name="show">Zeigen</string>
     <string name="sort_by_name">Name</string>
@@ -200,11 +200,11 @@
     <string name="runtime_sort">Laufzeit</string>
     <plurals name="theme_songs">
         <item quantity="one">Theme Songs</item>
-        <item quantity="other"></item>
+        <item quantity="other"/>
     </plurals>
     <plurals name="theme_videos">
         <item quantity="one">Theme Videos</item>
-        <item quantity="other"></item>
+        <item quantity="other"/>
     </plurals>
     <plurals name="clips">
         <item quantity="one">Clips</item>
@@ -224,7 +224,7 @@
     </plurals>
     <plurals name="shorts">
         <item quantity="one">Shorts</item>
-        <item quantity="other"></item>
+        <item quantity="other"/>
     </plurals>
     <string name="combine_continue_next_summary">Trifft nur auf Serien zu</string>
     <string name="direct_play_ass">Direct play ASS subtitles</string>
@@ -280,4 +280,10 @@
     <string name="skip_segment_recap">Rückblick Überspringen</string>
     <string name="skip_segment_outro">Outro Überspringen</string>
     <string name="skip_segment_intro">Intro Überspringen</string>
+    <string name="filter">Filter</string>
+    <string name="year">Jahr</string>
+    <string name="decade">Jahrzehnt</string>
+    <string name="remove">Entfernen</string>
+    <string name="dolby_vision">Dolby Vision</string>
+    <string name="dolby_atmos">Dolby Atmos</string>
 </resources>
