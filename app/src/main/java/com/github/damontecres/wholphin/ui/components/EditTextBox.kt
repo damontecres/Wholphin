@@ -53,8 +53,8 @@ fun EditTextBox(
     isInputValid: (String) -> Boolean = { true },
     supportingText: @Composable (() -> Unit)? = null,
     placeholder: @Composable (() -> Unit)? = null,
+    interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
 ) {
-    val interactionSource = remember { MutableInteractionSource() }
     // From ButtonDefaults
     val colors =
         TextFieldDefaults.colors(
@@ -157,6 +157,7 @@ fun SearchEditTextBox(
     enabled: Boolean = true,
     readOnly: Boolean = false,
     height: Dp = 40.dp,
+    interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
 ) {
     EditTextBox(
         value,
@@ -171,7 +172,7 @@ fun SearchEditTextBox(
             KeyboardActions(
                 onSearch = {
                     onSearchClick.invoke()
-                    this.defaultKeyboardAction(ImeAction.Done)
+                    this.defaultKeyboardAction(ImeAction.Search)
                 },
             ),
         leadingIcon = {
@@ -181,9 +182,10 @@ fun SearchEditTextBox(
                 tint = MaterialTheme.colorScheme.onPrimaryContainer,
             )
         },
-        enabled,
-        readOnly,
-        height,
+        enabled = enabled,
+        readOnly = readOnly,
+        height = height,
+        interactionSource = interactionSource,
     )
 }
 

@@ -1,5 +1,9 @@
 package com.github.damontecres.wholphin.ui.main
 
+import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.focusGroup
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -18,10 +22,13 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -157,6 +164,8 @@ fun SearchPage(
     viewModel: SearchViewModel = hiltViewModel(),
 ) {
     val context = LocalContext.current
+    val focusManager = LocalFocusManager.current
+    val keyboardController = LocalSoftwareKeyboardController.current
     val movies by viewModel.movies.observeAsState(SearchResult.NoQuery)
     val collections by viewModel.collections.observeAsState(SearchResult.NoQuery)
     val series by viewModel.series.observeAsState(SearchResult.NoQuery)
@@ -166,6 +175,7 @@ fun SearchPage(
     val focusRequester = remember { FocusRequester() }
 
     var position by rememberPosition()
+    var searchClicked by rememberSaveable { mutableStateOf(false) }
 
     LaunchedEffect(query) {
         delay(750L)
@@ -177,17 +187,31 @@ fun SearchPage(
     val onClickItem = { index: Int, item: BaseItem ->
         viewModel.navigationManager.navigateTo(item.destination())
     }
+    LaunchedEffect(searchClicked, movies, collections, series, episodes) {
+        if (searchClicked) {
+            if (listOf(movies, collections, series, episodes).any { it is SearchResult.Success }) {
+                focusManager.moveFocus(FocusDirection.Next)
+                searchClicked = false
+            }
+        }
+    }
 
     LazyColumn(
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 44.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
-        modifier = modifier,
+        modifier = modifier.focusGroup(),
     ) {
         item {
             Box(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier.fillMaxWidth(),
             ) {
+                val interactionSource = remember { MutableInteractionSource() }
+                val focused by interactionSource.collectIsFocusedAsState()
+                BackHandler(focused) {
+                    keyboardController?.hide()
+                    focusManager.moveFocus(FocusDirection.Next)
+                }
                 SearchEditTextBox(
                     value = query,
                     onValueChange = {
@@ -195,12 +219,15 @@ fun SearchPage(
                     },
                     onSearchClick = {
                         viewModel.search(query)
+                        searchClicked = true
                     },
                     modifier =
-                        Modifier.ifElse(
-                            position.row < MOVIE_ROW,
-                            Modifier.focusRequester(focusRequester),
-                        ),
+                        Modifier
+                            .ifElse(
+                                position.row < MOVIE_ROW,
+                                Modifier.focusRequester(focusRequester),
+                            ),
+                    interactionSource = interactionSource,
                 )
             }
         }
