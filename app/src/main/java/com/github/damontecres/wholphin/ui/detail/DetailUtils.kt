@@ -47,7 +47,7 @@ data class MoreDialogActions(
 fun buildMoreDialogItems(
     context: Context,
     item: BaseItem,
-    series: BaseItem?,
+    seriesId: UUID?,
     sourceId: UUID?,
     watched: Boolean,
     favorite: Boolean,
@@ -144,7 +144,7 @@ fun buildMoreDialogItems(
                 actions.onClickFavorite.invoke(item.id, !favorite)
             },
         )
-        series?.let {
+        seriesId?.let {
             add(
                 DialogItem(
                     context.getString(R.string.go_to_series),
@@ -152,9 +152,8 @@ fun buildMoreDialogItems(
                 ) {
                     actions.navigateTo(
                         Destination.MediaItem(
-                            series.id,
+                            seriesId,
                             BaseItemKind.SERIES,
-                            series,
                         ),
                     )
                 },
