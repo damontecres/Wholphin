@@ -40,6 +40,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.intl.Locale
@@ -117,6 +118,7 @@ fun PlaybackPage(
         LoadingState.Success -> {
             val prefs = preferences.appPreferences.playbackPreferences
             val scope = rememberCoroutineScope()
+            val configuration = LocalConfiguration.current
             val density = LocalDensity.current
 
             val player = viewModel.player
@@ -142,11 +144,11 @@ fun PlaybackPage(
             val subtitleSearchLanguage by viewModel.subtitleSearchLanguage.observeAsState(Locale.current.language)
 
             var playbackDialog by remember { mutableStateOf<PlaybackDialogType?>(null) }
-
             OneTimeLaunchedEffect {
                 if (prefs.playerBackend == PlayerBackend.MPV) {
                     scope.launch(Dispatchers.Main + ExceptionHandler()) {
                         preferences.appPreferences.interfacePreferences.subtitlesPreferences.applyToMpv(
+                            configuration,
                             density,
                         )
                     }
@@ -322,6 +324,7 @@ fun PlaybackPage(
                                     preferences.appPreferences.interfacePreferences.subtitlesPreferences.let {
                                         setStyle(it.toSubtitleStyle())
                                         setFixedTextSize(Dimension.SP, it.fontSize.toFloat())
+                                        setBottomPaddingFraction(it.margin.toFloat() / 100f)
                                     }
                                 }
                             },
