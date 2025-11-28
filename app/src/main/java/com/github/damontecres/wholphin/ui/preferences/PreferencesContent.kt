@@ -69,6 +69,7 @@ fun PreferencesContent(
     modifier: Modifier = Modifier,
     viewModel: PreferencesViewModel = hiltViewModel(),
     updateVM: UpdateViewModel = hiltViewModel(),
+    onFocus: (Int, Int) -> Unit = { _, _ -> },
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -216,6 +217,7 @@ fun PreferencesContent(
                             if (focused) {
                                 focusedIndex = Pair(groupIndex, prefIndex)
                                 if (movementSounds) playOnClickSound(context)
+                                onFocus.invoke(groupIndex, prefIndex)
                             }
                         }
                         when (pref) {

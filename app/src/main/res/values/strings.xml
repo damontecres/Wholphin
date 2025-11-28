@@ -326,6 +326,7 @@
     <string name="remove">Remove</string>
     <string name="dolby_vision">Dolby Vision</string>
     <string name="dolby_atmos">Dolby Atmos</string>
+    <string name="subtitle_margin">Margin</string>
 
     <string-array name="theme_song_volume">
         <item>Disabled</item>

@@ -1,10 +1,12 @@
 package com.github.damontecres.wholphin.ui.preferences.subtitle
 
+import android.content.res.Configuration
 import android.graphics.Typeface
 import androidx.annotation.OptIn
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.ui.CaptionStyleCompat
@@ -21,6 +23,7 @@ import com.github.damontecres.wholphin.ui.indexOfFirstOrNull
 import com.github.damontecres.wholphin.ui.preferences.PreferenceGroup
 import com.github.damontecres.wholphin.util.mpv.MPVLib
 import com.github.damontecres.wholphin.util.mpv.setPropertyColor
+import timber.log.Timber
 
 object SubtitleSettings {
     val FontSize =
@@ -183,6 +186,23 @@ object SubtitleSettings {
             valueToIndex = { it.number },
         )
 
+    val Margin =
+        AppSliderPreference(
+            title = R.string.subtitle_margin,
+            defaultValue = 8,
+            min = 0,
+            max = 100,
+            interval = 1,
+            getter = {
+                it.interfacePreferences.subtitlesPreferences.margin
+                    .toLong()
+            },
+            setter = { prefs, value ->
+                prefs.updateSubtitlePreferences { margin = value.toInt() }
+            },
+            summarizer = { value -> value?.let { "$it%" } },
+        )
+
     val Reset =
         AppClickablePreference(
             title = R.string.reset,
@@ -223,16 +243,23 @@ object SubtitleSettings {
             PreferenceGroup(
                 title = R.string.more,
                 preferences =
-                    listOf(Reset),
+                    listOf(
+                        Margin,
+                        Reset,
+                    ),
             ),
         )
 
+    private fun combine(
+        color: Int,
+        opacity: Int,
+    ) = ((opacity / 100.0 * 255).toInt().shl(24)).or(color.and(0x00FFFFFF))
+
     @OptIn(UnstableApi::class)
     fun SubtitlePreferences.toSubtitleStyle(): CaptionStyleCompat {
-        val fo = (fontOpacity / 100.0 * 255).toInt().shl(24)
-        val bg = (backgroundOpacity / 100.0 * 255).toInt().shl(24).or(backgroundColor)
+        val bg = combine(backgroundColor, backgroundOpacity)
         return CaptionStyleCompat(
-            fo.or(fontColor),
+            combine(fontColor, fontOpacity),
             if (backgroundStyle == BackgroundStyle.BG_WRAP)bg else 0,
             if (backgroundStyle == BackgroundStyle.BG_BOXED) bg else 0,
             when (edgeStyle) {
@@ -240,7 +267,7 @@ object SubtitleSettings {
                 EdgeStyle.EDGE_SOLID -> CaptionStyleCompat.EDGE_TYPE_OUTLINE
                 EdgeStyle.EDGE_SHADOW -> CaptionStyleCompat.EDGE_TYPE_DROP_SHADOW
             },
-            fo.or(edgeColor),
+            combine(edgeColor, fontOpacity),
             when {
                 fontBold && fontItalic -> Typeface.defaultFromStyle(Typeface.BOLD_ITALIC)
                 fontBold -> Typeface.defaultFromStyle(Typeface.BOLD)
@@ -250,17 +277,25 @@ object SubtitleSettings {
         )
     }
 
-    fun SubtitlePreferences.applyToMpv(density: Density) {
+    fun SubtitlePreferences.applyToMpv(
+        configuration: Configuration,
+        density: Density,
+    ) {
         val fo = (fontOpacity / 100.0 * 255).toInt().shl(24)
-        val fc = Color(fo.or(fontColor))
-        val bg = Color((backgroundOpacity / 100.0 * 255).toInt().shl(24).or(backgroundColor))
-        val edge = Color(fo.or(edgeColor))
+        val fc = Color(combine(fontColor, fontOpacity))
+        val bg = Color(combine(backgroundColor, backgroundOpacity))
+        val edge = Color(combine(edgeColor, fontOpacity))
 
         // TODO weird, but seems to get the size to be very close to matching sizes between renderers
         val fontSizePx = with(density) { fontSize.sp.toPx() * .8 }.toInt()
         MPVLib.setPropertyInt("sub-font-size", fontSizePx)
         MPVLib.setPropertyColor("sub-color", fc)
         MPVLib.setPropertyColor("sub-outline-color", edge)
+
+        val heightInPx = with(density) { configuration.screenHeightDp.dp.toPx() }
+        val margin = (heightInPx * (margin.toFloat() / 100f) * .8).toInt()
+        MPVLib.setPropertyInt("sub-margin-y", margin)
+        Timber.d("MPV subtitles: fontSizePx=%s, margin=$margin", fontSizePx, margin)
 
         when (edgeStyle) {
             EdgeStyle.EDGE_NONE,
