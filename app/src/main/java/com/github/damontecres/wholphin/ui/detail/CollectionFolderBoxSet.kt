@@ -14,8 +14,11 @@ import com.github.damontecres.wholphin.data.model.GetItemsFilter
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.components.CollectionFolderGrid
 import com.github.damontecres.wholphin.ui.components.CollectionFolderGridParameters
-import com.github.damontecres.wholphin.ui.data.MovieSortOptions
+import com.github.damontecres.wholphin.ui.data.BoxSetSortOptions
+import com.github.damontecres.wholphin.ui.data.SortAndDirection
 import com.github.damontecres.wholphin.ui.preferences.PreferencesViewModel
+import org.jellyfin.sdk.model.api.ItemSortBy
+import org.jellyfin.sdk.model.api.SortOrder
 import java.util.UUID
 
 @Composable
@@ -37,7 +40,8 @@ fun CollectionFolderBoxSet(
         initialFilter = filter,
         showTitle = showHeader,
         recursive = recursive,
-        sortOptions = MovieSortOptions,
+        sortOptions = BoxSetSortOptions,
+        initialSortAndDirection = SortAndDirection(ItemSortBy.DEFAULT, SortOrder.ASCENDING),
         modifier =
             modifier
                 .padding(start = 16.dp),
