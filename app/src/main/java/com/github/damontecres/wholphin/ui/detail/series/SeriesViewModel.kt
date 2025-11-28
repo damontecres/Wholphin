@@ -24,6 +24,7 @@ import com.github.damontecres.wholphin.ui.SlimItemFields
 import com.github.damontecres.wholphin.ui.detail.ItemViewModel
 import com.github.damontecres.wholphin.ui.equalsNotNull
 import com.github.damontecres.wholphin.ui.launchIO
+import com.github.damontecres.wholphin.ui.letNotEmpty
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.setValueOnMain
 import com.github.damontecres.wholphin.ui.showToast
@@ -79,6 +80,8 @@ class SeriesViewModel
         val extras = MutableLiveData<List<ExtrasItem>>(listOf())
         val people = MutableLiveData<List<Person>>(listOf())
         val similar = MutableLiveData<List<BaseItem>>()
+
+        val peopleInEpisode = MutableLiveData<List<Person>>(listOf())
 
         fun init(
             prefs: UserPreferences,
@@ -218,6 +221,7 @@ class SeriesViewModel
                             ItemFields.CUSTOM_RATING,
                             ItemFields.TRICKPLAY,
                             ItemFields.PRIMARY_IMAGE_ASPECT_RATIO,
+                            ItemFields.PEOPLE,
                         ),
                 )
             val pager = ApiRequestPager(api, request, GetEpisodesRequestHandler, viewModelScope)
@@ -241,6 +245,7 @@ class SeriesViewModel
         }
 
         fun loadEpisodes(seasonId: UUID) {
+            this@SeriesViewModel.peopleInEpisode.value = listOf()
             this@SeriesViewModel.episodes.value = EpisodeList.Loading
             viewModelScope.launchIO(ExceptionHandler(true)) {
                 val episodes =
@@ -253,6 +258,10 @@ class SeriesViewModel
                 withContext(Dispatchers.Main) {
                     this@SeriesViewModel.episodes.value = episodes
                 }
+                (episodes as? EpisodeList.Success)
+                    ?.let {
+                        it.episodes.getOrNull(it.initialIndex)
+                    }?.let { lookupPeopleInEpisode(it) }
             }
         }
 
@@ -402,6 +411,16 @@ class SeriesViewModel
                     chosenStreams.value = chosen
                 }
             }
+        }
+
+        private var peopleInEpisodeJob: Job? = null
+
+        suspend fun lookupPeopleInEpisode(item: BaseItem) {
+            val people =
+                item.data.people
+                    ?.letNotEmpty { it.map { Person.fromDto(it, api) } }
+                    .orEmpty()
+            peopleInEpisode.setValueOnMain(people)
         }
     }
 

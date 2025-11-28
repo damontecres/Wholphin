@@ -4,6 +4,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusState
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.github.damontecres.wholphin.data.ChosenStreams
@@ -20,6 +22,7 @@ fun FocusedEpisodeHeader(
     ep: BaseItem?,
     chosenStreams: ChosenStreams?,
     overviewOnClick: () -> Unit,
+    overviewOnFocus: (FocusState) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -44,6 +47,7 @@ fun FocusedEpisodeHeader(
             overview = dto?.overview ?: "",
             maxLines = 3,
             onClick = overviewOnClick,
+            modifier = Modifier.onFocusChanged(overviewOnFocus),
         )
     }
 }

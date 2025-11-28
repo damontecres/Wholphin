@@ -39,11 +39,13 @@ import com.github.damontecres.wholphin.ui.detail.buildMoreDialogItems
 import com.github.damontecres.wholphin.ui.equalsNotNull
 import com.github.damontecres.wholphin.ui.indexOfFirstOrNull
 import com.github.damontecres.wholphin.ui.nav.Destination
+import com.github.damontecres.wholphin.ui.rememberInt
 import com.github.damontecres.wholphin.ui.seasonEpisode
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.LoadingState
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.UseSerializers
+import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.ImageType
 import org.jellyfin.sdk.model.api.MediaType
 import org.jellyfin.sdk.model.extensions.ticks
@@ -85,6 +87,7 @@ fun SeriesOverview(
     val context = LocalContext.current
     val firstItemFocusRequester = remember { FocusRequester() }
     val episodeRowFocusRequester = remember { FocusRequester() }
+    val peopleRowFocusRequester = remember { FocusRequester() }
 
     var initialLoadDone by rememberSaveable { mutableStateOf(false) }
     OneTimeLaunchedEffect {
@@ -103,6 +106,7 @@ fun SeriesOverview(
     val series by viewModel.item.observeAsState(null)
     val seasons by viewModel.seasons.observeAsState(listOf())
     val episodes by viewModel.episodes.observeAsState(EpisodeList.Loading)
+    val peopleInEpisode by viewModel.peopleInEpisode.observeAsState(listOf())
     val episodeList = (episodes as? EpisodeList.Success)?.episodes
 
     var position by rememberSaveable(
@@ -138,6 +142,8 @@ fun SeriesOverview(
     var showPlaylistDialog by remember { mutableStateOf<UUID?>(null) }
     val playlistState by playlistViewModel.playlistState.observeAsState(PlaylistLoadingState.Pending)
 
+    var rowFocused by rememberInt()
+
     LaunchedEffect(episodes) {
         episodes?.let { episodes ->
             if (episodes is EpisodeList.Success) {
@@ -158,6 +164,7 @@ fun SeriesOverview(
             ?.getOrNull(position.episodeRowIndex)
             ?.let {
                 viewModel.lookUpChosenTracks(it.id, it)
+                viewModel.lookupPeopleInEpisode(it)
             }
     }
     val chosenStreams by viewModel.chosenStreams.observeAsState(null)
@@ -171,7 +178,14 @@ fun SeriesOverview(
 
         LoadingState.Success -> {
             series?.let { series ->
-                LaunchedEffect(Unit) { episodeRowFocusRequester.tryRequestFocus() }
+
+                LaunchedEffect(Unit) {
+                    if (rowFocused == EPISODE_ROW) {
+                        episodeRowFocusRequester.tryRequestFocus()
+                    } else if (rowFocused == PEOPLE_ROW) {
+                        peopleRowFocusRequester.tryRequestFocus()
+                    }
+                }
                 LifecycleStartEffect(destination.itemId) {
                     viewModel.maybePlayThemeSong(
                         destination.itemId,
@@ -263,6 +277,7 @@ fun SeriesOverview(
                     seasons = seasons,
                     episodes = episodes,
                     chosenStreams = chosenStreams,
+                    peopleInEpisode = peopleInEpisode,
                     position = position,
                     backdropImageUrl =
                         remember {
@@ -273,6 +288,7 @@ fun SeriesOverview(
                         },
                     firstItemFocusRequester = firstItemFocusRequester,
                     episodeRowFocusRequester = episodeRowFocusRequester,
+                    peopleRowFocusRequester = peopleRowFocusRequester,
                     onFocus = {
                         if (it.seasonTabIndex != position.seasonTabIndex) {
                             seasons.getOrNull(it.seasonTabIndex)?.let { season ->
@@ -282,6 +298,7 @@ fun SeriesOverview(
                         position = it
                     },
                     onClick = {
+                        rowFocused = EPISODE_ROW
                         val resumePosition =
                             it.data.userData
                                 ?.playbackPositionTicks
@@ -298,6 +315,7 @@ fun SeriesOverview(
                         moreDialog = buildMoreForEpisode(ep, true)
                     },
                     playOnClick = { resume ->
+                        rowFocused = EPISODE_ROW
                         episodeList?.getOrNull(position.episodeRowIndex)?.let {
                             viewModel.release()
                             viewModel.navigateTo(
@@ -336,6 +354,15 @@ fun SeriesOverview(
                                     files = it.data.mediaSources.orEmpty(),
                                 )
                         }
+                    },
+                    personOnClick = {
+                        rowFocused = PEOPLE_ROW
+                        viewModel.navigateTo(
+                            Destination.MediaItem(
+                                it.id,
+                                BaseItemKind.PERSON,
+                            ),
+                        )
                     },
                     modifier = modifier,
                 )
@@ -391,3 +418,6 @@ fun SeriesOverview(
         )
     }
 }
+
+private const val EPISODE_ROW = 0
+private const val PEOPLE_ROW = EPISODE_ROW + 1

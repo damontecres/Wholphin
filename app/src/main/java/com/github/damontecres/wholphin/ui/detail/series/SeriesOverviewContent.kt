@@ -2,21 +2,24 @@ package com.github.damontecres.wholphin.ui.detail.series
 
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
+import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.relocation.bringIntoViewRequester
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -24,6 +27,7 @@ import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -38,10 +42,12 @@ import androidx.compose.ui.unit.dp
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.ChosenStreams
 import com.github.damontecres.wholphin.data.model.BaseItem
+import com.github.damontecres.wholphin.data.model.Person
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.AspectRatios
 import com.github.damontecres.wholphin.ui.OneTimeLaunchedEffect
 import com.github.damontecres.wholphin.ui.cards.BannerCard
+import com.github.damontecres.wholphin.ui.cards.PersonRow
 import com.github.damontecres.wholphin.ui.components.DetailsBackdropImage
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.LoadingPage
@@ -51,6 +57,7 @@ import com.github.damontecres.wholphin.ui.formatDateTime
 import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.logTab
 import com.github.damontecres.wholphin.ui.tryRequestFocus
+import kotlinx.coroutines.launch
 import kotlin.time.Duration
 
 @Composable
@@ -60,10 +67,12 @@ fun SeriesOverviewContent(
     seasons: List<BaseItem?>,
     episodes: EpisodeList,
     chosenStreams: ChosenStreams?,
+    peopleInEpisode: List<Person>,
     position: SeriesOverviewPosition,
     backdropImageUrl: String?,
     firstItemFocusRequester: FocusRequester,
     episodeRowFocusRequester: FocusRequester,
+    peopleRowFocusRequester: FocusRequester,
     onFocus: (SeriesOverviewPosition) -> Unit,
     onClick: (BaseItem) -> Unit,
     onLongClick: (BaseItem) -> Unit,
@@ -72,8 +81,10 @@ fun SeriesOverviewContent(
     favoriteOnClick: () -> Unit,
     moreOnClick: () -> Unit,
     overviewOnClick: () -> Unit,
+    personOnClick: (Person) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val scope = rememberCoroutineScope()
     val bringIntoViewRequester = remember { BringIntoViewRequester() }
     var selectedTabIndex by rememberSaveable(position) { mutableIntStateOf(position.seasonTabIndex) }
     LaunchedEffect(selectedTabIndex) {
@@ -87,24 +98,40 @@ fun SeriesOverviewContent(
     var cardRowHasFocus by remember { mutableStateOf(false) }
     val dimming by animateFloatAsState(if (pageHasFocus && !cardRowHasFocus) .4f else 1f)
 
+//    val listState = rememberLazyListState()
+    val scrollState = rememberScrollState()
+//    LaunchedEffect(position) {
+//        listState.scrollToItem(0)
+//    }
+
     Box(
         modifier =
             modifier
-                .fillMaxWidth()
+                .fillMaxWidth(),
 //                .fillMaxHeight(.33f)
-                .height(460.dp)
-                .bringIntoViewRequester(bringIntoViewRequester),
+//                .height(460.dp)
     ) {
         DetailsBackdropImage(backdropImageUrl)
-        LazyColumn(
+        Column(
+//            state = listState,
             verticalArrangement = Arrangement.spacedBy(8.dp),
-            contentPadding = PaddingValues(16.dp),
+//            contentPadding = PaddingValues(16.dp),
             modifier =
                 Modifier
-                    .focusRestorer(episodeRowFocusRequester)
+                    .fillMaxSize()
+                    .padding(16.dp)
+                    .focusGroup()
+                    .verticalScroll(scrollState, enabled = false)
+//                    .focusRestorer(episodeRowFocusRequester)
                     .onFocusChanged { pageHasFocus = it.hasFocus },
         ) {
-            item {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                modifier =
+                    Modifier
+                        .focusGroup()
+                        .bringIntoViewRequester(bringIntoViewRequester),
+            ) {
                 val paddingValues =
                     if (preferences.appPreferences.interfacePreferences.showClock) {
                         PaddingValues(start = 16.dp, end = 100.dp)
@@ -129,21 +156,28 @@ fun SeriesOverviewContent(
                             .padding(paddingValues)
                             .fillMaxWidth(),
                 )
-            }
-            item {
+//            }
+//            item {
                 SeriesName(series.name, Modifier)
-            }
-            item {
+//            }
+//            item {
                 // Episode header
                 FocusedEpisodeHeader(
                     preferences = preferences,
                     ep = focusedEpisode,
                     chosenStreams = chosenStreams,
                     overviewOnClick = overviewOnClick,
+                    overviewOnFocus = {
+                        if (it.isFocused) {
+                            scope.launch {
+                                bringIntoViewRequester.bringIntoView()
+                            }
+                        }
+                    },
                     modifier = Modifier.fillMaxWidth(.6f),
                 )
-            }
-            item {
+//            }
+//            item {
                 key(position.seasonTabIndex) {
                     when (val eps = episodes) {
                         EpisodeList.Loading -> LoadingPage()
@@ -216,7 +250,13 @@ fun SeriesOverviewContent(
                                                             Color.Black,
                                                             shape = RoundedCornerShape(8.dp),
                                                         ).alpha(dimming),
-                                                ),
+                                                ).onFocusChanged {
+                                                    if (it.isFocused) {
+                                                        scope.launch {
+                                                            bringIntoViewRequester.bringIntoView()
+                                                        }
+                                                    }
+                                                },
                                         interactionSource = interactionSource,
                                         cardHeight = 120.dp,
                                     )
@@ -225,8 +265,8 @@ fun SeriesOverviewContent(
                         }
                     }
                 }
-            }
-            item {
+//            }
+//            item {
                 focusedEpisode?.let { ep ->
                     FocusedEpisodeFooter(
                         preferences = preferences,
@@ -239,6 +279,13 @@ fun SeriesOverviewContent(
                             episodeRowFocusRequester.tryRequestFocus()
                         },
                         favoriteOnClick = favoriteOnClick,
+                        buttonOnFocusChanged = {
+                            if (it.isFocused) {
+                                scope.launch {
+                                    bringIntoViewRequester.bringIntoView()
+                                }
+                            }
+                        },
                         modifier =
                             Modifier
                                 .fillMaxWidth()
@@ -246,6 +293,20 @@ fun SeriesOverviewContent(
                     )
                 }
             }
+//            }
+//            item {
+            if (peopleInEpisode.isNotEmpty()) {
+                PersonRow(
+                    people = peopleInEpisode,
+                    onClick = personOnClick,
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 200.dp)
+                            .focusRequester(peopleRowFocusRequester),
+                )
+            }
+//            }
         }
     }
 }
