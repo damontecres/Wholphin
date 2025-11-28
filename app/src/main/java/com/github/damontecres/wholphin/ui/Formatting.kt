@@ -11,7 +11,7 @@ import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import java.util.Locale
 
-val TimeFormatter = DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT)
+val TimeFormatter: DateTimeFormatter = DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT)
 
 /**
  * Format a [LocalDateTime] as `Aug 24, 2000`
