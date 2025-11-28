@@ -78,31 +78,7 @@ fun FilterByButton(
                 nestedDropDown = null
             },
         ) {
-            filterOptions
-                .forEach { filterOption ->
-                    val currentValue = remember(current) { filterOption.get(current) }
-                    TvDropdownMenuItem(
-                        leadingIcon = {
-                            if (currentValue != null) {
-                                Icon(
-                                    imageVector = Icons.Default.Check,
-                                    contentDescription = "Filter active",
-                                )
-                            }
-                        },
-                        text = {
-                            Text(
-                                text = stringResource(filterOption.stringRes),
-                            )
-                        },
-                        onClick = {
-                            nestedDropDown = filterOption
-                        },
-                        modifier = Modifier,
-                    )
-                }
             if (filterCount > 0) {
-                HorizontalDivider()
                 val interactionSource = remember { MutableInteractionSource() }
                 val focused by interactionSource.collectIsFocusedAsState()
                 TvDropdownMenuItem(
@@ -126,7 +102,35 @@ fun FilterByButton(
                     interactionSource = interactionSource,
                     modifier = Modifier,
                 )
+                HorizontalDivider()
             }
+            filterOptions
+                .forEachIndexed { index, filterOption ->
+                    val focusRequester = remember { FocusRequester() }
+                    if (index == 0) {
+                        LaunchedEffect(Unit) { focusRequester.tryRequestFocus() }
+                    }
+                    val currentValue = remember(current) { filterOption.get(current) }
+                    TvDropdownMenuItem(
+                        leadingIcon = {
+                            if (currentValue != null) {
+                                Icon(
+                                    imageVector = Icons.Default.Check,
+                                    contentDescription = "Filter active",
+                                )
+                            }
+                        },
+                        text = {
+                            Text(
+                                text = stringResource(filterOption.stringRes),
+                            )
+                        },
+                        onClick = {
+                            nestedDropDown = filterOption
+                        },
+                        modifier = Modifier.focusRequester(focusRequester),
+                    )
+                }
         }
 
         DropdownMenu(

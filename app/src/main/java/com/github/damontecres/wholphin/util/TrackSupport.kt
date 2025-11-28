@@ -146,7 +146,9 @@ fun checkForSupport(tracks: Tracks): List<TrackSupport> =
     }
 
 fun languageName(code: String?): String =
-    if (code != null) {
+    if (code == "und") {
+        "Unknown"
+    } else if (code != null) {
         try {
             Locale(code).displayLanguage
         } catch (ex: Exception) {

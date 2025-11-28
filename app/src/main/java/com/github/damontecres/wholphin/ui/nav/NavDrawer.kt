@@ -32,7 +32,6 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
@@ -77,7 +76,7 @@ import com.github.damontecres.wholphin.preferences.AppThemeColors
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.ui.FontAwesome
-import com.github.damontecres.wholphin.ui.TimeFormatter
+import com.github.damontecres.wholphin.ui.components.TimeDisplay
 import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.preferences.PreferenceScreenOption
@@ -89,11 +88,9 @@ import com.github.damontecres.wholphin.ui.tryRequestFocus
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.isActive
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.model.api.CollectionType
 import org.jellyfin.sdk.model.api.DeviceProfile
-import java.time.LocalTime
 import java.util.UUID
 import javax.inject.Inject
 
@@ -498,23 +495,7 @@ fun NavDrawer(
                         .fillMaxSize(),
             )
             if (preferences.appPreferences.interfacePreferences.showClock) {
-                var now by remember { mutableStateOf(LocalTime.now()) }
-                LaunchedEffect(Unit) {
-                    while (isActive) {
-                        now = LocalTime.now()
-                        delay(1000L)
-                    }
-                }
-                Text(
-                    text = TimeFormatter.format(now),
-//                    style = MaterialTheme.typography.titleMedium,
-                    fontSize = 18.sp,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    modifier =
-                        Modifier
-                            .align(Alignment.TopEnd)
-                            .padding(vertical = 16.dp, horizontal = 24.dp),
-                )
+                TimeDisplay()
             }
         }
     }

@@ -23,40 +23,65 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
+import androidx.tv.material3.LocalTextStyle
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
+import com.github.damontecres.wholphin.ui.PreviewTvSpec
+import com.github.damontecres.wholphin.ui.theme.WholphinTheme
 
 @Composable
 fun DotSeparatedRow(
     texts: List<String>,
+    rating: Float? = null,
     modifier: Modifier = Modifier,
     textStyle: TextStyle = MaterialTheme.typography.titleSmall,
 ) {
-    Row(
-        modifier = modifier,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        texts.forEachIndexed { index, text ->
-            Text(
-                text = text,
-                style = textStyle,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
-            if (index != texts.lastIndex) {
-                Box(
-                    modifier =
-                        Modifier
-                            .padding(horizontal = 8.dp)
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 1f))
-                            .size(4.dp),
+    CompositionLocalProvider(LocalTextStyle provides textStyle) {
+        Row(
+            modifier = modifier,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            texts.forEachIndexed { index, text ->
+                Text(
+                    text = text,
+                    style = textStyle,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+                if (rating != null || index != texts.lastIndex) {
+                    Box(
+                        modifier =
+                            Modifier
+                                .padding(horizontal = 8.dp)
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 1f))
+                                .size(4.dp),
+                    )
+                }
+            }
+            rating?.let {
+                SimpleStarRating(
+                    communityRating = it,
+                    modifier = Modifier,
                 )
             }
         }
+    }
+}
+
+@PreviewTvSpec
+@Composable
+private fun DotSeparatedRowPreview() {
+    WholphinTheme {
+        DotSeparatedRow(
+            texts = listOf("2025", "1h 48m", "PG-13", "1h 30m left"),
+            rating = 7.5f,
+            modifier = Modifier,
+        )
     }
 }

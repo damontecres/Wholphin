@@ -10,7 +10,9 @@ import com.github.damontecres.wholphin.preferences.AppPreference
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.updateInterfacePreferences
 import com.github.damontecres.wholphin.preferences.updatePlaybackOverrides
+import com.github.damontecres.wholphin.preferences.updateSubtitlePreferences
 import com.github.damontecres.wholphin.ui.preferences.PreferencesViewModel
+import com.github.damontecres.wholphin.ui.preferences.subtitle.SubtitleSettings
 import com.github.damontecres.wholphin.util.Version
 import dagger.hilt.android.qualifiers.ApplicationContext
 import timber.log.Timber
@@ -97,7 +99,7 @@ suspend fun upgradeApp(
     current: Version,
     appPreferences: DataStore<AppPreferences>,
 ) {
-    if (previous.isEqualOrBefore(Version.Companion.fromString("0.1.0-2-g0"))) {
+    if (previous.isEqualOrBefore(Version.fromString("0.1.0-2-g0"))) {
         appPreferences.updateData {
             it.updatePlaybackOverrides {
                 ac3Supported = AppPreference.Ac3Supported.defaultValue
@@ -107,21 +109,28 @@ suspend fun upgradeApp(
             }
         }
     }
-    if (previous.isEqualOrBefore(Version.Companion.fromString("0.2.3-6-g0"))) {
+    if (previous.isEqualOrBefore(Version.fromString("0.2.3-6-g0"))) {
         appPreferences.updateData {
             it.updateInterfacePreferences {
                 navDrawerSwitchOnFocus = AppPreference.NavDrawerSwitchOnFocus.defaultValue
             }
         }
     }
-    if (previous.isEqualOrBefore(Version.Companion.fromString("0.2.5-11-g0"))) {
+    if (previous.isEqualOrBefore(Version.fromString("0.2.5-11-g0"))) {
         appPreferences.updateData {
             it.updateInterfacePreferences {
                 showClock = AppPreference.ShowClock.defaultValue
             }
         }
     }
-    if (previous.isEqualOrBefore(Version.Companion.fromString("0.2.7-1-g0"))) {
+    if (previous.isEqualOrBefore(Version.fromString("0.2.7-1-g0"))) {
         PreferencesViewModel.resetSubtitleSettings(appPreferences)
+    }
+    if (previous.isEqualOrBefore(Version.fromString("0.3.2-4-g0"))) {
+        appPreferences.updateData {
+            it.updateSubtitlePreferences {
+                margin = SubtitleSettings.Margin.defaultValue.toInt()
+            }
+        }
     }
 }

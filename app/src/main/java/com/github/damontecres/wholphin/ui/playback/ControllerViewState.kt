@@ -17,7 +17,7 @@ import kotlinx.coroutines.flow.debounce
  */
 class ControllerViewState internal constructor(
     @param:IntRange(from = 0)
-    private val hideMilliseconds: Long,
+    var hideMilliseconds: Long,
     val controlsEnabled: Boolean,
 ) {
     private val channel = Channel<Long>(CONFLATED)
