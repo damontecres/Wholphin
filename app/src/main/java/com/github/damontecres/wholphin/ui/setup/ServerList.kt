@@ -29,10 +29,13 @@ import com.github.damontecres.wholphin.ui.components.CircularProgress
 import com.github.damontecres.wholphin.ui.components.DialogItem
 import com.github.damontecres.wholphin.ui.components.DialogPopup
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
+import org.jellyfin.sdk.model.api.PublicSystemInfo
 import java.util.UUID
 
 sealed interface ServerConnectionStatus {
-    object Success : ServerConnectionStatus
+    data class Success(
+        val systemInfo: PublicSystemInfo,
+    ) : ServerConnectionStatus
 
     object Pending : ServerConnectionStatus
 
@@ -68,7 +71,7 @@ fun ServerList(
                 supportingContent = { if (server.name.isNotNullOrBlank()) Text(text = server.url) },
                 leadingContent = {
                     when (status) {
-                        ServerConnectionStatus.Success -> {}
+                        is ServerConnectionStatus.Success -> {}
                         ServerConnectionStatus.Pending -> {
                             CircularProgress(
                                 Modifier.size(IconButtonDefaults.MediumIconSize),
@@ -85,7 +88,7 @@ fun ServerList(
                 },
                 onClick = {
                     when (status) {
-                        ServerConnectionStatus.Success -> onSwitchServer.invoke(server)
+                        is ServerConnectionStatus.Success -> onSwitchServer.invoke(server)
                         ServerConnectionStatus.Pending -> {}
                         is ServerConnectionStatus.Error -> onTestServer.invoke(server)
                     }

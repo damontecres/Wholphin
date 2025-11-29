@@ -39,6 +39,7 @@ import com.github.damontecres.wholphin.ui.components.EditTextBox
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.LoadingState
+import org.jellyfin.sdk.model.api.PublicSystemInfo
 
 @Composable
 fun SwitchServerContent(
@@ -88,7 +89,7 @@ fun SwitchServerContent(
                     servers = servers,
                     connectionStatus = serverStatus,
                     onSwitchServer = {
-                        viewModel.addServer(it.url)
+                        viewModel.switchServer(it)
                     },
                     onTestServer = {
                         viewModel.testServer(it)
@@ -141,7 +142,7 @@ fun SwitchServerContent(
                         connectionStatus =
                             discoveredServers
                                 .map { it.id }
-                                .associateWith { ServerConnectionStatus.Success },
+                                .associateWith { ServerConnectionStatus.Success(PublicSystemInfo()) },
                         onSwitchServer = {
                             viewModel.addServer(it.url)
                         },
