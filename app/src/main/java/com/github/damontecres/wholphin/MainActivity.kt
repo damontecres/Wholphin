@@ -110,15 +110,15 @@ class MainActivity : AppCompatActivity() {
                             }
                             isRestoringSession = false
                         }
-                        val server by serverRepository.currentServer.observeAsState()
-                        val user by serverRepository.currentUser.observeAsState()
-                        val userDto by serverRepository.currentUserDto.observeAsState()
+                        val current by serverRepository.current.observeAsState()
 
                         val preferences =
-                            UserPreferences(
-                                appPreferences,
-                                userDto?.configuration ?: DefaultUserConfiguration,
-                            )
+                            remember(current) {
+                                UserPreferences(
+                                    appPreferences,
+                                    current?.userDto?.configuration ?: DefaultUserConfiguration,
+                                )
+                            }
 
                         if (isRestoringSession) {
                             Box(
@@ -131,9 +131,9 @@ class MainActivity : AppCompatActivity() {
                                 )
                             }
                         } else {
-                            key(server, user) {
+                            key(current) {
                                 val initialDestination =
-                                    if (server != null && user != null) {
+                                    if (current != null) {
                                         Destination.Home()
                                     } else {
                                         Destination.ServerList
@@ -150,16 +150,16 @@ class MainActivity : AppCompatActivity() {
                                     }
                                 }
                                 val deviceProfile =
-                                    remember(server, appPreferences) {
+                                    remember(current, appPreferences) {
                                         createDeviceProfile(
                                             this@MainActivity,
                                             preferences,
-                                            server?.serverVersion,
+                                            current?.server?.serverVersion,
                                         )
                                     }
                                 ApplicationContent(
-                                    user = user,
-                                    server = server,
+                                    user = current?.user,
+                                    server = current?.server,
                                     navigationManager = navigationManager,
                                     preferences = preferences,
                                     deviceProfile = deviceProfile,

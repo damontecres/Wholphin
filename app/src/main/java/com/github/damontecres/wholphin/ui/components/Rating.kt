@@ -1,5 +1,6 @@
 package com.github.damontecres.wholphin.ui.components
 
+import android.R.attr.textStyle
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.layout.Arrangement
@@ -35,10 +36,12 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.tv.material3.Icon
 import androidx.tv.material3.LocalContentColor
+import androidx.tv.material3.LocalTextStyle
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.ui.AppColors
@@ -100,11 +103,12 @@ fun SimpleStarRating(
                 text = text,
                 modifier = Modifier,
             )
+            val height = with(LocalDensity.current) { LocalTextStyle.current.fontSize.toDp() }
             Icon(
                 imageVector = Icons.Filled.Star,
                 tint = starColor,
                 contentDescription = null,
-                modifier = Modifier,
+                modifier = Modifier.height(height),
             )
         }
     }

@@ -87,7 +87,7 @@ class SwitchServerViewModel
             viewModelScope.launchIO {
                 delay(1000)
                 val result = internalTestServer(server)
-                if (result == ServerConnectionStatus.Success) {
+                if (result is ServerConnectionStatus.Success) {
                     showToast(context, context.getString(R.string.success), Toast.LENGTH_SHORT)
                 } else if (result is ServerConnectionStatus.Error) {
                     showToast(context, result.message ?: "Error", Toast.LENGTH_SHORT)
@@ -97,27 +97,30 @@ class SwitchServerViewModel
 
         private suspend fun internalTestServer(server: JellyfinServer): ServerConnectionStatus =
             try {
-                jellyfin
-                    .createApi(
-                        server.url,
-                        httpClientOptions =
-                            HttpClientOptions(
-                                requestTimeout = 6.seconds,
-                                connectTimeout = 6.seconds,
-                                socketTimeout = 6.seconds,
-                            ),
-                    ).systemApi
-                    .getPublicSystemInfo()
+                val systemInfo =
+                    jellyfin
+                        .createApi(
+                            server.url,
+                            httpClientOptions =
+                                HttpClientOptions(
+                                    requestTimeout = 6.seconds,
+                                    connectTimeout = 6.seconds,
+                                    socketTimeout = 6.seconds,
+                                ),
+                        ).systemApi
+                        .getPublicSystemInfo()
+                        .content
+                val result = ServerConnectionStatus.Success(systemInfo)
                 withContext(Dispatchers.Main) {
                     serverStatus.value =
                         serverStatus.value!!.toMutableMap().apply {
                             put(
                                 server.id,
-                                ServerConnectionStatus.Success,
+                                result,
                             )
                         }
                 }
-                ServerConnectionStatus.Success
+                result
             } catch (ex: Exception) {
                 val status = ServerConnectionStatus.Error(ex.localizedMessage)
                 Timber.w(ex, "Error checking server ${server.url}")
@@ -132,6 +135,34 @@ class SwitchServerViewModel
                 }
                 status
             }
+
+        fun switchServer(server: JellyfinServer) {
+            viewModelScope.launchIO {
+                withContext(Dispatchers.Main) {
+                    serverStatus.value =
+                        serverStatus.value!!.toMutableMap().apply {
+                            put(
+                                server.id,
+                                ServerConnectionStatus.Pending,
+                            )
+                        }
+                }
+                val result = internalTestServer(server)
+                if (result is ServerConnectionStatus.Success) {
+                    val updatedServer =
+                        server.copy(
+                            name = result.systemInfo.serverName,
+                            version = result.systemInfo.version,
+                        )
+                    serverRepository.addAndChangeServer(updatedServer)
+                    withContext(Dispatchers.Main) {
+                        navigationManager.navigateTo(Destination.UserList(server))
+                    }
+                } else if (result is ServerConnectionStatus.Error) {
+                    showToast(context, "Error connecting: $${result.message}")
+                }
+            }
+        }
 
         fun addServer(inputUrl: String) {
             addServerState.value = LoadingState.Loading
