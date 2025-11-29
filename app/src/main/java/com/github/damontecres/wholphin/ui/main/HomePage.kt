@@ -1,6 +1,8 @@
 package com.github.damontecres.wholphin.ui.main
 
 import android.widget.Toast
+import androidx.compose.foundation.background
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -326,9 +328,22 @@ fun HomePageContent(
                         }
 
                         is HomeRowLoadingState.Error -> {
+                            var focused by remember { mutableStateOf(false) }
                             Column(
                                 verticalArrangement = Arrangement.spacedBy(8.dp),
-                                modifier = Modifier.animateItem(),
+                                modifier =
+                                    Modifier
+                                        .onFocusChanged {
+                                            focused = it.isFocused
+                                        }.focusable()
+                                        .background(
+                                            if (focused) {
+                                                // Just so the user can tell it has focus
+                                                MaterialTheme.colorScheme.border.copy(alpha = .25f)
+                                            } else {
+                                                Color.Unspecified
+                                            },
+                                        ).animateItem(),
                             ) {
                                 Text(
                                     text = r.title,
