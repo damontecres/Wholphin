@@ -418,8 +418,6 @@ class SeriesViewModel
             }
         }
 
-        private var peopleInEpisodeJob: Job? = null
-
         suspend fun lookupPeopleInEpisode(item: BaseItem) {
             val people =
                 item.data.people

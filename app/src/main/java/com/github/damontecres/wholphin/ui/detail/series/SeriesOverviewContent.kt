@@ -1,6 +1,9 @@
 package com.github.damontecres.wholphin.ui.detail.series
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -98,31 +101,22 @@ fun SeriesOverviewContent(
     var cardRowHasFocus by remember { mutableStateOf(false) }
     val dimming by animateFloatAsState(if (pageHasFocus && !cardRowHasFocus) .4f else 1f)
 
-//    val listState = rememberLazyListState()
     val scrollState = rememberScrollState()
-//    LaunchedEffect(position) {
-//        listState.scrollToItem(0)
-//    }
 
     Box(
         modifier =
             modifier
                 .fillMaxWidth(),
-//                .fillMaxHeight(.33f)
-//                .height(460.dp)
     ) {
         DetailsBackdropImage(backdropImageUrl)
         Column(
-//            state = listState,
             verticalArrangement = Arrangement.spacedBy(8.dp),
-//            contentPadding = PaddingValues(16.dp),
             modifier =
                 Modifier
                     .fillMaxSize()
                     .padding(16.dp)
                     .focusGroup()
                     .verticalScroll(scrollState, enabled = false)
-//                    .focusRestorer(episodeRowFocusRequester)
                     .onFocusChanged { pageHasFocus = it.hasFocus },
         ) {
             Column(
@@ -156,12 +150,7 @@ fun SeriesOverviewContent(
                             .padding(paddingValues)
                             .fillMaxWidth(),
                 )
-//            }
-//            item {
                 SeriesName(series.name, Modifier)
-//            }
-//            item {
-                // Episode header
                 FocusedEpisodeHeader(
                     preferences = preferences,
                     ep = focusedEpisode,
@@ -176,8 +165,7 @@ fun SeriesOverviewContent(
                     },
                     modifier = Modifier.fillMaxWidth(.6f),
                 )
-//            }
-//            item {
+
                 key(position.seasonTabIndex) {
                     when (val eps = episodes) {
                         EpisodeList.Loading -> LoadingPage()
@@ -265,8 +253,7 @@ fun SeriesOverviewContent(
                         }
                     }
                 }
-//            }
-//            item {
+
                 focusedEpisode?.let { ep ->
                     FocusedEpisodeFooter(
                         preferences = preferences,
@@ -293,9 +280,12 @@ fun SeriesOverviewContent(
                     )
                 }
             }
-//            }
-//            item {
-            if (peopleInEpisode.isNotEmpty()) {
+
+            AnimatedVisibility(
+                visible = peopleInEpisode.isNotEmpty(),
+                enter = fadeIn(),
+                exit = fadeOut(),
+            ) {
                 PersonRow(
                     people = peopleInEpisode,
                     onClick = personOnClick,
@@ -306,7 +296,6 @@ fun SeriesOverviewContent(
                             .focusRequester(peopleRowFocusRequester),
                 )
             }
-//            }
         }
     }
 }
