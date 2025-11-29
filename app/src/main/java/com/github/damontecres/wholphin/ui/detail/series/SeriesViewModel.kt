@@ -241,12 +241,15 @@ class SeriesViewModel
                     0
                 }
             Timber.v("Loaded ${pager.size} episodes for season $seasonId, initialIndex=$initialIndex")
-            return EpisodeList.Success(pager, initialIndex)
+            return EpisodeList.Success(seasonId, pager, initialIndex)
         }
 
         fun loadEpisodes(seasonId: UUID) {
-            this@SeriesViewModel.peopleInEpisode.value = listOf()
-            this@SeriesViewModel.episodes.value = EpisodeList.Loading
+            val currentEpisodes = (this@SeriesViewModel.episodes.value as? EpisodeList.Success)
+            if (currentEpisodes == null || currentEpisodes.seasonId != seasonId) {
+                this@SeriesViewModel.peopleInEpisode.value = listOf()
+                this@SeriesViewModel.episodes.value = EpisodeList.Loading
+            }
             viewModelScope.launchIO(ExceptionHandler(true)) {
                 val episodes =
                     try {
@@ -258,10 +261,12 @@ class SeriesViewModel
                 withContext(Dispatchers.Main) {
                     this@SeriesViewModel.episodes.value = episodes
                 }
-                (episodes as? EpisodeList.Success)
-                    ?.let {
-                        it.episodes.getOrNull(it.initialIndex)
-                    }?.let { lookupPeopleInEpisode(it) }
+                if (currentEpisodes == null || currentEpisodes.seasonId != seasonId) {
+                    (episodes as? EpisodeList.Success)
+                        ?.let {
+                            it.episodes.getOrNull(it.initialIndex)
+                        }?.let { lookupPeopleInEpisode(it) }
+                }
             }
         }
 
@@ -435,6 +440,7 @@ sealed interface EpisodeList {
     }
 
     data class Success(
+        val seasonId: UUID,
         val episodes: ApiRequestPager<GetEpisodesRequest>,
         val initialIndex: Int,
     ) : EpisodeList
