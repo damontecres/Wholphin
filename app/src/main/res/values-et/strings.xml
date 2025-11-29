@@ -223,7 +223,7 @@
     <string name="trailer">Treiler</string>
     <plurals name="trailers">
         <item quantity="one">Treilerid</item>
-        <item quantity="other"></item>
+        <item quantity="other"/>
     </plurals>
     <string name="tv_dvr_schedule">DVR-i kava</string>
     <string name="tv_guide">Telekava</string>
@@ -287,4 +287,5 @@
     <string name="skip_recap_behavior">Käitumine sisukokkuvõtte vahelejätmisel</string>
     <string name="skip_back_on_resume_preference">Taasesituse jätkamisel jäta vahele tagasisuunas</string>
     <string name="pass_out_protection">Vaataja uinumise taimer</string>
+    <string name="subtitle_margin">Veeris</string>
 </resources>
