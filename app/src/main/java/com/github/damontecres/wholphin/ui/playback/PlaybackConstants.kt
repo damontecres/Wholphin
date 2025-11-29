@@ -42,15 +42,15 @@ val BaseItemKind.playable: Boolean
             BaseItemKind.MUSIC_VIDEO,
             BaseItemKind.TRAILER,
             BaseItemKind.VIDEO,
-            -> true
-
-            // TODO add support for these eventually
             BaseItemKind.LIVE_TV_CHANNEL,
             BaseItemKind.LIVE_TV_PROGRAM,
             BaseItemKind.PROGRAM,
             BaseItemKind.RECORDING,
             BaseItemKind.TV_CHANNEL,
             BaseItemKind.TV_PROGRAM,
+            -> true
+
+            // TODO add support for these eventually
             BaseItemKind.AUDIO_BOOK,
             BaseItemKind.AUDIO,
             BaseItemKind.CHANNEL,
