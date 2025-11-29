@@ -41,9 +41,12 @@ import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -85,12 +88,15 @@ import com.github.damontecres.wholphin.ui.spacedByWithFooter
 import com.github.damontecres.wholphin.ui.theme.LocalTheme
 import com.github.damontecres.wholphin.ui.toServerString
 import com.github.damontecres.wholphin.ui.tryRequestFocus
+import com.github.damontecres.wholphin.util.ExceptionHandler
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.model.api.CollectionType
 import org.jellyfin.sdk.model.api.DeviceProfile
+import timber.log.Timber
 import java.util.UUID
 import javax.inject.Inject
 
@@ -303,6 +309,28 @@ fun NavDrawer(
         },
     )
     val spacedBy = 4.dp
+    val config = LocalConfiguration.current
+    val density = LocalDensity.current
+    val heightInPx = remember { with(density) { config.screenHeightDp.dp.roundToPx() } }
+
+    suspend fun scrollToSelected() {
+        val target = selectedIndex + 2
+        try {
+            if (target !in
+                listState.firstVisibleItemIndex..<listState.layoutInfo.visibleItemsInfo.lastIndex
+            ) {
+                val mult = if ((target - 2) < listState.layoutInfo.totalItemsCount / 2) -1 else 1
+                listState.animateScrollToItem(selectedIndex + 2, mult * (heightInPx / 2))
+            }
+        } catch (ex: Exception) {
+            Timber.w(ex, "Error scrolling to %s", target)
+        }
+    }
+
+    LaunchedEffect(selectedIndex) {
+        scrollToSelected()
+    }
+
     NavigationDrawer(
         modifier = modifier,
         drawerState = drawerState,
@@ -315,7 +343,11 @@ fun NavDrawer(
                         Modifier
                             .fillMaxHeight()
                             .width(drawerWidth)
-                            .background(drawerBackground),
+                            .background(drawerBackground)
+                            .onFocusChanged {
+                                if (!it.hasFocus) {
+                                }
+                            },
                 ) {
                     // Even though some must be clicked, focusing on it should clear other focused items
                     val interactionSource = remember { MutableInteractionSource() }
@@ -351,6 +383,11 @@ fun NavDrawer(
                                             searchFocusRequester.tryRequestFocus()
                                         } else {
                                             focusRequester.tryRequestFocus()
+                                        }
+                                    }
+                                    onExit = {
+                                        scope.launch(ExceptionHandler()) {
+                                            scrollToSelected()
                                         }
                                     }
                                 }.fillMaxHeight()
