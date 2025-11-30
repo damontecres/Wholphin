@@ -41,6 +41,7 @@ import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.nav.ApplicationContent
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.theme.WholphinTheme
+import com.github.damontecres.wholphin.util.DebugLogTree
 import com.github.damontecres.wholphin.util.profile.createDeviceProfile
 import dagger.hilt.android.AndroidEntryPoint
 import okhttp3.OkHttpClient
@@ -87,6 +88,9 @@ class MainActivity : AppCompatActivity() {
             CoilConfig(okHttpClient, false)
             val appPreferences by userPreferencesDataStore.data.collectAsState(null)
             appPreferences?.let { appPreferences ->
+                LaunchedEffect(appPreferences.debugLogging) {
+                    DebugLogTree.INSTANCE.enabled = appPreferences.debugLogging
+                }
                 WholphinTheme(
                     true,
                     appThemeColors = appPreferences.interfacePreferences.appThemeColors,
