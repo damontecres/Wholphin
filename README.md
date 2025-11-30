@@ -64,7 +64,7 @@ The first time you attempt an update, the OS should guide you through enabling t
 
 ## Compatibility
 
-Requires Android 7.1+ (or Fire TV OS 6+) and Jellyfin server `10.10.x` (tested on primarily `10.10.7`).
+Requires Android 6+ (or Fire TV OS 6+) and Jellyfin server `10.10.x` or `10.11.x` (tested on primarily `10.11.3`).
 
 The app is tested on a variety of Android TV/Fire TV OS devices, but if you encounter issues, please file an issue!
 
