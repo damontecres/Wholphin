@@ -50,6 +50,7 @@ import com.github.damontecres.wholphin.preferences.uiPreferences
 import com.github.damontecres.wholphin.preferences.updatePlaybackPreferences
 import com.github.damontecres.wholphin.services.UpdateChecker
 import com.github.damontecres.wholphin.ui.ifElse
+import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.playOnClickSound
 import com.github.damontecres.wholphin.ui.playSoundOnFocus
@@ -77,6 +78,8 @@ fun PreferencesContent(
     var focusedIndex by rememberSaveable { mutableStateOf(Pair(0, 0)) }
     val state = rememberLazyListState()
     var preferences by remember { mutableStateOf(initialPreferences) }
+    val currentUser by viewModel.currentUser.observeAsState()
+    var showPinFlow by remember { mutableStateOf(false) }
 
     val navDrawerPins by viewModel.navDrawerPins.observeAsState(mapOf())
 
@@ -343,6 +346,19 @@ fun PreferencesContent(
                                 )
                             }
 
+                            AppPreference.RequireProfilePin -> {
+                                SwitchPreference(
+                                    title = stringResource(pref.title),
+                                    value = currentUser?.pin.isNotNullOrBlank(),
+                                    onClick = {
+                                        showPinFlow = true
+                                    },
+                                    summaryOn = stringResource(R.string.enabled),
+                                    summaryOff = null,
+                                    modifier = Modifier,
+                                )
+                            }
+
                             else -> {
                                 val value = pref.getter.invoke(preferences)
                                 ComposablePreference(
@@ -384,6 +400,22 @@ fun PreferencesContent(
                         }
                     }
                 }
+            }
+        }
+        if (showPinFlow && currentUser != null) {
+            currentUser?.let { user ->
+                SetPinFlow(
+                    currentPin = user.pin,
+                    onAddPin = {
+                        viewModel.setPin(user, it)
+                        showPinFlow = false
+                    },
+                    onRemovePin = {
+                        viewModel.setPin(user, null)
+                        showPinFlow = false
+                    },
+                    onDismissRequest = { showPinFlow = false },
+                )
             }
         }
     }

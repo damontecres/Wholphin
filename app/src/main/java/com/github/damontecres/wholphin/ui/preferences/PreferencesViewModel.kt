@@ -9,6 +9,7 @@ import com.github.damontecres.wholphin.data.NavDrawerItemRepository
 import com.github.damontecres.wholphin.data.ServerPreferencesDao
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.isPinned
+import com.github.damontecres.wholphin.data.model.JellyfinUser
 import com.github.damontecres.wholphin.data.model.NavDrawerPinnedItem
 import com.github.damontecres.wholphin.data.model.NavPinType
 import com.github.damontecres.wholphin.preferences.AppPreferences
@@ -46,6 +47,8 @@ class PreferencesViewModel
         RememberTabManager by rememberTabManager {
         private lateinit var allNavDrawerItems: List<NavDrawerItem>
         val navDrawerPins = MutableLiveData<Map<NavDrawerItem, Boolean>>(mapOf())
+
+        val currentUser get() = serverRepository.currentUser
 
         init {
             viewModelScope.launchIO {
@@ -97,6 +100,15 @@ class PreferencesViewModel
         fun resetSubtitleSettings() {
             viewModelScope.launchIO {
                 resetSubtitleSettings(preferenceDataStore)
+            }
+        }
+
+        fun setPin(
+            user: JellyfinUser,
+            pin: String?,
+        ) {
+            viewModelScope.launchIO(ExceptionHandler(autoToast = true)) {
+                serverRepository.setUserPin(user, pin)
             }
         }
 

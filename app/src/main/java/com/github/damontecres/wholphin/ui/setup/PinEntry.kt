@@ -8,10 +8,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.defaultMinSize
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -35,6 +33,7 @@ import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.ui.FontAwesome
 import com.github.damontecres.wholphin.ui.PreviewTvSpec
 import com.github.damontecres.wholphin.ui.components.BasicDialog
+import com.github.damontecres.wholphin.ui.playback.isEnterKey
 import com.github.damontecres.wholphin.ui.theme.WholphinTheme
 
 @Composable
@@ -83,7 +82,6 @@ fun PinEntry(
         ) {
             Text(
                 text = stringResource(R.string.use_server_credentials),
-                color = MaterialTheme.colorScheme.onSurface,
             )
         }
     }
@@ -93,6 +91,7 @@ fun PinEntry(
 fun PinEntryCreate(
     @StringRes title: Int,
     onTextChange: (String) -> Unit,
+    onConfirm: ((String) -> Unit)?,
     modifier: Modifier = Modifier,
 ) {
     var input by remember { mutableStateOf("") }
@@ -101,6 +100,10 @@ fun PinEntryCreate(
         modifier =
             modifier
                 .onKeyEvent {
+                    if (isEnterKey(it)) {
+                        onConfirm?.invoke(input)
+                        return@onKeyEvent true
+                    }
                     if (it.type == KeyEventType.KeyUp) {
                         var str = input
                         str +=
@@ -127,12 +130,14 @@ fun PinEntryCreate(
         )
         PinArrowRow(Modifier.align(Alignment.CenterHorizontally))
         PinEntryDots(input.length, Modifier.align(Alignment.CenterHorizontally))
-        Text(
-            text = stringResource(R.string.press_enter_to_confirm),
-            style = MaterialTheme.typography.headlineSmall,
-            color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.align(Alignment.CenterHorizontally),
-        )
+        if (onConfirm != null) {
+            Text(
+                text = stringResource(R.string.press_enter_to_confirm),
+                style = MaterialTheme.typography.headlineSmall,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.align(Alignment.CenterHorizontally),
+            )
+        }
     }
 }
 
@@ -165,8 +170,10 @@ fun PinEntryDots(
         modifier =
             modifier
                 .defaultMinSize(minWidth = 180.dp, minHeight = 40.dp)
-                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.8f), shape = CircleShape)
-                .padding(vertical = 16.dp),
+                .background(
+                    MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.8f),
+                    shape = CircleShape,
+                ).padding(vertical = 16.dp),
     ) {
         repeat(count) {
             Box(

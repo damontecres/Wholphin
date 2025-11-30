@@ -725,6 +725,11 @@ sealed interface AppPreference<T> {
                 summaryOn = R.string.enabled,
                 summaryOff = R.string.disabled,
             )
+
+        val RequireProfilePin =
+            AppClickablePreference(
+                title = R.string.require_pin_code,
+            )
     }
 }
 
@@ -767,6 +772,7 @@ val basicPreferences =
             title = R.string.profile_specific_settings,
             preferences =
                 listOf(
+                    AppPreference.RequireProfilePin,
                     AppPreference.UserPinnedNavDrawerItems,
                 ),
         ),

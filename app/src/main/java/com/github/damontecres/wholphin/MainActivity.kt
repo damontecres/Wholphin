@@ -135,7 +135,7 @@ class MainActivity : AppCompatActivity() {
                                 )
                             }
                         } else {
-                            key(current) {
+                            key(current?.server?.id, current?.user?.id) {
                                 val initialDestination =
                                     when {
                                         !appPreferences.signInAutomatically -> Destination.ServerList // TODO user list?

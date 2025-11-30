@@ -27,7 +27,7 @@ interface JellyfinServerDao {
         }
     }
 
-    @Insert(onConflict = OnConflictStrategy.Companion.IGNORE)
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
     fun addUser(user: JellyfinUser): Long
 
     @Update

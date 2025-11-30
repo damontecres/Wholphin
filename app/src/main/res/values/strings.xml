@@ -332,6 +332,10 @@
     <string name="sign_in_auto">Sign in automatically</string>
     <string name="use_server_credentials">Login via server</string>
     <string name="press_enter_to_confirm">Press center to confirm</string>
+    <string name="require_pin_code">Require PIN for profile</string>
+    <string name="confirm_pin">Confirm PIN</string>
+    <string name="incorrect">Incorrect</string>
+    <string name="pin_too_short">PIN must be 4 keys or longer</string>
 
     <string-array name="theme_song_volume">
         <item>Disabled</item>

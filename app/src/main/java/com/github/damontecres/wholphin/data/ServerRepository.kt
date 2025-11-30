@@ -225,6 +225,21 @@ class ServerRepository
             }
         }
 
+        suspend fun setUserPin(
+            user: JellyfinUser,
+            pin: String?,
+        ) = withContext(Dispatchers.IO) {
+            val newUser = user.copy(pin = pin)
+            val updatedUser = serverDao.addOrUpdateUser(newUser)
+            if (currentUser.value?.id == updatedUser.id && currentServer.value?.id == user.serverId) {
+                // Updating current user, so push out the change
+                current.value?.let {
+                    val newCurrent = it.copy(user = updatedUser)
+                    _current.setValueOnMain(newCurrent)
+                }
+            }
+        }
+
         companion object {
             fun getServerSharedPreferences(context: Context): SharedPreferences =
                 context.getSharedPreferences(
