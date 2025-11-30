@@ -113,12 +113,10 @@ class MainActivity : AppCompatActivity() {
                         val current by serverRepository.current.observeAsState()
 
                         val preferences =
-                            remember(current) {
-                                UserPreferences(
-                                    appPreferences,
-                                    current?.userDto?.configuration ?: DefaultUserConfiguration,
-                                )
-                            }
+                            UserPreferences(
+                                appPreferences,
+                                current?.userDto?.configuration ?: DefaultUserConfiguration,
+                            )
 
                         if (isRestoringSession) {
                             Box(
@@ -150,7 +148,7 @@ class MainActivity : AppCompatActivity() {
                                     }
                                 }
                                 val deviceProfile =
-                                    remember(current, appPreferences) {
+                                    remember(current, preferences) {
                                         createDeviceProfile(
                                             this@MainActivity,
                                             preferences,
