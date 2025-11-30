@@ -8,6 +8,7 @@ import androidx.preference.PreferenceManager
 import com.github.damontecres.wholphin.WholphinApplication
 import com.github.damontecres.wholphin.preferences.AppPreference
 import com.github.damontecres.wholphin.preferences.AppPreferences
+import com.github.damontecres.wholphin.preferences.update
 import com.github.damontecres.wholphin.preferences.updateInterfacePreferences
 import com.github.damontecres.wholphin.preferences.updatePlaybackOverrides
 import com.github.damontecres.wholphin.preferences.updateSubtitlePreferences
@@ -130,6 +131,13 @@ suspend fun upgradeApp(
         appPreferences.updateData {
             it.updateSubtitlePreferences {
                 margin = SubtitleSettings.Margin.defaultValue.toInt()
+            }
+        }
+    }
+    if (previous.isEqualOrBefore(Version.fromString("0.3.3-2-g0"))) {
+        appPreferences.updateData {
+            it.update {
+                signInAutomatically = AppPreference.SignInAuto.defaultValue
             }
         }
     }

@@ -40,6 +40,7 @@ import androidx.tv.material3.Text
 import androidx.tv.material3.surfaceColorAtElevation
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.JellyfinServer
+import com.github.damontecres.wholphin.data.model.JellyfinUser
 import com.github.damontecres.wholphin.ui.components.BasicDialog
 import com.github.damontecres.wholphin.ui.components.CircularProgress
 import com.github.damontecres.wholphin.ui.components.EditTextBox
@@ -84,6 +85,7 @@ fun SwitchUserContent(
             }
         }
     }
+    var switchUserWithPin by remember { mutableStateOf<JellyfinUser?>(null) }
 
     currentServer?.let { server ->
         Box(
@@ -116,7 +118,11 @@ fun SwitchUserContent(
                     users = users,
                     currentUser = currentUser,
                     onSwitchUser = { user ->
-                        viewModel.switchUser(user)
+                        if (user.pin.isNotNullOrBlank()) {
+                            switchUserWithPin = user
+                        } else {
+                            viewModel.switchUser(user)
+                        }
                     },
                     onAddUser = { showAddUser = true },
                     onRemoveUser = { user ->
@@ -297,6 +303,18 @@ fun SwitchUserContent(
                     }
                 }
             }
+        }
+        switchUserWithPin?.let { user ->
+            PinEntryDialog(
+                onDismissRequest = { switchUserWithPin = null },
+                onClickServerAuth = {
+                    showAddUser = true
+                    switchUserWithPin = null
+                },
+                onTextChange = {
+                    if (it == user.pin) viewModel.switchUser(user)
+                },
+            )
         }
     }
 }

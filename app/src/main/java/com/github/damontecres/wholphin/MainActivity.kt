@@ -104,13 +104,15 @@ class MainActivity : AppCompatActivity() {
                     ) {
                         var isRestoringSession by remember { mutableStateOf(true) }
                         LaunchedEffect(Unit) {
-                            try {
-                                serverRepository.restoreSession(
-                                    appPreferences.currentServerId?.toUUIDOrNull(),
-                                    appPreferences.currentUserId?.toUUIDOrNull(),
-                                )
-                            } catch (ex: Exception) {
-                                Timber.e(ex, "Exception restoring session")
+                            if (appPreferences.signInAutomatically) {
+                                try {
+                                    serverRepository.restoreSession(
+                                        appPreferences.currentServerId?.toUUIDOrNull(),
+                                        appPreferences.currentUserId?.toUUIDOrNull(),
+                                    )
+                                } catch (ex: Exception) {
+                                    Timber.e(ex, "Exception restoring session")
+                                }
                             }
                             isRestoringSession = false
                         }
@@ -135,10 +137,10 @@ class MainActivity : AppCompatActivity() {
                         } else {
                             key(current) {
                                 val initialDestination =
-                                    if (current != null) {
-                                        Destination.Home()
-                                    } else {
-                                        Destination.ServerList
+                                    when {
+                                        !appPreferences.signInAutomatically -> Destination.ServerList // TODO user list?
+                                        current != null -> Destination.Home()
+                                        else -> Destination.ServerList
                                     }
                                 val backStack = rememberNavBackStack(initialDestination)
                                 navigationManager.backStack = backStack

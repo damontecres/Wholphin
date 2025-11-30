@@ -713,6 +713,18 @@ sealed interface AppPreference<T> {
                 summaryOn = R.string.enabled,
                 summaryOff = R.string.disabled,
             )
+
+        val SignInAuto =
+            AppSwitchPreference(
+                title = R.string.sign_in_auto,
+                defaultValue = true,
+                getter = { it.signInAutomatically },
+                setter = { prefs, value ->
+                    prefs.update { signInAutomatically = value }
+                },
+                summaryOn = R.string.enabled,
+                summaryOff = R.string.disabled,
+            )
     }
 }
 
@@ -722,6 +734,7 @@ val basicPreferences =
             title = R.string.ui_interface,
             preferences =
                 listOf(
+                    AppPreference.SignInAuto,
                     AppPreference.HomePageItems,
                     AppPreference.CombineContinueNext,
                     AppPreference.RewatchNextUp,
