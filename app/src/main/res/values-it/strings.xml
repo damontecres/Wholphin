@@ -303,4 +303,5 @@
     <string name="skip_segment_recap">Salta Riassunto</string>
     <string name="playback_overrides">Sovrascrivi riproduzione</string>
     <string name="skip_back_on_resume_preference">Salta indietro al riavvio della riproduzione</string>
+    <string name="subtitle_margin">Margine</string>
 </resources>
