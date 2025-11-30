@@ -197,7 +197,7 @@
     <string name="global_content_scale">Échelle de contenu par défaut</string>
     <string name="install_update">Installer la mise à jour</string>
     <string name="installed_version">Version installée</string>
-    <string name="max_homepage_items">Nombre max d’éléments sur les lignes de la page d\'accueil</string>
+    <string name="max_homepage_items">Nombre d’éléments sur les lignes de la page d\'accueil</string>
     <string name="nav_drawer_pins_summary">Choisissez les éléments à afficher par défaut, les autres seront masqués</string>
     <string name="nav_drawer_pins">Personnaliser les éléments du menu de navigation</string>
     <string name="nav_drawer_switch_on_focus_summary_off">Cliquez pour changer de page</string>
