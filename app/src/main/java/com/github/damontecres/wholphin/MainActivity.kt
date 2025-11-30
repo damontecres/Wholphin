@@ -44,6 +44,8 @@ import com.github.damontecres.wholphin.ui.theme.WholphinTheme
 import com.github.damontecres.wholphin.util.DebugLogTree
 import com.github.damontecres.wholphin.util.profile.createDeviceProfile
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.runBlocking
 import okhttp3.OkHttpClient
 import org.jellyfin.sdk.model.serializer.toUUIDOrNull
 import timber.log.Timber
@@ -138,8 +140,8 @@ class MainActivity : AppCompatActivity() {
                             key(current?.server?.id, current?.user?.id) {
                                 val initialDestination =
                                     when {
-                                        !appPreferences.signInAutomatically -> Destination.ServerList // TODO user list?
                                         current != null -> Destination.Home()
+                                        !appPreferences.signInAutomatically -> Destination.ServerList // TODO user list?
                                         else -> Destination.ServerList
                                     }
                                 val backStack = rememberNavBackStack(initialDestination)
@@ -181,6 +183,15 @@ class MainActivity : AppCompatActivity() {
         super.onResume()
         lifecycleScope.launchIO {
             appUpgradeHandler.run()
+        }
+    }
+
+    override fun onRestart() {
+        super.onRestart()
+        val signInAutomatically =
+            runBlocking { userPreferencesDataStore.data.firstOrNull()?.signInAutomatically } ?: true
+        if (!signInAutomatically) {
+            navigationManager.navigateToFromDrawer(Destination.ServerList)
         }
     }
 }

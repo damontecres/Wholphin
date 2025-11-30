@@ -26,6 +26,7 @@ import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.tv.material3.Button
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
@@ -80,9 +81,17 @@ fun PinEntry(
                         }
                     },
         ) {
-            Text(
-                text = stringResource(R.string.use_server_credentials),
-            )
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Text(
+                    text = stringResource(R.string.use_server_credentials),
+                )
+                Text(
+                    text = stringResource(R.string.will_remove_pin),
+                    fontSize = 10.sp,
+                )
+            }
         }
     }
 }
