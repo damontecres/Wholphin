@@ -144,4 +144,5 @@ message AppPreferences {
   bool auto_check_for_updates = 6;
   string update_url = 7;
   bool send_crash_reports = 8;
+  bool debug_logging = 9;
 }

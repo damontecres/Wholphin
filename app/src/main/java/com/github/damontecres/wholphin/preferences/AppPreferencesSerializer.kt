@@ -20,6 +20,8 @@ class AppPreferencesSerializer
                 .apply {
                     updateUrl = AppPreference.UpdateUrl.defaultValue
                     autoCheckForUpdates = AppPreference.AutoCheckForUpdates.defaultValue
+                    sendCrashReports = AppPreference.SendCrashReports.defaultValue
+                    debugLogging = AppPreference.DebugLogging.defaultValue
 
                     playbackPreferences =
                         PlaybackPreferences
