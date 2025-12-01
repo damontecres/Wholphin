@@ -44,6 +44,7 @@ import com.github.damontecres.wholphin.data.model.JellyfinUser
 import com.github.damontecres.wholphin.ui.components.BasicDialog
 import com.github.damontecres.wholphin.ui.components.CircularProgress
 import com.github.damontecres.wholphin.ui.components.EditTextBox
+import com.github.damontecres.wholphin.ui.dimAndBlur
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.tryRequestFocus
@@ -89,7 +90,7 @@ fun SwitchUserContent(
 
     currentServer?.let { server ->
         Box(
-            modifier = modifier,
+            modifier = modifier.dimAndBlur(showAddUser || switchUserWithPin != null),
         ) {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
