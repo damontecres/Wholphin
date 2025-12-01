@@ -288,4 +288,5 @@
     <string name="skip_back_on_resume_preference">Taasesituse jätkamisel jäta vahele tagasisuunas</string>
     <string name="pass_out_protection">Vaataja uinumise taimer</string>
     <string name="subtitle_margin">Veeris</string>
+    <string name="verbose_logging">Detailne logimine</string>
 </resources>
