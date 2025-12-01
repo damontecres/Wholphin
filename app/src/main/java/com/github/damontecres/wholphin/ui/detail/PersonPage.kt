@@ -212,6 +212,7 @@ fun PersonPage(
                             ItemDetailsDialogInfo(
                                 title = name,
                                 overview = person.data.overview,
+                                genres = listOf(),
                                 files = listOf(),
                             ),
                         showFilePath = false,

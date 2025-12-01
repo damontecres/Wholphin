@@ -136,6 +136,7 @@ fun EpisodeDetails(
                             ItemDetailsDialogInfo(
                                 title = ep.name ?: context.getString(R.string.unknown),
                                 overview = ep.data.overview,
+                                genres = ep.data.genres.orEmpty(),
                                 files = ep.data.mediaSources.orEmpty(),
                             )
                     },

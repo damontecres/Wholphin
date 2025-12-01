@@ -332,6 +332,7 @@ fun SeriesOverview(
                                 ItemDetailsDialogInfo(
                                     title = it.name ?: context.getString(R.string.unknown),
                                     overview = it.data.overview,
+                                    genres = it.data.genres.orEmpty(),
                                     files = it.data.mediaSources.orEmpty(),
                                 )
                         }
