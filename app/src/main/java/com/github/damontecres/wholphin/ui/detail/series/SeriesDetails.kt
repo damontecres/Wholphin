@@ -600,7 +600,8 @@ fun SeriesDetailsHeader(
         ) {
             DotSeparatedRow(
                 texts = details,
-                rating = dto.communityRating,
+                communityRating = dto.communityRating,
+                criticRating = dto.criticRating,
                 textStyle = MaterialTheme.typography.titleSmall,
                 modifier = Modifier,
             )
