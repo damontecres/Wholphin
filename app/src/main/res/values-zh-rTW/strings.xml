@@ -42,7 +42,7 @@
     <string name="shuffle">隨機播放</string>
     <string name="skip">跳過</string>
     <string name="sort_by_date_added">新增日期</string>
-    <string name="sort_by_date_episode_added">劇集新增日期</string>
+    <string name="sort_by_date_episode_added">單集新增日期</string>
     <string name="sort_by_date_released">發行日期</string>
     <string name="sort_by_name">名稱</string>
     <string name="sort_by_random">隨機</string>
@@ -147,7 +147,7 @@
     <string name="bitrate">位元率</string>
     <string name="born">生日</string>
     <string name="cancel_recording">取消錄製</string>
-    <string name="cancel_series_recording">取消影集錄製</string>
+    <string name="cancel_series_recording">取消劇集錄製</string>
     <string name="cancel">取消</string>
     <string name="chapters">章節</string>
     <string name="choose_stream">選擇 %1$s</string>
@@ -172,7 +172,7 @@
     <string name="downloading">下載中…</string>
     <string name="enabled">已啟用</string>
     <string name="enter_server_url">輸入伺服器 IP 位址或 URL</string>
-    <string name="episodes">劇集</string>
+    <string name="episodes">單集</string>
     <string name="favorites">我的最愛</string>
     <string name="go_to_series">前往劇集</string>
     <string name="go_to">前往</string>
@@ -183,8 +183,8 @@
     <string name="jump_letters">#ABCDEFGHIJKLMNOPQRSTUVWXYZ</string>
     <string name="license_info">授權資訊</string>
     <string name="live_tv">電視直播</string>
-    <string name="mark_entire_series_as_played">標記整部劇集為已觀看？</string>
-    <string name="mark_entire_series_as_unplayed">標記整部劇集為未觀看？</string>
+    <string name="mark_entire_series_as_played">標記整部電視劇為已觀看？</string>
+    <string name="mark_entire_series_as_unplayed">標記整部電視劇為未觀看？</string>
     <string name="mark_unwatched">標記為未觀看</string>
     <string name="mark_watched">標記為已觀看</string>
     <string name="max_bitrate">最大位元率</string>
@@ -223,7 +223,7 @@
         <item quantity="other">%d 秒</item>
     </plurals>
     <string name="auto_play_next_delay">播放下一集前的延遲時間</string>
-    <string name="combine_continue_next_summary">僅適用於劇集</string>
+    <string name="combine_continue_next_summary">僅適用於電視劇</string>
     <string name="combine_continue_next"><![CDATA[合併繼續觀看與即將播放]]></string>
     <string name="downmix_stereo">一律降轉為雙聲道</string>
     <string name="nav_drawer_switch_on_focus">選取選單時自動切換頁面</string>
@@ -270,4 +270,5 @@
     <string name="send_app_logs">傳送程式日誌到目前伺服器</string>
     <string name="send_app_logs_summary">有助於偵錯</string>
     <string name="subtitle_margin">邊距</string>
+    <string name="verbose_logging">詳細日誌記錄</string>
 </resources>
