@@ -216,8 +216,7 @@ class HomeViewModel
                 views.items
                     .filter {
                         it.id in includedIds && it.id !in excluded &&
-                            // Exclude Live TV because a recording folder view will be used instead
-                            it.collectionType != CollectionType.LIVETV
+                            it.collectionType in supportedLatestCollectionTypes
                     }.map { view ->
                         val title =
                             view.name?.let { context.getString(R.string.recently_added_in, it) }
@@ -239,17 +238,21 @@ class HomeViewModel
 
         private suspend fun loadLatest(latestData: List<LatestData>) {
             val rows =
-                latestData.map { (title, request) ->
+                latestData.mapNotNull { (title, request) ->
                     try {
                         val latest =
                             api.userLibraryApi
                                 .getLatestMedia(request)
                                 .content
                                 .map { BaseItem.from(it, api, true) }
-                        HomeRowLoadingState.Success(
-                            title = title,
-                            items = latest,
-                        )
+                        if (latest.isNotEmpty()) {
+                            HomeRowLoadingState.Success(
+                                title = title,
+                                items = latest,
+                            )
+                        } else {
+                            null
+                        }
                     } catch (ex: Exception) {
                         Timber.e(ex, "Exception fetching %s", title)
                         HomeRowLoadingState.Error(
@@ -319,7 +322,9 @@ val supportedLatestCollectionTypes =
     setOf(
         CollectionType.MOVIES,
         CollectionType.TVSHOWS,
-        CollectionType.LIVETV,
+        CollectionType.HOMEVIDEOS,
+        // Exclude Live TV because a recording folder view will be used instead
+        null, // Recordings & mixed collection types
     )
 
 data class LatestData(

@@ -13,6 +13,7 @@ import com.github.damontecres.wholphin.ui.preferences.ConditionalPreferences
 import com.github.damontecres.wholphin.ui.preferences.PreferenceGroup
 import com.github.damontecres.wholphin.ui.preferences.PreferenceScreenOption
 import com.github.damontecres.wholphin.ui.preferences.PreferenceValidation
+import com.github.damontecres.wholphin.util.DebugLogTree
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
@@ -699,6 +700,19 @@ sealed interface AppPreference<T> {
                 },
                 summary = R.string.disable_if_crash,
             )
+
+        val DebugLogging =
+            AppSwitchPreference(
+                title = R.string.verbose_logging,
+                defaultValue = false,
+                getter = { DebugLogTree.INSTANCE.enabled },
+                setter = { prefs, value ->
+                    DebugLogTree.INSTANCE.enabled = value
+                    prefs.update { debugLogging = value }
+                },
+                summaryOn = R.string.enabled,
+                summaryOff = R.string.disabled,
+            )
     }
 }
 
@@ -837,6 +851,7 @@ val advancedPreferences =
                     listOf(
                         AppPreference.SendAppLogs,
                         AppPreference.SendCrashReports,
+                        AppPreference.DebugLogging,
                         AppPreference.ClearImageCache,
                         AppPreference.OssLicenseInfo,
                     ),

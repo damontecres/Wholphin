@@ -18,6 +18,7 @@ package com.github.damontecres.wholphin.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -78,10 +79,19 @@ fun DotSeparatedRow(
 @Composable
 private fun DotSeparatedRowPreview() {
     WholphinTheme {
-        DotSeparatedRow(
-            texts = listOf("2025", "1h 48m", "PG-13", "1h 30m left"),
-            rating = 7.5f,
-            modifier = Modifier,
-        )
+        Column {
+            DotSeparatedRow(
+                texts = listOf("2025", "1h 48m", "PG-13", "1h 30m left"),
+                rating = 7.5f,
+                modifier = Modifier,
+                textStyle = MaterialTheme.typography.titleMedium,
+            )
+            DotSeparatedRow(
+                texts = listOf("2025", "1h 48m", "PG-13", "1h 30m left 7.5"),
+                rating = 7.5f,
+                modifier = Modifier,
+                textStyle = MaterialTheme.typography.titleLarge,
+            )
+        }
     }
 }

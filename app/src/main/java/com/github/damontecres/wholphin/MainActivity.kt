@@ -41,6 +41,7 @@ import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.nav.ApplicationContent
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.theme.WholphinTheme
+import com.github.damontecres.wholphin.util.DebugLogTree
 import com.github.damontecres.wholphin.util.profile.createDeviceProfile
 import dagger.hilt.android.AndroidEntryPoint
 import okhttp3.OkHttpClient
@@ -87,6 +88,9 @@ class MainActivity : AppCompatActivity() {
             CoilConfig(okHttpClient, false)
             val appPreferences by userPreferencesDataStore.data.collectAsState(null)
             appPreferences?.let { appPreferences ->
+                LaunchedEffect(appPreferences.debugLogging) {
+                    DebugLogTree.INSTANCE.enabled = appPreferences.debugLogging
+                }
                 WholphinTheme(
                     true,
                     appThemeColors = appPreferences.interfacePreferences.appThemeColors,
@@ -110,14 +114,12 @@ class MainActivity : AppCompatActivity() {
                             }
                             isRestoringSession = false
                         }
-                        val server by serverRepository.currentServer.observeAsState()
-                        val user by serverRepository.currentUser.observeAsState()
-                        val userDto by serverRepository.currentUserDto.observeAsState()
+                        val current by serverRepository.current.observeAsState()
 
                         val preferences =
                             UserPreferences(
                                 appPreferences,
-                                userDto?.configuration ?: DefaultUserConfiguration,
+                                current?.userDto?.configuration ?: DefaultUserConfiguration,
                             )
 
                         if (isRestoringSession) {
@@ -131,9 +133,9 @@ class MainActivity : AppCompatActivity() {
                                 )
                             }
                         } else {
-                            key(server, user) {
+                            key(current) {
                                 val initialDestination =
-                                    if (server != null && user != null) {
+                                    if (current != null) {
                                         Destination.Home()
                                     } else {
                                         Destination.ServerList
@@ -150,16 +152,16 @@ class MainActivity : AppCompatActivity() {
                                     }
                                 }
                                 val deviceProfile =
-                                    remember(server, appPreferences) {
+                                    remember(current, preferences) {
                                         createDeviceProfile(
                                             this@MainActivity,
                                             preferences,
-                                            server?.serverVersion,
+                                            current?.server?.serverVersion,
                                         )
                                     }
                                 ApplicationContent(
-                                    user = user,
-                                    server = server,
+                                    user = current?.user,
+                                    server = current?.server,
                                     navigationManager = navigationManager,
                                     preferences = preferences,
                                     deviceProfile = deviceProfile,
