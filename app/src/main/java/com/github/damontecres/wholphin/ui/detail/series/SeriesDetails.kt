@@ -1,6 +1,7 @@
 package com.github.damontecres.wholphin.ui.detail.series
 
 import android.content.Context
+import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -25,6 +26,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -57,6 +59,7 @@ import com.github.damontecres.wholphin.ui.components.DotSeparatedRow
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.ExpandableFaButton
 import com.github.damontecres.wholphin.ui.components.ExpandablePlayButton
+import com.github.damontecres.wholphin.ui.components.GenreText
 import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.components.Optional
 import com.github.damontecres.wholphin.ui.components.OverviewText
@@ -174,6 +177,7 @@ fun SeriesDetails(
                             ItemDetailsDialogInfo(
                                 title = item.name ?: context.getString(R.string.unknown),
                                 overview = item.data.overview,
+                                genres = item.data.genres.orEmpty(),
                                 files = listOf(),
                             )
                     },
@@ -303,6 +307,7 @@ fun SeriesDetailsContent(
 
     var position by rememberInt()
     val focusRequesters = remember { List(SIMILAR_ROW + 1) { FocusRequester() } }
+    val playFocusRequester = remember { FocusRequester() }
     LaunchedEffect(Unit) {
         focusRequesters.getOrNull(position)?.tryRequestFocus()
     }
@@ -321,7 +326,7 @@ fun SeriesDetailsContent(
         ) {
             LazyColumn(
                 contentPadding = PaddingValues(bottom = 80.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
+                verticalArrangement = Arrangement.spacedBy(0.dp),
                 modifier = Modifier,
             ) {
                 item {
@@ -330,9 +335,9 @@ fun SeriesDetailsContent(
                         overviewOnClick = overviewOnClick,
                         modifier =
                             Modifier
-                                .fillMaxWidth(.7f)
+                                .fillMaxWidth()
                                 .bringIntoViewRequester(bringIntoViewRequester)
-                                .padding(bottom = 8.dp),
+                                .padding(top = 32.dp, bottom = 16.dp),
                     )
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(16.dp),
@@ -340,7 +345,9 @@ fun SeriesDetailsContent(
                             Modifier
                                 .padding(start = 16.dp)
                                 .focusRequester(focusRequesters[HEADER_ROW])
-                                .padding(bottom = 80.dp),
+                                .focusRestorer(playFocusRequester)
+                                .focusGroup()
+                                .padding(bottom = 16.dp),
                     ) {
                         ExpandablePlayButton(
                             title = R.string.play,
@@ -351,13 +358,15 @@ fun SeriesDetailsContent(
                                 playOnClick.invoke(false)
                             },
                             modifier =
-                                Modifier.onFocusChanged {
-                                    if (it.isFocused) {
-                                        scope.launch(ExceptionHandler()) {
-                                            bringIntoViewRequester.bringIntoView()
+                                Modifier
+                                    .focusRequester(playFocusRequester)
+                                    .onFocusChanged {
+                                        if (it.isFocused) {
+                                            scope.launch(ExceptionHandler()) {
+                                                bringIntoViewRequester.bringIntoView()
+                                            }
                                         }
-                                    }
-                                },
+                                    },
                         )
                         ExpandableFaButton(
                             title = R.string.shuffle,
@@ -406,7 +415,7 @@ fun SeriesDetailsContent(
                 }
                 item {
                     ItemRow(
-                        title = stringResource(R.string.tv_seasons),
+                        title = stringResource(R.string.tv_seasons) + " (${seasons.size})",
                         items = seasons,
                         onClickItem = { index, item ->
                             position = SEASONS_ROW
@@ -564,13 +573,15 @@ fun SeriesDetailsHeader(
     val scope = rememberCoroutineScope()
     val dto = series.data
     val details =
-        buildList {
-            dto.productionYear?.let { add(it.toString()) }
-            dto.runTimeTicks
-                ?.ticks
-                ?.roundMinutes
-                ?.let { add(it.toString()) }
-            dto.officialRating?.let(::add)
+        remember(series) {
+            buildList {
+                dto.productionYear?.let { add(it.toString()) }
+                dto.runTimeTicks
+                    ?.ticks
+                    ?.roundMinutes
+                    ?.let { add(it.toString()) }
+                dto.officialRating?.let(::add)
+            }
         }
     Column(
         verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -579,29 +590,31 @@ fun SeriesDetailsHeader(
         Text(
             text = series.name ?: stringResource(R.string.unknown),
             style = MaterialTheme.typography.displaySmall,
-            modifier = Modifier.fillMaxWidth(),
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.fillMaxWidth(.75f),
         )
-        DotSeparatedRow(
-            texts = details,
-            rating = dto.communityRating,
-            textStyle = MaterialTheme.typography.titleMedium,
-        )
-        dto.genres?.letNotEmpty {
-            Text(
-                text = it.joinToString(", "),
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurface,
-                overflow = TextOverflow.Ellipsis,
+        Column(
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+            modifier = Modifier.fillMaxWidth(.60f),
+        ) {
+            DotSeparatedRow(
+                texts = details,
+                rating = dto.communityRating,
+                textStyle = MaterialTheme.typography.titleSmall,
                 modifier = Modifier,
             )
-        }
-        dto.overview?.let { overview ->
-            OverviewText(
-                overview = overview,
-                maxLines = 3,
-                onClick = overviewOnClick,
-                textBoxHeight = Dp.Unspecified,
-            )
+            dto.genres?.letNotEmpty {
+                GenreText(it)
+            }
+            dto.overview?.let { overview ->
+                OverviewText(
+                    overview = overview,
+                    maxLines = 3,
+                    onClick = overviewOnClick,
+                    textBoxHeight = Dp.Unspecified,
+                )
+            }
         }
     }
 }
