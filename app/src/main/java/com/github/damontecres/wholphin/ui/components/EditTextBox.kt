@@ -76,7 +76,7 @@ fun EditTextBox(
             else -> colors.unfocusedTextColor
         }
     val lineLimits =
-        remember {
+        remember(maxLines) {
             if (maxLines == 1) {
                 TextFieldLineLimits.SingleLine
             } else {
