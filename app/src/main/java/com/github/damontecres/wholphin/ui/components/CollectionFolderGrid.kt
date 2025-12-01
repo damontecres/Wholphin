@@ -88,7 +88,6 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
@@ -154,8 +153,8 @@ class CollectionFolderViewModel
                     }
 
                 val sortAndDirection =
-                    initialSortAndDirection
-                        ?: libraryDisplayInfo?.sortAndDirection
+                    libraryDisplayInfo?.sortAndDirection
+                        ?: initialSortAndDirection
                         ?: SortAndDirection.DEFAULT
 
                 val filterToUse =
@@ -233,7 +232,6 @@ class CollectionFolderViewModel
                     this@CollectionFolderViewModel.sortAndDirection.value = sortAndDirection
                     this@CollectionFolderViewModel.filter.value = filter
                 }
-                delay(1000)
                 val newPager = createPager(sortAndDirection, recursive, filter, useSeriesForPrimary)
                 newPager.init()
                 if (newPager.isNotEmpty()) newPager.getBlocking(0)
@@ -270,22 +268,26 @@ class CollectionFolderViewModel
                                 excludeItemIds = item?.let { listOf(item.id) },
                                 sortBy =
                                     buildList {
-                                        add(sortAndDirection.sort)
-                                        if (sortAndDirection.sort != ItemSortBy.SORT_NAME) {
-                                            add(ItemSortBy.SORT_NAME)
-                                        }
-                                        if (item?.data?.collectionType == CollectionType.MOVIES) {
-                                            add(ItemSortBy.PRODUCTION_YEAR)
+                                        if (sortAndDirection.sort != ItemSortBy.DEFAULT) {
+                                            add(sortAndDirection.sort)
+                                            if (sortAndDirection.sort != ItemSortBy.SORT_NAME) {
+                                                add(ItemSortBy.SORT_NAME)
+                                            }
+                                            if (item?.data?.collectionType == CollectionType.MOVIES) {
+                                                add(ItemSortBy.PRODUCTION_YEAR)
+                                            }
                                         }
                                     },
                                 sortOrder =
                                     buildList {
-                                        add(sortAndDirection.direction)
-                                        if (sortAndDirection.sort != ItemSortBy.SORT_NAME) {
-                                            add(SortOrder.ASCENDING)
-                                        }
-                                        if (item?.data?.collectionType == CollectionType.MOVIES) {
-                                            add(SortOrder.ASCENDING)
+                                        if (sortAndDirection.sort != ItemSortBy.DEFAULT) {
+                                            add(sortAndDirection.direction)
+                                            if (sortAndDirection.sort != ItemSortBy.SORT_NAME) {
+                                                add(SortOrder.ASCENDING)
+                                            }
+                                            if (item?.data?.collectionType == CollectionType.MOVIES) {
+                                                add(SortOrder.ASCENDING)
+                                            }
                                         }
                                     },
                                 fields = SlimItemFields,

@@ -56,6 +56,7 @@ import com.github.damontecres.wholphin.ui.AspectRatios
 import com.github.damontecres.wholphin.ui.TimeFormatter
 import com.github.damontecres.wholphin.ui.cards.ChapterCard
 import com.github.damontecres.wholphin.ui.cards.SeasonCard
+import com.github.damontecres.wholphin.ui.components.TimeDisplay
 import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.tryRequestFocus
@@ -394,6 +395,14 @@ fun PlaybackOverlay(
                         .sizeIn(maxWidth = 180.dp, maxHeight = 100.dp)
                         .padding(16.dp),
             )
+        }
+        AnimatedVisibility(
+            !showDebugInfo && showClock && controllerViewState.controlsVisible,
+            modifier =
+                Modifier
+                    .align(Alignment.TopEnd),
+        ) {
+            TimeDisplay()
         }
         AnimatedVisibility(
             showDebugInfo && controllerViewState.controlsVisible,

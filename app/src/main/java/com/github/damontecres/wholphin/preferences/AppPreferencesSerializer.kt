@@ -20,6 +20,8 @@ class AppPreferencesSerializer
                 .apply {
                     updateUrl = AppPreference.UpdateUrl.defaultValue
                     autoCheckForUpdates = AppPreference.AutoCheckForUpdates.defaultValue
+                    sendCrashReports = AppPreference.SendCrashReports.defaultValue
+                    debugLogging = AppPreference.DebugLogging.defaultValue
 
                     playbackPreferences =
                         PlaybackPreferences
@@ -152,4 +154,5 @@ fun SubtitlePreferences.Builder.resetSubtitles() {
     backgroundColor = SubtitleSettings.BackgroundColor.defaultValue.toArgb()
     backgroundOpacity = SubtitleSettings.BackgroundOpacity.defaultValue.toInt()
     backgroundStyle = SubtitleSettings.BackgroundStylePref.defaultValue
+    margin = SubtitleSettings.Margin.defaultValue.toInt()
 }

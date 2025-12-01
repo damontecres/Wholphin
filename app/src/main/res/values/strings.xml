@@ -329,6 +329,8 @@
     <string name="mpv_use_gpu_next">MPV: Use gpu-next</string>
     <string name="mpv_conf">Edit mpv.conf</string>
     <string name="discard_change">Discard changes?</string>
+    <string name="subtitle_margin">Margin</string>
+    <string name="verbose_logging">Verbose logging</string>
 
     <string-array name="theme_song_volume">
         <item>Disabled</item>

@@ -32,7 +32,6 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
@@ -42,9 +41,12 @@ import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -77,7 +79,7 @@ import com.github.damontecres.wholphin.preferences.AppThemeColors
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.ui.FontAwesome
-import com.github.damontecres.wholphin.ui.TimeFormatter
+import com.github.damontecres.wholphin.ui.components.TimeDisplay
 import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.preferences.PreferenceScreenOption
@@ -86,14 +88,15 @@ import com.github.damontecres.wholphin.ui.spacedByWithFooter
 import com.github.damontecres.wholphin.ui.theme.LocalTheme
 import com.github.damontecres.wholphin.ui.toServerString
 import com.github.damontecres.wholphin.ui.tryRequestFocus
+import com.github.damontecres.wholphin.util.ExceptionHandler
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.model.api.CollectionType
 import org.jellyfin.sdk.model.api.DeviceProfile
-import java.time.LocalTime
+import timber.log.Timber
 import java.util.UUID
 import javax.inject.Inject
 
@@ -306,6 +309,28 @@ fun NavDrawer(
         },
     )
     val spacedBy = 4.dp
+    val config = LocalConfiguration.current
+    val density = LocalDensity.current
+    val heightInPx = remember { with(density) { config.screenHeightDp.dp.roundToPx() } }
+
+    suspend fun scrollToSelected() {
+        val target = selectedIndex + 2
+        try {
+            if (target !in
+                listState.firstVisibleItemIndex..<listState.layoutInfo.visibleItemsInfo.lastIndex
+            ) {
+                val mult = if ((target - 2) < listState.layoutInfo.totalItemsCount / 2) -1 else 1
+                listState.animateScrollToItem(selectedIndex + 2, mult * (heightInPx / 2))
+            }
+        } catch (ex: Exception) {
+            Timber.w(ex, "Error scrolling to %s", target)
+        }
+    }
+
+    LaunchedEffect(selectedIndex) {
+        scrollToSelected()
+    }
+
     NavigationDrawer(
         modifier = modifier,
         drawerState = drawerState,
@@ -318,7 +343,11 @@ fun NavDrawer(
                         Modifier
                             .fillMaxHeight()
                             .width(drawerWidth)
-                            .background(drawerBackground),
+                            .background(drawerBackground)
+                            .onFocusChanged {
+                                if (!it.hasFocus) {
+                                }
+                            },
                 ) {
                     // Even though some must be clicked, focusing on it should clear other focused items
                     val interactionSource = remember { MutableInteractionSource() }
@@ -354,6 +383,11 @@ fun NavDrawer(
                                             searchFocusRequester.tryRequestFocus()
                                         } else {
                                             focusRequester.tryRequestFocus()
+                                        }
+                                    }
+                                    onExit = {
+                                        scope.launch(ExceptionHandler()) {
+                                            scrollToSelected()
                                         }
                                     }
                                 }.fillMaxHeight()
@@ -498,23 +532,7 @@ fun NavDrawer(
                         .fillMaxSize(),
             )
             if (preferences.appPreferences.interfacePreferences.showClock) {
-                var now by remember { mutableStateOf(LocalTime.now()) }
-                LaunchedEffect(Unit) {
-                    while (isActive) {
-                        now = LocalTime.now()
-                        delay(1000L)
-                    }
-                }
-                Text(
-                    text = TimeFormatter.format(now),
-//                    style = MaterialTheme.typography.titleMedium,
-                    fontSize = 18.sp,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    modifier =
-                        Modifier
-                            .align(Alignment.TopEnd)
-                            .padding(vertical = 16.dp, horizontal = 24.dp),
-                )
+                TimeDisplay()
             }
         }
     }

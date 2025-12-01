@@ -1,7 +1,7 @@
 import com.google.protobuf.gradle.id
 import com.mikepenz.aboutlibraries.plugin.DuplicateMode
 import com.mikepenz.aboutlibraries.plugin.DuplicateRule
-import java.io.ByteArrayOutputStream
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import java.util.Base64
 import java.util.Properties
 
@@ -21,31 +21,17 @@ val isCI = if (System.getenv("CI") != null) System.getenv("CI").toBoolean() else
 val shouldSign = isCI && System.getenv("KEY_ALIAS") != null
 val ffmpegModuleExists = project.file("libs/lib-decoder-ffmpeg-release.aar").exists()
 
-fun getVersionCode(): Int {
-    val stdout = ByteArrayOutputStream()
-    exec {
-        commandLine = listOf("git", "tag", "--list", "v*", "p*")
-        standardOutput = stdout
-    }
-    return stdout
-        .toString()
-        .trim()
-        .lines()
-        .size
-}
+val gitTags =
+    providers
+        .exec { commandLine("git", "tag", "--list", "v*", "p*") }
+        .standardOutput.asText
+        .get()
 
-fun getAppVersion(): String {
-    val stdout = ByteArrayOutputStream()
-    exec {
-        commandLine = listOf("git", "describe", "--tags", "--long", "--match=v*")
-        standardOutput = stdout
-    }
-    return stdout
-        .toString()
-        .trim()
-        .removePrefix("v")
-        .ifBlank { "0.0.0" }
-}
+val gitDescribe =
+    providers
+        .exec { commandLine("git", "describe", "--tags", "--long", "--match=v*") }
+        .standardOutput.asText
+        .getOrElse("v0.0.0")
 
 android {
     namespace = "com.github.damontecres.wholphin"
@@ -53,10 +39,10 @@ android {
 
     defaultConfig {
         applicationId = "com.github.damontecres.wholphin"
-        minSdk = 25
+        minSdk = 23
         targetSdk = 36
-        versionCode = getVersionCode()
-        versionName = getAppVersion()
+        versionCode = gitTags.trim().lines().size
+        versionName = gitDescribe.trim().removePrefix("v").ifBlank { "0.0.0" }
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -79,8 +65,11 @@ android {
         targetCompatibility = JavaVersion.VERSION_11
         isCoreLibraryDesugaringEnabled = true
     }
-    kotlinOptions {
-        jvmTarget = "11"
+    kotlin {
+        compilerOptions {
+            jvmTarget = JvmTarget.JVM_11
+            javaParameters = true
+        }
     }
     buildFeatures {
         buildConfig = true

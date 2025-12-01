@@ -1,6 +1,5 @@
 package com.github.damontecres.wholphin.ui
 
-import android.os.Build
 import androidx.annotation.StringRes
 import com.github.damontecres.wholphin.R
 import org.jellyfin.sdk.model.api.BaseItemDto
@@ -11,34 +10,18 @@ import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import java.util.Locale
 
-val TimeFormatter = DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT)
+val TimeFormatter: DateTimeFormatter = DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT)
+val DateFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("MMM d, yyyy")
+
+// TODO server returns in UTC, but sdk converts to local time
+// eg 2020-02-14T00:00:00.0000000Z => 2020-02-13T17:00:00 PT => Feb 13, 2020
 
 /**
  * Format a [LocalDateTime] as `Aug 24, 2000`
  */
-fun formatDateTime(dateTime: LocalDateTime): String =
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-        // TODO server returns in UTC, but sdk converts to local time
-        // eg 2020-02-14T00:00:00.0000000Z => 2020-02-13T17:00:00 PT => Feb 13, 2020
-        val formatter = DateTimeFormatter.ofPattern("MMM d, yyyy")
-        formatter.format(dateTime)
-    } else if (dateTime.toString().length >= 10) {
-        dateTime.toString().substring(0, 10)
-    } else {
-        dateTime.toString()
-    }
+fun formatDateTime(dateTime: LocalDateTime): String = DateFormatter.format(dateTime)
 
-fun formatDate(dateTime: LocalDate): String =
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-        // TODO server returns in UTC, but sdk converts to local time
-        // eg 2020-02-14T00:00:00.0000000Z => 2020-02-13T17:00:00 PT => Feb 13, 2020
-        val formatter = DateTimeFormatter.ofPattern("MMM d, yyyy")
-        formatter.format(dateTime)
-    } else if (dateTime.toString().length >= 10) {
-        dateTime.toString().substring(0, 10)
-    } else {
-        dateTime.toString()
-    }
+fun formatDate(dateTime: LocalDate): String = DateFormatter.format(dateTime)
 
 /**
  * If the item has season & episode info, format as `S# E#`

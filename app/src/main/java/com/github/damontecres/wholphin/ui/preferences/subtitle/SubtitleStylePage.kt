@@ -33,7 +33,6 @@ import com.github.damontecres.wholphin.ui.preferences.PreferenceScreenOption
 import com.github.damontecres.wholphin.ui.preferences.PreferencesContent
 import com.github.damontecres.wholphin.ui.preferences.PreferencesViewModel
 import com.github.damontecres.wholphin.ui.preferences.subtitle.SubtitleSettings.toSubtitleStyle
-import timber.log.Timber
 
 @OptIn(UnstableApi::class)
 @Composable
@@ -48,8 +47,9 @@ fun SubtitleStylePage(
             preferences = it
         }
     }
-    Timber.v("SubtitleStylePage")
     val prefs = preferences.interfacePreferences.subtitlesPreferences
+    var focusedOnMargin by remember { mutableStateOf(false) }
+
     Row(
         modifier = modifier,
     ) {
@@ -68,45 +68,74 @@ fun SubtitleStylePage(
                     Modifier
                         .fillMaxSize(),
             )
-            Column(
-                verticalArrangement = Arrangement.SpaceBetween,
-                modifier =
-                    Modifier
-                        .padding(16.dp)
-                        .fillMaxSize(),
-            ) {
-                val examples =
-                    mapOf(
-                        "Subtitles will look like this" to 48.dp,
-                        "This is another example" to 24.dp,
-                        "Longer multi line subtitles will\nlook like this" to 0.dp,
-                    )
-                examples.forEach { (text, padding) ->
-                    AndroidView(
-                        factory = { context ->
-                            SubtitleView(context)
-                        },
-                        update = {
-                            it.setStyle(prefs.toSubtitleStyle())
-                            it.setFixedTextSize(Dimension.SP, prefs.fontSize.toFloat())
-                            it.setCues(
-                                listOf(
-                                    Cue.Builder().setText(text).build(),
-                                ),
-                            )
-                        },
-                        modifier =
-                            Modifier
-                                .weight(1f)
-                                .fillMaxWidth()
-                                .padding(bottom = padding),
-                    )
+            if (!focusedOnMargin) {
+                Column(
+                    verticalArrangement = Arrangement.SpaceBetween,
+                    modifier =
+                        Modifier
+                            .padding(16.dp)
+                            .fillMaxSize(),
+                ) {
+                    val examples =
+                        mapOf(
+                            "Subtitles will look like this" to 48.dp,
+                            "This is another example" to 24.dp,
+                            "Longer multi line subtitles will\nlook like this" to 0.dp,
+                        )
+                    examples.forEach { (text, padding) ->
+                        AndroidView(
+                            factory = { context ->
+                                SubtitleView(context)
+                            },
+                            update = {
+                                it.setStyle(prefs.toSubtitleStyle())
+                                it.setFixedTextSize(Dimension.SP, prefs.fontSize.toFloat())
+                                it.setCues(
+                                    listOf(
+                                        Cue.Builder().setText(text).build(),
+                                    ),
+                                )
+                            },
+                            modifier =
+                                Modifier
+                                    .weight(1f)
+                                    .fillMaxWidth()
+                                    .padding(bottom = padding),
+                        )
+                    }
                 }
+            } else {
+                // Margin
+                AndroidView(
+                    factory = { context ->
+                        SubtitleView(context)
+                    },
+                    update = {
+                        it.setStyle(prefs.toSubtitleStyle())
+                        it.setFixedTextSize(Dimension.SP, prefs.fontSize.toFloat())
+                        it.setCues(
+                            listOf(
+                                Cue.Builder().setText("Subtitles margin below here").build(),
+                            ),
+                        )
+                        it.setBottomPaddingFraction(prefs.margin.toFloat() / 100f)
+                    },
+                    modifier =
+                        Modifier
+                            .fillMaxSize(),
+                )
             }
         }
         PreferencesContent(
             initialPreferences = preferences,
             preferenceScreenOption = PreferenceScreenOption.SUBTITLES,
+            onFocus = { groupIndex, prefIndex ->
+
+                focusedOnMargin =
+                    SubtitleSettings.preferences.getOrNull(groupIndex)?.preferences?.getOrNull(
+                        prefIndex,
+                    ) == SubtitleSettings.Margin
+            },
             modifier =
                 Modifier
                     .fillMaxHeight()

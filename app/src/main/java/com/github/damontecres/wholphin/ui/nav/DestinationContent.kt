@@ -7,6 +7,7 @@ import com.github.damontecres.wholphin.data.filter.DefaultForGenresFilterOptions
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.components.ItemGrid
 import com.github.damontecres.wholphin.ui.components.LicenseInfo
+import com.github.damontecres.wholphin.ui.data.MovieSortOptions
 import com.github.damontecres.wholphin.ui.detail.CollectionFolderBoxSet
 import com.github.damontecres.wholphin.ui.detail.CollectionFolderGeneric
 import com.github.damontecres.wholphin.ui.detail.CollectionFolderLiveTv
@@ -18,6 +19,7 @@ import com.github.damontecres.wholphin.ui.detail.DebugPage
 import com.github.damontecres.wholphin.ui.detail.FavoritesPage
 import com.github.damontecres.wholphin.ui.detail.PersonPage
 import com.github.damontecres.wholphin.ui.detail.PlaylistDetails
+import com.github.damontecres.wholphin.ui.detail.episode.EpisodeDetails
 import com.github.damontecres.wholphin.ui.detail.movie.MovieDetails
 import com.github.damontecres.wholphin.ui.detail.series.SeriesDetails
 import com.github.damontecres.wholphin.ui.detail.series.SeriesOverview
@@ -96,6 +98,13 @@ fun DestinationContent(
                 BaseItemKind.VIDEO ->
                     // TODO Use VideoDetails
                     MovieDetails(
+                        preferences,
+                        destination,
+                        modifier,
+                    )
+
+                BaseItemKind.EPISODE ->
+                    EpisodeDetails(
                         preferences,
                         destination,
                         modifier,
@@ -231,12 +240,14 @@ fun CollectionFolder(
             )
 
         CollectionType.BOXSETS ->
-            CollectionFolderBoxSet(
-                preferences,
-                destination.itemId,
-                destination.item,
-                false,
-                modifier,
+            CollectionFolderGeneric(
+                preferences = preferences,
+                itemId = destination.itemId,
+                usePosters = true,
+                recursive = false,
+                playEnabled = false,
+                modifier = modifier,
+                sortOptions = MovieSortOptions,
             )
 
         CollectionType.PLAYLISTS ->

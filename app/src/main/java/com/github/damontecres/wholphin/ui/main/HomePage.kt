@@ -1,6 +1,8 @@
 package com.github.damontecres.wholphin.ui.main
 
 import android.widget.Toast
+import androidx.compose.foundation.background
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -57,9 +59,10 @@ import com.github.damontecres.wholphin.ui.cards.ItemRow
 import com.github.damontecres.wholphin.ui.components.CircularProgress
 import com.github.damontecres.wholphin.ui.components.DialogParams
 import com.github.damontecres.wholphin.ui.components.DialogPopup
-import com.github.damontecres.wholphin.ui.components.DotSeparatedRow
+import com.github.damontecres.wholphin.ui.components.EpisodeQuickDetails
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.LoadingPage
+import com.github.damontecres.wholphin.ui.components.MovieQuickDetails
 import com.github.damontecres.wholphin.ui.data.AddPlaylistViewModel
 import com.github.damontecres.wholphin.ui.data.RowColumn
 import com.github.damontecres.wholphin.ui.data.RowColumnSaver
@@ -67,19 +70,14 @@ import com.github.damontecres.wholphin.ui.detail.MoreDialogActions
 import com.github.damontecres.wholphin.ui.detail.PlaylistDialog
 import com.github.damontecres.wholphin.ui.detail.PlaylistLoadingState
 import com.github.damontecres.wholphin.ui.detail.buildMoreDialogItemsForHome
-import com.github.damontecres.wholphin.ui.formatDateTime
 import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
-import com.github.damontecres.wholphin.ui.roundMinutes
-import com.github.damontecres.wholphin.ui.seasonEpisode
-import com.github.damontecres.wholphin.ui.timeRemaining
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.HomeRowLoadingState
 import com.github.damontecres.wholphin.util.LoadingState
 import kotlinx.coroutines.delay
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.MediaType
-import org.jellyfin.sdk.model.extensions.ticks
 import java.util.UUID
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -330,9 +328,22 @@ fun HomePageContent(
                         }
 
                         is HomeRowLoadingState.Error -> {
+                            var focused by remember { mutableStateOf(false) }
                             Column(
                                 verticalArrangement = Arrangement.spacedBy(8.dp),
-                                modifier = Modifier.animateItem(),
+                                modifier =
+                                    Modifier
+                                        .onFocusChanged {
+                                            focused = it.isFocused
+                                        }.focusable()
+                                        .background(
+                                            if (focused) {
+                                                // Just so the user can tell it has focus
+                                                MaterialTheme.colorScheme.border.copy(alpha = .25f)
+                                            } else {
+                                                Color.Unspecified
+                                            },
+                                        ).animateItem(),
                             ) {
                                 Text(
                                     text = r.title,
@@ -457,30 +468,6 @@ fun HomePageHeader(
                 val title = if (isEpisode) dto.seriesName ?: item.name else item.name
                 val subtitle = if (isEpisode) dto.name else null
                 val overview = dto.overview
-                val details =
-                    buildList {
-                        if (isEpisode) {
-                            val se = dto.seasonEpisode
-                            if (se != null) {
-                                add(se)
-                            } else if (dto.parentIndexNumber != null) {
-                                // Maybe a daily episode, so just show season, the date is added below
-                                add("S${dto.parentIndexNumber}")
-                            }
-                        }
-                        if (isEpisode) {
-                            dto.premiereDate?.let { add(formatDateTime(it)) }
-                        } else {
-                            dto.productionYear?.let { add(it.toString()) }
-                        }
-                        dto.runTimeTicks?.ticks?.roundMinutes?.let {
-                            add(it.toString())
-                        }
-                        dto.timeRemaining?.roundMinutes?.let {
-                            add("$it left")
-                        }
-                        dto.officialRating?.let(::add)
-                    }
                 title?.let {
                     Text(
                         text = title,
@@ -499,13 +486,10 @@ fun HomePageHeader(
                         overflow = TextOverflow.Ellipsis,
                     )
                 }
-                if (details.isNotEmpty()) {
-                    DotSeparatedRow(
-                        texts = details,
-                        rating = item.data.communityRating,
-                        textStyle = MaterialTheme.typography.bodyLarge,
-                        modifier = Modifier,
-                    )
+                if (isEpisode) {
+                    EpisodeQuickDetails(dto, Modifier)
+                } else {
+                    MovieQuickDetails(dto, Modifier)
                 }
                 val overviewModifier =
                     Modifier

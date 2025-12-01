@@ -258,7 +258,7 @@ class PlaybackViewModel
                             }
                         }
                     } else {
-                        throw IllegalArgumentException("Item is not playable and not PlaybackList")
+                        throw IllegalArgumentException("Item is not playable and not PlaybackList: ${queriedItem.type}")
                     }
                 val item = BaseItem.from(base, api)
 
