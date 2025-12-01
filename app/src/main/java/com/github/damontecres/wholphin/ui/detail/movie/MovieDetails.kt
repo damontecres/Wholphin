@@ -182,6 +182,7 @@ fun MovieDetails(
                             ItemDetailsDialogInfo(
                                 title = movie.name ?: context.getString(R.string.unknown),
                                 overview = movie.data.overview,
+                                genres = movie.data.genres.orEmpty(),
                                 files = movie.data.mediaSources.orEmpty(),
                             )
                     },

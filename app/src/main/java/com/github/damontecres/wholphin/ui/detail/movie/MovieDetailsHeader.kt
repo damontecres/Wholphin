@@ -1,17 +1,15 @@
 package com.github.damontecres.wholphin.ui.detail.movie
 
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontStyle
@@ -24,10 +22,14 @@ import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.ChosenStreams
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.preferences.UserPreferences
+import com.github.damontecres.wholphin.ui.components.GenreText
 import com.github.damontecres.wholphin.ui.components.MovieQuickDetails
 import com.github.damontecres.wholphin.ui.components.OverviewText
 import com.github.damontecres.wholphin.ui.components.VideoStreamDetails
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
+import com.github.damontecres.wholphin.ui.letNotEmpty
+import com.github.damontecres.wholphin.util.ExceptionHandler
+import kotlinx.coroutines.launch
 import org.jellyfin.sdk.model.api.PersonKind
 
 @Composable
@@ -60,8 +62,12 @@ fun MovieDetailsHeader(
             verticalArrangement = Arrangement.spacedBy(4.dp),
             modifier = Modifier.fillMaxWidth(.60f),
         ) {
-            val padding = 8.dp
+            val padding = 4.dp
             MovieQuickDetails(dto, Modifier.padding(bottom = padding))
+
+            dto.genres?.letNotEmpty {
+                GenreText(it, Modifier.padding(bottom = padding))
+            }
 
             VideoStreamDetails(
                 preferences = preferences,
@@ -80,17 +86,19 @@ fun MovieDetailsHeader(
 
             // Description
             dto.overview?.let { overview ->
-                val interactionSource = remember { MutableInteractionSource() }
-                val focused = interactionSource.collectIsFocusedAsState().value
-                LaunchedEffect(focused) {
-                    if (focused) bringIntoViewRequester.bringIntoView()
-                }
                 OverviewText(
                     overview = overview,
                     maxLines = 3,
                     onClick = overviewOnClick,
                     textBoxHeight = Dp.Unspecified,
-                    interactionSource = interactionSource,
+                    modifier =
+                        Modifier.onFocusChanged {
+                            if (it.isFocused) {
+                                scope.launch(ExceptionHandler()) {
+                                    bringIntoViewRequester.bringIntoView()
+                                }
+                            }
+                        },
                 )
             }
 
