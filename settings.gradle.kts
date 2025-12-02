@@ -27,3 +27,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "Wholphin"
 include(":app")
+include(":seerr-api")

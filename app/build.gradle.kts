@@ -247,4 +247,6 @@ dependencies {
     if (ffmpegModuleExists || isCI) {
         implementation(files("libs/lib-decoder-ffmpeg-release.aar"))
     }
+
+    implementation(project(":seerr-api"))
 }
