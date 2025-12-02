@@ -64,11 +64,9 @@ class ApiRequestPager<T>(
             .maximumSize(cacheSize)
             .build<Int, MutableList<BaseItem>>()
 
-    suspend fun init(): ApiRequestPager<T> {
+    suspend fun init(initialPosition: Int = 0): ApiRequestPager<T> {
         if (totalCount < 0) {
-            val newRequest = requestHandler.prepare(request, 0, 1, true)
-            val result = requestHandler.execute(api, newRequest).content
-            totalCount = result.totalRecordCount
+            fetchPage(initialPosition, true).join()
         }
         return this
     }
@@ -77,7 +75,7 @@ class ApiRequestPager<T>(
         if (index in 0..<totalCount) {
             val item = items[index]
             if (item == null) {
-                fetchPage(index)
+                fetchPage(index, false)
             }
             return item
         } else {
@@ -89,7 +87,7 @@ class ApiRequestPager<T>(
         if (index in 0..<totalCount) {
             val item = items[index]
             if (item == null) {
-                fetchPage(index).join()
+                fetchPage(index, false).join()
                 return items[index]
             }
             return item
@@ -112,7 +110,10 @@ class ApiRequestPager<T>(
     override val size: Int
         get() = totalCount
 
-    private fun fetchPage(position: Int): Job =
+    private fun fetchPage(
+        position: Int,
+        setTotalCount: Boolean,
+    ): Job =
         scope.launch(ExceptionHandler() + Dispatchers.IO) {
             mutex.withLock {
                 val pageNumber = position / pageSize
@@ -123,9 +124,12 @@ class ApiRequestPager<T>(
                             request,
                             pageNumber * pageSize,
                             pageSize,
-                            false,
+                            setTotalCount,
                         )
                     val result = requestHandler.execute(api, newRequest).content
+                    if (setTotalCount) {
+                        totalCount = result.totalRecordCount
+                    }
                     val data = mutableListOf<BaseItem>()
                     result.items.forEach { data.add(BaseItem.from(it, api, useSeriesForPrimary)) }
                     cachedPages.put(pageNumber, data)
