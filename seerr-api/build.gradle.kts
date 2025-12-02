@@ -36,6 +36,14 @@ openApiGenerate {
         put("enumPropertyNaming", "UPPERCASE")
         put("modelMutable", false)
     }
+    typeMappings.set(
+        mapOf(
+            "number" to "kotlin.Int",
+            "integer" to "kotlin.Int",
+            "int32" to "kotlin.Int",
+            "int64" to "kotlin.Long",
+        ),
+    )
 }
 
 tasks.named("compileKotlin") {
