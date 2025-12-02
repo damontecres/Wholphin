@@ -53,7 +53,7 @@ fun BannerCard(
     played: Boolean = false,
     favorite: Boolean = false,
     playPercent: Double = 0.0,
-    cardHeight: Dp = 140.dp * .85f,
+    cardHeight: Dp = 120.dp,
     aspectRatio: Float = AspectRatios.WIDE,
     interactionSource: MutableInteractionSource? = null,
 ) {

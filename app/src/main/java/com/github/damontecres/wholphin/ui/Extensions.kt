@@ -29,6 +29,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.MutableLiveData
 import androidx.media3.common.Player
 import coil3.request.ErrorResult
+import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.ui.data.RowColumn
 import com.github.damontecres.wholphin.ui.data.RowColumnSaver
 import com.github.damontecres.wholphin.util.ExceptionHandler
@@ -39,7 +40,10 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.acra.ACRA
+import org.jellyfin.sdk.api.client.ApiClient
+import org.jellyfin.sdk.api.client.Response
 import org.jellyfin.sdk.model.api.BaseItemDto
+import org.jellyfin.sdk.model.api.BaseItemDtoQueryResult
 import org.jellyfin.sdk.model.extensions.ticks
 import timber.log.Timber
 import java.util.UUID
@@ -392,3 +396,8 @@ fun logTab(
 }
 
 suspend fun <T> onMain(block: suspend CoroutineScope.() -> T) = withContext(Dispatchers.Main, block)
+
+fun Response<BaseItemDtoQueryResult>.toBaseItems(
+    api: ApiClient,
+    useSeriesForPrimary: Boolean,
+) = this.content.items.map { BaseItem.from(it, api, useSeriesForPrimary) }

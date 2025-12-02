@@ -95,6 +95,14 @@ class AppPreferencesSerializer
                                             resetSubtitles()
                                         }.build()
                             }.build()
+
+                    advancedPreferences =
+                        AdvancedPreferences
+                            .newBuilder()
+                            .apply {
+                                imageDiskCacheSizeBytes =
+                                    AppPreference.ImageDiskCacheSize.defaultValue * AppPreference.MEGA_BIT
+                            }.build()
                 }.build()
 
         override suspend fun readFrom(input: InputStream): AppPreferences {
@@ -141,6 +149,11 @@ inline fun AppPreferences.updateInterfacePreferences(block: InterfacePreferences
 inline fun AppPreferences.updateSubtitlePreferences(block: SubtitlePreferences.Builder.() -> Unit): AppPreferences =
     updateInterfacePreferences {
         subtitlesPreferences = subtitlesPreferences.toBuilder().apply(block).build()
+    }
+
+inline fun AppPreferences.updateAdvancedPreferences(block: AdvancedPreferences.Builder.() -> Unit): AppPreferences =
+    update {
+        advancedPreferences = advancedPreferences.toBuilder().apply(block).build()
     }
 
 fun SubtitlePreferences.Builder.resetSubtitles() {

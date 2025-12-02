@@ -323,7 +323,7 @@ sealed interface AppPreference<T> {
                 },
             )
 
-        private const val MEGA_BIT = 1024 * 1024L
+        const val MEGA_BIT = 1024 * 1024L
         const val DEFAULT_BITRATE = 100 * MEGA_BIT
         private val bitrateValues =
             listOf(
@@ -713,6 +713,30 @@ sealed interface AppPreference<T> {
                 summaryOn = R.string.enabled,
                 summaryOff = R.string.disabled,
             )
+
+        val ImageDiskCacheSize =
+            AppSliderPreference(
+                title = R.string.image_cache_size,
+                defaultValue = 200,
+                min = 25,
+                max = 1_000,
+                interval = 25,
+                getter = {
+                    it.advancedPreferences.imageDiskCacheSizeBytes / MEGA_BIT
+                },
+                setter = { prefs, value ->
+                    prefs.updateAdvancedPreferences {
+                        imageDiskCacheSizeBytes = value * MEGA_BIT
+                    }
+                },
+                summarizer = { value ->
+                    if (value != null) {
+                        "$value MB"
+                    } else {
+                        null
+                    }
+                },
+            )
     }
 }
 
@@ -852,6 +876,7 @@ val advancedPreferences =
                         AppPreference.SendAppLogs,
                         AppPreference.SendCrashReports,
                         AppPreference.DebugLogging,
+                        AppPreference.ImageDiskCacheSize,
                         AppPreference.ClearImageCache,
                         AppPreference.OssLicenseInfo,
                     ),

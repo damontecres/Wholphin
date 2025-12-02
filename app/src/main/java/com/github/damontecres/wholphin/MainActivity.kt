@@ -19,6 +19,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.datastore.core.DataStore
 import androidx.lifecycle.lifecycleScope
@@ -27,6 +28,8 @@ import androidx.tv.material3.ExperimentalTvMaterial3Api
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Surface
 import com.github.damontecres.wholphin.data.ServerRepository
+import com.github.damontecres.wholphin.data.model.BaseItem
+import com.github.damontecres.wholphin.preferences.AppPreference
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.DefaultUserConfiguration
 import com.github.damontecres.wholphin.preferences.UserPreferences
@@ -85,9 +88,31 @@ class MainActivity : AppCompatActivity() {
             appUpgradeHandler.copySubfont(false)
         }
         setContent {
-            CoilConfig(okHttpClient, false)
+            val density = LocalDensity.current
+            LaunchedEffect(density) {
+                with(density) {
+                    // Cards are never taller than 200 (most are around 120)
+                    BaseItem.primaryMaxHeight = 200.dp.roundToPx()
+                    // This width covers up to 2.35:1 aspect ratio images
+                    BaseItem.primaryMaxWidth = 480.dp.roundToPx()
+                }
+            }
+
             val appPreferences by userPreferencesDataStore.data.collectAsState(null)
             appPreferences?.let { appPreferences ->
+                CoilConfig(
+                    diskCacheSizeBytes =
+                        appPreferences.advancedPreferences.imageDiskCacheSizeBytes.let {
+                            if (it < AppPreference.ImageDiskCacheSize.min * AppPreference.MEGA_BIT) {
+                                AppPreference.ImageDiskCacheSize.defaultValue * AppPreference.MEGA_BIT
+                            } else {
+                                it
+                            }
+                        },
+                    okHttpClient = okHttpClient,
+                    debugLogging = false,
+                    enableCache = true,
+                )
                 LaunchedEffect(appPreferences.debugLogging) {
                     DebugLogTree.INSTANCE.enabled = appPreferences.debugLogging
                 }
