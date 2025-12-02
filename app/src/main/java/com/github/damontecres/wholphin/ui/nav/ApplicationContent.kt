@@ -12,7 +12,6 @@ import com.github.damontecres.wholphin.data.model.JellyfinUser
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
-import org.jellyfin.sdk.model.api.DeviceProfile
 
 /**
  * This is generally the root composable of the of the app
@@ -25,7 +24,6 @@ fun ApplicationContent(
     user: JellyfinUser?,
     navigationManager: NavigationManager,
     preferences: UserPreferences,
-    deviceProfile: DeviceProfile,
     modifier: Modifier = Modifier,
 ) {
     NavDisplay(
@@ -44,14 +42,12 @@ fun ApplicationContent(
                     DestinationContent(
                         destination = key,
                         preferences = preferences,
-                        deviceProfile = deviceProfile,
                         modifier = modifier.fillMaxSize(),
                     )
                 } else if (user != null && server != null) {
                     NavDrawer(
                         destination = key,
                         preferences = preferences,
-                        deviceProfile = deviceProfile,
                         user = user,
                         server = server,
                         modifier = modifier,

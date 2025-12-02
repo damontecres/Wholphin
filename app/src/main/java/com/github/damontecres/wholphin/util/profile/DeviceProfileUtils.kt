@@ -2,10 +2,7 @@ package com.github.damontecres.wholphin.util.profile
 
 // Adapted from https://github.com/jellyfin/jellyfin-androidtv/blob/v0.19.4/app/src/main/java/org/jellyfin/androidtv/util/profile/deviceProfile.kt
 
-import android.content.Context
 import androidx.media3.common.MimeTypes
-import com.github.damontecres.wholphin.preferences.UserPreferences
-import org.jellyfin.sdk.model.ServerVersion
 import org.jellyfin.sdk.model.api.CodecType
 import org.jellyfin.sdk.model.api.DlnaProfileType
 import org.jellyfin.sdk.model.api.EncodingContext
@@ -46,21 +43,21 @@ val supportedAudioCodecs =
         Codec.Audio.VORBIS,
     )
 
-fun createDeviceProfile(
-    context: Context,
-    userPreferences: UserPreferences,
-    serverVersion: ServerVersion?,
-) = userPreferences.appPreferences.playbackPreferences.let { prefs ->
-    createDeviceProfile(
-        mediaTest = MediaCodecCapabilitiesTest(context),
-        maxBitrate = prefs.maxBitrate.toInt(),
-        isAC3Enabled = prefs.overrides.ac3Supported,
-        downMixAudio = prefs.overrides.downmixStereo,
-        assDirectPlay = prefs.overrides.directPlayAss,
-        pgsDirectPlay = prefs.overrides.directPlayPgs,
-        jellyfinTenEleven = serverVersion != null && serverVersion >= ServerVersion(10, 11, 0),
-    )
-}
+// fun createDeviceProfile(
+//    context: Context,
+//    userPreferences: UserPreferences,
+//    serverVersion: ServerVersion?,
+// ) = userPreferences.appPreferences.playbackPreferences.let { prefs ->
+//    createDeviceProfile(
+//        mediaTest = MediaCodecCapabilitiesTest(context),
+//        maxBitrate = prefs.maxBitrate.toInt(),
+//        isAC3Enabled = prefs.overrides.ac3Supported,
+//        downMixAudio = prefs.overrides.downmixStereo,
+//        assDirectPlay = prefs.overrides.directPlayAss,
+//        pgsDirectPlay = prefs.overrides.directPlayPgs,
+//        jellyfinTenEleven = serverVersion != null && serverVersion >= ServerVersion(10, 11, 0),
+//    )
+// }
 
 fun createDeviceProfile(
     mediaTest: MediaCodecCapabilitiesTest,

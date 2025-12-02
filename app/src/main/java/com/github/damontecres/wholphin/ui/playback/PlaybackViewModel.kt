@@ -37,6 +37,7 @@ import com.github.damontecres.wholphin.preferences.ShowNextUpWhen
 import com.github.damontecres.wholphin.preferences.SkipSegmentBehavior
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.DatePlayedService
+import com.github.damontecres.wholphin.services.DeviceProfileService
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.PlayerFactory
 import com.github.damontecres.wholphin.services.PlaylistCreationResult
@@ -84,7 +85,6 @@ import org.jellyfin.sdk.api.client.extensions.videosApi
 import org.jellyfin.sdk.api.sockets.subscribe
 import org.jellyfin.sdk.model.DeviceInfo
 import org.jellyfin.sdk.model.api.BaseItemKind
-import org.jellyfin.sdk.model.api.DeviceProfile
 import org.jellyfin.sdk.model.api.MediaSegmentDto
 import org.jellyfin.sdk.model.api.MediaSegmentType
 import org.jellyfin.sdk.model.api.MediaStreamType
@@ -120,6 +120,7 @@ class PlaybackViewModel
         private val playerFactory: PlayerFactory,
         private val datePlayedService: DatePlayedService,
         private val deviceInfo: DeviceInfo,
+        private val deviceProfileService: DeviceProfileService,
     ) : ViewModel(),
         Player.Listener,
         AnalyticsListener {
@@ -145,7 +146,6 @@ class PlaybackViewModel
         val subtitleCues = MutableLiveData<List<Cue>>(listOf())
 
         private lateinit var preferences: UserPreferences
-        private lateinit var deviceProfile: DeviceProfile
         internal lateinit var itemId: UUID
         internal lateinit var item: BaseItem
         internal var forceTranscoding: Boolean = false
@@ -180,14 +180,12 @@ class PlaybackViewModel
          */
         fun init(
             destination: Destination,
-            deviceProfile: DeviceProfile,
             preferences: UserPreferences,
         ) {
             nextUp.value = null
             this.preferences = preferences
             controllerViewState.hideMilliseconds =
                 preferences.appPreferences.playbackPreferences.controllerTimeoutMs
-            this.deviceProfile = deviceProfile
             this.forceTranscoding =
                 (destination as? Destination.Playback)?.forceTranscoding ?: false
             val positionMs: Long
@@ -500,7 +498,10 @@ class PlaybackViewModel
                             startTimeTicks = null,
                             deviceProfile =
                                 if (playerBackend == PlayerBackend.EXO_PLAYER) {
-                                    deviceProfile
+                                    deviceProfileService.getOrCreateDeviceProfile(
+                                        preferences.appPreferences.playbackPreferences,
+                                        serverRepository.currentServer.value?.serverVersion,
+                                    )
                                 } else {
                                     mpvDeviceProfile
                                 },

@@ -81,7 +81,6 @@ import com.github.damontecres.wholphin.util.LoadingState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import org.jellyfin.sdk.model.api.DeviceProfile
 import org.jellyfin.sdk.model.extensions.ticks
 import java.util.UUID
 import kotlin.time.Duration.Companion.milliseconds
@@ -94,7 +93,6 @@ import kotlin.time.Duration.Companion.seconds
 @Composable
 fun PlaybackPage(
     preferences: UserPreferences,
-    deviceProfile: DeviceProfile,
     destination: Destination,
     modifier: Modifier = Modifier,
     viewModel: PlaybackViewModel = hiltViewModel(),
@@ -105,7 +103,7 @@ fun PlaybackPage(
         }
     }
     LaunchedEffect(destination) {
-        viewModel.init(destination, deviceProfile, preferences)
+        viewModel.init(destination, preferences)
     }
 
     val loading by viewModel.loading.observeAsState(LoadingState.Loading)

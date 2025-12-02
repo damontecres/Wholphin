@@ -32,7 +32,6 @@ import com.github.damontecres.wholphin.ui.setup.SwitchServerContent
 import com.github.damontecres.wholphin.ui.setup.SwitchUserContent
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.CollectionType
-import org.jellyfin.sdk.model.api.DeviceProfile
 import timber.log.Timber
 
 /**
@@ -42,7 +41,6 @@ import timber.log.Timber
 fun DestinationContent(
     destination: Destination,
     preferences: UserPreferences,
-    deviceProfile: DeviceProfile,
     modifier: Modifier = Modifier,
 ) {
     when (destination) {
@@ -56,7 +54,6 @@ fun DestinationContent(
         ->
             PlaybackPage(
                 preferences = preferences,
-                deviceProfile = deviceProfile,
                 destination = destination,
                 modifier = modifier,
             )

@@ -2,6 +2,8 @@ package com.github.damontecres.wholphin
 
 import android.app.Application
 import android.os.Build
+import android.os.StrictMode
+import android.os.StrictMode.ThreadPolicy
 import android.util.Log
 import androidx.compose.runtime.Composer
 import androidx.compose.runtime.ExperimentalComposeRuntimeApi
@@ -18,6 +20,16 @@ import timber.log.Timber
 class WholphinApplication : Application() {
     init {
         instance = this
+
+        if (BuildConfig.DEBUG) {
+            StrictMode.setThreadPolicy(
+                ThreadPolicy
+                    .Builder()
+                    .detectNetwork()
+                    .penaltyLog()
+                    .build(),
+            )
+        }
 
         if (BuildConfig.DEBUG) {
             Timber.plant(Timber.DebugTree())
