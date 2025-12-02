@@ -328,6 +328,7 @@
     <string name="dolby_atmos">Dolby Atmos</string>
     <string name="subtitle_margin">Margin</string>
     <string name="verbose_logging">Verbose logging</string>
+    <string name="image_cache_size">Image disk cache size (MB)</string>
 
     <string-array name="theme_song_volume">
         <item>Disabled</item>

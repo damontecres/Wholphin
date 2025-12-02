@@ -8,6 +8,7 @@ import androidx.preference.PreferenceManager
 import com.github.damontecres.wholphin.WholphinApplication
 import com.github.damontecres.wholphin.preferences.AppPreference
 import com.github.damontecres.wholphin.preferences.AppPreferences
+import com.github.damontecres.wholphin.preferences.updateAdvancedPreferences
 import com.github.damontecres.wholphin.preferences.updateInterfacePreferences
 import com.github.damontecres.wholphin.preferences.updatePlaybackOverrides
 import com.github.damontecres.wholphin.preferences.updateSubtitlePreferences
@@ -130,6 +131,16 @@ suspend fun upgradeApp(
         appPreferences.updateData {
             it.updateSubtitlePreferences {
                 margin = SubtitleSettings.Margin.defaultValue.toInt()
+            }
+        }
+    }
+    if (previous.isEqualOrBefore(Version.fromString("0.3.4"))) {
+        appPreferences.updateData {
+            it.updateAdvancedPreferences {
+                if (imageDiskCacheSizeBytes < (AppPreference.ImageDiskCacheSize.min * AppPreference.MEGA_BIT)) {
+                    imageDiskCacheSizeBytes =
+                        AppPreference.ImageDiskCacheSize.defaultValue * AppPreference.MEGA_BIT
+                }
             }
         }
     }

@@ -40,6 +40,7 @@ import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import androidx.tv.material3.surfaceColorAtElevation
 import coil3.SingletonImageLoader
+import coil3.imageLoader
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.preferences.AppPreference
 import com.github.damontecres.wholphin.preferences.AppPreferences
@@ -79,11 +80,20 @@ fun PreferencesContent(
     var preferences by remember { mutableStateOf(initialPreferences) }
 
     val navDrawerPins by viewModel.navDrawerPins.observeAsState(mapOf())
+    var cacheUsage by remember { mutableStateOf(CacheUsage(0, 0, 0)) }
 
     LaunchedEffect(Unit) {
         viewModel.preferenceDataStore.data.collect {
             preferences = it
         }
+    }
+    var updateCache by remember { mutableStateOf(false) }
+    LaunchedEffect(updateCache) {
+        val imageUsedMemory = context.imageLoader.memoryCache?.size ?: 0L
+        val imageMaxMemory = context.imageLoader.memoryCache?.maxSize ?: 0L
+        val imageDisk = context.imageLoader.diskCache?.size ?: 0L
+        cacheUsage = CacheUsage(imageUsedMemory, imageMaxMemory, imageDisk)
+        updateCache = false
     }
 
     val release by updateVM.release.observeAsState(null)
@@ -284,16 +294,28 @@ fun PreferencesContent(
                             }
 
                             AppPreference.ClearImageCache -> {
+                                val summary =
+                                    remember(cacheUsage) {
+                                        cacheUsage.let {
+                                            val diskMB = it.imageDiskUsed / AppPreference.MEGA_BIT
+                                            val memoryUsedMB =
+                                                it.imageMemoryUsed / AppPreference.MEGA_BIT
+                                            val memoryMaxMB =
+                                                it.imageMemoryMax / AppPreference.MEGA_BIT
+                                            "Disk: ${diskMB}mb, Memory: ${memoryUsedMB}mb/${memoryMaxMB}mb"
+                                        }
+                                    }
                                 ClickPreference(
                                     title = stringResource(pref.title),
                                     onClick = {
                                         SingletonImageLoader.get(context).let {
                                             it.memoryCache?.clear()
                                             it.diskCache?.clear()
+                                            updateCache = true
                                         }
                                     },
                                     modifier = Modifier,
-                                    summary = null,
+                                    summary = summary,
                                     onLongClick = {},
                                     interactionSource = interactionSource,
                                 )
@@ -419,3 +441,9 @@ fun PreferencesPage(
         }
     }
 }
+
+data class CacheUsage(
+    val imageMemoryUsed: Long,
+    val imageMemoryMax: Long,
+    val imageDiskUsed: Long,
+)
