@@ -129,6 +129,7 @@ data class BaseItem(
                         ImageType.PRIMARY,
                         maxHeight = primaryMaxHeight,
                         maxWidth = primaryMaxWidth,
+                        quality = 96,
                     )
                 } else if (dto.imageTags == null || dto.imageTags!![ImageType.PRIMARY] == null) {
                     // TODO is this a bad assumption?
@@ -139,6 +140,7 @@ data class BaseItem(
                         ImageType.PRIMARY,
                         maxHeight = primaryMaxHeight,
                         maxWidth = primaryMaxWidth,
+                        quality = 96,
                     )
                 }
             val logoImageUrl =
