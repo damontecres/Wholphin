@@ -108,7 +108,8 @@ class MainActivity : AppCompatActivity() {
                             }
                         },
                     okHttpClient = okHttpClient,
-                    debugLogging = true,
+                    debugLogging = false,
+                    enableCache = true,
                 )
                 LaunchedEffect(appPreferences.debugLogging) {
                     DebugLogTree.INSTANCE.enabled = appPreferences.debugLogging
