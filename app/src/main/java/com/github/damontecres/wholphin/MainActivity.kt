@@ -91,7 +91,9 @@ class MainActivity : AppCompatActivity() {
             val density = LocalDensity.current
             LaunchedEffect(density) {
                 with(density) {
+                    // Cards are never taller than 200 (most are around 120)
                     BaseItem.primaryMaxHeight = 200.dp.roundToPx()
+                    // This width covers up to 2.35:1 aspect ratio images
                     BaseItem.primaryMaxWidth = 480.dp.roundToPx()
                 }
             }

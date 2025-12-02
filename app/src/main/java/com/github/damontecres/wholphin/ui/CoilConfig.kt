@@ -27,7 +27,6 @@ fun CoilConfig(
     debugLogging: Boolean,
     enableCache: Boolean = true,
 ) {
-    Timber.i("Image diskCacheSizeBytes=$diskCacheSizeBytes")
     val client =
         remember(okHttpClient, debugLogging) {
             if (debugLogging) {
@@ -46,6 +45,7 @@ fun CoilConfig(
             }
         }
     setSingletonImageLoaderFactory { ctx ->
+        Timber.i("Image diskCacheSizeBytes=$diskCacheSizeBytes")
         ImageLoader
             .Builder(ctx)
             .apply {
