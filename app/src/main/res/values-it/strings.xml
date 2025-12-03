@@ -305,4 +305,5 @@
     <string name="skip_back_on_resume_preference">Salta indietro al riavvio della riproduzione</string>
     <string name="subtitle_margin">Margine</string>
     <string name="verbose_logging">Log dettagliati</string>
+    <string name="image_cache_size">Dimensione cache Immagini su disco (MB)</string>
 </resources>
