@@ -36,6 +36,7 @@ import com.github.damontecres.wholphin.preferences.PrefContentScale
 import com.github.damontecres.wholphin.ui.AspectRatio
 import com.github.damontecres.wholphin.ui.preferences.ComposablePreference
 import com.github.damontecres.wholphin.ui.tryRequestFocus
+import kotlinx.serialization.Serializable
 import org.jellyfin.sdk.model.api.ImageType
 
 @Composable
@@ -104,6 +105,7 @@ fun ViewOptionsDialog(
     }
 }
 
+@Serializable
 data class ViewOptions(
     val columns: Int = 6,
     val spacing: Int = 16,

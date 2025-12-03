@@ -80,6 +80,7 @@ import com.github.damontecres.wholphin.ui.main.HomePageHeader
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.playback.scale
 import com.github.damontecres.wholphin.ui.rememberInt
+import com.github.damontecres.wholphin.ui.setValueOnMain
 import com.github.damontecres.wholphin.ui.toServerString
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.ApiRequestPager
@@ -129,6 +130,7 @@ class CollectionFolderViewModel
         val pager = MutableLiveData<List<BaseItem?>>(listOf())
         val sortAndDirection = MutableLiveData<SortAndDirection>()
         val filter = MutableLiveData<GetItemsFilter>(GetItemsFilter())
+        val viewOptions = MutableLiveData<ViewOptions>()
 
         private var useSeriesForPrimary: Boolean = true
 
@@ -138,6 +140,7 @@ class CollectionFolderViewModel
             recursive: Boolean,
             filter: GetItemsFilter,
             useSeriesForPrimary: Boolean,
+            viewOptions: ViewOptions,
         ): Job =
             viewModelScope.launch(
                 LoadingExceptionHandler(
@@ -155,6 +158,9 @@ class CollectionFolderViewModel
                     serverRepository.currentUser.value?.let { user ->
                         libraryDisplayInfoDao.getItem(user, itemId)
                     }
+                this@CollectionFolderViewModel.viewOptions.setValueOnMain(
+                    libraryDisplayInfo?.viewOptions ?: viewOptions,
+                )
 
                 val sortAndDirection =
                     libraryDisplayInfo?.sortAndDirection
@@ -171,24 +177,38 @@ class CollectionFolderViewModel
                 loadResults(true, sortAndDirection, recursive, filterToUse, useSeriesForPrimary)
             }
 
-        fun onFilterChange(
-            newFilter: GetItemsFilter,
-            recursive: Boolean,
+        private fun saveLibraryDisplayInfo(
+            newFilter: GetItemsFilter = this.filter.value!!,
+            newSort: SortAndDirection = this.sortAndDirection.value!!,
+            viewOptions: ViewOptions? = this.viewOptions.value,
         ) {
-            Timber.v("onFilterChange: filter=%s", newFilter)
             serverRepository.currentUser.value?.let { user ->
                 viewModelScope.launch(Dispatchers.IO) {
                     val libraryDisplayInfo =
                         LibraryDisplayInfo(
                             userId = user.rowId,
                             itemId = itemId,
-                            sort = sortAndDirection.value!!.sort,
-                            direction = sortAndDirection.value!!.direction,
+                            sort = newSort.sort,
+                            direction = newSort.direction,
                             filter = newFilter,
+                            viewOptions = viewOptions,
                         )
                     libraryDisplayInfoDao.saveItem(libraryDisplayInfo)
                 }
             }
+        }
+
+        fun saveViewOptions(viewOptions: ViewOptions) =
+            viewModelScope.launch(ExceptionHandler() + Dispatchers.IO) {
+                saveLibraryDisplayInfo(viewOptions = viewOptions)
+            }
+
+        fun onFilterChange(
+            newFilter: GetItemsFilter,
+            recursive: Boolean,
+        ) {
+            Timber.v("onFilterChange: filter=%s", newFilter)
+            saveLibraryDisplayInfo(newFilter, sortAndDirection.value!!)
             loadResults(false, sortAndDirection.value!!, recursive, newFilter, useSeriesForPrimary)
         }
 
@@ -203,19 +223,7 @@ class CollectionFolderViewModel
                 recursive,
                 filter,
             )
-            serverRepository.currentUser.value?.let { user ->
-                viewModelScope.launch(Dispatchers.IO) {
-                    val libraryDisplayInfo =
-                        LibraryDisplayInfo(
-                            userId = user.rowId,
-                            itemId = itemId,
-                            sort = sortAndDirection.sort,
-                            direction = sortAndDirection.direction,
-                            filter = filter,
-                        )
-                    libraryDisplayInfoDao.saveItem(libraryDisplayInfo)
-                }
-            }
+            saveLibraryDisplayInfo(filter, sortAndDirection)
             loadResults(true, sortAndDirection, recursive, filter, useSeriesForPrimary)
         }
 
@@ -477,7 +485,7 @@ fun CollectionFolderGrid(
     initialSortAndDirection = initialSortAndDirection,
     showTitle = showTitle,
     positionCallback = positionCallback,
-    viewOptions = viewOptions,
+    defaultViewOptions = viewOptions,
     useSeriesForPrimary = useSeriesForPrimary,
     filterOptions = filterOptions,
 )
@@ -499,7 +507,7 @@ fun CollectionFolderGrid(
     positionCallback: ((columns: Int, position: Int) -> Unit)? = null,
     useSeriesForPrimary: Boolean = true,
     filterOptions: List<ItemFilterBy<*>> = DefaultFilterOptions,
-    viewOptions: ViewOptions = ViewOptions(),
+    defaultViewOptions: ViewOptions = ViewOptions(),
 ) {
     val context = LocalContext.current
     OneTimeLaunchedEffect {
@@ -509,6 +517,7 @@ fun CollectionFolderGrid(
             recursive,
             initialFilter,
             useSeriesForPrimary,
+            defaultViewOptions,
         )
     }
     val sortAndDirection by viewModel.sortAndDirection.observeAsState(SortAndDirection.DEFAULT)
@@ -517,6 +526,7 @@ fun CollectionFolderGrid(
     val backgroundLoading by viewModel.backgroundLoading.observeAsState(LoadingState.Loading)
     val item by viewModel.item.observeAsState()
     val pager by viewModel.pager.observeAsState()
+    val viewOptions by viewModel.viewOptions.observeAsState(defaultViewOptions)
 
     var moreDialog by remember { mutableStateOf<Optional<PositionItem>>(Optional.absent()) }
     var showPlaylistDialog by remember { mutableStateOf<Optional<UUID>>(Optional.absent()) }
@@ -556,9 +566,7 @@ fun CollectionFolderGrid(
                         positionCallback = positionCallback,
                         letterPosition = { viewModel.positionOfLetter(it) ?: -1 },
                         viewOptions = viewOptions,
-                        onSaveViewOptions = {
-                            TODO()
-                        },
+                        onSaveViewOptions = { viewModel.saveViewOptions(it) },
                         playEnabled = playEnabled,
                         onClickPlay = { shuffle ->
                             itemId.toUUIDOrNull()?.let {

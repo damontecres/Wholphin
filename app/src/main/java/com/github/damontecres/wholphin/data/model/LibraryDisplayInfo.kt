@@ -7,6 +7,7 @@ import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Ignore
 import androidx.room.Index
+import com.github.damontecres.wholphin.ui.components.ViewOptions
 import com.github.damontecres.wholphin.ui.data.SortAndDirection
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
@@ -36,6 +37,7 @@ data class LibraryDisplayInfo(
     val direction: SortOrder,
     @ColumnInfo(defaultValue = "{}")
     val filter: GetItemsFilter,
+    val viewOptions: ViewOptions?,
 ) {
     @Ignore @Transient
     val sortAndDirection = SortAndDirection(sort, direction)

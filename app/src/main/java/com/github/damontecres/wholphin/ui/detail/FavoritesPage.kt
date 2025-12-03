@@ -174,7 +174,7 @@ fun FavoritesPage(
                     showTitle = false,
                     recursive = true,
                     sortOptions = EpisodeSortOptions,
-                    viewOptions = ViewOptionsWide,
+                    defaultViewOptions = ViewOptionsWide,
                     useSeriesForPrimary = false,
                     modifier =
                         Modifier
@@ -202,7 +202,7 @@ fun FavoritesPage(
                     showTitle = false,
                     recursive = true,
                     sortOptions = VideoSortOptions,
-                    viewOptions = ViewOptionsWide,
+                    defaultViewOptions = ViewOptionsWide,
                     modifier =
                         Modifier
                             .padding(start = 16.dp)
@@ -229,7 +229,7 @@ fun FavoritesPage(
                     showTitle = false,
                     recursive = true,
                     sortOptions = VideoSortOptions,
-                    viewOptions = ViewOptionsSquare,
+                    defaultViewOptions = ViewOptionsSquare,
                     modifier =
                         Modifier
                             .padding(start = 16.dp)
