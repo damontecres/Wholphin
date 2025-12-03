@@ -29,9 +29,10 @@ import com.github.damontecres.wholphin.data.model.GetItemsFilter
 import com.github.damontecres.wholphin.data.model.GetItemsFilterOverride
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.components.CollectionFolderGrid
-import com.github.damontecres.wholphin.ui.components.CollectionFolderGridParameters
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.TabRow
+import com.github.damontecres.wholphin.ui.components.ViewOptionsSquare
+import com.github.damontecres.wholphin.ui.components.ViewOptionsWide
 import com.github.damontecres.wholphin.ui.data.EpisodeSortOptions
 import com.github.damontecres.wholphin.ui.data.MovieSortOptions
 import com.github.damontecres.wholphin.ui.data.SeriesSortOptions
@@ -173,7 +174,7 @@ fun FavoritesPage(
                     showTitle = false,
                     recursive = true,
                     sortOptions = EpisodeSortOptions,
-                    params = CollectionFolderGridParameters.WIDE,
+                    viewOptions = ViewOptionsWide,
                     useSeriesForPrimary = false,
                     modifier =
                         Modifier
@@ -201,7 +202,7 @@ fun FavoritesPage(
                     showTitle = false,
                     recursive = true,
                     sortOptions = VideoSortOptions,
-                    params = CollectionFolderGridParameters.WIDE,
+                    viewOptions = ViewOptionsWide,
                     modifier =
                         Modifier
                             .padding(start = 16.dp)
@@ -228,7 +229,7 @@ fun FavoritesPage(
                     showTitle = false,
                     recursive = true,
                     sortOptions = VideoSortOptions,
-                    params = CollectionFolderGridParameters.SQUARE,
+                    viewOptions = ViewOptionsSquare,
                     modifier =
                         Modifier
                             .padding(start = 16.dp)

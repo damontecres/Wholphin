@@ -14,7 +14,8 @@ import com.github.damontecres.wholphin.data.filter.ItemFilterBy
 import com.github.damontecres.wholphin.data.model.GetItemsFilter
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.components.CollectionFolderGrid
-import com.github.damontecres.wholphin.ui.components.CollectionFolderGridParameters
+import com.github.damontecres.wholphin.ui.components.ViewOptionsPoster
+import com.github.damontecres.wholphin.ui.components.ViewOptionsWide
 import com.github.damontecres.wholphin.ui.data.VideoSortOptions
 import com.github.damontecres.wholphin.ui.preferences.PreferencesViewModel
 import org.jellyfin.sdk.model.api.ItemSortBy
@@ -34,12 +35,12 @@ fun CollectionFolderGeneric(
     preferencesViewModel: PreferencesViewModel = hiltViewModel(),
 ) {
     var showHeader by remember { mutableStateOf(true) }
-    val params =
+    val viewOptions =
         remember(usePosters) {
             if (usePosters) {
-                CollectionFolderGridParameters.POSTER
+                ViewOptionsPoster
             } else {
-                CollectionFolderGridParameters.WIDE
+                ViewOptionsWide
             }
         }
     CollectionFolderGrid(
@@ -56,7 +57,7 @@ fun CollectionFolderGeneric(
         positionCallback = { columns, position ->
             showHeader = position < columns
         },
-        params = params,
+        viewOptions = viewOptions,
         playEnabled = playEnabled,
         filterOptions = filterOptions,
     )

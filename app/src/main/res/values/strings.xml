@@ -414,6 +414,7 @@
         <item>Poster (2:3)</item>
         <item>16:9</item>
         <item>4:3</item>
+        <item>Square (1:1)</item>
     </string-array>
 
     <string-array name="image_types">

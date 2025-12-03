@@ -462,9 +462,9 @@ fun CollectionFolderGrid(
     initialSortAndDirection: SortAndDirection? = null,
     showTitle: Boolean = true,
     positionCallback: ((columns: Int, position: Int) -> Unit)? = null,
-    params: CollectionFolderGridParameters = CollectionFolderGridParameters(),
     useSeriesForPrimary: Boolean = true,
     filterOptions: List<ItemFilterBy<*>> = DefaultFilterOptions,
+    viewOptions: ViewOptions = ViewOptions(),
 ) = CollectionFolderGrid(
     preferences,
     itemId.toServerString(),
@@ -477,7 +477,7 @@ fun CollectionFolderGrid(
     initialSortAndDirection = initialSortAndDirection,
     showTitle = showTitle,
     positionCallback = positionCallback,
-    params = params,
+    viewOptions = viewOptions,
     useSeriesForPrimary = useSeriesForPrimary,
     filterOptions = filterOptions,
 )
@@ -497,9 +497,9 @@ fun CollectionFolderGrid(
     initialSortAndDirection: SortAndDirection? = null,
     showTitle: Boolean = true,
     positionCallback: ((columns: Int, position: Int) -> Unit)? = null,
-    params: CollectionFolderGridParameters = CollectionFolderGridParameters(),
     useSeriesForPrimary: Boolean = true,
     filterOptions: List<ItemFilterBy<*>> = DefaultFilterOptions,
+    viewOptions: ViewOptions = ViewOptions(),
 ) {
     val context = LocalContext.current
     OneTimeLaunchedEffect {
@@ -555,7 +555,10 @@ fun CollectionFolderGrid(
                         sortOptions = sortOptions,
                         positionCallback = positionCallback,
                         letterPosition = { viewModel.positionOfLetter(it) ?: -1 },
-                        params = params,
+                        viewOptions = viewOptions,
+                        onSaveViewOptions = {
+                            TODO()
+                        },
                         playEnabled = playEnabled,
                         onClickPlay = { shuffle ->
                             itemId.toUUIDOrNull()?.let {
@@ -660,18 +663,19 @@ fun CollectionFolderGridContent(
     modifier: Modifier = Modifier,
     showTitle: Boolean = true,
     positionCallback: ((columns: Int, position: Int) -> Unit)? = null,
-    params: CollectionFolderGridParameters = CollectionFolderGridParameters(),
     currentFilter: GetItemsFilter = GetItemsFilter(),
     filterOptions: List<ItemFilterBy<*>> = listOf(),
     onFilterChange: (GetItemsFilter) -> Unit = {},
     getPossibleFilterValues: suspend (ItemFilterBy<*>) -> List<FilterValueOption>,
+    viewOptions: ViewOptions = ViewOptions(),
+    onSaveViewOptions: (ViewOptions) -> Unit,
 ) {
     val context = LocalContext.current
     val title = item?.name ?: item?.data?.collectionType?.name ?: stringResource(R.string.collection)
 
     var showHeader by rememberSaveable { mutableStateOf(true) }
     var showViewOptions by rememberSaveable { mutableStateOf(false) }
-    var viewOptions by remember { mutableStateOf(ViewOptions(params.columns)) }
+    var viewOptions by remember(viewOptions) { mutableStateOf(viewOptions) }
 
     val gridFocusRequester = remember { FocusRequester() }
     LaunchedEffect(Unit) { gridFocusRequester.tryRequestFocus() }
@@ -812,7 +816,10 @@ fun CollectionFolderGridContent(
             AnimatedVisibility(showViewOptions) {
                 ViewOptionsDialog(
                     viewOptions = viewOptions,
-                    onDismissRequest = { showViewOptions = false },
+                    onDismissRequest = {
+                        showViewOptions = false
+                        onSaveViewOptions.invoke(viewOptions)
+                    },
                     onViewOptionsChange = { viewOptions = it },
                 )
             }

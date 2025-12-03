@@ -107,7 +107,7 @@ fun ViewOptionsDialog(
 data class ViewOptions(
     val columns: Int = 6,
     val spacing: Int = 16,
-    val contentScale: PrefContentScale = PrefContentScale.FILL,
+    val contentScale: PrefContentScale = PrefContentScale.FIT,
     val aspectRatio: AspectRatio = AspectRatio.TALL,
     val showDetails: Boolean = false,
     val imageType: ViewOptionImageType = ViewOptionImageType.PRIMARY,
@@ -199,6 +199,27 @@ data class ViewOptions(
             )
     }
 }
+
+val ViewOptionsPoster =
+    ViewOptions(
+        columns = 6,
+        spacing = 16,
+        contentScale = PrefContentScale.FILL,
+    )
+val ViewOptionsWide =
+    ViewOptions(
+        columns = 4,
+        spacing = 24,
+        contentScale = PrefContentScale.CROP,
+        aspectRatio = AspectRatio.WIDE,
+    )
+val ViewOptionsSquare =
+    ViewOptions(
+        columns = 6,
+        spacing = 16,
+        contentScale = PrefContentScale.FILL,
+        aspectRatio = AspectRatio.SQUARE,
+    )
 
 enum class ViewOptionImageType(
     val imageType: ImageType,

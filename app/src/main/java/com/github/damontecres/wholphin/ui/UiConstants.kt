@@ -87,6 +87,7 @@ enum class AspectRatio(
     TALL(AspectRatios.TALL),
     WIDE(AspectRatios.WIDE),
     FOUR_THREE(AspectRatios.FOUR_THREE),
+    SQUARE(AspectRatios.SQUARE),
 }
 
 @Preview(
