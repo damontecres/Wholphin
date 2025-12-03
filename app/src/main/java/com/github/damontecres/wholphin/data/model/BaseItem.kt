@@ -22,6 +22,8 @@ data class BaseItem(
     val imageUrl: String?,
     val backdropImageUrl: String? = null,
     val logoImageUrl: String? = null,
+    val thumbImageUrl: String? = null,
+    val bannerImageUrl: String? = null,
 ) {
     val id get() = data.id
 
@@ -154,11 +156,36 @@ data class BaseItem(
                 } else {
                     api.imageApi.getItemImageUrl(dto.id, ImageType.LOGO)
                 }
+            val thumbImageUrl =
+                if (useSeriesForPrimary && (dto.type == BaseItemKind.EPISODE || dto.type == BaseItemKind.SEASON)) {
+                    val seriesId = dto.seriesId
+                    if (seriesId != null) {
+                        api.imageApi.getItemImageUrl(seriesId, ImageType.THUMB)
+                    } else {
+                        api.imageApi.getItemImageUrl(dto.id, ImageType.THUMB)
+                    }
+                } else {
+                    api.imageApi.getItemImageUrl(dto.id, ImageType.THUMB)
+                }
+            val bannerImageUrl =
+                if (useSeriesForPrimary && (dto.type == BaseItemKind.EPISODE || dto.type == BaseItemKind.SEASON)) {
+                    val seriesId = dto.seriesId
+                    if (seriesId != null) {
+                        api.imageApi.getItemImageUrl(seriesId, ImageType.BANNER)
+                    } else {
+                        api.imageApi.getItemImageUrl(dto.id, ImageType.BANNER)
+                    }
+                } else {
+                    api.imageApi.getItemImageUrl(dto.id, ImageType.BANNER)
+                }
+
             return BaseItem(
                 dto,
                 primaryImageUrl,
                 backdropImageUrl,
                 logoImageUrl,
+                thumbImageUrl,
+                bannerImageUrl,
             )
         }
     }

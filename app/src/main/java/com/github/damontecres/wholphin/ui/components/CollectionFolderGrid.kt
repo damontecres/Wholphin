@@ -11,9 +11,9 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -29,11 +29,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -46,9 +42,6 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
-import coil3.compose.AsyncImage
-import coil3.request.ImageRequest
-import coil3.request.transitionFactory
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.LibraryDisplayInfoDao
 import com.github.damontecres.wholphin.data.ServerRepository
@@ -72,7 +65,6 @@ import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.FavoriteWatchManager
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.ui.AspectRatios
-import com.github.damontecres.wholphin.ui.CrossFadeFactory
 import com.github.damontecres.wholphin.ui.OneTimeLaunchedEffect
 import com.github.damontecres.wholphin.ui.SlimItemFields
 import com.github.damontecres.wholphin.ui.cards.GridCard
@@ -100,7 +92,6 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
@@ -121,7 +112,6 @@ import java.util.TreeSet
 import java.util.UUID
 import javax.inject.Inject
 import kotlin.time.Duration
-import kotlin.time.Duration.Companion.milliseconds
 
 @HiltViewModel
 class CollectionFolderViewModel
@@ -690,48 +680,11 @@ fun CollectionFolderGridContent(
     var position by rememberInt(0)
     val focusedItem = pager.getOrNull(position)
 
-    if (viewOptions.showDetails) {
-        LaunchedEffect(focusedItem) {
-            backdropImageUrl = null
-            delay(150)
-            backdropImageUrl = focusedItem?.backdropImageUrl
-        }
-    }
     Box(modifier = modifier) {
         if (viewOptions.showDetails) {
-            val gradientColor = MaterialTheme.colorScheme.background
-            AsyncImage(
-                model =
-                    ImageRequest
-                        .Builder(context)
-                        .data(backdropImageUrl)
-                        .transitionFactory(CrossFadeFactory(250.milliseconds))
-                        .build(),
-                contentDescription = null,
-                contentScale = ContentScale.Fit,
-                alignment = Alignment.TopEnd,
-                modifier =
-                    Modifier
-                        .fillMaxHeight(.7f)
-                        .fillMaxWidth(.7f)
-                        .alpha(.75f)
-                        .align(Alignment.TopEnd)
-                        .drawWithContent {
-                            drawContent()
-                            drawRect(
-                                Brush.verticalGradient(
-                                    colors = listOf(Color.Transparent, gradientColor),
-                                    startY = size.height * .33f,
-                                ),
-                            )
-                            drawRect(
-                                Brush.horizontalGradient(
-                                    colors = listOf(gradientColor, Color.Transparent),
-                                    startX = 0f,
-                                    endX = size.width * .5f,
-                                ),
-                            )
-                        },
+            DelayedDetailsBackdropImage(
+                focusedBackdropImageUrl = focusedItem?.backdropImageUrl,
+                modifier = Modifier,
             )
         }
         Column(
@@ -822,7 +775,8 @@ fun CollectionFolderGridContent(
                     modifier =
                         Modifier
                             .fillMaxWidth(.6f)
-                            .fillMaxHeight(.33f)
+//                            .fillMaxHeight(.25f)
+                            .height(140.dp)
                             .padding(16.dp),
                 )
             }
@@ -848,6 +802,7 @@ fun CollectionFolderGridContent(
                         onLongClick = onLongClick,
                         imageContentScale = viewOptions.contentScale.scale,
                         imageAspectRatio = viewOptions.aspectRatio.ratio,
+                        imageType = viewOptions.imageType,
                         modifier = mod,
                     )
                 },

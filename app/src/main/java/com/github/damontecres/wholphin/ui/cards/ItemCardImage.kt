@@ -54,7 +54,7 @@ fun ItemCardImage(
     useFallbackText: Boolean = true,
     contentScale: ContentScale = ContentScale.Fit,
 ) {
-    var imageError by remember { mutableStateOf(false) }
+    var imageError by remember(imageUrl) { mutableStateOf(false) }
     Box(modifier = modifier) {
         if (!imageError && imageUrl.isNotNullOrBlank()) {
             AsyncImage(

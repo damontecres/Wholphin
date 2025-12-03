@@ -188,7 +188,7 @@ object SubtitleSettings {
         )
 
     val Margin =
-        AppSliderPreference(
+        AppSliderPreference<AppPreferences>(
             title = R.string.subtitle_margin,
             defaultValue = 8,
             min = 0,

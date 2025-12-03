@@ -63,6 +63,7 @@ fun <T> ComposablePreference(
     onNavigate: (Destination) -> Unit,
     modifier: Modifier = Modifier,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
+    onClickPreference: (AppClickablePreference<*>) -> Unit = {},
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -72,13 +73,6 @@ fun <T> ComposablePreference(
 
     val title = stringResource(preference.title)
 
-    val onClick: () -> Unit = {
-        scope.launch(ExceptionHandler()) {
-            when (preference) {
-                else -> {}
-            }
-        }
-    }
     val onLongClick: () -> Unit = {
         scope.launch(ExceptionHandler()) {
             when (preference) {
@@ -102,7 +96,7 @@ fun <T> ComposablePreference(
         is AppClickablePreference ->
             ClickPreference(
                 title = title,
-                onClick = onClick,
+                onClick = { onClickPreference.invoke(preference) },
                 onLongClick = onLongClick,
                 summary = preference.summary(context, value),
                 interactionSource = interactionSource,

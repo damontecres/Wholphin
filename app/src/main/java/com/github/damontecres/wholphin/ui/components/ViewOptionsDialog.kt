@@ -18,14 +18,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.window.DialogWindowProvider
 import androidx.tv.material3.MaterialTheme
+import androidx.tv.material3.Text
 import androidx.tv.material3.surfaceColorAtElevation
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.preferences.AppChoicePreference
+import com.github.damontecres.wholphin.preferences.AppClickablePreference
 import com.github.damontecres.wholphin.preferences.AppPreference
 import com.github.damontecres.wholphin.preferences.AppSliderPreference
 import com.github.damontecres.wholphin.preferences.AppSwitchPreference
@@ -33,22 +36,15 @@ import com.github.damontecres.wholphin.preferences.PrefContentScale
 import com.github.damontecres.wholphin.ui.AspectRatio
 import com.github.damontecres.wholphin.ui.preferences.ComposablePreference
 import com.github.damontecres.wholphin.ui.tryRequestFocus
-
-data class ViewOptions(
-    val columns: Int = 6,
-    val spacing: Int = 16,
-    val contentScale: PrefContentScale = PrefContentScale.FIT,
-    val aspectRatio: AspectRatio = AspectRatio.TALL,
-    val showDetails: Boolean = false,
-)
+import org.jellyfin.sdk.model.api.ImageType
 
 @Composable
 fun ViewOptionsDialog(
     viewOptions: ViewOptions,
     onDismissRequest: () -> Unit,
     onViewOptionsChange: (ViewOptions) -> Unit,
+    defaultViewOptions: ViewOptions = ViewOptions(),
 ) {
-    val settings = listOf(ViewOptionsColumns, ViewOptionsSpacing, ViewOptionsContentScale, ViewOptionsAspectRatio, ViewOptionsDetailHeader)
     val focusRequester = remember { FocusRequester() }
     LaunchedEffect(Unit) { focusRequester.tryRequestFocus() }
     val columnState = rememberLazyListState()
@@ -67,18 +63,24 @@ fun ViewOptionsDialog(
         LazyColumn(
             state = columnState,
             contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(0.dp),
             modifier =
                 Modifier
                     .width(256.dp)
                     .heightIn(max = 380.dp)
                     .focusRequester(focusRequester)
                     .background(
-                        MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp),
+                        MaterialTheme.colorScheme.surfaceColorAtElevation(6.dp),
                         shape = RoundedCornerShape(8.dp),
                     ),
         ) {
-            items(settings) { pref ->
+            stickyHeader {
+                Text(
+                    text = stringResource(R.string.view_options),
+                    style = MaterialTheme.typography.titleMedium,
+                )
+            }
+            items(ViewOptions.OPTIONS) { pref ->
                 pref as AppPreference<ViewOptions, Any>
                 val interactionSource = remember { MutableInteractionSource() }
                 val value = pref.getter.invoke(viewOptions)
@@ -91,59 +93,117 @@ fun ViewOptionsDialog(
                     },
                     interactionSource = interactionSource,
                     modifier = Modifier,
+                    onClickPreference = { pref ->
+                        if (pref == ViewOptions.ViewOptionsReset) {
+                            onViewOptionsChange.invoke(defaultViewOptions)
+                        }
+                    },
                 )
             }
         }
     }
 }
 
-val ViewOptionsColumns =
-    AppSliderPreference<ViewOptions>(
-        title = R.string.columns,
-        defaultValue = 6,
-        min = 1,
-        max = 10,
-        interval = 1,
-        getter = { it.columns.toLong() },
-        setter = { prefs, value -> prefs.copy(columns = value.toInt()) },
-    )
-val ViewOptionsSpacing =
-    AppSliderPreference<ViewOptions>(
-        title = R.string.spacing,
-        defaultValue = 16,
-        min = 0,
-        max = 32,
-        interval = 2,
-        getter = { it.spacing.toLong() },
-        setter = { prefs, value -> prefs.copy(spacing = value.toInt()) },
-    )
+data class ViewOptions(
+    val columns: Int = 6,
+    val spacing: Int = 16,
+    val contentScale: PrefContentScale = PrefContentScale.FILL,
+    val aspectRatio: AspectRatio = AspectRatio.TALL,
+    val showDetails: Boolean = false,
+    val imageType: ViewOptionImageType = ViewOptionImageType.PRIMARY,
+) {
+    companion object {
+        val ViewOptionsColumns =
+            AppSliderPreference<ViewOptions>(
+                title = R.string.columns,
+                defaultValue = 6,
+                min = 1,
+                max = 12,
+                interval = 1,
+                getter = { it.columns.toLong() },
+                setter = { prefs, value -> prefs.copy(columns = value.toInt()) },
+            )
+        val ViewOptionsSpacing =
+            AppSliderPreference<ViewOptions>(
+                title = R.string.spacing,
+                defaultValue = 16,
+                min = 0,
+                max = 32,
+                interval = 2,
+                getter = { it.spacing.toLong() },
+                setter = { prefs, value -> prefs.copy(spacing = value.toInt()) },
+            )
 
-val ViewOptionsContentScale =
-    AppChoicePreference<ViewOptions, PrefContentScale>(
-        title = R.string.global_content_scale,
-        defaultValue = PrefContentScale.FIT,
-        displayValues = R.array.content_scale,
-        getter = { it.contentScale },
-        setter = { viewOptions, value -> viewOptions.copy(contentScale = value) },
-        indexToValue = { PrefContentScale.forNumber(it) },
-        valueToIndex = { it.number },
-    )
+        val ViewOptionsContentScale =
+            AppChoicePreference<ViewOptions, PrefContentScale>(
+                title = R.string.global_content_scale,
+                defaultValue = PrefContentScale.FIT,
+                displayValues = R.array.content_scale,
+                getter = { it.contentScale },
+                setter = { viewOptions, value -> viewOptions.copy(contentScale = value) },
+                indexToValue = { PrefContentScale.forNumber(it) },
+                valueToIndex = { it.number },
+            )
 
-val ViewOptionsAspectRatio =
-    AppChoicePreference<ViewOptions, AspectRatio>(
-        title = R.string.aspect_ratio,
-        defaultValue = AspectRatio.TALL,
-        displayValues = R.array.aspect_ratios,
-        getter = { it.aspectRatio },
-        setter = { viewOptions, value -> viewOptions.copy(aspectRatio = value) },
-        indexToValue = { AspectRatio.entries[it] },
-        valueToIndex = { it.ordinal },
-    )
+        val ViewOptionsAspectRatio =
+            AppChoicePreference<ViewOptions, AspectRatio>(
+                title = R.string.aspect_ratio,
+                defaultValue = AspectRatio.TALL,
+                displayValues = R.array.aspect_ratios,
+                getter = { it.aspectRatio },
+                setter = { viewOptions, value -> viewOptions.copy(aspectRatio = value) },
+                indexToValue = { AspectRatio.entries[it] },
+                valueToIndex = { it.ordinal },
+            )
 
-val ViewOptionsDetailHeader =
-    AppSwitchPreference<ViewOptions>(
-        title = R.string.show_details,
-        defaultValue = false,
-        getter = { it.showDetails },
-        setter = { vo, value -> vo.copy(showDetails = value) },
-    )
+        val ViewOptionsDetailHeader =
+            AppSwitchPreference<ViewOptions>(
+                title = R.string.show_details,
+                defaultValue = false,
+                getter = { it.showDetails },
+                setter = { vo, value -> vo.copy(showDetails = value) },
+            )
+
+        val ViewOptionsImageType =
+            AppChoicePreference<ViewOptions, ViewOptionImageType>(
+                title = R.string.image_type,
+                defaultValue = ViewOptionImageType.PRIMARY,
+                displayValues = R.array.image_types,
+                getter = { it.imageType },
+                setter = { viewOptions, value ->
+                    val aspectRatio =
+                        when (value) {
+                            ViewOptionImageType.PRIMARY -> AspectRatio.TALL
+                            ViewOptionImageType.THUMB -> AspectRatio.WIDE
+                        }
+                    viewOptions.copy(imageType = value, aspectRatio = aspectRatio)
+                },
+                indexToValue = { ViewOptionImageType.entries[it] },
+                valueToIndex = { it.ordinal },
+            )
+
+        val ViewOptionsReset =
+            AppClickablePreference<ViewOptions>(
+                title = R.string.reset,
+            )
+
+        val OPTIONS =
+            listOf(
+                ViewOptionsImageType,
+                ViewOptionsAspectRatio,
+                ViewOptionsDetailHeader,
+                ViewOptionsColumns,
+                ViewOptionsSpacing,
+                ViewOptionsContentScale,
+                ViewOptionsReset,
+            )
+    }
+}
+
+enum class ViewOptionImageType(
+    val imageType: ImageType,
+) {
+    PRIMARY(ImageType.PRIMARY),
+    THUMB(ImageType.THUMB),
+//    BANNER(ImageType.BANNER),
+}

@@ -702,7 +702,7 @@ sealed interface AppPreference<Pref, T> {
             )
 
         val DebugLogging =
-            AppSwitchPreference(
+            AppSwitchPreference<AppPreferences>(
                 title = R.string.verbose_logging,
                 defaultValue = false,
                 getter = { DebugLogTree.INSTANCE.enabled },
@@ -715,7 +715,7 @@ sealed interface AppPreference<Pref, T> {
             )
 
         val ImageDiskCacheSize =
-            AppSliderPreference(
+            AppSliderPreference<AppPreferences>(
                 title = R.string.image_cache_size,
                 defaultValue = 200,
                 min = 25,
