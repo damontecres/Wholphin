@@ -42,6 +42,7 @@ import com.github.damontecres.wholphin.services.PlaybackLifecycleObserver
 import com.github.damontecres.wholphin.services.ServerEventListener
 import com.github.damontecres.wholphin.services.UpdateChecker
 import com.github.damontecres.wholphin.services.hilt.AuthOkHttpClient
+import com.github.damontecres.wholphin.services.tvprovider.TvProviderSchedulerService
 import com.github.damontecres.wholphin.ui.CoilConfig
 import com.github.damontecres.wholphin.ui.LocalImageUrlService
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
@@ -92,6 +93,9 @@ class MainActivity : AppCompatActivity() {
 
     @Inject
     lateinit var imageUrlService: ImageUrlService
+
+    @Inject
+    lateinit var tvProviderSchedulerService: TvProviderSchedulerService
 
     @OptIn(ExperimentalTvMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
