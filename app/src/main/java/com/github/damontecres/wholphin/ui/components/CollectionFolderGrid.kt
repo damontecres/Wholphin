@@ -754,7 +754,7 @@ fun CollectionFolderGridContent(
                             }
                             ExpandableFaButton(
                                 title = R.string.view_options,
-                                iconStringRes = R.string.fa_eye,
+                                iconStringRes = R.string.fa_sliders,
                                 onClick = { showViewOptions = true },
                                 modifier = Modifier,
                             )
