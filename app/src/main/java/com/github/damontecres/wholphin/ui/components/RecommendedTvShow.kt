@@ -84,7 +84,7 @@ class RecommendedTvShowViewModel
                         ?: AppPreference.HomePageItems.defaultValue.toInt()
                 try {
                     val resumeItemsDeferred =
-                        viewModelScope.async {
+                        viewModelScope.async(Dispatchers.IO) {
                             val resumeItemsRequest =
                                 GetResumeItemsRequest(
                                     parentId = parentId,
@@ -101,7 +101,7 @@ class RecommendedTvShowViewModel
                         }
 
                     val nextUpItemsDeferred =
-                        viewModelScope.async {
+                        viewModelScope.async(Dispatchers.IO) {
                             val nextUpRequest =
                                 GetNextUpRequest(
                                     parentId = parentId,

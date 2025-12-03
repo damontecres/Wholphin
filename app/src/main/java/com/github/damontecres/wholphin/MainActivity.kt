@@ -34,6 +34,7 @@ import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.DefaultUserConfiguration
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.AppUpgradeHandler
+import com.github.damontecres.wholphin.services.DeviceProfileService
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.PlaybackLifecycleObserver
 import com.github.damontecres.wholphin.services.ServerEventListener
@@ -45,8 +46,9 @@ import com.github.damontecres.wholphin.ui.nav.ApplicationContent
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.theme.WholphinTheme
 import com.github.damontecres.wholphin.util.DebugLogTree
-import com.github.damontecres.wholphin.util.profile.createDeviceProfile
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import org.jellyfin.sdk.model.serializer.toUUIDOrNull
 import timber.log.Timber
@@ -78,6 +80,9 @@ class MainActivity : AppCompatActivity() {
 
     @Inject
     lateinit var playbackLifecycleObserver: PlaybackLifecycleObserver
+
+    @Inject
+    lateinit var deviceProfileService: DeviceProfileService
 
     @OptIn(ExperimentalTvMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -176,20 +181,19 @@ class MainActivity : AppCompatActivity() {
                                         }
                                     }
                                 }
-                                val deviceProfile =
-                                    remember(current, preferences) {
-                                        createDeviceProfile(
-                                            this@MainActivity,
-                                            preferences,
+                                LaunchedEffect(current, preferences) {
+                                    withContext(Dispatchers.IO) {
+                                        deviceProfileService.getOrCreateDeviceProfile(
+                                            preferences.appPreferences.playbackPreferences,
                                             current?.server?.serverVersion,
                                         )
                                     }
+                                }
                                 ApplicationContent(
                                     user = current?.user,
                                     server = current?.server,
                                     navigationManager = navigationManager,
                                     preferences = preferences,
-                                    deviceProfile = deviceProfile,
                                     modifier = Modifier.fillMaxSize(),
                                 )
                             }
