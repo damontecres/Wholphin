@@ -228,6 +228,7 @@ dependencies {
     implementation(libs.androidx.room.testing)
     ksp(libs.androidx.room.compiler)
     ksp(libs.hilt.android.compiler)
+    ksp(libs.androidx.hilt.compiler)
 
     implementation(libs.timber)
     implementation(libs.slf4j2.timber)
