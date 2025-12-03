@@ -566,6 +566,7 @@ fun CollectionFolderGrid(
                         positionCallback = positionCallback,
                         letterPosition = { viewModel.positionOfLetter(it) ?: -1 },
                         viewOptions = viewOptions,
+                        defaultViewOptions = defaultViewOptions,
                         onSaveViewOptions = { viewModel.saveViewOptions(it) },
                         playEnabled = playEnabled,
                         onClickPlay = { shuffle ->
@@ -675,7 +676,8 @@ fun CollectionFolderGridContent(
     filterOptions: List<ItemFilterBy<*>> = listOf(),
     onFilterChange: (GetItemsFilter) -> Unit = {},
     getPossibleFilterValues: suspend (ItemFilterBy<*>) -> List<FilterValueOption>,
-    viewOptions: ViewOptions = ViewOptions(),
+    defaultViewOptions: ViewOptions,
+    viewOptions: ViewOptions,
     onSaveViewOptions: (ViewOptions) -> Unit,
 ) {
     val context = LocalContext.current
@@ -824,6 +826,7 @@ fun CollectionFolderGridContent(
             AnimatedVisibility(showViewOptions) {
                 ViewOptionsDialog(
                     viewOptions = viewOptions,
+                    defaultViewOptions = defaultViewOptions,
                     onDismissRequest = {
                         showViewOptions = false
                         onSaveViewOptions.invoke(viewOptions)
