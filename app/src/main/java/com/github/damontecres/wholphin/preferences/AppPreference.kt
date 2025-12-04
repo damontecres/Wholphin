@@ -701,6 +701,24 @@ sealed interface AppPreference<Pref, T> {
                 summary = R.string.disable_if_crash,
             )
 
+        val MpvGpuNext =
+            AppSwitchPreference<AppPreferences>(
+                title = R.string.mpv_use_gpu_next,
+                defaultValue = true,
+                getter = { it.playbackPreferences.mpvOptions.useGpuNext },
+                setter = { prefs, value ->
+                    prefs.updateMpvOptions { useGpuNext = value }
+                },
+                summaryOn = R.string.enabled,
+                summaryOff = R.string.disabled,
+            )
+
+        val MpvConfFile =
+            AppClickablePreference<AppPreferences>(
+                title = R.string.mpv_conf,
+                summary = null,
+            )
+
         val DebugLogging =
             AppSwitchPreference<AppPreferences>(
                 title = R.string.verbose_logging,
@@ -851,7 +869,11 @@ val advancedPreferences =
                         ),
                         ConditionalPreferences(
                             { it.playbackPreferences.playerBackend == PlayerBackend.MPV },
-                            listOf(AppPreference.MpvHardwareDecoding),
+                            listOf(
+                                AppPreference.MpvHardwareDecoding,
+                                AppPreference.MpvGpuNext,
+                                AppPreference.MpvConfFile,
+                            ),
                         ),
                     ),
             ),

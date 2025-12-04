@@ -9,8 +9,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -23,6 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -170,9 +171,9 @@ fun SwitchServerContent(
                 viewModel.clearAddServerState()
             }
             val state by viewModel.addServerState.observeAsState(LoadingState.Pending)
-            var url by remember { mutableStateOf("") }
+            val url = rememberTextFieldState()
             val submit = {
-                viewModel.addServer(url)
+                viewModel.addServer(url.text.toString())
             }
             BasicDialog(
                 onDismissRequest = {
@@ -196,21 +197,15 @@ fun SwitchServerContent(
                         text = stringResource(R.string.enter_server_url),
                     )
                     EditTextBox(
-                        value = url,
-                        onValueChange = {
-                            url = it
-                            viewModel.clearAddServerState()
-                        },
+                        state = url,
                         keyboardOptions =
                             KeyboardOptions(
                                 capitalization = KeyboardCapitalization.None,
                                 autoCorrectEnabled = false,
                                 keyboardType = KeyboardType.Uri,
+                                imeAction = ImeAction.Go,
                             ),
-                        keyboardActions =
-                            KeyboardActions(
-                                onDone = { submit.invoke() },
-                            ),
+                        onKeyboardAction = { submit.invoke() },
                         modifier =
                             Modifier
                                 .focusRequester(focusRequester)
@@ -230,7 +225,7 @@ fun SwitchServerContent(
                     }
                     Button(
                         onClick = { submit.invoke() },
-                        enabled = url.isNotNullOrBlank() && state == LoadingState.Pending,
+                        enabled = url.text.isNotNullOrBlank() && state == LoadingState.Pending,
                         modifier = Modifier,
                     ) {
                         if (state == LoadingState.Loading) {

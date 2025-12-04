@@ -10,6 +10,7 @@ import com.github.damontecres.wholphin.preferences.AppPreference
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.updateAdvancedPreferences
 import com.github.damontecres.wholphin.preferences.updateInterfacePreferences
+import com.github.damontecres.wholphin.preferences.updateMpvOptions
 import com.github.damontecres.wholphin.preferences.updatePlaybackOverrides
 import com.github.damontecres.wholphin.preferences.updateSubtitlePreferences
 import com.github.damontecres.wholphin.ui.preferences.PreferencesViewModel
@@ -141,6 +142,13 @@ suspend fun upgradeApp(
                     imageDiskCacheSizeBytes =
                         AppPreference.ImageDiskCacheSize.defaultValue * AppPreference.MEGA_BIT
                 }
+            }
+        }
+    }
+    if (previous.isEqualOrBefore(Version.fromString("0.3.4-2-g0"))) {
+        appPreferences.updateData {
+            it.updateMpvOptions {
+                useGpuNext = AppPreference.MpvGpuNext.defaultValue
             }
         }
     }
