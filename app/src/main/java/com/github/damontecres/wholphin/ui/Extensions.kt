@@ -44,6 +44,7 @@ import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.Response
 import org.jellyfin.sdk.model.api.BaseItemDto
 import org.jellyfin.sdk.model.api.BaseItemDtoQueryResult
+import org.jellyfin.sdk.model.api.ImageType
 import org.jellyfin.sdk.model.extensions.ticks
 import timber.log.Timber
 import java.util.UUID
@@ -308,7 +309,7 @@ fun logCoilError(
     url: String?,
     errorResult: ErrorResult,
 ) {
-    if (errorResult.throwable is coil3.network.HttpException) {
+    if (errorResult.throwable is coil3.network.HttpException || errorResult.throwable is coil3.request.NullRequestDataException) {
         Timber.w("Error loading image: %s for %s", errorResult.throwable.localizedMessage, url)
     } else {
         Timber.e(errorResult.throwable, "Error loading image: %s", url)
@@ -401,3 +402,9 @@ fun Response<BaseItemDtoQueryResult>.toBaseItems(
     api: ApiClient,
     useSeriesForPrimary: Boolean,
 ) = this.content.items.map { BaseItem.from(it, api, useSeriesForPrimary) }
+
+@Composable
+fun rememberBackDropImage(item: BaseItem) {
+    val imageUrlService = LocalImageUrlService.current
+    return remember(item) { imageUrlService.getItemImageUrl(item, ImageType.BACKDROP) }
+}

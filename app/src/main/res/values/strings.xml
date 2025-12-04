@@ -329,6 +329,12 @@
     <string name="subtitle_margin">Margin</string>
     <string name="verbose_logging">Verbose logging</string>
     <string name="image_cache_size">Image disk cache size (MB)</string>
+    <string name="view_options">View options</string>
+    <string name="columns">Columns</string>
+    <string name="spacing">Spacing</string>
+    <string name="aspect_ratio">Aspect Ratio</string>
+    <string name="show_details">Show details</string>
+    <string name="image_type">Image type</string>
 
     <string-array name="theme_song_volume">
         <item>Disabled</item>
@@ -402,6 +408,19 @@
     <string-array name="player_backend_options">
         <item>ExoPlayer (default)</item>
         <item>MPV (Experimental)</item>
+    </string-array>
+
+    <string-array name="aspect_ratios">
+        <item>Poster (2:3)</item>
+        <item>16:9</item>
+        <item>4:3</item>
+        <item>Square (1:1)</item>
+    </string-array>
+
+    <string-array name="image_types">
+        <item>Primary</item>
+        <item>Thumb</item>
+        <!--        <item>Banner</item>-->
     </string-array>
 
 </resources>

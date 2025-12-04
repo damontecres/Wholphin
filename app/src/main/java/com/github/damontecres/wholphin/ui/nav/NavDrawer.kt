@@ -63,7 +63,7 @@ import androidx.tv.material3.DrawerValue
 import androidx.tv.material3.Icon
 import androidx.tv.material3.LocalContentColor
 import androidx.tv.material3.MaterialTheme
-import androidx.tv.material3.NavigationDrawer
+import androidx.tv.material3.ModalNavigationDrawer
 import androidx.tv.material3.NavigationDrawerItem
 import androidx.tv.material3.NavigationDrawerItemDefaults
 import androidx.tv.material3.NavigationDrawerScope
@@ -295,7 +295,8 @@ fun NavDrawer(
         }
     }
 
-    val drawerWidth by animateDpAsState(if (drawerState.isOpen) 260.dp else 40.dp)
+    val closedDrawerWidth = 40.dp
+    val drawerWidth by animateDpAsState(if (drawerState.isOpen) 260.dp else closedDrawerWidth)
     val drawerPadding by animateDpAsState(if (drawerState.isOpen) 0.dp else 8.dp)
     val drawerBackground by animateColorAsState(
         if (drawerState.isOpen) {
@@ -329,7 +330,7 @@ fun NavDrawer(
         scrollToSelected()
     }
 
-    NavigationDrawer(
+    ModalNavigationDrawer(
         modifier = modifier,
         drawerState = drawerState,
         drawerContent = {
@@ -518,7 +519,10 @@ fun NavDrawer(
         },
     ) {
         Box(
-            modifier = Modifier.fillMaxSize(),
+            modifier =
+                Modifier
+                    .padding(start = closedDrawerWidth)
+                    .fillMaxSize(),
         ) {
             // Drawer content
             DestinationContent(

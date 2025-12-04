@@ -2,17 +2,22 @@ package com.github.damontecres.wholphin.ui
 
 import android.content.res.Configuration.UI_MODE_TYPE_TELEVISION
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.github.damontecres.wholphin.R
+import com.github.damontecres.wholphin.services.ImageUrlService
 import org.jellyfin.sdk.model.api.ItemFields
 
 // This file is for constants used for the UI
 
 val FontAwesome = FontFamily(Font(resId = R.font.fa_solid_900))
+
+val LocalImageUrlService =
+    staticCompositionLocalOf<ImageUrlService> { throw IllegalStateException("LocalImageUrlService not set") }
 
 /**
  * Colors not associated with the theme
@@ -79,6 +84,15 @@ object AspectRatios {
     const val FOUR_THREE = 4f / 3f
     const val TALL = 2f / 3f
     const val SQUARE = 1f
+}
+
+enum class AspectRatio(
+    val ratio: Float,
+) {
+    TALL(AspectRatios.TALL),
+    WIDE(AspectRatios.WIDE),
+    FOUR_THREE(AspectRatios.FOUR_THREE),
+    SQUARE(AspectRatios.SQUARE),
 }
 
 @Preview(

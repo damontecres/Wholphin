@@ -13,7 +13,7 @@ import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.GetItemsFilter
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.components.CollectionFolderGrid
-import com.github.damontecres.wholphin.ui.components.CollectionFolderGridParameters
+import com.github.damontecres.wholphin.ui.components.ViewOptionsSquare
 import com.github.damontecres.wholphin.ui.data.PlaylistSortOptions
 import com.github.damontecres.wholphin.ui.preferences.PreferencesViewModel
 import java.util.UUID
@@ -43,7 +43,7 @@ fun CollectionFolderPlaylist(
         positionCallback = { columns, position ->
             showHeader = position < columns
         },
-        params = CollectionFolderGridParameters.SQUARE,
+        defaultViewOptions = ViewOptionsSquare,
         playEnabled = false,
     )
 }

@@ -183,7 +183,7 @@ fun SeriesOverviewContent(
                                             ?: episode?.data?.premiereDate?.let(::formatDateTime)
                                     BannerCard(
                                         name = episode?.name,
-                                        imageUrl = episode?.imageUrl,
+                                        item = episode,
                                         aspectRatio =
                                             episode
                                                 ?.data

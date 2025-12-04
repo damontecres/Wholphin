@@ -24,7 +24,7 @@ import kotlin.time.Duration.Companion.seconds
  *
  * @param T The type of the preference value.
  */
-sealed interface AppPreference<T> {
+sealed interface AppPreference<Pref, T> {
     /**
      * String resource ID for the title of the preference
      */
@@ -40,12 +40,12 @@ sealed interface AppPreference<T> {
      * A function that gets the value from the [AppPreferences] object for UI purposes. This means
      * that it should return the value that is displayed in the UI, which isn't necessarily the raw value
      */
-    val getter: (prefs: AppPreferences) -> T
+    val getter: (prefs: Pref) -> T
 
     /**
      * A function that sets the value in the [AppPreferences] object from the UI. It should convert the value if needed
      */
-    val setter: (prefs: AppPreferences, value: T) -> AppPreferences
+    val setter: (prefs: Pref, value: T) -> Pref
 
     fun summary(
         context: Context,
@@ -56,7 +56,7 @@ sealed interface AppPreference<T> {
 
     companion object {
         val SkipForward =
-            AppSliderPreference(
+            AppSliderPreference<AppPreferences>(
                 title = R.string.skip_forward_preference,
                 defaultValue = 30,
                 min = 10,
@@ -85,7 +85,7 @@ sealed interface AppPreference<T> {
             )
 
         val SkipBack =
-            AppSliderPreference(
+            AppSliderPreference<AppPreferences>(
                 title = R.string.skip_back_preference,
                 defaultValue = 10,
                 min = 5,
@@ -114,7 +114,7 @@ sealed interface AppPreference<T> {
             )
 
 //        val GridJumpButtons =
-//            AppSwitchPreference(
+//            AppSwitchPreference<AppPreferences>(
 //                title = R.string.show_grid_jump_buttons,
 //                defaultValue = true,
 //                getter = { it.interfacePreferences.showGridJumpButtons },
@@ -126,7 +126,7 @@ sealed interface AppPreference<T> {
 //            )
 
 //        val ShowGridFooter =
-//            AppSwitchPreference(
+//            AppSwitchPreference<AppPreferences>(
 //                title = R.string.grid_position_footer,
 //                defaultValue = true,
 //                getter = { it.interfacePreferences.showPositionFooter },
@@ -138,7 +138,7 @@ sealed interface AppPreference<T> {
 //            )
 
         val ControllerTimeout =
-            AppSliderPreference(
+            AppSliderPreference<AppPreferences>(
                 title = R.string.hide_controller_timeout,
                 defaultValue = 5000,
                 min = 500,
@@ -159,7 +159,7 @@ sealed interface AppPreference<T> {
             )
 
         val SeekBarSteps =
-            AppSliderPreference(
+            AppSliderPreference<AppPreferences>(
                 title = R.string.seek_bar_steps,
                 defaultValue = 16,
                 min = 4,
@@ -173,7 +173,7 @@ sealed interface AppPreference<T> {
             )
 
         val HomePageItems =
-            AppSliderPreference(
+            AppSliderPreference<AppPreferences>(
                 title = R.string.max_homepage_items,
                 defaultValue = 25,
                 min = 5,
@@ -187,7 +187,7 @@ sealed interface AppPreference<T> {
             )
 
         val CombineContinueNext =
-            AppSwitchPreference(
+            AppSwitchPreference<AppPreferences>(
                 title = R.string.combine_continue_next,
                 defaultValue = false,
                 getter = { it.homePagePreferences.combineContinueNext },
@@ -199,7 +199,7 @@ sealed interface AppPreference<T> {
             )
 
         val RewatchNextUp =
-            AppSwitchPreference(
+            AppSwitchPreference<AppPreferences>(
                 title = R.string.rewatch_next_up,
                 defaultValue = false,
                 getter = { it.homePagePreferences.enableRewatchingNextUp },
@@ -211,7 +211,7 @@ sealed interface AppPreference<T> {
             )
 
         val PlayThemeMusic =
-            AppChoicePreference<ThemeSongVolume>(
+            AppChoicePreference<AppPreferences, ThemeSongVolume>(
                 title = R.string.play_theme_music,
                 defaultValue = ThemeSongVolume.MEDIUM,
                 getter = { it.interfacePreferences.playThemeSongs },
@@ -224,7 +224,7 @@ sealed interface AppPreference<T> {
             )
 
         val PlaybackDebugInfo =
-            AppSwitchPreference(
+            AppSwitchPreference<AppPreferences>(
                 title = R.string.playback_debug_info,
                 defaultValue = false,
                 getter = { it.playbackPreferences.showDebugInfo },
@@ -236,7 +236,7 @@ sealed interface AppPreference<T> {
             )
 
         val AutoPlayNextUp =
-            AppSwitchPreference(
+            AppSwitchPreference<AppPreferences>(
                 title = R.string.auto_play_next,
                 defaultValue = true,
                 getter = { it.playbackPreferences.autoPlayNext },
@@ -248,7 +248,7 @@ sealed interface AppPreference<T> {
             )
 
         val SkipBackOnResume =
-            AppSliderPreference(
+            AppSliderPreference<AppPreferences>(
                 title = R.string.skip_back_on_resume_preference,
                 defaultValue = 0,
                 min = 0,
@@ -270,7 +270,7 @@ sealed interface AppPreference<T> {
             )
 
         val AutoPlayNextDelay =
-            AppSliderPreference(
+            AppSliderPreference<AppPreferences>(
                 title = R.string.auto_play_next_delay,
                 defaultValue = 15,
                 min = 0,
@@ -296,7 +296,7 @@ sealed interface AppPreference<T> {
             )
 
         val PassOutProtection =
-            AppSliderPreference(
+            AppSliderPreference<AppPreferences>(
                 title = R.string.pass_out_protection,
                 defaultValue = 2,
                 min = 0,
@@ -341,7 +341,7 @@ sealed interface AppPreference<T> {
                 *(120..200 step 20).map { it * MEGA_BIT }.toTypedArray(),
             )
         val MaxBitrate =
-            AppSliderPreference(
+            AppSliderPreference<AppPreferences>(
                 title = R.string.max_bitrate,
                 defaultValue = bitrateValues.indexOf(DEFAULT_BITRATE).toLong(),
                 min = 0,
@@ -370,7 +370,7 @@ sealed interface AppPreference<T> {
             )
 
         val Ac3Supported =
-            AppSwitchPreference(
+            AppSwitchPreference<AppPreferences>(
                 title = R.string.ac3_supported,
                 defaultValue = true,
                 getter = { it.playbackPreferences.overrides.ac3Supported },
@@ -381,7 +381,7 @@ sealed interface AppPreference<T> {
                 summaryOff = R.string.disabled,
             )
         val DownMixStereo =
-            AppSwitchPreference(
+            AppSwitchPreference<AppPreferences>(
                 title = R.string.downmix_stereo,
                 defaultValue = false,
                 getter = { it.playbackPreferences.overrides.downmixStereo },
@@ -392,7 +392,7 @@ sealed interface AppPreference<T> {
                 summaryOff = R.string.disabled,
             )
         val DirectPlayAss =
-            AppSwitchPreference(
+            AppSwitchPreference<AppPreferences>(
                 title = R.string.direct_play_ass,
                 defaultValue = true,
                 getter = { it.playbackPreferences.overrides.directPlayAss },
@@ -403,7 +403,7 @@ sealed interface AppPreference<T> {
                 summaryOff = R.string.disabled,
             )
         val DirectPlayPgs =
-            AppSwitchPreference(
+            AppSwitchPreference<AppPreferences>(
                 title = R.string.direct_play_pgs,
                 defaultValue = true,
                 getter = { it.playbackPreferences.overrides.directPlayPgs },
@@ -415,7 +415,7 @@ sealed interface AppPreference<T> {
             )
 
         val RememberSelectedTab =
-            AppSwitchPreference(
+            AppSwitchPreference<AppPreferences>(
                 title = R.string.remember_selected_tab,
                 defaultValue = false,
                 getter = { it.interfacePreferences.rememberSelectedTab },
@@ -427,7 +427,7 @@ sealed interface AppPreference<T> {
             )
 
         val ThemeColors =
-            AppChoicePreference<AppThemeColors>(
+            AppChoicePreference<AppPreferences, AppThemeColors>(
                 title = R.string.app_theme,
                 defaultValue = AppThemeColors.PURPLE,
                 getter = { it.interfacePreferences.appThemeColors },
@@ -440,21 +440,21 @@ sealed interface AppPreference<T> {
             )
 
         val InstalledVersion =
-            AppClickablePreference(
+            AppClickablePreference<AppPreferences>(
                 title = R.string.installed_version,
                 getter = { },
                 setter = { prefs, _ -> prefs },
             )
 
         val Update =
-            AppClickablePreference(
+            AppClickablePreference<AppPreferences>(
                 title = R.string.check_for_updates,
                 getter = { },
                 setter = { prefs, _ -> prefs },
             )
 
         val AutoCheckForUpdates =
-            AppSwitchPreference(
+            AppSwitchPreference<AppPreferences>(
                 title = R.string.auto_check_for_updates,
                 defaultValue = true,
                 getter = { it.autoCheckForUpdates },
@@ -466,7 +466,7 @@ sealed interface AppPreference<T> {
             )
 
         val UpdateUrl =
-            AppStringPreference(
+            AppStringPreference<AppPreferences>(
                 title = R.string.update_url,
                 defaultValue = "https://api.github.com/repos/damontecres/Wholphin/releases/latest",
                 getter = { it.updateUrl },
@@ -477,19 +477,19 @@ sealed interface AppPreference<T> {
             )
 
         val OssLicenseInfo =
-            AppDestinationPreference(
+            AppDestinationPreference<AppPreferences>(
                 title = R.string.license_info,
                 destination = Destination.License,
             )
 
         val AdvancedSettings =
-            AppDestinationPreference(
+            AppDestinationPreference<AppPreferences>(
                 title = R.string.advanced_settings,
                 destination = Destination.Settings(PreferenceScreenOption.ADVANCED),
             )
 
         val SkipIntros =
-            AppChoicePreference<SkipSegmentBehavior>(
+            AppChoicePreference<AppPreferences, SkipSegmentBehavior>(
                 title = R.string.skip_intro_behavior,
                 defaultValue = SkipSegmentBehavior.ASK_TO_SKIP,
                 getter = { it.playbackPreferences.skipIntros },
@@ -502,7 +502,7 @@ sealed interface AppPreference<T> {
             )
 
         val SkipOutros =
-            AppChoicePreference<SkipSegmentBehavior>(
+            AppChoicePreference<AppPreferences, SkipSegmentBehavior>(
                 title = R.string.skip_outro_behavior,
                 defaultValue = SkipSegmentBehavior.ASK_TO_SKIP,
                 getter = { it.playbackPreferences.skipOutros },
@@ -515,7 +515,7 @@ sealed interface AppPreference<T> {
             )
 
         val SkipCommercials =
-            AppChoicePreference<SkipSegmentBehavior>(
+            AppChoicePreference<AppPreferences, SkipSegmentBehavior>(
                 title = R.string.skip_commercials_behavior,
                 defaultValue = SkipSegmentBehavior.ASK_TO_SKIP,
                 getter = { it.playbackPreferences.skipCommercials },
@@ -528,7 +528,7 @@ sealed interface AppPreference<T> {
             )
 
         val SkipPreviews =
-            AppChoicePreference<SkipSegmentBehavior>(
+            AppChoicePreference<AppPreferences, SkipSegmentBehavior>(
                 title = R.string.skip_previews_behavior,
                 defaultValue = SkipSegmentBehavior.IGNORE,
                 getter = { it.playbackPreferences.skipPreviews },
@@ -541,7 +541,7 @@ sealed interface AppPreference<T> {
             )
 
         val SkipRecaps =
-            AppChoicePreference<SkipSegmentBehavior>(
+            AppChoicePreference<AppPreferences, SkipSegmentBehavior>(
                 title = R.string.skip_recap_behavior,
                 defaultValue = SkipSegmentBehavior.IGNORE,
                 getter = { it.playbackPreferences.skipRecaps },
@@ -554,7 +554,7 @@ sealed interface AppPreference<T> {
             )
 
         val GlobalContentScale =
-            AppChoicePreference<PrefContentScale>(
+            AppChoicePreference<AppPreferences, PrefContentScale>(
                 title = R.string.global_content_scale,
                 defaultValue = PrefContentScale.FIT,
                 getter = { it.playbackPreferences.globalContentScale },
@@ -567,7 +567,7 @@ sealed interface AppPreference<T> {
             )
 
         val FfmpegPreference =
-            AppChoicePreference<MediaExtensionStatus>(
+            AppChoicePreference<AppPreferences, MediaExtensionStatus>(
                 title = R.string.ffmpeg_extension_pref,
                 defaultValue = MediaExtensionStatus.MES_FALLBACK,
                 getter = { it.playbackPreferences.overrides.mediaExtensionsEnabled },
@@ -580,14 +580,14 @@ sealed interface AppPreference<T> {
             )
 
         val ClearImageCache =
-            AppClickablePreference(
+            AppClickablePreference<AppPreferences>(
                 title = R.string.clear_image_cache,
                 getter = { },
                 setter = { prefs, _ -> prefs },
             )
 
         val UserPinnedNavDrawerItems =
-            AppClickablePreference(
+            AppClickablePreference<AppPreferences>(
                 title = R.string.nav_drawer_pins,
                 summary = R.string.nav_drawer_pins_summary,
                 getter = { },
@@ -595,7 +595,7 @@ sealed interface AppPreference<T> {
             )
 
         val SendCrashReports =
-            AppSwitchPreference(
+            AppSwitchPreference<AppPreferences>(
                 title = R.string.send_crash_reports,
                 defaultValue = true,
                 getter = {
@@ -615,7 +615,7 @@ sealed interface AppPreference<T> {
             )
 
         val SendAppLogs =
-            AppClickablePreference(
+            AppClickablePreference<AppPreferences>(
                 title = R.string.send_app_logs,
                 summary = R.string.send_app_logs_summary,
                 getter = { },
@@ -623,7 +623,7 @@ sealed interface AppPreference<T> {
             )
 
         val NavDrawerSwitchOnFocus =
-            AppSwitchPreference(
+            AppSwitchPreference<AppPreferences>(
                 title = R.string.nav_drawer_switch_on_focus,
                 defaultValue = true,
                 getter = { it.interfacePreferences.navDrawerSwitchOnFocus },
@@ -635,7 +635,7 @@ sealed interface AppPreference<T> {
             )
 
         val ShowNextUpTiming =
-            AppChoicePreference<ShowNextUpWhen>(
+            AppChoicePreference<AppPreferences, ShowNextUpWhen>(
                 title = R.string.show_next_up_when,
                 defaultValue = ShowNextUpWhen.END_OF_PLAYBACK,
                 getter = { it.playbackPreferences.showNextUpWhen },
@@ -648,7 +648,7 @@ sealed interface AppPreference<T> {
             )
 
         val ShowClock =
-            AppSwitchPreference(
+            AppSwitchPreference<AppPreferences>(
                 title = R.string.show_clock,
                 defaultValue = true,
                 getter = { it.interfacePreferences.showClock },
@@ -660,7 +660,7 @@ sealed interface AppPreference<T> {
             )
 
         val OneClickPause =
-            AppSwitchPreference(
+            AppSwitchPreference<AppPreferences>(
                 title = R.string.one_click_pause,
                 defaultValue = false,
                 getter = { it.playbackPreferences.oneClickPause },
@@ -672,13 +672,13 @@ sealed interface AppPreference<T> {
             )
 
         val SubtitleStyle =
-            AppDestinationPreference(
+            AppDestinationPreference<AppPreferences>(
                 title = R.string.subtitle_style,
                 destination = Destination.Settings(PreferenceScreenOption.SUBTITLES),
             )
 
         val PlayerBackendPref =
-            AppChoicePreference<PlayerBackend>(
+            AppChoicePreference<AppPreferences, PlayerBackend>(
                 title = R.string.player_backend,
                 defaultValue = PlayerBackend.EXO_PLAYER,
                 getter = { it.playbackPreferences.playerBackend },
@@ -691,7 +691,7 @@ sealed interface AppPreference<T> {
             )
 
         val MpvHardwareDecoding =
-            AppSwitchPreference(
+            AppSwitchPreference<AppPreferences>(
                 title = R.string.mpv_hardware_decoding,
                 defaultValue = true,
                 getter = { it.playbackPreferences.mpvOptions.enableHardwareDecoding },
@@ -702,7 +702,7 @@ sealed interface AppPreference<T> {
             )
 
         val DebugLogging =
-            AppSwitchPreference(
+            AppSwitchPreference<AppPreferences>(
                 title = R.string.verbose_logging,
                 defaultValue = false,
                 getter = { DebugLogTree.INSTANCE.enabled },
@@ -715,7 +715,7 @@ sealed interface AppPreference<T> {
             )
 
         val ImageDiskCacheSize =
-            AppSliderPreference(
+            AppSliderPreference<AppPreferences>(
                 title = R.string.image_cache_size,
                 defaultValue = 200,
                 min = 25,
@@ -884,16 +884,16 @@ val advancedPreferences =
         )
     }
 
-data class AppSwitchPreference(
+data class AppSwitchPreference<Pref>(
     @get:StringRes override val title: Int,
     override val defaultValue: Boolean,
-    override val getter: (prefs: AppPreferences) -> Boolean,
-    override val setter: (prefs: AppPreferences, value: Boolean) -> AppPreferences,
+    override val getter: (prefs: Pref) -> Boolean,
+    override val setter: (prefs: Pref, value: Boolean) -> Pref,
     val validator: (value: Boolean) -> PreferenceValidation = { PreferenceValidation.Valid },
     @param:StringRes val summary: Int? = null,
     @param:StringRes val summaryOn: Int? = null,
     @param:StringRes val summaryOff: Int? = null,
-) : AppPreference<Boolean> {
+) : AppPreference<Pref, Boolean> {
     override fun summary(
         context: Context,
         value: Boolean?,
@@ -905,70 +905,70 @@ data class AppSwitchPreference(
         }
 }
 
-open class AppStringPreference(
+open class AppStringPreference<Pref>(
     @param:StringRes override val title: Int,
     override val defaultValue: String,
-    override val getter: (AppPreferences) -> String,
-    override val setter: (AppPreferences, String) -> AppPreferences,
+    override val getter: (Pref) -> String,
+    override val setter: (Pref, String) -> Pref,
     @param:StringRes val summary: Int?,
-) : AppPreference<String> {
+) : AppPreference<Pref, String> {
     override fun summary(
         context: Context,
         value: String?,
     ): String? = summary?.let { context.getString(it) } ?: value
 }
 
-data class AppChoicePreference<T>(
+data class AppChoicePreference<Pref, T>(
     @param:StringRes override val title: Int,
     override val defaultValue: T,
     @param:ArrayRes val displayValues: Int,
     val indexToValue: (index: Int) -> T,
     val valueToIndex: (T) -> Int,
-    override val getter: (prefs: AppPreferences) -> T,
-    override val setter: (prefs: AppPreferences, value: T) -> AppPreferences,
+    override val getter: (prefs: Pref) -> T,
+    override val setter: (prefs: Pref, value: T) -> Pref,
     @param:StringRes val summary: Int? = null,
-) : AppPreference<T>
+) : AppPreference<Pref, T>
 
-data class AppMultiChoicePreference<T>(
+data class AppMultiChoicePreference<Pref, T>(
     @param:StringRes override val title: Int,
     override val defaultValue: List<T>,
     val allValues: List<T>,
     @param:ArrayRes val displayValues: Int,
-    override val getter: (prefs: AppPreferences) -> List<T>,
-    override val setter: (prefs: AppPreferences, value: List<T>) -> AppPreferences,
+    override val getter: (prefs: Pref) -> List<T>,
+    override val setter: (prefs: Pref, value: List<T>) -> Pref,
     @param:StringRes val summary: Int? = null,
     val toSharedPrefs: (T) -> String,
     val fromSharedPrefs: (String) -> T?,
-) : AppPreference<List<T>>
+) : AppPreference<Pref, List<T>>
 
-data class AppClickablePreference(
+data class AppClickablePreference<Pref>(
     @param:StringRes override val title: Int,
     override val defaultValue: Unit = Unit,
-    override val getter: (prefs: AppPreferences) -> Unit = { },
-    override val setter: (prefs: AppPreferences, value: Unit) -> AppPreferences = { prefs, _ -> prefs },
+    override val getter: (prefs: Pref) -> Unit = { },
+    override val setter: (prefs: Pref, value: Unit) -> Pref = { prefs, _ -> prefs },
     @param:StringRes val summary: Int? = null,
-) : AppPreference<Unit> {
+) : AppPreference<Pref, Unit> {
     override fun summary(
         context: Context,
         value: Unit?,
     ): String? = summary?.let { context.getString(it) }
 }
 
-data class AppDestinationPreference(
+data class AppDestinationPreference<Pref>(
     @param:StringRes override val title: Int,
     override val defaultValue: Unit = Unit,
-    override val getter: (prefs: AppPreferences) -> Unit = { },
-    override val setter: (prefs: AppPreferences, value: Unit) -> AppPreferences = { prefs, _ -> prefs },
+    override val getter: (prefs: Pref) -> Unit = { },
+    override val setter: (prefs: Pref, value: Unit) -> Pref = { prefs, _ -> prefs },
     @param:StringRes val summary: Int? = null,
     val destination: Destination,
-) : AppPreference<Unit> {
+) : AppPreference<Pref, Unit> {
     override fun summary(
         context: Context,
         value: Unit?,
     ): String? = summary?.let { context.getString(it) }
 }
 
-class AppSliderPreference(
+class AppSliderPreference<Pref>(
     @param:StringRes override val title: Int,
     override val defaultValue: Long,
     /**
@@ -980,11 +980,11 @@ class AppSliderPreference(
      */
     val max: Long = 100,
     val interval: Int = 1,
-    override val getter: (prefs: AppPreferences) -> Long,
-    override val setter: (prefs: AppPreferences, value: Long) -> AppPreferences,
+    override val getter: (prefs: Pref) -> Long,
+    override val setter: (prefs: Pref, value: Long) -> Pref,
     @param:StringRes val summary: Int? = null,
     val summarizer: ((Long?) -> String?)? = null,
-) : AppPreference<Long> {
+) : AppPreference<Pref, Long> {
     override fun summary(
         context: Context,
         value: Long?,

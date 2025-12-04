@@ -1,6 +1,7 @@
 package com.github.damontecres.wholphin.ui.cards
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalResources
@@ -11,6 +12,8 @@ import com.github.damontecres.wholphin.data.ExtrasItem
 import com.github.damontecres.wholphin.data.pluralRes
 import com.github.damontecres.wholphin.ui.AspectRatios
 import com.github.damontecres.wholphin.ui.Cards
+import com.github.damontecres.wholphin.ui.LocalImageUrlService
+import org.jellyfin.sdk.model.api.ImageType
 
 @Composable
 fun ExtrasRow(
@@ -27,6 +30,17 @@ fun ExtrasRow(
         onClickItem = onClickItem,
         onLongClickItem = onLongClickItem,
         cardContent = { index, item, mod, onClick, onLongClick ->
+            val imageUrlService = LocalImageUrlService.current
+            val imageUrl =
+                remember {
+                    val item =
+                        when (item) {
+                            is ExtrasItem.Group -> item.items.random()
+                            is ExtrasItem.Single -> item.item
+                            null -> null
+                        }
+                    imageUrlService.getItemImageUrl(item, ImageType.PRIMARY)
+                }
             SeasonCard(
                 title =
                     when (item) {
@@ -49,7 +63,7 @@ fun ExtrasRow(
                 showImageOverlay = true,
                 imageHeight = Cards.height2x3 * .75f,
                 imageWidth = Dp.Unspecified,
-                imageUrl = item?.imageUrl,
+                imageUrl = imageUrl,
                 isFavorite = false,
                 isPlayed = false,
                 unplayedItemCount = -1,

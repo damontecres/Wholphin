@@ -13,6 +13,7 @@ import androidx.media3.ui.CaptionStyleCompat
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.preferences.AppChoicePreference
 import com.github.damontecres.wholphin.preferences.AppClickablePreference
+import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.AppSliderPreference
 import com.github.damontecres.wholphin.preferences.AppSwitchPreference
 import com.github.damontecres.wholphin.preferences.BackgroundStyle
@@ -27,7 +28,7 @@ import timber.log.Timber
 
 object SubtitleSettings {
     val FontSize =
-        AppSliderPreference(
+        AppSliderPreference<AppPreferences>(
             title = R.string.font_size,
             defaultValue = 24,
             min = 8,
@@ -58,7 +59,7 @@ object SubtitleSettings {
         )
 
     val FontColor =
-        AppChoicePreference<Color>(
+        AppChoicePreference<AppPreferences, Color>(
             title = R.string.font_color,
             defaultValue = Color.White,
             getter = { Color(it.interfacePreferences.subtitlesPreferences.fontColor) },
@@ -74,7 +75,7 @@ object SubtitleSettings {
         )
 
     val FontBold =
-        AppSwitchPreference(
+        AppSwitchPreference<AppPreferences>(
             title = R.string.bold_font,
             defaultValue = false,
             getter = { it.interfacePreferences.subtitlesPreferences.fontBold },
@@ -83,7 +84,7 @@ object SubtitleSettings {
             },
         )
     val FontItalic =
-        AppSwitchPreference(
+        AppSwitchPreference<AppPreferences>(
             title = R.string.italic_font,
             defaultValue = false,
             getter = { it.interfacePreferences.subtitlesPreferences.fontItalic },
@@ -93,7 +94,7 @@ object SubtitleSettings {
         )
 
     val FontOpacity =
-        AppSliderPreference(
+        AppSliderPreference<AppPreferences>(
             title = R.string.font_opacity,
             defaultValue = 100,
             min = 10,
@@ -110,7 +111,7 @@ object SubtitleSettings {
         )
 
     val EdgeStylePref =
-        AppChoicePreference<EdgeStyle>(
+        AppChoicePreference<AppPreferences, EdgeStyle>(
             title =
                 R.string.edge_style,
             defaultValue = EdgeStyle.EDGE_SOLID,
@@ -124,7 +125,7 @@ object SubtitleSettings {
         )
 
     val EdgeColor =
-        AppChoicePreference<Color>(
+        AppChoicePreference<AppPreferences, Color>(
             title = R.string.edge_color,
             defaultValue = Color.Black,
             getter = { Color(it.interfacePreferences.subtitlesPreferences.edgeColor) },
@@ -140,7 +141,7 @@ object SubtitleSettings {
         )
 
     val BackgroundColor =
-        AppChoicePreference<Color>(
+        AppChoicePreference<AppPreferences, Color>(
             title = R.string.background_color,
             defaultValue = Color.Transparent,
             getter = { Color(it.interfacePreferences.subtitlesPreferences.backgroundColor) },
@@ -156,7 +157,7 @@ object SubtitleSettings {
         )
 
     val BackgroundOpacity =
-        AppSliderPreference(
+        AppSliderPreference<AppPreferences>(
             title = R.string.background_opacity,
             defaultValue = 50,
             min = 10,
@@ -173,7 +174,7 @@ object SubtitleSettings {
         )
 
     val BackgroundStylePref =
-        AppChoicePreference<BackgroundStyle>(
+        AppChoicePreference<AppPreferences, BackgroundStyle>(
             title =
                 R.string.background_style,
             defaultValue = BackgroundStyle.BG_NONE,
@@ -187,7 +188,7 @@ object SubtitleSettings {
         )
 
     val Margin =
-        AppSliderPreference(
+        AppSliderPreference<AppPreferences>(
             title = R.string.subtitle_margin,
             defaultValue = 8,
             min = 0,
@@ -204,7 +205,7 @@ object SubtitleSettings {
         )
 
     val Reset =
-        AppClickablePreference(
+        AppClickablePreference<AppPreferences>(
             title = R.string.reset,
             getter = { },
             setter = { prefs, _ -> prefs },

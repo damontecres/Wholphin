@@ -19,6 +19,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -27,8 +28,10 @@ import androidx.tv.material3.CardDefaults
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.ui.AspectRatios
+import com.github.damontecres.wholphin.ui.LocalImageUrlService
 import com.github.damontecres.wholphin.ui.enableMarquee
 import kotlinx.coroutines.delay
+import org.jellyfin.sdk.model.api.ImageType
 
 /**
  * A Card for a TV Show Season, but can generically show most items
@@ -44,24 +47,57 @@ fun SeasonCard(
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
     showImageOverlay: Boolean = false,
     aspectRatio: Float = item?.data?.primaryImageAspectRatio?.toFloat() ?: AspectRatios.TALL,
-) = SeasonCard(
-    title = item?.title,
-    subtitle = item?.subtitle,
-    name = item?.name,
-    imageUrl = item?.imageUrl,
-    isFavorite = item?.data?.userData?.isFavorite ?: false,
-    isPlayed = item?.data?.userData?.played ?: false,
-    unplayedItemCount = item?.data?.userData?.unplayedItemCount ?: 0,
-    playedPercentage = item?.data?.userData?.playedPercentage ?: 0.0,
-    onClick = onClick,
-    onLongClick = onLongClick,
-    modifier = modifier,
-    imageHeight = imageHeight,
-    imageWidth = imageWidth,
-    interactionSource = interactionSource,
-    showImageOverlay = showImageOverlay,
-    aspectRatio = aspectRatio,
-)
+) {
+    val imageUrlService = LocalImageUrlService.current
+    val density = LocalDensity.current
+    val imageUrl =
+        remember(item, imageHeight, imageWidth) {
+            if (item != null) {
+                val fillHeight =
+                    if (imageHeight != Dp.Unspecified) {
+                        with(density) {
+                            imageHeight.roundToPx()
+                        }
+                    } else {
+                        null
+                    }
+                val fillWidth =
+                    if (imageWidth != Dp.Unspecified) {
+                        with(density) {
+                            imageWidth.roundToPx()
+                        }
+                    } else {
+                        null
+                    }
+                imageUrlService.getItemImageUrl(
+                    item,
+                    ImageType.PRIMARY,
+                    fillWidth = fillWidth,
+                    fillHeight = fillHeight,
+                )
+            } else {
+                null
+            }
+        }
+    SeasonCard(
+        title = item?.title,
+        subtitle = item?.subtitle,
+        name = item?.name,
+        imageUrl = imageUrl,
+        isFavorite = item?.data?.userData?.isFavorite ?: false,
+        isPlayed = item?.data?.userData?.played ?: false,
+        unplayedItemCount = item?.data?.userData?.unplayedItemCount ?: 0,
+        playedPercentage = item?.data?.userData?.playedPercentage ?: 0.0,
+        onClick = onClick,
+        onLongClick = onLongClick,
+        modifier = modifier,
+        imageHeight = imageHeight,
+        imageWidth = imageWidth,
+        interactionSource = interactionSource,
+        showImageOverlay = showImageOverlay,
+        aspectRatio = aspectRatio,
+    )
+}
 
 /**
  * A Card for a TV Show Season, but can generically show most items
