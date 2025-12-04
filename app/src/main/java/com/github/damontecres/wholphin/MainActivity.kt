@@ -245,4 +245,9 @@ class MainActivity : AppCompatActivity() {
             serverRepository.closeSession()
         }
     }
+
+    companion object {
+        const val INTENT_ITEM_ID = "itemId"
+        const val INTENT_ITEM_TYPE = "itemType"
+    }
 }

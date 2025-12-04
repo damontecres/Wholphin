@@ -43,6 +43,7 @@ class TvProviderSchedulerService
                                     .setInputData(
                                         workDataOf(
                                             TvProviderWorker.PARAM_USER_ID to user.user.id.toString(),
+                                            TvProviderWorker.PARAM_SERVER_ID to user.server.id.toString(),
                                         ),
                                     ).build(),
                             )

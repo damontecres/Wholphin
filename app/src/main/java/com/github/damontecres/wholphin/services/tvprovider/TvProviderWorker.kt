@@ -1,25 +1,35 @@
 package com.github.damontecres.wholphin.services.tvprovider
 
-import android.content.ContentUris
 import android.content.Context
+import android.content.Intent
+import android.database.Cursor
+import androidx.core.net.toUri
 import androidx.datastore.core.DataStore
 import androidx.hilt.work.HiltWorker
-import androidx.tvprovider.media.tv.Channel
 import androidx.tvprovider.media.tv.TvContractCompat
+import androidx.tvprovider.media.tv.TvContractCompat.WatchNextPrograms
+import androidx.tvprovider.media.tv.WatchNextProgram
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
-import com.github.damontecres.wholphin.R
-import com.github.damontecres.wholphin.data.NavDrawerItemRepository
+import com.github.damontecres.wholphin.MainActivity
 import com.github.damontecres.wholphin.data.ServerRepository
+import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.preferences.AppPreferences
+import com.github.damontecres.wholphin.services.ImageUrlService
 import com.github.damontecres.wholphin.services.LatestNextUpService
-import com.github.damontecres.wholphin.ui.nav.ServerNavDrawerItem
-import com.github.damontecres.wholphin.util.HomeRowLoadingState
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import kotlinx.coroutines.flow.firstOrNull
+import org.jellyfin.sdk.api.client.ApiClient
+import org.jellyfin.sdk.model.api.BaseItemKind
+import org.jellyfin.sdk.model.api.ImageType
+import org.jellyfin.sdk.model.extensions.ticks
 import org.jellyfin.sdk.model.serializer.toUUIDOrNull
 import timber.log.Timber
+import java.time.ZoneId
+import java.util.Date
+import java.util.UUID
+import kotlin.time.Duration.Companion.minutes
 
 @HiltWorker
 class TvProviderWorker
@@ -29,8 +39,9 @@ class TvProviderWorker
         @Assisted workerParams: WorkerParameters,
         private val serverRepository: ServerRepository,
         private val preferences: DataStore<AppPreferences>,
-        private val navDrawerItemRepository: NavDrawerItemRepository,
+        private val api: ApiClient,
         private val latestNextUpService: LatestNextUpService,
+        private val imageUrlService: ImageUrlService,
     ) : CoroutineWorker(context, workerParams) {
         override suspend fun doWork(): Result {
             Timber.d("Start")
@@ -39,106 +50,151 @@ class TvProviderWorker
             val userId =
                 inputData.getString(PARAM_USER_ID)?.toUUIDOrNull() ?: return Result.failure()
 
-            val sharedPrefs =
-                context.getSharedPreferences(
-                    "tvprovider",
-                    Context.MODE_PRIVATE,
-                )
-
-            var currentUser = serverRepository.current.value
-            if (currentUser == null) {
-                serverRepository.restoreSession(serverId, userId)
-                currentUser = serverRepository.current.value
-            }
-            if (currentUser == null) {
-                Timber.w("No user found during run")
-                return Result.failure()
+            if (api.baseUrl.isNullOrBlank() || api.accessToken.isNullOrBlank()) {
+                // Not active
+                var currentUser = serverRepository.current.value
+                if (currentUser == null) {
+                    serverRepository.restoreSession(serverId, userId)
+                    currentUser = serverRepository.current.value
+                }
+                if (currentUser == null) {
+                    Timber.w("No user found during run")
+                    return Result.failure()
+                }
             }
             val prefs = preferences.data.firstOrNull() ?: AppPreferences.getDefaultInstance()
-            val resume = latestNextUpService.getResume(userId, 5, true)
-            val nextUp =
-                latestNextUpService.getNextUp(
+            val potentialItemsToAdd =
+                getPotentialItems(
                     userId,
-                    5,
                     prefs.homePagePreferences.enableRewatchingNextUp,
-                    false,
                 )
-            val combined =
-                if (prefs.homePagePreferences.combineContinueNext) {
-                    latestNextUpService.buildCombined(resume, nextUp)
-                } else {
-                    null
-                }
-            val includedIds =
-                navDrawerItemRepository
-                    .getFilteredNavDrawerItems(navDrawerItemRepository.getNavDrawerItems())
-                    .filter { it is ServerNavDrawerItem }
-                    .map { (it as ServerNavDrawerItem).itemId }
-            val latest = latestNextUpService.getLatest(currentUser.userDto, 10, includedIds)
-            val latestResults = latestNextUpService.loadLatest(latest)
+            val potentialItemsToAddIds = potentialItemsToAdd.map { it.id.toString() }
+            val toAddSeriesId = potentialItemsToAdd.map { it.data.seriesId }
 
-            val channels =
-                buildMap {
-                    if (combined != null) {
-                        put(
-                            "next_up",
-                            HomeRowLoadingState.Success(
-                                context.getString(R.string.next_up),
-                                combined,
-                            ),
-                        )
-                    } else {
-                        put(
-                            "resume",
-                            HomeRowLoadingState.Success(context.getString(R.string.resume), resume),
-                        )
-                        put(
-                            "next_up",
-                            HomeRowLoadingState.Success(context.getString(R.string.next_up), nextUp),
-                        )
-                    }
-                    latestResults
-                        .forEach {
-                            (it as? HomeRowLoadingState.Success)?.let {
-                                put(it.title, it.items)
-                            }
-                        }
-                }
-            channels.forEach { (title, items) ->
-                val channel =
-                    Channel
-                        .Builder()
-                        .setDisplayName(title)
-                        .setType(TvContractCompat.Channels.TYPE_PREVIEW)
-                        .build()
+            Timber.v("potentialItemsToAddIds=%s", potentialItemsToAddIds)
+            val currentItems = getCurrentTvChannelNextUp()
+            val currentItemIds = currentItems.map { it.internalProviderId }
 
-                // Create
-                val channelUri =
-                    context.contentResolver.insert(
-                        TvContractCompat.Channels.CONTENT_URI,
-                        channel.toContentValues(),
-                    )
-                // Update
-                context.contentResolver.update(
-                    TvContractCompat.buildChannelUri(channelId),
-                    channel.toContentValues(),
-                    null,
-                    null,
+            val toRemove =
+                currentItems.filterNot { it.internalProviderId in potentialItemsToAddIds }
+            Timber.v("toRemove (%s)=%s", toRemove.size, toRemove.map { it.internalProviderId })
+            val toAdd = potentialItemsToAdd.filterNot { it.id.toString() in currentItemIds }
+            Timber.v("toAdd (%s)=%s", toAdd.size, toAdd.map { it.id })
+
+            // Remove existing items if they are no longer in the next up from server
+            toRemove
+                .map { TvContractCompat.buildWatchNextProgramUri(it.id) }
+                .forEach {
+                    context.contentResolver.delete(it, null, null)
+                }
+
+            // Add new ones
+            val addedCount =
+                context.contentResolver.bulkInsert(
+                    WatchNextPrograms.CONTENT_URI,
+                    toAdd
+                        .map { convert(it).toContentValues() }
+                        .toTypedArray(),
                 )
-
-                if (channelUri != null) {
-                    val channelId = ContentUris.parseId(channelUri)
-                    // TODO save this
-                }
-            }
+            Timber.v("Added %s", addedCount)
 
             Timber.d("Completed successfully")
             return Result.success()
         }
 
+        private suspend fun getPotentialItems(
+            userId: UUID,
+            enableRewatching: Boolean,
+        ): List<BaseItem> {
+            val resumeItems = latestNextUpService.getResume(userId, 10, true)
+            val seriesIds = resumeItems.mapNotNull { it.data.seriesId }
+            val nextUpItems =
+                latestNextUpService
+                    .getNextUp(userId, 10, enableRewatching, false)
+                    .filterNot { it.data.seriesId != null && it.data.seriesId in seriesIds }
+            return resumeItems + nextUpItems
+        }
+
+        private suspend fun getCurrentTvChannelNextUp(): List<WatchNextProgram> =
+            context.contentResolver
+                .query(
+                    WatchNextPrograms.CONTENT_URI,
+                    WatchNextProgram.PROJECTION,
+                    null,
+                    null,
+                    null,
+                )?.map(WatchNextProgram::fromCursor)
+                .orEmpty()
+
+        private fun convert(item: BaseItem): WatchNextProgram =
+            WatchNextProgram
+                .Builder()
+                .apply {
+                    val dto = item.data
+                    setInternalProviderId(item.id.toString())
+
+                    val type =
+                        when (item.type) {
+                            BaseItemKind.EPISODE -> WatchNextPrograms.TYPE_TV_EPISODE
+                            BaseItemKind.MOVIE -> WatchNextPrograms.TYPE_MOVIE
+                            else -> WatchNextPrograms.TYPE_CLIP
+                        }
+                    setType(type)
+
+                    val resumePosition = dto.userData?.playbackPositionTicks?.ticks
+                    if (resumePosition != null && resumePosition >= 2.minutes) {
+                        // https://developer.android.com/training/tv/discovery/guidelines-app-developers#types-of-content
+                        setWatchNextType(WatchNextPrograms.WATCH_NEXT_TYPE_CONTINUE)
+                        setLastPlaybackPositionMillis(resumePosition.inWholeMilliseconds.toInt())
+                    } else {
+                        setWatchNextType(WatchNextPrograms.WATCH_NEXT_TYPE_NEXT)
+                    }
+                    dto.runTimeTicks
+                        ?.ticks
+                        ?.inWholeMilliseconds
+                        ?.toInt()
+                        ?.let(::setDurationMillis)
+
+                    setLastEngagementTimeUtcMillis(
+                        dto.userData
+                            ?.lastPlayedDate
+                            ?.atZone(ZoneId.systemDefault())
+                            ?.toEpochSecond()
+                            ?: Date().time, // TODO
+                    )
+
+                    setTitle(item.title)
+                    setDescription(dto.overview)
+                    if (item.type == BaseItemKind.EPISODE) {
+                        setEpisodeTitle(item.name)
+                        dto.indexNumber?.let(::setEpisodeNumber)
+                        dto.parentIndexNumber?.let(::setSeasonNumber)
+                    }
+
+                    setPosterArtAspectRatio(TvContractCompat.PreviewProgramColumns.ASPECT_RATIO_MOVIE_POSTER)
+                    setPosterArtUri(imageUrlService.getItemImageUrl(item, ImageType.PRIMARY)!!.toUri())
+
+                    setIntent(
+                        Intent(context, MainActivity::class.java)
+                            .putExtra(MainActivity.INTENT_ITEM_ID, item.id.toString())
+                            .putExtra(MainActivity.INTENT_ITEM_TYPE, item.type.serialName),
+                    )
+                }.build()
+
         companion object {
             const val WORK_NAME = "com.github.damontecres.wholphin.services.tvprovider.TvProviderWorker"
             const val PARAM_USER_ID = "userId"
             const val PARAM_SERVER_ID = "serverId"
+        }
+    }
+
+fun <T> Cursor.map(transform: (Cursor) -> T): List<T> =
+    this.use {
+        buildList {
+            if (moveToFirst()) {
+                do {
+                    add(transform.invoke(this@map))
+                } while (moveToNext())
+            }
         }
     }
