@@ -68,6 +68,7 @@ class AppPreferencesSerializer
                                         .apply {
                                             enableHardwareDecoding =
                                                 AppPreference.MpvHardwareDecoding.defaultValue
+                                            useGpuNext = AppPreference.MpvGpuNext.defaultValue
                                         }.build()
                             }.build()
                     homePagePreferences =
