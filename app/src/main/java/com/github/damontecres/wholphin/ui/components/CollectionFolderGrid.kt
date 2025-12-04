@@ -140,7 +140,7 @@ class CollectionFolderViewModel
             recursive: Boolean,
             filter: GetItemsFilter,
             useSeriesForPrimary: Boolean,
-            viewOptions: ViewOptions,
+            defaultViewOptions: ViewOptions,
         ): Job =
             viewModelScope.launch(
                 LoadingExceptionHandler(
@@ -159,7 +159,7 @@ class CollectionFolderViewModel
                         libraryDisplayInfoDao.getItem(user, itemId)
                     }
                 this@CollectionFolderViewModel.viewOptions.setValueOnMain(
-                    libraryDisplayInfo?.viewOptions ?: viewOptions,
+                    libraryDisplayInfo?.viewOptions ?: defaultViewOptions,
                 )
 
                 val sortAndDirection =
@@ -198,10 +198,12 @@ class CollectionFolderViewModel
             }
         }
 
-        fun saveViewOptions(viewOptions: ViewOptions) =
+        fun saveViewOptions(viewOptions: ViewOptions) {
+            this.viewOptions.value = viewOptions
             viewModelScope.launch(ExceptionHandler() + Dispatchers.IO) {
                 saveLibraryDisplayInfo(viewOptions = viewOptions)
             }
+        }
 
         fun onFilterChange(
             newFilter: GetItemsFilter,
@@ -685,7 +687,7 @@ fun CollectionFolderGridContent(
 
     var showHeader by rememberSaveable { mutableStateOf(true) }
     var showViewOptions by rememberSaveable { mutableStateOf(false) }
-    var viewOptions by remember(viewOptions) { mutableStateOf(viewOptions) }
+    var viewOptions by remember { mutableStateOf(viewOptions) }
 
     val gridFocusRequester = remember { FocusRequester() }
     LaunchedEffect(Unit) { gridFocusRequester.tryRequestFocus() }
