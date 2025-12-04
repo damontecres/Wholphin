@@ -22,6 +22,7 @@ class AppPreferencesSerializer
                     autoCheckForUpdates = AppPreference.AutoCheckForUpdates.defaultValue
                     sendCrashReports = AppPreference.SendCrashReports.defaultValue
                     debugLogging = AppPreference.DebugLogging.defaultValue
+                    signInAutomatically = AppPreference.SignInAuto.defaultValue
 
                     playbackPreferences =
                         PlaybackPreferences

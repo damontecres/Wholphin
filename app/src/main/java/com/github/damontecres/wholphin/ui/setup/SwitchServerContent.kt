@@ -37,6 +37,7 @@ import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.ui.components.BasicDialog
 import com.github.damontecres.wholphin.ui.components.CircularProgress
 import com.github.damontecres.wholphin.ui.components.EditTextBox
+import com.github.damontecres.wholphin.ui.dimAndBlur
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.LoadingState
@@ -60,7 +61,7 @@ fun SwitchServerContent(
     }
 
     Box(
-        modifier = modifier,
+        modifier = modifier.dimAndBlur(showAddServer),
     ) {
         Row(
             modifier =

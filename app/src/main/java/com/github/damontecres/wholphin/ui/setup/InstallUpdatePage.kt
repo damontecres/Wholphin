@@ -30,8 +30,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.blur
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
@@ -58,8 +56,8 @@ import com.github.damontecres.wholphin.ui.PreviewTvSpec
 import com.github.damontecres.wholphin.ui.components.BasicDialog
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.LoadingPage
+import com.github.damontecres.wholphin.ui.dimAndBlur
 import com.github.damontecres.wholphin.ui.formatBytes
-import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.setValueOnMain
 import com.github.damontecres.wholphin.ui.theme.WholphinTheme
 import com.github.damontecres.wholphin.util.ExceptionHandler
@@ -195,14 +193,7 @@ fun InstallUpdatePage(
                     onCancel = {
                         viewModel.navigationManager.goBack()
                     },
-                    modifier =
-                        modifier
-                            .ifElse(
-                                isDownloading,
-                                Modifier
-                                    .blur(8.dp)
-                                    .alpha(.33f),
-                            ),
+                    modifier = modifier.dimAndBlur(isDownloading),
                 )
             }
             if (isDownloading) {

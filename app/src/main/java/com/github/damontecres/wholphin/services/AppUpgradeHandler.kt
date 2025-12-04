@@ -8,6 +8,7 @@ import androidx.preference.PreferenceManager
 import com.github.damontecres.wholphin.WholphinApplication
 import com.github.damontecres.wholphin.preferences.AppPreference
 import com.github.damontecres.wholphin.preferences.AppPreferences
+import com.github.damontecres.wholphin.preferences.update
 import com.github.damontecres.wholphin.preferences.updateAdvancedPreferences
 import com.github.damontecres.wholphin.preferences.updateInterfacePreferences
 import com.github.damontecres.wholphin.preferences.updateMpvOptions
@@ -135,6 +136,7 @@ suspend fun upgradeApp(
             }
         }
     }
+
     if (previous.isEqualOrBefore(Version.fromString("0.3.4"))) {
         appPreferences.updateData {
             it.updateAdvancedPreferences {
@@ -145,10 +147,19 @@ suspend fun upgradeApp(
             }
         }
     }
+
     if (previous.isEqualOrBefore(Version.fromString("0.3.4-2-g0"))) {
         appPreferences.updateData {
             it.updateMpvOptions {
                 useGpuNext = AppPreference.MpvGpuNext.defaultValue
+            }
+        }
+    }
+
+    if (previous.isEqualOrBefore(Version.fromString("0.3.4-4-g0"))) {
+        appPreferences.updateData {
+            it.update {
+                signInAutomatically = AppPreference.SignInAuto.defaultValue
             }
         }
     }

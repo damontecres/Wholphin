@@ -50,9 +50,10 @@ data class JellyfinUser(
     @ColumnInfo(index = true)
     val serverId: UUID,
     val accessToken: String?,
+    val pin: String? = null,
 ) {
     override fun toString(): String =
-        "JellyfinUser(rowId=$rowId, id=$id, name=$name, serverId=$serverId, accessToken=${accessToken.isNotNullOrBlank()})"
+        "JellyfinUser(rowId=$rowId, id=$id, name=$name, serverId=$serverId, accessToken?=${accessToken.isNotNullOrBlank()}, pin?=${pin.isNotNullOrBlank()})"
 }
 
 data class JellyfinServerUsers(

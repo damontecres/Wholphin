@@ -132,6 +132,10 @@ class ServerRepository
             return false
         }
 
+        fun closeSession() {
+            _current.value = null
+        }
+
         /**
          * Given a successful [AuthenticationResult], switch to the user that just authenticated
          */
@@ -222,6 +226,21 @@ class ServerRepository
                         currentServerId = ""
                         currentUserId = ""
                     }.build()
+            }
+        }
+
+        suspend fun setUserPin(
+            user: JellyfinUser,
+            pin: String?,
+        ) = withContext(Dispatchers.IO) {
+            val newUser = user.copy(pin = pin)
+            val updatedUser = serverDao.addOrUpdateUser(newUser)
+            if (currentUser.value?.id == updatedUser.id && currentServer.value?.id == user.serverId) {
+                // Updating current user, so push out the change
+                current.value?.let {
+                    val newCurrent = it.copy(user = updatedUser)
+                    _current.setValueOnMain(newCurrent)
+                }
             }
         }
 

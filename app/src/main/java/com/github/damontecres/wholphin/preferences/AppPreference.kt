@@ -732,6 +732,23 @@ sealed interface AppPreference<Pref, T> {
                 summaryOff = R.string.disabled,
             )
 
+        val SignInAuto =
+            AppSwitchPreference<AppPreferences>(
+                title = R.string.sign_in_auto,
+                defaultValue = true,
+                getter = { it.signInAutomatically },
+                setter = { prefs, value ->
+                    prefs.update { signInAutomatically = value }
+                },
+                summaryOn = R.string.enabled,
+                summaryOff = R.string.disabled,
+            )
+
+        val RequireProfilePin =
+            AppClickablePreference<AppPreferences>(
+                title = R.string.require_pin_code,
+            )
+
         val ImageDiskCacheSize =
             AppSliderPreference<AppPreferences>(
                 title = R.string.image_cache_size,
@@ -764,6 +781,7 @@ val basicPreferences =
             title = R.string.ui_interface,
             preferences =
                 listOf(
+                    AppPreference.SignInAuto,
                     AppPreference.HomePageItems,
                     AppPreference.CombineContinueNext,
                     AppPreference.RewatchNextUp,
@@ -796,6 +814,7 @@ val basicPreferences =
             title = R.string.profile_specific_settings,
             preferences =
                 listOf(
+                    AppPreference.RequireProfilePin,
                     AppPreference.UserPinnedNavDrawerItems,
                 ),
         ),

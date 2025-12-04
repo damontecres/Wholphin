@@ -23,7 +23,7 @@ import java.util.UUID
 
 @Database(
     entities = [JellyfinServer::class, JellyfinUser::class, ItemPlayback::class, NavDrawerPinnedItem::class, LibraryDisplayInfo::class],
-    version = 9,
+    version = 10,
     exportSchema = true,
     autoMigrations = [
         AutoMigration(3, 4),
@@ -32,6 +32,7 @@ import java.util.UUID
         AutoMigration(6, 7),
         AutoMigration(7, 8),
         AutoMigration(8, 9),
+        AutoMigration(9, 10),
     ],
 )
 @TypeConverters(Converters::class)

@@ -331,6 +331,15 @@
     <string name="discard_change">Discard changes?</string>
     <string name="subtitle_margin">Margin</string>
     <string name="verbose_logging">Verbose logging</string>
+    <string name="enter_pin">Enter PIN</string>
+    <string name="sign_in_auto">Sign in automatically</string>
+    <string name="use_server_credentials">Login via server</string>
+    <string name="press_enter_to_confirm">Press center to confirm</string>
+    <string name="require_pin_code">Require PIN for profile</string>
+    <string name="confirm_pin">Confirm PIN</string>
+    <string name="incorrect">Incorrect</string>
+    <string name="pin_too_short">PIN must be 4 keys or longer</string>
+    <string name="will_remove_pin">Will remove PIN</string>
     <string name="image_cache_size">Image disk cache size (MB)</string>
     <string name="view_options">View options</string>
     <string name="columns">Columns</string>
@@ -338,6 +347,7 @@
     <string name="aspect_ratio">Aspect Ratio</string>
     <string name="show_details">Show details</string>
     <string name="image_type">Image type</string>
+
 
     <string-array name="theme_song_volume">
         <item>Disabled</item>

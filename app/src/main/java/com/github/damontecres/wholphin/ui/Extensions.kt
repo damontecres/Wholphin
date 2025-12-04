@@ -19,6 +19,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.input.key.onPreviewKeyEvent
@@ -398,13 +400,21 @@ fun logTab(
 
 suspend fun <T> onMain(block: suspend CoroutineScope.() -> T) = withContext(Dispatchers.Main, block)
 
+fun Modifier.dimAndBlur(enabled: Boolean) =
+    this.ifElse(
+        enabled,
+        Modifier
+            .alpha(.5f)
+            .blur(16.dp),
+    )
+
 fun Response<BaseItemDtoQueryResult>.toBaseItems(
     api: ApiClient,
     useSeriesForPrimary: Boolean,
 ) = this.content.items.map { BaseItem.from(it, api, useSeriesForPrimary) }
 
 @Composable
-fun rememberBackDropImage(item: BaseItem) {
+fun rememberBackDropImage(item: BaseItem): String? {
     val imageUrlService = LocalImageUrlService.current
     return remember(item) { imageUrlService.getItemImageUrl(item, ImageType.BACKDROP) }
 }
