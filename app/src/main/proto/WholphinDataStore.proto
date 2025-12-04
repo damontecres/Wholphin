@@ -36,6 +36,7 @@ enum PlayerBackend{
 
 message MpvOptions{
   bool enable_hardware_decoding = 1;
+  bool use_gpu_next = 2;
 }
 
 message PlaybackOverrides{

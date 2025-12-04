@@ -49,7 +49,10 @@ class PlayerFactory
                         val enableHardwareDecoding =
                             prefs?.mpvOptions?.enableHardwareDecoding
                                 ?: AppPreference.MpvHardwareDecoding.defaultValue
-                        MpvPlayer(context, enableHardwareDecoding)
+                        val useGpuNext =
+                            prefs?.mpvOptions?.useGpuNext
+                                ?: AppPreference.MpvGpuNext.defaultValue
+                        MpvPlayer(context, enableHardwareDecoding, useGpuNext)
                             .apply {
                                 playWhenReady = true
                             }

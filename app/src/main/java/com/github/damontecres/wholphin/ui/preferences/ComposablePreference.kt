@@ -1,16 +1,7 @@
 package com.github.damontecres.wholphin.ui.preferences
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Done
@@ -22,7 +13,6 @@ import androidx.compose.runtime.mutableStateSetOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -30,13 +20,12 @@ import androidx.compose.ui.res.stringArrayResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
-import androidx.tv.material3.Button
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import androidx.tv.material3.surfaceColorAtElevation
-import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.preferences.AppChoicePreference
 import com.github.damontecres.wholphin.preferences.AppClickablePreference
 import com.github.damontecres.wholphin.preferences.AppDestinationPreference
@@ -48,10 +37,10 @@ import com.github.damontecres.wholphin.preferences.AppSwitchPreference
 import com.github.damontecres.wholphin.ui.components.DialogItem
 import com.github.damontecres.wholphin.ui.components.DialogParams
 import com.github.damontecres.wholphin.ui.components.DialogPopup
-import com.github.damontecres.wholphin.ui.components.EditTextBox
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import kotlinx.coroutines.launch
+import java.io.File
 import java.util.SortedSet
 
 @Suppress("UNCHECKED_CAST")
@@ -82,6 +71,37 @@ fun <T> ComposablePreference(
     }
 
     when (preference) {
+        AppPreference.MpvConfFile -> {
+            ClickPreference(
+                title = title,
+                onClick = {
+                    val confFile = File(context.filesDir, "mpv.conf")
+                    val contents = if (confFile.exists()) confFile.readText() else ""
+                    showStringDialog =
+                        StringInput(
+                            title = title,
+                            value = contents,
+                            keyboardOptions =
+                                KeyboardOptions(
+                                    capitalization = KeyboardCapitalization.None,
+                                    autoCorrectEnabled = false,
+                                    keyboardType = KeyboardType.Text,
+                                    imeAction = ImeAction.None,
+                                ),
+                            onSubmit = {
+                                confFile.writeText(it)
+                                showStringDialog = null
+                            },
+                            maxLines = 10,
+                            confirmDiscard = true,
+                        )
+                },
+                summary = preference.summary(context, value),
+                interactionSource = interactionSource,
+                modifier = modifier,
+            )
+        }
+
         is AppDestinationPreference ->
             ClickPreference(
                 title = title,
@@ -244,73 +264,15 @@ fun <T> ComposablePreference(
         }
     }
     AnimatedVisibility(showStringDialog != null) {
-        showStringDialog?.let {
-            var mutableValue by remember { mutableStateOf(it.value ?: "") }
-            val onDone = {
-                it.onSubmit.invoke(mutableValue)
-            }
-            Dialog(
+        showStringDialog?.let { input ->
+            StringInputDialog(
+                input = input,
+                onSave = {
+                    input.onSubmit.invoke(it)
+                },
                 onDismissRequest = { showStringDialog = null },
-            ) {
-                Box(
-                    contentAlignment = Alignment.Center,
-                    modifier =
-                        Modifier
-                            .padding(16.dp)
-                            .background(
-                                color = dialogBackgroundColor,
-                                shape = RoundedCornerShape(8.dp),
-                            ),
-                ) {
-                    Column(
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
-                        modifier =
-                            Modifier
-                                .padding(16.dp),
-                    ) {
-                        Text(
-                            text = it.title,
-                            style = MaterialTheme.typography.titleLarge,
-                            color = MaterialTheme.colorScheme.onSecondaryContainer,
-                            modifier = Modifier,
-                        )
-                        EditTextBox(
-                            value = mutableValue,
-                            onValueChange = { mutableValue = it },
-                            keyboardOptions = it.keyboardOptions.copy(imeAction = ImeAction.Done),
-                            keyboardActions =
-                                KeyboardActions(
-                                    onDone = { onDone.invoke() },
-                                ),
-                            leadingIcon = null,
-                            isInputValid = { true },
-                            modifier = Modifier.fillMaxWidth(),
-                        )
-
-                        Row(
-                            horizontalArrangement = Arrangement.SpaceAround,
-                            modifier = Modifier.fillMaxWidth(),
-                        ) {
-                            Button(
-                                onClick = { showStringDialog = null },
-                                modifier = Modifier,
-                            ) {
-                                Text(
-                                    text = stringResource(R.string.cancel),
-                                )
-                            }
-                            Button(
-                                onClick = onDone,
-                                modifier = Modifier,
-                            ) {
-                                Text(
-                                    text = stringResource(R.string.save),
-                                )
-                            }
-                        }
-                    }
-                }
-            }
+                elevation = 3.dp,
+            )
         }
     }
 }
@@ -353,9 +315,11 @@ fun PreferenceSummary(
     }
 }
 
-private data class StringInput(
+data class StringInput(
     val title: String,
     val value: String?,
     val keyboardOptions: KeyboardOptions,
     val onSubmit: (String) -> Unit,
+    val maxLines: Int = 1,
+    val confirmDiscard: Boolean = false,
 )
