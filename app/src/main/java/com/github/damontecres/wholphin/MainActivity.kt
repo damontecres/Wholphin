@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -162,6 +163,13 @@ class MainActivity : AppCompatActivity() {
                                     )
                                 }
                             } else {
+                                DisposableEffect(Unit) {
+                                    onDispose {
+                                        if (!appPreferences.signInAutomatically) {
+                                            serverRepository.closeSession()
+                                        }
+                                    }
+                                }
                                 key(current?.server?.id, current?.user?.id) {
                                     val initialDestination =
                                         when {
@@ -215,8 +223,9 @@ class MainActivity : AppCompatActivity() {
         super.onRestart()
         val signInAutomatically =
             runBlocking { userPreferencesDataStore.data.firstOrNull()?.signInAutomatically } ?: true
+        Timber.i("onRestart: signInAutomatically=$signInAutomatically")
         if (!signInAutomatically) {
-            navigationManager.navigateToFromDrawer(Destination.ServerList)
+            serverRepository.closeSession()
         }
     }
 }

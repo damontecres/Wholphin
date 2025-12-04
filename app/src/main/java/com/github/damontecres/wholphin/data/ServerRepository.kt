@@ -132,6 +132,10 @@ class ServerRepository
             return false
         }
 
+        fun closeSession() {
+            _current.value = null
+        }
+
         /**
          * Given a successful [AuthenticationResult], switch to the user that just authenticated
          */
