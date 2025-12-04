@@ -10,13 +10,13 @@ import kotlinx.serialization.Serializable
  */
 data class PreferenceGroup(
     @param:StringRes val title: Int,
-    val preferences: List<AppPreference<out Any?>>,
+    val preferences: List<AppPreference<AppPreferences, out Any?>>,
     val conditionalPreferences: List<ConditionalPreferences> = listOf(),
 )
 
 data class ConditionalPreferences(
     val condition: (AppPreferences) -> Boolean,
-    val preferences: List<AppPreference<out Any?>>,
+    val preferences: List<AppPreference<AppPreferences, out Any?>>,
 )
 
 /**

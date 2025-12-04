@@ -1,6 +1,5 @@
 package com.github.damontecres.wholphin.ui.components
 
-import android.R.attr.textStyle
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.layout.Arrangement
@@ -37,6 +36,7 @@ import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.tv.material3.Icon
@@ -44,6 +44,7 @@ import androidx.tv.material3.LocalContentColor
 import androidx.tv.material3.LocalTextStyle
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
+import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.ui.AppColors
 import com.github.damontecres.wholphin.ui.PreviewTvSpec
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
@@ -109,6 +110,42 @@ fun SimpleStarRating(
                 tint = starColor,
                 contentDescription = null,
                 modifier = Modifier.height(height),
+            )
+        }
+    }
+}
+
+@Composable
+fun TomatoRating(
+    rating: Float?,
+    modifier: Modifier = Modifier,
+    threshold: Float = 60f,
+) {
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(2.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = modifier,
+    ) {
+        if (rating != null) {
+            CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onSurface) {
+                Text(
+                    text = rating.toInt().toString() + "%",
+                    modifier = Modifier,
+                )
+            }
+            val height = with(LocalDensity.current) { LocalTextStyle.current.fontSize.toDp() * .8f }
+            Icon(
+                painter =
+                    painterResource(
+                        if (rating >= threshold) {
+                            R.drawable.ic_rotten_tomatoes_fresh
+                        } else {
+                            R.drawable.ic_rotten_tomatoes_rotten
+                        },
+                    ),
+                contentDescription = null,
+                modifier = Modifier.height(height),
+                tint = Color.Unspecified,
             )
         }
     }
@@ -269,8 +306,12 @@ private fun SimpleStarRatingPreview() {
     WholphinTheme {
         Column {
             SimpleStarRating(7.5f, Modifier.height(32.dp))
+            TomatoRating(75f)
             SimpleStarRating(7.5f, Modifier.height(20.dp))
             SimpleStarRating("", Modifier.height(32.dp))
+            TomatoRating(75f)
+            TomatoRating(40f)
+            TomatoRating(3f)
         }
     }
 }

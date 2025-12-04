@@ -1,8 +1,8 @@
 {
   "formatVersion": 1,
   "database": {
-    "version": 9,
-    "identityHash": "4255556f160da7bb269b114400da58da",
+    "version": 10,
+    "identityHash": "addc8fcbddd84a88e20fbda34849cf26",
     "entities": [
       {
         "tableName": "servers",
@@ -40,7 +40,7 @@
       },
       {
         "tableName": "users",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`rowId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `id` TEXT NOT NULL, `name` TEXT, `serverId` TEXT NOT NULL, `accessToken` TEXT, FOREIGN KEY(`serverId`) REFERENCES `servers`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`rowId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `id` TEXT NOT NULL, `name` TEXT, `serverId` TEXT NOT NULL, `accessToken` TEXT, `pin` TEXT, FOREIGN KEY(`serverId`) REFERENCES `servers`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
         "fields": [
           {
             "fieldPath": "rowId",
@@ -68,6 +68,11 @@
           {
             "fieldPath": "accessToken",
             "columnName": "accessToken",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "pin",
+            "columnName": "pin",
             "affinity": "TEXT"
           }
         ],
@@ -314,7 +319,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '4255556f160da7bb269b114400da58da')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'addc8fcbddd84a88e20fbda34849cf26')"
     ]
   }
 }

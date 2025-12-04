@@ -13,7 +13,7 @@ import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.GetItemsFilter
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.components.CollectionFolderGrid
-import com.github.damontecres.wholphin.ui.components.CollectionFolderGridParameters
+import com.github.damontecres.wholphin.ui.components.ViewOptionsPoster
 import com.github.damontecres.wholphin.ui.data.BoxSetSortOptions
 import com.github.damontecres.wholphin.ui.data.SortAndDirection
 import com.github.damontecres.wholphin.ui.preferences.PreferencesViewModel
@@ -48,7 +48,7 @@ fun CollectionFolderBoxSet(
         positionCallback = { columns, position ->
             showHeader = position < columns
         },
-        params = CollectionFolderGridParameters.POSTER,
+        defaultViewOptions = ViewOptionsPoster,
         playEnabled = playEnabled,
     )
 }

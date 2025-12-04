@@ -132,6 +132,10 @@ message InterfacePreferences {
   SubtitlePreferences subtitles_preferences = 7;
 }
 
+message AdvancedPreferences {
+  int64 image_disk_cache_size_bytes = 1;
+}
+
 message AppPreferences {
   // The currently signed in server and user IDs, mostly for restoring a session
   string current_server_id = 1;
@@ -145,5 +149,6 @@ message AppPreferences {
   string update_url = 7;
   bool send_crash_reports = 8;
   bool debug_logging = 9;
-  bool sign_in_automatically = 10;
+  AdvancedPreferences advanced_preferences = 10;
+  bool sign_in_automatically = 11;
 }

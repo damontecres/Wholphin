@@ -13,6 +13,7 @@ import com.github.damontecres.wholphin.data.model.JellyfinServer
 import com.github.damontecres.wholphin.data.model.JellyfinUser
 import com.github.damontecres.wholphin.data.model.LibraryDisplayInfo
 import com.github.damontecres.wholphin.data.model.NavDrawerPinnedItem
+import com.github.damontecres.wholphin.ui.components.ViewOptions
 import kotlinx.serialization.json.Json
 import org.jellyfin.sdk.model.api.ItemSortBy
 import org.jellyfin.sdk.model.api.SortOrder
@@ -22,7 +23,7 @@ import java.util.UUID
 
 @Database(
     entities = [JellyfinServer::class, JellyfinUser::class, ItemPlayback::class, NavDrawerPinnedItem::class, LibraryDisplayInfo::class],
-    version = 9,
+    version = 10,
     exportSchema = true,
     autoMigrations = [
         AutoMigration(3, 4),
@@ -31,6 +32,7 @@ import java.util.UUID
         AutoMigration(6, 7),
         AutoMigration(7, 8),
         AutoMigration(8, 9),
+        AutoMigration(9, 10),
     ],
 )
 @TypeConverters(Converters::class)
@@ -73,6 +75,18 @@ class Converters {
         } catch (ex: Exception) {
             Timber.e(ex, "Error parsing filter")
             GetItemsFilter()
+        }
+
+    @TypeConverter
+    fun convertViewOptions(viewOptions: ViewOptions?): String? = viewOptions?.let { Json.encodeToString(viewOptions) }
+
+    @TypeConverter
+    fun convertViewOptions(viewOptions: String?): ViewOptions? =
+        try {
+            viewOptions?.let { Json.decodeFromString(viewOptions) }
+        } catch (ex: Exception) {
+            Timber.e(ex, "Error parsing view options")
+            null
         }
 }
 

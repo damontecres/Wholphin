@@ -28,15 +28,11 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.focus.onFocusChanged
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -45,24 +41,22 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
-import coil3.compose.AsyncImage
-import coil3.request.ImageRequest
-import coil3.request.transitionFactory
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.AspectRatios
 import com.github.damontecres.wholphin.ui.Cards
-import com.github.damontecres.wholphin.ui.CrossFadeFactory
 import com.github.damontecres.wholphin.ui.cards.BannerCard
 import com.github.damontecres.wholphin.ui.cards.ItemRow
 import com.github.damontecres.wholphin.ui.components.CircularProgress
+import com.github.damontecres.wholphin.ui.components.DelayedDetailsBackdropImage
 import com.github.damontecres.wholphin.ui.components.DialogParams
 import com.github.damontecres.wholphin.ui.components.DialogPopup
 import com.github.damontecres.wholphin.ui.components.EpisodeQuickDetails
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.components.MovieQuickDetails
+import com.github.damontecres.wholphin.ui.components.SeriesQuickDetails
 import com.github.damontecres.wholphin.ui.data.AddPlaylistViewModel
 import com.github.damontecres.wholphin.ui.data.RowColumn
 import com.github.damontecres.wholphin.ui.data.RowColumnSaver
@@ -79,7 +73,6 @@ import kotlinx.coroutines.delay
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.MediaType
 import java.util.UUID
-import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
 fun HomePage(
@@ -242,46 +235,10 @@ fun HomePageContent(
     LaunchedEffect(position) {
         listState.animateScrollToItem(position.row)
     }
-    var backdropImageUrl by remember { mutableStateOf<String?>(null) }
-    LaunchedEffect(focusedItem) {
-        backdropImageUrl = null
-        delay(150)
-        backdropImageUrl = focusedItem?.backdropImageUrl
-    }
     Box(modifier = modifier) {
-        val gradientColor = MaterialTheme.colorScheme.background
-        AsyncImage(
-            model =
-                ImageRequest
-                    .Builder(context)
-                    .data(backdropImageUrl)
-                    .transitionFactory(CrossFadeFactory(250.milliseconds))
-                    .build(),
-            contentDescription = null,
-            contentScale = ContentScale.Fit,
-            alignment = Alignment.TopEnd,
-            modifier =
-                Modifier
-                    .fillMaxHeight(.7f)
-                    .fillMaxWidth(.7f)
-                    .alpha(.75f)
-                    .align(Alignment.TopEnd)
-                    .drawWithContent {
-                        drawContent()
-                        drawRect(
-                            Brush.verticalGradient(
-                                colors = listOf(Color.Transparent, gradientColor),
-                                startY = size.height * .33f,
-                            ),
-                        )
-                        drawRect(
-                            Brush.horizontalGradient(
-                                colors = listOf(gradientColor, Color.Transparent),
-                                startX = 0f,
-                                endX = size.width * .5f,
-                            ),
-                        )
-                    },
+        DelayedDetailsBackdropImage(
+            item = focusedItem,
+            modifier = Modifier,
         )
 
         Column(modifier = Modifier.fillMaxSize()) {
@@ -382,7 +339,7 @@ fun HomePageContent(
                                     cardContent = { index, item, cardModifier, onClick, onLongClick ->
                                         BannerCard(
                                             name = item?.data?.seriesName ?: item?.name,
-                                            imageUrl = item?.imageUrl,
+                                            item = item,
                                             aspectRatio = AspectRatios.TALL,
                                             cornerText =
                                                 item?.data?.indexNumber?.let { "E$it" }
@@ -486,10 +443,10 @@ fun HomePageHeader(
                         overflow = TextOverflow.Ellipsis,
                     )
                 }
-                if (isEpisode) {
-                    EpisodeQuickDetails(dto, Modifier)
-                } else {
-                    MovieQuickDetails(dto, Modifier)
+                when (item.type) {
+                    BaseItemKind.EPISODE -> EpisodeQuickDetails(dto, Modifier)
+                    BaseItemKind.SERIES -> SeriesQuickDetails(dto, Modifier)
+                    else -> MovieQuickDetails(dto, Modifier)
                 }
                 val overviewModifier =
                     Modifier

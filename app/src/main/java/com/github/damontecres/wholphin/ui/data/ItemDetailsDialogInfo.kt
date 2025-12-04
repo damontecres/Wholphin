@@ -28,6 +28,7 @@ import java.util.Locale
 data class ItemDetailsDialogInfo(
     val title: String,
     val overview: String?,
+    val genres: List<String>,
     val files: List<MediaSourceInfo>,
 )
 
@@ -44,6 +45,14 @@ fun ItemDetailsDialog(
             text = info.title,
             style = MaterialTheme.typography.titleLarge,
         )
+    }
+    if (info.genres.isNotEmpty()) {
+        item {
+            Text(
+                text = info.genres.joinToString(", "),
+                style = MaterialTheme.typography.titleSmall,
+            )
+        }
     }
     if (info.overview.isNotNullOrBlank()) {
         item {

@@ -136,6 +136,7 @@ fun EpisodeDetails(
                             ItemDetailsDialogInfo(
                                 title = ep.name ?: context.getString(R.string.unknown),
                                 overview = ep.data.overview,
+                                genres = ep.data.genres.orEmpty(),
                                 files = ep.data.mediaSources.orEmpty(),
                             )
                     },
@@ -270,7 +271,6 @@ fun EpisodeDetailsContent(
     var position by rememberInt(0)
     val focusRequesters = remember { List(1) { FocusRequester() } }
     val dto = ep.data
-    val backdropImageUrl = ep.backdropImageUrl
     val resumePosition = dto.userData?.playbackPositionTicks?.ticks ?: Duration.ZERO
 
     val bringIntoViewRequester = remember { BringIntoViewRequester() }
@@ -278,7 +278,7 @@ fun EpisodeDetailsContent(
         focusRequesters.getOrNull(position)?.tryRequestFocus()
     }
     Box(modifier = modifier) {
-        DetailsBackdropImage(backdropImageUrl)
+        DetailsBackdropImage(ep)
         LazyColumn(
             verticalArrangement = Arrangement.spacedBy(16.dp),
             contentPadding = PaddingValues(horizontal = 32.dp, vertical = 8.dp),

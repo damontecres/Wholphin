@@ -31,6 +31,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.MutableLiveData
 import androidx.media3.common.Player
 import coil3.request.ErrorResult
+import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.ui.data.RowColumn
 import com.github.damontecres.wholphin.ui.data.RowColumnSaver
 import com.github.damontecres.wholphin.util.ExceptionHandler
@@ -41,7 +42,11 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.acra.ACRA
+import org.jellyfin.sdk.api.client.ApiClient
+import org.jellyfin.sdk.api.client.Response
 import org.jellyfin.sdk.model.api.BaseItemDto
+import org.jellyfin.sdk.model.api.BaseItemDtoQueryResult
+import org.jellyfin.sdk.model.api.ImageType
 import org.jellyfin.sdk.model.extensions.ticks
 import timber.log.Timber
 import java.util.UUID
@@ -306,7 +311,7 @@ fun logCoilError(
     url: String?,
     errorResult: ErrorResult,
 ) {
-    if (errorResult.throwable is coil3.network.HttpException) {
+    if (errorResult.throwable is coil3.network.HttpException || errorResult.throwable is coil3.request.NullRequestDataException) {
         Timber.w("Error loading image: %s for %s", errorResult.throwable.localizedMessage, url)
     } else {
         Timber.e(errorResult.throwable, "Error loading image: %s", url)
@@ -402,3 +407,14 @@ fun Modifier.dimAndBlur(enabled: Boolean) =
             .alpha(.5f)
             .blur(16.dp),
     )
+
+fun Response<BaseItemDtoQueryResult>.toBaseItems(
+    api: ApiClient,
+    useSeriesForPrimary: Boolean,
+) = this.content.items.map { BaseItem.from(it, api, useSeriesForPrimary) }
+
+@Composable
+fun rememberBackDropImage(item: BaseItem): String? {
+    val imageUrlService = LocalImageUrlService.current
+    return remember(item) { imageUrlService.getItemImageUrl(item, ImageType.BACKDROP) }
+}

@@ -70,7 +70,49 @@ fun EpisodeQuickDetails(
         }
     DotSeparatedRow(
         texts = details,
-        rating = dto?.communityRating,
+        communityRating = dto?.communityRating,
+        criticRating = dto?.criticRating,
+        textStyle = MaterialTheme.typography.titleSmall,
+        modifier = modifier,
+    )
+}
+
+@Composable
+fun SeriesQuickDetails(
+    dto: BaseItemDto?,
+    modifier: Modifier = Modifier,
+) {
+    val details =
+        remember(dto) {
+            buildList {
+                if (dto?.productionYear != null) {
+                    val date =
+                        buildString {
+                            append(dto.productionYear.toString())
+                            if (dto.status == "Continuing") {
+                                append(" - ")
+                                append("Present")
+                            } else if (dto.status == "Ended") {
+                                dto.endDate?.let {
+                                    append(" - ")
+                                    append(it.year)
+                                }
+                            }
+                        }
+                    add(date)
+                }
+                val duration = dto?.runTimeTicks?.ticks
+                duration
+                    ?.roundMinutes
+                    ?.toString()
+                    ?.let(::add)
+                dto?.officialRating?.let(::add)
+            }
+        }
+    DotSeparatedRow(
+        texts = details,
+        communityRating = dto?.communityRating,
+        criticRating = dto?.criticRating,
         textStyle = MaterialTheme.typography.titleSmall,
         modifier = modifier,
     )

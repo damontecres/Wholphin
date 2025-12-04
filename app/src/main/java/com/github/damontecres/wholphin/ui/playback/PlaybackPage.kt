@@ -67,6 +67,7 @@ import com.github.damontecres.wholphin.preferences.PlayerBackend
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.preferences.skipBackOnResume
 import com.github.damontecres.wholphin.ui.AspectRatios
+import com.github.damontecres.wholphin.ui.LocalImageUrlService
 import com.github.damontecres.wholphin.ui.OneTimeLaunchedEffect
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.LoadingPage
@@ -81,7 +82,6 @@ import com.github.damontecres.wholphin.util.LoadingState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import org.jellyfin.sdk.model.api.DeviceProfile
 import org.jellyfin.sdk.model.extensions.ticks
 import java.util.UUID
 import kotlin.time.Duration.Companion.milliseconds
@@ -94,7 +94,6 @@ import kotlin.time.Duration.Companion.seconds
 @Composable
 fun PlaybackPage(
     preferences: UserPreferences,
-    deviceProfile: DeviceProfile,
     destination: Destination,
     modifier: Modifier = Modifier,
     viewModel: PlaybackViewModel = hiltViewModel(),
@@ -105,7 +104,7 @@ fun PlaybackPage(
         }
     }
     LaunchedEffect(destination) {
-        viewModel.init(destination, deviceProfile, preferences)
+        viewModel.init(destination, preferences)
     }
 
     val loading by viewModel.loading.observeAsState(LoadingState.Loading)
@@ -461,7 +460,7 @@ fun PlaybackPage(
                                     it.name,
                                 ).joinToString(" - "),
                             description = it.data.overview,
-                            imageUrl = it.imageUrl,
+                            imageUrl = LocalImageUrlService.current.rememberImageUrl(it),
                             aspectRatio =
                                 it.data.primaryImageAspectRatio?.toFloat()
                                     ?: AspectRatios.WIDE,
