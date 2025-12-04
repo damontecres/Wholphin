@@ -63,7 +63,7 @@ import androidx.tv.material3.DrawerValue
 import androidx.tv.material3.Icon
 import androidx.tv.material3.LocalContentColor
 import androidx.tv.material3.MaterialTheme
-import androidx.tv.material3.NavigationDrawer
+import androidx.tv.material3.ModalNavigationDrawer
 import androidx.tv.material3.NavigationDrawerItem
 import androidx.tv.material3.NavigationDrawerItemDefaults
 import androidx.tv.material3.NavigationDrawerScope
@@ -95,7 +95,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.model.api.CollectionType
-import org.jellyfin.sdk.model.api.DeviceProfile
 import timber.log.Timber
 import java.util.UUID
 import javax.inject.Inject
@@ -211,7 +210,6 @@ fun NavDrawer(
     preferences: UserPreferences,
     user: JellyfinUser,
     server: JellyfinServer,
-    deviceProfile: DeviceProfile,
     modifier: Modifier = Modifier,
     viewModel: NavDrawerViewModel =
         hiltViewModel(
@@ -297,7 +295,8 @@ fun NavDrawer(
         }
     }
 
-    val drawerWidth by animateDpAsState(if (drawerState.isOpen) 260.dp else 40.dp)
+    val closedDrawerWidth = 40.dp
+    val drawerWidth by animateDpAsState(if (drawerState.isOpen) 260.dp else closedDrawerWidth)
     val drawerPadding by animateDpAsState(if (drawerState.isOpen) 0.dp else 8.dp)
     val drawerBackground by animateColorAsState(
         if (drawerState.isOpen) {
@@ -331,7 +330,7 @@ fun NavDrawer(
         scrollToSelected()
     }
 
-    NavigationDrawer(
+    ModalNavigationDrawer(
         modifier = modifier,
         drawerState = drawerState,
         drawerContent = {
@@ -520,13 +519,15 @@ fun NavDrawer(
         },
     ) {
         Box(
-            modifier = Modifier.fillMaxSize(),
+            modifier =
+                Modifier
+                    .padding(start = closedDrawerWidth)
+                    .fillMaxSize(),
         ) {
             // Drawer content
             DestinationContent(
                 destination = destination,
                 preferences = preferences,
-                deviceProfile = deviceProfile,
                 modifier =
                     Modifier
                         .fillMaxSize(),

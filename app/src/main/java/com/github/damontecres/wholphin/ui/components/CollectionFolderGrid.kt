@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -75,7 +76,11 @@ import com.github.damontecres.wholphin.ui.detail.MoreDialogActions
 import com.github.damontecres.wholphin.ui.detail.PlaylistDialog
 import com.github.damontecres.wholphin.ui.detail.PlaylistLoadingState
 import com.github.damontecres.wholphin.ui.detail.buildMoreDialogItemsForHome
+import com.github.damontecres.wholphin.ui.main.HomePageHeader
 import com.github.damontecres.wholphin.ui.nav.Destination
+import com.github.damontecres.wholphin.ui.playback.scale
+import com.github.damontecres.wholphin.ui.rememberInt
+import com.github.damontecres.wholphin.ui.setValueOnMain
 import com.github.damontecres.wholphin.ui.toServerString
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.ApiRequestPager
@@ -125,6 +130,7 @@ class CollectionFolderViewModel
         val pager = MutableLiveData<List<BaseItem?>>(listOf())
         val sortAndDirection = MutableLiveData<SortAndDirection>()
         val filter = MutableLiveData<GetItemsFilter>(GetItemsFilter())
+        val viewOptions = MutableLiveData<ViewOptions>()
 
         private var useSeriesForPrimary: Boolean = true
 
@@ -134,6 +140,7 @@ class CollectionFolderViewModel
             recursive: Boolean,
             filter: GetItemsFilter,
             useSeriesForPrimary: Boolean,
+            defaultViewOptions: ViewOptions,
         ): Job =
             viewModelScope.launch(
                 LoadingExceptionHandler(
@@ -151,6 +158,9 @@ class CollectionFolderViewModel
                     serverRepository.currentUser.value?.let { user ->
                         libraryDisplayInfoDao.getItem(user, itemId)
                     }
+                this@CollectionFolderViewModel.viewOptions.setValueOnMain(
+                    libraryDisplayInfo?.viewOptions ?: defaultViewOptions,
+                )
 
                 val sortAndDirection =
                     libraryDisplayInfo?.sortAndDirection
@@ -167,24 +177,40 @@ class CollectionFolderViewModel
                 loadResults(true, sortAndDirection, recursive, filterToUse, useSeriesForPrimary)
             }
 
-        fun onFilterChange(
-            newFilter: GetItemsFilter,
-            recursive: Boolean,
+        private fun saveLibraryDisplayInfo(
+            newFilter: GetItemsFilter = this.filter.value!!,
+            newSort: SortAndDirection = this.sortAndDirection.value!!,
+            viewOptions: ViewOptions? = this.viewOptions.value,
         ) {
-            Timber.v("onFilterChange: filter=%s", newFilter)
             serverRepository.currentUser.value?.let { user ->
                 viewModelScope.launch(Dispatchers.IO) {
                     val libraryDisplayInfo =
                         LibraryDisplayInfo(
                             userId = user.rowId,
                             itemId = itemId,
-                            sort = sortAndDirection.value!!.sort,
-                            direction = sortAndDirection.value!!.direction,
+                            sort = newSort.sort,
+                            direction = newSort.direction,
                             filter = newFilter,
+                            viewOptions = viewOptions,
                         )
                     libraryDisplayInfoDao.saveItem(libraryDisplayInfo)
                 }
             }
+        }
+
+        fun saveViewOptions(viewOptions: ViewOptions) {
+            this.viewOptions.value = viewOptions
+            viewModelScope.launch(ExceptionHandler() + Dispatchers.IO) {
+                saveLibraryDisplayInfo(viewOptions = viewOptions)
+            }
+        }
+
+        fun onFilterChange(
+            newFilter: GetItemsFilter,
+            recursive: Boolean,
+        ) {
+            Timber.v("onFilterChange: filter=%s", newFilter)
+            saveLibraryDisplayInfo(newFilter, sortAndDirection.value!!)
             loadResults(false, sortAndDirection.value!!, recursive, newFilter, useSeriesForPrimary)
         }
 
@@ -199,19 +225,7 @@ class CollectionFolderViewModel
                 recursive,
                 filter,
             )
-            serverRepository.currentUser.value?.let { user ->
-                viewModelScope.launch(Dispatchers.IO) {
-                    val libraryDisplayInfo =
-                        LibraryDisplayInfo(
-                            userId = user.rowId,
-                            itemId = itemId,
-                            sort = sortAndDirection.sort,
-                            direction = sortAndDirection.direction,
-                            filter = filter,
-                        )
-                    libraryDisplayInfoDao.saveItem(libraryDisplayInfo)
-                }
-            }
+            saveLibraryDisplayInfo(filter, sortAndDirection)
             loadResults(true, sortAndDirection, recursive, filter, useSeriesForPrimary)
         }
 
@@ -454,11 +468,11 @@ fun CollectionFolderGrid(
     onClickItem: (Int, BaseItem) -> Unit,
     sortOptions: List<ItemSortBy>,
     playEnabled: Boolean,
+    defaultViewOptions: ViewOptions,
     modifier: Modifier = Modifier,
     initialSortAndDirection: SortAndDirection? = null,
     showTitle: Boolean = true,
     positionCallback: ((columns: Int, position: Int) -> Unit)? = null,
-    params: CollectionFolderGridParameters = CollectionFolderGridParameters(),
     useSeriesForPrimary: Boolean = true,
     filterOptions: List<ItemFilterBy<*>> = DefaultFilterOptions,
 ) = CollectionFolderGrid(
@@ -469,11 +483,11 @@ fun CollectionFolderGrid(
     onClickItem,
     sortOptions,
     playEnabled,
-    modifier,
+    defaultViewOptions = defaultViewOptions,
+    modifier = modifier,
     initialSortAndDirection = initialSortAndDirection,
     showTitle = showTitle,
     positionCallback = positionCallback,
-    params = params,
     useSeriesForPrimary = useSeriesForPrimary,
     filterOptions = filterOptions,
 )
@@ -487,13 +501,13 @@ fun CollectionFolderGrid(
     onClickItem: (Int, BaseItem) -> Unit,
     sortOptions: List<ItemSortBy>,
     playEnabled: Boolean,
+    defaultViewOptions: ViewOptions,
     modifier: Modifier = Modifier,
     viewModel: CollectionFolderViewModel = hiltViewModel(),
     playlistViewModel: AddPlaylistViewModel = hiltViewModel(),
     initialSortAndDirection: SortAndDirection? = null,
     showTitle: Boolean = true,
     positionCallback: ((columns: Int, position: Int) -> Unit)? = null,
-    params: CollectionFolderGridParameters = CollectionFolderGridParameters(),
     useSeriesForPrimary: Boolean = true,
     filterOptions: List<ItemFilterBy<*>> = DefaultFilterOptions,
 ) {
@@ -505,6 +519,7 @@ fun CollectionFolderGrid(
             recursive,
             initialFilter,
             useSeriesForPrimary,
+            defaultViewOptions,
         )
     }
     val sortAndDirection by viewModel.sortAndDirection.observeAsState(SortAndDirection.DEFAULT)
@@ -513,6 +528,7 @@ fun CollectionFolderGrid(
     val backgroundLoading by viewModel.backgroundLoading.observeAsState(LoadingState.Loading)
     val item by viewModel.item.observeAsState()
     val pager by viewModel.pager.observeAsState()
+    val viewOptions by viewModel.viewOptions.observeAsState(defaultViewOptions)
 
     var moreDialog by remember { mutableStateOf<Optional<PositionItem>>(Optional.absent()) }
     var showPlaylistDialog by remember { mutableStateOf<Optional<UUID>>(Optional.absent()) }
@@ -551,7 +567,9 @@ fun CollectionFolderGrid(
                         sortOptions = sortOptions,
                         positionCallback = positionCallback,
                         letterPosition = { viewModel.positionOfLetter(it) ?: -1 },
-                        params = params,
+                        viewOptions = viewOptions,
+                        defaultViewOptions = defaultViewOptions,
+                        onSaveViewOptions = { viewModel.saveViewOptions(it) },
                         playEnabled = playEnabled,
                         onClickPlay = { shuffle ->
                             itemId.toUUIDOrNull()?.let {
@@ -656,117 +674,174 @@ fun CollectionFolderGridContent(
     modifier: Modifier = Modifier,
     showTitle: Boolean = true,
     positionCallback: ((columns: Int, position: Int) -> Unit)? = null,
-    params: CollectionFolderGridParameters = CollectionFolderGridParameters(),
     currentFilter: GetItemsFilter = GetItemsFilter(),
     filterOptions: List<ItemFilterBy<*>> = listOf(),
     onFilterChange: (GetItemsFilter) -> Unit = {},
     getPossibleFilterValues: suspend (ItemFilterBy<*>) -> List<FilterValueOption>,
+    defaultViewOptions: ViewOptions,
+    viewOptions: ViewOptions,
+    onSaveViewOptions: (ViewOptions) -> Unit,
 ) {
+    val context = LocalContext.current
     val title = item?.name ?: item?.data?.collectionType?.name ?: stringResource(R.string.collection)
 
     var showHeader by rememberSaveable { mutableStateOf(true) }
+    var showViewOptions by rememberSaveable { mutableStateOf(false) }
+    var viewOptions by remember { mutableStateOf(viewOptions) }
 
     val gridFocusRequester = remember { FocusRequester() }
     LaunchedEffect(Unit) { gridFocusRequester.tryRequestFocus() }
-    Column(
-        verticalArrangement = Arrangement.spacedBy(0.dp),
-        modifier = modifier,
-    ) {
-        AnimatedVisibility(
-            showHeader,
-            enter = slideInVertically() + fadeIn(),
-            exit = slideOutVertically() + fadeOut(),
+    var backdropImageUrl by remember { mutableStateOf<String?>(null) }
+
+    var position by rememberInt(0)
+    val focusedItem = pager.getOrNull(position)
+
+    Box(modifier = modifier) {
+        if (viewOptions.showDetails) {
+            DelayedDetailsBackdropImage(
+                item = focusedItem,
+                modifier = Modifier,
+            )
+        }
+        Column(
+            verticalArrangement = Arrangement.spacedBy(0.dp),
+            modifier = Modifier.fillMaxSize(),
         ) {
-            Column(
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.fillMaxWidth(),
+            AnimatedVisibility(
+                showHeader,
+                enter = slideInVertically() + fadeIn(),
+                exit = slideOutVertically() + fadeOut(),
             ) {
-                if (showTitle) {
-                    Text(
-                        text = title,
-                        style = MaterialTheme.typography.displayMedium,
-                        color = MaterialTheme.colorScheme.onBackground,
-                        textAlign = TextAlign.Center,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-                }
-                val endPadding =
-                    16.dp + if (sortAndDirection.sort == ItemSortBy.SORT_NAME) 24.dp else 0.dp
-                Row(
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier =
-                        Modifier
-                            .padding(start = 16.dp, end = endPadding)
-                            .fillMaxWidth(),
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.fillMaxWidth(),
                 ) {
-                    if (sortOptions.isNotEmpty() || filterOptions.isNotEmpty()) {
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier,
-                        ) {
-                            if (sortOptions.isNotEmpty()) {
-                                SortByButton(
-                                    sortOptions = sortOptions,
-                                    current = sortAndDirection,
-                                    onSortChange = onSortChange,
-                                    modifier = Modifier,
-                                )
-                            }
-                            if (filterOptions.isNotEmpty()) {
-                                FilterByButton(
-                                    filterOptions = filterOptions,
-                                    current = currentFilter,
-                                    onFilterChange = onFilterChange,
-                                    getPossibleValues = getPossibleFilterValues,
+                    if (showTitle) {
+                        Text(
+                            text = title,
+                            style = MaterialTheme.typography.displayMedium,
+                            color = MaterialTheme.colorScheme.onBackground,
+                            textAlign = TextAlign.Center,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    }
+                    val endPadding =
+                        16.dp + if (sortAndDirection.sort == ItemSortBy.SORT_NAME) 24.dp else 0.dp
+                    Row(
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier =
+                            Modifier
+                                .padding(start = 16.dp, end = endPadding)
+                                .fillMaxWidth(),
+                    ) {
+                        if (sortOptions.isNotEmpty() || filterOptions.isNotEmpty()) {
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier,
+                            ) {
+                                if (sortOptions.isNotEmpty()) {
+                                    SortByButton(
+                                        sortOptions = sortOptions,
+                                        current = sortAndDirection,
+                                        onSortChange = onSortChange,
+                                        modifier = Modifier,
+                                    )
+                                }
+                                if (filterOptions.isNotEmpty()) {
+                                    FilterByButton(
+                                        filterOptions = filterOptions,
+                                        current = currentFilter,
+                                        onFilterChange = onFilterChange,
+                                        getPossibleValues = getPossibleFilterValues,
+                                        modifier = Modifier,
+                                    )
+                                }
+                                ExpandableFaButton(
+                                    title = R.string.view_options,
+                                    iconStringRes = R.string.fa_sliders,
+                                    onClick = { showViewOptions = true },
                                     modifier = Modifier,
                                 )
                             }
                         }
-                    }
-                    if (playEnabled) {
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier,
-                        ) {
-                            ExpandablePlayButton(
-                                title = R.string.play,
-                                resume = Duration.ZERO,
-                                icon = Icons.Default.PlayArrow,
-                                onClick = { onClickPlay.invoke(false) },
-                            )
-                            ExpandableFaButton(
-                                title = R.string.shuffle,
-                                iconStringRes = R.string.fa_shuffle,
-                                onClick = { onClickPlay.invoke(true) },
-                            )
+                        if (playEnabled) {
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier,
+                            ) {
+                                ExpandablePlayButton(
+                                    title = R.string.play,
+                                    resume = Duration.ZERO,
+                                    icon = Icons.Default.PlayArrow,
+                                    onClick = { onClickPlay.invoke(false) },
+                                )
+                                ExpandableFaButton(
+                                    title = R.string.shuffle,
+                                    iconStringRes = R.string.fa_shuffle,
+                                    onClick = { onClickPlay.invoke(true) },
+                                )
+                            }
                         }
                     }
                 }
             }
+            AnimatedVisibility(viewOptions.showDetails) {
+                HomePageHeader(
+                    item = focusedItem,
+                    modifier =
+                        Modifier
+                            .fillMaxWidth(.6f)
+//                            .fillMaxHeight(.25f)
+                            .height(140.dp)
+                            .padding(16.dp),
+                )
+            }
+            CardGrid(
+                pager = pager,
+                onClickItem = onClickItem,
+                onLongClickItem = onLongClickItem,
+                letterPosition = letterPosition,
+                gridFocusRequester = gridFocusRequester,
+                showJumpButtons = false, // TODO add preference
+                showLetterButtons = sortAndDirection.sort == ItemSortBy.SORT_NAME,
+                modifier = Modifier.fillMaxSize(),
+                initialPosition = 0,
+                positionCallback = { columns, newPosition ->
+                    showHeader = newPosition < columns
+                    position = newPosition
+                    positionCallback?.invoke(columns, newPosition)
+                },
+                cardContent = { item, onClick, onLongClick, mod ->
+                    GridCard(
+                        item = item,
+                        onClick = onClick,
+                        onLongClick = onLongClick,
+                        imageContentScale = viewOptions.contentScale.scale,
+                        imageAspectRatio = viewOptions.aspectRatio.ratio,
+                        imageType = viewOptions.imageType,
+                        modifier = mod,
+                    )
+                },
+                columns = viewOptions.columns,
+                spacing = viewOptions.spacing.dp,
+            )
+            AnimatedVisibility(showViewOptions) {
+                ViewOptionsDialog(
+                    viewOptions = viewOptions,
+                    defaultViewOptions = defaultViewOptions,
+                    onDismissRequest = {
+                        showViewOptions = false
+                        onSaveViewOptions.invoke(viewOptions)
+                    },
+                    onViewOptionsChange = { viewOptions = it },
+                )
+            }
         }
-        CardGrid(
-            pager = pager,
-            onClickItem = onClickItem,
-            onLongClickItem = onLongClickItem,
-            letterPosition = letterPosition,
-            gridFocusRequester = gridFocusRequester,
-            showJumpButtons = false, // TODO add preference
-            showLetterButtons = sortAndDirection.sort == ItemSortBy.SORT_NAME,
-            modifier = Modifier.fillMaxSize(),
-            initialPosition = 0,
-            positionCallback = { columns, position ->
-                showHeader = position < columns
-                positionCallback?.invoke(columns, position)
-            },
-            cardContent = params.cardContent,
-            columns = params.columns,
-            spacing = params.spacing,
-        )
     }
 }
 

@@ -9,6 +9,7 @@ import android.media.MediaFormat
 import android.os.Build
 import android.util.Size
 import androidx.core.content.ContextCompat
+import androidx.media3.common.MimeTypes
 import timber.log.Timber
 
 class MediaCodecCapabilitiesTest(
@@ -213,6 +214,8 @@ class MediaCodecCapabilitiesTest(
                 level >= item.first
             }?.second ?: 0
     }
+
+    fun supportsVc1(): Boolean = hasCodecForMime(MimeTypes.VIDEO_VC1)
 
     private fun getDecoderLevel(
         mime: String,

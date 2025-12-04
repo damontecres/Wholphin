@@ -43,6 +43,7 @@ import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.FavoriteWatchManager
 import com.github.damontecres.wholphin.services.NavigationManager
+import com.github.damontecres.wholphin.ui.LocalImageUrlService
 import com.github.damontecres.wholphin.ui.OneTimeLaunchedEffect
 import com.github.damontecres.wholphin.ui.PreviewTvSpec
 import com.github.damontecres.wholphin.ui.SlimItemFields
@@ -69,6 +70,7 @@ import com.github.damontecres.wholphin.util.RowLoadingState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.model.api.BaseItemKind
+import org.jellyfin.sdk.model.api.ImageType
 import org.jellyfin.sdk.model.api.ItemSortBy
 import org.jellyfin.sdk.model.api.SortOrder
 import org.jellyfin.sdk.model.api.request.GetItemsRequest
@@ -185,11 +187,13 @@ fun PersonPage(
             person?.let { person ->
                 var showOverviewDialog by remember { mutableStateOf(false) }
                 val name = person.name ?: person.id.toString()
+                val imageUrlService = LocalImageUrlService.current
+                val imageUrl = remember { imageUrlService.getItemImageUrl(itemId = person.id, imageType = ImageType.PRIMARY) }
                 PersonPageContent(
                     preferences = preferences,
                     name = name,
                     overview = person.data.overview,
-                    imageUrl = person.imageUrl,
+                    imageUrl = imageUrl,
                     birthdate = person.data.premiereDate?.toLocalDate(),
                     deathdate = person.data.endDate?.toLocalDate(),
                     birthPlace = person.data.productionLocations?.firstOrNull(),
@@ -212,6 +216,7 @@ fun PersonPage(
                             ItemDetailsDialogInfo(
                                 title = name,
                                 overview = person.data.overview,
+                                genres = listOf(),
                                 files = listOf(),
                             ),
                         showFilePath = false,

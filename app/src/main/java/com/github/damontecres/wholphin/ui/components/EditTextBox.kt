@@ -165,6 +165,7 @@ fun SearchEditTextBox(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     readOnly: Boolean = false,
+    interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
 ) {
     EditTextBox(
         state = state,
@@ -186,6 +187,7 @@ fun SearchEditTextBox(
         },
         enabled = enabled,
         readOnly = readOnly,
+        interactionSource = interactionSource,
     )
 }
 

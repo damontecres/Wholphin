@@ -2,10 +2,7 @@ package com.github.damontecres.wholphin.util.profile
 
 // Adapted from https://github.com/jellyfin/jellyfin-androidtv/blob/v0.19.4/app/src/main/java/org/jellyfin/androidtv/util/profile/deviceProfile.kt
 
-import android.content.Context
 import androidx.media3.common.MimeTypes
-import com.github.damontecres.wholphin.preferences.UserPreferences
-import org.jellyfin.sdk.model.ServerVersion
 import org.jellyfin.sdk.model.api.CodecType
 import org.jellyfin.sdk.model.api.DlnaProfileType
 import org.jellyfin.sdk.model.api.EncodingContext
@@ -46,21 +43,21 @@ val supportedAudioCodecs =
         Codec.Audio.VORBIS,
     )
 
-fun createDeviceProfile(
-    context: Context,
-    userPreferences: UserPreferences,
-    serverVersion: ServerVersion?,
-) = userPreferences.appPreferences.playbackPreferences.let { prefs ->
-    createDeviceProfile(
-        mediaTest = MediaCodecCapabilitiesTest(context),
-        maxBitrate = prefs.maxBitrate.toInt(),
-        isAC3Enabled = prefs.overrides.ac3Supported,
-        downMixAudio = prefs.overrides.downmixStereo,
-        assDirectPlay = prefs.overrides.directPlayAss,
-        pgsDirectPlay = prefs.overrides.directPlayPgs,
-        jellyfinTenEleven = serverVersion != null && serverVersion >= ServerVersion(10, 11, 0),
-    )
-}
+// fun createDeviceProfile(
+//    context: Context,
+//    userPreferences: UserPreferences,
+//    serverVersion: ServerVersion?,
+// ) = userPreferences.appPreferences.playbackPreferences.let { prefs ->
+//    createDeviceProfile(
+//        mediaTest = MediaCodecCapabilitiesTest(context),
+//        maxBitrate = prefs.maxBitrate.toInt(),
+//        isAC3Enabled = prefs.overrides.ac3Supported,
+//        downMixAudio = prefs.overrides.downmixStereo,
+//        assDirectPlay = prefs.overrides.directPlayAss,
+//        pgsDirectPlay = prefs.overrides.directPlayPgs,
+//        jellyfinTenEleven = serverVersion != null && serverVersion >= ServerVersion(10, 11, 0),
+//    )
+// }
 
 fun createDeviceProfile(
     mediaTest: MediaCodecCapabilitiesTest,
@@ -92,9 +89,11 @@ fun createDeviceProfile(
     val avcHigh10Level = mediaTest.getAVCHigh10Level()
     val supportsAV1 = mediaTest.supportsAV1()
     val supportsAV1Main10 = mediaTest.supportsAV1Main10()
+    val supportsVC1 = mediaTest.supportsVc1()
     val maxResolutionAVC = mediaTest.getMaxResolution(MimeTypes.VIDEO_H264)
     val maxResolutionHevc = mediaTest.getMaxResolution(MimeTypes.VIDEO_H265)
     val maxResolutionAV1 = mediaTest.getMaxResolution(MimeTypes.VIDEO_AV1)
+    val maxResolutionVC1 = mediaTest.getMaxResolution(MimeTypes.VIDEO_VC1)
 
     // / HDR capabilities
 
@@ -171,6 +170,7 @@ fun createDeviceProfile(
             Codec.Video.HEVC,
             Codec.Video.MPEG,
             Codec.Video.MPEG2VIDEO,
+            Codec.Video.VC1,
             Codec.Video.VP8,
             Codec.Video.VP9,
         )
@@ -329,6 +329,19 @@ fun createDeviceProfile(
         }
     }
 
+    // VC1 profile
+    codecProfile {
+        type = CodecType.VIDEO
+        codec = Codec.Video.VC1
+
+        conditions {
+            when {
+                !supportsVC1 -> ProfileConditionValue.VIDEO_PROFILE equals "none"
+                else -> ProfileConditionValue.VIDEO_PROFILE notEquals "none"
+            }
+        }
+    }
+
     // Get max resolutions for common codecs
     // AVC
     codecProfile {
@@ -360,6 +373,17 @@ fun createDeviceProfile(
         conditions {
             ProfileConditionValue.WIDTH lowerThanOrEquals maxResolutionAV1.width
             ProfileConditionValue.HEIGHT lowerThanOrEquals maxResolutionAV1.height
+        }
+    }
+
+    // VC1
+    codecProfile {
+        type = CodecType.VIDEO
+        codec = Codec.Video.VC1
+
+        conditions {
+            ProfileConditionValue.WIDTH lowerThanOrEquals maxResolutionVC1.width
+            ProfileConditionValue.HEIGHT lowerThanOrEquals maxResolutionVC1.height
         }
     }
 

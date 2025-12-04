@@ -1,5 +1,7 @@
 package com.github.damontecres.wholphin.ui.components
 
+import android.content.Context
+import androidx.annotation.StringRes
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -32,11 +34,14 @@ import com.github.damontecres.wholphin.ui.main.HomePageContent
 import com.github.damontecres.wholphin.util.ApiRequestPager
 import com.github.damontecres.wholphin.util.HomeRowLoadingState
 import com.github.damontecres.wholphin.util.LoadingState
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.launch
 import org.jellyfin.sdk.model.api.MediaType
 import java.util.UUID
 
 abstract class RecommendedViewModel(
+    val context: Context,
     val navigationManager: NavigationManager,
     val favoriteWatchManager: FavoriteWatchManager,
 ) : ViewModel() {
@@ -77,6 +82,27 @@ abstract class RecommendedViewModel(
         viewModelScope.launchIO {
             favoriteWatchManager.setFavorite(itemId, watched)
             refreshItem(position, itemId)
+        }
+    }
+
+    abstract fun update(
+        @StringRes title: Int,
+        row: HomeRowLoadingState,
+    )
+
+    fun update(
+        @StringRes title: Int,
+        block: suspend () -> List<BaseItem>,
+    ) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val titleStr = context.getString(title)
+            val row =
+                try {
+                    HomeRowLoadingState.Success(titleStr, block.invoke())
+                } catch (ex: Exception) {
+                    HomeRowLoadingState.Error(titleStr, null, ex)
+                }
+            update(title, row)
         }
     }
 }

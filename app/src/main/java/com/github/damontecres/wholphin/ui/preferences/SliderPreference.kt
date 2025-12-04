@@ -28,7 +28,7 @@ import com.github.damontecres.wholphin.ui.components.SliderBar
 
 @Composable
 fun SliderPreference(
-    preference: AppSliderPreference,
+    preference: AppSliderPreference<*>,
     title: String,
     summary: String?,
     value: Long,

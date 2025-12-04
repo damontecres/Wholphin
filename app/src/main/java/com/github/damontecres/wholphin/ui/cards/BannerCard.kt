@@ -21,6 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
@@ -33,11 +34,14 @@ import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import coil3.compose.AsyncImage
 import com.github.damontecres.wholphin.R
+import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.ui.AppColors
 import com.github.damontecres.wholphin.ui.AspectRatios
 import com.github.damontecres.wholphin.ui.Cards
 import com.github.damontecres.wholphin.ui.FontAwesome
+import com.github.damontecres.wholphin.ui.LocalImageUrlService
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
+import org.jellyfin.sdk.model.api.ImageType
 
 /**
  * Displays an image as a card. If no image is available, the name will be shown instead
@@ -45,7 +49,7 @@ import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 @Composable
 fun BannerCard(
     name: String?,
-    imageUrl: String?,
+    item: BaseItem?,
     onClick: () -> Unit,
     onLongClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -53,10 +57,33 @@ fun BannerCard(
     played: Boolean = false,
     favorite: Boolean = false,
     playPercent: Double = 0.0,
-    cardHeight: Dp = 140.dp * .85f,
+    cardHeight: Dp = 120.dp,
     aspectRatio: Float = AspectRatios.WIDE,
     interactionSource: MutableInteractionSource? = null,
 ) {
+    val imageUrlService = LocalImageUrlService.current
+    val density = LocalDensity.current
+    val imageUrl =
+        remember(item, cardHeight) {
+            if (item != null) {
+                val fillHeight =
+                    if (cardHeight != Dp.Unspecified) {
+                        with(density) {
+                            cardHeight.roundToPx()
+                        }
+                    } else {
+                        null
+                    }
+                imageUrlService.getItemImageUrl(
+                    item,
+                    ImageType.PRIMARY,
+                    fillWidth = null,
+                    fillHeight = fillHeight,
+                )
+            } else {
+                null
+            }
+        }
     var imageError by remember { mutableStateOf(false) }
     Card(
         modifier = modifier.size(cardHeight * aspectRatio, cardHeight),

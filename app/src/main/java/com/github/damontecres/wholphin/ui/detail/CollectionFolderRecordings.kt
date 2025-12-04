@@ -12,7 +12,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.github.damontecres.wholphin.data.model.GetItemsFilter
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.components.CollectionFolderGrid
-import com.github.damontecres.wholphin.ui.components.CollectionFolderGridParameters
+import com.github.damontecres.wholphin.ui.components.ViewOptionsPoster
 import com.github.damontecres.wholphin.ui.data.MovieSortOptions
 import com.github.damontecres.wholphin.ui.preferences.PreferencesViewModel
 import java.util.UUID
@@ -41,7 +41,7 @@ fun CollectionFolderRecordings(
         positionCallback = { columns, position ->
             showHeader = position < columns
         },
-        params = CollectionFolderGridParameters.POSTER,
+        defaultViewOptions = ViewOptionsPoster,
         playEnabled = false,
     )
 }

@@ -53,6 +53,7 @@ import com.github.damontecres.wholphin.data.model.Playlist
 import com.github.damontecres.wholphin.data.model.aspectRatioFloat
 import com.github.damontecres.wholphin.ui.AppColors
 import com.github.damontecres.wholphin.ui.AspectRatios
+import com.github.damontecres.wholphin.ui.LocalImageUrlService
 import com.github.damontecres.wholphin.ui.TimeFormatter
 import com.github.damontecres.wholphin.ui.cards.ChapterCard
 import com.github.damontecres.wholphin.ui.cards.SeasonCard
@@ -62,6 +63,7 @@ import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
+import org.jellyfin.sdk.model.api.ImageType
 import org.jellyfin.sdk.model.api.MediaSegmentDto
 import org.jellyfin.sdk.model.api.TrickplayInfo
 import java.time.LocalTime
@@ -381,14 +383,15 @@ fun PlaybackOverlay(
                 }
             }
         }
+        val logoImageUrl = LocalImageUrlService.current.rememberImageUrl(item, ImageType.LOGO)
         AnimatedVisibility(
-            !showDebugInfo && item?.logoImageUrl.isNotNullOrBlank() && controllerViewState.controlsVisible,
+            !showDebugInfo && logoImageUrl.isNotNullOrBlank() && controllerViewState.controlsVisible,
             modifier =
                 Modifier
                     .align(Alignment.TopStart),
         ) {
             AsyncImage(
-                model = item?.logoImageUrl,
+                model = logoImageUrl,
                 contentDescription = "Logo",
                 modifier =
                     Modifier

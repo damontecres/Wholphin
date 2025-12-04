@@ -1,19 +1,23 @@
 package com.github.damontecres.wholphin.ui.components
 
 import android.content.Context
+import androidx.annotation.StringRes
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.datastore.core.DataStore
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.viewModelScope
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.ServerRepository
+import com.github.damontecres.wholphin.preferences.AppPreference
+import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.FavoriteWatchManager
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.ui.SlimItemFields
 import com.github.damontecres.wholphin.ui.data.RowColumn
 import com.github.damontecres.wholphin.ui.setValueOnMain
-import com.github.damontecres.wholphin.util.ApiRequestPager
+import com.github.damontecres.wholphin.ui.toBaseItems
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.GetItemsRequestHandler
 import com.github.damontecres.wholphin.util.GetResumeItemsRequestHandler
@@ -26,9 +30,8 @@ import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -46,13 +49,14 @@ import java.util.UUID
 class RecommendedMovieViewModel
     @AssistedInject
     constructor(
-        @param:ApplicationContext private val context: Context,
+        @ApplicationContext context: Context,
         private val api: ApiClient,
         private val serverRepository: ServerRepository,
+        private val preferencesDataStore: DataStore<AppPreferences>,
         @Assisted val parentId: UUID,
         navigationManager: NavigationManager,
         favoriteWatchManager: FavoriteWatchManager,
-    ) : RecommendedViewModel(navigationManager, favoriteWatchManager) {
+    ) : RecommendedViewModel(context, navigationManager, favoriteWatchManager) {
         @AssistedFactory
         interface Factory {
             fun create(parentId: UUID): RecommendedMovieViewModel
@@ -60,16 +64,21 @@ class RecommendedMovieViewModel
 
         override val rows =
             MutableStateFlow<List<HomeRowLoadingState>>(
-                rowTitles
-                    .map {
-                        HomeRowLoadingState.Pending(
-                            context.getString(it),
-                        )
-                    },
+                rowTitles.keys.map {
+                    HomeRowLoadingState.Pending(
+                        context.getString(it),
+                    )
+                },
             )
 
         override fun init() {
             viewModelScope.launch(Dispatchers.IO + ExceptionHandler()) {
+                val itemsPerRow =
+                    preferencesDataStore.data
+                        .firstOrNull()
+                        ?.homePagePreferences
+                        ?.maxItemsPerRow
+                        ?: AppPreference.HomePageItems.defaultValue.toInt()
                 try {
                     val resumeItemsRequest =
                         GetResumeItemsRequest(
@@ -77,20 +86,16 @@ class RecommendedMovieViewModel
                             fields = SlimItemFields,
                             includeItemTypes = listOf(BaseItemKind.MOVIE),
                             enableUserData = true,
+                            startIndex = 0,
+                            limit = itemsPerRow,
+                            enableTotalRecordCount = false,
                         )
                     val resumeItems =
-                        ApiRequestPager(
-                            api,
-                            resumeItemsRequest,
-                            GetResumeItemsRequestHandler,
-                            viewModelScope,
-                        ).init()
-                    if (resumeItems.isNotEmpty()) {
-                        resumeItems.getBlocking(0)
-                    }
-
+                        GetResumeItemsRequestHandler
+                            .execute(api, resumeItemsRequest)
+                            .toBaseItems(api, false)
                     update(
-                        0,
+                        R.string.continue_watching,
                         HomeRowLoadingState.Success(
                             context.getString(R.string.continue_watching),
                             resumeItems,
@@ -107,95 +112,90 @@ class RecommendedMovieViewModel
                     }
                 }
 
-                val recentlyReleasedRequest =
-                    GetItemsRequest(
-                        parentId = parentId,
-                        fields = SlimItemFields,
-                        includeItemTypes = listOf(BaseItemKind.MOVIE),
-                        recursive = true,
-                        enableUserData = true,
-                        sortBy = listOf(ItemSortBy.PREMIERE_DATE),
-                        sortOrder = listOf(SortOrder.DESCENDING),
-                    )
-                val recentlyReleasedItems =
-                    ApiRequestPager(api, recentlyReleasedRequest, GetItemsRequestHandler, viewModelScope)
+                update(R.string.recently_released) {
+                    val recentlyReleasedRequest =
+                        GetItemsRequest(
+                            parentId = parentId,
+                            fields = SlimItemFields,
+                            includeItemTypes = listOf(BaseItemKind.MOVIE),
+                            recursive = true,
+                            enableUserData = true,
+                            sortBy = listOf(ItemSortBy.PREMIERE_DATE),
+                            sortOrder = listOf(SortOrder.DESCENDING),
+                            startIndex = 0,
+                            limit = itemsPerRow,
+                            enableTotalRecordCount = false,
+                        )
+                    GetItemsRequestHandler
+                        .execute(api, recentlyReleasedRequest)
+                        .toBaseItems(api, false)
+                }
 
-                val recentlyAddedRequest =
-                    GetItemsRequest(
-                        parentId = parentId,
-                        fields = SlimItemFields,
-                        includeItemTypes = listOf(BaseItemKind.MOVIE),
-                        recursive = true,
-                        enableUserData = true,
-                        sortBy = listOf(ItemSortBy.DATE_CREATED),
-                        sortOrder = listOf(SortOrder.DESCENDING),
-                    )
-                val recentlyAddedItems =
-                    ApiRequestPager(api, recentlyAddedRequest, GetItemsRequestHandler, viewModelScope)
+                update(R.string.recently_added) {
+                    val recentlyAddedRequest =
+                        GetItemsRequest(
+                            parentId = parentId,
+                            fields = SlimItemFields,
+                            includeItemTypes = listOf(BaseItemKind.MOVIE),
+                            recursive = true,
+                            enableUserData = true,
+                            sortBy = listOf(ItemSortBy.DATE_CREATED),
+                            sortOrder = listOf(SortOrder.DESCENDING),
+                            startIndex = 0,
+                            limit = itemsPerRow,
+                            enableTotalRecordCount = false,
+                        )
+                    GetItemsRequestHandler
+                        .execute(api, recentlyAddedRequest)
+                        .toBaseItems(api, false)
+                }
 
-                val suggestionsRequest =
-                    GetSuggestionsRequest(
-                        userId = serverRepository.currentUser.value?.id,
-                        type = listOf(BaseItemKind.MOVIE),
-                    )
-                val suggestedItems = ApiRequestPager(api, suggestionsRequest, GetSuggestionsRequestHandler, viewModelScope)
+                update(R.string.suggestions) {
+                    val suggestionsRequest =
+                        GetSuggestionsRequest(
+                            userId = serverRepository.currentUser.value?.id,
+                            type = listOf(BaseItemKind.MOVIE),
+                            startIndex = 0,
+                            limit = itemsPerRow,
+                            enableTotalRecordCount = false,
+                        )
+                    GetSuggestionsRequestHandler
+                        .execute(api, suggestionsRequest)
+                        .toBaseItems(api, false)
+                }
 
-                val unwatchedTopRatedRequest =
-                    GetItemsRequest(
-                        parentId = parentId,
-                        fields = SlimItemFields,
-                        includeItemTypes = listOf(BaseItemKind.MOVIE),
-                        recursive = true,
-                        enableUserData = true,
-                        isPlayed = false,
-                        sortBy = listOf(ItemSortBy.COMMUNITY_RATING),
-                        sortOrder = listOf(SortOrder.DESCENDING),
-                    )
-                val unwatchedTopRatedItems =
-                    ApiRequestPager(api, unwatchedTopRatedRequest, GetItemsRequestHandler, viewModelScope, useSeriesForPrimary = true)
+                update(R.string.top_unwatched) {
+                    val unwatchedTopRatedRequest =
+                        GetItemsRequest(
+                            parentId = parentId,
+                            fields = SlimItemFields,
+                            includeItemTypes = listOf(BaseItemKind.MOVIE),
+                            recursive = true,
+                            enableUserData = true,
+                            isPlayed = false,
+                            sortBy = listOf(ItemSortBy.COMMUNITY_RATING),
+                            sortOrder = listOf(SortOrder.DESCENDING),
+                            startIndex = 0,
+                            limit = itemsPerRow,
+                            enableTotalRecordCount = false,
+                        )
+                    GetItemsRequestHandler
+                        .execute(api, unwatchedTopRatedRequest)
+                        .toBaseItems(api, false)
+                }
 
-                val rows =
-                    listOf(
-                        R.string.recently_released to recentlyReleasedItems,
-                        R.string.recently_added to recentlyAddedItems,
-                        R.string.suggestions to suggestedItems,
-                        R.string.top_unwatched to unwatchedTopRatedItems,
-                    )
-                rows
-                    .mapIndexed { index, (title, pager) ->
-                        viewModelScope.async(Dispatchers.IO + ExceptionHandler()) {
-                            val title = context.getString(title)
-                            val result =
-                                try {
-                                    pager.init()
-                                    if (pager.isNotEmpty()) {
-                                        pager.getBlocking(0)
-                                    }
-                                    HomeRowLoadingState.Success(title, pager)
-                                } catch (ex: Exception) {
-                                    Timber.e(ex, "Error fetching %s", title)
-                                    HomeRowLoadingState.Error(title, null, ex)
-                                }
-                            update(index + 1, result)
-                            if (result is HomeRowLoadingState.Success && result.items.isNotEmpty() &&
-                                (loading.value == LoadingState.Loading || loading.value == LoadingState.Pending)
-                            ) {
-                                loading.setValueOnMain(LoadingState.Success)
-                            }
-                        }
-                    }.awaitAll()
                 if (loading.value == LoadingState.Loading || loading.value == LoadingState.Pending) {
                     loading.setValueOnMain(LoadingState.Success)
                 }
             }
         }
 
-        private fun update(
-            position: Int,
+        override fun update(
+            @StringRes title: Int,
             row: HomeRowLoadingState,
         ) {
             rows.update { current ->
-                current.toMutableList().apply { set(position, row) }
+                current.toMutableList().apply { set(rowTitles[title]!!, row) }
             }
         }
 
@@ -207,7 +207,7 @@ class RecommendedMovieViewModel
                     R.string.recently_added,
                     R.string.suggestions,
                     R.string.top_unwatched,
-                )
+                ).mapIndexed { index, i -> i to index }.toMap()
         }
     }
 

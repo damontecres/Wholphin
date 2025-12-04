@@ -13,7 +13,6 @@ sealed interface ExtrasItem {
     val type: ExtraType
     val destination: Destination
     val title: String?
-    val imageUrl: String?
 
     data class Group(
         override val parentId: UUID,
@@ -24,7 +23,6 @@ sealed interface ExtrasItem {
             Destination.ItemGrid(null, type.stringRes, items.map { it.id })
 
         override val title: String? = null
-        override val imageUrl: String? = items.random().imageUrl
     }
 
     data class Single(
@@ -37,7 +35,6 @@ sealed interface ExtrasItem {
                 item = item,
             )
         override val title: String? get() = item.title
-        override val imageUrl: String? get() = item.imageUrl
     }
 }
 

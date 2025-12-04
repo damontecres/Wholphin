@@ -35,6 +35,7 @@ import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.ui.components.CollectionFolderGrid
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.TabRow
+import com.github.damontecres.wholphin.ui.components.ViewOptions
 import com.github.damontecres.wholphin.ui.data.VideoSortOptions
 import com.github.damontecres.wholphin.ui.detail.livetv.DvrSchedule
 import com.github.damontecres.wholphin.ui.detail.livetv.TvGuideGrid
@@ -170,6 +171,7 @@ fun CollectionFolderLiveTv(
                             showHeader = position < columns
                         },
                         playEnabled = false,
+                        defaultViewOptions = ViewOptions(),
                     )
                 } else {
                     ErrorMessage("Invalid tab index $selectedTabIndex", null)
