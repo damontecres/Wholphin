@@ -43,7 +43,7 @@ fun CollectionFolderPlaylist(
         positionCallback = { columns, position ->
             showHeader = position < columns
         },
-        viewOptions = ViewOptionsSquare,
+        defaultViewOptions = ViewOptionsSquare,
         playEnabled = false,
     )
 }

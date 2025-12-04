@@ -44,6 +44,11 @@ import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.logCoilError
 import org.jellyfin.sdk.model.api.ImageType
 
+/**
+ * Display an image for an item with optional overlay data
+ *
+ * This will fetch the image using fillWidth/fillHeight based on the layout size
+ */
 @Composable
 fun ItemCardImage(
     item: BaseItem?,
@@ -83,7 +88,7 @@ fun ItemCardImage(
         watchedPercent = watchedPercent,
         modifier =
             modifier.onLayoutRectChanged(
-                throttleMillis = 250,
+                throttleMillis = 1000,
                 debounceMillis = 250,
             ) {
                 size = IntSize(width = it.width, height = it.height)

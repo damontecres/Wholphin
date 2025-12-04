@@ -12,6 +12,11 @@ import org.jellyfin.sdk.model.api.ImageType
 import javax.inject.Inject
 import javax.inject.Singleton
 
+/**
+ * Provides image URLs for items with several convenience methods
+ *
+ * This is available in compose UI code via [com.github.damontecres.wholphin.ui.LocalImageUrlService]
+ */
 @Singleton
 class ImageUrlService
     @Inject
@@ -139,6 +144,9 @@ class ImageUrlService
                 imageIndex = imageIndex,
             )
 
+        /**
+         * Just a convenient way to get the image URL and remember it
+         */
         @Composable
         fun rememberImageUrl(
             item: BaseItem?,

@@ -57,7 +57,7 @@ fun CollectionFolderGeneric(
         positionCallback = { columns, position ->
             showHeader = position < columns
         },
-        viewOptions = viewOptions,
+        defaultViewOptions = viewOptions,
         playEnabled = playEnabled,
         filterOptions = filterOptions,
     )

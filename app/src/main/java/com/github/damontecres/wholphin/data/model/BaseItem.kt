@@ -11,7 +11,6 @@ import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.model.api.BaseItemDto
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.extensions.ticks
-import timber.log.Timber
 import kotlin.time.Duration
 
 @Serializable
@@ -91,17 +90,6 @@ data class BaseItem(
     }
 
     companion object {
-        var primaryMaxWidth: Int? = null
-            set(value) {
-                Timber.v("primaryMaxWidth=$value")
-//                field = value
-            }
-        var primaryMaxHeight: Int? = null
-            set(value) {
-                Timber.v("primaryMaxHeight=$value")
-//                field = value
-            }
-
         fun from(
             dto: BaseItemDto,
             api: ApiClient,

@@ -41,7 +41,7 @@ fun CollectionFolderRecordings(
         positionCallback = { columns, position ->
             showHeader = position < columns
         },
-        viewOptions = ViewOptionsPoster,
+        defaultViewOptions = ViewOptionsPoster,
         playEnabled = false,
     )
 }

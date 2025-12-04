@@ -31,6 +31,7 @@ import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.components.CollectionFolderGrid
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.TabRow
+import com.github.damontecres.wholphin.ui.components.ViewOptionsPoster
 import com.github.damontecres.wholphin.ui.components.ViewOptionsSquare
 import com.github.damontecres.wholphin.ui.components.ViewOptionsWide
 import com.github.damontecres.wholphin.ui.data.EpisodeSortOptions
@@ -122,6 +123,7 @@ fun FavoritesPage(
                     showTitle = false,
                     recursive = true,
                     sortOptions = MovieSortOptions,
+                    defaultViewOptions = ViewOptionsPoster,
                     modifier =
                         Modifier
                             .padding(start = 16.dp)
@@ -148,6 +150,7 @@ fun FavoritesPage(
                     showTitle = false,
                     recursive = true,
                     sortOptions = SeriesSortOptions,
+                    defaultViewOptions = ViewOptionsPoster,
                     modifier =
                         Modifier
                             .padding(start = 16.dp)
@@ -261,6 +264,7 @@ fun FavoritesPage(
                     showTitle = false,
                     recursive = true,
                     sortOptions = listOf(),
+                    defaultViewOptions = ViewOptionsPoster,
                     modifier =
                         Modifier
                             .padding(start = 16.dp)

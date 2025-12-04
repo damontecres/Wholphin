@@ -468,13 +468,13 @@ fun CollectionFolderGrid(
     onClickItem: (Int, BaseItem) -> Unit,
     sortOptions: List<ItemSortBy>,
     playEnabled: Boolean,
+    defaultViewOptions: ViewOptions,
     modifier: Modifier = Modifier,
     initialSortAndDirection: SortAndDirection? = null,
     showTitle: Boolean = true,
     positionCallback: ((columns: Int, position: Int) -> Unit)? = null,
     useSeriesForPrimary: Boolean = true,
     filterOptions: List<ItemFilterBy<*>> = DefaultFilterOptions,
-    viewOptions: ViewOptions = ViewOptions(),
 ) = CollectionFolderGrid(
     preferences,
     itemId.toServerString(),
@@ -483,11 +483,11 @@ fun CollectionFolderGrid(
     onClickItem,
     sortOptions,
     playEnabled,
-    modifier,
+    defaultViewOptions = defaultViewOptions,
+    modifier = modifier,
     initialSortAndDirection = initialSortAndDirection,
     showTitle = showTitle,
     positionCallback = positionCallback,
-    defaultViewOptions = viewOptions,
     useSeriesForPrimary = useSeriesForPrimary,
     filterOptions = filterOptions,
 )
@@ -501,6 +501,7 @@ fun CollectionFolderGrid(
     onClickItem: (Int, BaseItem) -> Unit,
     sortOptions: List<ItemSortBy>,
     playEnabled: Boolean,
+    defaultViewOptions: ViewOptions,
     modifier: Modifier = Modifier,
     viewModel: CollectionFolderViewModel = hiltViewModel(),
     playlistViewModel: AddPlaylistViewModel = hiltViewModel(),
@@ -509,7 +510,6 @@ fun CollectionFolderGrid(
     positionCallback: ((columns: Int, position: Int) -> Unit)? = null,
     useSeriesForPrimary: Boolean = true,
     filterOptions: List<ItemFilterBy<*>> = DefaultFilterOptions,
-    defaultViewOptions: ViewOptions = ViewOptions(),
 ) {
     val context = LocalContext.current
     OneTimeLaunchedEffect {
