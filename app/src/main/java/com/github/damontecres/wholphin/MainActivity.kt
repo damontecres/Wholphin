@@ -1,6 +1,7 @@
 package com.github.damontecres.wholphin
 
 import android.os.Bundle
+import android.view.WindowManager
 import androidx.activity.compose.setContent
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.background
@@ -43,6 +44,7 @@ import com.github.damontecres.wholphin.services.UpdateChecker
 import com.github.damontecres.wholphin.services.hilt.AuthOkHttpClient
 import com.github.damontecres.wholphin.ui.CoilConfig
 import com.github.damontecres.wholphin.ui.LocalImageUrlService
+import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.nav.ApplicationContent
 import com.github.damontecres.wholphin.ui.nav.Destination
@@ -171,6 +173,17 @@ class MainActivity : AppCompatActivity() {
                                     }
                                 }
                                 key(current?.server?.id, current?.user?.id) {
+                                    LaunchedEffect(current?.user?.pin) {
+                                        if (current?.user?.pin?.isNotNullOrBlank() == true) {
+                                            // If user has a pin, then obscure the window in previews
+                                            window?.setFlags(
+                                                WindowManager.LayoutParams.FLAG_SECURE,
+                                                WindowManager.LayoutParams.FLAG_SECURE,
+                                            )
+                                        } else {
+                                            window?.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
+                                        }
+                                    }
                                     val initialDestination =
                                         when {
                                             current != null -> Destination.Home()
