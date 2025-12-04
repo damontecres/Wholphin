@@ -88,8 +88,8 @@ fun ItemCardImage(
         watchedPercent = watchedPercent,
         modifier =
             modifier.onLayoutRectChanged(
-                throttleMillis = 1000,
-                debounceMillis = 250,
+                throttleMillis = 100,
+                debounceMillis = 25,
             ) {
                 size = IntSize(width = it.width, height = it.height)
             },
