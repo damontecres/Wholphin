@@ -289,4 +289,5 @@
     <string name="pass_out_protection">Vaataja uinumise taimer</string>
     <string name="subtitle_margin">Veeris</string>
     <string name="verbose_logging">Detailne logimine</string>
+    <string name="image_cache_size">Pildipuhvri suurus (MB)</string>
 </resources>
