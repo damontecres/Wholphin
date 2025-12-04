@@ -712,75 +712,80 @@ fun CollectionFolderGridContent(
                 enter = slideInVertically() + fadeIn(),
                 exit = slideOutVertically() + fadeOut(),
             ) {
-                if (showTitle) {
-                    Text(
-                        text = title,
-                        style = MaterialTheme.typography.displayMedium,
-                        color = MaterialTheme.colorScheme.onBackground,
-                        textAlign = TextAlign.Center,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-                }
-                val endPadding =
-                    16.dp + if (sortAndDirection.sort == ItemSortBy.SORT_NAME) 24.dp else 0.dp
-                Row(
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier =
-                        Modifier
-                            .padding(start = 16.dp, end = endPadding)
-                            .fillMaxWidth(),
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.fillMaxWidth(),
                 ) {
-                    if (sortOptions.isNotEmpty() || filterOptions.isNotEmpty()) {
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier,
-                        ) {
-                            if (sortOptions.isNotEmpty()) {
-                                SortByButton(
-                                    sortOptions = sortOptions,
-                                    current = sortAndDirection,
-                                    onSortChange = onSortChange,
-                                    modifier = Modifier,
-                                )
-                            }
-                            if (filterOptions.isNotEmpty()) {
-                                FilterByButton(
-                                    filterOptions = filterOptions,
-                                    current = currentFilter,
-                                    onFilterChange = onFilterChange,
-                                    getPossibleValues = getPossibleFilterValues,
-                                    modifier = Modifier,
-                                )
-                            }
-                            ExpandableFaButton(
-                                title = R.string.view_options,
-                                iconStringRes = R.string.fa_sliders,
-                                onClick = { showViewOptions = true },
-                                modifier = Modifier,
-                            )
-                        }
+                    if (showTitle) {
+                        Text(
+                            text = title,
+                            style = MaterialTheme.typography.displayMedium,
+                            color = MaterialTheme.colorScheme.onBackground,
+                            textAlign = TextAlign.Center,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
                     }
-                    if (playEnabled) {
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier,
-                        ) {
-                            ExpandablePlayButton(
-                                title = R.string.play,
-                                resume = Duration.ZERO,
-                                icon = Icons.Default.PlayArrow,
-                                onClick = { onClickPlay.invoke(false) },
-                            )
-                            ExpandableFaButton(
-                                title = R.string.shuffle,
-                                iconStringRes = R.string.fa_shuffle,
-                                onClick = { onClickPlay.invoke(true) },
-                            )
+                    val endPadding =
+                        16.dp + if (sortAndDirection.sort == ItemSortBy.SORT_NAME) 24.dp else 0.dp
+                    Row(
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier =
+                            Modifier
+                                .padding(start = 16.dp, end = endPadding)
+                                .fillMaxWidth(),
+                    ) {
+                        if (sortOptions.isNotEmpty() || filterOptions.isNotEmpty()) {
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier,
+                            ) {
+                                if (sortOptions.isNotEmpty()) {
+                                    SortByButton(
+                                        sortOptions = sortOptions,
+                                        current = sortAndDirection,
+                                        onSortChange = onSortChange,
+                                        modifier = Modifier,
+                                    )
+                                }
+                                if (filterOptions.isNotEmpty()) {
+                                    FilterByButton(
+                                        filterOptions = filterOptions,
+                                        current = currentFilter,
+                                        onFilterChange = onFilterChange,
+                                        getPossibleValues = getPossibleFilterValues,
+                                        modifier = Modifier,
+                                    )
+                                }
+                                ExpandableFaButton(
+                                    title = R.string.view_options,
+                                    iconStringRes = R.string.fa_sliders,
+                                    onClick = { showViewOptions = true },
+                                    modifier = Modifier,
+                                )
+                            }
+                        }
+                        if (playEnabled) {
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier,
+                            ) {
+                                ExpandablePlayButton(
+                                    title = R.string.play,
+                                    resume = Duration.ZERO,
+                                    icon = Icons.Default.PlayArrow,
+                                    onClick = { onClickPlay.invoke(false) },
+                                )
+                                ExpandableFaButton(
+                                    title = R.string.shuffle,
+                                    iconStringRes = R.string.fa_shuffle,
+                                    onClick = { onClickPlay.invoke(true) },
+                                )
+                            }
                         }
                     }
                 }
