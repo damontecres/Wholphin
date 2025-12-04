@@ -69,14 +69,13 @@ class TvProviderWorker
                     prefs.homePagePreferences.enableRewatchingNextUp,
                 )
             val potentialItemsToAddIds = potentialItemsToAdd.map { it.id.toString() }
-            val toAddSeriesId = potentialItemsToAdd.map { it.data.seriesId }
 
             Timber.v("potentialItemsToAddIds=%s", potentialItemsToAddIds)
             val currentItems = getCurrentTvChannelNextUp()
             val currentItemIds = currentItems.map { it.internalProviderId }
 
             val toRemove =
-                currentItems // .filterNot { it.internalProviderId in potentialItemsToAddIds } // TODO remove after done testing
+                currentItems.filterNot { it.internalProviderId in potentialItemsToAddIds }
             Timber.v("toRemove (%s)=%s", toRemove.size, toRemove.map { it.internalProviderId })
             val toAdd = potentialItemsToAdd.filterNot { it.id.toString() in currentItemIds }
             Timber.v("toAdd (%s)=%s", toAdd.size, toAdd.map { it.id })
