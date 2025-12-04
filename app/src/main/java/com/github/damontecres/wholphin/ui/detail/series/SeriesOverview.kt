@@ -61,7 +61,7 @@ data class SeasonEpisode(
 
 @Serializable
 data class SeasonEpisodeIds(
-    val seasonId: UUID,
+    val seasonId: UUID?,
     val seasonNumber: Int?,
     val episodeId: UUID?,
     val episodeNumber: Int?,

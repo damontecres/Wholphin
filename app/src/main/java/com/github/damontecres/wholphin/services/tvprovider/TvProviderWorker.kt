@@ -76,7 +76,7 @@ class TvProviderWorker
             val currentItemIds = currentItems.map { it.internalProviderId }
 
             val toRemove =
-                currentItems.filterNot { it.internalProviderId in potentialItemsToAddIds }
+                currentItems // .filterNot { it.internalProviderId in potentialItemsToAddIds } // TODO remove after done testing
             Timber.v("toRemove (%s)=%s", toRemove.size, toRemove.map { it.internalProviderId })
             val toAdd = potentialItemsToAdd.filterNot { it.id.toString() in currentItemIds }
             Timber.v("toAdd (%s)=%s", toAdd.size, toAdd.map { it.id })
@@ -171,13 +171,35 @@ class TvProviderWorker
                         dto.parentIndexNumber?.let(::setSeasonNumber)
                     }
 
-                    setPosterArtAspectRatio(TvContractCompat.PreviewProgramColumns.ASPECT_RATIO_MOVIE_POSTER)
-                    setPosterArtUri(imageUrlService.getItemImageUrl(item, ImageType.PRIMARY)!!.toUri())
+                    setPosterArtAspectRatio(TvContractCompat.PreviewProgramColumns.ASPECT_RATIO_16_9)
+                    val imageType =
+                        when (item.type) {
+                            BaseItemKind.EPISODE -> ImageType.THUMB
+                            else -> ImageType.PRIMARY
+                        }
+                    setPosterArtUri(imageUrlService.getItemImageUrl(item, imageType)!!.toUri())
 
                     setIntent(
                         Intent(context, MainActivity::class.java)
                             .putExtra(MainActivity.INTENT_ITEM_ID, item.id.toString())
-                            .putExtra(MainActivity.INTENT_ITEM_TYPE, item.type.serialName),
+                            .putExtra(MainActivity.INTENT_ITEM_TYPE, item.type.serialName)
+                            .apply {
+                                if (item.type == BaseItemKind.EPISODE) {
+                                    putExtra(MainActivity.INTENT_SERIES_ID, dto.seriesId.toString())
+                                    dto.parentIndexNumber?.let {
+                                        putExtra(
+                                            MainActivity.INTENT_SEASON_NUMBER,
+                                            it,
+                                        )
+                                    }
+                                    dto.indexNumber?.let {
+                                        putExtra(
+                                            MainActivity.INTENT_EPISODE_NUMBER,
+                                            it,
+                                        )
+                                    }
+                                }
+                            },
                     )
                 }.build()
 
