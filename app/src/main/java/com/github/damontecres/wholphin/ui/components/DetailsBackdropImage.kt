@@ -21,10 +21,30 @@ import androidx.tv.material3.MaterialTheme
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.request.transitionFactory
+import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.ui.CrossFadeFactory
+import com.github.damontecres.wholphin.ui.LocalImageUrlService
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import kotlinx.coroutines.delay
+import org.jellyfin.sdk.model.api.ImageType
 import kotlin.time.Duration.Companion.milliseconds
+
+@Composable
+fun BoxScope.DetailsBackdropImage(
+    item: BaseItem?,
+    modifier: Modifier = Modifier,
+) {
+    val imageUrlService = LocalImageUrlService.current
+    val backdropImageUrl =
+        remember(item) {
+            if (item != null) {
+                imageUrlService.getItemImageUrl(item, ImageType.BACKDROP)
+            } else {
+                null
+            }
+        }
+    DetailsBackdropImage(backdropImageUrl, modifier)
+}
 
 @Composable
 fun BoxScope.DetailsBackdropImage(
@@ -61,6 +81,23 @@ fun BoxScope.DetailsBackdropImage(
                     },
         )
     }
+}
+
+@Composable
+fun BoxScope.DelayedDetailsBackdropImage(
+    item: BaseItem?,
+    modifier: Modifier = Modifier,
+) {
+    val imageUrlService = LocalImageUrlService.current
+    val backdropImageUrl =
+        remember(item) {
+            if (item != null) {
+                imageUrlService.getItemImageUrl(item, ImageType.BACKDROP)
+            } else {
+                null
+            }
+        }
+    DelayedDetailsBackdropImage(backdropImageUrl, modifier)
 }
 
 /**

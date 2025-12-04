@@ -80,12 +80,8 @@ fun GridCard(
                 ),
         ) {
             ItemCardImage(
-                imageUrl =
-                    when (imageType) {
-                        ViewOptionImageType.PRIMARY -> item?.imageUrl
-                        ViewOptionImageType.THUMB -> item?.thumbImageUrl
-//                        ViewOptionImageType.BANNER -> item?.bannerImageUrl
-                    },
+                item = item,
+                imageType = imageType.imageType,
                 name = item?.name,
 //                        showOverlay = !focusedAfterDelay,
                 showOverlay = true,

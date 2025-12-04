@@ -90,7 +90,7 @@ fun EpisodeCard(
                         .fillMaxSize(),
             ) {
                 ItemCardImage(
-                    imageUrl = item?.imageUrl,
+                    item = item,
                     name = item?.name,
                     showOverlay = false,
                     favorite = dto?.userData?.isFavorite ?: false,

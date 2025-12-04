@@ -32,16 +32,11 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.focus.onFocusChanged
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
@@ -53,12 +48,12 @@ import androidx.tv.material3.ListItem
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import androidx.tv.material3.surfaceColorAtElevation
-import coil3.compose.AsyncImage
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.ui.DefaultItemFields
 import com.github.damontecres.wholphin.ui.cards.ItemCardImage
+import com.github.damontecres.wholphin.ui.components.DelayedDetailsBackdropImage
 import com.github.damontecres.wholphin.ui.components.DialogItem
 import com.github.damontecres.wholphin.ui.components.DialogParams
 import com.github.damontecres.wholphin.ui.components.DialogPopup
@@ -69,7 +64,6 @@ import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.components.OverviewText
 import com.github.damontecres.wholphin.ui.enableMarquee
 import com.github.damontecres.wholphin.ui.ifElse
-import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.roundMinutes
 import com.github.damontecres.wholphin.ui.tryRequestFocus
@@ -224,35 +218,7 @@ fun PlaylistDetailsContent(
     Box(
         modifier = modifier,
     ) {
-        if (focusedItem?.backdropImageUrl.isNotNullOrBlank()) {
-            val gradientColor = MaterialTheme.colorScheme.background
-            AsyncImage(
-                model = focusedItem.backdropImageUrl,
-                contentDescription = null,
-                contentScale = ContentScale.Crop,
-                alignment = Alignment.TopEnd,
-                modifier =
-                    Modifier
-                        .fillMaxHeight(.85f)
-                        .alpha(.4f)
-                        .drawWithContent {
-                            drawContent()
-                            drawRect(
-                                Brush.verticalGradient(
-                                    colors = listOf(Color.Transparent, gradientColor),
-                                    startY = 500f,
-                                ),
-                            )
-                            drawRect(
-                                Brush.horizontalGradient(
-                                    colors = listOf(gradientColor, Color.Transparent),
-                                    endX = 400f,
-                                    startX = 100f,
-                                ),
-                            )
-                        },
-            )
-        }
+        DelayedDetailsBackdropImage(focusedItem)
         Column(
             verticalArrangement = Arrangement.spacedBy(16.dp),
             modifier =
@@ -438,7 +404,7 @@ fun PlaylistItem(
                     style = MaterialTheme.typography.labelLarge,
                 )
                 ItemCardImage(
-                    imageUrl = item?.imageUrl,
+                    item = item,
                     name = item?.name,
                     showOverlay = true,
                     favorite = item?.data?.userData?.isFavorite ?: false,

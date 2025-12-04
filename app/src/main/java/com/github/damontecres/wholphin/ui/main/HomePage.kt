@@ -237,7 +237,7 @@ fun HomePageContent(
     }
     Box(modifier = modifier) {
         DelayedDetailsBackdropImage(
-            focusedBackdropImageUrl = focusedItem?.backdropImageUrl,
+            item = focusedItem,
             modifier = Modifier,
         )
 
@@ -339,7 +339,7 @@ fun HomePageContent(
                                     cardContent = { index, item, cardModifier, onClick, onLongClick ->
                                         BannerCard(
                                             name = item?.data?.seriesName ?: item?.name,
-                                            imageUrl = item?.imageUrl,
+                                            item = item,
                                             aspectRatio = AspectRatios.TALL,
                                             cornerText =
                                                 item?.data?.indexNumber?.let { "E$it" }

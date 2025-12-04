@@ -67,6 +67,7 @@ import com.github.damontecres.wholphin.preferences.PlayerBackend
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.preferences.skipBackOnResume
 import com.github.damontecres.wholphin.ui.AspectRatios
+import com.github.damontecres.wholphin.ui.LocalImageUrlService
 import com.github.damontecres.wholphin.ui.OneTimeLaunchedEffect
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.LoadingPage
@@ -459,7 +460,7 @@ fun PlaybackPage(
                                     it.name,
                                 ).joinToString(" - "),
                             description = it.data.overview,
-                            imageUrl = it.imageUrl,
+                            imageUrl = LocalImageUrlService.current.rememberImageUrl(it),
                             aspectRatio =
                                 it.data.primaryImageAspectRatio?.toFloat()
                                     ?: AspectRatios.WIDE,

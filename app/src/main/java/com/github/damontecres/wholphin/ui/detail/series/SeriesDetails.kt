@@ -316,7 +316,7 @@ fun SeriesDetailsContent(
     Box(
         modifier = modifier,
     ) {
-        DetailsBackdropImage(series.backdropImageUrl)
+        DetailsBackdropImage(series)
 
         Column(
             modifier =

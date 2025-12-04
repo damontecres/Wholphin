@@ -8,10 +8,8 @@ import com.github.damontecres.wholphin.ui.seasonEpisodePadded
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import org.jellyfin.sdk.api.client.ApiClient
-import org.jellyfin.sdk.api.client.extensions.imageApi
 import org.jellyfin.sdk.model.api.BaseItemDto
 import org.jellyfin.sdk.model.api.BaseItemKind
-import org.jellyfin.sdk.model.api.ImageType
 import org.jellyfin.sdk.model.extensions.ticks
 import timber.log.Timber
 import kotlin.time.Duration
@@ -19,11 +17,7 @@ import kotlin.time.Duration
 @Serializable
 data class BaseItem(
     val data: BaseItemDto,
-    val imageUrl: String?,
-    val backdropImageUrl: String? = null,
-    val logoImageUrl: String? = null,
-    val thumbImageUrl: String? = null,
-    val bannerImageUrl: String? = null,
+    val useSeriesForPrimary: Boolean,
 ) {
     val id get() = data.id
 
@@ -100,94 +94,23 @@ data class BaseItem(
         var primaryMaxWidth: Int? = null
             set(value) {
                 Timber.v("primaryMaxWidth=$value")
-                field = value
+//                field = value
             }
         var primaryMaxHeight: Int? = null
             set(value) {
                 Timber.v("primaryMaxHeight=$value")
-                field = value
+//                field = value
             }
 
         fun from(
             dto: BaseItemDto,
             api: ApiClient,
             useSeriesForPrimary: Boolean = false,
-        ): BaseItem {
-            val backdropImageUrl =
-                if (dto.type == BaseItemKind.EPISODE) {
-                    val seriesId = dto.seriesId
-                    if (seriesId != null) {
-                        api.imageApi.getItemImageUrl(seriesId, ImageType.BACKDROP)
-                    } else {
-                        api.imageApi.getItemImageUrl(dto.id, ImageType.BACKDROP)
-                    }
-                } else {
-                    api.imageApi.getItemImageUrl(dto.id, ImageType.BACKDROP)
-                }
-            val primaryImageUrl =
-                if (useSeriesForPrimary && dto.type == BaseItemKind.EPISODE && dto.seriesId != null) {
-                    api.imageApi.getItemImageUrl(
-                        dto.seriesId!!,
-                        ImageType.PRIMARY,
-                        maxHeight = primaryMaxHeight,
-                        maxWidth = primaryMaxWidth,
-                        quality = 96,
-                    )
-                } else if (dto.imageTags == null || dto.imageTags!![ImageType.PRIMARY] == null) {
-                    // TODO is this a bad assumption?
-                    null
-                } else {
-                    api.imageApi.getItemImageUrl(
-                        dto.id,
-                        ImageType.PRIMARY,
-                        maxHeight = primaryMaxHeight,
-                        maxWidth = primaryMaxWidth,
-                        quality = 96,
-                    )
-                }
-            val logoImageUrl =
-                if (dto.type == BaseItemKind.EPISODE || dto.type == BaseItemKind.SEASON) {
-                    val seriesId = dto.seriesId
-                    if (seriesId != null) {
-                        api.imageApi.getItemImageUrl(seriesId, ImageType.LOGO)
-                    } else {
-                        api.imageApi.getItemImageUrl(dto.id, ImageType.LOGO)
-                    }
-                } else {
-                    api.imageApi.getItemImageUrl(dto.id, ImageType.LOGO)
-                }
-            val thumbImageUrl =
-                if (useSeriesForPrimary && (dto.type == BaseItemKind.EPISODE || dto.type == BaseItemKind.SEASON)) {
-                    val seriesId = dto.seriesId
-                    if (seriesId != null) {
-                        api.imageApi.getItemImageUrl(seriesId, ImageType.THUMB)
-                    } else {
-                        api.imageApi.getItemImageUrl(dto.id, ImageType.THUMB)
-                    }
-                } else {
-                    api.imageApi.getItemImageUrl(dto.id, ImageType.THUMB)
-                }
-            val bannerImageUrl =
-                if (useSeriesForPrimary && (dto.type == BaseItemKind.EPISODE || dto.type == BaseItemKind.SEASON)) {
-                    val seriesId = dto.seriesId
-                    if (seriesId != null) {
-                        api.imageApi.getItemImageUrl(seriesId, ImageType.BANNER)
-                    } else {
-                        api.imageApi.getItemImageUrl(dto.id, ImageType.BANNER)
-                    }
-                } else {
-                    api.imageApi.getItemImageUrl(dto.id, ImageType.BANNER)
-                }
-
-            return BaseItem(
+        ): BaseItem =
+            BaseItem(
                 dto,
-                primaryImageUrl,
-                backdropImageUrl,
-                logoImageUrl,
-                thumbImageUrl,
-                bannerImageUrl,
+                useSeriesForPrimary,
             )
-        }
     }
 }
 

@@ -82,23 +82,24 @@ private fun ThemeExample(theme: AppThemeColors) {
                         modifier = Modifier.fillMaxWidth(),
                     ) {
                         WatchedIcon()
-                        BannerCard(
-                            name = "Card",
-                            imageUrl = null,
-                            onClick = { },
-                            onLongClick = {},
-                            playPercent = .5,
-                            cardHeight = 64.dp,
-                        )
-                        BannerCard(
-                            name = "Card",
-                            imageUrl = null,
-                            onClick = { },
-                            onLongClick = {},
-                            playPercent = .5,
-                            cardHeight = 64.dp,
-                            interactionSource = source,
-                        )
+                        // TODO
+//                        BannerCard(
+//                            name = "Card",
+//                            imageUrl = null,
+//                            onClick = { },
+//                            onLongClick = {},
+//                            playPercent = .5,
+//                            cardHeight = 64.dp,
+//                        )
+//                        BannerCard(
+//                            name = "Card",
+//                            imageUrl = null,
+//                            onClick = { },
+//                            onLongClick = {},
+//                            playPercent = .5,
+//                            cardHeight = 64.dp,
+//                            interactionSource = source,
+//                        )
                         SeasonCard(
                             title = "Card",
                             subtitle = "2025",

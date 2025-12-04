@@ -699,7 +699,7 @@ fun CollectionFolderGridContent(
     Box(modifier = modifier) {
         if (viewOptions.showDetails) {
             DelayedDetailsBackdropImage(
-                focusedBackdropImageUrl = focusedItem?.backdropImageUrl,
+                item = focusedItem,
                 modifier = Modifier,
             )
         }
