@@ -159,7 +159,7 @@ fun SeriesOverview(
         }
     }
 
-    LaunchedEffect(position) {
+    LaunchedEffect(position, episodes) {
         val focusedEpisode =
             (episodes as? EpisodeList.Success)
                 ?.episodes
