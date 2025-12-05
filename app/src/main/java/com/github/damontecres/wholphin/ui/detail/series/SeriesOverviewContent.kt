@@ -151,7 +151,6 @@ fun SeriesOverviewContent(
                     modifier =
                         Modifier
                             .focusRequester(tabRowFocusRequester)
-                            .focusRestorer()
                             .padding(paddingValues)
                             .fillMaxWidth(),
                 )
