@@ -14,6 +14,7 @@ import com.github.damontecres.wholphin.data.model.Person
 import com.github.damontecres.wholphin.data.model.Trailer
 import com.github.damontecres.wholphin.preferences.ThemeSongVolume
 import com.github.damontecres.wholphin.preferences.UserPreferences
+import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.ExtrasService
 import com.github.damontecres.wholphin.services.FavoriteWatchManager
 import com.github.damontecres.wholphin.services.NavigationManager
@@ -74,6 +75,7 @@ class SeriesViewModel
         private val extrasService: ExtrasService,
         val streamChoiceService: StreamChoiceService,
         private val userPreferencesService: UserPreferencesService,
+        private val backdropService: BackdropService,
     ) : ItemViewModel(api) {
         private lateinit var seriesId: UUID
         private lateinit var prefs: UserPreferences
@@ -103,6 +105,7 @@ class SeriesViewModel
                 ) + Dispatchers.IO,
             ) {
                 val item = fetchItem(seriesId)
+                backdropService.submit(item)
                 val seasons = getSeasons(item)
 
                 // If a particular season was requested, fetch those episodes, otherwise get the first season

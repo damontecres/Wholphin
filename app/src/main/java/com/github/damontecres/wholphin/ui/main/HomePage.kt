@@ -51,7 +51,6 @@ import com.github.damontecres.wholphin.ui.Cards
 import com.github.damontecres.wholphin.ui.cards.BannerCard
 import com.github.damontecres.wholphin.ui.cards.ItemRow
 import com.github.damontecres.wholphin.ui.components.CircularProgress
-import com.github.damontecres.wholphin.ui.components.DelayedDetailsBackdropImage
 import com.github.damontecres.wholphin.ui.components.DialogParams
 import com.github.damontecres.wholphin.ui.components.DialogPopup
 import com.github.damontecres.wholphin.ui.components.EpisodeQuickDetails
@@ -167,6 +166,7 @@ fun HomePage(
                 },
                 loadingState = refreshing,
                 showClock = preferences.appPreferences.interfacePreferences.showClock,
+                onUpdateBackdrop = viewModel::updateBackdrop,
                 modifier = modifier,
             )
             dialog?.let { params ->
@@ -203,6 +203,7 @@ fun HomePageContent(
     onLongClickItem: (RowColumn, BaseItem) -> Unit,
     onClickPlay: (RowColumn, BaseItem) -> Unit,
     showClock: Boolean,
+    onUpdateBackdrop: (BaseItem) -> Unit,
     modifier: Modifier = Modifier,
     onFocusPosition: ((RowColumn) -> Unit)? = null,
     loadingState: LoadingState? = null,
@@ -249,12 +250,10 @@ fun HomePageContent(
     LaunchedEffect(position) {
         listState.animateScrollToItem(position.row)
     }
+    LaunchedEffect(focusedItem) {
+        focusedItem?.let(onUpdateBackdrop)
+    }
     Box(modifier = modifier) {
-        DelayedDetailsBackdropImage(
-            item = focusedItem,
-            modifier = Modifier,
-        )
-
         Column(modifier = Modifier.fillMaxSize()) {
             HomePageHeader(
                 item = focusedItem,

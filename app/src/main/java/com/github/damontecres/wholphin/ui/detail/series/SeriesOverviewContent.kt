@@ -52,7 +52,6 @@ import com.github.damontecres.wholphin.ui.AspectRatios
 import com.github.damontecres.wholphin.ui.OneTimeLaunchedEffect
 import com.github.damontecres.wholphin.ui.cards.BannerCard
 import com.github.damontecres.wholphin.ui.cards.PersonRow
-import com.github.damontecres.wholphin.ui.components.DetailsBackdropImage
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.components.SeriesName
@@ -112,7 +111,6 @@ fun SeriesOverviewContent(
             modifier
                 .fillMaxWidth(),
     ) {
-        DetailsBackdropImage(backdropImageUrl)
         Column(
             verticalArrangement = Arrangement.spacedBy(8.dp),
             modifier =

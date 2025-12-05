@@ -20,6 +20,8 @@ import androidx.lifecycle.viewModelScope
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.preferences.UserPreferences
+import com.github.damontecres.wholphin.services.BackdropRequest
+import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.FavoriteWatchManager
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.ui.OneTimeLaunchedEffect
@@ -45,6 +47,7 @@ abstract class RecommendedViewModel(
     val context: Context,
     val navigationManager: NavigationManager,
     val favoriteWatchManager: FavoriteWatchManager,
+    private val backdropService: BackdropService,
 ) : ViewModel() {
     abstract fun init()
 
@@ -83,6 +86,12 @@ abstract class RecommendedViewModel(
         viewModelScope.launchIO {
             favoriteWatchManager.setFavorite(itemId, watched)
             refreshItem(position, itemId)
+        }
+    }
+
+    fun updateBackdrop(item: BaseItem) {
+        viewModelScope.launchIO {
+            backdropService.submit(BackdropRequest(item, true, true))
         }
     }
 
@@ -152,6 +161,7 @@ fun RecommendedContent(
                 },
                 onFocusPosition = onFocusPosition,
                 showClock = preferences.appPreferences.interfacePreferences.showClock,
+                onUpdateBackdrop = viewModel::updateBackdrop,
                 modifier = modifier,
             )
         }

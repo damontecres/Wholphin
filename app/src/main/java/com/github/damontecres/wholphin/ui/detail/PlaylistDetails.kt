@@ -50,10 +50,11 @@ import androidx.tv.material3.Text
 import androidx.tv.material3.surfaceColorAtElevation
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.BaseItem
+import com.github.damontecres.wholphin.services.BackdropRequest
+import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.ui.DefaultItemFields
 import com.github.damontecres.wholphin.ui.cards.ItemCardImage
-import com.github.damontecres.wholphin.ui.components.DelayedDetailsBackdropImage
 import com.github.damontecres.wholphin.ui.components.DialogItem
 import com.github.damontecres.wholphin.ui.components.DialogParams
 import com.github.damontecres.wholphin.ui.components.DialogPopup
@@ -64,6 +65,7 @@ import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.components.OverviewText
 import com.github.damontecres.wholphin.ui.enableMarquee
 import com.github.damontecres.wholphin.ui.ifElse
+import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.roundMinutes
 import com.github.damontecres.wholphin.ui.tryRequestFocus
@@ -88,6 +90,7 @@ class PlaylistViewModel
     constructor(
         api: ApiClient,
         val navigationManager: NavigationManager,
+        private val backdropService: BackdropService,
     ) : ItemViewModel(api) {
         val loading = MutableLiveData<LoadingState>(LoadingState.Pending)
         val items = MutableLiveData<List<BaseItem?>>(listOf())
@@ -109,6 +112,12 @@ class PlaylistViewModel
                     items.value = pager
                     loading.value = LoadingState.Success
                 }
+            }
+        }
+
+        fun updateBackdrop(item: BaseItem) {
+            viewModelScope.launchIO {
+                backdropService.submit(BackdropRequest(item, true, true))
             }
         }
     }
@@ -146,6 +155,7 @@ fun PlaylistDetails(
                     playlist = it,
                     items = items,
                     focusRequester = focusRequester,
+                    onChangeBackdrop = viewModel::updateBackdrop,
                     onClickIndex = { index, _ ->
                         viewModel.navigationManager.navigateTo(
                             Destination.PlaybackList(
@@ -212,6 +222,7 @@ fun PlaylistDetailsContent(
     onClickIndex: (Int, BaseItem) -> Unit,
     onLongClickIndex: (Int, BaseItem) -> Unit,
     onClickPlay: (shuffle: Boolean) -> Unit,
+    onChangeBackdrop: (BaseItem) -> Unit,
     modifier: Modifier = Modifier,
     focusRequester: FocusRequester = remember { FocusRequester() },
 ) {
@@ -219,13 +230,15 @@ fun PlaylistDetailsContent(
     var focusedIndex by remember { mutableIntStateOf(savedIndex) }
     val focus = remember { FocusRequester() }
     val focusedItem = items.getOrNull(focusedIndex)
+    LaunchedEffect(focusedItem) {
+        focusedItem?.let(onChangeBackdrop)
+    }
 
     val playButtonFocusRequester = remember { FocusRequester() }
 
     Box(
         modifier = modifier,
     ) {
-        DelayedDetailsBackdropImage(focusedItem)
         Column(
             verticalArrangement = Arrangement.spacedBy(16.dp),
             modifier =
