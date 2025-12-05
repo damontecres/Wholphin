@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -246,9 +247,8 @@ fun HomePageContent(
                 item = focusedItem,
                 modifier =
                     Modifier
-                        .fillMaxWidth(.6f)
-                        .fillMaxHeight(.33f)
-                        .padding(16.dp),
+                        .padding(top = 48.dp, bottom = 32.dp, start = 32.dp)
+                        .fillMaxHeight(.33f),
             )
             LazyColumn(
                 state = listState,
@@ -412,28 +412,32 @@ fun HomePageHeader(
     item: BaseItem?,
     modifier: Modifier = Modifier,
 ) {
-    Box(
-        modifier = modifier,
-    ) {
+    item?.let {
+        val dto = item.data
         Column(
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+            modifier = modifier,
         ) {
-            item?.let {
-                val dto = item.data
+            item.title?.let {
+                Text(
+                    text = it,
+                    style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.SemiBold),
+                    color = MaterialTheme.colorScheme.onBackground,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.fillMaxWidth(.75f),
+                )
+            }
+            Column(
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                modifier =
+                    Modifier
+                        .fillMaxWidth(.6f)
+                        .fillMaxHeight(),
+            ) {
                 val isEpisode = item.type == BaseItemKind.EPISODE
-                val title = if (isEpisode) dto.seriesName ?: item.name else item.name
                 val subtitle = if (isEpisode) dto.name else null
                 val overview = dto.overview
-                title?.let {
-                    Text(
-                        text = title,
-                        style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.SemiBold),
-                        color = MaterialTheme.colorScheme.onBackground,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                }
                 subtitle?.let {
                     Text(
                         text = subtitle,
@@ -452,6 +456,7 @@ fun HomePageHeader(
                     Modifier
                         .padding(0.dp)
                         .height(48.dp + if (!isEpisode) 12.dp else 0.dp)
+                        .width(400.dp)
                 if (overview.isNotNullOrBlank()) {
                     Text(
                         text = overview,
