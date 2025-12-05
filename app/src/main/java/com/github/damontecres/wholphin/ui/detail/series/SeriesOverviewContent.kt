@@ -40,6 +40,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.github.damontecres.wholphin.R
@@ -60,6 +61,7 @@ import com.github.damontecres.wholphin.ui.formatDateTime
 import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.logTab
 import com.github.damontecres.wholphin.ui.tryRequestFocus
+import com.github.damontecres.wholphin.ui.util.rememberDelayedNestedScroll
 import kotlinx.coroutines.launch
 import kotlin.time.Duration
 
@@ -102,7 +104,7 @@ fun SeriesOverviewContent(
     val dimming by animateFloatAsState(if (pageHasFocus && !cardRowHasFocus) .4f else 1f)
 
     val scrollState = rememberScrollState()
-
+    val scrollConnection = rememberDelayedNestedScroll()
     Box(
         modifier =
             modifier
@@ -116,7 +118,8 @@ fun SeriesOverviewContent(
                     .fillMaxSize()
                     .padding(16.dp)
                     .focusGroup()
-                    .verticalScroll(scrollState, enabled = false)
+                    .nestedScroll(scrollConnection)
+                    .verticalScroll(scrollState)
                     .onFocusChanged { pageHasFocus = it.hasFocus },
         ) {
             Column(
@@ -292,7 +295,7 @@ fun SeriesOverviewContent(
                     modifier =
                         Modifier
                             .fillMaxWidth()
-                            .padding(bottom = 200.dp)
+//                            .padding(bottom = 80.dp)
                             .focusRequester(peopleRowFocusRequester),
                 )
             }

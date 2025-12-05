@@ -38,6 +38,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
@@ -81,7 +82,7 @@ class SeriesViewModel
         val people = MutableLiveData<List<Person>>(listOf())
         val similar = MutableLiveData<List<BaseItem>>()
 
-        val peopleInEpisode = MutableLiveData<List<Person>>(listOf())
+        val peopleInEpisode = MutableLiveData<PeopleInItem>(PeopleInItem())
 
         fun init(
             prefs: UserPreferences,
@@ -247,7 +248,7 @@ class SeriesViewModel
         fun loadEpisodes(seasonId: UUID) {
             val currentEpisodes = (this@SeriesViewModel.episodes.value as? EpisodeList.Success)
             if (currentEpisodes == null || currentEpisodes.seasonId != seasonId) {
-                this@SeriesViewModel.peopleInEpisode.value = listOf()
+                this@SeriesViewModel.peopleInEpisode.value = PeopleInItem()
                 this@SeriesViewModel.episodes.value = EpisodeList.Loading
             }
             viewModelScope.launchIO(ExceptionHandler(true)) {
@@ -418,12 +419,22 @@ class SeriesViewModel
             }
         }
 
+        private var peopleInEpisodeJob: Job? = null
+
         suspend fun lookupPeopleInEpisode(item: BaseItem) {
-            val people =
-                item.data.people
-                    ?.letNotEmpty { it.map { Person.fromDto(it, api) } }
-                    .orEmpty()
-            peopleInEpisode.setValueOnMain(people)
+            peopleInEpisodeJob?.cancel()
+            if (peopleInEpisode.value?.itemId != item.id) {
+                peopleInEpisode.setValueOnMain(PeopleInItem())
+                peopleInEpisodeJob =
+                    viewModelScope.launch(ExceptionHandler()) {
+                        delay(250)
+                        val people =
+                            item.data.people
+                                ?.letNotEmpty { it.map { Person.fromDto(it, api) } }
+                                .orEmpty()
+                        peopleInEpisode.setValueOnMain(PeopleInItem(item.id, people))
+                    }
+            }
         }
     }
 
@@ -443,3 +454,8 @@ sealed interface EpisodeList {
         val initialIndex: Int,
     ) : EpisodeList
 }
+
+data class PeopleInItem(
+    val itemId: UUID? = null,
+    val people: List<Person> = listOf(),
+)

@@ -18,6 +18,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.LifecycleStartEffect
+import androidx.lifecycle.map
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.chooseSource
@@ -106,7 +107,7 @@ fun SeriesOverview(
     val series by viewModel.item.observeAsState(null)
     val seasons by viewModel.seasons.observeAsState(listOf())
     val episodes by viewModel.episodes.observeAsState(EpisodeList.Loading)
-    val peopleInEpisode by viewModel.peopleInEpisode.observeAsState(listOf())
+    val peopleInEpisode by viewModel.peopleInEpisode.map { it.people }.observeAsState(listOf())
     val episodeList = (episodes as? EpisodeList.Success)?.episodes
 
     var position by rememberSaveable(
@@ -159,13 +160,15 @@ fun SeriesOverview(
     }
 
     LaunchedEffect(position) {
-        (episodes as? EpisodeList.Success)
-            ?.episodes
-            ?.getOrNull(position.episodeRowIndex)
-            ?.let {
-                viewModel.lookUpChosenTracks(it.id, it)
-                viewModel.lookupPeopleInEpisode(it)
-            }
+        val focusedEpisode =
+            (episodes as? EpisodeList.Success)
+                ?.episodes
+                ?.getOrNull(position.episodeRowIndex)
+
+        focusedEpisode?.let {
+            viewModel.lookUpChosenTracks(it.id, it)
+            viewModel.lookupPeopleInEpisode(it)
+        }
     }
     val chosenStreams by viewModel.chosenStreams.observeAsState(null)
 
