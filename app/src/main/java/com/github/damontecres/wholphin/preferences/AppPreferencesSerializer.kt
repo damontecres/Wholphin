@@ -170,4 +170,5 @@ fun SubtitlePreferences.Builder.resetSubtitles() {
     backgroundOpacity = SubtitleSettings.BackgroundOpacity.defaultValue.toInt()
     backgroundStyle = SubtitleSettings.BackgroundStylePref.defaultValue
     margin = SubtitleSettings.Margin.defaultValue.toInt()
+    edgeThickness = SubtitleSettings.EdgeThickness.defaultValue.toInt()
 }

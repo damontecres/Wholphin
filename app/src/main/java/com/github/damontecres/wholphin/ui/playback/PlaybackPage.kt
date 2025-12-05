@@ -73,12 +73,14 @@ import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.preferences.subtitle.SubtitleSettings.applyToMpv
+import com.github.damontecres.wholphin.ui.preferences.subtitle.SubtitleSettings.calculateEdgeSize
 import com.github.damontecres.wholphin.ui.preferences.subtitle.SubtitleSettings.toSubtitleStyle
 import com.github.damontecres.wholphin.ui.seasonEpisode
 import com.github.damontecres.wholphin.ui.skipStringRes
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
+import com.github.damontecres.wholphin.util.Media3SubtitleOverride
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -329,6 +331,10 @@ fun PlaybackPage(
                             },
                             update = {
                                 it.setCues(cues)
+                                Media3SubtitleOverride(
+                                    preferences.appPreferences.interfacePreferences.subtitlesPreferences
+                                        .calculateEdgeSize(density),
+                                ).apply(it)
                             },
                             onReset = {
                                 it.setCues(null)
