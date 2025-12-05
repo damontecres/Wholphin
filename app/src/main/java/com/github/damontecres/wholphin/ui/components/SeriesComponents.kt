@@ -9,6 +9,7 @@ import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.ui.formatDateTime
 import com.github.damontecres.wholphin.ui.roundMinutes
 import com.github.damontecres.wholphin.ui.seasonEpisode
+import com.github.damontecres.wholphin.ui.seriesProductionYears
 import com.github.damontecres.wholphin.ui.timeRemaining
 import org.jellyfin.sdk.model.api.BaseItemDto
 import org.jellyfin.sdk.model.extensions.ticks
@@ -85,22 +86,7 @@ fun SeriesQuickDetails(
     val details =
         remember(dto) {
             buildList {
-                if (dto?.productionYear != null) {
-                    val date =
-                        buildString {
-                            append(dto.productionYear.toString())
-                            if (dto.status == "Continuing") {
-                                append(" - ")
-                                append("Present")
-                            } else if (dto.status == "Ended") {
-                                dto.endDate?.let {
-                                    append(" - ")
-                                    append(it.year)
-                                }
-                            }
-                        }
-                    add(date)
-                }
+                dto?.seriesProductionYears?.let(::add)
                 val duration = dto?.runTimeTicks?.ticks
                 duration
                     ?.roundMinutes
