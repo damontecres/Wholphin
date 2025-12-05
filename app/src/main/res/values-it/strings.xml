@@ -324,4 +324,6 @@
     <string name="show_details">Mostra dettagli</string>
     <string name="aspect_ratio">Rapporto d’aspetto</string>
     <string name="image_type">Tipo di immagine</string>
+    <string name="cast_and_crew"><![CDATA[Cast e troupe]]></string>
+    <string name="guest_stars">Guest star</string>
 </resources>
