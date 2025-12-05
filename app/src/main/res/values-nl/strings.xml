@@ -290,4 +290,24 @@
     <string name="subtitle_margin">Marge</string>
     <string name="verbose_logging">Uitgebreid logboek aanleggen</string>
     <string name="image_cache_size">Omvang van afbeeldingscache (in MB)</string>
+    <string name="mpv_use_gpu_next">Mpv: gpu-next gebruiken</string>
+    <string name="mpv_conf">mpv.conf bewerken</string>
+    <string name="discard_change">Wijzigingen negeren?</string>
+    <string name="enter_pin">Pincode invoeren</string>
+    <string name="sign_in_auto">Automatisch inloggen</string>
+    <string name="use_server_credentials">Inloggen via server</string>
+    <string name="press_enter_to_confirm">Druk op het midden om te bevestigen</string>
+    <string name="require_pin_code">Profiel voorzien van pincode</string>
+    <string name="confirm_pin">Pincode bevestigen</string>
+    <string name="incorrect">Onjuist</string>
+    <string name="pin_too_short">De pincode dient 4 of meer tekens te bevatten</string>
+    <string name="will_remove_pin">De pincode wordt gewist</string>
+    <string name="view_options">Weergaveopties</string>
+    <string name="columns">Kolommen</string>
+    <string name="spacing">Tussenruimte</string>
+    <string name="aspect_ratio">Beeldverhouding</string>
+    <string name="show_details">Details bekijken</string>
+    <string name="image_type">Afbeeldingstype</string>
+    <string name="cast_and_crew"><![CDATA[Cast en crew]]></string>
+    <string name="guest_stars">Gastrollen</string>
 </resources>
