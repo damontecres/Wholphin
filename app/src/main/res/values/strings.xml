@@ -349,6 +349,7 @@
     <string name="image_type">Image type</string>
     <string name="cast_and_crew"><![CDATA[Cast & Crew]]></string>
     <string name="guest_stars">Guest stars</string>
+    <string name="edge_size">Edge size</string>
 
 
     <string-array name="theme_song_volume">

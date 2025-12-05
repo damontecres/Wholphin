@@ -163,4 +163,14 @@ suspend fun upgradeApp(
             }
         }
     }
+
+    if (previous.isEqualOrBefore(Version.fromString("0.3.5-0-g0"))) {
+        appPreferences.updateData {
+            it.updateSubtitlePreferences {
+                if (edgeThickness < 1) {
+                    edgeThickness = SubtitleSettings.EdgeThickness.defaultValue.toInt()
+                }
+            }
+        }
+    }
 }
