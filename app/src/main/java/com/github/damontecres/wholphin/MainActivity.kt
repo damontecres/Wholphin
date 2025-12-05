@@ -1,5 +1,6 @@
 package com.github.damontecres.wholphin
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.WindowManager
 import androidx.activity.compose.setContent
@@ -42,8 +43,10 @@ import com.github.damontecres.wholphin.services.PlaybackLifecycleObserver
 import com.github.damontecres.wholphin.services.ServerEventListener
 import com.github.damontecres.wholphin.services.UpdateChecker
 import com.github.damontecres.wholphin.services.hilt.AuthOkHttpClient
+import com.github.damontecres.wholphin.services.tvprovider.TvProviderSchedulerService
 import com.github.damontecres.wholphin.ui.CoilConfig
 import com.github.damontecres.wholphin.ui.LocalImageUrlService
+import com.github.damontecres.wholphin.ui.detail.series.SeasonEpisodeIds
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.nav.ApplicationContent
@@ -56,6 +59,7 @@ import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
+import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.serializer.toUUIDOrNull
 import timber.log.Timber
 import javax.inject.Inject
@@ -93,6 +97,9 @@ class MainActivity : AppCompatActivity() {
     @Inject
     lateinit var imageUrlService: ImageUrlService
 
+    @Inject
+    lateinit var tvProviderSchedulerService: TvProviderSchedulerService
+
     @OptIn(ExperimentalTvMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -101,6 +108,7 @@ class MainActivity : AppCompatActivity() {
         if (savedInstanceState == null) {
             appUpgradeHandler.copySubfont(false)
         }
+        val requestedDestination = this.intent?.let(::extractDestination)
         setContent {
             val appPreferences by userPreferencesDataStore.data.collectAsState(null)
             appPreferences?.let { appPreferences ->
@@ -186,7 +194,9 @@ class MainActivity : AppCompatActivity() {
                                     }
                                     val initialDestination =
                                         when {
-                                            current != null -> Destination.Home()
+                                            current != null ->
+                                                requestedDestination
+                                                    ?: Destination.Home()
                                             !appPreferences.signInAutomatically -> Destination.ServerList // TODO user list?
                                             else -> Destination.ServerList
                                         }
@@ -240,5 +250,51 @@ class MainActivity : AppCompatActivity() {
         if (!signInAutomatically) {
             serverRepository.closeSession()
         }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        Timber.v("onNewIntent")
+        extractDestination(intent)?.let {
+            navigationManager.navigateToFromDrawer(it)
+        }
+    }
+
+    private fun extractDestination(intent: Intent): Destination? =
+        intent.let {
+            val itemId =
+                it.getStringExtra(INTENT_ITEM_ID)?.toUUIDOrNull()
+            val type =
+                it.getStringExtra(INTENT_ITEM_TYPE)?.let(BaseItemKind::fromNameOrNull)
+            if (itemId != null && type != null) {
+                val seriesId = it.getStringExtra(INTENT_SERIES_ID)?.toUUIDOrNull()
+                val episodeNumber = it.getIntExtra(INTENT_EPISODE_NUMBER, -1)
+                val seasonNumber = it.getIntExtra(INTENT_SEASON_NUMBER, -1)
+                if (seriesId != null && episodeNumber >= 0 && seasonNumber >= 0) {
+                    Destination.SeriesOverview(
+                        itemId = seriesId,
+                        type = BaseItemKind.SERIES,
+                        seasonEpisode =
+                            SeasonEpisodeIds(
+                                seasonId = null,
+                                seasonNumber = seasonNumber,
+                                episodeId = itemId,
+                                episodeNumber = episodeNumber,
+                            ),
+                    )
+                } else {
+                    Destination.MediaItem(itemId, type)
+                }
+            } else {
+                null
+            }
+        }
+
+    companion object {
+        const val INTENT_ITEM_ID = "itemId"
+        const val INTENT_ITEM_TYPE = "itemType"
+        const val INTENT_SERIES_ID = "seriesId"
+        const val INTENT_EPISODE_NUMBER = "epNum"
+        const val INTENT_SEASON_NUMBER = "seaNum"
     }
 }
