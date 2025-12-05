@@ -51,5 +51,5 @@ fun rememberDelayedNestedScroll(
     @FloatRange(0.0, 1.0)
     xDelay: Float = 0f,
     @FloatRange(0.0, 1.0)
-    yDelay: Float = .6f,
+    yDelay: Float = .33f,
 ) = remember(xDelay, yDelay) { DelayedNestedScrollConnection(xDelay, yDelay) }

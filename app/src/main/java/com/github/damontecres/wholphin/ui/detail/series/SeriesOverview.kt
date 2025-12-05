@@ -49,6 +49,7 @@ import kotlinx.serialization.UseSerializers
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.ImageType
 import org.jellyfin.sdk.model.api.MediaType
+import org.jellyfin.sdk.model.api.PersonKind
 import org.jellyfin.sdk.model.extensions.ticks
 import org.jellyfin.sdk.model.serializer.UUIDSerializer
 import org.jellyfin.sdk.model.serializer.toUUID
@@ -88,7 +89,8 @@ fun SeriesOverview(
     val context = LocalContext.current
     val firstItemFocusRequester = remember { FocusRequester() }
     val episodeRowFocusRequester = remember { FocusRequester() }
-    val peopleRowFocusRequester = remember { FocusRequester() }
+    val castCrewRowFocusRequester = remember { FocusRequester() }
+    val guestStarRowFocusRequester = remember { FocusRequester() }
 
     var initialLoadDone by rememberSaveable { mutableStateOf(false) }
     OneTimeLaunchedEffect {
@@ -183,10 +185,10 @@ fun SeriesOverview(
             series?.let { series ->
 
                 LaunchedEffect(Unit) {
-                    if (rowFocused == EPISODE_ROW) {
-                        episodeRowFocusRequester.tryRequestFocus()
-                    } else if (rowFocused == PEOPLE_ROW) {
-                        peopleRowFocusRequester.tryRequestFocus()
+                    when (rowFocused) {
+                        EPISODE_ROW -> episodeRowFocusRequester.tryRequestFocus()
+                        CAST_AND_CREW_ROW -> castCrewRowFocusRequester.tryRequestFocus()
+                        GUEST_STAR_ROW -> guestStarRowFocusRequester.tryRequestFocus()
                     }
                 }
                 LifecycleStartEffect(destination.itemId) {
@@ -291,7 +293,8 @@ fun SeriesOverview(
                         },
                     firstItemFocusRequester = firstItemFocusRequester,
                     episodeRowFocusRequester = episodeRowFocusRequester,
-                    peopleRowFocusRequester = peopleRowFocusRequester,
+                    castCrewRowFocusRequester = castCrewRowFocusRequester,
+                    guestStarRowFocusRequester = guestStarRowFocusRequester,
                     onFocus = {
                         if (it.seasonTabIndex != position.seasonTabIndex) {
                             seasons.getOrNull(it.seasonTabIndex)?.let { season ->
@@ -359,7 +362,8 @@ fun SeriesOverview(
                         }
                     },
                     personOnClick = {
-                        rowFocused = PEOPLE_ROW
+                        rowFocused =
+                            if (it.type == PersonKind.GUEST_STAR) GUEST_STAR_ROW else CAST_AND_CREW_ROW
                         viewModel.navigateTo(
                             Destination.MediaItem(
                                 it.id,
@@ -423,4 +427,5 @@ fun SeriesOverview(
 }
 
 private const val EPISODE_ROW = 0
-private const val PEOPLE_ROW = EPISODE_ROW + 1
+private const val CAST_AND_CREW_ROW = EPISODE_ROW + 1
+private const val GUEST_STAR_ROW = CAST_AND_CREW_ROW + 1

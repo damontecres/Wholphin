@@ -63,6 +63,7 @@ import com.github.damontecres.wholphin.ui.logTab
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.ui.util.rememberDelayedNestedScroll
 import kotlinx.coroutines.launch
+import org.jellyfin.sdk.model.api.PersonKind
 import kotlin.time.Duration
 
 @Composable
@@ -77,7 +78,8 @@ fun SeriesOverviewContent(
     backdropImageUrl: String?,
     firstItemFocusRequester: FocusRequester,
     episodeRowFocusRequester: FocusRequester,
-    peopleRowFocusRequester: FocusRequester,
+    castCrewRowFocusRequester: FocusRequester,
+    guestStarRowFocusRequester: FocusRequester,
     onFocus: (SeriesOverviewPosition) -> Unit,
     onClick: (BaseItem) -> Unit,
     onLongClick: (BaseItem) -> Unit,
@@ -284,20 +286,51 @@ fun SeriesOverviewContent(
                 }
             }
 
+            val castAndCrew =
+                remember(peopleInEpisode) {
+                    peopleInEpisode.filterNot {
+                        it.type == PersonKind.GUEST_STAR
+                    }
+                }
+            val guestStars =
+                remember(peopleInEpisode) {
+                    peopleInEpisode.filter {
+                        it.type == PersonKind.GUEST_STAR
+                    }
+                }
+
             AnimatedVisibility(
                 visible = peopleInEpisode.isNotEmpty(),
                 enter = fadeIn(),
                 exit = fadeOut(),
             ) {
-                PersonRow(
-                    people = peopleInEpisode,
-                    onClick = personOnClick,
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-//                            .padding(bottom = 80.dp)
-                            .focusRequester(peopleRowFocusRequester),
-                )
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    if (castAndCrew.isNotEmpty()) {
+                        PersonRow(
+                            title = R.string.cast_and_crew,
+                            people = castAndCrew,
+                            onClick = personOnClick,
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .focusRequester(castCrewRowFocusRequester),
+                        )
+                    }
+                    if (guestStars.isNotEmpty()) {
+                        PersonRow(
+                            title = R.string.guest_stars,
+                            people = guestStars,
+                            onClick = personOnClick,
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .focusRequester(guestStarRowFocusRequester),
+                        )
+                    }
+                }
             }
         }
     }
