@@ -164,7 +164,7 @@ suspend fun upgradeApp(
         }
     }
 
-    if (previous.isEqualOrBefore(Version.fromString("0.3.4-5-g0"))) {
+    if (previous.isEqualOrBefore(Version.fromString("0.3.5-0-g0"))) {
         appPreferences.updateData {
             it.updateSubtitlePreferences {
                 if (edgeThickness < 1) {
