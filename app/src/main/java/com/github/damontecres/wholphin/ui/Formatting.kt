@@ -54,6 +54,27 @@ val BaseItemDto.seasonEpisodePadded: String?
             null
         }
 
+val BaseItemDto.seriesProductionYears: String?
+    get() =
+        if (productionYear != null) {
+            buildString {
+                append(productionYear.toString())
+                if (status == "Continuing") {
+                    append(" - ")
+                    append("Present")
+                } else if (status == "Ended") {
+                    endDate?.let {
+                        if (it.year != productionYear) {
+                            append(" - ")
+                            append(it.year)
+                        }
+                    }
+                }
+            }
+        } else {
+            null
+        }
+
 private val abbrevSuffixes = listOf("", "K", "M", "B")
 
 /**

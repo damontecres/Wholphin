@@ -5,6 +5,7 @@ import com.github.damontecres.wholphin.ui.formatDateTime
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.seasonEpisode
 import com.github.damontecres.wholphin.ui.seasonEpisodePadded
+import com.github.damontecres.wholphin.ui.seriesProductionYears
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import org.jellyfin.sdk.api.client.ApiClient
@@ -28,7 +29,11 @@ data class BaseItem(
 
     val subtitle
         get() =
-            if (type == BaseItemKind.EPISODE) data.seasonEpisode + " - " + name else data.productionYear?.toString()
+            when (type) {
+                BaseItemKind.EPISODE -> data.seasonEpisode + " - " + name
+                BaseItemKind.SERIES -> data.seriesProductionYears
+                else -> data.productionYear?.toString()
+            }
 
     val subtitleLong: String? by lazy {
         if (type == BaseItemKind.EPISODE) {
