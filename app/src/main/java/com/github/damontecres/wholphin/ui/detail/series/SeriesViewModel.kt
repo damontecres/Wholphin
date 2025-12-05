@@ -24,6 +24,7 @@ import com.github.damontecres.wholphin.ui.SlimItemFields
 import com.github.damontecres.wholphin.ui.detail.ItemViewModel
 import com.github.damontecres.wholphin.ui.equalsNotNull
 import com.github.damontecres.wholphin.ui.launchIO
+import com.github.damontecres.wholphin.ui.letNotEmpty
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.setValueOnMain
 import com.github.damontecres.wholphin.ui.showToast
@@ -37,6 +38,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
@@ -79,6 +81,8 @@ class SeriesViewModel
         val extras = MutableLiveData<List<ExtrasItem>>(listOf())
         val people = MutableLiveData<List<Person>>(listOf())
         val similar = MutableLiveData<List<BaseItem>>()
+
+        val peopleInEpisode = MutableLiveData<PeopleInItem>(PeopleInItem())
 
         fun init(
             prefs: UserPreferences,
@@ -218,6 +222,7 @@ class SeriesViewModel
                             ItemFields.CUSTOM_RATING,
                             ItemFields.TRICKPLAY,
                             ItemFields.PRIMARY_IMAGE_ASPECT_RATIO,
+                            ItemFields.PEOPLE,
                         ),
                 )
             val pager = ApiRequestPager(api, request, GetEpisodesRequestHandler, viewModelScope)
@@ -237,11 +242,15 @@ class SeriesViewModel
                     0
                 }
             Timber.v("Loaded ${pager.size} episodes for season $seasonId, initialIndex=$initialIndex")
-            return EpisodeList.Success(pager, initialIndex)
+            return EpisodeList.Success(seasonId, pager, initialIndex)
         }
 
         fun loadEpisodes(seasonId: UUID) {
-            this@SeriesViewModel.episodes.value = EpisodeList.Loading
+            val currentEpisodes = (this@SeriesViewModel.episodes.value as? EpisodeList.Success)
+            if (currentEpisodes == null || currentEpisodes.seasonId != seasonId) {
+                this@SeriesViewModel.peopleInEpisode.value = PeopleInItem()
+                this@SeriesViewModel.episodes.value = EpisodeList.Loading
+            }
             viewModelScope.launchIO(ExceptionHandler(true)) {
                 val episodes =
                     try {
@@ -252,6 +261,12 @@ class SeriesViewModel
                     }
                 withContext(Dispatchers.Main) {
                     this@SeriesViewModel.episodes.value = episodes
+                }
+                if (currentEpisodes == null || currentEpisodes.seasonId != seasonId) {
+                    (episodes as? EpisodeList.Success)
+                        ?.let {
+                            it.episodes.getOrNull(it.initialIndex)
+                        }?.let { lookupPeopleInEpisode(it) }
                 }
             }
         }
@@ -403,6 +418,24 @@ class SeriesViewModel
                 }
             }
         }
+
+        private var peopleInEpisodeJob: Job? = null
+
+        suspend fun lookupPeopleInEpisode(item: BaseItem) {
+            peopleInEpisodeJob?.cancel()
+            if (peopleInEpisode.value?.itemId != item.id) {
+                peopleInEpisode.setValueOnMain(PeopleInItem())
+                peopleInEpisodeJob =
+                    viewModelScope.launch(ExceptionHandler()) {
+                        delay(250)
+                        val people =
+                            item.data.people
+                                ?.letNotEmpty { it.map { Person.fromDto(it, api) } }
+                                .orEmpty()
+                        peopleInEpisode.setValueOnMain(PeopleInItem(item.id, people))
+                    }
+            }
+        }
     }
 
 sealed interface EpisodeList {
@@ -416,7 +449,13 @@ sealed interface EpisodeList {
     }
 
     data class Success(
+        val seasonId: UUID,
         val episodes: ApiRequestPager<GetEpisodesRequest>,
         val initialIndex: Int,
     ) : EpisodeList
 }
+
+data class PeopleInItem(
+    val itemId: UUID? = null,
+    val people: List<Person> = listOf(),
+)
