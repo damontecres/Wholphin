@@ -350,6 +350,8 @@
     <string name="cast_and_crew"><![CDATA[Cast & Crew]]></string>
     <string name="guest_stars">Guest stars</string>
     <string name="edge_size">Edge size</string>
+    <string name="username_or_password">Use username/password</string>
+    <string name="login">Login</string>
 
 
     <string-array name="theme_song_volume">

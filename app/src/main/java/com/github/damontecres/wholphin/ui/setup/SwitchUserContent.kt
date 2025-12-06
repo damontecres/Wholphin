@@ -34,7 +34,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.tv.material3.Button
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import androidx.tv.material3.surfaceColorAtElevation
@@ -44,6 +43,7 @@ import com.github.damontecres.wholphin.data.model.JellyfinUser
 import com.github.damontecres.wholphin.ui.components.BasicDialog
 import com.github.damontecres.wholphin.ui.components.CircularProgress
 import com.github.damontecres.wholphin.ui.components.EditTextBox
+import com.github.damontecres.wholphin.ui.components.TextButton
 import com.github.damontecres.wholphin.ui.dimAndBlur
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.nav.Destination
@@ -203,16 +203,15 @@ fun SwitchUserContent(
                             )
                         }
                         UserStateError(userState)
-                        Button(
+                        TextButton(
+                            stringRes = R.string.username_or_password,
                             onClick = {
                                 viewModel.cancelQuickConnect()
                                 viewModel.clearSwitchUserState()
                                 useQuickConnect = false
                             },
                             modifier = Modifier.align(Alignment.CenterHorizontally),
-                        ) {
-                            Text(text = "Use username/password")
-                        }
+                        )
                     } else {
                         val username = rememberTextFieldState()
                         val password = rememberTextFieldState()
@@ -282,27 +281,25 @@ fun SwitchUserContent(
                                 modifier = Modifier.focusRequester(passwordFocusRequester),
                             )
                         }
-                        Button(
+                        TextButton(
+                            stringRes = R.string.login,
                             onClick = { onSubmit.invoke() },
                             enabled = username.text.isNotNullOrBlank() && password.text.isNotNullOrBlank(),
                             modifier = Modifier.align(Alignment.CenterHorizontally),
-                        ) {
-                            Text("Login")
-                        }
+                        )
                     }
                     if (loginAttempts > 2) {
                         Text(
                             text = "Trouble logging in?",
                             modifier = Modifier.align(Alignment.CenterHorizontally),
                         )
-                        Button(
+                        TextButton(
+                            stringRes = R.string.show_debug_info,
                             onClick = {
                                 viewModel.navigationManager.navigateTo(Destination.Debug)
                             },
                             modifier = Modifier.align(Alignment.CenterHorizontally),
-                        ) {
-                            Text("Show debug info")
-                        }
+                        )
                     }
                 }
             }

@@ -3,17 +3,21 @@
 
 package com.github.damontecres.wholphin.ui.components
 
+import androidx.annotation.StringRes
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.NonRestartableComposable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
@@ -29,6 +33,7 @@ import androidx.tv.material3.ClickableSurfaceShape
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.ProvideTextStyle
 import androidx.tv.material3.Surface
+import androidx.tv.material3.Text
 
 @Composable
 fun Button(
@@ -70,7 +75,8 @@ fun Button(
                     shape = CircleShape,
                 ),
         ),
-    contentPadding: PaddingValues = PaddingValues(8.dp),
+    contentPadding: PaddingValues = DefaultButtonPadding,
+    contentHeight: Dp = MinButtonSize,
     interactionSource: MutableInteractionSource? = null,
     content: @Composable RowScope.() -> Unit,
 ) {
@@ -89,7 +95,10 @@ fun Button(
     ) {
         ProvideTextStyle(value = MaterialTheme.typography.labelLarge) {
             Row(
-                modifier = Modifier.padding(contentPadding),
+                modifier =
+                    Modifier
+                        .padding(contentPadding)
+                        .height(contentHeight),
                 horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically,
                 content = content,
@@ -97,3 +106,68 @@ fun Button(
         }
     }
 }
+
+@Composable
+@NonRestartableComposable
+fun TextButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    onLongClick: (() -> Unit)? = null,
+    enabled: Boolean = true,
+    contentPadding: PaddingValues =
+        PaddingValues(
+            start = 8.dp,
+            top = 4.dp,
+            end = 8.dp,
+            bottom = 4.dp,
+        ),
+    contentHeight: Dp = 32.dp,
+    interactionSource: MutableInteractionSource? = null,
+    content: @Composable RowScope.() -> Unit,
+) = Button(
+    onClick = onClick,
+    modifier = modifier,
+    onLongClick = onLongClick,
+    enabled = enabled,
+    contentPadding = contentPadding,
+    contentHeight = contentHeight,
+    interactionSource = interactionSource,
+    content = content,
+)
+
+@Composable
+fun TextButton(
+    @StringRes stringRes: Int,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    onLongClick: (() -> Unit)? = null,
+    enabled: Boolean = true,
+    contentPadding: PaddingValues =
+        PaddingValues(
+            start = 8.dp,
+            top = 4.dp,
+            end = 8.dp,
+            bottom = 4.dp,
+        ),
+    contentHeight: Dp = 32.dp,
+    interactionSource: MutableInteractionSource? = null,
+) = Button(
+    onClick = onClick,
+    modifier = modifier,
+    onLongClick = onLongClick,
+    enabled = enabled,
+    contentPadding = contentPadding,
+    contentHeight = contentHeight,
+    interactionSource = interactionSource,
+    content = {
+        Text(text = stringResource(stringRes))
+    },
+)
+
+val DefaultButtonPadding =
+    PaddingValues(
+        start = 4.dp,
+        top = 4.dp,
+        end = 4.dp,
+        bottom = 4.dp,
+    )
