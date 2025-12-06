@@ -2,16 +2,22 @@ package com.github.damontecres.wholphin.services
 
 import android.content.Context
 import android.hardware.display.DisplayManager
+import android.os.Build
 import android.view.Display
 import androidx.lifecycle.LiveData
+import com.github.damontecres.wholphin.ui.setValueOnMain
 import com.github.damontecres.wholphin.util.EqualityMutableLiveData
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.delay
 import org.jellyfin.sdk.model.api.MediaStream
 import org.jellyfin.sdk.model.api.MediaStreamType
 import timber.log.Timber
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.math.roundToInt
+import kotlin.time.Duration.Companion.seconds
 
 @Singleton
 class RefreshRateService
@@ -29,7 +35,7 @@ class RefreshRateService
         /**
          * Find the best display mode for the given stream and signal to change to it
          */
-        fun changeRefreshRate(stream: MediaStream) {
+        suspend fun changeRefreshRate(stream: MediaStream) {
             require(stream.type == MediaStreamType.VIDEO) { "Stream is not video" }
             val width = stream.width
             val height = stream.height
@@ -48,9 +54,32 @@ class RefreshRateService
                                 modeRate == (frameRate * 2.5).roundToInt() // eg 24 & 60fps
                         }
                     }.maxByOrNull { it.physicalWidth * it.physicalHeight }
-            Timber.i("Found display mode: %s", targetMode)
-            if (targetMode != null) {
-                _refreshRateMode.value = targetMode
+            Timber.i("Found display mode: %s, current=${display.mode}", targetMode)
+            if (targetMode != null && targetMode != display.mode) {
+                val listener = Listener(display.displayId)
+                displayManager.registerDisplayListener(listener, null)
+                _refreshRateMode.setValueOnMain(targetMode)
+                try {
+                    listener.latch.await(5, TimeUnit.SECONDS)
+                } catch (_: InterruptedException) {
+                    Timber.w("Timed out waiting for display change")
+                }
+                val targetRate = (targetMode.refreshRate * 100).roundToInt()
+                val isSeamless =
+                    targetRate == (display.mode.refreshRate * 100).roundToInt() ||
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                            display.mode.alternativeRefreshRates
+                                .map { (it * 100).roundToInt() }
+                                .any { targetRate % it == 0 }
+                        } else {
+                            false
+                        }
+                if (!isSeamless) {
+                    Timber.v("Waiting for non-seamless switch")
+                    // Wait the recommended 2 seconds (https://developer.android.com/media/optimize/performance/frame-rate)
+                    delay(2.seconds)
+                }
+                displayManager.unregisterDisplayListener(listener)
             }
         }
 
@@ -59,5 +88,24 @@ class RefreshRateService
          */
         fun resetRefreshRate() {
             _refreshRateMode.value = originalMode
+        }
+
+        private class Listener(
+            val displayId: Int,
+        ) : DisplayManager.DisplayListener {
+            val latch = CountDownLatch(1)
+
+            override fun onDisplayAdded(displayId: Int) {
+            }
+
+            override fun onDisplayChanged(displayId: Int) {
+                if (displayId == this.displayId) {
+                    Timber.v("Got display change for $displayId")
+                    latch.countDown()
+                }
+            }
+
+            override fun onDisplayRemoved(displayId: Int) {
+            }
         }
     }

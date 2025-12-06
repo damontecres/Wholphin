@@ -616,12 +616,12 @@ class PlaybackViewModel
                     }
                 }
 
-                withContext(Dispatchers.Main) {
-                    if (preferences.appPreferences.playbackPreferences.refreshRateSwitching) {
-                        source.mediaStreams?.firstOrNull { it.type == MediaStreamType.VIDEO }?.let {
-                            refreshRateService.changeRefreshRate(it)
-                        }
+                if (preferences.appPreferences.playbackPreferences.refreshRateSwitching) {
+                    source.mediaStreams?.firstOrNull { it.type == MediaStreamType.VIDEO }?.let {
+                        refreshRateService.changeRefreshRate(it)
                     }
+                }
+                withContext(Dispatchers.Main) {
                     // TODO, don't need to release & recreate when switching streams
                     this@PlaybackViewModel.activityListener?.let {
                         it.release()

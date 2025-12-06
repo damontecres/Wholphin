@@ -109,8 +109,8 @@ class MainActivity : AppCompatActivity() {
             // Listen for refresh rate changes
             val attrs = window.attributes
             if (attrs.preferredDisplayModeId != mode.modeId) {
-                Timber.d("Switch display mode to %s", mode)
-                window.attributes = attrs.apply { preferredDisplayModeId = mode.modeId }
+                Timber.d("Switch preferredRefreshRate to %s", mode.refreshRate)
+                window.attributes = attrs.apply { preferredRefreshRate = mode.refreshRate }
             }
         }
         setContent {
