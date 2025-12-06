@@ -20,7 +20,7 @@ import coil3.request.ImageRequest
 import coil3.request.transformations
 import com.github.damontecres.wholphin.ui.CoilTrickplayTransformation
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
-import org.jellyfin.sdk.model.api.TrickplayInfo
+import org.jellyfin.sdk.model.api.TrickplayInfoDto
 
 fun Modifier.offsetByPercent(
     xPercentage: Float,
@@ -74,7 +74,7 @@ fun SeekPreviewImage(
     seekProgressMs: Long,
     videoWidth: Int?,
     videoHeight: Int?,
-    trickPlayInfo: TrickplayInfo,
+    trickPlayInfo: TrickplayInfoDto,
     modifier: Modifier = Modifier,
     placeHolder: Painter? = null,
 ) {

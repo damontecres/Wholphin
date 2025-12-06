@@ -268,6 +268,7 @@ fun formatVideoRange(
             when (type) {
                 VideoRangeType.UNKNOWN,
                 VideoRangeType.SDR,
+                VideoRangeType.DOVI_INVALID,
                 null,
                 -> null
 
@@ -281,6 +282,9 @@ fun formatVideoRange(
                 VideoRangeType.DOVI_WITH_HDR10,
                 VideoRangeType.DOVI_WITH_HLG,
                 VideoRangeType.DOVI_WITH_SDR,
+                VideoRangeType.DOVI_WITH_EL,
+                VideoRangeType.DOVI_WITH_HDR10_PLUS,
+                VideoRangeType.DOVI_WITH_ELHDR10_PLUS,
                 -> context.getString(R.string.dolby_vision)
             }
         }
