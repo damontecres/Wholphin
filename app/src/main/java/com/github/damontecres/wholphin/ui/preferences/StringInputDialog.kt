@@ -22,13 +22,13 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import androidx.tv.material3.Button
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import androidx.tv.material3.surfaceColorAtElevation
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.ui.components.ConfirmDialog
 import com.github.damontecres.wholphin.ui.components.EditTextBox
+import com.github.damontecres.wholphin.ui.components.TextButton
 
 @Composable
 fun StringInputDialog(
@@ -95,22 +95,16 @@ fun StringInputDialog(
                     horizontalArrangement = Arrangement.SpaceAround,
                     modifier = Modifier.fillMaxWidth(),
                 ) {
-                    Button(
+                    TextButton(
+                        stringRes = R.string.cancel,
                         onClick = onDismissRequest,
                         modifier = Modifier,
-                    ) {
-                        Text(
-                            text = stringResource(R.string.cancel),
-                        )
-                    }
-                    Button(
+                    )
+                    TextButton(
+                        stringRes = R.string.save,
                         onClick = onDone,
                         modifier = Modifier,
-                    ) {
-                        Text(
-                            text = stringResource(R.string.save),
-                        )
-                    }
+                    )
                 }
             }
         }

@@ -45,15 +45,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.window.DialogWindowProvider
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
-import androidx.tv.material3.Button
-import androidx.tv.material3.ButtonDefaults
+import androidx.tv.material3.ClickableSurfaceDefaults
 import androidx.tv.material3.Icon
 import androidx.tv.material3.ListItem
 import androidx.tv.material3.LocalContentColor
@@ -62,10 +60,14 @@ import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.preferences.AppThemeColors
 import com.github.damontecres.wholphin.ui.AppColors
+import com.github.damontecres.wholphin.ui.PreviewTvSpec
+import com.github.damontecres.wholphin.ui.components.Button
+import com.github.damontecres.wholphin.ui.components.TextButton
 import com.github.damontecres.wholphin.ui.seekBack
 import com.github.damontecres.wholphin.ui.seekForward
 import com.github.damontecres.wholphin.ui.skipStringRes
 import com.github.damontecres.wholphin.ui.theme.LocalTheme
+import com.github.damontecres.wholphin.ui.theme.WholphinTheme
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import kotlinx.coroutines.delay
@@ -192,7 +194,8 @@ fun PlaybackControls(
                 modifier = Modifier.align(Alignment.CenterEnd),
             ) {
                 currentSegment?.let { segment ->
-                    Button(
+                    TextButton(
+                        stringRes = segment.type.skipStringRes,
                         onClick = {
                             playerControls.seekTo(segment.endTicks.ticks.inWholeMilliseconds)
                         },
@@ -200,11 +203,7 @@ fun PlaybackControls(
                             Modifier
                                 .align(Alignment.CenterVertically)
                                 .padding(end = 32.dp),
-                    ) {
-                        Text(
-                            text = stringResource(segment.type.skipStringRes),
-                        )
-                    }
+                    )
                 }
                 RightPlaybackButtons(
                     captionFocusRequester = captionFocusRequester,
@@ -286,7 +285,7 @@ fun SeekBar(
     }
 }
 
-private val buttonSpacing = 4.dp
+private val buttonSpacing = 12.dp
 
 @Composable
 fun LeftPlaybackButtons(
@@ -435,9 +434,9 @@ fun PlaybackButton(
     Button(
         enabled = enabled,
         onClick = onClick,
-        shape = ButtonDefaults.shape(CircleShape),
+//        shape = ButtonDefaults.shape(CircleShape),
         colors =
-            ButtonDefaults.colors(
+            ClickableSurfaceDefaults.colors(
                 containerColor = AppColors.TransparentBlack25,
                 focusedContainerColor = selectedColor,
             ),
@@ -445,8 +444,7 @@ fun PlaybackButton(
         interactionSource = interactionSource,
         modifier =
             modifier
-                .padding(4.dp)
-                .size(44.dp, 44.dp)
+                .size(36.dp, 36.dp)
                 .onFocusChanged { onControllerInteraction.invoke() },
     ) {
         Icon(
@@ -543,3 +541,17 @@ fun BottomDialog(
 data class MoreButtonOptions(
     val options: Map<String, PlaybackAction>,
 )
+
+@PreviewTvSpec
+@Composable
+private fun ButtonPreview() {
+    WholphinTheme {
+        Row {
+            PlaybackButton(
+                iconRes = R.drawable.baseline_play_arrow_24,
+                onClick = {},
+                onControllerInteraction = {},
+            )
+        }
+    }
+}

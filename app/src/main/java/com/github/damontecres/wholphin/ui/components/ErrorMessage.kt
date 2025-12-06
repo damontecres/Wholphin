@@ -10,7 +10,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
-import androidx.tv.material3.Button
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.R
@@ -56,15 +55,12 @@ fun ErrorMessage(
             color = MaterialTheme.colorScheme.error,
             style = MaterialTheme.typography.titleMedium,
         )
-        Button(
+        TextButton(
+            stringRes = R.string.send_app_logs,
             onClick = {
                 viewModel.sendLogs()
             },
-        ) {
-            Text(
-                text = stringResource(R.string.send_app_logs),
-            )
-        }
+        )
         message?.let {
             Text(
                 text = it,

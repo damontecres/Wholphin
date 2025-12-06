@@ -1,7 +1,6 @@
 package com.github.damontecres.wholphin.ui
 
 import android.content.res.Configuration.UI_MODE_TYPE_TELEVISION
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.Font
@@ -64,14 +63,6 @@ val SlimItemFields =
         ItemFields.CHILD_COUNT,
         ItemFields.OVERVIEW,
         ItemFields.SORT_NAME,
-    )
-
-val DefaultButtonPadding =
-    PaddingValues(
-        start = 12.dp / 2,
-        top = 10.dp / 2,
-        end = 16.dp / 2,
-        bottom = 10.dp / 2,
     )
 
 object Cards {

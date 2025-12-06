@@ -45,7 +45,6 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import androidx.tv.material3.Button
 import androidx.tv.material3.Icon
 import androidx.tv.material3.ListItem
 import androidx.tv.material3.LocalContentColor
@@ -443,20 +442,14 @@ fun ConfirmDialogContent(
                 horizontalArrangement = Arrangement.SpaceEvenly,
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                Button(
+                TextButton(
+                    stringRes = R.string.cancel,
                     onClick = onCancel,
-                ) {
-                    Text(
-                        text = stringResource(R.string.cancel),
-                    )
-                }
-                Button(
+                )
+                TextButton(
+                    stringRes = R.string.confirm,
                     onClick = onConfirm,
-                ) {
-                    Text(
-                        text = stringResource(R.string.confirm),
-                    )
-                }
+                )
             }
         }
     }

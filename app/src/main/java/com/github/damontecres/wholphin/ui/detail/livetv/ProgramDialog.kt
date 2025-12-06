@@ -28,15 +28,16 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
-import androidx.tv.material3.Button
 import androidx.tv.material3.Icon
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import androidx.tv.material3.surfaceColorAtElevation
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.BaseItem
+import com.github.damontecres.wholphin.ui.components.Button
 import com.github.damontecres.wholphin.ui.components.CircularProgress
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
+import com.github.damontecres.wholphin.ui.components.TextButton
 import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.seasonEpisode
@@ -145,7 +146,7 @@ fun ProgramDialog(
                                         .fillMaxWidth(),
                             ) {
                                 if (now.isAfter(dto.startDate!!) && now.isBefore(dto.endDate!!)) {
-                                    Button(
+                                    TextButton(
                                         onClick = onWatch,
                                         modifier = Modifier,
                                     ) {
@@ -179,7 +180,7 @@ fun ProgramDialog(
                                     ) {
                                         if (dto.isSeries ?: false) {
                                             item {
-                                                Button(
+                                                TextButton(
                                                     onClick = {
                                                         if (isSeriesRecording) {
                                                             onCancelRecord.invoke(true)
@@ -221,7 +222,7 @@ fun ProgramDialog(
                                         if (dto.endDate?.isAfter(LocalDateTime.now()) ?: true) {
                                             // Only show program specific recording button if it hasn't finished yet
                                             item {
-                                                Button(
+                                                TextButton(
                                                     onClick = {
                                                         if (isRecording) {
                                                             onCancelRecord.invoke(false)
