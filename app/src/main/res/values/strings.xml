@@ -350,6 +350,8 @@
     <string name="cast_and_crew"><![CDATA[Cast & Crew]]></string>
     <string name="guest_stars">Guest stars</string>
     <string name="edge_size">Edge size</string>
+    <string name="refresh_rate_switching">Refresh rate switching</string>
+    <string name="automatic">Automatic</string>
 
 
     <string-array name="theme_song_volume">

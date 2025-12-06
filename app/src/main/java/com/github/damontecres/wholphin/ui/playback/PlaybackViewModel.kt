@@ -42,6 +42,7 @@ import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.PlayerFactory
 import com.github.damontecres.wholphin.services.PlaylistCreationResult
 import com.github.damontecres.wholphin.services.PlaylistCreator
+import com.github.damontecres.wholphin.services.RefreshRateService
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.onMain
@@ -121,6 +122,7 @@ class PlaybackViewModel
         private val datePlayedService: DatePlayedService,
         private val deviceInfo: DeviceInfo,
         private val deviceProfileService: DeviceProfileService,
+        private val refreshRateService: RefreshRateService,
     ) : ViewModel(),
         Player.Listener,
         AnalyticsListener {
@@ -184,6 +186,9 @@ class PlaybackViewModel
         ) {
             nextUp.value = null
             this.preferences = preferences
+            if (preferences.appPreferences.playbackPreferences.refreshRateSwitching) {
+                addCloseable { refreshRateService.resetRefreshRate() }
+            }
             controllerViewState.hideMilliseconds =
                 preferences.appPreferences.playbackPreferences.controllerTimeoutMs
             this.forceTranscoding =
@@ -612,6 +617,11 @@ class PlaybackViewModel
                 }
 
                 withContext(Dispatchers.Main) {
+                    if (preferences.appPreferences.playbackPreferences.refreshRateSwitching) {
+                        source.mediaStreams?.firstOrNull { it.type == MediaStreamType.VIDEO }?.let {
+                            refreshRateService.changeRefreshRate(it)
+                        }
+                    }
                     // TODO, don't need to release & recreate when switching streams
                     this@PlaybackViewModel.activityListener?.let {
                         it.release()

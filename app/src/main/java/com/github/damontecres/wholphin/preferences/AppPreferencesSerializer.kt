@@ -50,6 +50,8 @@ class AppPreferencesSerializer
                                     AppPreference.PassOutProtection.defaultValue.hours.inWholeMilliseconds
                                 showNextUpWhen = AppPreference.ShowNextUpTiming.defaultValue
                                 playerBackend = AppPreference.PlayerBackendPref.defaultValue
+                                refreshRateSwitching =
+                                    AppPreference.RefreshRateSwitching.defaultValue
 
                                 overrides =
                                     PlaybackOverrides
