@@ -327,4 +327,8 @@
     <string name="cast_and_crew"><![CDATA[Cast e troupe]]></string>
     <string name="guest_stars">Guest star</string>
     <string name="edge_size">Dimensione del bordo</string>
+    <string name="login">Accedi</string>
+    <string name="automatic">Automatico</string>
+    <string name="refresh_rate_switching">Cambio frequenza di aggiornamento</string>
+    <string name="username_or_password">Usa nome utente/password</string>
 </resources>
