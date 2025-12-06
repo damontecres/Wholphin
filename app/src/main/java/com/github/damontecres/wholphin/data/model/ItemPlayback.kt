@@ -136,12 +136,13 @@ fun chooseSubtitleStream(
                 }
             }
 
-            SubtitlePlaybackMode.ONLY_FORCED ->
+            SubtitlePlaybackMode.ONLY_FORCED -> {
                 if (subtitleLanguage != null) {
                     candidates.firstOrNull { it.language == subtitleLanguage && it.isForced }
                 } else {
                     candidates.firstOrNull { it.isForced }
                 }
+            }
 
             SubtitlePlaybackMode.SMART -> {
                 val audioLanguage = prefs.userConfig.audioLanguagePreference
@@ -161,7 +162,9 @@ fun chooseSubtitleStream(
                 )
             }
 
-            SubtitlePlaybackMode.NONE -> null
+            SubtitlePlaybackMode.NONE -> {
+                null
+            }
         }
     }
 }

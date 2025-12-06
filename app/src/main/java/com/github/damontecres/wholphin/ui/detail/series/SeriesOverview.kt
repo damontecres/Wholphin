@@ -175,11 +175,15 @@ fun SeriesOverview(
     val chosenStreams by viewModel.chosenStreams.observeAsState(null)
 
     when (val state = loading) {
-        is LoadingState.Error -> ErrorMessage(state)
+        is LoadingState.Error -> {
+            ErrorMessage(state)
+        }
 
         LoadingState.Loading,
         LoadingState.Pending,
-        -> LoadingPage()
+        -> {
+            LoadingPage()
+        }
 
         LoadingState.Success -> {
             series?.let { series ->

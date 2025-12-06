@@ -199,7 +199,10 @@ class MainActivity : AppCompatActivity() {
                                     val initialDestination =
                                         when {
                                             current != null -> Destination.Home()
-                                            !appPreferences.signInAutomatically -> Destination.ServerList // TODO user list?
+
+                                            !appPreferences.signInAutomatically -> Destination.ServerList
+
+                                            // TODO user list?
                                             else -> Destination.ServerList
                                         }
                                     val backStack = rememberNavBackStack(initialDestination)

@@ -260,9 +260,11 @@ fun formatVideoRange(
     when (videoRange) {
         VideoRange.UNKNOWN,
         VideoRange.SDR, null,
-        -> null
+        -> {
+            null
+        }
 
-        VideoRange.HDR ->
+        VideoRange.HDR -> {
             when (type) {
                 VideoRangeType.UNKNOWN,
                 VideoRangeType.SDR,
@@ -270,7 +272,9 @@ fun formatVideoRange(
                 -> null
 
                 VideoRangeType.HDR10 -> "HDR10"
+
                 VideoRangeType.HDR10_PLUS -> "HDR10+"
+
                 VideoRangeType.HLG -> "HLG"
 
                 VideoRangeType.DOVI,
@@ -279,6 +283,7 @@ fun formatVideoRange(
                 VideoRangeType.DOVI_WITH_SDR,
                 -> context.getString(R.string.dolby_vision)
             }
+        }
     }
 
 fun formatAudioCodec(
@@ -287,20 +292,32 @@ fun formatAudioCodec(
     profile: String?,
 ): String? =
     when {
-        profile?.contains("Dolby Atmos", true) == true -> context.getString(R.string.dolby_atmos)
-        profile?.contains("DTS:X", true) == true -> "DTS:X"
-        profile?.contains("DTS:HD", true) == true -> "DTS:HD"
-        else ->
+        profile?.contains("Dolby Atmos", true) == true -> {
+            context.getString(R.string.dolby_atmos)
+        }
+
+        profile?.contains("DTS:X", true) == true -> {
+            "DTS:X"
+        }
+
+        profile?.contains("DTS:HD", true) == true -> {
+            "DTS:HD"
+        }
+
+        else -> {
             when (codec?.lowercase()) {
                 Codec.Audio.TRUEHD -> "TrueHD"
+
                 Codec.Audio.OGG,
                 Codec.Audio.OPUS,
                 Codec.Audio.VORBIS,
                 -> codec.replaceFirstChar { it.uppercase() }
 
                 null -> null
+
                 else -> codec.uppercase()
             }
+        }
     }
 
 fun formatSubtitleCodec(codec: String?): String? =

@@ -94,11 +94,15 @@ fun GenreCardGrid(
     when (val st = loading) {
         LoadingState.Pending,
         LoadingState.Loading,
-        -> LoadingPage(modifier.focusable())
+        -> {
+            LoadingPage(modifier.focusable())
+        }
 
-        is LoadingState.Error -> ErrorMessage(st, modifier.focusable())
+        is LoadingState.Error -> {
+            ErrorMessage(st, modifier.focusable())
+        }
 
-        LoadingState.Success ->
+        LoadingState.Success -> {
             Box(modifier = modifier) {
                 LaunchedEffect(Unit) { gridFocusRequester.tryRequestFocus() }
                 CardGrid(
@@ -132,5 +136,6 @@ fun GenreCardGrid(
                     },
                 )
             }
+        }
     }
 }

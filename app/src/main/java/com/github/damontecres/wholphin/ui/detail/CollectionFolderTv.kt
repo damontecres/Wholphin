@@ -107,6 +107,7 @@ fun CollectionFolderTv(
                             .focusRequester(focusRequester),
                 )
             }
+
             // Library
             1 -> {
                 CollectionFolderGrid(
@@ -134,6 +135,7 @@ fun CollectionFolderTv(
                     playEnabled = false,
                 )
             }
+
             // Genres
             2 -> {
                 GenreCardGrid(
@@ -145,7 +147,10 @@ fun CollectionFolderTv(
                             .focusRequester(focusRequester),
                 )
             }
-            else -> ErrorMessage("Invalid tab index $selectedTabIndex", null)
+
+            else -> {
+                ErrorMessage("Invalid tab index $selectedTabIndex", null)
+            }
         }
     }
 }

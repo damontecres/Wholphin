@@ -213,7 +213,9 @@ class PlaybackViewModel
                         d.itemId
                     }
 
-                    else -> throw IllegalArgumentException("Destination not supported: $destination")
+                    else -> {
+                        throw IllegalArgumentException("Destination not supported: $destination")
+                    }
                 }
             this.itemId = itemId
             viewModelScope.launch(
@@ -554,8 +556,11 @@ class PlaybackViewModel
                     when {
 //                        playerBackend == PlayerBackend.MPV -> PlayMethod.DIRECT_PLAY
                         source.supportsDirectPlay -> PlayMethod.DIRECT_PLAY
+
                         source.supportsDirectStream -> PlayMethod.DIRECT_STREAM
+
                         source.supportsTranscoding -> PlayMethod.TRANSCODE
+
                         else -> throw Exception("No supported playback method")
                     }
                 Timber.v("Playback decision: $transcodeType")
@@ -921,13 +926,14 @@ class PlaybackViewModel
             viewModelScope.launch(Dispatchers.Main + ExceptionHandler()) {
                 currentPlayback.value?.let {
                     when (it.playMethod) {
-                        PlayMethod.TRANSCODE ->
+                        PlayMethod.TRANSCODE -> {
                             loading.setValueOnMain(
                                 LoadingState.Error(
                                     "Error during playback",
                                     error,
                                 ),
                             )
+                        }
 
                         PlayMethod.DIRECT_STREAM, PlayMethod.DIRECT_PLAY -> {
                             Timber.w("Playback error during ${it.playMethod}, falling back to transcoding")
@@ -968,28 +974,45 @@ class PlaybackViewModel
                                     navigationManager.goBack()
                                 }
 
-                                PlaystateCommand.PAUSE -> player.pause()
-                                PlaystateCommand.UNPAUSE -> player.play()
-                                PlaystateCommand.NEXT_TRACK -> playNextUp()
-                                PlaystateCommand.PREVIOUS_TRACK -> playPrevious()
-                                PlaystateCommand.SEEK ->
+                                PlaystateCommand.PAUSE -> {
+                                    player.pause()
+                                }
+
+                                PlaystateCommand.UNPAUSE -> {
+                                    player.play()
+                                }
+
+                                PlaystateCommand.NEXT_TRACK -> {
+                                    playNextUp()
+                                }
+
+                                PlaystateCommand.PREVIOUS_TRACK -> {
+                                    playPrevious()
+                                }
+
+                                PlaystateCommand.SEEK -> {
                                     it.seekPositionTicks?.ticks?.let {
                                         player.seekTo(
                                             it.inWholeMilliseconds,
                                         )
                                     }
+                                }
 
-                                PlaystateCommand.REWIND ->
+                                PlaystateCommand.REWIND -> {
                                     player.seekBack(
                                         preferences.appPreferences.playbackPreferences.skipBackMs.milliseconds,
                                     )
+                                }
 
-                                PlaystateCommand.FAST_FORWARD ->
+                                PlaystateCommand.FAST_FORWARD -> {
                                     player.seekForward(
                                         preferences.appPreferences.playbackPreferences.skipForwardMs.milliseconds,
                                     )
+                                }
 
-                                PlaystateCommand.PLAY_PAUSE -> if (player.isPlaying) player.pause() else player.play()
+                                PlaystateCommand.PLAY_PAUSE -> {
+                                    if (player.isPlaying) player.pause() else player.play()
+                                }
                             }
                         }
                     }

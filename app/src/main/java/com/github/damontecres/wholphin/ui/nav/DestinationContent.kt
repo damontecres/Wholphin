@@ -44,70 +44,84 @@ fun DestinationContent(
     modifier: Modifier = Modifier,
 ) {
     when (destination) {
-        is Destination.Home ->
+        is Destination.Home -> {
             HomePage(
                 preferences = preferences,
                 modifier = modifier,
             )
+        }
+
         is Destination.PlaybackList,
         is Destination.Playback,
-        ->
+        -> {
             PlaybackPage(
                 preferences = preferences,
                 destination = destination,
                 modifier = modifier,
             )
+        }
 
-        Destination.ServerList -> SwitchServerContent(modifier)
-        is Destination.UserList -> SwitchUserContent(destination.server, modifier)
+        Destination.ServerList -> {
+            SwitchServerContent(modifier)
+        }
 
-        is Destination.Settings ->
+        is Destination.UserList -> {
+            SwitchUserContent(destination.server, modifier)
+        }
+
+        is Destination.Settings -> {
             PreferencesPage(
                 preferences.appPreferences,
                 destination.screen,
                 modifier,
             )
+        }
 
-        is Destination.SeriesOverview ->
+        is Destination.SeriesOverview -> {
             SeriesOverview(
                 preferences,
                 destination,
                 modifier,
                 initialSeasonEpisode = destination.seasonEpisode,
             )
+        }
 
-        is Destination.MediaItem ->
+        is Destination.MediaItem -> {
             when (destination.type) {
-                BaseItemKind.SERIES ->
+                BaseItemKind.SERIES -> {
                     SeriesDetails(
                         preferences,
                         destination,
                         modifier,
                     )
+                }
 
-                BaseItemKind.MOVIE ->
+                BaseItemKind.MOVIE -> {
                     MovieDetails(
                         preferences,
                         destination,
                         modifier,
                     )
+                }
 
-                BaseItemKind.VIDEO ->
+                BaseItemKind.VIDEO -> {
                     // TODO Use VideoDetails
                     MovieDetails(
                         preferences,
                         destination,
                         modifier,
                     )
+                }
 
-                BaseItemKind.EPISODE ->
+                BaseItemKind.EPISODE -> {
                     EpisodeDetails(
                         preferences,
                         destination,
                         modifier,
                     )
+                }
 
-                BaseItemKind.BOX_SET ->
+                BaseItemKind.BOX_SET -> {
                     CollectionFolderBoxSet(
                         preferences = preferences,
                         itemId = destination.itemId,
@@ -116,14 +130,16 @@ fun DestinationContent(
                         playEnabled = true,
                         modifier = modifier,
                     )
+                }
 
-                BaseItemKind.PLAYLIST ->
+                BaseItemKind.PLAYLIST -> {
                     PlaylistDetails(
                         destination = destination,
                         modifier = modifier,
                     )
+                }
 
-                BaseItemKind.COLLECTION_FOLDER ->
+                BaseItemKind.COLLECTION_FOLDER -> {
                     CollectionFolder(
                         preferences = preferences,
                         destination = destination,
@@ -132,8 +148,9 @@ fun DestinationContent(
                         recursiveOverride = null,
                         modifier = modifier,
                     )
+                }
 
-                BaseItemKind.FOLDER ->
+                BaseItemKind.FOLDER -> {
                     CollectionFolder(
                         preferences = preferences,
                         destination = destination,
@@ -142,8 +159,9 @@ fun DestinationContent(
                         recursiveOverride = null,
                         modifier = modifier,
                     )
+                }
 
-                BaseItemKind.USER_VIEW ->
+                BaseItemKind.USER_VIEW -> {
                     CollectionFolder(
                         preferences = preferences,
                         destination = destination,
@@ -152,21 +170,24 @@ fun DestinationContent(
                         recursiveOverride = true,
                         modifier = modifier,
                     )
+                }
 
-                BaseItemKind.PERSON ->
+                BaseItemKind.PERSON -> {
                     PersonPage(
                         preferences,
                         destination,
                         modifier,
                     )
+                }
 
                 else -> {
                     Timber.w("Unsupported item type: ${destination.type}")
                     Text("Unsupported item type: ${destination.type}")
                 }
             }
+        }
 
-        is Destination.FilteredCollection ->
+        is Destination.FilteredCollection -> {
             CollectionFolderGeneric(
                 preferences = preferences,
                 itemId = destination.itemId,
@@ -177,38 +198,49 @@ fun DestinationContent(
                 filterOptions = DefaultForGenresFilterOptions,
                 modifier = modifier,
             )
+        }
 
-        is Destination.Recordings ->
+        is Destination.Recordings -> {
             CollectionFolderRecordings(
                 preferences,
                 destination.itemId,
                 false,
                 modifier,
             )
+        }
 
-        is Destination.ItemGrid ->
+        is Destination.ItemGrid -> {
             ItemGrid(
                 destination,
                 modifier,
             )
+        }
 
-        Destination.Favorites ->
+        Destination.Favorites -> {
             FavoritesPage(
                 preferences = preferences,
                 modifier = modifier,
             )
+        }
 
-        Destination.UpdateApp -> InstallUpdatePage(preferences, modifier)
+        Destination.UpdateApp -> {
+            InstallUpdatePage(preferences, modifier)
+        }
 
-        Destination.License -> LicenseInfo(modifier)
+        Destination.License -> {
+            LicenseInfo(modifier)
+        }
 
-        Destination.Search ->
+        Destination.Search -> {
             SearchPage(
                 userPreferences = preferences,
                 modifier = modifier,
             )
+        }
 
-        Destination.Debug -> DebugPage(preferences, modifier)
+        Destination.Debug -> {
+            DebugPage(preferences, modifier)
+        }
     }
 }
 
@@ -222,21 +254,23 @@ fun CollectionFolder(
     modifier: Modifier = Modifier,
 ) {
     when (collectionType) {
-        CollectionType.TVSHOWS ->
+        CollectionType.TVSHOWS -> {
             CollectionFolderTv(
                 preferences,
                 destination,
                 modifier,
             )
+        }
 
-        CollectionType.MOVIES ->
+        CollectionType.MOVIES -> {
             CollectionFolderMovie(
                 preferences,
                 destination,
                 modifier,
             )
+        }
 
-        CollectionType.BOXSETS ->
+        CollectionType.BOXSETS -> {
             CollectionFolderGeneric(
                 preferences = preferences,
                 itemId = destination.itemId,
@@ -246,8 +280,9 @@ fun CollectionFolder(
                 modifier = modifier,
                 sortOptions = MovieSortOptions,
             )
+        }
 
-        CollectionType.PLAYLISTS ->
+        CollectionType.PLAYLISTS -> {
             CollectionFolderPlaylist(
                 preferences,
                 destination.itemId,
@@ -255,20 +290,22 @@ fun CollectionFolder(
                 true,
                 modifier,
             )
+        }
 
-        CollectionType.LIVETV ->
+        CollectionType.LIVETV -> {
             CollectionFolderLiveTv(
                 preferences = preferences,
                 destination = destination,
                 modifier = modifier,
             )
+        }
 
         CollectionType.HOMEVIDEOS,
         CollectionType.MUSICVIDEOS,
         CollectionType.MUSIC,
         CollectionType.BOOKS,
         CollectionType.PHOTOS,
-        ->
+        -> {
             CollectionFolderGeneric(
                 preferences,
                 destination.itemId,
@@ -277,12 +314,13 @@ fun CollectionFolder(
                 playEnabled = true,
                 modifier = modifier,
             )
+        }
 
         CollectionType.FOLDERS,
         CollectionType.TRAILERS,
         CollectionType.UNKNOWN,
         null,
-        ->
+        -> {
             CollectionFolderGeneric(
                 preferences,
                 destination.itemId,
@@ -291,5 +329,6 @@ fun CollectionFolder(
                 playEnabled = false,
                 modifier = modifier,
             )
+        }
     }
 }

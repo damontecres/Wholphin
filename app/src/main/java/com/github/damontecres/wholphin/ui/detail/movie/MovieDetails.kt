@@ -133,10 +133,16 @@ fun MovieDetails(
         )
 
     when (val state = loading) {
-        is LoadingState.Error -> ErrorMessage(state)
+        is LoadingState.Error -> {
+            ErrorMessage(state)
+        }
+
         LoadingState.Loading,
         LoadingState.Pending,
-        -> LoadingPage()
+        -> {
+            LoadingPage()
+        }
+
         LoadingState.Success -> {
             item?.let { movie ->
                 LifecycleStartEffect(destination.itemId) {
@@ -565,7 +571,7 @@ fun TrailerRow(
                         Modifier
                     }
                 when (item) {
-                    is LocalTrailer ->
+                    is LocalTrailer -> {
                         SeasonCard(
                             item = item.baseItem,
                             onClick = { onClickTrailer.invoke(item) },
@@ -575,6 +581,7 @@ fun TrailerRow(
                             showImageOverlay = false,
                             modifier = cardModifier,
                         )
+                    }
 
                     is RemoteTrailer -> {
                         val subtitle =

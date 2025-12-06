@@ -206,7 +206,9 @@ fun FilterByButton(
 
                                     FavoriteFilter,
                                     PlayedFilter,
-                                    -> (currentValue as? Boolean) == value.name.toBoolean()
+                                    -> {
+                                        (currentValue as? Boolean) == value.name.toBoolean()
+                                    }
 
                                     OfficialRatingFilter -> {
                                         (currentValue as? List<String>)
@@ -214,19 +216,23 @@ fun FilterByButton(
                                             .contains(value.name)
                                     }
 
-                                    VideoTypeFilter ->
+                                    VideoTypeFilter -> {
                                         (currentValue as? List<FilterVideoType>)
                                             .orEmpty()
                                             .contains(value.value)
+                                    }
 
                                     YearFilter,
                                     DecadeFilter,
-                                    ->
+                                    -> {
                                         (currentValue as? List<Int>)
                                             .orEmpty()
                                             .contains(value.value)
+                                    }
 
-                                    CommunityRatingFilter -> (currentValue as? Int) == value.value
+                                    CommunityRatingFilter -> {
+                                        (currentValue as? Int) == value.value
+                                    }
                                 }
                             }
                         val interactionSource = remember { MutableInteractionSource() }
@@ -328,11 +334,12 @@ fun FilterByButton(
                                             filterOption.set(newValue, current)
                                         }
 
-                                        CommunityRatingFilter ->
+                                        CommunityRatingFilter -> {
                                             filterOption.set(
                                                 value.value as? Int,
                                                 current,
                                             )
+                                        }
                                     }
 
                                 onFilterChange.invoke(newFilter)

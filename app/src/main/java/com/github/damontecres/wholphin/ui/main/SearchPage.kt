@@ -325,24 +325,26 @@ fun LazyListScope.searchResultRow(
 ) {
     item {
         when (val r = result) {
-            is SearchResult.Error ->
+            is SearchResult.Error -> {
                 SearchResultPlaceholder(
                     title = title,
                     message = r.ex.localizedMessage ?: "Error occurred during search",
                     messageColor = MaterialTheme.colorScheme.error,
                     modifier = Modifier,
                 )
+            }
 
             SearchResult.NoQuery -> {
                 // no-op
             }
 
-            SearchResult.Searching ->
+            SearchResult.Searching -> {
                 SearchResultPlaceholder(
                     title = title,
                     message = stringResource(R.string.searching),
                     modifier = modifier,
                 )
+            }
 
             is SearchResult.Success -> {
                 if (r.items.isEmpty()) {

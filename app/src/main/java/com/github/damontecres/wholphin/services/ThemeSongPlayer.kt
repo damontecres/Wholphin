@@ -85,9 +85,13 @@ class ThemeSongPlayer
                     -> return
 
                     ThemeSongVolume.LOWEST -> .05f
+
                     ThemeSongVolume.LOW -> .1f
+
                     ThemeSongVolume.MEDIUM -> .25f
+
                     ThemeSongVolume.HIGH -> .5f
+
                     ThemeSongVolume.HIGHEST -> 75f
                 }
             player.apply {

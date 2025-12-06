@@ -136,6 +136,7 @@ fun FavoritesPage(
                     filterOptions = DefaultForFavoritesFilterOptions,
                 )
             }
+
             // TV
             1 -> {
                 CollectionFolderGrid(
@@ -163,6 +164,7 @@ fun FavoritesPage(
                     filterOptions = DefaultForFavoritesFilterOptions,
                 )
             }
+
             // Episodes
             2 -> {
                 CollectionFolderGrid(
@@ -191,6 +193,7 @@ fun FavoritesPage(
                     filterOptions = DefaultForFavoritesFilterOptions,
                 )
             }
+
             // Videos
             3 -> {
                 CollectionFolderGrid(
@@ -218,6 +221,7 @@ fun FavoritesPage(
                     filterOptions = DefaultForFavoritesFilterOptions,
                 )
             }
+
             // Playlists
             4 -> {
                 CollectionFolderGrid(
@@ -245,6 +249,7 @@ fun FavoritesPage(
                     filterOptions = DefaultForFavoritesFilterOptions,
                 )
             }
+
             // People
             5 -> {
                 CollectionFolderGrid(
@@ -277,7 +282,10 @@ fun FavoritesPage(
                     filterOptions = listOf(),
                 )
             }
-            else -> ErrorMessage("Invalid tab index $selectedTabIndex", null)
+
+            else -> {
+                ErrorMessage("Invalid tab index $selectedTabIndex", null)
+            }
         }
     }
 }

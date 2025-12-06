@@ -279,7 +279,7 @@ object SubtitleSettings {
         val bg = combine(backgroundColor, backgroundOpacity)
         return CaptionStyleCompat(
             combine(fontColor, fontOpacity),
-            if (backgroundStyle == BackgroundStyle.BG_WRAP)bg else 0,
+            if (backgroundStyle == BackgroundStyle.BG_WRAP) bg else 0,
             if (backgroundStyle == BackgroundStyle.BG_BOXED) bg else 0,
             when (edgeStyle) {
                 EdgeStyle.EDGE_NONE, EdgeStyle.UNRECOGNIZED -> CaptionStyleCompat.EDGE_TYPE_NONE
@@ -355,6 +355,7 @@ object SubtitleSettings {
                 -> "outline-and-shadow"
 
                 BackgroundStyle.BG_WRAP -> "opaque-box"
+
                 BackgroundStyle.BG_BOXED -> "background-box"
             }
         MPVLib.setPropertyString("sub-border-style", borderStyle)

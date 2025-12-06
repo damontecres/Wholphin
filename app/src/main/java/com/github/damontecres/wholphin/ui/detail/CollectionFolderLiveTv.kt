@@ -144,6 +144,7 @@ fun CollectionFolderLiveTv(
                         .focusRequester(focusRequester),
                 )
             }
+
             1 -> {
                 DvrSchedule(
                     true,

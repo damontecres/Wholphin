@@ -172,8 +172,14 @@ fun SeriesOverviewContent(
 
                 key(position.seasonTabIndex) {
                     when (val eps = episodes) {
-                        EpisodeList.Loading -> LoadingPage()
-                        is EpisodeList.Error -> ErrorMessage(eps.message, eps.exception)
+                        EpisodeList.Loading -> {
+                            LoadingPage()
+                        }
+
+                        is EpisodeList.Error -> {
+                            ErrorMessage(eps.message, eps.exception)
+                        }
+
                         is EpisodeList.Success -> {
                             val state = rememberLazyListState()
                             OneTimeLaunchedEffect {

@@ -183,7 +183,7 @@ fun PlaybackOverlay(
                     // Don't use key events because this control has vertical items so up/down is tough to manage
                 )
                 when (nextState) {
-                    OverlayViewState.CHAPTERS ->
+                    OverlayViewState.CHAPTERS -> {
                         Text(
                             text = stringResource(R.string.chapters),
                             style = MaterialTheme.typography.titleLarge,
@@ -194,8 +194,9 @@ fun PlaybackOverlay(
                                         if (it.isFocused) state = nextState
                                     }.focusable(),
                         )
+                    }
 
-                    OverlayViewState.QUEUE ->
+                    OverlayViewState.QUEUE -> {
                         Text(
                             text = stringResource(R.string.queue),
                             style = MaterialTheme.typography.titleLarge,
@@ -206,8 +207,11 @@ fun PlaybackOverlay(
                                         if (it.isFocused) state = nextState
                                     }.focusable(),
                         )
+                    }
 
-                    else -> Spacer(Modifier.height(32.dp))
+                    else -> {
+                        Spacer(Modifier.height(32.dp))
+                    }
                 }
             }
         }

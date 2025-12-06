@@ -106,6 +106,7 @@ data class GetItemsFilter(
                         -> null
 
                         FilterVideoType.BLU_RAY -> VideoType.BLU_RAY
+
                         FilterVideoType.DVD -> VideoType.DVD
                     }
                 }

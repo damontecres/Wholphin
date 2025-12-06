@@ -102,7 +102,7 @@ fun <T> ComposablePreference(
             )
         }
 
-        is AppDestinationPreference ->
+        is AppDestinationPreference -> {
             ClickPreference(
                 title = title,
                 onClick = {
@@ -112,8 +112,9 @@ fun <T> ComposablePreference(
                 interactionSource = interactionSource,
                 modifier = modifier,
             )
+        }
 
-        is AppClickablePreference ->
+        is AppClickablePreference -> {
             ClickPreference(
                 title = title,
                 onClick = { onClickPreference.invoke(preference) },
@@ -122,8 +123,9 @@ fun <T> ComposablePreference(
                 interactionSource = interactionSource,
                 modifier = modifier,
             )
+        }
 
-        is AppSwitchPreference ->
+        is AppSwitchPreference -> {
             SwitchPreference(
                 title = title,
                 value = value as Boolean,
@@ -132,8 +134,9 @@ fun <T> ComposablePreference(
                 interactionSource = interactionSource,
                 modifier = modifier,
             )
+        }
 
-        is AppStringPreference ->
+        is AppStringPreference -> {
             ClickPreference(
                 title = title,
                 onClick = {
@@ -164,6 +167,7 @@ fun <T> ComposablePreference(
                 interactionSource = interactionSource,
                 modifier = modifier,
             )
+        }
 
         is AppChoicePreference -> {
             val values = stringArrayResource(preference.displayValues).toList()

@@ -352,11 +352,12 @@ class CollectionFolderViewModel
 
                     FavoriteFilter,
                     PlayedFilter,
-                    ->
+                    -> {
                         listOf(
                             FilterValueOption("True", null),
                             FilterValueOption("False", null),
                         )
+                    }
 
                     OfficialRatingFilter -> {
                         api.localizationApi.getParentalRatings().content.map {
@@ -364,10 +365,11 @@ class CollectionFolderViewModel
                         }
                     }
 
-                    VideoTypeFilter ->
+                    VideoTypeFilter -> {
                         FilterVideoType.entries.map {
                             FilterValueOption(it.readable, it)
                         }
+                    }
 
                     YearFilter -> {
                         api.yearsApi
@@ -400,10 +402,11 @@ class CollectionFolderViewModel
                         items.toList().sorted().map { FilterValueOption("$it's", it) }
                     }
 
-                    CommunityRatingFilter ->
+                    CommunityRatingFilter -> {
                         (1..10).map {
                             FilterValueOption("$it", it)
                         }
+                    }
                 }
             } catch (ex: Exception) {
                 Timber.e(ex, "Exception get filter value options for $filterOption")
@@ -418,7 +421,6 @@ class CollectionFolderViewModel
                             CollectionType.MOVIES -> listOf(BaseItemKind.MOVIE)
                             CollectionType.TVSHOWS -> listOf(BaseItemKind.SERIES)
                             CollectionType.HOMEVIDEOS -> listOf(BaseItemKind.VIDEO)
-
                             else -> listOf()
                         }
                     val request =
@@ -535,10 +537,16 @@ fun CollectionFolderGrid(
     val playlistState by playlistViewModel.playlistState.observeAsState(PlaylistLoadingState.Pending)
 
     when (val state = loading) {
-        is LoadingState.Error -> ErrorMessage(state)
+        is LoadingState.Error -> {
+            ErrorMessage(state)
+        }
+
         LoadingState.Loading,
         LoadingState.Pending,
-        -> LoadingPage()
+        -> {
+            LoadingPage()
+        }
+
         LoadingState.Success -> {
             pager?.let { pager ->
                 Box(modifier = modifier) {
@@ -920,18 +928,35 @@ data class CollectionFolderGridParameters(
 val CollectionType.baseItemKinds: List<BaseItemKind>
     get() =
         when (this) {
-            CollectionType.MOVIES -> listOf(BaseItemKind.MOVIE)
-            CollectionType.TVSHOWS -> listOf(BaseItemKind.SERIES)
-            CollectionType.HOMEVIDEOS -> listOf(BaseItemKind.VIDEO)
-            CollectionType.MUSIC ->
+            CollectionType.MOVIES -> {
+                listOf(BaseItemKind.MOVIE)
+            }
+
+            CollectionType.TVSHOWS -> {
+                listOf(BaseItemKind.SERIES)
+            }
+
+            CollectionType.HOMEVIDEOS -> {
+                listOf(BaseItemKind.VIDEO)
+            }
+
+            CollectionType.MUSIC -> {
                 listOf(
                     BaseItemKind.AUDIO,
                     BaseItemKind.MUSIC_ARTIST,
                     BaseItemKind.MUSIC_ALBUM,
                 )
+            }
 
-            CollectionType.BOXSETS -> listOf(BaseItemKind.BOX_SET)
-            CollectionType.PLAYLISTS -> listOf(BaseItemKind.PLAYLIST)
+            CollectionType.BOXSETS -> {
+                listOf(BaseItemKind.BOX_SET)
+            }
 
-            else -> listOf()
+            CollectionType.PLAYLISTS -> {
+                listOf(BaseItemKind.PLAYLIST)
+            }
+
+            else -> {
+                listOf()
+            }
         }

@@ -124,11 +124,15 @@ fun DvrSchedule(
     val active by viewModel.active.observeAsState(listOf())
     val recordings by viewModel.scheduled.observeAsState(mapOf())
     when (val state = loading) {
-        is LoadingState.Error -> ErrorMessage(state, modifier)
+        is LoadingState.Error -> {
+            ErrorMessage(state, modifier)
+        }
 
         LoadingState.Loading,
         LoadingState.Pending,
-        -> LoadingPage(modifier)
+        -> {
+            LoadingPage(modifier)
+        }
 
         LoadingState.Success -> {
             var showDialog by remember { mutableStateOf<BaseItem?>(null) }

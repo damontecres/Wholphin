@@ -174,10 +174,15 @@ fun InstallUpdatePage(
             }
         }
     when (val state = loading) {
-        is LoadingState.Error -> ErrorMessage(state, modifier)
+        is LoadingState.Error -> {
+            ErrorMessage(state, modifier)
+        }
+
         LoadingState.Loading,
         LoadingState.Pending,
-        -> LoadingPage(modifier)
+        -> {
+            LoadingPage(modifier)
+        }
 
         LoadingState.Success -> {
             release?.let {

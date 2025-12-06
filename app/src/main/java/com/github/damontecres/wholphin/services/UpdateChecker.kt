@@ -299,14 +299,16 @@ class UpdateChecker
 
         fun hasPermissions(): Boolean =
             Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q ||
-                ContextCompat.checkSelfPermission(
-                    context,
-                    Manifest.permission.WRITE_EXTERNAL_STORAGE,
-                ) == PackageManager.PERMISSION_GRANTED &&
-                ContextCompat.checkSelfPermission(
-                    context,
-                    Manifest.permission.READ_EXTERNAL_STORAGE,
-                ) == PackageManager.PERMISSION_GRANTED
+                (
+                    ContextCompat.checkSelfPermission(
+                        context,
+                        Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                    ) == PackageManager.PERMISSION_GRANTED &&
+                        ContextCompat.checkSelfPermission(
+                            context,
+                            Manifest.permission.READ_EXTERNAL_STORAGE,
+                        ) == PackageManager.PERMISSION_GRANTED
+                )
 
         /**
          * Delete previously downloaded APKs

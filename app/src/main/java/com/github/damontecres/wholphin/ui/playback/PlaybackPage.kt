@@ -109,10 +109,15 @@ fun PlaybackPage(
 
     val loading by viewModel.loading.observeAsState(LoadingState.Loading)
     when (val st = loading) {
-        is LoadingState.Error -> ErrorMessage(st, modifier)
+        is LoadingState.Error -> {
+            ErrorMessage(st, modifier)
+        }
+
         LoadingState.Pending,
         LoadingState.Loading,
-        -> LoadingPage(modifier.background(Color.Black))
+        -> {
+            LoadingPage(modifier.background(Color.Black))
+        }
 
         LoadingState.Success -> {
             val prefs = preferences.appPreferences.playbackPreferences
@@ -177,7 +182,7 @@ fun PlaybackPage(
             }
             var skipPosition by remember { mutableLongStateOf(0L) }
             val updateSkipIndicator = { delta: Long ->
-                if (skipIndicatorDuration > 0 && delta < 0 || skipIndicatorDuration < 0 && delta > 0) {
+                if ((skipIndicatorDuration > 0 && delta < 0) || (skipIndicatorDuration < 0 && delta > 0)) {
                     skipIndicatorDuration = 0
                 }
                 skipIndicatorDuration += delta
@@ -216,8 +221,14 @@ fun PlaybackPage(
                         showDebugInfo = !showDebugInfo
                     }
 
-                    PlaybackAction.ShowPlaylist -> TODO()
-                    PlaybackAction.ShowVideoFilterDialog -> TODO()
+                    PlaybackAction.ShowPlaylist -> {
+                        TODO()
+                    }
+
+                    PlaybackAction.ShowVideoFilterDialog -> {
+                        TODO()
+                    }
+
                     is PlaybackAction.ToggleAudio -> {
                         viewModel.changeAudioStream(it.index)
                     }
