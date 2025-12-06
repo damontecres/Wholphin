@@ -84,7 +84,8 @@ fun ExpandablePlayButtons(
                     playOnClick,
                     Modifier
                         .onFocusChanged(buttonOnFocusChanged)
-                        .focusRequester(firstFocus),
+                        .focusRequester(firstFocus)
+                        .animateItem(),
                 )
             }
             item("restart") {
@@ -93,7 +94,9 @@ fun ExpandablePlayButtons(
                     Duration.ZERO,
                     Icons.Default.Refresh,
                     playOnClick,
-                    Modifier.onFocusChanged(buttonOnFocusChanged),
+                    Modifier
+                        .onFocusChanged(buttonOnFocusChanged)
+                        .animateItem(),
                     mirrorIcon = true,
                 )
             }
@@ -106,7 +109,8 @@ fun ExpandablePlayButtons(
                     playOnClick,
                     Modifier
                         .onFocusChanged(buttonOnFocusChanged)
-                        .focusRequester(firstFocus),
+                        .focusRequester(firstFocus)
+                        .animateItem(),
                 )
             }
         }
@@ -117,7 +121,10 @@ fun ExpandablePlayButtons(
                 title = if (watched) R.string.mark_unwatched else R.string.mark_watched,
                 iconStringRes = if (watched) R.string.fa_eye else R.string.fa_eye_slash,
                 onClick = watchOnClick,
-                modifier = Modifier.onFocusChanged(buttonOnFocusChanged),
+                modifier =
+                    Modifier
+                        .onFocusChanged(buttonOnFocusChanged)
+                        .animateItem(),
             )
         }
 
@@ -128,7 +135,10 @@ fun ExpandablePlayButtons(
                 iconStringRes = R.string.fa_heart,
                 onClick = favoriteOnClick,
                 iconColor = if (favorite) Color.Red else Color.Unspecified,
-                modifier = Modifier.onFocusChanged(buttonOnFocusChanged),
+                modifier =
+                    Modifier
+                        .onFocusChanged(buttonOnFocusChanged)
+                        .animateItem(),
             )
         }
 
@@ -139,7 +149,9 @@ fun ExpandablePlayButtons(
                 Duration.ZERO,
                 Icons.Default.MoreVert,
                 { moreOnClick.invoke() },
-                Modifier.onFocusChanged(buttonOnFocusChanged),
+                Modifier
+                    .onFocusChanged(buttonOnFocusChanged)
+                    .animateItem(),
             )
         }
     }
@@ -177,6 +189,7 @@ fun ExpandablePlayButton(
         Box(
             modifier =
                 Modifier
+                    .padding(start = 2.dp, top = 2.dp)
                     .height(MinButtonSize),
         ) {
             Icon(
@@ -184,7 +197,7 @@ fun ExpandablePlayButton(
                 contentDescription = null,
                 modifier =
                     Modifier
-                        .size(32.dp)
+                        .size(28.dp)
                         .ifElse(mirrorIcon, Modifier.graphicsLayer { scaleX = -1f }),
             )
         }
@@ -232,7 +245,7 @@ fun ExpandableFaButton(
                 text = stringResource(iconStringRes),
                 style = MaterialTheme.typography.titleSmall,
                 color = iconColor,
-                fontSize = 18.sp,
+                fontSize = 16.sp,
                 fontFamily = FontAwesome,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.align(Alignment.Center),
