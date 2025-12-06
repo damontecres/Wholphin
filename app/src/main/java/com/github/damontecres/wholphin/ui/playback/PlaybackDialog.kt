@@ -117,7 +117,7 @@ fun PlaybackDialog(
             )
         }
 
-        PlaybackDialogType.AUDIO ->
+        PlaybackDialogType.AUDIO -> {
             BottomDialog(
                 choices = settings.audioStreams.map { it.displayName },
                 currentChoice = settings.audioStreams.indexOfFirstOrNull { it.index == settings.audioIndex },
@@ -134,8 +134,9 @@ fun PlaybackDialog(
                 },
                 gravity = Gravity.END,
             )
+        }
 
-        PlaybackDialogType.PLAYBACK_SPEED ->
+        PlaybackDialogType.PLAYBACK_SPEED -> {
             BottomDialog(
                 choices = playbackSpeedOptions,
                 currentChoice = playbackSpeedOptions.indexOf(settings.playbackSpeed.toString()),
@@ -152,8 +153,9 @@ fun PlaybackDialog(
                 },
                 gravity = Gravity.END,
             )
+        }
 
-        PlaybackDialogType.VIDEO_SCALE ->
+        PlaybackDialogType.VIDEO_SCALE -> {
             BottomDialog(
                 choices = playbackScaleOptions.values.toList(),
                 currentChoice = playbackScaleOptions.keys.toList().indexOf(settings.contentScale),
@@ -170,5 +172,6 @@ fun PlaybackDialog(
                 },
                 gravity = Gravity.END,
             )
+        }
     }
 }

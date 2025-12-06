@@ -76,17 +76,21 @@ fun ProgramDialog(
                         .padding(16.dp),
             ) {
                 when (val st = loading) {
-                    is LoadingState.Error -> ErrorMessage(st)
+                    is LoadingState.Error -> {
+                        ErrorMessage(st)
+                    }
+
                     LoadingState.Loading,
                     LoadingState.Pending,
-                    ->
+                    -> {
                         CircularProgress(
                             Modifier
                                 .padding(8.dp)
                                 .size(48.dp),
                         )
+                    }
 
-                    LoadingState.Success ->
+                    LoadingState.Success -> {
                         item?.let { item ->
                             val now = LocalDateTime.now()
                             val dto = item.data
@@ -272,6 +276,7 @@ fun ProgramDialog(
                                 }
                             }
                         }
+                    }
                 }
             }
         }

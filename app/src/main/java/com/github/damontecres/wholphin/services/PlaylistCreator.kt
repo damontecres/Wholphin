@@ -138,7 +138,7 @@ class PlaylistCreator
                 BaseItemKind.BOX_SET,
                 BaseItemKind.COLLECTION_FOLDER,
                 BaseItemKind.USER_VIEW,
-                ->
+                -> {
                     PlaylistCreationResult.Success(
                         createFromCollection(
                             item = item,
@@ -152,6 +152,7 @@ class PlaylistCreator
                             filter = filter,
                         ),
                     )
+                }
 
                 BaseItemKind.EPISODE -> {
                     val seriesId = item.seriesId
@@ -185,7 +186,7 @@ class PlaylistCreator
                     }
                 }
 
-                BaseItemKind.SERIES ->
+                BaseItemKind.SERIES -> {
                     PlaylistCreationResult.Success(
                         createFromEpisode(
                             seriesId = item.id,
@@ -194,8 +195,9 @@ class PlaylistCreator
                             shuffled = shuffled,
                         ),
                     )
+                }
 
-                BaseItemKind.PLAYLIST ->
+                BaseItemKind.PLAYLIST -> {
                     PlaylistCreationResult.Success(
                         createFromPlaylistId(
                             item.id,
@@ -203,6 +205,7 @@ class PlaylistCreator
                             shuffled,
                         ),
                     )
+                }
 
                 // Not support yet
 //                BaseItemKind.AGGREGATE_FOLDER -> TODO()
@@ -212,7 +215,9 @@ class PlaylistCreator
 //                BaseItemKind.MUSIC_ALBUM -> TODO()
 //                BaseItemKind.MUSIC_ARTIST -> TODO()
 
-                else -> PlaylistCreationResult.Error(null, "Unsupported type: ${item.type}")
+                else -> {
+                    PlaylistCreationResult.Error(null, "Unsupported type: ${item.type}")
+                }
             }
 
         suspend fun getServerPlaylists(

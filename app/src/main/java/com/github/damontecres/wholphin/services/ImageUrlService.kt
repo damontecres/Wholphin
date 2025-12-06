@@ -76,13 +76,14 @@ class ImageUrlService
                     }
                 }
 
-                else ->
+                else -> {
                     getItemImageUrl(
                         itemId = itemId,
                         imageType = imageType,
                         fillWidth = fillWidth,
                         fillHeight = fillHeight,
                     )
+                }
             }
 
         fun getItemImageUrl(

@@ -81,15 +81,18 @@ data class BaseItem(
                     } ?: Destination.MediaItem(id, type, this)
                 }
 
-                BaseItemKind.SEASON ->
+                BaseItemKind.SEASON -> {
                     Destination.SeriesOverview(
                         data.seriesId!!,
                         BaseItemKind.SERIES,
                         this,
                         SeasonEpisodeIds(id, indexNumber, null, null),
                     )
+                }
 
-                else -> Destination.MediaItem(id, type, this)
+                else -> {
+                    Destination.MediaItem(id, type, this)
+                }
             }
         return result
     }

@@ -59,22 +59,24 @@ fun LoadingRow(
     },
 ) {
     when (val r = state) {
-        is RowLoadingState.Error ->
+        is RowLoadingState.Error -> {
             LoadingRowPlaceholder(
                 title = title,
                 message = r.localizedMessage,
                 messageColor = MaterialTheme.colorScheme.error,
                 modifier = Modifier,
             )
+        }
 
         RowLoadingState.Pending,
         RowLoadingState.Loading,
-        ->
+        -> {
             LoadingRowPlaceholder(
                 title = title,
                 message = stringResource(R.string.loading),
                 modifier = modifier,
             )
+        }
 
         is RowLoadingState.Success -> {
             if (r.items.isNotEmpty()) {

@@ -216,7 +216,7 @@ fun PlaylistDialog(
             when (val s = state) {
                 PlaylistLoadingState.Pending,
                 PlaylistLoadingState.Loading,
-                ->
+                -> {
                     CircularProgressIndicator(
                         color = MaterialTheme.colorScheme.border,
                         modifier =
@@ -224,9 +224,11 @@ fun PlaylistDialog(
                                 .align(Alignment.CenterHorizontally)
                                 .size(48.dp),
                     )
+                }
 
-                is PlaylistLoadingState.Error ->
+                is PlaylistLoadingState.Error -> {
                     ErrorMessage(s.message, s.exception)
+                }
 
                 is PlaylistLoadingState.Success -> {
                     LaunchedEffect(Unit) { focusRequester.tryRequestFocus() }

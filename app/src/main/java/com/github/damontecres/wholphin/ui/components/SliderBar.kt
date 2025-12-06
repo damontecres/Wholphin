@@ -128,21 +128,25 @@ fun SliderActiveColor(focused: Boolean): Color {
         AppThemeColors.BLUE,
         AppThemeColors.GREEN,
         AppThemeColors.ORANGE,
-        -> MaterialTheme.colorScheme.border
+        -> {
+            MaterialTheme.colorScheme.border
+        }
 
-        AppThemeColors.BOLD_BLUE ->
+        AppThemeColors.BOLD_BLUE -> {
             if (focused) {
                 MaterialTheme.colorScheme.border
             } else {
                 MaterialTheme.colorScheme.border
             }
+        }
 
-        AppThemeColors.OLED_BLACK ->
+        AppThemeColors.OLED_BLACK -> {
             if (focused) {
                 MaterialTheme.colorScheme.primaryContainer
             } else {
                 MaterialTheme.colorScheme.border
             }
+        }
     }
 }
 
@@ -152,23 +156,27 @@ fun SliderInactiveColor(focused: Boolean): Color {
     return when (theme) {
         AppThemeColors.UNRECOGNIZED,
         AppThemeColors.PURPLE,
-        ->
+        -> {
             MaterialTheme.colorScheme.border
                 .copy(alpha = .25f)
                 .compositeOver(MaterialTheme.colorScheme.surfaceVariant)
                 .copy(alpha = .66f)
+        }
 
         AppThemeColors.BLUE,
         AppThemeColors.GREEN,
         AppThemeColors.ORANGE,
         AppThemeColors.BOLD_BLUE,
-        -> MaterialTheme.colorScheme.secondaryContainer.copy(alpha = .66f)
+        -> {
+            MaterialTheme.colorScheme.secondaryContainer.copy(alpha = .66f)
+        }
 
-        AppThemeColors.OLED_BLACK ->
+        AppThemeColors.OLED_BLACK -> {
             if (focused) {
                 MaterialTheme.colorScheme.tertiaryContainer
             } else {
                 MaterialTheme.colorScheme.primaryContainer
             }
+        }
     }
 }

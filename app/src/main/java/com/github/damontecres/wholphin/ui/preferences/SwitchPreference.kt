@@ -71,17 +71,19 @@ fun SwitchColors(): SwitchColors {
         AppThemeColors.UNRECOGNIZED,
         AppThemeColors.PURPLE,
         AppThemeColors.BLUE,
-        ->
+        -> {
             SwitchDefaults.colors()
+        }
 
         AppThemeColors.GREEN,
         AppThemeColors.ORANGE,
         AppThemeColors.BOLD_BLUE,
         AppThemeColors.OLED_BLACK,
-        ->
+        -> {
             SwitchDefaults.colors(
                 checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
                 uncheckedThumbColor = MaterialTheme.colorScheme.onPrimary,
             )
+        }
     }
 }

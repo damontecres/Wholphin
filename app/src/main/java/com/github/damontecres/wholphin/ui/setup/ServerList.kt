@@ -72,11 +72,13 @@ fun ServerList(
                 leadingContent = {
                     when (status) {
                         is ServerConnectionStatus.Success -> {}
+
                         ServerConnectionStatus.Pending -> {
                             CircularProgress(
                                 Modifier.size(IconButtonDefaults.MediumIconSize),
                             )
                         }
+
                         is ServerConnectionStatus.Error -> {
                             Icon(
                                 imageVector = Icons.Default.Warning,
@@ -88,9 +90,15 @@ fun ServerList(
                 },
                 onClick = {
                     when (status) {
-                        is ServerConnectionStatus.Success -> onSwitchServer.invoke(server)
+                        is ServerConnectionStatus.Success -> {
+                            onSwitchServer.invoke(server)
+                        }
+
                         ServerConnectionStatus.Pending -> {}
-                        is ServerConnectionStatus.Error -> onTestServer.invoke(server)
+
+                        is ServerConnectionStatus.Error -> {
+                            onTestServer.invoke(server)
+                        }
                     }
                 },
                 onLongClick = {

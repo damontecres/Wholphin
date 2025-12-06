@@ -75,7 +75,9 @@ fun DownloadSubtitlesContent(
             }
         }
 
-        is SubtitleSearch.Error -> Wrapper { ErrorMessage(null, s.ex, modifier) }
+        is SubtitleSearch.Error -> {
+            Wrapper { ErrorMessage(null, s.ex, modifier) }
+        }
 
         is SubtitleSearch.Success -> {
             val dialogItems = convertRemoteSubtitles(s.options, onClickDownload)
@@ -133,9 +135,11 @@ fun DownloadSubtitlesContent(
                     ) {
                         itemsIndexed(dialogItems) { index, item ->
                             when (item) {
-                                is DialogItemDivider -> HorizontalDivider(Modifier.height(16.dp))
+                                is DialogItemDivider -> {
+                                    HorizontalDivider(Modifier.height(16.dp))
+                                }
 
-                                is DialogItem ->
+                                is DialogItem -> {
                                     ListItem(
                                         selected = false,
                                         enabled = item.enabled,
@@ -153,6 +157,7 @@ fun DownloadSubtitlesContent(
                                                 Modifier.focusRequester(focusRequester),
                                             ),
                                     )
+                                }
                             }
                         }
                     }

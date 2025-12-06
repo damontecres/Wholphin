@@ -130,9 +130,15 @@ fun PlaylistDetails(
     var longClickDialog by remember { mutableStateOf<DialogParams?>(null) }
 
     when (val st = loading) {
-        is LoadingState.Error -> ErrorMessage(st, modifier)
-        LoadingState.Pending, LoadingState.Loading -> LoadingPage(modifier)
-        LoadingState.Success ->
+        is LoadingState.Error -> {
+            ErrorMessage(st, modifier)
+        }
+
+        LoadingState.Pending, LoadingState.Loading -> {
+            LoadingPage(modifier)
+        }
+
+        LoadingState.Success -> {
             playlist?.let {
                 val focusRequester = remember { FocusRequester() }
                 LaunchedEffect(Unit) { focusRequester.tryRequestFocus() }
@@ -189,6 +195,7 @@ fun PlaylistDetails(
                     modifier = modifier,
                 )
             }
+        }
     }
     longClickDialog?.let { params ->
         DialogPopup(

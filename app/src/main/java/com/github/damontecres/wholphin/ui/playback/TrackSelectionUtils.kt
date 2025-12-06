@@ -153,8 +153,14 @@ object TrackSelectionUtils {
             // TODO MPV could use literal indexes because they are stored in the track format ID
             PlayerBackend.MPV -> {
                 when (type) {
-                    MediaStreamType.VIDEO -> serverIndex - externalSubtitleCount + 1
-                    MediaStreamType.AUDIO -> serverIndex - externalSubtitleCount - videoStreamCount + 1
+                    MediaStreamType.VIDEO -> {
+                        serverIndex - externalSubtitleCount + 1
+                    }
+
+                    MediaStreamType.AUDIO -> {
+                        serverIndex - externalSubtitleCount - videoStreamCount + 1
+                    }
+
                     MediaStreamType.SUBTITLE -> {
                         if (subtitleIsExternal) {
                             serverIndex + embeddedSubtitleCount + 1
@@ -162,7 +168,10 @@ object TrackSelectionUtils {
                             serverIndex - externalSubtitleCount - videoStreamCount - audioStreamCount + 1
                         }
                     }
-                    else -> throw UnsupportedOperationException("Cannot calculate index for $type")
+
+                    else -> {
+                        throw UnsupportedOperationException("Cannot calculate index for $type")
+                    }
                 }
             }
         }

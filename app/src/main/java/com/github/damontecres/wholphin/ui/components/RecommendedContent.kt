@@ -127,13 +127,17 @@ fun RecommendedContent(
     val rows by viewModel.rows.collectAsState()
 
     when (val state = loading) {
-        is LoadingState.Error -> ErrorMessage(state)
+        is LoadingState.Error -> {
+            ErrorMessage(state)
+        }
 
         LoadingState.Loading,
         LoadingState.Pending,
-        -> LoadingPage()
+        -> {
+            LoadingPage()
+        }
 
-        LoadingState.Success ->
+        LoadingState.Success -> {
             HomePageContent(
                 homeRows = rows,
                 onClickItem = { _, item ->
@@ -146,6 +150,7 @@ fun RecommendedContent(
                 showClock = preferences.appPreferences.interfacePreferences.showClock,
                 modifier = modifier,
             )
+        }
     }
     moreDialog.compose { (position, item) ->
         DialogPopup(

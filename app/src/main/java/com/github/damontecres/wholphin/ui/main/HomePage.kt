@@ -107,11 +107,15 @@ fun HomePage(
     }
 
     when (val state = loading) {
-        is LoadingState.Error -> ErrorMessage(state)
+        is LoadingState.Error -> {
+            ErrorMessage(state)
+        }
 
         LoadingState.Loading,
         LoadingState.Pending,
-        -> LoadingPage()
+        -> {
+            LoadingPage()
+        }
 
         LoadingState.Success -> {
             var dialog by remember { mutableStateOf<DialogParams?>(null) }
@@ -391,7 +395,7 @@ fun HomePageContent(
         when (loadingState) {
             LoadingState.Pending,
             LoadingState.Loading,
-            ->
+            -> {
                 Box(
                     modifier =
                         Modifier
@@ -401,6 +405,7 @@ fun HomePageContent(
                 ) {
                     CircularProgress(Modifier.fillMaxSize())
                 }
+            }
 
             else -> {}
         }

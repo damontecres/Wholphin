@@ -77,9 +77,14 @@ fun TvGuideGrid(
 //    val programsByChannel by viewModel.programsByChannel.observeAsState(mapOf())
 //    val fetchedRange by viewModel.fetchedRange.observeAsState(0..0)
     when (val state = loading) {
-        is LoadingState.Error -> ErrorMessage(state, modifier)
+        is LoadingState.Error -> {
+            ErrorMessage(state, modifier)
+        }
+
         LoadingState.Pending,
-        -> LoadingPage(modifier)
+        -> {
+            LoadingPage(modifier)
+        }
 
         LoadingState.Loading,
         LoadingState.Success,
