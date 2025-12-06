@@ -4,7 +4,7 @@
     <string name="add_favorite">В избранное</string>
     <string name="add_server">Добавить сервер</string>
     <string name="add_user">Добавить Пользователя</string>
-    <string name="audio">Аудио</string>
+    <string name="audio">Аудиодорожка</string>
     <string name="birthplace">Место рождения</string>
     <string name="bitrate">Битрейт</string>
     <string name="born">Рождён</string>
@@ -97,10 +97,10 @@
     <string name="top_unwatched">Лучшее непросмотренное</string>
     <string name="trailer">Трейлер</string>
     <plurals name="trailers">
-        <item quantity="one">Трейлеры</item>
-        <item quantity="few"/>
-        <item quantity="many"/>
-        <item quantity="other"/>
+        <item quantity="one">Трейлер</item>
+        <item quantity="few">Трейлера</item>
+        <item quantity="many">Трейлеров</item>
+        <item quantity="other">Трейлеров</item>
     </plurals>
     <string name="tv_guide">Телегид</string>
     <string name="tv_season">Сезон</string>
@@ -114,7 +114,7 @@
     <string name="videos">Видео</string>
     <string name="years_old">%1$d возраст</string>
     <string name="play_with_transcoding">Воспроизвести с перекодированием</string>
-    <string name="show_clock">Показать часы</string>
+    <string name="show_clock">Показывать часы</string>
     <string name="create_playlist">Создать новый плейлист</string>
     <string name="add_to_playlist">Добавить в плейлист</string>
     <string name="one_click_pause">Пауза одним нажатием</string>
@@ -127,9 +127,9 @@
     <string name="extras">Дополнительно</string>
     <plurals name="other_extras">
         <item quantity="one">Другое</item>
-        <item quantity="few"/>
-        <item quantity="many"/>
-        <item quantity="other"/>
+        <item quantity="few">Других</item>
+        <item quantity="many">Других</item>
+        <item quantity="other">Других</item>
     </plurals>
     <plurals name="behind_the_scenes">
         <item quantity="one">За кадром</item>
@@ -138,28 +138,28 @@
         <item quantity="other"/>
     </plurals>
     <plurals name="clips">
-        <item quantity="one">Клипы</item>
-        <item quantity="few"/>
-        <item quantity="many"/>
-        <item quantity="other"/>
+        <item quantity="one">Клип</item>
+        <item quantity="few">Клипа</item>
+        <item quantity="many">Клипов</item>
+        <item quantity="other">Клипов</item>
     </plurals>
     <plurals name="deleted_scenes">
-        <item quantity="one">Удаленные сцены</item>
-        <item quantity="few"/>
-        <item quantity="many"/>
-        <item quantity="other"/>
+        <item quantity="one">Удаленная сцена</item>
+        <item quantity="few">Удалённые сцены</item>
+        <item quantity="many">Удалённых сцен</item>
+        <item quantity="other">Удалённых сцен</item>
     </plurals>
     <plurals name="interviews">
         <item quantity="one">Интервью</item>
-        <item quantity="few"/>
-        <item quantity="many"/>
-        <item quantity="other"/>
+        <item quantity="few">Интервью</item>
+        <item quantity="many">Интервью</item>
+        <item quantity="other">Интервью</item>
     </plurals>
     <plurals name="scenes">
-        <item quantity="one">Сцены</item>
-        <item quantity="few"/>
-        <item quantity="many"/>
-        <item quantity="other"/>
+        <item quantity="one">Сцена</item>
+        <item quantity="few">Сцены</item>
+        <item quantity="many">Сцен</item>
+        <item quantity="other">Сцен</item>
     </plurals>
     <plurals name="downloads">
         <item quantity="one">%s загрузка</item>
@@ -194,7 +194,7 @@
     <string name="home">Домашняя страница</string>
     <string name="disabled">Отключено</string>
     <string name="enabled">Включено</string>
-    <string name="hide_controller_timeout">Скрыть элементы управления воспроизведением</string>
+    <string name="hide_controller_timeout">Скрывать элементы управления воспроизведением</string>
     <string name="more">Ещё</string>
     <string name="no_scheduled_recordings">Нет запланированных записей</string>
     <string name="play">Воспроизвести</string>
@@ -290,4 +290,57 @@
     <string name="send_crash_reports_summary">Совершит попытку отправки на последний подключённый сервер</string>
     <string name="go_to_series">Перейти к сериалу</string>
     <string name="tv_dvr_schedule">Расписание записей</string>
+    <string name="update_url">Ссылка для обновлениий</string>
+    <plurals name="items">
+        <item quantity="one">%d объект</item>
+        <item quantity="few">%d объекта</item>
+        <item quantity="many">%d объектов</item>
+        <item quantity="other">%d объектов</item>
+    </plurals>
+    <plurals name="samples">
+        <item quantity="one">Отрывки</item>
+        <item quantity="few"></item>
+        <item quantity="many"></item>
+        <item quantity="other"></item>
+    </plurals>
+    <plurals name="featurettes">
+        <item quantity="one">Дополнительные материалы</item>
+        <item quantity="few"></item>
+        <item quantity="many"></item>
+        <item quantity="other"></item>
+    </plurals>
+    <string name="player_backend">Выбор плеера</string>
+    <string name="edge_size">Толщина обводки</string>
+    <string name="global_content_scale">Масштаб по умолчанию</string>
+    <string name="max_homepage_items">Максимальное количество элементов в ряду на домашней странице</string>
+    <string name="forced_track">Форсированные</string>
+    <plurals name="theme_songs">
+        <item quantity="one">Саундтреки</item>
+        <item quantity="few"></item>
+        <item quantity="many"></item>
+        <item quantity="other"></item>
+    </plurals>
+    <plurals name="theme_videos">
+        <item quantity="one">Видеоролики</item>
+        <item quantity="few"></item>
+        <item quantity="many"></item>
+        <item quantity="other"></item>
+    </plurals>
+    <string name="nav_drawer_pins">Настроить элементы боковой панели</string>
+    <string name="nav_drawer_pins_summary">Выберите элементы для показа на панели, остальные элементы будут скрыты</string>
+    <string name="play_theme_music">Воспроизведение фоновой музыки</string>
+    <string name="playback_overrides">Приоритеты воспроизведения</string>
+    <string name="remember_selected_tab">Запоминать выбранные вкладки</string>
+    <string name="rewatch_next_up">Разрешить просмотренное в \"Далее\"</string>
+    <string name="seek_bar_steps">Интервал перемотки</string>
+    <string name="send_app_logs_summary">Используется при отладке</string>
+    <string name="nav_drawer_switch_on_focus_summary_off">Смена страниц по нажатию</string>
+    <string name="nav_drawer_switch_on_focus">Смена страниц по выделению</string>
+    <string name="pass_out_protection">Остановка воспроизведения при бездействии</string>
+    <plurals name="shorts">
+        <item quantity="one">Короткометражки</item>
+        <item quantity="few"></item>
+        <item quantity="many"></item>
+        <item quantity="other"></item>
+    </plurals>
 </resources>
