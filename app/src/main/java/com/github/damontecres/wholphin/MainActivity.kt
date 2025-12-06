@@ -39,6 +39,7 @@ import com.github.damontecres.wholphin.services.DeviceProfileService
 import com.github.damontecres.wholphin.services.ImageUrlService
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.PlaybackLifecycleObserver
+import com.github.damontecres.wholphin.services.RefreshRateService
 import com.github.damontecres.wholphin.services.ServerEventListener
 import com.github.damontecres.wholphin.services.UpdateChecker
 import com.github.damontecres.wholphin.services.hilt.AuthOkHttpClient
@@ -93,6 +94,9 @@ class MainActivity : AppCompatActivity() {
     @Inject
     lateinit var imageUrlService: ImageUrlService
 
+    @Inject
+    lateinit var refreshRateService: RefreshRateService
+
     @OptIn(ExperimentalTvMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -100,6 +104,14 @@ class MainActivity : AppCompatActivity() {
         lifecycle.addObserver(playbackLifecycleObserver)
         if (savedInstanceState == null) {
             appUpgradeHandler.copySubfont(false)
+        }
+        refreshRateService.refreshRateMode.observe(this) { mode ->
+            // Listen for refresh rate changes
+            val attrs = window.attributes
+            if (attrs.preferredDisplayModeId != mode.modeId) {
+                Timber.d("Switch preferredRefreshRate to %s", mode.refreshRate)
+                window.attributes = attrs.apply { preferredRefreshRate = mode.refreshRate }
+            }
         }
         setContent {
             val appPreferences by userPreferencesDataStore.data.collectAsState(null)

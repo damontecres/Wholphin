@@ -677,6 +677,18 @@ sealed interface AppPreference<Pref, T> {
                 destination = Destination.Settings(PreferenceScreenOption.SUBTITLES),
             )
 
+        val RefreshRateSwitching =
+            AppSwitchPreference<AppPreferences>(
+                title = R.string.refresh_rate_switching,
+                defaultValue = false,
+                getter = { it.playbackPreferences.refreshRateSwitching },
+                setter = { prefs, value ->
+                    prefs.updatePlaybackPreferences { refreshRateSwitching = value }
+                },
+                summaryOn = R.string.automatic,
+                summaryOff = R.string.disabled,
+            )
+
         val PlayerBackendPref =
             AppChoicePreference<AppPreferences, PlayerBackend>(
                 title = R.string.player_backend,
@@ -860,13 +872,22 @@ val advancedPreferences =
                     listOf(
                         AppPreference.OneClickPause,
                         AppPreference.GlobalContentScale,
+                        AppPreference.MaxBitrate,
+                        AppPreference.RefreshRateSwitching,
+                        AppPreference.PlaybackDebugInfo,
+                    ),
+            ),
+        )
+        add(
+            PreferenceGroup(
+                title = R.string.skip,
+                preferences =
+                    listOf(
                         AppPreference.SkipIntros,
                         AppPreference.SkipOutros,
                         AppPreference.SkipCommercials,
                         AppPreference.SkipPreviews,
                         AppPreference.SkipRecaps,
-                        AppPreference.MaxBitrate,
-                        AppPreference.PlaybackDebugInfo,
                     ),
             ),
         )

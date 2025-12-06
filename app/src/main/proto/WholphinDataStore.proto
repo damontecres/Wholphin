@@ -71,6 +71,7 @@ message PlaybackPreferences {
   bool one_click_pause = 19;
   PlayerBackend player_backend = 20;
   MpvOptions mpv_options = 21;
+  bool refresh_rate_switching = 22;
 }
 
 message HomePagePreferences{

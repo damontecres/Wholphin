@@ -49,3 +49,18 @@ You can build the module on MacOS or Linux with the [`build_ffmpeg_decoder.sh`](
 Wholphin has a playback engine that uses [`libmpv`](https://github.com/mpv-player/mpv). The app uses JNI code from [`mpv-android`](https://github.com/mpv-android/mpv-android) and has an implementation of `androidx.media3.common.Player` to swap out for `ExoPlayer`.
 
 See the [build scripts](scripts/mpv/) for details on building this component.
+
+### App settings
+
+App settings are available with the `AppPreferences` object and defined by different `AppPreference` objects (note the `s` differences).
+
+The `AppPreference` objects are used to create the UI for configuring settings using the composable functions in `com.github.damontecres.wholphin.ui.preferences`.
+
+#### How to add a new app setting
+
+1. Add entry in `WholphinDataStore.proto` & build to generate classes
+2. Add new `AppPreference` object in `AppPreference.kt`
+3. Add new object to a `PreferenceGroup` (listed in `AppPreference.kt`)
+4. Update `AppPreferencesSerializer` to set the default value for new installs
+5. If needed, update `AppUpgradeHandler` to set the default value for app upgrades
+    - Since preferences use proto3, the [default values](https://protobuf.dev/programming-guides/proto3/#default) are zero, false, or the first enum, so only need this step if the default value is different
