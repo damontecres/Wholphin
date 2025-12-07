@@ -52,6 +52,8 @@ data class JellyfinUser(
     val accessToken: String?,
     val pin: String? = null,
 ) {
+    val hasPin: Boolean get() = pin.isNotNullOrBlank()
+
     override fun toString(): String =
         "JellyfinUser(rowId=$rowId, id=$id, name=$name, serverId=$serverId, accessToken?=${accessToken.isNotNullOrBlank()}, pin?=${pin.isNotNullOrBlank()})"
 }

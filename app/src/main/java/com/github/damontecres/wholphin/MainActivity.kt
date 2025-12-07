@@ -179,7 +179,7 @@ class MainActivity : AppCompatActivity() {
                             } else {
                                 DisposableEffect(Unit) {
                                     onDispose {
-                                        if (!appPreferences.signInAutomatically) {
+                                        if (!appPreferences.signInAutomatically || current?.user?.hasPin == true) {
                                             serverRepository.closeSession()
                                         }
                                     }
@@ -252,7 +252,7 @@ class MainActivity : AppCompatActivity() {
         val signInAutomatically =
             runBlocking { userPreferencesDataStore.data.firstOrNull()?.signInAutomatically } ?: true
         Timber.i("onRestart: signInAutomatically=$signInAutomatically")
-        if (!signInAutomatically) {
+        if (!signInAutomatically || serverRepository.currentUser.value?.hasPin == true) {
             serverRepository.closeSession()
         }
     }
