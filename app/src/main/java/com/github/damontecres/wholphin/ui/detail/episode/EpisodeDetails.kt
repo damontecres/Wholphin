@@ -329,6 +329,7 @@ fun EpisodeDetailsContent(
                         },
                         modifier =
                             Modifier
+                                .fillMaxWidth()
                                 .padding(bottom = 16.dp)
                                 .focusRequester(focusRequesters[HEADER_ROW]),
                     )
