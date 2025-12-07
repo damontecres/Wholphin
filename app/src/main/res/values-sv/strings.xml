@@ -254,4 +254,27 @@
     <string name="background_color">Bakgrundsfärg</string>
     <string name="played">Spelad</string>
     <string name="filter">Filter</string>
+    <string name="confirm_pin">Konfirmera kod</string>
+    <string name="image_type">Bildtyp</string>
+    <string name="image_cache_size">Storlek på bilddiskcache (MB)</string>
+    <string name="view_options">Visa alternativ</string>
+    <string name="columns">Kolumner</string>
+    <string name="spacing">Avstånd</string>
+    <string name="aspect_ratio">Bildformat</string>
+    <string name="show_details">Visa detaljer</string>
+    <string name="guest_stars">Gästartister</string>
+    <string name="automatic">Automatisk</string>
+    <string name="username_or_password">Använd användarnamn/lösenord</string>
+    <string name="login">Logga in</string>
+    <string name="skip_forward_preference">Hoppa framåt</string>
+    <string name="reset">Återställ</string>
+    <string name="skip_segment_recap">Skippa sammanfattning</string>
+    <string name="year">År</string>
+    <string name="decade">Årtionde</string>
+    <string name="remove">Ta bort</string>
+    <string name="dolby_vision">Dolby Vision</string>
+    <string name="subtitle_margin">Marginal</string>
+    <string name="enter_pin">Skriv in PIN</string>
+    <string name="sign_in_auto">Logga in automatiskt</string>
+    <string name="use_server_credentials">Logga in via server</string>
 </resources>
