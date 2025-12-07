@@ -109,6 +109,8 @@ class ServerRepository
 
         /**
          * Restores a session for the given server & user such as when the app reopens
+         *
+         * If user has a PIN, this returns false
          */
         suspend fun restoreSession(
             serverId: UUID?,
@@ -124,7 +126,7 @@ class ServerRepository
                 }
             if (serverAndUsers != null) {
                 val user = serverAndUsers.users.firstOrNull { it.id == userId }
-                if (user != null) {
+                if (user != null && !user.hasPin) {
                     changeUser(serverAndUsers.server, user)
                     return true
                 }
