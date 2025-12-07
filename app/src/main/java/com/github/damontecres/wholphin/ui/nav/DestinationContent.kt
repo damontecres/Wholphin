@@ -27,6 +27,7 @@ import com.github.damontecres.wholphin.ui.main.HomePage
 import com.github.damontecres.wholphin.ui.main.SearchPage
 import com.github.damontecres.wholphin.ui.playback.PlaybackPage
 import com.github.damontecres.wholphin.ui.preferences.PreferencesPage
+import com.github.damontecres.wholphin.ui.seerr.SeerrDiscoverPage
 import com.github.damontecres.wholphin.ui.setup.InstallUpdatePage
 import com.github.damontecres.wholphin.ui.setup.SwitchServerContent
 import com.github.damontecres.wholphin.ui.setup.SwitchUserContent
@@ -241,6 +242,14 @@ fun DestinationContent(
         Destination.Debug -> {
             DebugPage(preferences, modifier)
         }
+
+        Destination.Discover ->
+            SeerrDiscoverPage(
+                preferences = preferences,
+                modifier = modifier,
+            )
+    }
+
     }
 }
 

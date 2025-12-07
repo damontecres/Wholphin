@@ -46,7 +46,7 @@ class NavDrawerItemRepository
                     setOf()
                 }
 
-            val builtins = listOf(NavDrawerItem.Favorites)
+            val builtins = listOf(NavDrawerItem.Favorites, NavDrawerItem.Discover)
             val libraries =
                 userViews
                     .filter { it.collectionType in supportedCollectionTypes || it.id in recordingFolders }

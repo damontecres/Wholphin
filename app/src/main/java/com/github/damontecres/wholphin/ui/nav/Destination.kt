@@ -118,6 +118,9 @@ sealed class Destination(
     data object Favorites : Destination(false)
 
     @Serializable
+    data object Discover : Destination(false)
+
+    @Serializable
     data object UpdateApp : Destination(true)
 
     @Serializable
