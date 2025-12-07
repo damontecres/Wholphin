@@ -62,12 +62,12 @@ class DatePlayedService
                             ).content.items
                             .firstOrNull()
                             ?.userData
-                            ?.lastPlayedDate
-                    if (premiereDate != null && premiereDate.isAfter(result)) {
+                            ?.lastPlayedDate ?: LocalDateTime.MIN
+                    if (premiereDate != null && result.isBefore(premiereDate)) {
                         premiereDate
                     } else {
                         result
-                    } ?: LocalDateTime.MIN
+                    }
                 } catch (ex: InvalidStatusException) {
                     Timber.w(
                         "Error fetching series=%s, item=%s: %s",
