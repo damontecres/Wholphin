@@ -11,7 +11,7 @@
     <string name="more">更多</string>
     <string name="movies">電影</string>
     <string name="name">名稱</string>
-    <string name="next_up">即將播放</string>
+    <string name="next_up">接下來播放</string>
     <string name="no_data">無資料</string>
     <string name="no_results">無查詢結果</string>
     <string name="no_scheduled_recordings">無排程錄影</string>
@@ -24,7 +24,7 @@
     <string name="playlist">播放清單</string>
     <string name="playlists">播放清單</string>
     <string name="preview">預覽</string>
-    <string name="profile_specific_settings">使用者設定</string>
+    <string name="profile_specific_settings">個人化設定</string>
     <string name="queue">佇列</string>
     <string name="recently_added">最近新增</string>
     <string name="recently_recorded">最近錄製</string>
@@ -224,12 +224,12 @@
     </plurals>
     <string name="auto_play_next_delay">播放下一集前的延遲時間</string>
     <string name="combine_continue_next_summary">僅適用於電視劇</string>
-    <string name="combine_continue_next"><![CDATA[合併繼續觀看與即將播放]]></string>
+    <string name="combine_continue_next"><![CDATA[合併繼續觀看與接下來播放]]></string>
     <string name="downmix_stereo">一律降轉為雙聲道</string>
     <string name="nav_drawer_switch_on_focus">選取選單時自動切換頁面</string>
     <string name="pass_out_protection">防睡保護</string>
-    <string name="rewatch_next_up">在即將播放中顯示重播內容</string>
-    <string name="show_next_up_when">顯示即將播放</string>
+    <string name="rewatch_next_up">在接下來播放中顯示重播內容</string>
+    <string name="show_next_up_when">顯示接下來播放</string>
     <string name="skip_segment_recap">跳過前情提要</string>
     <string name="skip_segment_outro">跳過片尾</string>
     <string name="skip_segment_intro">跳過片頭</string>
@@ -271,4 +271,5 @@
     <string name="send_app_logs_summary">有助於偵錯</string>
     <string name="subtitle_margin">邊距</string>
     <string name="verbose_logging">詳細日誌記錄</string>
+    <string name="require_pin_code">使用 PIN 鍵登入</string>
 </resources>
