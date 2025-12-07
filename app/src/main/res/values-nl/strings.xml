@@ -311,4 +311,8 @@
     <string name="cast_and_crew"><![CDATA[Cast en crew]]></string>
     <string name="guest_stars">Gastrollen</string>
     <string name="edge_size">Randbreedte</string>
+    <string name="refresh_rate_switching">Andere ververssnelheid toepassen</string>
+    <string name="automatic">Automatisch</string>
+    <string name="username_or_password">Gebruikersnaam/wachtwoord gebruiken</string>
+    <string name="login">Inloggen</string>
 </resources>
