@@ -1,7 +1,6 @@
 package com.github.damontecres.wholphin
 
 import android.os.Bundle
-import android.view.WindowManager
 import androidx.activity.compose.setContent
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.background
@@ -10,7 +9,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -45,7 +43,6 @@ import com.github.damontecres.wholphin.services.UpdateChecker
 import com.github.damontecres.wholphin.services.hilt.AuthOkHttpClient
 import com.github.damontecres.wholphin.ui.CoilConfig
 import com.github.damontecres.wholphin.ui.LocalImageUrlService
-import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.nav.ApplicationContent
 import com.github.damontecres.wholphin.ui.nav.Destination
@@ -53,8 +50,6 @@ import com.github.damontecres.wholphin.ui.theme.WholphinTheme
 import com.github.damontecres.wholphin.util.DebugLogTree
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.firstOrNull
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import org.jellyfin.sdk.model.serializer.toUUIDOrNull
@@ -146,16 +141,17 @@ class MainActivity : AppCompatActivity() {
                         ) {
                             var isRestoringSession by remember { mutableStateOf(true) }
                             LaunchedEffect(Unit) {
-                                if (appPreferences.signInAutomatically) {
-                                    try {
-                                        serverRepository.restoreSession(
-                                            appPreferences.currentServerId?.toUUIDOrNull(),
-                                            appPreferences.currentUserId?.toUUIDOrNull(),
-                                        )
-                                    } catch (ex: Exception) {
-                                        Timber.e(ex, "Exception restoring session")
-                                    }
+                                // TODO PIN-related
+//                                if (appPreferences.signInAutomatically) {
+                                try {
+                                    serverRepository.restoreSession(
+                                        appPreferences.currentServerId?.toUUIDOrNull(),
+                                        appPreferences.currentUserId?.toUUIDOrNull(),
+                                    )
+                                } catch (ex: Exception) {
+                                    Timber.e(ex, "Exception restoring session")
                                 }
+//                                }
                                 isRestoringSession = false
                             }
                             val current by serverRepository.current.observeAsState()
@@ -177,32 +173,34 @@ class MainActivity : AppCompatActivity() {
                                     )
                                 }
                             } else {
-                                DisposableEffect(Unit) {
-                                    onDispose {
-                                        if (!appPreferences.signInAutomatically || current?.user?.hasPin == true) {
-                                            serverRepository.closeSession()
-                                        }
-                                    }
-                                }
+                                // TODO PIN-related
+//                                DisposableEffect(Unit) {
+//                                    onDispose {
+//                                        if (!appPreferences.signInAutomatically || current?.user?.hasPin == true) {
+//                                            serverRepository.closeSession()
+//                                        }
+//                                    }
+//                                }
                                 key(current?.server?.id, current?.user?.id) {
-                                    LaunchedEffect(current?.user?.pin) {
-                                        if (current?.user?.pin?.isNotNullOrBlank() == true) {
-                                            // If user has a pin, then obscure the window in previews
-                                            window?.setFlags(
-                                                WindowManager.LayoutParams.FLAG_SECURE,
-                                                WindowManager.LayoutParams.FLAG_SECURE,
-                                            )
-                                        } else {
-                                            window?.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
-                                        }
-                                    }
+                                    // TODO PIN-related
+//                                    LaunchedEffect(current?.user?.pin) {
+//                                        if (current?.user?.pin?.isNotNullOrBlank() == true) {
+//                                            // If user has a pin, then obscure the window in previews
+//                                            window?.setFlags(
+//                                                WindowManager.LayoutParams.FLAG_SECURE,
+//                                                WindowManager.LayoutParams.FLAG_SECURE,
+//                                            )
+//                                        } else {
+//                                            window?.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
+//                                        }
+//                                    }
                                     val initialDestination =
                                         when {
                                             current != null -> Destination.Home()
 
-                                            !appPreferences.signInAutomatically -> Destination.ServerList
+                                            // TODO PIN-related
+                                            // !appPreferences.signInAutomatically -> Destination.ServerList
 
-                                            // TODO user list?
                                             else -> Destination.ServerList
                                         }
                                     val backStack = rememberNavBackStack(initialDestination)
@@ -249,11 +247,12 @@ class MainActivity : AppCompatActivity() {
 
     override fun onRestart() {
         super.onRestart()
-        val signInAutomatically =
-            runBlocking { userPreferencesDataStore.data.firstOrNull()?.signInAutomatically } ?: true
-        Timber.i("onRestart: signInAutomatically=$signInAutomatically")
-        if (!signInAutomatically || serverRepository.currentUser.value?.hasPin == true) {
-            serverRepository.closeSession()
-        }
+        // TODO PIN-related
+//        val signInAutomatically =
+//            runBlocking { userPreferencesDataStore.data.firstOrNull()?.signInAutomatically } ?: true
+//        Timber.i("onRestart: signInAutomatically=$signInAutomatically")
+//        if (!signInAutomatically || serverRepository.currentUser.value?.hasPin == true) {
+//            serverRepository.closeSession()
+//        }
     }
 }
