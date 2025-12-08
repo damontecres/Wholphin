@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.data.filter.DefaultForGenresFilterOptions
+import com.github.damontecres.wholphin.data.model.SeerrItemType
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.components.ItemGrid
 import com.github.damontecres.wholphin.ui.components.LicenseInfo
@@ -19,6 +20,7 @@ import com.github.damontecres.wholphin.ui.detail.DebugPage
 import com.github.damontecres.wholphin.ui.detail.FavoritesPage
 import com.github.damontecres.wholphin.ui.detail.PersonPage
 import com.github.damontecres.wholphin.ui.detail.PlaylistDetails
+import com.github.damontecres.wholphin.ui.detail.discover.DiscoverMovieDetails
 import com.github.damontecres.wholphin.ui.detail.episode.EpisodeDetails
 import com.github.damontecres.wholphin.ui.detail.movie.MovieDetails
 import com.github.damontecres.wholphin.ui.detail.series.SeriesDetails
@@ -248,6 +250,25 @@ fun DestinationContent(
                 preferences = preferences,
                 modifier = modifier,
             )
+        }
+
+        is Destination.DiscoveredItem -> {
+            when (destination.item.type) {
+                SeerrItemType.MOVIE -> {
+                    DiscoverMovieDetails(
+                        preferences = preferences,
+                        destination = destination,
+                    )
+                }
+
+                SeerrItemType.TV -> {
+                    TODO()
+                }
+
+                SeerrItemType.PERSON -> {
+                    TODO()
+                }
+            }
         }
     }
 }

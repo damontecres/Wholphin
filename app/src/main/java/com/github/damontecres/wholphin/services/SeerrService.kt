@@ -2,6 +2,7 @@ package com.github.damontecres.wholphin.services
 
 import com.github.damontecres.wholphin.api.seerr.SeerrApiClient
 import com.github.damontecres.wholphin.api.seerr.model.SearchGet200ResponseResultsInner
+import com.github.damontecres.wholphin.data.model.DiscoverItem
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -13,13 +14,9 @@ class SeerrService
     constructor(
         private val seerApi: SeerrApi,
     ) {
-        private val api: SeerrApiClient get() = seerApi.api
+        val api: SeerrApiClient get() = seerApi.api
 
         val active: Boolean get() = seerApi.active
-
-        suspend fun init() {
-            api.searchApi.discoverTvGet(1)
-        }
 
         suspend fun search(
             query: String,
@@ -30,15 +27,17 @@ class SeerrService
                 .results
                 .orEmpty()
 
-        suspend fun discoverTv(page: Int = 1) =
+        suspend fun discoverTv(page: Int = 1): List<DiscoverItem> =
             api.searchApi
                 .discoverTvGet(page = page)
                 .results
+                ?.map(::DiscoverItem)
                 .orEmpty()
 
-        suspend fun discoverMovies(page: Int = 1) =
+        suspend fun discoverMovies(page: Int = 1): List<DiscoverItem> =
             api.searchApi
                 .discoverMoviesGet(page = page)
                 .results
+                ?.map(::DiscoverItem)
                 .orEmpty()
     }

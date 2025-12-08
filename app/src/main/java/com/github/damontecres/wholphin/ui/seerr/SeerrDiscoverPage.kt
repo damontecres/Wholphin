@@ -3,6 +3,8 @@ package com.github.damontecres.wholphin.ui.seerr
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
@@ -12,13 +14,14 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.github.damontecres.wholphin.api.seerr.model.MovieResult
+import com.github.damontecres.wholphin.data.model.DiscoverItem
 import com.github.damontecres.wholphin.preferences.UserPreferences
+import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.SeerrService
-import com.github.damontecres.wholphin.ui.Cards
+import com.github.damontecres.wholphin.ui.cards.DiscoverItemCard
 import com.github.damontecres.wholphin.ui.cards.ItemRow
-import com.github.damontecres.wholphin.ui.cards.SeasonCard
 import com.github.damontecres.wholphin.ui.launchIO
+import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.setValueOnMain
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -27,14 +30,20 @@ import javax.inject.Inject
 class SeerrDiscoverViewModel
     @Inject
     constructor(
-        val seerrService: SeerrService,
+        private val seerrService: SeerrService,
+        val navigationManager: NavigationManager,
     ) : ViewModel() {
-        val discoverMovies = MutableLiveData<List<MovieResult>>(listOf())
+        val discoverMovies = MutableLiveData<List<DiscoverItem>>(listOf())
+        val discoverTv = MutableLiveData<List<DiscoverItem>>(listOf())
 
         init {
             viewModelScope.launchIO {
                 val movies = seerrService.discoverMovies()
                 discoverMovies.setValueOnMain(movies)
+            }
+            viewModelScope.launchIO {
+                val tv = seerrService.discoverTv()
+                discoverTv.setValueOnMain(tv)
             }
         }
     }
@@ -46,30 +55,44 @@ fun SeerrDiscoverPage(
     viewModel: SeerrDiscoverViewModel = hiltViewModel(),
 ) {
     val movies by viewModel.discoverMovies.observeAsState(listOf())
+    val tv by viewModel.discoverTv.observeAsState(listOf())
+
+    val scrollState = rememberScrollState()
     Column(
         verticalArrangement = Arrangement.spacedBy(16.dp),
         modifier =
             modifier
+                .verticalScroll(scrollState)
                 .padding(16.dp),
     ) {
         ItemRow(
             title = "Movies",
             items = movies,
-            onClickItem = { index, item -> },
+            onClickItem = { index, item ->
+                viewModel.navigationManager.navigateTo(Destination.DiscoveredItem(item))
+            },
             onLongClickItem = { index, item -> },
-            cardContent = { index: Int, item: MovieResult?, mod: Modifier, onClick: () -> Unit, onLongClick: () -> Unit ->
-                SeasonCard(
-                    title = item?.title,
-                    subtitle = null,
-                    name = item?.title,
-                    imageUrl = item?.posterPath?.let { "https://image.tmdb.org/t/p/w500$it" }, // TODO
-                    isFavorite = false,
-                    isPlayed = false,
-                    unplayedItemCount = -1,
-                    playedPercentage = -1.0,
+            cardContent = { index: Int, item: DiscoverItem?, mod: Modifier, onClick: () -> Unit, onLongClick: () -> Unit ->
+                DiscoverItemCard(
+                    item = item,
                     onClick = onClick,
                     onLongClick = onLongClick,
-                    imageHeight = Cards.height2x3,
+                    modifier = mod,
+                )
+            },
+        )
+        ItemRow(
+            title = "TV",
+            items = tv,
+            onClickItem = { index, item ->
+                viewModel.navigationManager.navigateTo(Destination.DiscoveredItem(item))
+            },
+            onLongClickItem = { index, item -> },
+            cardContent = { index: Int, item: DiscoverItem?, mod: Modifier, onClick: () -> Unit, onLongClick: () -> Unit ->
+                DiscoverItemCard(
+                    item = item,
+                    onClick = onClick,
+                    onLongClick = onLongClick,
                     modifier = mod,
                 )
             },
