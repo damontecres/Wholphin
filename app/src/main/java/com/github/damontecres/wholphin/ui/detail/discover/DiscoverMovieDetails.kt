@@ -36,8 +36,7 @@ import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.api.seerr.model.MovieDetails
-import com.github.damontecres.wholphin.data.ExtrasItem
-import com.github.damontecres.wholphin.data.model.BaseItem
+import com.github.damontecres.wholphin.data.model.DiscoverItem
 import com.github.damontecres.wholphin.data.model.DiscoverRating
 import com.github.damontecres.wholphin.data.model.LocalTrailer
 import com.github.damontecres.wholphin.data.model.Person
@@ -46,7 +45,7 @@ import com.github.damontecres.wholphin.data.model.Trailer
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.TrailerService
 import com.github.damontecres.wholphin.ui.Cards
-import com.github.damontecres.wholphin.ui.cards.ExtrasRow
+import com.github.damontecres.wholphin.ui.cards.DiscoverItemCard
 import com.github.damontecres.wholphin.ui.cards.ItemRow
 import com.github.damontecres.wholphin.ui.cards.PersonRow
 import com.github.damontecres.wholphin.ui.cards.SeasonCard
@@ -59,7 +58,6 @@ import com.github.damontecres.wholphin.ui.data.AddPlaylistViewModel
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialog
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialogInfo
 import com.github.damontecres.wholphin.ui.detail.MoreDialogActions
-import com.github.damontecres.wholphin.ui.detail.buildMoreDialogItemsForHome
 import com.github.damontecres.wholphin.ui.detail.buildMoreDialogItemsForPerson
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.rememberInt
@@ -88,8 +86,8 @@ fun DiscoverMovieDetails(
     val rating by viewModel.rating.observeAsState(null)
     val people by viewModel.people.observeAsState(listOf())
     val trailers by viewModel.trailers.observeAsState(listOf())
-    val extras by viewModel.extras.observeAsState(listOf())
     val similar by viewModel.similar.observeAsState(listOf())
+    val recommended by viewModel.similar.observeAsState(listOf())
     val loading by viewModel.loading.observeAsState(LoadingState.Loading)
 
     var overviewDialog by remember { mutableStateOf<ItemDetailsDialogInfo?>(null) }
@@ -121,14 +119,14 @@ fun DiscoverMovieDetails(
                     movie = movie,
                     rating = rating,
                     people = people,
-                    extras = extras,
                     trailers = trailers,
                     similar = similar,
+                    recommended = recommended,
                     requestOnClick = {
                         // TODO seerr
                     },
                     onClickItem = { index, item ->
-                        viewModel.navigateTo(item.destination())
+                        viewModel.navigateTo(Destination.DiscoveredItem(item))
                     },
                     onClickPerson = {
                     },
@@ -164,28 +162,9 @@ fun DiscoverMovieDetails(
                             )
                     },
                     onLongClickSimilar = { index, similar ->
-                        val items =
-                            buildMoreDialogItemsForHome(
-                                context = context,
-                                item = similar,
-                                seriesId = null,
-                                playbackPosition = similar.playbackPosition,
-                                watched = similar.played,
-                                favorite = similar.favorite,
-                                actions = moreActions,
-                            )
-                        moreDialog =
-                            DialogParams(
-                                fromLongClick = true,
-                                title = similar.title ?: "",
-                                items = items,
-                            )
                     },
                     trailerOnClick = {
                         TrailerService.onClick(context, it, viewModel::navigateTo)
-                    },
-                    onClickExtra = { index, extra ->
-                        viewModel.navigateTo(extra.destination)
                     },
                     modifier = modifier,
                 )
@@ -217,6 +196,7 @@ private const val TRAILER_ROW = PEOPLE_ROW + 1
 private const val CHAPTER_ROW = TRAILER_ROW + 1
 private const val EXTRAS_ROW = CHAPTER_ROW + 1
 private const val SIMILAR_ROW = EXTRAS_ROW + 1
+private const val RECOMMENDED_ROW = SIMILAR_ROW + 1
 
 @Composable
 fun DiscoverMovieDetailsContent(
@@ -225,23 +205,22 @@ fun DiscoverMovieDetailsContent(
     rating: DiscoverRating?,
     people: List<Person>,
     trailers: List<Trailer>,
-    extras: List<ExtrasItem>,
-    similar: List<BaseItem>,
+    similar: List<DiscoverItem>,
+    recommended: List<DiscoverItem>,
     requestOnClick: () -> Unit,
     trailerOnClick: (Trailer) -> Unit,
     overviewOnClick: () -> Unit,
     moreOnClick: () -> Unit,
-    onClickItem: (Int, BaseItem) -> Unit,
+    onClickItem: (Int, DiscoverItem) -> Unit,
     onClickPerson: (Person) -> Unit,
     onLongClickPerson: (Int, Person) -> Unit,
-    onLongClickSimilar: (Int, BaseItem) -> Unit,
-    onClickExtra: (Int, ExtrasItem) -> Unit,
+    onLongClickSimilar: (Int, DiscoverItem) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var position by rememberInt(0)
-    val focusRequesters = remember { List(SIMILAR_ROW + 1) { FocusRequester() } }
+    val focusRequesters = remember { List(RECOMMENDED_ROW + 1) { FocusRequester() } }
 
     val bringIntoViewRequester = remember { BringIntoViewRequester() }
     LaunchedEffect(Unit) {
@@ -329,22 +308,6 @@ fun DiscoverMovieDetailsContent(
                 }
             }
 
-            if (extras.isNotEmpty()) {
-                item {
-                    ExtrasRow(
-                        extras = extras,
-                        onClickItem = { index, item ->
-                            position = EXTRAS_ROW
-                            onClickExtra.invoke(index, item)
-                        },
-                        onLongClickItem = { _, _ -> },
-                        modifier =
-                            Modifier
-                                .fillMaxWidth()
-                                .focusRequester(focusRequesters[EXTRAS_ROW]),
-                    )
-                }
-            }
             if (similar.isNotEmpty()) {
                 item {
                     ItemRow(
@@ -359,20 +322,45 @@ fun DiscoverMovieDetailsContent(
                             onLongClickSimilar.invoke(index, similar)
                         },
                         cardContent = { index, item, mod, onClick, onLongClick ->
-                            SeasonCard(
+                            DiscoverItemCard(
                                 item = item,
                                 onClick = onClick,
                                 onLongClick = onLongClick,
                                 modifier = mod,
-                                showImageOverlay = true,
-                                imageHeight = Cards.height2x3,
-                                imageWidth = Dp.Unspecified,
                             )
                         },
                         modifier =
                             Modifier
                                 .fillMaxWidth()
                                 .focusRequester(focusRequesters[SIMILAR_ROW]),
+                    )
+                }
+            }
+            if (recommended.isNotEmpty()) {
+                item {
+                    ItemRow(
+                        title = stringResource(R.string.recommended),
+                        items = similar,
+                        onClickItem = { index, item ->
+                            position = RECOMMENDED_ROW
+                            onClickItem.invoke(index, item)
+                        },
+                        onLongClickItem = { index, similar ->
+                            position = RECOMMENDED_ROW
+                            onLongClickSimilar.invoke(index, similar)
+                        },
+                        cardContent = { index, item, mod, onClick, onLongClick ->
+                            DiscoverItemCard(
+                                item = item,
+                                onClick = onClick,
+                                onLongClick = onLongClick,
+                                modifier = mod,
+                            )
+                        },
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .focusRequester(focusRequesters[RECOMMENDED_ROW]),
                     )
                 }
             }

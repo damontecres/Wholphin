@@ -29,6 +29,7 @@ import com.github.damontecres.wholphin.ui.letNotEmpty
 import com.github.damontecres.wholphin.ui.roundMinutes
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import kotlinx.coroutines.launch
+import java.util.Locale
 import kotlin.time.Duration.Companion.minutes
 
 @Composable
@@ -71,9 +72,18 @@ fun DiscoverMovieDetailsHeader(
                             ?.roundMinutes
                             ?.toString()
                             ?.let(::add)
-                        movie.releases
-                            ?.results
-                            ?.firstOrNull()
+                        val release =
+                            movie.releases
+                                ?.results
+                                ?.firstOrNull { it.iso31661 == Locale.getDefault().country }
+                                ?: movie.releases
+                                    ?.results
+                                    ?.firstOrNull { it.iso31661 == Locale.US.country }
+                                ?: movie.releases
+                                    ?.results
+                                    ?.firstOrNull()
+
+                        release
                             ?.releaseDates
                             ?.firstOrNull()
                             ?.certification

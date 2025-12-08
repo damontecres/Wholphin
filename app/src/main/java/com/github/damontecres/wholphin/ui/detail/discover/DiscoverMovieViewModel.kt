@@ -5,17 +5,16 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.github.damontecres.wholphin.api.seerr.model.MovieDetails
-import com.github.damontecres.wholphin.data.ChosenStreams
-import com.github.damontecres.wholphin.data.ExtrasItem
+import com.github.damontecres.wholphin.api.seerr.model.RelatedVideo
 import com.github.damontecres.wholphin.data.ServerRepository
-import com.github.damontecres.wholphin.data.model.BaseItem
-import com.github.damontecres.wholphin.data.model.Chapter
 import com.github.damontecres.wholphin.data.model.DiscoverItem
 import com.github.damontecres.wholphin.data.model.DiscoverRating
 import com.github.damontecres.wholphin.data.model.Person
+import com.github.damontecres.wholphin.data.model.RemoteTrailer
 import com.github.damontecres.wholphin.data.model.Trailer
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.SeerrService
+import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.setValueOnMain
@@ -58,10 +57,8 @@ class DiscoverMovieViewModel
 
         val trailers = MutableLiveData<List<Trailer>>(listOf())
         val people = MutableLiveData<List<Person>>(listOf())
-        val chapters = MutableLiveData<List<Chapter>>(listOf())
-        val extras = MutableLiveData<List<ExtrasItem>>(listOf())
-        val similar = MutableLiveData<List<BaseItem>>()
-        val chosenStreams = MutableLiveData<ChosenStreams?>(null)
+        val similar = MutableLiveData<List<DiscoverItem>>(listOf())
+        val recommended = MutableLiveData<List<DiscoverItem>>(listOf())
 
         init {
             init()
@@ -96,6 +93,26 @@ class DiscoverMovieViewModel
                     val result = seerrService.api.moviesApi.movieMovieIdRatingsGet(movieId = item.id)
                     rating.setValueOnMain(DiscoverRating(result))
                 }
+                if (!similar.isInitialized) {
+                    viewModelScope.launchIO {
+                        val result =
+                            seerrService.api.moviesApi
+                                .movieMovieIdSimilarGet(movieId = item.id, page = 2)
+                                .results
+                                ?.map(::DiscoverItem)
+                                .orEmpty()
+                        similar.setValueOnMain(result)
+                    }
+                    viewModelScope.launchIO {
+                        val result =
+                            seerrService.api.moviesApi
+                                .movieMovieIdRecommendationsGet(movieId = item.id, page = 2)
+                                .results
+                                ?.map(::DiscoverItem)
+                                .orEmpty()
+                        similar.setValueOnMain(result)
+                    }
+                }
                 val people =
                     movie.credits
                         ?.cast
@@ -122,20 +139,14 @@ class DiscoverMovieViewModel
                                 )
                             }.orEmpty()
                 this@DiscoverMovieViewModel.people.setValueOnMain(people)
-                if (!similar.isInitialized) {
-//                    val similar =
-//                        api.libraryApi
-//                            .getSimilarItems(
-//                                GetSimilarItemsRequest(
-//                                    userId = serverRepository.currentUser.value?.id,
-//                                    itemId = itemId,
-//                                    fields = SlimItemFields,
-//                                    limit = 25,
-//                                ),
-//                            ).content.items
-//                            .map { BaseItem.Companion.from(it, api) }
-//                    this@DiscoverMovieViewModel.similar.setValueOnMain(similar)
-                }
+                val trailers =
+                    movie.relatedVideos
+                        ?.filter { it.type == RelatedVideo.Type.TRAILER }
+                        ?.filter { it.name.isNotNullOrBlank() && it.url.isNotNullOrBlank() }
+                        ?.map {
+                            RemoteTrailer(it.name!!, it.url!!)
+                        }.orEmpty()
+                this@DiscoverMovieViewModel.trailers.setValueOnMain(trailers)
             }
 
         fun navigateTo(destination: Destination) {
