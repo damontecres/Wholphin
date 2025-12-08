@@ -5,7 +5,7 @@ import com.github.damontecres.wholphin.api.seerr.model.SearchGet200ResponseResul
 import javax.inject.Inject
 import javax.inject.Singleton
 
-typealias SearchResult = SearchGet200ResponseResultsInner
+typealias SeerrSearchResult = SearchGet200ResponseResultsInner
 
 @Singleton
 class SeerrService
@@ -15,6 +15,8 @@ class SeerrService
     ) {
         private val api: SeerrApiClient get() = seerApi.api
 
+        val active: Boolean get() = seerApi.active
+
         suspend fun init() {
             api.searchApi.discoverTvGet(1)
         }
@@ -22,7 +24,7 @@ class SeerrService
         suspend fun search(
             query: String,
             page: Int = 1,
-        ): List<SearchResult> =
+        ): List<SeerrSearchResult> =
             api.searchApi
                 .searchGet(query = query, page = page)
                 .results

@@ -42,6 +42,8 @@ import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.NavigationManager
+import com.github.damontecres.wholphin.services.SeerrSearchResult
+import com.github.damontecres.wholphin.services.SeerrService
 import com.github.damontecres.wholphin.ui.Cards
 import com.github.damontecres.wholphin.ui.SlimItemFields
 import com.github.damontecres.wholphin.ui.cards.EpisodeCard
@@ -51,7 +53,9 @@ import com.github.damontecres.wholphin.ui.components.SearchEditTextBox
 import com.github.damontecres.wholphin.ui.data.RowColumn
 import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
+import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.rememberPosition
+import com.github.damontecres.wholphin.ui.setValueOnMain
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.ApiRequestPager
 import com.github.damontecres.wholphin.util.ExceptionHandler
@@ -73,11 +77,13 @@ class SearchViewModel
     constructor(
         val api: ApiClient,
         val navigationManager: NavigationManager,
+        private val seerrService: SeerrService,
     ) : ViewModel() {
         val movies = MutableLiveData<SearchResult>(SearchResult.NoQuery)
         val series = MutableLiveData<SearchResult>(SearchResult.NoQuery)
         val episodes = MutableLiveData<SearchResult>(SearchResult.NoQuery)
         val collections = MutableLiveData<SearchResult>(SearchResult.NoQuery)
+        val seerrResults = MutableLiveData<SearchResult>(SearchResult.NoQuery)
 
         private var currentQuery: String? = null
 
@@ -95,11 +101,13 @@ class SearchViewModel
                 searchInternal(query, BaseItemKind.SERIES, series)
                 searchInternal(query, BaseItemKind.EPISODE, episodes)
                 searchInternal(query, BaseItemKind.BOX_SET, collections)
+                searchSeerr(query)
             } else {
                 movies.value = SearchResult.NoQuery
                 series.value = SearchResult.NoQuery
                 episodes.value = SearchResult.NoQuery
                 collections.value = SearchResult.NoQuery
+                seerrResults.value = SearchResult.NoQuery
             }
         }
 
@@ -133,6 +141,16 @@ class SearchViewModel
             }
         }
 
+        private fun searchSeerr(query: String) {
+            if (seerrService.active) {
+                viewModelScope.launchIO {
+                    seerrResults.setValueOnMain(SearchResult.Searching)
+                    val results = seerrService.search(query)
+                    seerrResults.setValueOnMain(SearchResult.SuccessSeerr(results))
+                }
+            }
+        }
+
         fun getHints(query: String) {
             // TODO
 //        api.searchApi.getSearchHints()
@@ -151,12 +169,17 @@ sealed interface SearchResult {
     data class Success(
         val items: List<BaseItem?>,
     ) : SearchResult
+
+    data class SuccessSeerr(
+        val items: List<SeerrSearchResult>,
+    ) : SearchResult
 }
 
 private const val MOVIE_ROW = 0
 private const val COLLECTION_ROW = MOVIE_ROW + 1
 private const val SERIES_ROW = COLLECTION_ROW + 1
 private const val EPISODE_ROW = SERIES_ROW + 1
+private const val SEERR_ROW = EPISODE_ROW + 1
 
 @Composable
 fun SearchPage(
@@ -171,6 +194,7 @@ fun SearchPage(
     val collections by viewModel.collections.observeAsState(SearchResult.NoQuery)
     val series by viewModel.series.observeAsState(SearchResult.NoQuery)
     val episodes by viewModel.episodes.observeAsState(SearchResult.NoQuery)
+    val seerrResults by viewModel.seerrResults.observeAsState(SearchResult.NoQuery)
 
     val query = rememberTextFieldState()
     val focusRequester = remember { FocusRequester() }
@@ -287,6 +311,18 @@ fun SearchPage(
                 )
             },
         )
+        searchResultRow(
+            title = context.getString(R.string.discover),
+            result = seerrResults,
+            rowIndex = SEERR_ROW,
+            position = position,
+            focusRequester = focusRequester,
+            onClickItem = { index, item ->
+                // TODO seerr
+            },
+            onClickPosition = { position = it },
+            modifier = Modifier.fillMaxWidth(),
+        )
     }
 }
 
@@ -361,6 +397,40 @@ fun LazyListScope.searchResultRow(
                         onLongClickItem = { _, _ -> },
                         modifier = modifier,
                         cardContent = cardContent,
+                    )
+                }
+            }
+
+            is SearchResult.SuccessSeerr -> {
+                if (r.items.isEmpty()) {
+                    SearchResultPlaceholder(
+                        title = title,
+                        message = stringResource(R.string.no_results),
+                        modifier = modifier,
+                    )
+                } else {
+                    ItemRow(
+                        title = title,
+                        items = r.items,
+                        onClickItem = { index, item -> },
+                        onLongClickItem = { _, _ -> },
+                        modifier = modifier,
+                        cardContent = { index: Int, item: SeerrSearchResult?, mod: Modifier, onClick: () -> Unit, onLongClick: () -> Unit ->
+                            SeasonCard(
+                                title = item?.title ?: item?.name,
+                                subtitle = null,
+                                name = item?.title ?: item?.name,
+                                imageUrl = item?.posterPath?.let { "https://image.tmdb.org/t/p/w500$it" }, // TODO
+                                isFavorite = false,
+                                isPlayed = false,
+                                unplayedItemCount = -1,
+                                playedPercentage = -1.0,
+                                onClick = onClick,
+                                onLongClick = onLongClick,
+                                imageHeight = Cards.height2x3,
+                                modifier = mod,
+                            )
+                        },
                     )
                 }
             }

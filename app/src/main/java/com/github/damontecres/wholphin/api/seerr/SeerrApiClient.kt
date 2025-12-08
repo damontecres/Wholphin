@@ -3,6 +3,7 @@ package com.github.damontecres.wholphin.api.seerr
 import com.github.damontecres.wholphin.api.seerr.infrastructure.ApiClient
 import okhttp3.Call
 import okhttp3.OkHttpClient
+import timber.log.Timber
 
 class SeerrApiClient(
     val baseUrl: String,
@@ -13,6 +14,7 @@ class SeerrApiClient(
         okHttpClient
             .newBuilder()
             .addInterceptor {
+                Timber.d("SeerrApiClient: ${it.request().method} ${it.request().url}")
                 it.proceed(
                     it
                         .request()

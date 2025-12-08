@@ -2,9 +2,7 @@ package com.github.damontecres.wholphin.ui.seerr
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
@@ -14,10 +12,12 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.api.seerr.model.MovieResult
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.SeerrService
+import com.github.damontecres.wholphin.ui.Cards
+import com.github.damontecres.wholphin.ui.cards.ItemRow
+import com.github.damontecres.wholphin.ui.cards.SeasonCard
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.setValueOnMain
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -47,17 +47,32 @@ fun SeerrDiscoverPage(
 ) {
     val movies by viewModel.discoverMovies.observeAsState(listOf())
     Column(
-        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+        modifier =
+            modifier
+                .padding(16.dp),
     ) {
-        LazyRow(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            items(movies) { movie ->
-                Text(
-                    text = movie.title,
+        ItemRow(
+            title = "Movies",
+            items = movies,
+            onClickItem = { index, item -> },
+            onLongClickItem = { index, item -> },
+            cardContent = { index: Int, item: MovieResult?, mod: Modifier, onClick: () -> Unit, onLongClick: () -> Unit ->
+                SeasonCard(
+                    title = item?.title,
+                    subtitle = null,
+                    name = item?.title,
+                    imageUrl = item?.posterPath?.let { "https://image.tmdb.org/t/p/w500$it" }, // TODO
+                    isFavorite = false,
+                    isPlayed = false,
+                    unplayedItemCount = -1,
+                    playedPercentage = -1.0,
+                    onClick = onClick,
+                    onLongClick = onLongClick,
+                    imageHeight = Cards.height2x3,
+                    modifier = mod,
                 )
-            }
-        }
+            },
+        )
     }
 }
