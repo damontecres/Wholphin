@@ -1296,6 +1296,10 @@ components:
           type: string
           example: '2020-09-12T10:00:27.000Z'
           readOnly: true
+        jellyfinMediaId:
+          type: string
+        jellyfinMediaId4k:
+          type: string
     Cast:
       type: object
       properties:
