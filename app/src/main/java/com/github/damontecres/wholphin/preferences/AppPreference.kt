@@ -793,8 +793,7 @@ val basicPreferences =
             title = R.string.ui_interface,
             preferences =
                 listOf(
-                    // TODO PIN-related
-                    // AppPreference.SignInAuto,
+                    AppPreference.SignInAuto,
                     AppPreference.HomePageItems,
                     AppPreference.CombineContinueNext,
                     AppPreference.RewatchNextUp,
@@ -827,8 +826,7 @@ val basicPreferences =
             title = R.string.profile_specific_settings,
             preferences =
                 listOf(
-                    // TODO PIN-related
-                    // AppPreference.RequireProfilePin,
+                    AppPreference.RequireProfilePin,
                     AppPreference.UserPinnedNavDrawerItems,
                 ),
         ),
