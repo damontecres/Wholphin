@@ -1,6 +1,6 @@
-package com.github.damontecres.api.seerr
+package com.github.damontecres.wholphin.api.seerr
 
-import com.github.damontecres.api.seerr.infrastructure.ApiClient
+import com.github.damontecres.wholphin.api.seerr.infrastructure.ApiClient
 import okhttp3.Call
 import okhttp3.OkHttpClient
 

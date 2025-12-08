@@ -1,7 +1,7 @@
 package com.github.damontecres.wholphin.services
 
-import com.github.damontecres.api.seerr.SeerrApiClient
-import com.github.damontecres.api.seerr.model.SearchGet200ResponseResultsInner
+import com.github.damontecres.wholphin.api.seerr.SeerrApiClient
+import com.github.damontecres.wholphin.api.seerr.model.SearchGet200ResponseResultsInner
 import javax.inject.Inject
 import javax.inject.Singleton
 

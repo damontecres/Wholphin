@@ -15,6 +15,7 @@ plugins {
     alias(libs.plugins.protobuf)
     alias(libs.plugins.kotlin.plugin.serialization)
     alias(libs.plugins.aboutLibraries)
+    id("org.openapi.generator") version "7.17.0"
 }
 
 val isCI = if (System.getenv("CI") != null) System.getenv("CI").toBoolean() else false
@@ -70,6 +71,14 @@ android {
             jvmTarget = JvmTarget.JVM_11
             javaParameters = true
         }
+//        sourceSets {
+//            main {
+//                java.srcDirs +=
+//                    kotlin {
+//                        srcDirs += files("$buildDir/generated/seerr_api/src/main/kotlin")
+//                    }
+//            }
+//        }
     }
     buildFeatures {
         buildConfig = true
@@ -144,6 +153,12 @@ android {
             isUniversalApk = true
         }
     }
+
+    sourceSets {
+        getByName("main") {
+            kotlin.srcDirs("$buildDir/generated/seerr_api/src/main/kotlin")
+        }
+    }
 }
 
 protobuf {
@@ -173,6 +188,30 @@ aboutLibraries {
         duplicationMode = DuplicateMode.MERGE
         duplicationRule = DuplicateRule.SIMPLE
     }
+}
+
+openApiGenerate {
+    generatorName.set("kotlin")
+    inputSpec.set("$projectDir/src/main/seerr-api.yml")
+    outputDir.set("$buildDir/generated/seerr_api")
+    apiPackage.set("com.github.damontecres.wholphin.api.seerr")
+    modelPackage.set("com.github.damontecres.wholphin.api.seerr.model")
+    groupId.set("com.github.damontecres.wholphin.api.seerr")
+    id.set("seerr-api")
+    packageName.set("com.github.damontecres.wholphin.api.seerr")
+    additionalProperties.apply {
+        put("serializationLibrary", "kotlinx_serialization")
+        put("sortModelPropertiesByRequiredFlag", true)
+        put("sortParamsByRequiredFlag", true)
+        put("useCoroutines", true)
+        put("enumPropertyNaming", "UPPERCASE")
+        put("modelMutable", false)
+        put("supportAndroidApiLevel25AndBelow", true)
+    }
+}
+
+tasks.named("preBuild") {
+    dependsOn.add(tasks.named("openApiGenerate"))
 }
 
 dependencies {
@@ -238,6 +277,8 @@ dependencies {
     implementation(libs.acra.limiter)
     compileOnly(libs.auto.service.annotations)
     ksp(libs.auto.service.ksp)
+    implementation(platform(libs.okhttp.bom))
+    implementation(libs.okhttp)
 
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
@@ -248,5 +289,5 @@ dependencies {
         implementation(files("libs/lib-decoder-ffmpeg-release.aar"))
     }
 
-    implementation(project(":seerr-api"))
+//    implementation(project(":seerr-api"))
 }

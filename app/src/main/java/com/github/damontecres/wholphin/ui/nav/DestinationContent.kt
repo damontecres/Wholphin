@@ -243,13 +243,12 @@ fun DestinationContent(
             DebugPage(preferences, modifier)
         }
 
-        Destination.Discover ->
+        Destination.Discover -> {
             SeerrDiscoverPage(
                 preferences = preferences,
                 modifier = modifier,
             )
-    }
-
+        }
     }
 }
 

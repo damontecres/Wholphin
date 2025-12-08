@@ -188,6 +188,13 @@ sealed interface NavDrawerItem {
 
         override fun name(context: Context): String = context.getString(R.string.more)
     }
+
+    object Discover : NavDrawerItem {
+        override val id: String
+            get() = "a_discover"
+
+        override fun name(context: Context): String = context.getString(R.string.discover)
+    }
 }
 
 data class ServerNavDrawerItem(
@@ -260,6 +267,13 @@ fun NavDrawer(
 
             NavDrawerItem.More -> {
                 setShowMore(!showMore)
+            }
+
+            NavDrawerItem.Discover -> {
+                viewModel.setIndex(index)
+                viewModel.navigationManager.navigateToFromDrawer(
+                    Destination.Discover,
+                )
             }
 
             is ServerNavDrawerItem -> {
@@ -604,6 +618,11 @@ fun NavigationDrawerScope.NavItem(
 
             NavDrawerItem.More -> {
                 R.string.fa_ellipsis
+            }
+
+            NavDrawerItem.Discover -> {
+                // TODO seerr
+                R.string.fa_list_ul
             }
 
             is ServerNavDrawerItem -> {
