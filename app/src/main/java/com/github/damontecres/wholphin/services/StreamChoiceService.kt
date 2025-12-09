@@ -14,6 +14,7 @@ import org.jellyfin.sdk.model.api.MediaStream
 import org.jellyfin.sdk.model.api.MediaStreamType
 import org.jellyfin.sdk.model.api.SubtitlePlaybackMode
 import org.jellyfin.sdk.model.serializer.toUUIDOrNull
+import timber.log.Timber
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -56,6 +57,7 @@ class StreamChoiceService
                     playbackLanguageChoiceDao.get(userId, seriesId)
                         ?: PlaybackLanguageChoice(userId, seriesId, dto.id)
                 val newPlc = update.invoke(currentPlc)
+                Timber.v("Saving series PLC: %s", newPlc)
                 playbackLanguageChoiceDao.save(newPlc)
             }
         }
@@ -119,8 +121,14 @@ class StreamChoiceService
             } else {
                 // TODO audio selection based on channel layout or preferences or default
                 val audioLanguage =
-                    playbackLanguageChoice?.audioLanguage
-                        ?: prefs.userConfig.audioLanguagePreference
+                    if (prefs.userConfig.audioLanguagePreference.isNotNullOrBlank()) {
+                        // If the user has chosen a preferred language, but changed tracks on the series, use that
+                        // Otherwise, use their preferred language
+                        playbackLanguageChoice?.audioLanguage
+                            ?: prefs.userConfig.audioLanguagePreference
+                    } else {
+                        null
+                    }
                 if (audioLanguage.isNotNullOrBlank()) {
                     val sorted =
                         candidates.sortedWith(compareBy<MediaStream> { it.language }.thenByDescending { it.channels })
@@ -146,10 +154,21 @@ class StreamChoiceService
                 return candidates.firstOrNull { it.index == itemPlayback.subtitleIndex }
             } else {
                 val subtitleLanguage =
-                    playbackLanguageChoice?.subtitleLanguage
-                        ?: prefs.userConfig.subtitleLanguagePreference
+                    if (prefs.userConfig.subtitleLanguagePreference.isNotNullOrBlank()) {
+                        // If the user has chosen a preferred language, but changed tracks on the series, use that
+                        // Otherwise, use their preferred language
+                        playbackLanguageChoice?.subtitleLanguage
+                            ?: prefs.userConfig.subtitleLanguagePreference
+                    } else {
+                        null
+                    }
                 val subtitleMode =
-                    if (playbackLanguageChoice?.subtitlesDisabled == false && playbackLanguageChoice.subtitleLanguage != null) {
+                    if (playbackLanguageChoice?.subtitlesDisabled == false &&
+                        playbackLanguageChoice.subtitleLanguage != null &&
+                        subtitleLanguage.isNotNullOrBlank()
+                    ) {
+                        // User has a subtitle language preference, but has chosen a different language for the series
+                        // So override their normal playback mode to always display subtitles
                         SubtitlePlaybackMode.ALWAYS
                     } else {
                         prefs.userConfig.subtitleMode

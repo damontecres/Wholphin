@@ -127,6 +127,7 @@ class ItemPlaybackRepository
                         else -> toSave
                     }
                 Timber.v("Saving track selection %s", toSave)
+                toSave = saveItemPlayback(toSave)
                 val seriesId = item.data.seriesId
                 if (seriesId != null && trackIndex != TrackIndex.UNSPECIFIED) {
                     if (type == MediaStreamType.AUDIO) {
@@ -156,7 +157,7 @@ class ItemPlaybackRepository
                         }
                     }
                 }
-                saveItemPlayback(toSave)
+                toSave
             }
 
         /**

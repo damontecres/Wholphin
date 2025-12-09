@@ -578,7 +578,7 @@ class PlaybackViewModel
 
                         else -> throw Exception("No supported playback method")
                     }
-                Timber.v("Playback decision: $transcodeType")
+                Timber.i("Playback decision for $itemId: $transcodeType")
 
                 val externalSubtitleCount = source.externalSubtitlesCount
 
@@ -678,6 +678,7 @@ class PlaybackViewModel
 
         fun changeAudioStream(index: Int) {
             viewModelScope.launchIO {
+                Timber.d("Changing audio track to %s", index)
                 val itemPlayback =
                     itemPlaybackRepository.saveTrackSelection(
                         item = item,
@@ -699,12 +700,13 @@ class PlaybackViewModel
 
         fun changeSubtitleStream(index: Int): Job =
             viewModelScope.launchIO {
+                Timber.d("Changing subtitle track to %s", index)
                 val itemPlayback =
                     itemPlaybackRepository.saveTrackSelection(
                         item = item,
                         itemPlayback = currentItemPlayback.value!!,
                         trackIndex = index,
-                        type = MediaStreamType.AUDIO,
+                        type = MediaStreamType.SUBTITLE,
                     )
                 this@PlaybackViewModel.currentItemPlayback.setValueOnMain(itemPlayback)
                 changeStreams(
