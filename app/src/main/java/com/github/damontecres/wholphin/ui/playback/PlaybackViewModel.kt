@@ -620,21 +620,6 @@ class PlaybackViewModel
                         liveStreamId = source.liveStreamId,
                         mediaSourceInfo = source,
                     )
-                val itemPlayback =
-                    currentItemPlayback.copy(
-                        sourceId = source.id?.toUUIDOrNull(),
-                        audioIndex = audioIndex ?: TrackIndex.UNSPECIFIED,
-                        subtitleIndex = subtitleIndex ?: TrackIndex.DISABLED,
-                    )
-                if (userInitiated) {
-                    viewModelScope.launchIO {
-                        Timber.v("Saving user initiated item playback: %s", itemPlayback)
-                        val updated = itemPlaybackRepository.saveItemPlayback(itemPlayback)
-                        withContext(Dispatchers.Main) {
-                            this@PlaybackViewModel.currentItemPlayback.value = updated
-                        }
-                    }
-                }
 
                 if (preferences.appPreferences.playbackPreferences.refreshRateSwitching) {
                     source.mediaStreams?.firstOrNull { it.type == MediaStreamType.VIDEO }?.let {
@@ -653,14 +638,13 @@ class PlaybackViewModel
                             api = api,
                             player = player,
                             playback = playback,
-                            itemPlayback = itemPlayback,
+                            itemPlayback = currentItemPlayback,
                         )
                     player.addListener(activityListener)
                     this@PlaybackViewModel.activityListener = activityListener
 
                     loading.value = LoadingState.Success
                     this@PlaybackViewModel.currentPlayback.update { playback }
-                    this@PlaybackViewModel.currentItemPlayback.value = itemPlayback
                     player.setMediaItem(
                         mediaItem,
                         positionMs,
@@ -694,23 +678,39 @@ class PlaybackViewModel
 
         fun changeAudioStream(index: Int) {
             viewModelScope.launchIO {
+                val itemPlayback =
+                    itemPlaybackRepository.saveTrackSelection(
+                        item = item,
+                        itemPlayback = currentItemPlayback.value!!,
+                        trackIndex = index,
+                        type = MediaStreamType.AUDIO,
+                    )
+                this@PlaybackViewModel.currentItemPlayback.setValueOnMain(itemPlayback)
                 changeStreams(
                     item,
-                    currentItemPlayback.value!!,
+                    itemPlayback,
                     index,
-                    currentItemPlayback.value?.subtitleIndex,
+                    itemPlayback.subtitleIndex,
                     onMain { player.currentPosition },
                     true,
                 )
             }
         }
 
-        fun changeSubtitleStream(index: Int?): Job =
+        fun changeSubtitleStream(index: Int): Job =
             viewModelScope.launchIO {
+                val itemPlayback =
+                    itemPlaybackRepository.saveTrackSelection(
+                        item = item,
+                        itemPlayback = currentItemPlayback.value!!,
+                        trackIndex = index,
+                        type = MediaStreamType.AUDIO,
+                    )
+                this@PlaybackViewModel.currentItemPlayback.setValueOnMain(itemPlayback)
                 changeStreams(
                     item,
-                    currentItemPlayback.value!!,
-                    currentItemPlayback.value?.audioIndex,
+                    itemPlayback,
+                    itemPlayback.audioIndex,
                     index,
                     onMain { player.currentPosition },
                     true,

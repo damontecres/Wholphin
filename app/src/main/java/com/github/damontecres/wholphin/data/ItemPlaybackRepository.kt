@@ -104,26 +104,60 @@ class ItemPlaybackRepository
             itemPlayback: ItemPlayback?,
             trackIndex: Int,
             type: MediaStreamType,
-        ) = serverRepository.currentUser.value?.let { user ->
-            var toSave =
-                itemPlayback ?: ItemPlayback(
-                    userId = user.rowId,
-                    itemId = item.id,
-                    sourceId =
-                        streamChoiceService
-                            .chooseSource(item.data, null)
-                            ?.id
-                            ?.toUUIDOrNull(),
-                )
-            toSave =
-                when (type) {
-                    MediaStreamType.AUDIO -> toSave.copy(audioIndex = trackIndex)
-                    MediaStreamType.SUBTITLE -> toSave.copy(subtitleIndex = trackIndex)
-                    else -> toSave
+        ): ItemPlayback =
+            serverRepository.current.value!!.let { current ->
+                val source =
+                    itemPlayback?.sourceId?.let { sourceId ->
+                        item.data.mediaSources?.firstOrNull { it.id?.toUUIDOrNull() == sourceId }
+                    } ?: streamChoiceService.chooseSource(item.data, null)
+                if (source == null) {
+                    Timber.w("Could not find media source for ${item.id}")
+                    throw IllegalArgumentException("Could not find media source for ${item.id}")
                 }
-            Timber.v("Saving track selection %s", toSave)
-            saveItemPlayback(toSave)
-        }
+                var toSave =
+                    itemPlayback ?: ItemPlayback(
+                        userId = current.user.rowId,
+                        itemId = item.id,
+                        sourceId = source.id?.toUUIDOrNull(),
+                    )
+                toSave =
+                    when (type) {
+                        MediaStreamType.AUDIO -> toSave.copy(audioIndex = trackIndex)
+                        MediaStreamType.SUBTITLE -> toSave.copy(subtitleIndex = trackIndex)
+                        else -> toSave
+                    }
+                Timber.v("Saving track selection %s", toSave)
+                val seriesId = item.data.seriesId
+                if (seriesId != null && trackIndex != TrackIndex.UNSPECIFIED) {
+                    if (type == MediaStreamType.AUDIO) {
+                        val audioLang = current.userDto.configuration?.audioLanguagePreference
+                        val stream = source.mediaStreams?.first { it.index == trackIndex }
+                        if (stream?.language != null && stream.language != audioLang) {
+                            streamChoiceService.updateAudio(item.data, stream.language!!)
+                        }
+                    } else if (type == MediaStreamType.SUBTITLE) {
+                        if (trackIndex == TrackIndex.DISABLED) {
+                            streamChoiceService.updateSubtitles(
+                                item.data,
+                                subtitleLang = null,
+                                subtitlesDisabled = true,
+                            )
+                        } else {
+                            val subtitleLang =
+                                current.userDto.configuration?.subtitleLanguagePreference
+                            val stream = source.mediaStreams?.first { it.index == trackIndex }
+                            if (stream?.language != null && stream.language != subtitleLang) {
+                                streamChoiceService.updateSubtitles(
+                                    item.data,
+                                    stream.language!!,
+                                    subtitlesDisabled = false,
+                                )
+                            }
+                        }
+                    }
+                }
+                saveItemPlayback(toSave)
+            }
 
         /**
          * Saves the [ItemPlayback] into the database, returning the same object with the rowId updated if needed
