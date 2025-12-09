@@ -1,0 +1,11 @@
+app/
+local_scripts/
+build/
+local.properties
+.gradle/
+.kotlin/
+.vscode/
+.idea/
+scripts/
+
+*.jks

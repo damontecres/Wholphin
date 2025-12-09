@@ -1,7 +1,13 @@
 title: Wholphin
-author: ''
-description: 'Wholphin is an OSS Android TV client for Jellyfin'
-baseurl: "/Wholphin/"
-remote_theme: pages-themes/minimal@v0.2.0
+email: damontecres@gmail.com
+description: >-
+  Wholphin is an OSS Android TV client for Jellyfin
+domain: damontecres.github.io
+baseurl: "/Wholphin"
+url: "https://damontecres.github.io"
+github_username:  damontecres
+
+# Build settings
+theme: minima
 plugins:
-  - jekyll-remote-theme
+  - jekyll-feed
