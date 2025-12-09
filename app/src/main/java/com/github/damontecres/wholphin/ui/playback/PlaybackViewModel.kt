@@ -722,7 +722,7 @@ class PlaybackViewModel
                     withContext(Dispatchers.Main) {
                         nextUp.value = nextItem
                         if (nextItem == null) {
-                            controllerViewState.showControls()
+                            navigationManager.goBack()
                         }
                     }
                 }
