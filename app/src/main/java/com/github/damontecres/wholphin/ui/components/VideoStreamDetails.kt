@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.NonRestartableComposable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -23,12 +24,8 @@ import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.ProvideTextStyle
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.R
-import com.github.damontecres.wholphin.data.model.ItemPlayback
-import com.github.damontecres.wholphin.data.model.TrackIndex
-import com.github.damontecres.wholphin.data.model.chooseSource
-import com.github.damontecres.wholphin.data.model.chooseStream
+import com.github.damontecres.wholphin.data.ChosenStreams
 import com.github.damontecres.wholphin.preferences.AppThemeColors
-import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.FontAwesome
 import com.github.damontecres.wholphin.ui.PreviewTvSpec
 import com.github.damontecres.wholphin.ui.playback.audioStreamCount
@@ -37,16 +34,30 @@ import com.github.damontecres.wholphin.ui.playback.externalSubtitlesCount
 import com.github.damontecres.wholphin.ui.theme.WholphinTheme
 import com.github.damontecres.wholphin.util.languageName
 import com.github.damontecres.wholphin.util.profile.Codec
-import org.jellyfin.sdk.model.api.BaseItemDto
-import org.jellyfin.sdk.model.api.MediaStreamType
+import org.jellyfin.sdk.model.api.MediaSourceInfo
+import org.jellyfin.sdk.model.api.MediaStream
 import org.jellyfin.sdk.model.api.VideoRange
 import org.jellyfin.sdk.model.api.VideoRangeType
 
 @Composable
+@NonRestartableComposable
 fun VideoStreamDetails(
-    preferences: UserPreferences,
-    dto: BaseItemDto,
-    itemPlayback: ItemPlayback?,
+    chosenStreams: ChosenStreams?,
+    modifier: Modifier = Modifier,
+) = VideoStreamDetails(
+    chosenStreams?.source,
+    chosenStreams?.videoStream,
+    chosenStreams?.audioStream,
+    chosenStreams?.subtitleStream,
+    modifier,
+)
+
+@Composable
+fun VideoStreamDetails(
+    source: MediaSourceInfo?,
+    videoStream: MediaStream?,
+    audioStream: MediaStream?,
+    subtitleStream: MediaStream?,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -54,17 +65,6 @@ fun VideoStreamDetails(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         modifier = modifier,
     ) {
-        val source = remember(dto, itemPlayback) { chooseSource(dto, itemPlayback) }
-
-        val videoStream =
-            remember(dto, itemPlayback) {
-                chooseStream(
-                    dto,
-                    itemPlayback,
-                    MediaStreamType.VIDEO,
-                    preferences,
-                )
-            }
         val video =
             remember(videoStream) {
                 videoStream
@@ -92,15 +92,6 @@ fun VideoStreamDetails(
             StreamLabel(it)
         }
 
-        val audioStream =
-            remember(dto, itemPlayback) {
-                chooseStream(
-                    dto,
-                    itemPlayback,
-                    MediaStreamType.AUDIO,
-                    preferences,
-                )
-            }
         val audioCount = remember(source) { source?.audioStreamCount ?: 0 }
         val audio =
             if (audioCount == 0 || audioStream == null) {
@@ -119,21 +110,12 @@ fun VideoStreamDetails(
             modifier = Modifier.widthIn(max = 200.dp),
         )
 
-        val subtitleStream =
-            remember(dto, itemPlayback) {
-                chooseStream(
-                    dto,
-                    itemPlayback,
-                    MediaStreamType.SUBTITLE,
-                    preferences,
-                )
-            }
         val subtitleCount =
             remember(source) {
                 (source?.embeddedSubtitleCount ?: 0) + (source?.externalSubtitlesCount ?: 0)
             }
         val subtitle =
-            if (itemPlayback?.subtitleIndex == TrackIndex.DISABLED) {
+            if (subtitleCount > 0 && subtitleStream == null) {
                 stringResource(R.string.disabled)
             } else if (subtitleCount == 0 || subtitleStream == null) {
                 null

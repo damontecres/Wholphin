@@ -29,8 +29,6 @@ import com.github.damontecres.wholphin.data.model.Chapter
 import com.github.damontecres.wholphin.data.model.ItemPlayback
 import com.github.damontecres.wholphin.data.model.Playlist
 import com.github.damontecres.wholphin.data.model.TrackIndex
-import com.github.damontecres.wholphin.data.model.chooseSource
-import com.github.damontecres.wholphin.data.model.chooseStream
 import com.github.damontecres.wholphin.preferences.AppPreference
 import com.github.damontecres.wholphin.preferences.PlayerBackend
 import com.github.damontecres.wholphin.preferences.ShowNextUpWhen
@@ -43,6 +41,7 @@ import com.github.damontecres.wholphin.services.PlayerFactory
 import com.github.damontecres.wholphin.services.PlaylistCreationResult
 import com.github.damontecres.wholphin.services.PlaylistCreator
 import com.github.damontecres.wholphin.services.RefreshRateService
+import com.github.damontecres.wholphin.services.StreamChoiceService
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.onMain
@@ -123,6 +122,7 @@ class PlaybackViewModel
         private val deviceInfo: DeviceInfo,
         private val deviceProfileService: DeviceProfileService,
         private val refreshRateService: RefreshRateService,
+        val streamChoiceService: StreamChoiceService,
     ) : ViewModel(),
         Player.Listener,
         AnalyticsListener {
@@ -338,7 +338,8 @@ class PlaybackViewModel
                                 }
                             }
                         }
-                val mediaSource = chooseSource(base, playbackConfig)
+                val mediaSource = streamChoiceService.chooseSource(base, playbackConfig)
+                val plc = streamChoiceService.getPlaybackLanguageChoice(base)
 
                 if (mediaSource == null) {
                     showToast(
@@ -362,12 +363,26 @@ class PlaybackViewModel
                         .orEmpty()
 
                 val audioIndex =
-                    chooseStream(base, playbackConfig, MediaStreamType.AUDIO, preferences)
-                        ?.index
+                    streamChoiceService
+                        .chooseStream(
+                            mediaSource,
+                            base.seriesId,
+                            playbackConfig,
+                            plc,
+                            MediaStreamType.AUDIO,
+                            preferences,
+                        )?.index
 
                 val subtitleIndex =
-                    chooseStream(base, playbackConfig, MediaStreamType.SUBTITLE, preferences)
-                        ?.index
+                    streamChoiceService
+                        .chooseStream(
+                            mediaSource,
+                            base.seriesId,
+                            playbackConfig,
+                            plc,
+                            MediaStreamType.SUBTITLE,
+                            preferences,
+                        )?.index
 
                 Timber.d("Selected mediaSource=${mediaSource.id}, audioIndex=$audioIndex, subtitleIndex=$subtitleIndex")
 

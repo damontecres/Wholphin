@@ -21,7 +21,6 @@ import androidx.lifecycle.compose.LifecycleStartEffect
 import androidx.lifecycle.map
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.BaseItem
-import com.github.damontecres.wholphin.data.model.chooseSource
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.OneTimeLaunchedEffect
 import com.github.damontecres.wholphin.ui.components.DialogParams
@@ -53,6 +52,7 @@ import org.jellyfin.sdk.model.api.PersonKind
 import org.jellyfin.sdk.model.extensions.ticks
 import org.jellyfin.sdk.model.serializer.UUIDSerializer
 import org.jellyfin.sdk.model.serializer.toUUID
+import org.jellyfin.sdk.model.serializer.toUUIDOrNull
 import timber.log.Timber
 import java.util.UUID
 import kotlin.time.Duration
@@ -219,7 +219,7 @@ fun SeriesOverview(
                                 watched = ep.data.userData?.played ?: false,
                                 favorite = ep.data.userData?.isFavorite ?: false,
                                 seriesId = series.id,
-                                sourceId = chosenStreams?.sourceId,
+                                sourceId = chosenStreams?.source?.id?.toUUIDOrNull(),
                                 actions =
                                     MoreDialogActions(
                                         navigateTo = viewModel::navigateTo,
@@ -257,25 +257,26 @@ fun SeriesOverview(
                                     moreDialog = null
                                 },
                                 onChooseTracks = { type ->
-                                    chooseSource(
-                                        ep.data,
-                                        chosenStreams?.itemPlayback,
-                                    )?.let { source ->
-                                        chooseVersion =
-                                            chooseStream(
-                                                context = context,
-                                                streams = source.mediaStreams.orEmpty(),
-                                                type = type,
-                                                onClick = { trackIndex ->
-                                                    viewModel.saveTrackSelection(
-                                                        ep,
-                                                        chosenStreams?.itemPlayback,
-                                                        trackIndex,
-                                                        type,
-                                                    )
-                                                },
-                                            )
-                                    }
+                                    viewModel.streamChoiceService
+                                        .chooseSource(
+                                            ep.data,
+                                            chosenStreams?.itemPlayback,
+                                        )?.let { source ->
+                                            chooseVersion =
+                                                chooseStream(
+                                                    context = context,
+                                                    streams = source.mediaStreams.orEmpty(),
+                                                    type = type,
+                                                    onClick = { trackIndex ->
+                                                        viewModel.saveTrackSelection(
+                                                            ep,
+                                                            chosenStreams?.itemPlayback,
+                                                            trackIndex,
+                                                            type,
+                                                        )
+                                                    },
+                                                )
+                                        }
                                 },
                             ),
                     )

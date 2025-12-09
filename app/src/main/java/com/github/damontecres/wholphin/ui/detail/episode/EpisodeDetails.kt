@@ -30,7 +30,6 @@ import androidx.lifecycle.compose.LifecycleStartEffect
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.ChosenStreams
 import com.github.damontecres.wholphin.data.model.BaseItem
-import com.github.damontecres.wholphin.data.model.chooseSource
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.components.DetailsBackdropImage
 import com.github.damontecres.wholphin.ui.components.DialogParams
@@ -57,6 +56,7 @@ import kotlinx.coroutines.launch
 import org.jellyfin.sdk.model.api.MediaType
 import org.jellyfin.sdk.model.extensions.ticks
 import org.jellyfin.sdk.model.serializer.toUUID
+import org.jellyfin.sdk.model.serializer.toUUIDOrNull
 import java.util.UUID
 import kotlin.time.Duration
 
@@ -157,7 +157,7 @@ fun EpisodeDetails(
                                         watched = ep.data.userData?.played ?: false,
                                         favorite = ep.data.userData?.isFavorite ?: false,
                                         seriesId = ep.data.seriesId,
-                                        sourceId = chosenStreams?.sourceId,
+                                        sourceId = chosenStreams?.source?.id?.toUUIDOrNull(),
                                         actions = moreActions,
                                         onChooseVersion = {
                                             chooseVersion =
@@ -174,25 +174,26 @@ fun EpisodeDetails(
                                             moreDialog = null
                                         },
                                         onChooseTracks = { type ->
-                                            chooseSource(
-                                                ep.data,
-                                                chosenStreams?.itemPlayback,
-                                            )?.let { source ->
-                                                chooseVersion =
-                                                    chooseStream(
-                                                        context = context,
-                                                        streams = source.mediaStreams.orEmpty(),
-                                                        type = type,
-                                                        onClick = { trackIndex ->
-                                                            viewModel.saveTrackSelection(
-                                                                ep,
-                                                                chosenStreams?.itemPlayback,
-                                                                trackIndex,
-                                                                type,
-                                                            )
-                                                        },
-                                                    )
-                                            }
+                                            viewModel.streamChoiceService
+                                                .chooseSource(
+                                                    ep.data,
+                                                    chosenStreams?.itemPlayback,
+                                                )?.let { source ->
+                                                    chooseVersion =
+                                                        chooseStream(
+                                                            context = context,
+                                                            streams = source.mediaStreams.orEmpty(),
+                                                            type = type,
+                                                            onClick = { trackIndex ->
+                                                                viewModel.saveTrackSelection(
+                                                                    ep,
+                                                                    chosenStreams?.itemPlayback,
+                                                                    trackIndex,
+                                                                    type,
+                                                                )
+                                                            },
+                                                        )
+                                                }
                                         },
                                     ),
                             )

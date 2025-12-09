@@ -45,7 +45,6 @@ import com.github.damontecres.wholphin.data.model.Person
 import com.github.damontecres.wholphin.data.model.RemoteTrailer
 import com.github.damontecres.wholphin.data.model.Trailer
 import com.github.damontecres.wholphin.data.model.aspectRatioFloat
-import com.github.damontecres.wholphin.data.model.chooseSource
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.TrailerService
 import com.github.damontecres.wholphin.ui.AspectRatios
@@ -83,6 +82,7 @@ import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.MediaType
 import org.jellyfin.sdk.model.extensions.ticks
 import org.jellyfin.sdk.model.serializer.toUUID
+import org.jellyfin.sdk.model.serializer.toUUIDOrNull
 import java.util.UUID
 import kotlin.time.Duration
 
@@ -204,7 +204,7 @@ fun MovieDetails(
                                         watched = movie.data.userData?.played ?: false,
                                         favorite = movie.data.userData?.isFavorite ?: false,
                                         seriesId = null,
-                                        sourceId = chosenStreams?.sourceId,
+                                        sourceId = chosenStreams?.source?.id?.toUUIDOrNull(),
                                         actions = moreActions,
                                         onChooseVersion = {
                                             chooseVersion =
@@ -221,25 +221,26 @@ fun MovieDetails(
                                             moreDialog = null
                                         },
                                         onChooseTracks = { type ->
-                                            chooseSource(
-                                                movie.data,
-                                                chosenStreams?.itemPlayback,
-                                            )?.let { source ->
-                                                chooseVersion =
-                                                    chooseStream(
-                                                        context = context,
-                                                        streams = source.mediaStreams.orEmpty(),
-                                                        type = type,
-                                                        onClick = { trackIndex ->
-                                                            viewModel.saveTrackSelection(
-                                                                movie,
-                                                                chosenStreams?.itemPlayback,
-                                                                trackIndex,
-                                                                type,
-                                                            )
-                                                        },
-                                                    )
-                                            }
+                                            viewModel.streamChoiceService
+                                                .chooseSource(
+                                                    movie.data,
+                                                    chosenStreams?.itemPlayback,
+                                                )?.let { source ->
+                                                    chooseVersion =
+                                                        chooseStream(
+                                                            context = context,
+                                                            streams = source.mediaStreams.orEmpty(),
+                                                            type = type,
+                                                            onClick = { trackIndex ->
+                                                                viewModel.saveTrackSelection(
+                                                                    movie,
+                                                                    chosenStreams?.itemPlayback,
+                                                                    trackIndex,
+                                                                    type,
+                                                                )
+                                                            },
+                                                        )
+                                                }
                                         },
                                     ),
                             )
