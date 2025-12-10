@@ -3,6 +3,7 @@ package com.github.damontecres.wholphin.ui.components
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
@@ -23,6 +24,7 @@ fun SeriesName(
         text = seriesName ?: "",
         color = MaterialTheme.colorScheme.onSurface,
         style = MaterialTheme.typography.headlineMedium,
+        fontWeight = FontWeight.SemiBold,
         maxLines = 2,
         overflow = TextOverflow.Ellipsis,
         modifier = modifier,

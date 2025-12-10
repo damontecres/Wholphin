@@ -10,7 +10,10 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.NonRestartableComposable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -94,14 +97,16 @@ fun VideoStreamDetails(
 
         val audioCount = remember(source) { source?.audioStreamCount ?: 0 }
         val audio =
-            if (audioCount == 0 || audioStream == null) {
-                stringResource(R.string.none)
-            } else {
-                listOfNotNull(
-                    languageName(audioStream.language),
-                    formatAudioCodec(context, audioStream.codec, audioStream.profile),
-                    audioStream.channelLayout,
-                ).joinToString(" ")
+            remember(audioCount, audioStream) {
+                if (audioCount == 0 || audioStream == null) {
+                    context.getString(R.string.none)
+                } else {
+                    listOfNotNull(
+                        languageName(audioStream.language),
+                        formatAudioCodec(context, audioStream.codec, audioStream.profile),
+                        audioStream.channelLayout,
+                    ).joinToString(" ")
+                }
             }
         StreamLabel(
             text = audio,
@@ -114,17 +119,22 @@ fun VideoStreamDetails(
             remember(source) {
                 (source?.embeddedSubtitleCount ?: 0) + (source?.externalSubtitlesCount ?: 0)
             }
+        var disabled by remember { mutableStateOf(false) }
         val subtitle =
-            if (subtitleCount > 0 && subtitleStream == null) {
-                stringResource(R.string.disabled)
-            } else if (subtitleCount == 0 || subtitleStream == null) {
-                null
-            } else {
-                listOfNotNull(
-                    languageName(subtitleStream.language),
-                    "SDH".takeIf { subtitleStream.isHearingImpaired },
-                    formatSubtitleCodec(subtitleStream.codec),
-                ).joinToString(" ")
+            remember(subtitleCount, subtitleStream) {
+                if (subtitleCount > 0 && subtitleStream == null) {
+                    disabled = true
+                    context.getString(R.string.disabled)
+                } else if (subtitleCount == 0 || subtitleStream == null) {
+                    null
+                } else {
+                    disabled = false
+                    listOfNotNull(
+                        languageName(subtitleStream.language),
+                        "SDH".takeIf { subtitleStream.isHearingImpaired },
+                        formatSubtitleCodec(subtitleStream.codec),
+                    ).joinToString(" ")
+                }
             }
         subtitle?.let {
             StreamLabel(
@@ -132,6 +142,7 @@ fun VideoStreamDetails(
                 count = subtitleCount,
                 icon = R.string.fa_closed_captioning,
                 modifier = Modifier.widthIn(max = 160.dp),
+                disabled = disabled,
             )
         }
     }
@@ -172,6 +183,7 @@ fun StreamLabel(
     modifier: Modifier = Modifier,
     @StringRes icon: Int? = null,
     count: Int = 0,
+    disabled: Boolean = false,
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -204,9 +216,10 @@ fun StreamLabel(
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier,
             )
-            if (count > 1) {
+            val countToUse = if (disabled) count else count - 1
+            if (countToUse > 0) {
                 Text(
-                    text = "(+${count - 1})",
+                    text = "(+$countToUse)",
                     maxLines = 1,
                     modifier = Modifier,
                 )
@@ -230,6 +243,10 @@ private fun StreamLabelPreview() {
             StreamLabel("HDR")
             StreamLabel("H264")
             StreamLabel("AC3 5.1", icon = R.string.fa_volume_high, count = 2)
+
+            StreamLabel("PGS", count = 1)
+            StreamLabel("PGS", count = 1, disabled = true)
+            StreamLabel("PGS", count = 2)
         }
     }
 }
