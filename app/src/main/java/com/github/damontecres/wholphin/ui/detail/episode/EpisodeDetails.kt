@@ -57,6 +57,7 @@ import kotlinx.coroutines.launch
 import org.jellyfin.sdk.model.api.MediaType
 import org.jellyfin.sdk.model.extensions.ticks
 import org.jellyfin.sdk.model.serializer.toUUID
+import org.jellyfin.sdk.model.serializer.toUUIDOrNull
 import java.util.UUID
 import kotlin.time.Duration
 
@@ -199,10 +200,9 @@ fun EpisodeDetails(
                                             }
                                         },
                                         onShowOverview = {
-                                            val source = chooseSource(
-                                                ep.data,
-                                                chosenStreams?.itemPlayback,
-                                            ) ?: ep.data.mediaSources?.firstOrNull()
+                                            val source = chosenStreams?.sourceId?.let { sourceId ->
+                                                ep.data.mediaSources?.firstOrNull { it.id?.toUUIDOrNull() == sourceId }
+                                            } ?: ep.data.mediaSources?.firstOrNull()
                                             if (source != null) {
                                                 overviewDialog =
                                                     ItemDetailsDialogInfo(
