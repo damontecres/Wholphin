@@ -33,8 +33,6 @@ import com.github.damontecres.wholphin.ui.components.chooseVersionParams
 import com.github.damontecres.wholphin.ui.data.AddPlaylistViewModel
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialog
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialogInfo
-import com.github.damontecres.wholphin.ui.data.MediaInfoDialog
-import com.github.damontecres.wholphin.ui.data.MediaInfoDialogData
 import com.github.damontecres.wholphin.ui.detail.MoreDialogActions
 import com.github.damontecres.wholphin.ui.detail.PlaylistDialog
 import com.github.damontecres.wholphin.ui.detail.PlaylistLoadingState
@@ -145,7 +143,6 @@ fun SeriesOverview(
     var moreDialog by remember { mutableStateOf<DialogParams?>(null) }
     var chooseVersion by remember { mutableStateOf<DialogParams?>(null) }
     var showPlaylistDialog by remember { mutableStateOf<UUID?>(null) }
-    var mediaInfoDialog by remember { mutableStateOf<MediaInfoDialogData?>(null) }
     val playlistState by playlistViewModel.playlistState.observeAsState(PlaylistLoadingState.Pending)
 
     var rowFocused by rememberInt()
@@ -280,19 +277,19 @@ fun SeriesOverview(
                                             )
                                     }
                                 },
-                                onShowMediaInfo = {
+                                onShowOverview = {
                                     val source = chooseSource(
                                         ep.data,
                                         chosenStreams?.itemPlayback,
                                     ) ?: ep.data.mediaSources?.firstOrNull()
                                     if (source != null) {
-                                        mediaInfoDialog = MediaInfoDialogData(
-                                            itemName = ep.name ?: context.getString(R.string.unknown),
-                                            source = source,
-                                            showFilePath = viewModel.serverRepository.currentUserDto.value
-                                                ?.policy
-                                                ?.isAdministrator == true,
-                                        )
+                                        overviewDialog =
+                                            ItemDetailsDialogInfo(
+                                                title = ep.name ?: context.getString(R.string.unknown),
+                                                overview = ep.data.overview,
+                                                genres = ep.data.genres.orEmpty(),
+                                                files = listOf(source),
+                                            )
                                     }
                                 },
                             ),
@@ -444,12 +441,6 @@ fun SeriesOverview(
                 showPlaylistDialog = null
             },
             elevation = 3.dp,
-        )
-    }
-    mediaInfoDialog?.let { data ->
-        MediaInfoDialog(
-            data = data,
-            onDismissRequest = { mediaInfoDialog = null },
         )
     }
 }

@@ -44,7 +44,7 @@ data class MoreDialogActions(
  * @param navigateTo a function to trigger a navigation
  * @param onChooseVersion callback to pick a version of the item
  * @param onChooseTracks callback to pick a track for the given type of the item
- * @param onShowMediaInfo callback to show media information dialog
+ * @param onShowOverview callback to show overview dialog with media information
  */
 fun buildMoreDialogItems(
     context: Context,
@@ -56,7 +56,7 @@ fun buildMoreDialogItems(
     actions: MoreDialogActions,
     onChooseVersion: () -> Unit,
     onChooseTracks: (MediaStreamType) -> Unit,
-    onShowMediaInfo: () -> Unit,
+    onShowOverview: () -> Unit,
 ): List<DialogItem> =
     buildList {
         add(
@@ -172,7 +172,7 @@ fun buildMoreDialogItems(
                         context.getString(R.string.media_information),
                         Icons.Default.Info,
                     ) {
-                        onShowMediaInfo.invoke()
+                        onShowOverview.invoke()
                     },
                 )
             }

@@ -46,39 +46,97 @@ fun ItemDetailsDialog(
     info: ItemDetailsDialogInfo,
     showFilePath: Boolean,
     onDismissRequest: () -> Unit,
-) = ScrollableDialog(
-    onDismissRequest = onDismissRequest,
 ) {
-    item {
-        Text(
-            text = info.title,
-            style = MaterialTheme.typography.titleLarge,
-        )
-    }
-    if (info.genres.isNotEmpty()) {
+    val context = LocalContext.current
+    // Extract stringResource calls outside of ScrollableDialog's non-composable lambda
+    val pathLabel = stringResource(R.string.path)
+    val fileSizeLabel = stringResource(R.string.file_size)
+    val videoLabel = stringResource(R.string.video)
+    val audioLabel = stringResource(R.string.audio)
+    val subtitleLabel = stringResource(R.string.subtitle)
+    
+    ScrollableDialog(
+        onDismissRequest = onDismissRequest,
+        width = 800.dp,
+        maxHeight = 600.dp,
+        itemSpacing = 4.dp,
+    ) {
         item {
             Text(
-                text = info.genres.joinToString(", "),
-                style = MaterialTheme.typography.titleSmall,
+                text = info.title,
+                style = MaterialTheme.typography.titleLarge,
             )
         }
-    }
-    if (info.overview.isNotNullOrBlank()) {
-        item {
-            Text(
-                text = info.overview,
-                style = MaterialTheme.typography.bodyLarge,
-            )
+        if (info.genres.isNotEmpty()) {
+            item {
+                Text(
+                    text = info.genres.joinToString(", "),
+                    style = MaterialTheme.typography.titleSmall,
+                )
+            }
         }
-    }
-    if (info.files.isNotEmpty()) {
-        item {
-            Spacer(Modifier.height(12.dp))
+        if (info.overview.isNotNullOrBlank()) {
+            item {
+                Text(
+                    text = info.overview,
+                    style = MaterialTheme.typography.bodyLarge,
+                )
+            }
         }
-    }
-    items(info.files) { file ->
-        ProvideTextStyle(MaterialTheme.typography.bodyMedium) {
-            MediaSourceInfo(file, showFilePath, Modifier.padding(top = 12.dp))
+        
+        // Show detailed media information for the selected source (first one if multiple)
+        info.files.firstOrNull()?.let { source ->
+            if (source.mediaStreams?.isNotEmpty() == true) {
+                item {
+                    Spacer(Modifier.height(8.dp))
+                }
+                
+                // General file information
+                item {
+                    MediaInfoSection(
+                        title = "General",
+                        items = buildList {
+                            source.container?.let { add("Container" to it) }
+                            if (showFilePath) {
+                                source.path?.let { add(pathLabel to it) }
+                            }
+                            source.size?.let {
+                                add(fileSizeLabel to formatBytes(it))
+                            }
+                        },
+                    )
+                }
+
+                // Video streams
+                source.mediaStreams?.filter { it.type == MediaStreamType.VIDEO }?.let { videoStreams ->
+                    items(videoStreams) { stream ->
+                        MediaInfoSection(
+                            title = videoLabel,
+                            items = buildVideoStreamInfo(context, stream),
+                        )
+                    }
+                }
+
+                // Audio streams
+                source.mediaStreams?.filter { it.type == MediaStreamType.AUDIO }?.let { audioStreams ->
+                    items(audioStreams) { stream ->
+                        MediaInfoSection(
+                            title = audioLabel,
+                            items = buildAudioStreamInfo(context, stream),
+                        )
+                    }
+                }
+
+                // Subtitle streams
+                source.mediaStreams?.filter { it.type == MediaStreamType.SUBTITLE }?.let { subtitleStreams ->
+                    items(subtitleStreams) { stream ->
+                        MediaInfoSection(
+                            title = subtitleLabel,
+                            items = buildSubtitleStreamInfo(context, stream),
+                        )
+                    }
+                }
+            }
         }
     }
 }
@@ -170,91 +228,6 @@ fun MediaSourceInfo(
                 )
             }
         }
-    }
-}
-
-data class MediaInfoDialogData(
-    val itemName: String,
-    val source: MediaSourceInfo,
-    val showFilePath: Boolean,
-)
-
-@Composable
-fun MediaInfoDialog(
-    data: MediaInfoDialogData,
-    onDismissRequest: () -> Unit,
-) {
-    val context = LocalContext.current
-    ScrollableDialog(
-        onDismissRequest = onDismissRequest,
-        width = 800.dp,
-        maxHeight = 600.dp,
-        itemSpacing = 4.dp,
-    ) {
-        item {
-        Text(
-            text = stringResource(R.string.media_information),
-            style = MaterialTheme.typography.titleLarge,
-        )
-    }
-    item {
-        Spacer(Modifier.height(4.dp))
-    }
-    item {
-        Text(
-            text = data.itemName,
-            style = MaterialTheme.typography.titleMedium,
-        )
-    }
-    item {
-        Spacer(Modifier.height(8.dp))
-    }
-    
-    // General file information
-    item {
-        MediaInfoSection(
-            title = "General",
-            items = buildList {
-                data.source.container?.let { add("Container" to it) }
-                if (data.showFilePath) {
-                    data.source.path?.let { add(stringResource(R.string.path) to it) }
-                }
-                data.source.size?.let { 
-                    add(stringResource(R.string.file_size) to formatBytes(it)) 
-                }
-            },
-        )
-    }
-    
-    // Video streams
-    data.source.mediaStreams?.filter { it.type == MediaStreamType.VIDEO }?.let { videoStreams ->
-        items(videoStreams) { stream ->
-            MediaInfoSection(
-                title = stringResource(R.string.video),
-                items = buildVideoStreamInfo(context, stream),
-            )
-        }
-    }
-    
-    // Audio streams
-    data.source.mediaStreams?.filter { it.type == MediaStreamType.AUDIO }?.let { audioStreams ->
-        items(audioStreams) { stream ->
-            MediaInfoSection(
-                title = stringResource(R.string.audio),
-                items = buildAudioStreamInfo(context, stream),
-            )
-        }
-    }
-    
-    // Subtitle streams
-    data.source.mediaStreams?.filter { it.type == MediaStreamType.SUBTITLE }?.let { subtitleStreams ->
-        items(subtitleStreams) { stream ->
-            MediaInfoSection(
-                title = stringResource(R.string.subtitle),
-                items = buildSubtitleStreamInfo(context, stream),
-            )
-        }
-    }
     }
 }
 

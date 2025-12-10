@@ -67,8 +67,6 @@ import com.github.damontecres.wholphin.ui.components.chooseVersionParams
 import com.github.damontecres.wholphin.ui.data.AddPlaylistViewModel
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialog
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialogInfo
-import com.github.damontecres.wholphin.ui.data.MediaInfoDialog
-import com.github.damontecres.wholphin.ui.data.MediaInfoDialogData
 import com.github.damontecres.wholphin.ui.detail.MoreDialogActions
 import com.github.damontecres.wholphin.ui.detail.PlaylistDialog
 import com.github.damontecres.wholphin.ui.detail.PlaylistLoadingState
@@ -117,7 +115,6 @@ fun MovieDetails(
     var moreDialog by remember { mutableStateOf<DialogParams?>(null) }
     var chooseVersion by remember { mutableStateOf<DialogParams?>(null) }
     var showPlaylistDialog by remember { mutableStateOf<Optional<UUID>>(Optional.absent()) }
-    var mediaInfoDialog by remember { mutableStateOf<MediaInfoDialogData?>(null) }
     val playlistState by playlistViewModel.playlistState.observeAsState(PlaylistLoadingState.Pending)
 
     val moreActions =
@@ -244,19 +241,19 @@ fun MovieDetails(
                                                     )
                                             }
                                         },
-                                        onShowMediaInfo = {
+                                        onShowOverview = {
                                             val source = chooseSource(
                                                 movie.data,
                                                 chosenStreams?.itemPlayback,
                                             ) ?: movie.data.mediaSources?.firstOrNull()
                                             if (source != null) {
-                                                mediaInfoDialog = MediaInfoDialogData(
-                                                    itemName = movie.name ?: context.getString(R.string.unknown),
-                                                    source = source,
-                                                    showFilePath = viewModel.serverRepository.currentUserDto.value
-                                                        ?.policy
-                                                        ?.isAdministrator == true,
-                                                )
+                                                overviewDialog =
+                                                    ItemDetailsDialogInfo(
+                                                        title = movie.name ?: context.getString(R.string.unknown),
+                                                        overview = movie.data.overview,
+                                                        genres = movie.data.genres.orEmpty(),
+                                                        files = listOf(source),
+                                                    )
                                             }
                                         },
                                     ),
@@ -356,12 +353,6 @@ fun MovieDetails(
                 showPlaylistDialog.makeAbsent()
             },
             elevation = 3.dp,
-        )
-    }
-    mediaInfoDialog?.let { data ->
-        MediaInfoDialog(
-            data = data,
-            onDismissRequest = { mediaInfoDialog = null },
         )
     }
 }
