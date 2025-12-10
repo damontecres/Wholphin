@@ -140,6 +140,7 @@
     <string name="watch_live">Watch live</string>
     <string name="years_old">%1$d years old</string>
     <string name="play_with_transcoding">Play with transcoding</string>
+    <string name="media_information">Media Information</string>
     <string name="show_clock">Show Clock</string>
     <string name="aired_episode_order">Aired Episode Order</string>
     <string name="create_playlist">Create new playlist</string>

@@ -310,6 +310,9 @@ fun DialogPopup(
 @Composable
 fun ScrollableDialog(
     onDismissRequest: () -> Unit,
+    width: Dp = 600.dp,
+    maxHeight: Dp = 380.dp,
+    itemSpacing: Dp = 8.dp,
     content: LazyListScope.() -> Unit,
 ) {
     val scrollAmount = 100f
@@ -331,12 +334,12 @@ fun ScrollableDialog(
         LazyColumn(
             state = columnState,
             contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(itemSpacing),
             content = content,
             modifier =
                 Modifier
-                    .width(600.dp)
-                    .heightIn(max = 380.dp)
+                    .width(width)
+                    .heightIn(max = maxHeight)
                     .focusable()
                     .background(
                         MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp),
