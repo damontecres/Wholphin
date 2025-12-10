@@ -94,7 +94,7 @@ fun ItemDetailsDialog(
                 // General file information
                 item {
                     MediaInfoSection(
-                        title = "General",
+                        title = stringResource(R.string.general),
                         items = buildList {
                             source.container?.let { add("Container" to it) }
                             if (showFilePath) {
@@ -330,13 +330,11 @@ private fun buildAudioStreamInfo(
         val formattedCodec = formatAudioCodec(context, it, stream.profile) ?: it.uppercase()
         add("Codec" to formattedCodec)
     }
-    stream.isAvc?.let { add("AVC" to if (it) "Yes" else "No") }
     stream.channelLayout?.let { add("Layout" to it) }
     stream.channels?.let { add("Channels" to "$it ch") }
     stream.bitRate?.let { add("Bitrate" to formatBytes(it, byteRateSuffixes)) }
     stream.sampleRate?.let { add("Sample rate" to "$it Hz") }
     stream.isDefault?.let { add("Default" to if (it) "Yes" else "No") }
-    stream.isForced?.let { add("Forced" to if (it) "Yes" else "No") }
     stream.isExternal?.let { add("External" to if (it) "Yes" else "No") }
 }
 
