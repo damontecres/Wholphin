@@ -315,4 +315,5 @@
     <string name="automatic">Automatisch</string>
     <string name="username_or_password">Gebruikersnaam/wachtwoord gebruiken</string>
     <string name="login">Inloggen</string>
+    <string name="show_titles">Titels weergeven</string>
 </resources>
