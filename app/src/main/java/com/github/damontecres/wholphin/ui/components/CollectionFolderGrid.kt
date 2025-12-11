@@ -579,7 +579,10 @@ fun CollectionFolderGrid(
                         defaultViewOptions = defaultViewOptions,
                         onSaveViewOptions = { viewModel.saveViewOptions(it) },
                         playEnabled = playEnabled,
-                        onClickPlay = { shuffle ->
+                        onClickPlay = { _, item ->
+                            viewModel.navigationManager.navigateTo(Destination.Playback(item))
+                        },
+                        onClickPlayAll = { shuffle ->
                             itemId.toUUIDOrNull()?.let {
                                 viewModel.navigationManager.navigateTo(
                                     Destination.PlaybackList(
@@ -678,17 +681,18 @@ fun CollectionFolderGridContent(
     letterPosition: suspend (Char) -> Int,
     sortOptions: List<ItemSortBy>,
     playEnabled: Boolean,
-    onClickPlay: (shuffle: Boolean) -> Unit,
+    getPossibleFilterValues: suspend (ItemFilterBy<*>) -> List<FilterValueOption>,
+    defaultViewOptions: ViewOptions,
+    onSaveViewOptions: (ViewOptions) -> Unit,
+    viewOptions: ViewOptions,
+    onClickPlayAll: (shuffle: Boolean) -> Unit,
+    onClickPlay: (Int, BaseItem) -> Unit,
     modifier: Modifier = Modifier,
     showTitle: Boolean = true,
     positionCallback: ((columns: Int, position: Int) -> Unit)? = null,
     currentFilter: GetItemsFilter = GetItemsFilter(),
     filterOptions: List<ItemFilterBy<*>> = listOf(),
     onFilterChange: (GetItemsFilter) -> Unit = {},
-    getPossibleFilterValues: suspend (ItemFilterBy<*>) -> List<FilterValueOption>,
-    defaultViewOptions: ViewOptions,
-    viewOptions: ViewOptions,
-    onSaveViewOptions: (ViewOptions) -> Unit,
 ) {
     val context = LocalContext.current
     val title = item?.name ?: item?.data?.collectionType?.name ?: stringResource(R.string.collection)
@@ -786,12 +790,12 @@ fun CollectionFolderGridContent(
                                     title = R.string.play,
                                     resume = Duration.ZERO,
                                     icon = Icons.Default.PlayArrow,
-                                    onClick = { onClickPlay.invoke(false) },
+                                    onClick = { onClickPlayAll.invoke(false) },
                                 )
                                 ExpandableFaButton(
                                     title = R.string.shuffle,
                                     iconStringRes = R.string.fa_shuffle,
-                                    onClick = { onClickPlay.invoke(true) },
+                                    onClick = { onClickPlayAll.invoke(true) },
                                 )
                             }
                         }
@@ -813,6 +817,7 @@ fun CollectionFolderGridContent(
                 pager = pager,
                 onClickItem = onClickItem,
                 onLongClickItem = onLongClickItem,
+                onClickPlay = onClickPlay,
                 letterPosition = letterPosition,
                 gridFocusRequester = gridFocusRequester,
                 showJumpButtons = false, // TODO add preference
@@ -832,6 +837,7 @@ fun CollectionFolderGridContent(
                         imageContentScale = viewOptions.contentScale.scale,
                         imageAspectRatio = viewOptions.aspectRatio.ratio,
                         imageType = viewOptions.imageType,
+                        showTitle = viewOptions.showTitles,
                         modifier = mod,
                     )
                 },

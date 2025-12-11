@@ -31,6 +31,7 @@ import com.github.damontecres.wholphin.ui.detail.PlaylistLoadingState
 import com.github.damontecres.wholphin.ui.detail.buildMoreDialogItemsForHome
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.main.HomePageContent
+import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.util.ApiRequestPager
 import com.github.damontecres.wholphin.util.HomeRowLoadingState
 import com.github.damontecres.wholphin.util.LoadingState
@@ -145,6 +146,9 @@ fun RecommendedContent(
                 },
                 onLongClickItem = { position, item ->
                     moreDialog.makePresent(RowColumnItem(position, item))
+                },
+                onClickPlay = { _, item ->
+                    viewModel.navigationManager.navigateTo(Destination.Playback(item))
                 },
                 onFocusPosition = onFocusPosition,
                 showClock = preferences.appPreferences.interfacePreferences.showClock,

@@ -165,8 +165,8 @@
     <string name="italic_font">Poner la fuente en cursiva</string>
     <plurals name="behind_the_scenes">
         <item quantity="one">Detrás de las cámaras</item>
-        <item quantity="many"></item>
-        <item quantity="other"></item>
+        <item quantity="many"/>
+        <item quantity="other"/>
     </plurals>
     <plurals name="theme_songs">
         <item quantity="one">Canciones principales</item>
@@ -175,63 +175,63 @@
     </plurals>
     <plurals name="theme_videos">
         <item quantity="one">Vídeos temáticos</item>
-        <item quantity="many"></item>
-        <item quantity="other"></item>
+        <item quantity="many"/>
+        <item quantity="other"/>
     </plurals>
     <plurals name="clips">
         <item quantity="one">Clips</item>
-        <item quantity="many"></item>
-        <item quantity="other"></item>
+        <item quantity="many"/>
+        <item quantity="other"/>
     </plurals>
     <plurals name="deleted_scenes">
         <item quantity="one">Escenas eliminadas</item>
-        <item quantity="many"></item>
-        <item quantity="other"></item>
+        <item quantity="many"/>
+        <item quantity="other"/>
     </plurals>
     <plurals name="interviews">
         <item quantity="one">Entrevistas</item>
-        <item quantity="many"></item>
-        <item quantity="other"></item>
+        <item quantity="many"/>
+        <item quantity="other"/>
     </plurals>
     <plurals name="scenes">
         <item quantity="one">Escenas</item>
-        <item quantity="many"></item>
-        <item quantity="other"></item>
+        <item quantity="many"/>
+        <item quantity="other"/>
     </plurals>
     <plurals name="samples">
         <item quantity="one">Fragmentos</item>
-        <item quantity="many"></item>
-        <item quantity="other"></item>
+        <item quantity="many"/>
+        <item quantity="other"/>
     </plurals>
     <plurals name="featurettes">
         <item quantity="one">Mini-documentales</item>
-        <item quantity="many"></item>
-        <item quantity="other"></item>
+        <item quantity="many"/>
+        <item quantity="other"/>
     </plurals>
     <plurals name="shorts">
         <item quantity="one">Cortos</item>
-        <item quantity="many"></item>
-        <item quantity="other"></item>
+        <item quantity="many"/>
+        <item quantity="other"/>
     </plurals>
     <plurals name="downloads">
         <item quantity="one">%s descarga</item>
         <item quantity="many">%s descargas</item>
-        <item quantity="other"></item>
+        <item quantity="other"/>
     </plurals>
     <plurals name="hours">
         <item quantity="one">%d hora</item>
         <item quantity="many">%d horas</item>
-        <item quantity="other"></item>
+        <item quantity="other"/>
     </plurals>
     <plurals name="items">
         <item quantity="one">%d elemento</item>
         <item quantity="many">%d elementos</item>
-        <item quantity="other"></item>
+        <item quantity="other"/>
     </plurals>
     <plurals name="seconds">
         <item quantity="one">%d segundo</item>
         <item quantity="many">%d segundos</item>
-        <item quantity="other"></item>
+        <item quantity="other"/>
     </plurals>
     <string name="ac3_supported">El dispositivo es compatible con AC3/Dolby Digital</string>
     <string name="auto_check_for_updates">Comprobar actualizaciones automáticamente</string>

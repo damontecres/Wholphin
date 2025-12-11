@@ -269,4 +269,6 @@
     <string name="year">Tahun</string>
     <string name="decade">Dekade</string>
     <string name="remove">Hapus</string>
+    <string name="dolby_vision">Dolby Vision</string>
+    <string name="dolby_atmos">Dolby Atmos</string>
 </resources>
