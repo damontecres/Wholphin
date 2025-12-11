@@ -34,6 +34,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -67,12 +68,16 @@ import com.github.damontecres.wholphin.ui.detail.PlaylistLoadingState
 import com.github.damontecres.wholphin.ui.detail.buildMoreDialogItemsForHome
 import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
+import com.github.damontecres.wholphin.ui.nav.Destination
+import com.github.damontecres.wholphin.ui.playback.isPlayKeyUp
+import com.github.damontecres.wholphin.ui.playback.playable
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.HomeRowLoadingState
 import com.github.damontecres.wholphin.util.LoadingState
 import kotlinx.coroutines.delay
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.MediaType
+import timber.log.Timber
 import java.util.UUID
 
 @Composable
@@ -157,6 +162,9 @@ fun HomePage(
                             items = dialogItems,
                         )
                 },
+                onClickPlay = { _, item ->
+                    viewModel.navigationManager.navigateTo(Destination.Playback(item))
+                },
                 loadingState = refreshing,
                 showClock = preferences.appPreferences.interfacePreferences.showClock,
                 modifier = modifier,
@@ -193,6 +201,7 @@ fun HomePageContent(
     homeRows: List<HomeRowLoadingState>,
     onClickItem: (RowColumn, BaseItem) -> Unit,
     onLongClickItem: (RowColumn, BaseItem) -> Unit,
+    onClickPlay: (RowColumn, BaseItem) -> Unit,
     showClock: Boolean,
     modifier: Modifier = Modifier,
     onFocusPosition: ((RowColumn) -> Unit)? = null,
@@ -264,7 +273,18 @@ fun HomePageContent(
                         top = 0.dp,
                         bottom = Cards.height2x3,
                     ),
-                modifier = Modifier.focusRestorer(),
+                modifier =
+                    Modifier
+                        .focusRestorer()
+                        .onKeyEvent {
+                            val item = focusedItem
+                            if (isPlayKeyUp(it) && item?.type?.playable == true) {
+                                Timber.v("Clicked play on ${item.id}")
+                                onClickPlay.invoke(position, item)
+                                return@onKeyEvent true
+                            }
+                            return@onKeyEvent false
+                        },
             ) {
                 itemsIndexed(homeRows) { rowIndex, row ->
                     when (val r = row) {

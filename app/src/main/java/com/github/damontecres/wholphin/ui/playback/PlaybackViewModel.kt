@@ -225,9 +225,13 @@ class PlaybackViewModel
                         "Error preparing for playback for $itemId",
                     ),
             ) {
+                val destItem = (destination as? Destination.Playback)?.item?.data
                 val queriedItem =
-                    (destination as? Destination.Playback)?.item?.data
-                        ?: api.userLibraryApi.getItem(itemId).content
+                    if (destItem?.mediaSources != null) {
+                        destItem
+                    } else {
+                        api.userLibraryApi.getItem(itemId).content
+                    }
                 val base =
                     if (queriedItem.type.playable) {
                         queriedItem
@@ -362,26 +366,26 @@ class PlaybackViewModel
                         ?.sortedWith(compareBy<AudioStream> { it.language }.thenByDescending { it.channels })
                         .orEmpty()
 
-                val audioIndex =
+                val audioStream =
                     streamChoiceService
-                        .chooseStream(
-                            mediaSource,
-                            base.seriesId,
-                            playbackConfig,
-                            plc,
-                            MediaStreamType.AUDIO,
-                            preferences,
-                        )?.index
+                        .chooseAudioStream(
+                            source = mediaSource,
+                            seriesId = base.seriesId,
+                            itemPlayback = playbackConfig,
+                            plc = plc,
+                            prefs = preferences,
+                        )
+                val audioIndex = audioStream?.index
 
                 val subtitleIndex =
                     streamChoiceService
-                        .chooseStream(
-                            mediaSource,
-                            base.seriesId,
-                            playbackConfig,
-                            plc,
-                            MediaStreamType.SUBTITLE,
-                            preferences,
+                        .chooseSubtitleStream(
+                            source = mediaSource,
+                            audioStream = audioStream,
+                            seriesId = base.seriesId,
+                            itemPlayback = playbackConfig,
+                            plc = plc,
+                            prefs = preferences,
                         )?.index
 
                 Timber.d("Selected mediaSource=${mediaSource.id}, audioIndex=$audioIndex, subtitleIndex=$subtitleIndex")

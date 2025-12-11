@@ -91,22 +91,17 @@ class StreamChoiceService
                 result
             }
 
-        suspend fun chooseStream(
+        suspend fun chooseAudioStream(
             source: MediaSourceInfo,
             seriesId: UUID?,
             itemPlayback: ItemPlayback?,
             plc: PlaybackLanguageChoice?,
-            type: MediaStreamType,
             prefs: UserPreferences,
         ): MediaStream? {
             val plc = plc ?: seriesId?.let { playbackLanguageChoiceDao.get(serverRepository.currentUser.value!!.rowId, it) }
             return source.mediaStreams?.letNotEmpty { streams ->
-                val candidates = streams.filter { it.type == type }
-                when (type) {
-                    MediaStreamType.AUDIO -> chooseAudioStream(candidates, itemPlayback, plc, prefs)
-                    MediaStreamType.SUBTITLE -> chooseSubtitleStream(candidates, itemPlayback, plc, prefs)
-                    else -> candidates.firstOrNull()
-                }
+                val candidates = streams.filter { it.type == MediaStreamType.AUDIO }
+                chooseAudioStream(candidates, itemPlayback, plc, prefs)
             }
         }
 
@@ -142,7 +137,35 @@ class StreamChoiceService
                 }
             }
 
+        suspend fun chooseSubtitleStream(
+            source: MediaSourceInfo,
+            audioStream: MediaStream?,
+            seriesId: UUID?,
+            itemPlayback: ItemPlayback?,
+            plc: PlaybackLanguageChoice?,
+            prefs: UserPreferences,
+        ): MediaStream? {
+            val plc =
+                plc ?: seriesId?.let {
+                    playbackLanguageChoiceDao.get(
+                        serverRepository.currentUser.value!!.rowId,
+                        it,
+                    )
+                }
+            return source.mediaStreams?.letNotEmpty { streams ->
+                val candidates = streams.filter { it.type == MediaStreamType.SUBTITLE }
+                chooseSubtitleStream(
+                    audioStream,
+                    candidates,
+                    itemPlayback,
+                    plc,
+                    prefs,
+                )
+            }
+        }
+
         fun chooseSubtitleStream(
+            audioStream: MediaStream?,
             candidates: List<MediaStream>,
             itemPlayback: ItemPlayback?,
             playbackLanguageChoice: PlaybackLanguageChoice?,
@@ -202,7 +225,8 @@ class StreamChoiceService
 
                     SubtitlePlaybackMode.SMART -> {
                         val audioLanguage = prefs.userConfig.audioLanguagePreference
-                        if (audioLanguage != null && subtitleLanguage != null && audioLanguage != subtitleLanguage) {
+                        val audioStreamLang = audioStream?.language
+                        if (audioLanguage.isNotNullOrBlank() && audioStreamLang.isNotNullOrBlank() && audioLanguage != audioStreamLang) {
                             candidates.firstOrNull { it.language == subtitleLanguage }
                         } else {
                             null
