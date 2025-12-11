@@ -124,6 +124,7 @@ fun ItemGrid(
                         viewModel.navigateTo(Destination.Playback(item.id, 0))
                     },
                     onLongClickItem = { index: Int, item: BaseItem -> },
+                    onClickPlay = { _, item -> viewModel.navigateTo(Destination.Playback(item)) },
                     letterPosition = { c: Char -> 0 },
                     gridFocusRequester = focusRequester,
                     showJumpButtons = false,

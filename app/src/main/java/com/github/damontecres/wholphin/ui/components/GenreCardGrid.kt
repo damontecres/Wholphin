@@ -117,6 +117,7 @@ fun GenreCardGrid(
                         )
                     },
                     onLongClickItem = { _, _ -> },
+                    onClickPlay = { _, _ -> },
                     letterPosition = { viewModel.positionOfLetter(it) },
                     gridFocusRequester = gridFocusRequester,
                     showJumpButtons = false,

@@ -63,6 +63,7 @@ import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.playback.isBackwardButton
 import com.github.damontecres.wholphin.ui.playback.isForwardButton
 import com.github.damontecres.wholphin.ui.playback.isPlayKeyUp
+import com.github.damontecres.wholphin.ui.playback.playable
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import kotlinx.coroutines.Dispatchers
@@ -78,6 +79,7 @@ fun CardGrid(
     pager: List<BaseItem?>,
     onClickItem: (Int, BaseItem) -> Unit,
     onLongClickItem: (Int, BaseItem) -> Unit,
+    onClickPlay: (Int, BaseItem) -> Unit,
     letterPosition: suspend (Char) -> Int,
     gridFocusRequester: FocusRequester,
     showJumpButtons: Boolean,
@@ -213,7 +215,11 @@ fun CardGrid(
                         jumpToTop()
                         return@onKeyEvent true
                     } else if (isPlayKeyUp(it)) {
-                        // TODO play the focused item
+                        val item = pager.getOrNull(focusedIndex)
+                        if (item?.type?.playable == true) {
+                            Timber.v("Clicked play on ${item.id}")
+                            onClickPlay.invoke(focusedIndex, item)
+                        }
                         return@onKeyEvent true
                     } else if (useJumpRemoteButtons && isForwardButton(it)) {
                         jump(jump1)
