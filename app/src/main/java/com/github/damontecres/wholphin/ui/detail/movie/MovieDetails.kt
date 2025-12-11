@@ -226,21 +226,21 @@ fun MovieDetails(
                                                     movie.data,
                                                     chosenStreams?.itemPlayback,
                                                 )?.let { source ->
-                                                chooseVersion =
-                                                    chooseStream(
-                                                        context = context,
-                                                            streams = source.mediaStreams.orEmpty(),
-                                                        type = type,
-                                                        onClick = { trackIndex ->
-                                                            viewModel.saveTrackSelection(
-                                                                movie,
-                                                                chosenStreams?.itemPlayback,
-                                                                trackIndex,
-                                                                type,
-                                                            )
-                                                        },
-                                                    )
-                                            }
+                                                    chooseVersion =
+                                                        chooseStream(
+                                                            context = context,
+                                                                streams = source.mediaStreams.orEmpty(),
+                                                            type = type,
+                                                            onClick = { trackIndex ->
+                                                                viewModel.saveTrackSelection(
+                                                                    movie,
+                                                                    chosenStreams?.itemPlayback,
+                                                                    trackIndex,
+                                                                    type,
+                                                                )
+                                                            },
+                                                        )
+                                                }
                                         },
                                         onShowOverview = {
                                             val source = chosenStreams?.source ?: movie.data.mediaSources?.firstOrNull()

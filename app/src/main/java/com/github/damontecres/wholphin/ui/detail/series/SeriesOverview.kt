@@ -262,21 +262,21 @@ fun SeriesOverview(
                                             ep.data,
                                             chosenStreams?.itemPlayback,
                                         )?.let { source ->
-                                        chooseVersion =
-                                            chooseStream(
-                                                context = context,
-                                                    streams = source.mediaStreams.orEmpty(),
-                                                type = type,
-                                                onClick = { trackIndex ->
-                                                    viewModel.saveTrackSelection(
-                                                        ep,
-                                                        chosenStreams?.itemPlayback,
-                                                        trackIndex,
-                                                        type,
-                                                    )
-                                                },
-                                            )
-                                    }
+                                            chooseVersion =
+                                                chooseStream(
+                                                    context = context,
+                                                        streams = source.mediaStreams.orEmpty(),
+                                                    type = type,
+                                                    onClick = { trackIndex ->
+                                                        viewModel.saveTrackSelection(
+                                                            ep,
+                                                            chosenStreams?.itemPlayback,
+                                                            trackIndex,
+                                                            type,
+                                                        )
+                                                    },
+                                                )
+                                        }
                                 },
                                 onShowOverview = {
                                     val source = chosenStreams?.source ?: ep.data.mediaSources?.firstOrNull()
