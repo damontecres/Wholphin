@@ -412,15 +412,7 @@ private fun calculateAspectRatio(width: Int, height: Int): String {
     val gcd = gcd(width, height)
     val w = width / gcd
     val h = height / gcd
-    
-    // Common aspect ratios
-    return when {
-        w == 16 && h == 9 -> "16:9"
-        w == 4 && h == 3 -> "4:3"
-        w == 21 && h == 9 -> "21:9"
-        w == 1 && h == 1 -> "1:1"
-        else -> "$w:$h"
-    }
+    return "$w:$h"
 }
 
 private fun gcd(a: Int, b: Int): Int {

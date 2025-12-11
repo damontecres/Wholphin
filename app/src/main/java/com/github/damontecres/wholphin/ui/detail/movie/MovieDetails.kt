@@ -229,7 +229,7 @@ fun MovieDetails(
                                                     chooseVersion =
                                                         chooseStream(
                                                             context = context,
-                                                                streams = source.mediaStreams.orEmpty(),
+                                                            streams = source.mediaStreams.orEmpty(),
                                                             type = type,
                                                             onClick = { trackIndex ->
                                                                 viewModel.saveTrackSelection(
