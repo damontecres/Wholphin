@@ -148,7 +148,7 @@ class StreamChoiceService
             playbackLanguageChoice: PlaybackLanguageChoice?,
             prefs: UserPreferences,
         ): MediaStream? {
-            if (itemPlayback?.subtitleIndex == TrackIndex.DISABLED || playbackLanguageChoice?.subtitlesDisabled == true) {
+            if (itemPlayback?.subtitleIndex == TrackIndex.DISABLED) {
                 return null
             } else if (itemPlayback?.subtitleIndexEnabled == true) {
                 return candidates.firstOrNull { it.index == itemPlayback.subtitleIndex }
@@ -162,16 +162,26 @@ class StreamChoiceService
                     } else {
                         null
                     }
+
                 val subtitleMode =
-                    if (playbackLanguageChoice?.subtitlesDisabled == false &&
-                        playbackLanguageChoice.subtitleLanguage != null &&
-                        subtitleLanguage.isNotNullOrBlank()
-                    ) {
-                        // User has a subtitle language preference, but has chosen a different language for the series
-                        // So override their normal playback mode to always display subtitles
-                        SubtitlePlaybackMode.ALWAYS
-                    } else {
-                        prefs.userConfig.subtitleMode
+                    when {
+                        playbackLanguageChoice?.subtitlesDisabled == false &&
+                            playbackLanguageChoice.subtitleLanguage != null &&
+                            subtitleLanguage.isNotNullOrBlank() -> {
+                            // User has a subtitle language preference, but has chosen a different language for the series
+                            // So override their normal playback mode to always display subtitles
+                            SubtitlePlaybackMode.ALWAYS
+                        }
+
+                        playbackLanguageChoice?.subtitlesDisabled == true -> {
+                            // Series level settings disables subtitles
+                            SubtitlePlaybackMode.NONE
+                        }
+
+                        else -> {
+                            // Fallback to the user's preference
+                            prefs.userConfig.subtitleMode
+                        }
                     }
                 return when (subtitleMode) {
                     SubtitlePlaybackMode.ALWAYS -> {
