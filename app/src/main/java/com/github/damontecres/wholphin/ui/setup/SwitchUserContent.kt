@@ -286,7 +286,7 @@ fun SwitchUserContent(
                         TextButton(
                             stringRes = R.string.login,
                             onClick = { onSubmit.invoke() },
-                            enabled = username.text.isNotNullOrBlank() && password.text.isNotNullOrBlank(),
+                            enabled = username.text.isNotNullOrBlank(),
                             modifier = Modifier.align(Alignment.CenterHorizontally),
                         )
                     }
