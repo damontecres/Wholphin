@@ -354,6 +354,7 @@
     <string name="automatic">Automatic</string>
     <string name="username_or_password">Use username/password</string>
     <string name="login">Login</string>
+    <string name="show_titles">Show titles</string>
 
     <string-array name="theme_song_volume">
         <item>Disabled</item>

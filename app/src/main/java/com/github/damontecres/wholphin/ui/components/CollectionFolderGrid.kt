@@ -679,16 +679,16 @@ fun CollectionFolderGridContent(
     sortOptions: List<ItemSortBy>,
     playEnabled: Boolean,
     onClickPlay: (shuffle: Boolean) -> Unit,
+    getPossibleFilterValues: suspend (ItemFilterBy<*>) -> List<FilterValueOption>,
+    defaultViewOptions: ViewOptions,
+    onSaveViewOptions: (ViewOptions) -> Unit,
+    viewOptions: ViewOptions,
     modifier: Modifier = Modifier,
     showTitle: Boolean = true,
     positionCallback: ((columns: Int, position: Int) -> Unit)? = null,
     currentFilter: GetItemsFilter = GetItemsFilter(),
     filterOptions: List<ItemFilterBy<*>> = listOf(),
     onFilterChange: (GetItemsFilter) -> Unit = {},
-    getPossibleFilterValues: suspend (ItemFilterBy<*>) -> List<FilterValueOption>,
-    defaultViewOptions: ViewOptions,
-    viewOptions: ViewOptions,
-    onSaveViewOptions: (ViewOptions) -> Unit,
 ) {
     val context = LocalContext.current
     val title = item?.name ?: item?.data?.collectionType?.name ?: stringResource(R.string.collection)
@@ -832,6 +832,7 @@ fun CollectionFolderGridContent(
                         imageContentScale = viewOptions.contentScale.scale,
                         imageAspectRatio = viewOptions.aspectRatio.ratio,
                         imageType = viewOptions.imageType,
+                        showTitle = viewOptions.showTitles,
                         modifier = mod,
                     )
                 },
