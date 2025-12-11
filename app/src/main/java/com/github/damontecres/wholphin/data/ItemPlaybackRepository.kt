@@ -59,6 +59,7 @@ class ItemPlaybackRepository
                     )
                 val subtitleStream =
                     streamChoiceService.chooseSubtitleStream(
+                        audioStream = audioStream,
                         candidates =
                             source.mediaStreams
                                 ?.filter { it.type == MediaStreamType.SUBTITLE }
