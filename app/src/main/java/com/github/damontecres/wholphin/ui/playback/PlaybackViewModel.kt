@@ -225,9 +225,13 @@ class PlaybackViewModel
                         "Error preparing for playback for $itemId",
                     ),
             ) {
+                val destItem = (destination as? Destination.Playback)?.item?.data
                 val queriedItem =
-                    (destination as? Destination.Playback)?.item?.data
-                        ?: api.userLibraryApi.getItem(itemId).content
+                    if (destItem?.mediaSources != null) {
+                        destItem
+                    } else {
+                        api.userLibraryApi.getItem(itemId).content
+                    }
                 val base =
                     if (queriedItem.type.playable) {
                         queriedItem
