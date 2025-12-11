@@ -13,7 +13,7 @@ PROJECT_ROOT="$(realpath "${SCRIPT_DIR}/../../")"
 
 # Config
 ANDROID_ABI=21
-ENABLED_DECODERS=(dca ac3 eac3 mlp truehd)
+ENABLED_DECODERS=(dca ac3 eac3 mlp truehd flac alac pcm_mulaw pcm_alaw mp3)
 FFMPEG_BRANCH="release/6.0"
 
 # Path configs
