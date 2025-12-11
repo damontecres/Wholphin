@@ -5,8 +5,10 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -57,8 +59,8 @@ fun ItemDetailsDialog(
     
     ScrollableDialog(
         onDismissRequest = onDismissRequest,
-        width = 800.dp,
-        maxHeight = 600.dp,
+        width = 720.dp,
+        maxHeight = 480.dp,
         itemSpacing = 4.dp,
     ) {
         item {
@@ -118,23 +120,47 @@ fun ItemDetailsDialog(
                     }
                 }
 
-                // Audio streams
+                // Audio streams - display multiple per row
                 source.mediaStreams?.filter { it.type == MediaStreamType.AUDIO }?.let { audioStreams ->
-                    items(audioStreams) { stream ->
-                        MediaInfoSection(
-                            title = audioLabel,
-                            items = buildAudioStreamInfo(context, stream),
-                        )
+                    items(audioStreams.chunked(3)) { streamGroup ->
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            streamGroup.forEach { stream ->
+                                MediaInfoSection(
+                                    title = audioLabel,
+                                    items = buildAudioStreamInfo(context, stream),
+                                    modifier = Modifier.weight(1f),
+                                )
+                            }
+                            // Fill remaining space if less than 3 items
+                            repeat(3 - streamGroup.size) {
+                                Spacer(modifier = Modifier.weight(1f))
+                            }
+                        }
                     }
                 }
 
-                // Subtitle streams
+                // Subtitle streams - display multiple per row
                 source.mediaStreams?.filter { it.type == MediaStreamType.SUBTITLE }?.let { subtitleStreams ->
-                    items(subtitleStreams) { stream ->
-                        MediaInfoSection(
-                            title = subtitleLabel,
-                            items = buildSubtitleStreamInfo(context, stream),
-                        )
+                    items(subtitleStreams.chunked(3)) { streamGroup ->
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            streamGroup.forEach { stream ->
+                                MediaInfoSection(
+                                    title = subtitleLabel,
+                                    items = buildSubtitleStreamInfo(context, stream),
+                                    modifier = Modifier.weight(1f),
+                                )
+                            }
+                            // Fill remaining space if less than 3 items
+                            repeat(3 - streamGroup.size) {
+                                Spacer(modifier = Modifier.weight(1f))
+                            }
+                        }
                     }
                 }
             }
@@ -365,7 +391,6 @@ private fun buildAudioStreamInfo(
     val externalLabel = context.getString(R.string.external_track)
     val yesStr = context.getString(R.string.yes)
     val noStr = context.getString(R.string.no)
-    val channelsUnit = context.getString(R.string.channels_unit)
     val sampleRateUnit = context.getString(R.string.sample_rate_unit)
     
     stream.title?.let { add(titleLabel to it) }
@@ -375,11 +400,10 @@ private fun buildAudioStreamInfo(
         add(codecLabel to formattedCodec)
     }
     stream.channelLayout?.let { add(layoutLabel to it) }
-    stream.channels?.let { add(channelsLabel to "$it $channelsUnit") }
+    stream.channels?.let { add(channelsLabel to it.toString()) }
     stream.bitRate?.let { add(bitrateLabel to formatBytes(it, byteRateSuffixes)) }
     stream.sampleRate?.let { add(sampleRateLabel to "$it $sampleRateUnit") }
     stream.isDefault?.let { add(defaultLabel to if (it) yesStr else noStr) }
-    stream.isExternal?.let { add(externalLabel to if (it) yesStr else noStr) }
 }
 
 private fun buildSubtitleStreamInfo(
