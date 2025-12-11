@@ -29,8 +29,6 @@ import com.github.damontecres.wholphin.data.model.Chapter
 import com.github.damontecres.wholphin.data.model.ItemPlayback
 import com.github.damontecres.wholphin.data.model.Playlist
 import com.github.damontecres.wholphin.data.model.TrackIndex
-import com.github.damontecres.wholphin.data.model.chooseSource
-import com.github.damontecres.wholphin.data.model.chooseStream
 import com.github.damontecres.wholphin.preferences.AppPreference
 import com.github.damontecres.wholphin.preferences.PlayerBackend
 import com.github.damontecres.wholphin.preferences.ShowNextUpWhen
@@ -43,6 +41,7 @@ import com.github.damontecres.wholphin.services.PlayerFactory
 import com.github.damontecres.wholphin.services.PlaylistCreationResult
 import com.github.damontecres.wholphin.services.PlaylistCreator
 import com.github.damontecres.wholphin.services.RefreshRateService
+import com.github.damontecres.wholphin.services.StreamChoiceService
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.onMain
@@ -123,6 +122,7 @@ class PlaybackViewModel
         private val deviceInfo: DeviceInfo,
         private val deviceProfileService: DeviceProfileService,
         private val refreshRateService: RefreshRateService,
+        val streamChoiceService: StreamChoiceService,
     ) : ViewModel(),
         Player.Listener,
         AnalyticsListener {
@@ -338,7 +338,8 @@ class PlaybackViewModel
                                 }
                             }
                         }
-                val mediaSource = chooseSource(base, playbackConfig)
+                val mediaSource = streamChoiceService.chooseSource(base, playbackConfig)
+                val plc = streamChoiceService.getPlaybackLanguageChoice(base)
 
                 if (mediaSource == null) {
                     showToast(
@@ -362,12 +363,26 @@ class PlaybackViewModel
                         .orEmpty()
 
                 val audioIndex =
-                    chooseStream(base, playbackConfig, MediaStreamType.AUDIO, preferences)
-                        ?.index
+                    streamChoiceService
+                        .chooseStream(
+                            mediaSource,
+                            base.seriesId,
+                            playbackConfig,
+                            plc,
+                            MediaStreamType.AUDIO,
+                            preferences,
+                        )?.index
 
                 val subtitleIndex =
-                    chooseStream(base, playbackConfig, MediaStreamType.SUBTITLE, preferences)
-                        ?.index
+                    streamChoiceService
+                        .chooseStream(
+                            mediaSource,
+                            base.seriesId,
+                            playbackConfig,
+                            plc,
+                            MediaStreamType.SUBTITLE,
+                            preferences,
+                        )?.index
 
                 Timber.d("Selected mediaSource=${mediaSource.id}, audioIndex=$audioIndex, subtitleIndex=$subtitleIndex")
 
@@ -563,7 +578,7 @@ class PlaybackViewModel
 
                         else -> throw Exception("No supported playback method")
                     }
-                Timber.v("Playback decision: $transcodeType")
+                Timber.i("Playback decision for $itemId: $transcodeType")
 
                 val externalSubtitleCount = source.externalSubtitlesCount
 
@@ -605,21 +620,6 @@ class PlaybackViewModel
                         liveStreamId = source.liveStreamId,
                         mediaSourceInfo = source,
                     )
-                val itemPlayback =
-                    currentItemPlayback.copy(
-                        sourceId = source.id?.toUUIDOrNull(),
-                        audioIndex = audioIndex ?: TrackIndex.UNSPECIFIED,
-                        subtitleIndex = subtitleIndex ?: TrackIndex.DISABLED,
-                    )
-                if (userInitiated) {
-                    viewModelScope.launchIO {
-                        Timber.v("Saving user initiated item playback: %s", itemPlayback)
-                        val updated = itemPlaybackRepository.saveItemPlayback(itemPlayback)
-                        withContext(Dispatchers.Main) {
-                            this@PlaybackViewModel.currentItemPlayback.value = updated
-                        }
-                    }
-                }
 
                 if (preferences.appPreferences.playbackPreferences.refreshRateSwitching) {
                     source.mediaStreams?.firstOrNull { it.type == MediaStreamType.VIDEO }?.let {
@@ -638,14 +638,13 @@ class PlaybackViewModel
                             api = api,
                             player = player,
                             playback = playback,
-                            itemPlayback = itemPlayback,
+                            itemPlayback = currentItemPlayback,
                         )
                     player.addListener(activityListener)
                     this@PlaybackViewModel.activityListener = activityListener
 
                     loading.value = LoadingState.Success
                     this@PlaybackViewModel.currentPlayback.update { playback }
-                    this@PlaybackViewModel.currentItemPlayback.value = itemPlayback
                     player.setMediaItem(
                         mediaItem,
                         positionMs,
@@ -679,23 +678,41 @@ class PlaybackViewModel
 
         fun changeAudioStream(index: Int) {
             viewModelScope.launchIO {
+                Timber.d("Changing audio track to %s", index)
+                val itemPlayback =
+                    itemPlaybackRepository.saveTrackSelection(
+                        item = item,
+                        itemPlayback = currentItemPlayback.value!!,
+                        trackIndex = index,
+                        type = MediaStreamType.AUDIO,
+                    )
+                this@PlaybackViewModel.currentItemPlayback.setValueOnMain(itemPlayback)
                 changeStreams(
                     item,
-                    currentItemPlayback.value!!,
+                    itemPlayback,
                     index,
-                    currentItemPlayback.value?.subtitleIndex,
+                    itemPlayback.subtitleIndex,
                     onMain { player.currentPosition },
                     true,
                 )
             }
         }
 
-        fun changeSubtitleStream(index: Int?): Job =
+        fun changeSubtitleStream(index: Int): Job =
             viewModelScope.launchIO {
+                Timber.d("Changing subtitle track to %s", index)
+                val itemPlayback =
+                    itemPlaybackRepository.saveTrackSelection(
+                        item = item,
+                        itemPlayback = currentItemPlayback.value!!,
+                        trackIndex = index,
+                        type = MediaStreamType.SUBTITLE,
+                    )
+                this@PlaybackViewModel.currentItemPlayback.setValueOnMain(itemPlayback)
                 changeStreams(
                     item,
-                    currentItemPlayback.value!!,
-                    currentItemPlayback.value?.audioIndex,
+                    itemPlayback,
+                    itemPlayback.audioIndex,
                     index,
                     onMain { player.currentPosition },
                     true,
