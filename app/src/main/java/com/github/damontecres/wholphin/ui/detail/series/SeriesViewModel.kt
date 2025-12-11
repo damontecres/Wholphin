@@ -18,8 +18,10 @@ import com.github.damontecres.wholphin.services.ExtrasService
 import com.github.damontecres.wholphin.services.FavoriteWatchManager
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.PeopleFavorites
+import com.github.damontecres.wholphin.services.StreamChoiceService
 import com.github.damontecres.wholphin.services.ThemeSongPlayer
 import com.github.damontecres.wholphin.services.TrailerService
+import com.github.damontecres.wholphin.services.UserPreferencesService
 import com.github.damontecres.wholphin.ui.SlimItemFields
 import com.github.damontecres.wholphin.ui.detail.ItemViewModel
 import com.github.damontecres.wholphin.ui.equalsNotNull
@@ -70,6 +72,8 @@ class SeriesViewModel
         private val peopleFavorites: PeopleFavorites,
         private val trailerService: TrailerService,
         private val extrasService: ExtrasService,
+        val streamChoiceService: StreamChoiceService,
+        private val userPreferencesService: UserPreferencesService,
     ) : ItemViewModel(api) {
         private lateinit var seriesId: UUID
         private lateinit var prefs: UserPreferences
@@ -372,7 +376,12 @@ class SeriesViewModel
             chosenStreamsJob?.cancel()
             chosenStreamsJob =
                 viewModelScope.launchIO {
-                    val result = itemPlaybackRepository.getSelectedTracks(itemId, item)
+                    val result =
+                        itemPlaybackRepository.getSelectedTracks(
+                            itemId,
+                            item,
+                            userPreferencesService.getCurrent(),
+                        )
                     withContext(Dispatchers.Main) {
                         chosenStreams.value = result
                     }
@@ -384,10 +393,12 @@ class SeriesViewModel
             sourceId: UUID,
         ) {
             viewModelScope.launchIO {
+                val prefs = userPreferencesService.getCurrent()
+                val plc = streamChoiceService.getPlaybackLanguageChoice(item.data)
                 val result = itemPlaybackRepository.savePlayVersion(item.id, sourceId)
                 val chosen =
                     result?.let {
-                        itemPlaybackRepository.getChosenItemFromPlayback(item, result)
+                        itemPlaybackRepository.getChosenItemFromPlayback(item, result, plc, prefs)
                     }
                 withContext(Dispatchers.Main) {
                     chosenStreams.value = chosen
@@ -402,6 +413,8 @@ class SeriesViewModel
             type: MediaStreamType,
         ) {
             viewModelScope.launchIO {
+                val prefs = userPreferencesService.getCurrent()
+                val plc = streamChoiceService.getPlaybackLanguageChoice(item.data)
                 val result =
                     itemPlaybackRepository.saveTrackSelection(
                         item = item,
@@ -411,7 +424,7 @@ class SeriesViewModel
                     )
                 val chosen =
                     result?.let {
-                        itemPlaybackRepository.getChosenItemFromPlayback(item, result)
+                        itemPlaybackRepository.getChosenItemFromPlayback(item, result, plc, prefs)
                     }
                 withContext(Dispatchers.Main) {
                     chosenStreams.value = chosen

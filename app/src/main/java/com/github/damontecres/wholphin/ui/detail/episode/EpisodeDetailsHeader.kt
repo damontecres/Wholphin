@@ -58,9 +58,7 @@ fun EpisodeDetailsHeader(
             EpisodeQuickDetails(dto)
 
             VideoStreamDetails(
-                preferences = preferences,
-                dto = dto,
-                itemPlayback = chosenStreams?.itemPlayback,
+                chosenStreams = chosenStreams,
                 modifier = Modifier.padding(bottom = padding),
             )
             dto.taglines?.firstOrNull()?.let { tagline ->
