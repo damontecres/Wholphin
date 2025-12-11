@@ -137,10 +137,7 @@ fun EpisodeDetails(
                         )
                     },
                     overviewOnClick = {
-                        val source = chooseSource(
-                            ep.data,
-                            chosenStreams?.itemPlayback,
-                        ) ?: ep.data.mediaSources?.firstOrNull()
+                        val source = chosenStreams?.source ?: ep.data.mediaSources?.firstOrNull()
                         overviewDialog =
                             ItemDetailsDialogInfo(
                                 title = ep.name ?: context.getString(R.string.unknown),
@@ -183,26 +180,24 @@ fun EpisodeDetails(
                                                     ep.data,
                                                     chosenStreams?.itemPlayback,
                                                 )?.let { source ->
-                                                    chooseVersion =
-                                                        chooseStream(
-                                                            context = context,
+                                                chooseVersion =
+                                                    chooseStream(
+                                                        context = context,
                                                             streams = source.mediaStreams.orEmpty(),
-                                                            type = type,
-                                                            onClick = { trackIndex ->
-                                                                viewModel.saveTrackSelection(
-                                                                    ep,
-                                                                    chosenStreams?.itemPlayback,
-                                                                    trackIndex,
-                                                                    type,
-                                                                )
-                                                            },
-                                                        )
-                                                }
+                                                        type = type,
+                                                        onClick = { trackIndex ->
+                                                            viewModel.saveTrackSelection(
+                                                                ep,
+                                                                chosenStreams?.itemPlayback,
+                                                                trackIndex,
+                                                                type,
+                                                            )
+                                                        },
+                                                    )
+                                            }
                                         },
                                         onShowOverview = {
-                                            val source = chosenStreams?.sourceId?.let { sourceId ->
-                                                ep.data.mediaSources?.firstOrNull { it.id?.toUUIDOrNull() == sourceId }
-                                            } ?: ep.data.mediaSources?.firstOrNull()
+                                            val source = chosenStreams?.source ?: ep.data.mediaSources?.firstOrNull()
                                             if (source != null) {
                                                 overviewDialog =
                                                     ItemDetailsDialogInfo(
