@@ -26,12 +26,12 @@ This is not a fork of the [official client](https://github.com/jellyfin/jellyfin
 
 ### User interface
 
-- A navigation drawer for quick access to libraries, search, and settings from almost anywhere in the app
+- A navigation drawer for quick access to libraries, favorites, search, and settings from almost anywhere in the app
 - Option to combine Continue Watching & Next Up rows
 - Show Movie/TV Show titles when browsing libraries
 - Play theme music, if available
+- Search & download subtitles (requires compatible server plugin such as [OpenSubtitles](https://github.com/jellyfin/jellyfin-plugin-opensubtitles))
 - Customize layout grids for libraries
-- Access all your favorites quickly from the nav drawer
 - Multiple app color themes
 
 ### Playback
@@ -45,6 +45,8 @@ This is not a fork of the [official client](https://github.com/jellyfin/jellyfin
   - Optionally skip back a few seconds when resuming playback
 - Live TV & DVR support
 - Auto play next episodes with pass out protection
+- Option for automatic refresh rate switching on supported displays
+- Trickplay support
 - Other (subjective) enhancements:
   - Subtly show playback position along the bottom of the screen while seeking w/ D-Pad
   - Force Continue Watching & Next Up TV episodes to use their Series posters
