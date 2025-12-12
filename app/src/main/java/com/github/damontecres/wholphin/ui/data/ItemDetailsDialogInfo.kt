@@ -25,7 +25,6 @@ import com.github.damontecres.wholphin.ui.formatBytes
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.letNotEmpty
 import com.github.damontecres.wholphin.util.languageName
-import org.jellyfin.sdk.model.api.AudioSpatialFormat
 import org.jellyfin.sdk.model.api.MediaSourceInfo
 import org.jellyfin.sdk.model.api.MediaStream
 import org.jellyfin.sdk.model.api.MediaStreamType
@@ -174,96 +173,6 @@ fun ItemDetailsDialog(
                         Spacer(Modifier.height(8.dp))
                     }
                 }
-            }
-        }
-    }
-}
-
-@Composable
-fun MediaSourceInfo(
-    source: MediaSourceInfo,
-    showFilePath: Boolean,
-    modifier: Modifier = Modifier,
-) {
-    Column(
-        verticalArrangement = Arrangement.spacedBy(4.dp),
-        modifier = modifier,
-    ) {
-        Text(
-            text = stringResource(R.string.name) + ": ${source.name}",
-        )
-        Text(
-            text = "ID: ${source.id}",
-        )
-        if (showFilePath) {
-            Text(
-                text = stringResource(R.string.path) + ": ${source.path}",
-            )
-        }
-        source.size?.let { size ->
-            Text(
-                text = stringResource(R.string.file_size) + ": ${formatBytes(size)}",
-            )
-        }
-        source.bitrate?.let { bitrate ->
-            Text(
-                text =
-                    stringResource(R.string.bitrate) + ": ${
-                        formatBytes(
-                            bitrate,
-                            byteRateSuffixes,
-                        )
-                    }",
-            )
-        }
-        source.mediaStreams?.letNotEmpty { streams ->
-            streams.filter { it.type == MediaStreamType.VIDEO }.forEach { stream ->
-                val data =
-                    buildList {
-                        if (stream.width != null && stream.height != null) {
-                            add("${stream.width}x${stream.height}")
-                        }
-                        stream.averageFrameRate?.let {
-                            add(String.format(Locale.getDefault(), "%.3f", it) + " fps")
-                        }
-                        stream.bitRate?.let { add(formatBytes(it, byteRateSuffixes)) }
-                        stream.codec?.let(::add)
-                        stream.profile?.let(::add)
-                    }
-                Text(
-                    text = stringResource(R.string.video) + ": " + data.joinToString(" - "),
-                )
-            }
-
-            streams.filter { it.type == MediaStreamType.AUDIO }.forEachIndexed { index, stream ->
-                val data =
-                    buildList {
-                        stream.language?.let { add(languageName(it)) }
-                        stream.codec?.let(::add)
-                        stream.channelLayout?.let(::add)
-                        stream.bitRate?.let { add(formatBytes(it, byteRateSuffixes)) }
-                        if (stream.audioSpatialFormat != AudioSpatialFormat.NONE) add(stream.audioSpatialFormat.serialName)
-                        if (stream.isDefault) add(stringResource(R.string.default_track))
-                    }
-                Text(
-                    text = stringResource(R.string.audio) + " ${index + 1}: " + data.joinToString(" - "),
-                )
-            }
-
-            streams.filter { it.type == MediaStreamType.SUBTITLE }.forEachIndexed { index, stream ->
-                val data =
-                    buildList {
-                        stream.language?.let { add(languageName(it)) }
-                        stream.codec?.let(::add)
-                        if (stream.isDefault) add(stringResource(R.string.default_track))
-                        if (stream.isForced) add(stringResource(R.string.forced_track))
-                        if (stream.isExternal) add(stringResource(R.string.external_track))
-                    }
-                Text(
-                    text =
-                        stringResource(R.string.subtitle) + " ${index + 1}: " +
-                            data.joinToString(" - "),
-                )
             }
         }
     }

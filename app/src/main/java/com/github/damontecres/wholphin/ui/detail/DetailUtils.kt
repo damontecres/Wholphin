@@ -162,20 +162,15 @@ fun buildMoreDialogItems(
                 },
             )
         }
-        item.data.mediaSources?.letNotEmpty { sources ->
-            val source =
-                sourceId?.let { sources.firstOrNull { it.id?.toUUIDOrNull() == sourceId } }
-                    ?: sources.firstOrNull()
-            if (source != null && source.mediaStreams?.isNotEmpty() == true) {
-                add(
-                    DialogItem(
-                        context.getString(R.string.media_information),
-                        Icons.Default.Info,
-                    ) {
-                        onShowOverview.invoke()
-                    },
-                )
-            }
+        if (item.data.mediaSources?.isNotEmpty() == true) {
+            add(
+                DialogItem(
+                    context.getString(R.string.media_information),
+                    Icons.Default.Info,
+                ) {
+                    onShowOverview.invoke()
+                },
+            )
         }
         add(
             DialogItem(

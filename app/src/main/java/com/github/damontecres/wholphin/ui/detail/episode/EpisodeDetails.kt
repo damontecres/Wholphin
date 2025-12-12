@@ -137,13 +137,12 @@ fun EpisodeDetails(
                         )
                     },
                     overviewOnClick = {
-                        val source = chosenStreams?.source ?: ep.data.mediaSources?.firstOrNull()
                         overviewDialog =
                             ItemDetailsDialogInfo(
                                 title = ep.name ?: context.getString(R.string.unknown),
                                 overview = ep.data.overview,
                                 genres = ep.data.genres.orEmpty(),
-                                files = source?.let { listOf(it) } ?: ep.data.mediaSources.orEmpty(),
+                                files = ep.data.mediaSources.orEmpty(),
                             )
                     },
                     moreOnClick = {

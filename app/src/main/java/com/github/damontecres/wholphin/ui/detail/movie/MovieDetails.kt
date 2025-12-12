@@ -243,16 +243,15 @@ fun MovieDetails(
                                                 }
                                         },
                                         onShowOverview = {
-                                            val source = chosenStreams?.source ?: movie.data.mediaSources?.firstOrNull()
-                                            if (source != null) {
-                                                overviewDialog =
-                                                    ItemDetailsDialogInfo(
-                                                        title = movie.name ?: context.getString(R.string.unknown),
-                                                        overview = movie.data.overview,
-                                                        genres = movie.data.genres.orEmpty(),
-                                                        files = listOf(source),
-                                                    )
-                                            }
+                                            overviewDialog =
+                                                ItemDetailsDialogInfo(
+                                                    title =
+                                                        movie.name
+                                                            ?: context.getString(R.string.unknown),
+                                                    overview = movie.data.overview,
+                                                    genres = movie.data.genres.orEmpty(),
+                                                    files = movie.data.mediaSources.orEmpty(),
+                                                )
                                         },
                                     ),
                             )
