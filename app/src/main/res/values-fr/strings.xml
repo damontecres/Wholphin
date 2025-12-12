@@ -306,7 +306,7 @@
     <string name="subtitle_margin">Marge</string>
     <string name="mpv_use_gpu_next">MPV: Utiliser gpu-next</string>
     <string name="mpv_conf">Éditer mpv.conf</string>
-    <string name="discard_change">Annuler les modifications?</string>
+    <string name="discard_change">Annuler les modifications ?</string>
     <string name="verbose_logging">Journalisation détaillée</string>
     <string name="enter_pin">Saisir le code PIN</string>
     <string name="sign_in_auto">Connexion automatique</string>
