@@ -195,6 +195,18 @@ fun EpisodeDetails(
                                                         )
                                                 }
                                         },
+                                        onShowOverview = {
+                                            val source = chosenStreams?.source ?: ep.data.mediaSources?.firstOrNull()
+                                            if (source != null) {
+                                                overviewDialog =
+                                                    ItemDetailsDialogInfo(
+                                                        title = ep.name ?: context.getString(R.string.unknown),
+                                                        overview = ep.data.overview,
+                                                        genres = ep.data.genres.orEmpty(),
+                                                        files = listOf(source),
+                                                    )
+                                            }
+                                        },
                                     ),
                             )
                     },
