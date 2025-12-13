@@ -365,4 +365,5 @@
     <string name="hlg">HLG</string>
     <string name="bit_unit">bit</string>
     <string name="sample_rate_unit">Hz</string>
+    <string name="container">Formato</string>
 </resources>
