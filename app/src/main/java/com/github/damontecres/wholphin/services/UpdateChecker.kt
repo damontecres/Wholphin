@@ -33,7 +33,6 @@ import kotlinx.serialization.json.jsonPrimitive
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.Response
-import okhttp3.internal.headersContentLength
 import timber.log.Timber
 import java.io.File
 import java.io.InputStream
@@ -211,7 +210,7 @@ class UpdateChecker
                     if (it.isSuccessful && it.body != null) {
                         Timber.v("Request successful for ${release.downloadUrl}")
                         withContext(Dispatchers.Main) {
-                            callback.contentLength(it.headersContentLength())
+                            callback.contentLength(it.body.contentLength())
                         }
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                             val contentValues =
