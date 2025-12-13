@@ -52,20 +52,22 @@ fun TvGuideHeader(
                         )
                     add(time)
                 }
-                program
-                    ?.duration
-                    ?.roundMinutes
-                    ?.toString()
-                    ?.let(::add)
-                if (program != null && now.isAfter(program.start) && now.isBefore(program.end)) {
-                    java.time.Duration
-                        .between(now, program.end)
-                        .toKotlinDuration()
+                if (program?.isFake == false) {
+                    program
+                        .duration
                         .roundMinutes
-                        .let { add("$it left") }
+                        .toString()
+                        .let(::add)
+                    if (now.isAfter(program.start) && now.isBefore(program.end)) {
+                        java.time.Duration
+                            .between(now, program.end)
+                            .toKotlinDuration()
+                            .roundMinutes
+                            .let { add("$it left") }
+                    }
+                    program.seasonEpisode?.let { "S${it.season} E${it.episode}" }?.let(::add)
+                    program.officialRating?.let(::add)
                 }
-                program?.seasonEpisode?.let { "S${it.season} E${it.episode}" }?.let(::add)
-                program?.officialRating?.let(::add)
             }
         }
     Column(
