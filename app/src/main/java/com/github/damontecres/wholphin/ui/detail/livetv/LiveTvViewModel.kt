@@ -2,6 +2,7 @@ package com.github.damontecres.wholphin.ui.detail.livetv
 
 import android.content.Context
 import androidx.compose.ui.graphics.Color
+import androidx.datastore.core.DataStore
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -9,6 +10,7 @@ import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.WholphinApplication
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.BaseItem
+import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.ui.AppColors
 import com.github.damontecres.wholphin.ui.data.RowColumn
@@ -58,6 +60,7 @@ class LiveTvViewModel
         @param:ApplicationContext private val context: Context,
         val api: ApiClient,
         val navigationManager: NavigationManager,
+        val preferences: DataStore<AppPreferences>,
         private val serverRepository: ServerRepository,
     ) : ViewModel() {
         val loading = MutableLiveData<LoadingState>(LoadingState.Pending)

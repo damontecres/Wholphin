@@ -155,6 +155,11 @@ inline fun AppPreferences.updateSubtitlePreferences(block: SubtitlePreferences.B
         subtitlesPreferences = subtitlesPreferences.toBuilder().apply(block).build()
     }
 
+inline fun AppPreferences.updateLiveTvPreferences(block: LiveTvPreferences.Builder.() -> Unit): AppPreferences =
+    updateInterfacePreferences {
+        liveTvPreferences = liveTvPreferences.toBuilder().apply(block).build()
+    }
+
 inline fun AppPreferences.updateAdvancedPreferences(block: AdvancedPreferences.Builder.() -> Unit): AppPreferences =
     update {
         advancedPreferences = advancedPreferences.toBuilder().apply(block).build()
