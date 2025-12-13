@@ -740,7 +740,7 @@ class PlaybackViewModel
         ) {
             val tilesPerImage = trickplayInfo.tileWidth * trickplayInfo.tileHeight
             val totalCount =
-                (duration.inWholeMilliseconds / trickplayInfo.interval).toInt() / tilesPerImage
+                (duration.inWholeMilliseconds / trickplayInfo.interval).toInt() / tilesPerImage + 1
             (0..<totalCount).forEach {
                 val url = getTrickplayUrl(it, trickplayInfo)
                 context.imageLoader.enqueue(

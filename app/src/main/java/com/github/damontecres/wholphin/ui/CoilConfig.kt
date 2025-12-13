@@ -79,6 +79,12 @@ fun CoilConfig(
     }
 }
 
+/**
+ * This [CacheStrategy] always prefers the cached response for Trickplay images,
+ * otherwise the decision is delegated to the provided [CacheStrategy]
+ *
+ * The expectation is that Trickplay images will be prefetched so the cache will always be warm
+ */
 @OptIn(ExperimentalCoilApi::class)
 private class WholphinCacheStrategy(
     private val delegate: CacheStrategy,
