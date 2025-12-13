@@ -6,6 +6,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -99,10 +100,25 @@ fun TvGuideGrid(
                     focusRequester.tryRequestFocus()
                 }
             }
+            var focusedPosition by rememberPosition(0, 0)
+            val focusedProgram =
+                remember(focusedPosition) {
+                    focusedPosition.let {
+                        val channelId = channels.getOrNull(it.row)?.id
+                        programs.programsByChannel[channelId]?.getOrNull(it.column)
+                    }
+                }
             Column(modifier = modifier) {
                 if (channels.isEmpty()) {
                     ErrorMessage("Live TV is enabled, but no channels were found.", null)
                 } else {
+                    TvGuideHeader(
+                        program = focusedProgram,
+                        modifier =
+                            Modifier
+                                .padding(top = 24.dp, bottom = 16.dp, start = 32.dp)
+                                .fillMaxHeight(.30f),
+                    )
                     TvGuideGridContent(
                         loading = state is LoadingState.Loading,
                         channels = channels,
@@ -118,6 +134,7 @@ fun TvGuideGrid(
                             )
                         },
                         onFocus = {
+                            focusedPosition = it
                             onRowPosition.invoke(it.row)
                             viewModel.onFocusChannel(it)
                         },

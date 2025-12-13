@@ -389,6 +389,7 @@
     <string name="bit_unit">bit</string>
     <string name="sample_rate_unit">Hz</string>
     <string name="show_titles">Show titles</string>
+    <string name="live_tv_repeat">Repeat</string>
 
     <string-array name="theme_song_volume">
         <item>Disabled</item>

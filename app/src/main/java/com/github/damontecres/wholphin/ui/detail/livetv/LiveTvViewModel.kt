@@ -34,6 +34,7 @@ import org.jellyfin.sdk.api.client.extensions.liveTvApi
 import org.jellyfin.sdk.model.api.BaseItemDto
 import org.jellyfin.sdk.model.api.GetProgramsDto
 import org.jellyfin.sdk.model.api.ImageType
+import org.jellyfin.sdk.model.api.ItemFields
 import org.jellyfin.sdk.model.api.ItemSortBy
 import org.jellyfin.sdk.model.api.TimerInfoDto
 import org.jellyfin.sdk.model.api.request.GetLiveTvChannelsRequest
@@ -148,6 +149,7 @@ class LiveTvViewModel
                     channelIds = channelsToFetch.map { it.id },
                     sortBy = listOf(ItemSortBy.START_DATE),
                     userId = serverRepository.currentUser.value?.id,
+                    fields = listOf(ItemFields.OVERVIEW),
                 )
             val fetchedPrograms =
                 api.liveTvApi
@@ -173,6 +175,7 @@ class LiveTvViewModel
                             } else {
                                 null
                             }
+
                         val p =
                             TvProgram(
                                 id = dto.id,
@@ -188,6 +191,8 @@ class LiveTvViewModel
                                 duration = dto.runTimeTicks!!.ticks,
                                 name = dto.seriesName ?: dto.name,
                                 subtitle = dto.episodeTitle.takeIf { dto.isSeries ?: false },
+                                overview = dto.overview,
+                                officialRating = dto.officialRating,
                                 seasonEpisode =
                                     if (dto.indexNumber != null && dto.parentIndexNumber != null) {
                                         SeasonEpisode(
@@ -474,11 +479,13 @@ data class TvProgram(
     val duration: Duration,
     val name: String?,
     val subtitle: String?,
+    val overview: String? = null,
     val seasonEpisode: SeasonEpisode?,
     val isRecording: Boolean,
     val isSeriesRecording: Boolean,
     val isRepeat: Boolean,
     val category: ProgramCategory?,
+    val officialRating: String? = null,
 ) {
     val isFake = category == ProgramCategory.FAKE
 
@@ -500,6 +507,7 @@ data class TvProgram(
             duration = ((endHours - startHours) * 60).toInt().minutes,
             name = NO_DATA,
             subtitle = null,
+            overview = null,
             seasonEpisode = null,
             isRecording = false,
             isSeriesRecording = false,
