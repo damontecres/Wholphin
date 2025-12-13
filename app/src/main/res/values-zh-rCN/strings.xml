@@ -300,4 +300,12 @@
     <string name="username_or_password">使用用户名/密码</string>
     <string name="login">登录</string>
     <string name="show_titles">显示标题</string>
+    <string name="media_information">媒体信息</string>
+    <string name="general">常规</string>
+    <string name="container">容器格式</string>
+    <string name="title">标题</string>
+    <string name="codec">编解码器</string>
+    <string name="profile">配置</string>
+    <string name="level">等级</string>
+    <string name="resolution">分辨率</string>
 </resources>
