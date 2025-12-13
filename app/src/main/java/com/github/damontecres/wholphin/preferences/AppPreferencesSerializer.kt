@@ -98,6 +98,19 @@ class AppPreferencesSerializer
                                         .apply {
                                             resetSubtitles()
                                         }.build()
+
+                                liveTvPreferences =
+                                    LiveTvPreferences
+                                        .newBuilder()
+                                        .apply {
+                                            showHeader = AppPreference.LiveTvShowHeader.defaultValue
+                                            favoriteChannelsAtBeginning =
+                                                AppPreference.LiveTvFavoriteChannelsBeginning.defaultValue
+                                            sortByRecentlyWatched =
+                                                AppPreference.LiveTvChannelSortByWatched.defaultValue
+                                            colorCodePrograms =
+                                                AppPreference.LiveTvColorCodePrograms.defaultValue
+                                        }.build()
                             }.build()
 
                     advancedPreferences =

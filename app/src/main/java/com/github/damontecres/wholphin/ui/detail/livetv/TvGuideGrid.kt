@@ -76,11 +76,12 @@ fun TvGuideGrid(
     modifier: Modifier = Modifier,
     viewModel: LiveTvViewModel = hiltViewModel(),
 ) {
-    var firstLoad by rememberSaveable { mutableStateOf(true) }
-    LaunchedEffect(Unit) {
-        viewModel.init(firstLoad)
-        firstLoad = false
-    }
+    val scope = rememberCoroutineScope()
+//    var firstLoad by rememberSaveable { mutableStateOf(true) }
+//    LaunchedEffect(Unit) {
+//        viewModel.init(firstLoad)
+//        firstLoad = false
+//    }
     val loading by viewModel.loading.observeAsState(LoadingState.Pending)
     val channels by viewModel.channels.observeAsState(listOf())
     val programs by viewModel.programs.observeAsState(FetchedPrograms(0..0, listOf(), mapOf()))
@@ -89,6 +90,7 @@ fun TvGuideGrid(
     val preferences by viewModel.preferences.data
         .collectAsState(AppPreferences.getDefaultInstance())
     val tvPrefs = preferences.interfacePreferences.liveTvPreferences
+    var showViewOptions by remember { mutableStateOf(false) }
     when (val state = loading) {
         is LoadingState.Error -> {
             ErrorMessage(state, modifier)
@@ -103,7 +105,6 @@ fun TvGuideGrid(
         LoadingState.Success,
         -> {
             val context = LocalContext.current
-            val scope = rememberCoroutineScope()
             val fetchedItem by viewModel.fetchedItem.observeAsState(null)
             val loadingItem by viewModel.fetchingItem.observeAsState(LoadingState.Pending)
             var showItemDialog by remember { mutableStateOf<Int?>(null) }
@@ -122,7 +123,6 @@ fun TvGuideGrid(
                         programs.programsByChannel[channelId]?.getOrNull(it.column)
                     }
                 }
-            var showViewOptions by remember { mutableStateOf(false) }
             Column(
                 verticalArrangement = Arrangement.spacedBy(4.dp),
                 modifier = modifier,
@@ -240,20 +240,20 @@ fun TvGuideGrid(
                     },
                 )
             }
-            if (showViewOptions) {
-                LiveTvViewOptionsDialog(
-                    preferences = preferences,
-                    onDismissRequest = { showViewOptions = false },
-                    onViewOptionsChange = { newPrefs ->
-                        scope.launchIO {
-                            viewModel.preferences.updateData {
-                                newPrefs
-                            }
-                        }
-                    },
-                )
-            }
         }
+    }
+    if (showViewOptions) {
+        LiveTvViewOptionsDialog(
+            preferences = preferences,
+            onDismissRequest = { showViewOptions = false },
+            onViewOptionsChange = { newPrefs ->
+                scope.launchIO {
+                    viewModel.preferences.updateData {
+                        newPrefs
+                    }
+                }
+            },
+        )
     }
 }
 
@@ -584,7 +584,7 @@ fun TvGuideGridContent(
                 val program = programs.programs[programIndex]
                 val focused =
                     gridHasFocus && !channelColumnFocused && programIndex == focusedProgramIndex
-                Program(program, focused, Modifier)
+                Program(program, focused, preferences.colorCodePrograms, Modifier)
             }
 
             channels(

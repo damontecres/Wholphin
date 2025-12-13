@@ -788,7 +788,7 @@ sealed interface AppPreference<Pref, T> {
         val LiveTvShowHeader =
             AppSwitchPreference<AppPreferences>(
                 title = R.string.show_details,
-                defaultValue = false,
+                defaultValue = true,
                 getter = { it.interfacePreferences.liveTvPreferences.showHeader },
                 setter = { prefs, value ->
                     prefs.updateLiveTvPreferences { showHeader = value }
@@ -799,7 +799,7 @@ sealed interface AppPreference<Pref, T> {
         val LiveTvFavoriteChannelsBeginning =
             AppSwitchPreference<AppPreferences>(
                 title = R.string.favorite_channels_at_beginning,
-                defaultValue = false,
+                defaultValue = true,
                 getter = { it.interfacePreferences.liveTvPreferences.favoriteChannelsAtBeginning },
                 setter = { prefs, value ->
                     prefs.updateLiveTvPreferences { favoriteChannelsAtBeginning = value }
@@ -821,7 +821,7 @@ sealed interface AppPreference<Pref, T> {
         val LiveTvColorCodePrograms =
             AppSwitchPreference<AppPreferences>(
                 title = R.string.color_code_programs,
-                defaultValue = false,
+                defaultValue = true,
                 getter = { it.interfacePreferences.liveTvPreferences.colorCodePrograms },
                 setter = { prefs, value ->
                     prefs.updateLiveTvPreferences { colorCodePrograms = value }

@@ -25,7 +25,13 @@ import com.github.damontecres.wholphin.util.LoadingState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -38,6 +44,7 @@ import org.jellyfin.sdk.model.api.GetProgramsDto
 import org.jellyfin.sdk.model.api.ImageType
 import org.jellyfin.sdk.model.api.ItemFields
 import org.jellyfin.sdk.model.api.ItemSortBy
+import org.jellyfin.sdk.model.api.SortOrder
 import org.jellyfin.sdk.model.api.TimerInfoDto
 import org.jellyfin.sdk.model.api.request.GetLiveTvChannelsRequest
 import org.jellyfin.sdk.model.extensions.ticks
@@ -48,11 +55,13 @@ import java.util.UUID
 import javax.inject.Inject
 import kotlin.math.min
 import kotlin.time.Duration
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 
 const val MAX_HOURS = 48L
 
+@OptIn(FlowPreview::class)
 @HiltViewModel
 class LiveTvViewModel
     @Inject
@@ -79,11 +88,25 @@ class LiveTvViewModel
 
         private val range = 100
 
-        fun init(firstLoad: Boolean) {
-            guideStart = LocalDateTime.now().truncatedTo(ChronoUnit.HOURS)
-            if (!firstLoad) {
-                loading.value = LoadingState.Loading
+        init {
+            viewModelScope.launchIO {
+                preferences.data
+                    .map {
+                        it.interfacePreferences.liveTvPreferences.let {
+                            Pair(it.sortByRecentlyWatched, it.favoriteChannelsAtBeginning)
+                        }
+                    }.distinctUntilChanged()
+                    .debounce { 500.milliseconds }
+                    .collectLatest {
+                        Timber.v("Init due to pref change")
+                        loading.setValueOnMain(LoadingState.Pending)
+                        init()
+                    }
             }
+        }
+
+        fun init() {
+            guideStart = LocalDateTime.now().truncatedTo(ChronoUnit.HOURS)
             viewModelScope.launch(
                 Dispatchers.IO +
                     LoadingExceptionHandler(
@@ -91,11 +114,26 @@ class LiveTvViewModel
                         "Could not fetch channels",
                     ),
             ) {
+                val prefs =
+                    (preferences.data.firstOrNull() ?: AppPreferences.getDefaultInstance())
+                        .interfacePreferences.liveTvPreferences
                 val channelData by api.liveTvApi.getLiveTvChannels(
                     GetLiveTvChannelsRequest(
                         startIndex = 0,
                         userId = serverRepository.currentUser.value?.id,
-                        enableFavoriteSorting = true,
+                        enableFavoriteSorting = prefs.favoriteChannelsAtBeginning,
+                        sortBy =
+                            if (prefs.sortByRecentlyWatched) {
+                                listOf(ItemSortBy.DATE_PLAYED)
+                            } else {
+                                null
+                            },
+                        sortOrder =
+                            if (prefs.sortByRecentlyWatched) {
+                                SortOrder.DESCENDING
+                            } else {
+                                null
+                            },
                         addCurrentProgram = false,
                     ),
                 )
