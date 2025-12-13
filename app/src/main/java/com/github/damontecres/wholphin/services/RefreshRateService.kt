@@ -60,13 +60,18 @@ class RefreshRateService
             Timber.i("Found display mode: %s, current=${display.mode}", targetMode)
             if (targetMode != null && targetMode != display.mode) {
                 val listener = Listener(display.displayId)
-                displayManager.registerDisplayListener(listener, Handler(Looper.getMainLooper()))
+                displayManager.registerDisplayListener(
+                    listener,
+                    Handler(Looper.myLooper() ?: Looper.getMainLooper()),
+                )
                 _refreshRateMode.setValueOnMain(targetMode)
                 try {
-                    listener.latch.await(5, TimeUnit.SECONDS)
-                } catch (_: InterruptedException) {
-                    Timber.w("Timed out waiting for display change")
-                    showToast(context, "Refresh rate switch is taking a long time")
+                    if (!listener.latch.await(5, TimeUnit.SECONDS)) {
+                        Timber.w("Timed out waiting for display change")
+                        showToast(context, "Refresh rate switch is taking a long time")
+                    }
+                } catch (ex: InterruptedException) {
+                    Timber.w(ex, "Exception waiting for refresh rate switch")
                 }
                 val targetRate = (targetMode.refreshRate * 100).roundToInt()
                 val isSeamless =
