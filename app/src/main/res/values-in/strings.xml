@@ -271,4 +271,22 @@
     <string name="remove">Hapus</string>
     <string name="dolby_vision">Dolby Vision</string>
     <string name="dolby_atmos">Dolby Atmos</string>
+    <string name="media_information">Informasi Media</string>
+    <string name="mpv_use_gpu_next">MPV: Gunakan gpu-next</string>
+    <string name="mpv_conf">Edit mpv.conf</string>
+    <string name="discard_change">Batalkan perubahan?</string>
+    <string name="enter_pin">Masukkan PIN</string>
+    <string name="sign_in_auto">Masuk secara otomatis</string>
+    <string name="use_server_credentials">Masuk via server</string>
+    <string name="press_enter_to_confirm">Tekan tengah untuk konfirmasi</string>
+    <string name="confirm_pin">Konfirmasi PIN</string>
+    <string name="incorrect">Salah</string>
+    <string name="pin_too_short">PIN harus 4 digit atau lebih</string>
+    <string name="image_cache_size">Ukuran cache disk gambar (MB)</string>
+    <string name="columns">Kolom</string>
+    <string name="aspect_ratio">Rasio Aspek</string>
+    <string name="show_details">Tampilkan detail</string>
+    <string name="image_type">Jenis gambar</string>
+    <string name="cast_and_crew"><![CDATA[Cast & Crew]]></string>
+    <string name="guest_stars">Pemeran Tamu</string>
 </resources>
