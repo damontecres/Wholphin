@@ -15,7 +15,6 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.tv.material3.MaterialTheme
 import coil3.compose.AsyncImage
-import coil3.request.CachePolicy
 import coil3.request.ImageRequest
 import coil3.request.transformations
 import com.github.damontecres.wholphin.ui.CoilTrickplayTransformation
@@ -104,7 +103,6 @@ fun SeekPreviewImage(
                 ImageRequest
                     .Builder(context)
                     .data(previewImageUrl)
-                    .memoryCachePolicy(CachePolicy.ENABLED)
                     .transformations(
                         CoilTrickplayTransformation(
                             widthPx,

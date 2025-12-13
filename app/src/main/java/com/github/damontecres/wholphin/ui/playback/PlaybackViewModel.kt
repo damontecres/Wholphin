@@ -21,6 +21,8 @@ import androidx.media3.exoplayer.DecoderCounters
 import androidx.media3.exoplayer.DecoderReuseEvaluation
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.analytics.AnalyticsListener
+import coil3.imageLoader
+import coil3.request.ImageRequest
 import com.github.damontecres.wholphin.data.ItemPlaybackDao
 import com.github.damontecres.wholphin.data.ItemPlaybackRepository
 import com.github.damontecres.wholphin.data.ServerRepository
@@ -92,6 +94,7 @@ import org.jellyfin.sdk.model.api.PlayMethod
 import org.jellyfin.sdk.model.api.PlaybackInfoDto
 import org.jellyfin.sdk.model.api.PlaystateCommand
 import org.jellyfin.sdk.model.api.PlaystateMessage
+import org.jellyfin.sdk.model.api.TrickplayInfo
 import org.jellyfin.sdk.model.extensions.inWholeTicks
 import org.jellyfin.sdk.model.extensions.ticks
 import org.jellyfin.sdk.model.serializer.toUUIDOrNull
@@ -99,6 +102,7 @@ import timber.log.Timber
 import java.util.Date
 import java.util.UUID
 import javax.inject.Inject
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
@@ -404,6 +408,13 @@ class PlaybackViewModel
                         ?.get(mediaSource.id)
                         ?.values
                         ?.firstOrNull()
+                trickPlayInfo?.let { trickplayInfo ->
+                    mediaSource.runTimeTicks?.ticks?.let { duration ->
+                        viewModelScope.launchIO {
+                            prefetchTrickplay(duration, trickplayInfo)
+                        }
+                    }
+                }
 
                 val chapters = Chapter.fromDto(base, api)
                 withContext(Dispatchers.Main) {
@@ -723,17 +734,38 @@ class PlaybackViewModel
                 )
             }
 
-        fun getTrickplayUrl(index: Int): String? {
-            val itemId = item.id
-            val mediaSourceId = currentItemPlayback.value?.sourceId
-            val trickPlayInfo = currentMediaInfo.value?.trickPlayInfo ?: return null
-            return api.trickplayApi.getTrickplayTileImageUrl(
-                itemId,
-                trickPlayInfo.width,
-                index,
-                mediaSourceId,
-            )
+        private suspend fun prefetchTrickplay(
+            duration: Duration,
+            trickplayInfo: TrickplayInfo,
+        ) {
+            val tilesPerImage = trickplayInfo.tileWidth * trickplayInfo.tileHeight
+            val totalCount =
+                (duration.inWholeMilliseconds / trickplayInfo.interval).toInt() / tilesPerImage
+            (0..<totalCount).forEach {
+                val url = getTrickplayUrl(it, trickplayInfo)
+                context.imageLoader.enqueue(
+                    ImageRequest
+                        .Builder(context)
+                        .data(url)
+                        .build(),
+                )
+            }
         }
+
+        fun getTrickplayUrl(
+            index: Int,
+            trickPlayInfo: TrickplayInfo? = currentMediaInfo.value?.trickPlayInfo,
+        ): String? =
+            trickPlayInfo?.let {
+                val itemId = item.id
+                val mediaSourceId = currentItemPlayback.value?.sourceId
+                return api.trickplayApi.getTrickplayTileImageUrl(
+                    itemId,
+                    trickPlayInfo.width,
+                    index,
+                    mediaSourceId,
+                )
+            }
 
         override fun onPlaybackStateChanged(playbackState: Int) {
             if (playbackState == Player.STATE_ENDED) {
