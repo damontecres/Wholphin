@@ -364,4 +364,6 @@
     <string name="sample_rate_unit">Hz</string>
     <string name="live_tv_repeat">Répéter</string>
     <string name="favorite_channels_at_beginning">Afficher les chaînes favorites en premier</string>
+    <string name="nal">NAL</string>
+    <string name="hlg">HLG</string>
 </resources>
