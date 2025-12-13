@@ -218,9 +218,7 @@ fun SeriesOverviewContent(
                                         item = episode,
                                         aspectRatio =
                                             episode
-                                                ?.data
-                                                ?.primaryImageAspectRatio
-                                                ?.toFloat()
+                                                ?.aspectRatio
                                                 ?.coerceAtLeast(AspectRatios.FOUR_THREE)
                                                 ?: (AspectRatios.WIDE),
                                         cornerText = cornerText,

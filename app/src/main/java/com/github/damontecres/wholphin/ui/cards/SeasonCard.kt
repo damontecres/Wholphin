@@ -46,7 +46,7 @@ fun SeasonCard(
     imageWidth: Dp = Dp.Unspecified,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
     showImageOverlay: Boolean = false,
-    aspectRatio: Float = item?.data?.primaryImageAspectRatio?.toFloat() ?: AspectRatios.TALL,
+    aspectRatio: Float = item?.aspectRatio ?: AspectRatios.TALL,
 ) {
     val imageUrlService = LocalImageUrlService.current
     val density = LocalDensity.current

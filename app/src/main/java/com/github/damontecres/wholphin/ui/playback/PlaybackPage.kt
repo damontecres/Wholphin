@@ -473,9 +473,7 @@ fun PlaybackPage(
                                 ).joinToString(" - "),
                             description = it.data.overview,
                             imageUrl = LocalImageUrlService.current.rememberImageUrl(it),
-                            aspectRatio =
-                                it.data.primaryImageAspectRatio?.toFloat()
-                                    ?: AspectRatios.WIDE,
+                            aspectRatio = it.aspectRatio ?: AspectRatios.WIDE,
                             onClick = {
                                 viewModel.reportInteraction()
                                 viewModel.playNextUp()
