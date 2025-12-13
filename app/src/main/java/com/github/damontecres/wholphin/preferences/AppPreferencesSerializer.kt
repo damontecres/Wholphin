@@ -98,6 +98,19 @@ class AppPreferencesSerializer
                                         .apply {
                                             resetSubtitles()
                                         }.build()
+
+                                liveTvPreferences =
+                                    LiveTvPreferences
+                                        .newBuilder()
+                                        .apply {
+                                            showHeader = AppPreference.LiveTvShowHeader.defaultValue
+                                            favoriteChannelsAtBeginning =
+                                                AppPreference.LiveTvFavoriteChannelsBeginning.defaultValue
+                                            sortByRecentlyWatched =
+                                                AppPreference.LiveTvChannelSortByWatched.defaultValue
+                                            colorCodePrograms =
+                                                AppPreference.LiveTvColorCodePrograms.defaultValue
+                                        }.build()
                             }.build()
 
                     advancedPreferences =
@@ -153,6 +166,11 @@ inline fun AppPreferences.updateInterfacePreferences(block: InterfacePreferences
 inline fun AppPreferences.updateSubtitlePreferences(block: SubtitlePreferences.Builder.() -> Unit): AppPreferences =
     updateInterfacePreferences {
         subtitlesPreferences = subtitlesPreferences.toBuilder().apply(block).build()
+    }
+
+inline fun AppPreferences.updateLiveTvPreferences(block: LiveTvPreferences.Builder.() -> Unit): AppPreferences =
+    updateInterfacePreferences {
+        liveTvPreferences = liveTvPreferences.toBuilder().apply(block).build()
     }
 
 inline fun AppPreferences.updateAdvancedPreferences(block: AdvancedPreferences.Builder.() -> Unit): AppPreferences =

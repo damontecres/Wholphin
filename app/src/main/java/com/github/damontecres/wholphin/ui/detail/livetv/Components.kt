@@ -25,14 +25,17 @@ import coil3.compose.AsyncImage
 fun Program(
     program: TvProgram,
     focused: Boolean,
+    colorCode: Boolean,
     modifier: Modifier = Modifier,
 ) {
     val background =
         if (focused) {
             MaterialTheme.colorScheme.inverseSurface
-        } else {
+        } else if (colorCode) {
             program.category?.color
                 ?: MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp)
+        } else {
+            MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp)
         }
     val textColor = MaterialTheme.colorScheme.contentColorFor(background)
     Box(

@@ -125,6 +125,13 @@ message SubtitlePreferences{
   int32 edge_thickness = 12;
 }
 
+message LiveTvPreferences {
+  bool show_header = 1;
+  bool favorite_channels_at_beginning = 2;
+  bool sort_by_recently_watched = 3;
+  bool color_code_programs = 4;
+}
+
 message InterfacePreferences {
   ThemeSongVolume play_theme_songs = 1;
   bool remember_selected_tab = 2;
@@ -133,6 +140,7 @@ message InterfacePreferences {
   bool nav_drawer_switch_on_focus = 5;
   bool show_clock = 6;
   SubtitlePreferences subtitles_preferences = 7;
+  LiveTvPreferences live_tv_preferences = 8;
 }
 
 message AdvancedPreferences {
