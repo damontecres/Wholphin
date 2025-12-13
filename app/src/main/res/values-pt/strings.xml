@@ -141,7 +141,7 @@
     <string name="years_old">%1$d anos</string>
     <string name="play_with_transcoding">Reproduzir com transcodificação</string>
     <string name="show_clock">Mostrar Relógio</string>
-    <string name="aired_episode_order">Ordem de emissão</string>
+    <string name="aired_episode_order">Ordem de Emissão</string>
     <string name="create_playlist">Criar nova lista de reprodução</string>
     <string name="add_to_playlist">Adicionar a lista de reprodução</string>
     <string name="one_click_pause">Pausar com um clique</string>
@@ -155,58 +155,58 @@
     <string name="extras">Extras</string>
     <plurals name="other_extras">
         <item quantity="one">Outro</item>
-        <item quantity="many"/>
-        <item quantity="other"/>
+        <item quantity="many">Outros</item>
+        <item quantity="other">Outros</item>
     </plurals>
     <plurals name="behind_the_scenes">
         <item quantity="one">Nos Bastidores</item>
-        <item quantity="many"/>
-        <item quantity="other"/>
+        <item quantity="many">Nos Bastidores</item>
+        <item quantity="other">Nos Bastidores</item>
     </plurals>
     <plurals name="theme_songs">
-        <item quantity="one">Músicas-tema</item>
-        <item quantity="many"/>
-        <item quantity="other"/>
+        <item quantity="one">Músicas temáticas</item>
+        <item quantity="many">Músicas temáticas</item>
+        <item quantity="other">Músicas temáticas</item>
     </plurals>
     <plurals name="theme_videos">
         <item quantity="one">Vídeos Temáticos</item>
-        <item quantity="many"/>
-        <item quantity="other"/>
+        <item quantity="many">Vídeos Temáticos</item>
+        <item quantity="other">Vídeos Temáticos</item>
     </plurals>
     <plurals name="clips">
         <item quantity="one">Clipes</item>
-        <item quantity="many"/>
-        <item quantity="other"/>
+        <item quantity="many">Clipes</item>
+        <item quantity="other">Clipes</item>
     </plurals>
     <plurals name="deleted_scenes">
         <item quantity="one">Cenas Excluídas</item>
-        <item quantity="many"/>
-        <item quantity="other"/>
+        <item quantity="many">Cenas Excluídas</item>
+        <item quantity="other">Cenas Excluídas</item>
     </plurals>
     <plurals name="interviews">
         <item quantity="one">Entrevistas</item>
-        <item quantity="many"/>
-        <item quantity="other"/>
+        <item quantity="many">Entrevistas</item>
+        <item quantity="other">Entrevistas</item>
     </plurals>
     <plurals name="scenes">
         <item quantity="one">Cenas</item>
-        <item quantity="many"/>
-        <item quantity="other"/>
+        <item quantity="many">Cenas</item>
+        <item quantity="other">Cenas</item>
     </plurals>
     <plurals name="samples">
         <item quantity="one">Amostras</item>
-        <item quantity="many"/>
-        <item quantity="other"/>
+        <item quantity="many">Amostras</item>
+        <item quantity="other">Amostras</item>
     </plurals>
     <plurals name="featurettes">
         <item quantity="one">Curta-metragens</item>
-        <item quantity="many"/>
-        <item quantity="other"/>
+        <item quantity="many">Curta-metragens</item>
+        <item quantity="other">Curta-metragens</item>
     </plurals>
     <plurals name="shorts">
         <item quantity="one">Curtos</item>
-        <item quantity="many"/>
-        <item quantity="other"/>
+        <item quantity="many">Curtos</item>
+        <item quantity="other">Curtos</item>
     </plurals>
     <plurals name="downloads">
         <item quantity="one">%s transferido</item>
@@ -286,7 +286,7 @@
     <string name="reset">Repor</string>
     <string name="bold_font">Fonte em negrito</string>
     <string name="player_backend">Motor de reprodução</string>
-    <string name="mpv_hardware_decoding">MPV: Usa descodificação por hardware</string>
+    <string name="mpv_hardware_decoding">MPV: Usar descodificação por hardware</string>
     <string name="disable_if_crash">Desative se ocorrerem falhas</string>
     <string name="mpv_options">Opções do MPV</string>
     <string name="exoplayer_options">Opções do ExoPlayer</string>
@@ -332,7 +332,7 @@
     <string name="username_or_password">Usar utilizador/palavra-passe</string>
     <string name="login">Entrar</string>
     <string name="show_titles">Mostrar títulos</string>
-    <string name="media_information">Informação da Media</string>
+    <string name="media_information">Informação da Multimédia</string>
     <string name="general">Geral</string>
     <string name="title">Título</string>
     <string name="codec">Codec</string>
@@ -366,4 +366,8 @@
     <string name="bit_unit">bit</string>
     <string name="sample_rate_unit">Hz</string>
     <string name="container">Formato</string>
+    <string name="live_tv_repeat">Repetir</string>
+    <string name="favorite_channels_at_beginning">Mostrar primeiro os canais favoritos</string>
+    <string name="sort_channels_recently_watched">Ordenar canais por visualizações recentes</string>
+    <string name="color_code_programs">Codificação de cores para os programas</string>
 </resources>
