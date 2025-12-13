@@ -3,9 +3,12 @@ package com.github.damontecres.wholphin.services
 import android.content.Context
 import android.hardware.display.DisplayManager
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import android.view.Display
 import androidx.lifecycle.LiveData
 import com.github.damontecres.wholphin.ui.setValueOnMain
+import com.github.damontecres.wholphin.ui.showToast
 import com.github.damontecres.wholphin.util.EqualityMutableLiveData
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.delay
@@ -57,12 +60,18 @@ class RefreshRateService
             Timber.i("Found display mode: %s, current=${display.mode}", targetMode)
             if (targetMode != null && targetMode != display.mode) {
                 val listener = Listener(display.displayId)
-                displayManager.registerDisplayListener(listener, null)
+                displayManager.registerDisplayListener(
+                    listener,
+                    Handler(Looper.myLooper() ?: Looper.getMainLooper()),
+                )
                 _refreshRateMode.setValueOnMain(targetMode)
                 try {
-                    listener.latch.await(5, TimeUnit.SECONDS)
-                } catch (_: InterruptedException) {
-                    Timber.w("Timed out waiting for display change")
+                    if (!listener.latch.await(5, TimeUnit.SECONDS)) {
+                        Timber.w("Timed out waiting for display change")
+                        showToast(context, "Refresh rate switch is taking a long time")
+                    }
+                } catch (ex: InterruptedException) {
+                    Timber.w(ex, "Exception waiting for refresh rate switch")
                 }
                 val targetRate = (targetMode.refreshRate * 100).roundToInt()
                 val isSeamless =
