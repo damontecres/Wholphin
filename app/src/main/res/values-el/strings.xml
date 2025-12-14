@@ -1,3 +1,72 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="movies">Ταινίες</string>
+    <string name="profile">Προφίλ</string>
+    <string name="home">Αρχική</string>
+    <string name="max_homepage_items"></string>
+    <string name="language">Γλώσσα</string>
+    <string name="app_theme">Θέμα εφαρμογής</string>
+    <string name="subtitles">Υπότιτλοι</string>
+    <string name="subtitle">Υπότιτλος</string>
+    <string name="channels">Κανάλια</string>
+    <string name="yes">Ναι</string>
+    <string name="no">Όχι</string>
+    <string name="advanced_settings">Προηγμένες ρυθμίσεις</string>
+    <string name="born">Γεννήθηκε</string>
+    <string name="birthplace">Τόπος γέννησης</string>
+    <string name="audio">Ήχος</string>
+    <string name="video">Το βίντεο</string>
+    <string name="videos">Τα βίντεο</string>
+    <string name="background">Παρασκήνιο</string>
+    <plurals name="theme_songs">
+        <item quantity="one">Θεματικά τραγούδια</item>
+        <item quantity="other"></item>
+    </plurals>
+    <plurals name="theme_videos">
+        <item quantity="one">Θεματικά βίντεο</item>
+        <item quantity="other"></item>
+    </plurals>
+    <string name="next_up">Επόμενο</string>
+    <string name="rewatch_next_up">Ενεργοποιήστε την επανάληψη παρακολούθησης στα \'Επόμενα\'</string>
+    <string name="font">Γραμματοσειρά</string>
+    <string name="font_size">Μέγεθος Κειμένου</string>
+    <string name="font_color">Χρώμα Κειμένου</string>
+    <string name="bold_font">Φωτεινότητα κειμένου</string>
+    <string name="library">Βιβλιοθήκης</string>
+    <string name="tv_shows">Σειρές</string>
+    <string name="genres">Είδη</string>
+    <string name="collection">Συλλογή</string>
+    <string name="collections">Συλλογές</string>
+    <string name="add_favorite">Αγαπημένο</string>
+    <string name="favorites">Αγαπημένα</string>
+    <string name="suggestions">Προτάσεις</string>
+    <string name="director">Σκηνοθέτης</string>
+    <string name="studios">Στούντιο</string>
+    <string name="sdr">SDR</string>
+    <string name="cast_and_crew"><![CDATA[Ηθοποιοί και Συνεργείο]]></string>
+    <string name="more_like_this">Περισσότερα Σαν Αυτό</string>
+    <string name="episodes">Επεισόδια</string>
+    <string name="jump_letters">#ΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩ</string>
+    <plurals name="downloads">
+        <item quantity="one">%s λήψη</item>
+        <item quantity="other">%s λήψεις</item>
+    </plurals>
+    <string name="downloading">λήψη…</string>
+    <string name="path">Διαδρομή</string>
+    <string name="name">Όνομα</string>
+    <string name="container">Δοχείο</string>
+    <string name="file_size">Μέγεθος</string>
+    <string name="codec">Κωδικοποιητής</string>
+    <string name="avc">AVC</string>
+    <string name="bitrate">Ρυθμός bit</string>
+    <string name="bit_depth">Βάθος bit</string>
+    <string name="bit_unit">bit</string>
+    <string name="forced_track">Εξαναγκασμός</string>
+    <string name="layout">Σχέδιο</string>
+    <string name="default_track">Προεπιλογή</string>
+    <string name="external_track">Εξωτερικό</string>
+    <string name="add_user">Προσθήκη χρήστη</string>
+    <string name="cancel">Ακύρωση</string>
+    <string name="chapters">Κεφάλαια</string>
+    <string name="choose_stream">Διάλεξε %1$s</string>
 </resources>
