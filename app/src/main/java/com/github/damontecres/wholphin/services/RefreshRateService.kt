@@ -32,6 +32,8 @@ class RefreshRateService
         private val display = displayManager.getDisplay(Display.DEFAULT_DISPLAY)
         private val originalMode = display.mode
 
+        val displayModes get() = display.supportedModes
+
         private val _refreshRateMode = EqualityMutableLiveData<Display.Mode>(originalMode)
         val refreshRateMode: LiveData<Display.Mode> = _refreshRateMode
 
