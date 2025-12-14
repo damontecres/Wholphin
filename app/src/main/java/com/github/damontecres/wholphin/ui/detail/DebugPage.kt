@@ -36,6 +36,7 @@ import com.github.damontecres.wholphin.data.ItemPlaybackDao
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.ItemPlayback
 import com.github.damontecres.wholphin.preferences.UserPreferences
+import com.github.damontecres.wholphin.services.RefreshRateService
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.showToast
 import com.github.damontecres.wholphin.util.ExceptionHandler
@@ -58,6 +59,9 @@ class DebugViewModel
     constructor(
         val serverRepository: ServerRepository,
         val itemPlaybackDao: ItemPlaybackDao,
+        val refreshRateService: RefreshRateService,
+        val clientInfo: ClientInfo,
+        val deviceInfo: DeviceInfo,
     ) : ViewModel() {
         val itemPlaybacks = MutableLiveData<List<ItemPlayback>>(listOf())
         val logcat = MutableLiveData<List<LogcatLine>>(listOf())
@@ -220,10 +224,37 @@ fun DebugPage(
                     listOf(
                         "Version Name: ${pkgInfo.versionName}",
                         "Version Code: ${pkgInfo.versionCodeLong}",
+                        "ClientInfo:  ${viewModel.clientInfo}",
                         "Build type: ${BuildConfig.BUILD_TYPE}",
                         "Debug enabled: ${BuildConfig.DEBUG}",
                         "ABIs: ${Build.SUPPORTED_ABIS.toList()}",
                     ) + installInfo
+                ).forEach {
+                    Text(
+                        text = it.toString(),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
+                }
+            }
+        }
+        item {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(
+                    text = "Device Information",
+                    style = MaterialTheme.typography.displaySmall,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+
+                listOf(
+                    "DeviceInfo:  ${viewModel.deviceInfo}",
+                    "Manufacturer: ${Build.MANUFACTURER}",
+                    "Model: ${Build.MODEL}",
+                    "Display Modes:",
+                    *viewModel.refreshRateService.displayModes,
                 ).forEach {
                     Text(
                         text = it.toString(),
