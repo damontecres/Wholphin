@@ -9,8 +9,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.CircularProgressIndicator
@@ -20,6 +20,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -133,7 +134,7 @@ fun PlaylistList(
             properties = DialogProperties(usePlatformDefaultWidth = false),
             elevation = 10.dp,
         ) {
-            val playlistName = rememberTextFieldState()
+            var playlistName by rememberSaveable { mutableStateOf("") }
             val focusRequester = remember { FocusRequester() }
             LaunchedEffect(Unit) { focusRequester.tryRequestFocus() }
             Column(
@@ -148,7 +149,8 @@ fun PlaylistList(
                     text = stringResource(R.string.name),
                 )
                 EditTextBox(
-                    state = playlistName,
+                    value = playlistName,
+                    onValueChange = { playlistName = it },
                     keyboardOptions =
                         KeyboardOptions(
                             capitalization = KeyboardCapitalization.Words,
@@ -156,10 +158,17 @@ fun PlaylistList(
                             keyboardType = KeyboardType.Text,
                             imeAction = ImeAction.Done,
                         ),
-                    onKeyboardAction = {
-                        showCreateDialog = false
-                        onCreatePlaylist.invoke(playlistName.text.toString())
-                    },
+                    keyboardActions =
+                        KeyboardActions(
+                            onDone = {
+                                showCreateDialog = false
+                                onCreatePlaylist.invoke(playlistName)
+                            },
+                        ),
+                    //                    onKeyboardAction = {
+//                        showCreateDialog = false
+//                        onCreatePlaylist.invoke(playlistName.text.toString())
+//                    },
                     modifier =
                         Modifier
                             .focusRequester(focusRequester)
@@ -168,9 +177,9 @@ fun PlaylistList(
                 Button(
                     onClick = {
                         showCreateDialog = false
-                        onCreatePlaylist.invoke(playlistName.text.toString())
+                        onCreatePlaylist.invoke(playlistName)
                     },
-                    enabled = playlistName.text.isNotNullOrBlank(),
+                    enabled = playlistName.isNotNullOrBlank(),
                     modifier = Modifier,
                 ) {
                     Text(text = stringResource(R.string.submit))

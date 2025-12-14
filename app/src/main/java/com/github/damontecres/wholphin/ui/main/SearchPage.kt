@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
-import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -172,7 +171,8 @@ fun SearchPage(
     val series by viewModel.series.observeAsState(SearchResult.NoQuery)
     val episodes by viewModel.episodes.observeAsState(SearchResult.NoQuery)
 
-    val query = rememberTextFieldState()
+//    val query = rememberTextFieldState()
+    var query by rememberSaveable { mutableStateOf("") }
     val focusRequester = remember { FocusRequester() }
 
     var position by rememberPosition()
@@ -180,7 +180,7 @@ fun SearchPage(
 
     LaunchedEffect(query) {
         delay(750L)
-        viewModel.search(query.text.toString())
+        viewModel.search(query)
     }
     LaunchedEffect(Unit) {
         focusRequester.tryRequestFocus()
@@ -214,9 +214,10 @@ fun SearchPage(
                     focusManager.moveFocus(FocusDirection.Next)
                 }
                 SearchEditTextBox(
-                    state = query,
+                    value = query,
+                    onValueChange = { query = it },
                     onSearchClick = {
-                        viewModel.search(query.text.toString())
+                        viewModel.search(query)
                         searchClicked = true
                     },
                     modifier =

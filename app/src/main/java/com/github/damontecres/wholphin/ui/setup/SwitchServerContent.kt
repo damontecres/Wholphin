@@ -9,8 +9,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -172,9 +172,11 @@ fun SwitchServerContent(
                 viewModel.clearAddServerState()
             }
             val state by viewModel.addServerState.observeAsState(LoadingState.Pending)
-            val url = rememberTextFieldState()
+//            val url = rememberTextFieldState()
+            var url by remember { mutableStateOf("") }
             val submit = {
-                viewModel.addServer(url.text.toString())
+//                viewModel.addServer(url.text.toString())
+                viewModel.addServer(url)
             }
             BasicDialog(
                 onDismissRequest = {
@@ -198,7 +200,8 @@ fun SwitchServerContent(
                         text = stringResource(R.string.enter_server_url),
                     )
                     EditTextBox(
-                        state = url,
+                        value = url,
+                        onValueChange = { url = it },
                         keyboardOptions =
                             KeyboardOptions(
                                 capitalization = KeyboardCapitalization.None,
@@ -206,7 +209,11 @@ fun SwitchServerContent(
                                 keyboardType = KeyboardType.Uri,
                                 imeAction = ImeAction.Go,
                             ),
-                        onKeyboardAction = { submit.invoke() },
+                        keyboardActions =
+                            KeyboardActions(
+                                onGo = { submit.invoke() },
+                            ),
+                        //                        onKeyboardAction = { submit.invoke() },
                         modifier =
                             Modifier
                                 .focusRequester(focusRequester)
@@ -226,7 +233,7 @@ fun SwitchServerContent(
                     }
                     TextButton(
                         onClick = { submit.invoke() },
-                        enabled = url.text.isNotNullOrBlank() && state == LoadingState.Pending,
+                        enabled = url.isNotNullOrBlank() && state == LoadingState.Pending,
                         modifier = Modifier,
                     ) {
                         if (state == LoadingState.Loading) {
