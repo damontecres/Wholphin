@@ -53,6 +53,7 @@ fun ItemDetailsDialog(
     val audioLabel = stringResource(R.string.audio)
     val subtitleLabel = stringResource(R.string.subtitle)
     val bitrateLabel = stringResource(R.string.bitrate)
+    val unknown = stringResource(R.string.unknown)
 
     ScrollableDialog(
         onDismissRequest = onDismissRequest,
@@ -100,6 +101,7 @@ fun ItemDetailsDialog(
                                 source.container?.let { add(containerLabel to it) }
                                 if (showFilePath) {
                                     source.path?.let { add(pathLabel to it) }
+                                    add("ID" to (source.id ?: unknown))
                                 }
                                 source.size?.let {
                                     add(fileSizeLabel to formatBytes(it))
