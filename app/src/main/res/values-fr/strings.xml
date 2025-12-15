@@ -366,4 +366,8 @@
     <string name="favorite_channels_at_beginning">Afficher les chaînes favorites en premier</string>
     <string name="nal">NAL</string>
     <string name="hlg">HLG</string>
+    <string name="color_primaries">Couleurs primaires</string>
+    <string name="ref_frames">Images de référence</string>
+    <string name="sort_channels_recently_watched">Trier les chaînes par date de visionnage</string>
+    <string name="color_code_programs">Classer les programmes par code couleur</string>
 </resources>
