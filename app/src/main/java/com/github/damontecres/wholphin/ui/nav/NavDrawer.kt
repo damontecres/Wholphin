@@ -212,6 +212,7 @@ fun NavDrawer(
     preferences: UserPreferences,
     user: JellyfinUser,
     server: JellyfinServer,
+    onClearBackdrop: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: NavDrawerViewModel =
         hiltViewModel(
@@ -528,6 +529,7 @@ fun NavDrawer(
             DestinationContent(
                 destination = destination,
                 preferences = preferences,
+                onClearBackdrop = onClearBackdrop,
                 modifier =
                     Modifier
                         .fillMaxSize(),

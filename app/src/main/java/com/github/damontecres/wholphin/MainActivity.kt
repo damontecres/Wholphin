@@ -237,6 +237,7 @@ class MainActivity : AppCompatActivity() {
                                         navigationManager = navigationManager,
                                         preferences = preferences,
                                         backdrop = backdrop,
+                                        onClearBackdrop = { lifecycleScope.launchIO { backdropService.clearBackdrop() } },
                                         modifier = Modifier.fillMaxSize(),
                                     )
                                 }

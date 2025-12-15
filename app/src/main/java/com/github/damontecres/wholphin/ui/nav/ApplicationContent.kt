@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -48,6 +49,7 @@ fun ApplicationContent(
     navigationManager: NavigationManager,
     preferences: UserPreferences,
     backdrop: BackdropResult,
+    onClearBackdrop: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Box(
@@ -174,9 +176,13 @@ fun ApplicationContent(
                 val contentKey = "${key}_${server?.id}_${user?.id}"
                 NavEntry(key, contentKey = contentKey) {
                     if (key.fullScreen) {
+                        LaunchedEffect(Unit) {
+                            onClearBackdrop.invoke()
+                        }
                         DestinationContent(
                             destination = key,
                             preferences = preferences,
+                            onClearBackdrop = onClearBackdrop,
                             modifier = Modifier.fillMaxSize(),
                         )
                     } else if (user != null && server != null) {
@@ -185,6 +191,7 @@ fun ApplicationContent(
                             preferences = preferences,
                             user = user,
                             server = server,
+                            onClearBackdrop = onClearBackdrop,
                             modifier = Modifier.fillMaxSize(),
                         )
                     } else {

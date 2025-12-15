@@ -335,6 +335,8 @@ class SeriesViewModel
                     episodes.value = eps
                 }
             }
+            // Kind of hack to ensure the backdrop is reloaded if needed
+            item.value?.let { backdropService.submit(it) }
         }
 
         /**
