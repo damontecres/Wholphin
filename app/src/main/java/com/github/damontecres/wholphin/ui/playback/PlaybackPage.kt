@@ -165,8 +165,7 @@ fun PlaybackPage(
             var playbackSpeed by remember { mutableFloatStateOf(1.0f) }
             LaunchedEffect(playbackSpeed) { player.setPlaybackSpeed(playbackSpeed) }
 
-            // TODO save
-            val subtitleDelay by viewModel.subtitleDelay.collectAsState(Duration.ZERO)
+            val subtitleDelay = currentPlayback?.subtitleDelay ?: Duration.ZERO
             LaunchedEffect(subtitleDelay) {
                 (player as? MpvPlayer)?.subtitleDelay = subtitleDelay
             }

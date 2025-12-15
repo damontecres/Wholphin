@@ -163,7 +163,6 @@ class PlaybackViewModel
         val playlist = MutableLiveData<Playlist>(Playlist(listOf()))
         val subtitleSearch = MutableLiveData<SubtitleSearch?>(null)
         val subtitleSearchLanguage = MutableLiveData<String>(Locale.current.language)
-        val subtitleDelay = MutableStateFlow(Duration.ZERO)
 
         init {
             viewModelScope.launch(ExceptionHandler()) { controllerViewState.observe() }
@@ -319,7 +318,6 @@ class PlaybackViewModel
                 // New item, so we can clear the media segment tracker & subtitle cues
                 autoSkippedSegments.clear()
                 this@PlaybackViewModel.subtitleCues.setValueOnMain(listOf())
-                subtitleDelay.update { Duration.ZERO }
 
                 if (item.type !in supportItemKinds) {
                     showToast(
@@ -517,7 +515,7 @@ class PlaybackViewModel
 
                             this@PlaybackViewModel.currentItemPlayback.value = itemPlayback
                         }
-
+                        loadSubtitleDelay()
                         return@withContext
                     }
                 } else {
@@ -688,6 +686,7 @@ class PlaybackViewModel
                                         if (result.bothSelected) {
                                             player.removeListener(this)
                                         }
+                                        viewModelScope.launchIO { loadSubtitleDelay() }
                                     }
                                 }
                             }
@@ -721,7 +720,6 @@ class PlaybackViewModel
 
         fun changeSubtitleStream(index: Int): Job =
             viewModelScope.launchIO {
-                subtitleDelay.update { Duration.ZERO }
                 Timber.d("Changing subtitle track to %s", index)
                 val itemPlayback =
                     itemPlaybackRepository.saveTrackSelection(
@@ -1154,7 +1152,46 @@ class PlaybackViewModel
             currentPlayback.update { it?.copy(audioDecoder = null) }
         }
 
+        private var subtitleDelaySaveJob: Job? = null
+
         fun updateSubtitleDelay(delta: Duration) {
-            subtitleDelay.update { it + delta }
+            subtitleDelaySaveJob?.cancel()
+            currentPlayback.update {
+                it?.let {
+                    val newDelay = it.subtitleDelay + delta
+                    val result = it.copy(subtitleDelay = it.subtitleDelay + delta)
+                    subtitleDelaySaveJob =
+                        viewModelScope.launchIO {
+                            // Debounce & save
+                            currentItemPlayback.value?.let { item ->
+                                delay(1500)
+                                itemPlaybackRepository.saveTrackModifications(
+                                    item.itemId,
+                                    item.subtitleIndex,
+                                    newDelay,
+                                )
+                            }
+                        }
+                    result
+                }
+            }
+        }
+
+        suspend fun loadSubtitleDelay() {
+            currentItemPlayback.value?.let {
+                if (it.subtitleIndexEnabled) {
+                    val result =
+                        itemPlaybackRepository.getTrackModifications(it.itemId, it.subtitleIndex)
+                    if (result != null) {
+                        Timber.v(
+                            "Loading subtitle delay %s for track=%s, itemId=%s",
+                            result.delayMs,
+                            it.subtitleIndex,
+                            it.itemId,
+                        )
+                        currentPlayback.update { it?.copy(subtitleDelay = result.delayMs.milliseconds) }
+                    }
+                }
+            }
         }
     }
