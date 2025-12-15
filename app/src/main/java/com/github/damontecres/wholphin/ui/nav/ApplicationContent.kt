@@ -14,18 +14,23 @@ import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import androidx.tv.material3.MaterialTheme
 import coil3.compose.AsyncImage
+import coil3.request.ImageRequest
+import coil3.request.transitionFactory
 import com.github.damontecres.wholphin.data.model.JellyfinServer
 import com.github.damontecres.wholphin.data.model.JellyfinUser
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.BackdropResult
 import com.github.damontecres.wholphin.services.NavigationManager
+import com.github.damontecres.wholphin.ui.CrossFadeFactory
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
+import kotlin.time.Duration.Companion.milliseconds
 
 /**
  * This is generally the root composable of the of the app
@@ -54,7 +59,12 @@ fun ApplicationContent(
             ) { backdrop ->
                 val gradientColor = MaterialTheme.colorScheme.background
                 AsyncImage(
-                    model = backdrop.imageUrl,
+                    model =
+                        ImageRequest
+                            .Builder(LocalContext.current)
+                            .data(backdrop.imageUrl)
+                            .transitionFactory(CrossFadeFactory(800.milliseconds))
+                            .build(),
                     contentDescription = null,
                     contentScale = ContentScale.Fit,
                     alignment = Alignment.TopEnd,

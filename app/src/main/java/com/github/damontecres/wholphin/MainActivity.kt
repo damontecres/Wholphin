@@ -22,6 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.unit.dp
 import androidx.datastore.core.DataStore
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.tv.material3.ExperimentalTvMaterial3Api
@@ -227,8 +228,16 @@ class MainActivity : AppCompatActivity() {
                                             )
                                         }
                                     }
-                                    val backdrop by backdropService.backdropFlow.collectAsState(
-                                        BackdropResult(null, 1f, 1f),
+                                    val backdrop by backdropService.backdropFlow.collectAsStateWithLifecycle(
+                                        BackdropResult(
+                                            null,
+                                            null,
+                                            1f,
+                                            1f,
+                                            genericPrimary = MaterialTheme.colorScheme.surfaceVariant,
+                                            genericSecondary = MaterialTheme.colorScheme.surface,
+                                            genericTertiary = MaterialTheme.colorScheme.surfaceVariant,
+                                        ),
                                     )
                                     ApplicationContent(
                                         user = current?.user,

@@ -62,7 +62,6 @@ import com.github.damontecres.wholphin.data.model.GetItemsFilter
 import com.github.damontecres.wholphin.data.model.GetItemsFilterOverride
 import com.github.damontecres.wholphin.data.model.LibraryDisplayInfo
 import com.github.damontecres.wholphin.preferences.UserPreferences
-import com.github.damontecres.wholphin.services.BackdropRequest
 import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.FavoriteWatchManager
 import com.github.damontecres.wholphin.services.NavigationManager
@@ -461,7 +460,7 @@ class CollectionFolderViewModel
 
         fun updateBackdrop(item: BaseItem) {
             viewModelScope.launchIO {
-                backdropService.submit(BackdropRequest(item, true, true))
+                backdropService.submit(item, true)
             }
         }
     }

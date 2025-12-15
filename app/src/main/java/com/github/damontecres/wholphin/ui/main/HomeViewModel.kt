@@ -9,7 +9,6 @@ import com.github.damontecres.wholphin.data.NavDrawerItemRepository
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.preferences.UserPreferences
-import com.github.damontecres.wholphin.services.BackdropRequest
 import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.DatePlayedService
 import com.github.damontecres.wholphin.services.FavoriteWatchManager
@@ -323,7 +322,7 @@ class HomeViewModel
 
         fun updateBackdrop(item: BaseItem) {
             viewModelScope.launchIO {
-                backdropService.submit(BackdropRequest(item, true, true))
+                backdropService.submit(item, true)
             }
         }
     }

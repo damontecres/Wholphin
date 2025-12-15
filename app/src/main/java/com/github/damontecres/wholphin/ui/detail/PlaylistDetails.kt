@@ -50,7 +50,6 @@ import androidx.tv.material3.Text
 import androidx.tv.material3.surfaceColorAtElevation
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.BaseItem
-import com.github.damontecres.wholphin.services.BackdropRequest
 import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.ui.DefaultItemFields
@@ -117,7 +116,7 @@ class PlaylistViewModel
 
         fun updateBackdrop(item: BaseItem) {
             viewModelScope.launchIO {
-                backdropService.submit(BackdropRequest(item, true, true))
+                backdropService.submit(item, true)
             }
         }
     }
