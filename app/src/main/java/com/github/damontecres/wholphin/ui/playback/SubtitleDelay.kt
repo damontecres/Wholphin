@@ -47,19 +47,19 @@ fun SubtitleDelay(
             delayIncrements.reversed().forEach {
                 SubtitleDelayButton(
                     text = "-$it",
-                    onClick = { onChangeDelay.invoke(-it + delay) },
+                    onClick = { onChangeDelay.invoke(-it) },
                     modifier = Modifier,
                 )
             }
             SubtitleDelayButton(
                 text = stringResource(R.string.reset),
-                onClick = { onChangeDelay.invoke(Duration.ZERO) },
+                onClick = { onChangeDelay.invoke(-delay) },
                 modifier = Modifier,
             )
             delayIncrements.forEach {
                 SubtitleDelayButton(
                     text = "+$it",
-                    onClick = { onChangeDelay.invoke(it + delay) },
+                    onClick = { onChangeDelay.invoke(it) },
                     modifier = Modifier,
                 )
             }

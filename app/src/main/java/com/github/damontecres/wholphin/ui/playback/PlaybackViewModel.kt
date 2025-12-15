@@ -163,6 +163,7 @@ class PlaybackViewModel
         val playlist = MutableLiveData<Playlist>(Playlist(listOf()))
         val subtitleSearch = MutableLiveData<SubtitleSearch?>(null)
         val subtitleSearchLanguage = MutableLiveData<String>(Locale.current.language)
+        val subtitleDelay = MutableStateFlow(Duration.ZERO)
 
         init {
             viewModelScope.launch(ExceptionHandler()) { controllerViewState.observe() }
@@ -318,6 +319,7 @@ class PlaybackViewModel
                 // New item, so we can clear the media segment tracker & subtitle cues
                 autoSkippedSegments.clear()
                 this@PlaybackViewModel.subtitleCues.setValueOnMain(listOf())
+                subtitleDelay.update { Duration.ZERO }
 
                 if (item.type !in supportItemKinds) {
                     showToast(
@@ -719,6 +721,7 @@ class PlaybackViewModel
 
         fun changeSubtitleStream(index: Int): Job =
             viewModelScope.launchIO {
+                subtitleDelay.update { Duration.ZERO }
                 Timber.d("Changing subtitle track to %s", index)
                 val itemPlayback =
                     itemPlaybackRepository.saveTrackSelection(
@@ -1149,5 +1152,9 @@ class PlaybackViewModel
         ) {
             Timber.d("decoder: onAudioDisabled")
             currentPlayback.update { it?.copy(audioDecoder = null) }
+        }
+
+        fun updateSubtitleDelay(delta: Duration) {
+            subtitleDelay.update { it + delta }
         }
     }
