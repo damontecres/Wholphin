@@ -23,9 +23,11 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.model.api.ImageType
 import timber.log.Timber
+import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -43,6 +45,7 @@ class BackdropService
         private val _backdropFlow =
             MutableStateFlow<BackdropRequest>(
                 BackdropRequest(
+                    null,
                     null,
                     false,
                 ),
@@ -67,12 +70,12 @@ class BackdropService
         ) = withContext(Dispatchers.IO) {
             val imageUrl = imageUrlService.getItemImageUrl(item, ImageType.BACKDROP)
             if (backdropFlow.firstOrNull()?.imageUrl != imageUrl) {
-                _backdropFlow.emit(
-                    BackdropRequest(
-                        null,
-                        small,
-                    ),
-                )
+                _backdropFlow.update {
+                    it.copy(
+                        itemId = item.id,
+                        imageUrl = null,
+                    )
+                }
                 extractColors(item, small)
             }
         }
@@ -85,15 +88,20 @@ class BackdropService
             val imageUrl = imageUrlService.getItemImageUrl(item, ImageType.BACKDROP)
             val colors = extractColorsFromBackdrop(imageUrl)
             Timber.v("extracted colors=$colors")
-            _backdropFlow.emit(
-                BackdropRequest(
-                    imageUrl,
-                    small,
-                    dynamicColorPrimary = colors?.primary ?: Color.Unspecified,
-                    dynamicColorSecondary = colors?.secondary ?: Color.Unspecified,
-                    dynamicColorTertiary = colors?.tertiary ?: Color.Unspecified,
-                ),
-            )
+            _backdropFlow.update {
+                if (it.itemId == item.id) {
+                    BackdropRequest(
+                        item.id,
+                        imageUrl,
+                        small,
+                        dynamicColorPrimary = colors?.primary ?: Color.Unspecified,
+                        dynamicColorSecondary = colors?.secondary ?: Color.Unspecified,
+                        dynamicColorTertiary = colors?.tertiary ?: Color.Unspecified,
+                    )
+                } else {
+                    it
+                }
+            }
         }
 
         private suspend fun extractColorsFromBackdrop(imageUrl: String?): ExtractedColors? =
@@ -218,6 +226,7 @@ class BackdropService
     }
 
 data class BackdropRequest(
+    val itemId: UUID?,
     val imageUrl: String?,
     val small: Boolean,
     val dynamicColorPrimary: Color = Color.Unspecified,

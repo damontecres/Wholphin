@@ -1,7 +1,5 @@
 package com.github.damontecres.wholphin.ui.nav
 
-import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Box
@@ -36,7 +34,6 @@ import com.github.damontecres.wholphin.services.BackdropResult
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.ui.CrossFadeFactory
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
-import timber.log.Timber
 import kotlin.time.Duration.Companion.milliseconds
 
 /**
@@ -56,128 +53,113 @@ fun ApplicationContent(
     Box(
         modifier = modifier,
     ) {
-        SharedTransitionLayout(
+        val baseBackgroundColor = MaterialTheme.colorScheme.background
+        if (backdrop.hasColors) {
+            val animPrimary by animateColorAsState(
+                backdrop.dynamicColorPrimary,
+                animationSpec = tween(1250),
+                label = "primary",
+            )
+            val animSecondary by animateColorAsState(
+                backdrop.dynamicColorSecondary,
+                animationSpec = tween(1250),
+                label = "secondary",
+            )
+            val animTertiary by animateColorAsState(
+                backdrop.dynamicColorTertiary,
+                animationSpec = tween(1250),
+                label = "tertiary",
+            )
+            Box(
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .drawBehind {
+                            drawRect(color = baseBackgroundColor)
+                            // Top Left (Vibrant/Muted)
+                            drawRect(
+                                brush =
+                                    Brush.radialGradient(
+                                        colors = listOf(animSecondary, Color.Transparent),
+                                        center = Offset(0f, 0f),
+                                        radius = size.width * 0.8f,
+                                    ),
+                            )
+                            // Bottom Right (DarkVibrant/DarkMuted)
+                            drawRect(
+                                brush =
+                                    Brush.radialGradient(
+                                        colors = listOf(animPrimary, Color.Transparent),
+                                        center = Offset(size.width, size.height),
+                                        radius = size.width * 0.8f,
+                                    ),
+                            )
+                            // Bottom Left (Dark / Bridge)
+                            drawRect(
+                                brush =
+                                    Brush.radialGradient(
+                                        colors =
+                                            listOf(
+                                                baseBackgroundColor,
+                                                Color.Transparent,
+                                            ),
+                                        center = Offset(0f, size.height),
+                                        radius = size.width * 0.8f,
+                                    ),
+                            )
+                            // Top Right (Under Image - Vibrant/Bright)
+                            drawRect(
+                                brush =
+                                    Brush.radialGradient(
+                                        colors = listOf(animTertiary, Color.Transparent),
+                                        center = Offset(size.width, 0f),
+                                        radius = size.width * 0.8f,
+                                    ),
+                            )
+                        },
+            )
+        }
+        Box(
             modifier = Modifier.fillMaxSize(),
         ) {
-            AnimatedContent(
-                backdrop,
-                label = "backdrop_transition",
-                modifier = Modifier.fillMaxSize(),
-            ) { backdrop ->
-                Timber.v("backdrop=$backdrop")
-                val baseBackgroundColor = MaterialTheme.colorScheme.background
-                if (backdrop.hasColors) {
-                    Timber.v("All colors")
-                    val animPrimary by animateColorAsState(
-                        backdrop.dynamicColorPrimary,
-                        animationSpec = tween(1250),
-                        label = "primary",
-                    )
-                    val animSecondary by animateColorAsState(
-                        backdrop.dynamicColorSecondary,
-                        animationSpec = tween(1250),
-                        label = "secondary",
-                    )
-                    val animTertiary by animateColorAsState(
-                        backdrop.dynamicColorTertiary,
-                        animationSpec = tween(1250),
-                        label = "tertiary",
-                    )
-                    Box(
-                        modifier =
-                            Modifier
-                                .fillMaxSize()
-                                .drawBehind {
-                                    drawRect(color = baseBackgroundColor)
-                                    // Top Left (Vibrant/Muted)
-                                    drawRect(
-                                        brush =
-                                            Brush.radialGradient(
-                                                colors = listOf(animSecondary, Color.Transparent),
-                                                center = Offset(0f, 0f),
-                                                radius = size.width * 0.8f,
-                                            ),
-                                    )
-                                    // Bottom Right (DarkVibrant/DarkMuted)
-                                    drawRect(
-                                        brush =
-                                            Brush.radialGradient(
-                                                colors = listOf(animPrimary, Color.Transparent),
-                                                center = Offset(size.width, size.height),
-                                                radius = size.width * 0.8f,
-                                            ),
-                                    )
-                                    // Bottom Left (Dark / Bridge)
-                                    drawRect(
-                                        brush =
-                                            Brush.radialGradient(
-                                                colors =
-                                                    listOf(
-                                                        baseBackgroundColor,
-                                                        Color.Transparent,
-                                                    ),
-                                                center = Offset(0f, size.height),
-                                                radius = size.width * 0.8f,
-                                            ),
-                                    )
-                                    // Top Right (Under Image - Vibrant/Bright)
-                                    drawRect(
-                                        brush =
-                                            Brush.radialGradient(
-                                                colors = listOf(animTertiary, Color.Transparent),
-                                                center = Offset(size.width, 0f),
-                                                radius = size.width * 0.8f,
-                                            ),
-                                    )
-                                },
-                    )
-                }
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                ) {
-                    AsyncImage(
-                        model =
-                            ImageRequest
-                                .Builder(LocalContext.current)
-                                .data(backdrop.imageUrl)
-                                .transitionFactory(CrossFadeFactory(800.milliseconds))
-                                .build(),
-                        contentDescription = null,
-                        contentScale = ContentScale.Fit,
-                        alignment = Alignment.TopEnd,
-                        modifier =
-                            Modifier
-                                .sharedElement(
-                                    rememberSharedContentState(key = backdrop.imageUrl ?: ""),
-                                    animatedVisibilityScope = this@AnimatedContent,
-                                ).align(Alignment.TopEnd)
-                                .fillMaxHeight(backdrop.fillHeight)
-                                .fillMaxWidth(backdrop.fillWidth)
-                                .alpha(.75f)
-                                .drawWithContent {
-                                    drawContent()
-                                    drawRect(
-                                        brush =
-                                            Brush.horizontalGradient(
-                                                colors = listOf(Color.Transparent, Color.Black),
-                                                startX = 0f,
-                                                endX = size.width * 0.6f,
-                                            ),
-                                        blendMode = BlendMode.DstIn,
-                                    )
-                                    drawRect(
-                                        brush =
-                                            Brush.verticalGradient(
-                                                colors = listOf(Color.Black, Color.Transparent),
-                                                startY = 0f,
-                                                endY = size.height,
-                                            ),
-                                        blendMode = BlendMode.DstIn,
-                                    )
-                                },
-                    )
-                }
-            }
+            AsyncImage(
+                model =
+                    ImageRequest
+                        .Builder(LocalContext.current)
+                        .data(backdrop.imageUrl)
+                        .transitionFactory(CrossFadeFactory(800.milliseconds))
+                        .build(),
+                contentDescription = null,
+                contentScale = ContentScale.Fit,
+                alignment = Alignment.TopEnd,
+                modifier =
+                    Modifier
+                        .align(Alignment.TopEnd)
+                        .fillMaxHeight(backdrop.fillHeight)
+                        .fillMaxWidth(backdrop.fillWidth)
+                        .alpha(.95f)
+                        .drawWithContent {
+                            drawContent()
+                            drawRect(
+                                brush =
+                                    Brush.horizontalGradient(
+                                        colors = listOf(Color.Transparent, Color.Black),
+                                        startX = 0f,
+                                        endX = size.width * 0.6f,
+                                    ),
+                                blendMode = BlendMode.DstIn,
+                            )
+                            drawRect(
+                                brush =
+                                    Brush.verticalGradient(
+                                        colors = listOf(Color.Black, Color.Transparent),
+                                        startY = 0f,
+                                        endY = size.height,
+                                    ),
+                                blendMode = BlendMode.DstIn,
+                            )
+                        },
+            )
         }
         NavDisplay(
             backStack = navigationManager.backStack,

@@ -302,11 +302,9 @@ fun NavDrawer(
     val drawerPadding by animateDpAsState(if (drawerState.isOpen) 0.dp else 8.dp)
     val drawerBackground by animateColorAsState(
         if (drawerState.isOpen) {
-            MaterialTheme.colorScheme.surfaceColorAtElevation(
-                1.dp,
-            )
-        } else {
             MaterialTheme.colorScheme.surface
+        } else {
+            Color.Transparent
         },
     )
     val spacedBy = 4.dp
