@@ -134,9 +134,8 @@ class ItemPlaybackRepository
                 val seriesId = item.data.seriesId
                 if (seriesId != null && trackIndex != TrackIndex.UNSPECIFIED) {
                     if (type == MediaStreamType.AUDIO) {
-                        val audioLang = current.userDto.configuration?.audioLanguagePreference
                         val stream = source.mediaStreams?.first { it.index == trackIndex }
-                        if (stream?.language != null && stream.language != audioLang) {
+                        if (stream?.language != null) {
                             streamChoiceService.updateAudio(item.data, stream.language!!)
                         }
                     } else if (type == MediaStreamType.SUBTITLE) {
@@ -147,10 +146,8 @@ class ItemPlaybackRepository
                                 subtitlesDisabled = true,
                             )
                         } else {
-                            val subtitleLang =
-                                current.userDto.configuration?.subtitleLanguagePreference
                             val stream = source.mediaStreams?.first { it.index == trackIndex }
-                            if (stream?.language != null && stream.language != subtitleLang) {
+                            if (stream?.language != null) {
                                 streamChoiceService.updateSubtitles(
                                     item.data,
                                     stream.language!!,
