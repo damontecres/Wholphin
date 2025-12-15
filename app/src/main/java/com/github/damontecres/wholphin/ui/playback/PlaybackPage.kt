@@ -79,6 +79,7 @@ import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
 import com.github.damontecres.wholphin.util.Media3SubtitleOverride
+import com.github.damontecres.wholphin.util.mpv.MpvPlayer
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -167,7 +168,7 @@ fun PlaybackPage(
             // TODO save
             var subtitleDelay by remember { mutableStateOf(Duration.ZERO) }
             LaunchedEffect(subtitleDelay) {
-                // TODO
+                (player as? MpvPlayer)?.subtitleDelay = subtitleDelay
             }
 
             val presentationState = rememberPresentationState(player, false)
@@ -570,7 +571,7 @@ fun PlaybackPage(
                     },
                     onPlaybackActionClick = onPlaybackActionClick,
                     onChangeSubtitleDelay = { subtitleDelay = it },
-                    enableSubtitleDelay = true,
+                    enableSubtitleDelay = player is MpvPlayer,
                 )
             }
         }
