@@ -356,7 +356,7 @@
     <string name="hlg">HLG</string>
     <string name="bit_unit">bit</string>
     <string name="sample_rate_unit">Hz</string>
-    <string name="show_titles">Mostra titolo</string>
+    <string name="show_titles">Mostra titoli</string>
     <string name="avc">AVC</string>
     <string name="framerate">Frequenza fotogrammi</string>
     <string name="bit_depth">Profondità bit</string>
@@ -370,4 +370,5 @@
     <string name="favorite_channels_at_beginning">Mostra prima i canali preferiti</string>
     <string name="sort_channels_recently_watched">Ordina canali per ultimo guardato</string>
     <string name="color_code_programs">Codifica colori per i programmi</string>
+    <string name="subtitle_delay">Ritardo sottotitoli</string>
 </resources>
