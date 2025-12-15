@@ -84,7 +84,7 @@ fun SeekPreviewImage(
     if (previewImageUrl.isNotNullOrBlank()) {
         val height = 160.dp
         val width = height * (trickPlayInfo.width.toFloat() / trickPlayInfo.height)
-        val scale = LocalDensity.current.density
+        val scale = with(LocalDensity.current) { width.toPx() / trickPlayInfo.width }
 
         val model =
             remember(previewImageUrl) {
