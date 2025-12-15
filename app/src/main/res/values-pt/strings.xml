@@ -370,4 +370,5 @@
     <string name="favorite_channels_at_beginning">Mostrar primeiro os canais favoritos</string>
     <string name="sort_channels_recently_watched">Ordenar canais por visualizações recentes</string>
     <string name="color_code_programs">Codificação de cores para os programas</string>
+    <string name="subtitle_delay">Atraso da legenda</string>
 </resources>
