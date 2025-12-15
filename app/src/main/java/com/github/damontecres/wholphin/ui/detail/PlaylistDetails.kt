@@ -62,6 +62,7 @@ import com.github.damontecres.wholphin.ui.components.ExpandableFaButton
 import com.github.damontecres.wholphin.ui.components.ExpandablePlayButton
 import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.components.OverviewText
+import com.github.damontecres.wholphin.ui.TimeFormatter
 import com.github.damontecres.wholphin.ui.enableMarquee
 import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.launchIO
@@ -79,6 +80,7 @@ import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.model.api.request.GetPlaylistItemsRequest
 import org.jellyfin.sdk.model.extensions.ticks
+import java.time.LocalTime
 import java.util.UUID
 import javax.inject.Inject
 import kotlin.time.Duration
@@ -407,10 +409,18 @@ fun PlaylistItem(
             )
         },
         trailingContent = {
-            item?.data?.runTimeTicks?.ticks?.roundMinutes?.let {
-                Text(
-                    text = it.toString(),
-                )
+            item?.data?.runTimeTicks?.ticks?.roundMinutes?.let { duration ->
+                Column {
+                    Text(
+                        text = duration.toString(),
+                    )
+                    val endTime = LocalTime.now().plusSeconds(duration.inWholeSeconds)
+                    val endTimeStr = TimeFormatter.format(endTime)
+                    Text(
+                        text = stringResource(R.string.ends_at, endTimeStr),
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                }
             }
         },
         leadingContent = {
