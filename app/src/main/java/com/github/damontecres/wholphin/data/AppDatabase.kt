@@ -9,6 +9,7 @@ import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.github.damontecres.wholphin.data.model.GetItemsFilter
 import com.github.damontecres.wholphin.data.model.ItemPlayback
+import com.github.damontecres.wholphin.data.model.ItemTrackModification
 import com.github.damontecres.wholphin.data.model.JellyfinServer
 import com.github.damontecres.wholphin.data.model.JellyfinUser
 import com.github.damontecres.wholphin.data.model.LibraryDisplayInfo
@@ -30,8 +31,9 @@ import java.util.UUID
         NavDrawerPinnedItem::class,
         LibraryDisplayInfo::class,
         PlaybackLanguageChoice::class,
+        ItemTrackModification::class,
     ],
-    version = 11,
+    version = 12,
     exportSchema = true,
     autoMigrations = [
         AutoMigration(3, 4),
@@ -42,6 +44,7 @@ import java.util.UUID
         AutoMigration(8, 9),
         AutoMigration(9, 10),
         AutoMigration(10, 11),
+        AutoMigration(11, 12),
     ],
 )
 @TypeConverters(Converters::class)

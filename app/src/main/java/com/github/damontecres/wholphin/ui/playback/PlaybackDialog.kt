@@ -1,13 +1,26 @@
 package com.github.damontecres.wholphin.ui.playback
 
 import android.view.Gravity
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
+import androidx.compose.ui.window.DialogWindowProvider
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.TrackIndex
+import com.github.damontecres.wholphin.ui.AppColors
 import com.github.damontecres.wholphin.ui.indexOfFirstOrNull
 import timber.log.Timber
+import kotlin.time.Duration
 
 enum class PlaybackDialogType {
     MORE,
@@ -16,6 +29,7 @@ enum class PlaybackDialogType {
     AUDIO,
     PLAYBACK_SPEED,
     VIDEO_SCALE,
+    SUBTITLE_DELAY,
 }
 
 data class PlaybackSettings(
@@ -26,16 +40,19 @@ data class PlaybackSettings(
     val subtitleStreams: List<SubtitleStream>,
     val playbackSpeed: Float,
     val contentScale: ContentScale,
+    val subtitleDelay: Duration,
 )
 
 @Composable
 fun PlaybackDialog(
+    enableSubtitleDelay: Boolean,
     type: PlaybackDialogType,
     settings: PlaybackSettings,
     onDismissRequest: () -> Unit,
     onControllerInteraction: () -> Unit,
     onClickPlaybackDialogType: (PlaybackDialogType) -> Unit,
     onPlaybackActionClick: (PlaybackAction) -> Unit,
+    onChangeSubtitleDelay: (Duration) -> Unit,
 ) {
     when (type) {
         PlaybackDialogType.MORE -> {
@@ -97,11 +114,14 @@ fun PlaybackDialog(
 
         PlaybackDialogType.SETTINGS -> {
             val options =
-                listOf(
-                    stringResource(R.string.audio),
-                    stringResource(R.string.playback_speed),
-                    stringResource(R.string.video_scale),
-                )
+                buildList {
+                    add(stringResource(R.string.audio))
+                    add(stringResource(R.string.playback_speed))
+                    add(stringResource(R.string.video_scale))
+                    if (enableSubtitleDelay) {
+                        add(stringResource(R.string.subtitle_delay))
+                    }
+                }
             BottomDialog(
                 choices = options,
                 currentChoice = null,
@@ -111,6 +131,7 @@ fun PlaybackDialog(
                         0 -> onClickPlaybackDialogType(PlaybackDialogType.AUDIO)
                         1 -> onClickPlaybackDialogType(PlaybackDialogType.PLAYBACK_SPEED)
                         2 -> onClickPlaybackDialogType(PlaybackDialogType.VIDEO_SCALE)
+                        3 -> onClickPlaybackDialogType(PlaybackDialogType.SUBTITLE_DELAY)
                     }
                 },
                 gravity = Gravity.END,
@@ -172,6 +193,32 @@ fun PlaybackDialog(
                 },
                 gravity = Gravity.END,
             )
+        }
+
+        PlaybackDialogType.SUBTITLE_DELAY -> {
+            Dialog(
+                onDismissRequest = onDismissRequest,
+                properties = DialogProperties(usePlatformDefaultWidth = false),
+            ) {
+                val dialogWindowProvider = LocalView.current.parent as? DialogWindowProvider
+                dialogWindowProvider?.window?.setDimAmount(0f)
+
+                Box(
+                    modifier =
+                        Modifier
+                            .wrapContentSize()
+                            .background(
+                                AppColors.TransparentBlack50,
+                                shape = RoundedCornerShape(16.dp),
+                            ),
+                ) {
+                    SubtitleDelay(
+                        delay = settings.subtitleDelay,
+                        onChangeDelay = onChangeSubtitleDelay,
+                        modifier = Modifier.padding(8.dp),
+                    )
+                }
+            }
         }
     }
 }

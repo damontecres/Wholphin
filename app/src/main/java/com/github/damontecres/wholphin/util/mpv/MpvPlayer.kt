@@ -45,6 +45,7 @@ import com.github.damontecres.wholphin.util.mpv.MPVLib.MpvEvent.MPV_EVENT_PLAYBA
 import com.github.damontecres.wholphin.util.mpv.MPVLib.MpvEvent.MPV_EVENT_VIDEO_RECONFIG
 import timber.log.Timber
 import kotlin.concurrent.atomics.ExperimentalAtomicApi
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
 /**
@@ -799,7 +800,7 @@ class MpvPlayer(
         // no-op
     }
 
-    var subtitleDelay: Double
+    var subtitleDelaySeconds: Double
         get() {
             if (isReleased) return 0.0
             return MPVLib.getPropertyDouble("sub-delay") ?: 0.0
@@ -807,6 +808,16 @@ class MpvPlayer(
         set(value) {
             if (isReleased) return
             MPVLib.setPropertyDouble("sub-delay", value)
+        }
+
+    var subtitleDelay: Duration
+        get() {
+            if (isReleased) return Duration.ZERO
+            return subtitleDelaySeconds.seconds
+        }
+        set(value) {
+            if (isReleased) return
+            subtitleDelaySeconds = value.inWholeMilliseconds / 1000.0
         }
 }
 

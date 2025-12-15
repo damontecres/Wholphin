@@ -2,6 +2,7 @@ package com.github.damontecres.wholphin.data
 
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.ItemPlayback
+import com.github.damontecres.wholphin.data.model.ItemTrackModification
 import com.github.damontecres.wholphin.data.model.PlaybackLanguageChoice
 import com.github.damontecres.wholphin.data.model.TrackIndex
 import com.github.damontecres.wholphin.preferences.UserPreferences
@@ -16,6 +17,7 @@ import timber.log.Timber
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlin.time.Duration
 
 @Singleton
 class ItemPlaybackRepository
@@ -178,6 +180,32 @@ class ItemPlaybackRepository
                 }
             val id = itemPlaybackDao.saveItem(toSave)
             return toSave.copy(rowId = id)
+        }
+
+        suspend fun getTrackModifications(
+            itemId: UUID,
+            trackIndex: Int,
+        ): ItemTrackModification? =
+            serverRepository.currentUser.value?.rowId?.let { userId ->
+                itemPlaybackDao.getTrackModifications(userId, itemId, trackIndex)
+            }
+
+        suspend fun saveTrackModifications(
+            itemId: UUID,
+            trackIndex: Int,
+            delay: Duration,
+        ) {
+            serverRepository.currentUser.value?.rowId?.let { userId ->
+                Timber.v("Saving track mod item=%s, track=%s, delay=%s", itemId, trackIndex, delay)
+                itemPlaybackDao.saveItem(
+                    ItemTrackModification(
+                        userId,
+                        itemId,
+                        trackIndex,
+                        delay.inWholeMilliseconds,
+                    ),
+                )
+            }
         }
     }
 

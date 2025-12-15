@@ -393,6 +393,7 @@
     <string name="favorite_channels_at_beginning">Show favorite channels first</string>
     <string name="sort_channels_recently_watched">Sort channels by recently watched</string>
     <string name="color_code_programs">Color-code programs</string>
+    <string name="subtitle_delay">Subtitle delay</string>
 
     <string-array name="theme_song_volume">
         <item>Disabled</item>

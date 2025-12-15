@@ -515,7 +515,7 @@ class PlaybackViewModel
 
                             this@PlaybackViewModel.currentItemPlayback.value = itemPlayback
                         }
-
+                        loadSubtitleDelay()
                         return@withContext
                     }
                 } else {
@@ -686,6 +686,7 @@ class PlaybackViewModel
                                         if (result.bothSelected) {
                                             player.removeListener(this)
                                         }
+                                        viewModelScope.launchIO { loadSubtitleDelay() }
                                     }
                                 }
                             }
@@ -1149,5 +1150,48 @@ class PlaybackViewModel
         ) {
             Timber.d("decoder: onAudioDisabled")
             currentPlayback.update { it?.copy(audioDecoder = null) }
+        }
+
+        private var subtitleDelaySaveJob: Job? = null
+
+        fun updateSubtitleDelay(delta: Duration) {
+            subtitleDelaySaveJob?.cancel()
+            currentPlayback.update {
+                it?.let {
+                    val newDelay = it.subtitleDelay + delta
+                    val result = it.copy(subtitleDelay = it.subtitleDelay + delta)
+                    subtitleDelaySaveJob =
+                        viewModelScope.launchIO {
+                            // Debounce & save
+                            currentItemPlayback.value?.let { item ->
+                                delay(1500)
+                                itemPlaybackRepository.saveTrackModifications(
+                                    item.itemId,
+                                    item.subtitleIndex,
+                                    newDelay,
+                                )
+                            }
+                        }
+                    result
+                }
+            }
+        }
+
+        suspend fun loadSubtitleDelay() {
+            currentItemPlayback.value?.let {
+                if (it.subtitleIndexEnabled) {
+                    val result =
+                        itemPlaybackRepository.getTrackModifications(it.itemId, it.subtitleIndex)
+                    if (result != null) {
+                        Timber.v(
+                            "Loading subtitle delay %s for track=%s, itemId=%s",
+                            result.delayMs,
+                            it.subtitleIndex,
+                            it.itemId,
+                        )
+                        currentPlayback.update { it?.copy(subtitleDelay = result.delayMs.milliseconds) }
+                    }
+                }
+            }
         }
     }

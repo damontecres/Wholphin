@@ -79,11 +79,13 @@ import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
 import com.github.damontecres.wholphin.util.Media3SubtitleOverride
+import com.github.damontecres.wholphin.util.mpv.MpvPlayer
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.jellyfin.sdk.model.extensions.ticks
 import java.util.UUID
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
@@ -162,6 +164,11 @@ fun PlaybackPage(
             var contentScale by remember { mutableStateOf(prefs.globalContentScale.scale) }
             var playbackSpeed by remember { mutableFloatStateOf(1.0f) }
             LaunchedEffect(playbackSpeed) { player.setPlaybackSpeed(playbackSpeed) }
+
+            val subtitleDelay = currentPlayback?.subtitleDelay ?: Duration.ZERO
+            LaunchedEffect(subtitleDelay) {
+                (player as? MpvPlayer)?.subtitleDelay = subtitleDelay
+            }
 
             val presentationState = rememberPresentationState(player, false)
             val scaledModifier =
@@ -543,6 +550,7 @@ fun PlaybackPage(
                             subtitleStreams = mediaInfo?.subtitleStreams.orEmpty(),
                             playbackSpeed = playbackSpeed,
                             contentScale = contentScale,
+                            subtitleDelay = subtitleDelay,
                         ),
                     onDismissRequest = {
                         playbackDialog = null
@@ -553,8 +561,16 @@ fun PlaybackPage(
                     onControllerInteraction = {
                         controllerViewState.pulseControls(Long.MAX_VALUE)
                     },
-                    onClickPlaybackDialogType = { playbackDialog = it },
+                    onClickPlaybackDialogType = {
+                        if (it == PlaybackDialogType.SUBTITLE_DELAY) {
+                            // Hide controls so subtitles are fully visible
+                            controllerViewState.hideControls()
+                        }
+                        playbackDialog = it
+                    },
                     onPlaybackActionClick = onPlaybackActionClick,
+                    onChangeSubtitleDelay = { viewModel.updateSubtitleDelay(it) },
+                    enableSubtitleDelay = player is MpvPlayer,
                 )
             }
         }
