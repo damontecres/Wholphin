@@ -398,17 +398,13 @@ fun PlaybackOverlay(
                         val tilesPerImage = trickplayInfo.tileWidth * trickplayInfo.tileHeight
                         val index =
                             (seekProgressMs / trickplayInfo.interval).toInt() / tilesPerImage
-                        val imageUrl = trickplayUrlFor(index)
+                        val imageUrl = remember(index) { trickplayUrlFor(index) }
 
                         if (imageUrl != null) {
                             SeekPreviewImage(
-                                modifier =
-                                Modifier,
+                                modifier = Modifier,
                                 previewImageUrl = imageUrl,
-                                duration = playerControls.duration,
                                 seekProgressMs = seekProgressMs,
-                                videoWidth = trickplayInfo.width,
-                                videoHeight = trickplayInfo.height,
                                 trickPlayInfo = trickplayInfo,
                             )
                         }

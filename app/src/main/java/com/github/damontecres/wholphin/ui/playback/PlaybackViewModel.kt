@@ -411,7 +411,11 @@ class PlaybackViewModel
                 trickPlayInfo?.let { trickplayInfo ->
                     mediaSource.runTimeTicks?.ticks?.let { duration ->
                         viewModelScope.launchIO {
-                            prefetchTrickplay(duration, trickplayInfo)
+                            prefetchTrickplay(
+                                duration,
+                                trickplayInfo,
+                                mediaSource.id?.toUUIDOrNull(),
+                            )
                         }
                     }
                 }
@@ -737,16 +741,18 @@ class PlaybackViewModel
         private suspend fun prefetchTrickplay(
             duration: Duration,
             trickplayInfo: TrickplayInfo,
+            mediaSourceId: UUID?,
         ) {
             val tilesPerImage = trickplayInfo.tileWidth * trickplayInfo.tileHeight
             val totalCount =
                 (duration.inWholeMilliseconds / trickplayInfo.interval).toInt() / tilesPerImage + 1
             (0..<totalCount).forEach {
-                val url = getTrickplayUrl(it, trickplayInfo)
+                val url = getTrickplayUrl(it, trickplayInfo, mediaSourceId)
                 context.imageLoader.enqueue(
                     ImageRequest
                         .Builder(context)
                         .data(url)
+                        .size(coil3.size.Size.ORIGINAL)
                         .build(),
                 )
             }
@@ -755,10 +761,10 @@ class PlaybackViewModel
         fun getTrickplayUrl(
             index: Int,
             trickPlayInfo: TrickplayInfo? = currentMediaInfo.value?.trickPlayInfo,
+            mediaSourceId: UUID? = currentItemPlayback.value?.sourceId,
         ): String? =
             trickPlayInfo?.let {
                 val itemId = item.id
-                val mediaSourceId = currentItemPlayback.value?.sourceId
                 return api.trickplayApi.getTrickplayTileImageUrl(
                     itemId,
                     trickPlayInfo.width,
