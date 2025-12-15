@@ -90,7 +90,7 @@ abstract class RecommendedViewModel(
 
     fun updateBackdrop(item: BaseItem) {
         viewModelScope.launchIO {
-            backdropService.submit(item, true)
+            backdropService.submit(item)
         }
     }
 

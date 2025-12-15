@@ -56,19 +56,19 @@ fun ApplicationContent(
         val baseBackgroundColor = MaterialTheme.colorScheme.background
         if (backdrop.hasColors) {
             val animPrimary by animateColorAsState(
-                backdrop.dynamicColorPrimary,
+                backdrop.primaryColor,
                 animationSpec = tween(1250),
-                label = "primary",
+                label = "dynamic_backdrop_primary",
             )
             val animSecondary by animateColorAsState(
-                backdrop.dynamicColorSecondary,
+                backdrop.secondaryColor,
                 animationSpec = tween(1250),
-                label = "secondary",
+                label = "dynamic_backdrop_secondary",
             )
             val animTertiary by animateColorAsState(
-                backdrop.dynamicColorTertiary,
+                backdrop.tertiaryColor,
                 animationSpec = tween(1250),
-                label = "tertiary",
+                label = "dynamic_backdrop_tertiary",
             )
             Box(
                 modifier =
@@ -135,8 +135,8 @@ fun ApplicationContent(
                 modifier =
                     Modifier
                         .align(Alignment.TopEnd)
-                        .fillMaxHeight(backdrop.fillHeight)
-                        .fillMaxWidth(backdrop.fillWidth)
+                        .fillMaxHeight(.7f)
+                        .fillMaxWidth(.7f)
                         .alpha(.95f)
                         .drawWithContent {
                             drawContent()

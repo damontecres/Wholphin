@@ -229,11 +229,7 @@ class MainActivity : AppCompatActivity() {
                                         }
                                     }
                                     val backdrop by backdropService.backdropFlow.collectAsStateWithLifecycle(
-                                        BackdropResult(
-                                            null,
-                                            1f,
-                                            1f,
-                                        ),
+                                        BackdropResult.NONE,
                                     )
                                     ApplicationContent(
                                         user = current?.user,

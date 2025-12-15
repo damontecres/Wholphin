@@ -6,7 +6,6 @@ import android.util.LruCache
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.isSpecified
 import androidx.core.graphics.drawable.toBitmap
-import androidx.datastore.core.DataStore
 import androidx.palette.graphics.Palette
 import coil3.asDrawable
 import coil3.imageLoader
@@ -15,14 +14,12 @@ import coil3.request.SuccessResult
 import coil3.request.allowHardware
 import coil3.request.bitmapConfig
 import com.github.damontecres.wholphin.data.model.BaseItem
-import com.github.damontecres.wholphin.preferences.AppPreferences
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.firstOrNull
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.model.api.ImageType
@@ -38,65 +35,44 @@ class BackdropService
     constructor(
         @param:ApplicationContext private val context: Context,
         private val imageUrlService: ImageUrlService,
-        private val preferences: DataStore<AppPreferences>,
     ) {
         private val extractedColorCache = LruCache<String, ExtractedColors>(50)
 
-        private val _backdropFlow =
-            MutableStateFlow<BackdropRequest>(
-                BackdropRequest(
-                    null,
-                    null,
-                    false,
-                ),
-            )
+        private val _backdropFlow = MutableStateFlow<BackdropResult>(BackdropResult.NONE)
+        val backdropFlow = _backdropFlow
 
-        val backdropFlow =
-            _backdropFlow
-                .map {
-                    BackdropResult(
-                        imageUrl = it.imageUrl,
-                        fillWidth = if (it.small) .7f else .85f,
-                        fillHeight = if (it.small) .7f else 1f,
-                        dynamicColorPrimary = it.dynamicColorPrimary,
-                        dynamicColorSecondary = it.dynamicColorSecondary,
-                        dynamicColorTertiary = it.dynamicColorTertiary,
-                    )
+        suspend fun submit(item: BaseItem) =
+            withContext(Dispatchers.IO) {
+                val imageUrl = imageUrlService.getItemImageUrl(item, ImageType.BACKDROP)
+                if (backdropFlow.firstOrNull()?.imageUrl != imageUrl) {
+                    _backdropFlow.update {
+                        it.copy(
+                            itemId = item.id,
+                            imageUrl = null,
+                        )
+                    }
+                    extractColors(item)
                 }
+            }
 
-        suspend fun submit(
-            item: BaseItem,
-            small: Boolean = true,
-        ) = withContext(Dispatchers.IO) {
-            val imageUrl = imageUrlService.getItemImageUrl(item, ImageType.BACKDROP)
-            if (backdropFlow.firstOrNull()?.imageUrl != imageUrl) {
-                _backdropFlow.update {
-                    it.copy(
-                        itemId = item.id,
-                        imageUrl = null,
-                    )
-                }
-                extractColors(item, small)
+        suspend fun clearBackdrop() {
+            _backdropFlow.update {
+                BackdropResult.NONE
             }
         }
 
-        private suspend fun extractColors(
-            item: BaseItem,
-            small: Boolean,
-        ) {
+        private suspend fun extractColors(item: BaseItem) {
             delay(500)
             val imageUrl = imageUrlService.getItemImageUrl(item, ImageType.BACKDROP)
-            val colors = extractColorsFromBackdrop(imageUrl)
-            Timber.v("extracted colors=$colors")
+            val (primaryColor, secondaryColor, tertiaryColor) = extractColorsFromBackdrop(imageUrl)
             _backdropFlow.update {
                 if (it.itemId == item.id) {
-                    BackdropRequest(
-                        item.id,
-                        imageUrl,
-                        small,
-                        dynamicColorPrimary = colors?.primary ?: Color.Unspecified,
-                        dynamicColorSecondary = colors?.secondary ?: Color.Unspecified,
-                        dynamicColorTertiary = colors?.tertiary ?: Color.Unspecified,
+                    BackdropResult(
+                        itemId = item.id,
+                        imageUrl = imageUrl,
+                        primaryColor = primaryColor,
+                        secondaryColor = secondaryColor,
+                        tertiaryColor = tertiaryColor,
                     )
                 } else {
                     it
@@ -104,10 +80,10 @@ class BackdropService
             }
         }
 
-        private suspend fun extractColorsFromBackdrop(imageUrl: String?): ExtractedColors? =
+        private suspend fun extractColorsFromBackdrop(imageUrl: String?): ExtractedColors =
             withContext(Dispatchers.IO) {
                 if (imageUrl.isNullOrBlank()) {
-                    return@withContext null
+                    return@withContext ExtractedColors.DEFAULT
                 }
                 extractedColorCache.get(imageUrl)?.let {
                     return@withContext it
@@ -127,15 +103,15 @@ class BackdropService
                     if (result is SuccessResult) {
                         val drawable = result.image.asDrawable(context.resources)
                         val bitmap = drawable.toBitmap(config = Bitmap.Config.ARGB_8888)
-                        extractColorsFromBitmap(bitmap)?.also {
+                        extractColorsFromBitmap(bitmap).also {
                             extractedColorCache.put(imageUrl, it)
                         }
                     } else {
-                        null
+                        ExtractedColors.DEFAULT
                     }
                 } catch (e: Exception) {
                     Timber.e(e, "Error extracting colors from URL: $imageUrl")
-                    null
+                    ExtractedColors.DEFAULT
                 }
             }
 
@@ -167,7 +143,7 @@ class BackdropService
          * @param bitmap The bitmap to extract colors from
          * @return ExtractedColors containing primary, secondary, and tertiary colors
          */
-        private suspend fun extractColorsFromBitmap(bitmap: Bitmap): ExtractedColors? =
+        private suspend fun extractColorsFromBitmap(bitmap: Bitmap): ExtractedColors =
             try {
                 val palette = Palette.from(bitmap).generate()
 
@@ -198,58 +174,49 @@ class BackdropService
                 val tertiaryColor = toColor(vibrant ?: lightVibrant, .35f)
 
                 Timber.v(
-                    "ColorExtractor: Primary=%s (alpha=0.4), Secondary=%s (alpha=0.4), Tertiary=%s (alpha=0.35)",
+                    "Colors extracted: primary=%s, secondary=%s, tertiary=%s",
                     primaryColor,
                     secondaryColor,
                     tertiaryColor,
                 )
-                Timber.v(
-                    "ColorExtractor: Palette: Vibrant=%X, DarkVibrant=%X, LightVibrant=%X, Muted=%X, DarkMuted=%X, LightMuted=%X, Dominant=%X",
-                    vibrant?.rgb,
-                    darkVibrant?.rgb,
-                    lightVibrant?.rgb,
-                    muted?.rgb,
-                    darkMuted?.rgb,
-                    lightMuted?.rgb,
-                    dominant?.rgb,
-                )
                 ExtractedColors(primaryColor, secondaryColor, tertiaryColor)
             } catch (e: Exception) {
-                Timber.e(e, "ColorExtractor: Error extracting palette colors")
-                null
+                Timber.e(e, "Error extracting palette colors")
+                ExtractedColors.DEFAULT
             }
 
         fun clearColorCache() {
             extractedColorCache.evictAll()
-            Timber.d("ColorExtractor: Cache cleared")
         }
     }
 
-data class BackdropRequest(
+data class BackdropResult(
     val itemId: UUID?,
     val imageUrl: String?,
-    val small: Boolean,
-    val dynamicColorPrimary: Color = Color.Unspecified,
-    val dynamicColorSecondary: Color = Color.Unspecified,
-    val dynamicColorTertiary: Color = Color.Unspecified,
-)
-
-data class BackdropResult(
-    val imageUrl: String?,
-    val fillWidth: Float,
-    val fillHeight: Float,
-    val dynamicColorPrimary: Color = Color.Unspecified,
-    val dynamicColorSecondary: Color = Color.Unspecified,
-    val dynamicColorTertiary: Color = Color.Unspecified,
+    val primaryColor: Color = Color.Unspecified,
+    val secondaryColor: Color = Color.Unspecified,
+    val tertiaryColor: Color = Color.Unspecified,
 ) {
     val hasColors: Boolean =
-        dynamicColorPrimary.isSpecified ||
-            dynamicColorSecondary.isSpecified ||
-            dynamicColorTertiary.isSpecified
+        primaryColor.isSpecified ||
+            secondaryColor.isSpecified ||
+            tertiaryColor.isSpecified
+
+    companion object {
+        val NONE =
+            BackdropResult(
+                null,
+                null,
+            )
+    }
 }
 
 data class ExtractedColors(
     val primary: Color,
     val secondary: Color,
     val tertiary: Color,
-)
+) {
+    companion object {
+        val DEFAULT = ExtractedColors(Color.Unspecified, Color.Unspecified, Color.Unspecified)
+    }
+}
