@@ -84,6 +84,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.jellyfin.sdk.model.extensions.ticks
 import java.util.UUID
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
@@ -162,6 +163,12 @@ fun PlaybackPage(
             var contentScale by remember { mutableStateOf(prefs.globalContentScale.scale) }
             var playbackSpeed by remember { mutableFloatStateOf(1.0f) }
             LaunchedEffect(playbackSpeed) { player.setPlaybackSpeed(playbackSpeed) }
+
+            // TODO save
+            var subtitleDelay by remember { mutableStateOf(Duration.ZERO) }
+            LaunchedEffect(subtitleDelay) {
+                // TODO
+            }
 
             val presentationState = rememberPresentationState(player, false)
             val scaledModifier =
@@ -543,6 +550,7 @@ fun PlaybackPage(
                             subtitleStreams = mediaInfo?.subtitleStreams.orEmpty(),
                             playbackSpeed = playbackSpeed,
                             contentScale = contentScale,
+                            subtitleDelay = subtitleDelay,
                         ),
                     onDismissRequest = {
                         playbackDialog = null
@@ -553,8 +561,16 @@ fun PlaybackPage(
                     onControllerInteraction = {
                         controllerViewState.pulseControls(Long.MAX_VALUE)
                     },
-                    onClickPlaybackDialogType = { playbackDialog = it },
+                    onClickPlaybackDialogType = {
+                        if (it == PlaybackDialogType.SUBTITLE_DELAY) {
+                            // Hide controls so subtitles are fully visible
+                            controllerViewState.hideControls()
+                        }
+                        playbackDialog = it
+                    },
                     onPlaybackActionClick = onPlaybackActionClick,
+                    onChangeSubtitleDelay = { subtitleDelay = it },
+                    enableSubtitleDelay = true,
                 )
             }
         }
