@@ -173,7 +173,9 @@ class StreamChoiceService
             } else {
                 val seriesLang =
                     playbackLanguageChoice?.subtitleLanguage?.takeIf { it.isNotNullOrBlank() }
-                val subtitleLanguage = seriesLang ?: prefs.userConfig.subtitleLanguagePreference
+                val subtitleLanguage =
+                    (seriesLang ?: prefs.userConfig.subtitleLanguagePreference)
+                        ?.takeIf { it.isNotNullOrBlank() }
 
                 val subtitleMode =
                     when {
@@ -221,12 +223,20 @@ class StreamChoiceService
                     }
 
                     SubtitlePlaybackMode.DEFAULT -> {
-                        // TODO check for language?
-                        (
-                            candidates.firstOrNull { it.isDefault && it.isForced }
-                                ?: candidates.firstOrNull { it.isDefault }
-                                ?: candidates.firstOrNull { it.isForced }
-                        )
+                        subtitleLanguage?.let { lang ->
+                            // Find best track that is in the preferred language
+                            (
+                                candidates.firstOrNull { it.isDefault && it.isForced && it.language == lang }
+                                    ?: candidates.firstOrNull { it.isDefault && it.language == lang }
+                                    ?: candidates.firstOrNull { it.isForced && it.language == lang }
+                            )
+                        }
+                            ?: (
+                                // If none in preferred language, just find the best track
+                                candidates.firstOrNull { it.isDefault && it.isForced }
+                                    ?: candidates.firstOrNull { it.isDefault }
+                                    ?: candidates.firstOrNull { it.isForced }
+                            )
                     }
 
                     SubtitlePlaybackMode.NONE -> {
