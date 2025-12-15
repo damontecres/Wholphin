@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.util.LruCache
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.isSpecified
 import androidx.core.graphics.drawable.toBitmap
 import androidx.datastore.core.DataStore
 import androidx.palette.graphics.Palette
@@ -15,7 +16,6 @@ import coil3.request.allowHardware
 import coil3.request.bitmapConfig
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.preferences.AppPreferences
-import com.github.damontecres.wholphin.ui.theme.getThemeColors
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
@@ -51,14 +51,13 @@ class BackdropService
         val backdropFlow =
             _backdropFlow
                 .map {
-                    val prefs =
-                        preferences.data.firstOrNull() ?: AppPreferences.getDefaultInstance()
-                    val theme = getThemeColors(prefs.interfacePreferences.appThemeColors).darkScheme
                     BackdropResult(
-                        item = it.item,
-                        imageUrl = imageUrlService.getItemImageUrl(it.item, ImageType.BACKDROP),
+                        imageUrl = it.imageUrl,
                         fillWidth = if (it.small) .7f else .85f,
                         fillHeight = if (it.small) .7f else 1f,
+                        dynamicColorPrimary = it.dynamicColorPrimary,
+                        dynamicColorSecondary = it.dynamicColorSecondary,
+                        dynamicColorTertiary = it.dynamicColorTertiary,
                     )
                 }
 
@@ -83,11 +82,12 @@ class BackdropService
             small: Boolean,
         ) {
             delay(500)
-            val colors =
-                extractColorsFromBackdrop(imageUrlService.getItemImageUrl(item, ImageType.BACKDROP))
+            val imageUrl = imageUrlService.getItemImageUrl(item, ImageType.BACKDROP)
+            val colors = extractColorsFromBackdrop(imageUrl)
+            Timber.v("extracted colors=$colors")
             _backdropFlow.emit(
                 BackdropRequest(
-                    item,
+                    imageUrl,
                     small,
                     dynamicColorPrimary = colors?.primary ?: Color.Unspecified,
                     dynamicColorSecondary = colors?.secondary ?: Color.Unspecified,
@@ -119,7 +119,7 @@ class BackdropService
                     if (result is SuccessResult) {
                         val drawable = result.image.asDrawable(context.resources)
                         val bitmap = drawable.toBitmap(config = Bitmap.Config.ARGB_8888)
-                        extractColorsFromBitmap(bitmap)?.let {
+                        extractColorsFromBitmap(bitmap)?.also {
                             extractedColorCache.put(imageUrl, it)
                         }
                     } else {
@@ -190,7 +190,7 @@ class BackdropService
                 val tertiaryColor = toColor(vibrant ?: lightVibrant, .35f)
 
                 Timber.v(
-                    "ColorExtractor: Primary=%X (alpha=0.4), Secondary=%X (alpha=0.4), Tertiary=%X (alpha=0.35)",
+                    "ColorExtractor: Primary=%s (alpha=0.4), Secondary=%s (alpha=0.4), Tertiary=%s (alpha=0.35)",
                     primaryColor,
                     secondaryColor,
                     tertiaryColor,
@@ -218,7 +218,7 @@ class BackdropService
     }
 
 data class BackdropRequest(
-    val item: BaseItem?,
+    val imageUrl: String?,
     val small: Boolean,
     val dynamicColorPrimary: Color = Color.Unspecified,
     val dynamicColorSecondary: Color = Color.Unspecified,
@@ -226,14 +226,18 @@ data class BackdropRequest(
 )
 
 data class BackdropResult(
-    val item: BaseItem?,
     val imageUrl: String?,
     val fillWidth: Float,
     val fillHeight: Float,
     val dynamicColorPrimary: Color = Color.Unspecified,
     val dynamicColorSecondary: Color = Color.Unspecified,
     val dynamicColorTertiary: Color = Color.Unspecified,
-)
+) {
+    val hasColors: Boolean =
+        dynamicColorPrimary.isSpecified ||
+            dynamicColorSecondary.isSpecified ||
+            dynamicColorTertiary.isSpecified
+}
 
 data class ExtractedColors(
     val primary: Color,

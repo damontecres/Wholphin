@@ -231,12 +231,8 @@ class MainActivity : AppCompatActivity() {
                                     val backdrop by backdropService.backdropFlow.collectAsStateWithLifecycle(
                                         BackdropResult(
                                             null,
-                                            null,
                                             1f,
                                             1f,
-                                            genericPrimary = MaterialTheme.colorScheme.surfaceVariant,
-                                            genericSecondary = MaterialTheme.colorScheme.surface,
-                                            genericTertiary = MaterialTheme.colorScheme.surfaceVariant,
                                         ),
                                     )
                                     ApplicationContent(
