@@ -6,6 +6,7 @@ import android.util.LruCache
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.isSpecified
 import androidx.core.graphics.drawable.toBitmap
+import androidx.datastore.core.DataStore
 import androidx.palette.graphics.Palette
 import coil3.asDrawable
 import coil3.imageLoader
@@ -14,6 +15,8 @@ import coil3.request.SuccessResult
 import coil3.request.allowHardware
 import coil3.request.bitmapConfig
 import com.github.damontecres.wholphin.data.model.BaseItem
+import com.github.damontecres.wholphin.preferences.AppPreferences
+import com.github.damontecres.wholphin.preferences.BackdropStyle
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
@@ -35,6 +38,7 @@ class BackdropService
     constructor(
         @param:ApplicationContext private val context: Context,
         private val imageUrlService: ImageUrlService,
+        private val preferences: DataStore<AppPreferences>,
     ) {
         private val extractedColorCache = LruCache<String, ExtractedColors>(50)
 
@@ -64,7 +68,17 @@ class BackdropService
         private suspend fun extractColors(item: BaseItem) {
             delay(500)
             val imageUrl = imageUrlService.getItemImageUrl(item, ImageType.BACKDROP)
-            val (primaryColor, secondaryColor, tertiaryColor) = extractColorsFromBackdrop(imageUrl)
+            val dynamicEnabled =
+                preferences.data
+                    .firstOrNull()
+                    ?.interfacePreferences
+                    ?.backdropStyle == BackdropStyle.BACKDROP_DYNAMIC_COLOR
+            val (primaryColor, secondaryColor, tertiaryColor) =
+                if (dynamicEnabled) {
+                    extractColorsFromBackdrop(imageUrl)
+                } else {
+                    ExtractedColors.DEFAULT
+                }
             _backdropFlow.update {
                 if (it.itemId == item.id) {
                     BackdropResult(

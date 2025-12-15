@@ -394,6 +394,7 @@
     <string name="sort_channels_recently_watched">Sort channels by recently watched</string>
     <string name="color_code_programs">Color-code programs</string>
     <string name="subtitle_delay">Subtitle delay</string>
+    <string name="backdrop_display">Backdrop style</string>
 
     <string-array name="theme_song_volume">
         <item>Disabled</item>
@@ -480,6 +481,12 @@
         <item>Primary</item>
         <item>Thumb</item>
         <!--        <item>Banner</item>-->
+    </string-array>
+
+    <string-array name="backdrop_style_options">
+        <item>Image with dynamic color</item>
+        <item>Image only</item>
+        <item>None</item>
     </string-array>
 
 </resources>

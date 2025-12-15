@@ -22,7 +22,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.unit.dp
 import androidx.datastore.core.DataStore
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.tv.material3.ExperimentalTvMaterial3Api
@@ -34,8 +33,6 @@ import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.DefaultUserConfiguration
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.AppUpgradeHandler
-import com.github.damontecres.wholphin.services.BackdropResult
-import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.DeviceProfileService
 import com.github.damontecres.wholphin.services.ImageUrlService
 import com.github.damontecres.wholphin.services.NavigationManager
@@ -94,9 +91,6 @@ class MainActivity : AppCompatActivity() {
 
     @Inject
     lateinit var refreshRateService: RefreshRateService
-
-    @Inject
-    lateinit var backdropService: BackdropService
 
     @OptIn(ExperimentalTvMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -228,16 +222,11 @@ class MainActivity : AppCompatActivity() {
                                             )
                                         }
                                     }
-                                    val backdrop by backdropService.backdropFlow.collectAsStateWithLifecycle(
-                                        BackdropResult.NONE,
-                                    )
                                     ApplicationContent(
                                         user = current?.user,
                                         server = current?.server,
                                         navigationManager = navigationManager,
                                         preferences = preferences,
-                                        backdrop = backdrop,
-                                        onClearBackdrop = { lifecycleScope.launchIO { backdropService.clearBackdrop() } },
                                         modifier = Modifier.fillMaxSize(),
                                     )
                                 }

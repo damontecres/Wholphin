@@ -132,6 +132,12 @@ message LiveTvPreferences {
   bool color_code_programs = 4;
 }
 
+enum BackdropStyle{
+  BACKDROP_DYNAMIC_COLOR = 0;
+  BACKDROP_IMAGE_ONLY = 1;
+  BACKDROP_NONE = 2;
+}
+
 message InterfacePreferences {
   ThemeSongVolume play_theme_songs = 1;
   bool remember_selected_tab = 2;
@@ -141,6 +147,7 @@ message InterfacePreferences {
   bool show_clock = 6;
   SubtitlePreferences subtitles_preferences = 7;
   LiveTvPreferences live_tv_preferences = 8;
+  BackdropStyle backdrop_style = 9;
 }
 
 message AdvancedPreferences {
