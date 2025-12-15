@@ -43,8 +43,8 @@ jobs:
       - name: Build app
         id: buildapp
         run: |
-          ./gradlew clean assembleDebug bundleDebug testDebugUnitTest --no-daemon
-          apks=$(find app/build/outputs/ -name '*.apk' -or -name '*.aab' -print0 | tr '\0' ',' | sed 's/,$//')
+          ./gradlew clean assembleDebug bundleDebugtestDebugUnitTest  --no-daemon
+          apks=$(find app/build/outputs \( -name '*.apk' -or -name '*.aab' \) -print0 | tr '\0' ',' | sed 's/,$//')
           echo "apks=$apks" >> "$GITHUB_OUTPUT"
       - name: Tar build dirs
         run: |
@@ -72,3 +72,4 @@ jobs:
       - name: Test applying patch
         run: |
           git apply app/src/patches/play_store.patch
+          git diff
