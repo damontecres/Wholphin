@@ -5,6 +5,7 @@ import android.os.Build
 import android.os.Handler
 import android.os.HandlerThread
 import android.os.Looper
+import android.os.Message
 import android.os.Process
 import android.view.Surface
 import android.view.SurfaceHolder
@@ -67,12 +68,12 @@ class MpvPlayer(
     useGpuNext: Boolean,
 ) : BasePlayer(),
     MPVLib.EventObserver,
-    TrackSelector.InvalidationListener {
+    TrackSelector.InvalidationListener,
+    Handler.Callback {
     companion object {
         private const val DEBUG = false
     }
 
-    private var isPaused: Boolean = true
     private var surface: Surface? = null
 
     private val looper = Util.getCurrentOrMainLooper()
@@ -88,7 +89,6 @@ class MpvPlayer(
     private val trackSelector = DefaultTrackSelector(context)
 
     private var mediaItem: MediaItem? = null
-    private var startPositionMs: Long = 0L
 
     private val thread: HandlerThread
     private val internalHandler: Handler
@@ -104,7 +104,7 @@ class MpvPlayer(
     init {
         thread = HandlerThread("MpvPlayer:Playback", Process.THREAD_PRIORITY_AUDIO)
         thread.start()
-        internalHandler = Handler(thread.looper)
+        internalHandler = Handler(thread.looper, this)
 
         Timber.v("config-dir=${context.filesDir.path}")
         MPVLib.create(context)
@@ -180,13 +180,11 @@ class MpvPlayer(
         mediaItems: List<MediaItem>,
         resetPosition: Boolean,
     ) {
-        throwIfReleased()
-
         if (DEBUG) Timber.v("setMediaItems")
+        throwIfReleased()
         mediaItems.firstOrNull()?.let {
-            mediaItem = it
             if (surface != null) {
-                loadFile(it)
+                sendCommand(MpvCommand.LOAD_FILE, MediaAndPosition(it, C.TIME_UNSET))
             }
         }
     }
@@ -197,8 +195,11 @@ class MpvPlayer(
         startPositionMs: Long,
     ) {
         if (DEBUG) Timber.v("setMediaItems")
-        this.startPositionMs = startPositionMs
-        setMediaItems(mediaItems.subList(startIndex, mediaItems.size), false)
+        throwIfReleased()
+        sendCommand(
+            MpvCommand.LOAD_FILE,
+            MediaAndPosition(mediaItems[startIndex], startPositionMs),
+        )
     }
 
     override fun addMediaItems(
@@ -247,18 +248,8 @@ class MpvPlayer(
 
     override fun setPlayWhenReady(playWhenReady: Boolean) {
         if (isReleased) return
-        if (DEBUG) Timber.v("setPlayWhenReady")
-        if (playWhenReady) {
-            MPVLib.setPropertyBoolean("pause", false)
-        } else {
-            MPVLib.setPropertyBoolean("pause", true)
-        }
-        notifyListeners(EVENT_PLAY_WHEN_READY_CHANGED) {
-            onPlayWhenReadyChanged(
-                playWhenReady,
-                PLAY_WHEN_READY_CHANGE_REASON_USER_REQUEST,
-            )
-        }
+        if (DEBUG) Timber.v("setPlayWhenReady: $playWhenReady")
+        sendCommand(MpvCommand.PLAY_PAUSE, playWhenReady)
     }
 
     override fun getPlayWhenReady(): Boolean {
@@ -289,7 +280,7 @@ class MpvPlayer(
 
     override fun setPlaybackParameters(playbackParameters: PlaybackParameters) {
         if (DEBUG) Timber.v("setPlaybackParameters")
-        MPVLib.setPropertyDouble("speed", playbackParameters.speed.toDouble())
+        sendCommand(MpvCommand.SET_SPEED, playbackParameters.speed)
     }
 
     override fun getPlaybackParameters(): PlaybackParameters {
@@ -346,12 +337,12 @@ class MpvPlayer(
         if (C.TRACK_TYPE_TEXT in parameters.disabledTrackTypes) {
             // Subtitles disabled
             Timber.v("TrackSelection: disabling subtitles")
-            MPVLib.setPropertyString("sid", "no")
+            sendCommand(MpvCommand.SET_TRACK_SELECTION, TrackSelection("sid", "no"))
         }
         if (C.TRACK_TYPE_AUDIO in parameters.disabledTrackTypes) {
             // Audio disabled
             Timber.v("TrackSelection: disabling audio")
-            MPVLib.setPropertyString("aid", "no")
+            sendCommand(MpvCommand.SET_TRACK_SELECTION, TrackSelection("aid", "no"))
         }
         Timber.v("TrackSelection: Got ${parameters.overrides.size} overrides")
         parameters.overrides.forEach { (trackGroup, trackSelectionOverride) ->
@@ -369,7 +360,10 @@ class MpvPlayer(
                         }
                     Timber.v("TrackSelection: activating %s %s '%s'", propertyName, trackId, id)
                     if (trackId != null && propertyName != null) {
-                        MPVLib.setPropertyString(propertyName, trackId)
+                        sendCommand(
+                            MpvCommand.SET_TRACK_SELECTION,
+                            TrackSelection(propertyName, trackId),
+                        )
                         true
                     } else {
                         false
@@ -422,7 +416,7 @@ class MpvPlayer(
     override fun getCurrentPosition(): Long {
         if (DEBUG) Timber.v("getCurrentPosition")
         val state = playbackState.load()
-        // TODO seeking
+        // TODO seeking, delta?
         val delta = System.currentTimeMillis() - state.timestamp
         return state.positionMs
     }
@@ -477,9 +471,8 @@ class MpvPlayer(
             MPVLib.attachSurface(surface)
             MPVLib.setOptionString("force-window", "yes")
             Timber.d("Attached surface")
-            mediaItem?.let(::loadFile)
-            if (mediaItem == null) {
-                Timber.w("mediaItem is null in setVideoSurfaceView")
+            playbackState.load().media?.let {
+                sendCommand(MpvCommand.LOAD_FILE, it)
             }
         } else {
             clearVideoSurfaceView(null)
@@ -562,7 +555,14 @@ class MpvPlayer(
         if (mediaItemIndex == C.INDEX_UNSET) {
             return
         }
-        MPVLib.setPropertyDouble("time-pos", positionMs / 1000.0)
+        sendCommand(MpvCommand.SEEK, positionMs)
+    }
+
+    private fun sendCommand(
+        cmd: MpvCommand,
+        obj: Any?,
+    ) {
+        internalHandler.obtainMessage(cmd.ordinal, obj).sendToTarget()
     }
 
     override fun eventProperty(property: String) {
@@ -630,6 +630,7 @@ class MpvPlayer(
                 isLoadingFile = false
                 notifyListeners(EVENT_IS_LOADING_CHANGED) { onIsLoadingChanged(false) }
                 Timber.d("event: MPV_EVENT_FILE_LOADED")
+                internalHandler.post(periodicUpdateRunnable)
                 mediaItem?.let {
                     it.localConfiguration?.subtitleConfigurations?.forEach {
                         val url = it.uri.toString()
@@ -717,18 +718,25 @@ class MpvPlayer(
             }
     }
 
-    private fun loadFile(mediaItem: MediaItem) {
+    private fun loadFile(media: MediaAndPosition) {
+        Timber.v("loadFile: media=$media")
         isLoadingFile = true
         notifyListeners(EVENT_IS_LOADING_CHANGED) { onIsLoadingChanged(true) }
-        val url = mediaItem.localConfiguration?.uri.toString()
-        if (startPositionMs > 0) {
+        playbackState.update {
+            it.copy(media = media)
+        }
+        val url =
+            media.mediaItem.localConfiguration
+                ?.uri
+                .toString()
+        if (media.startPositionMs > 0) {
             MPVLib.command(
                 arrayOf(
                     "loadfile",
                     url,
                     "replace",
                     "-1",
-                    "start=${startPositionMs / 1000.0}",
+                    "start=${media.startPositionMs / 1000.0}",
                 ),
             )
         } else {
@@ -766,11 +774,11 @@ class MpvPlayer(
     var subtitleDelaySeconds: Double
         get() {
             if (isReleased) return 0.0
-            return MPVLib.getPropertyDouble("sub-delay") ?: 0.0
+            return playbackState.load().subtitleDelay
         }
         set(value) {
             if (isReleased) return
-            MPVLib.setPropertyDouble("sub-delay", value)
+            sendCommand(MpvCommand.SET_SUBTITLE_DELAY, value)
         }
 
     var subtitleDelay: Duration
@@ -822,15 +830,60 @@ class MpvPlayer(
             }
         }
 
-    private val refreshTracksRunnable =
-        Runnable {
-            val tracks = createTracks()
-            playbackState.update {
-                it.copy(
-                    tracks = tracks,
-                )
+    override fun handleMessage(msg: Message): Boolean {
+        val cmd = MpvCommand.entries[msg.what]
+        Timber.v("handleMessage: cmd=$cmd")
+        when (cmd) {
+            MpvCommand.PLAY_PAUSE -> {
+                val playWhenReady = msg.obj as Boolean
+                MPVLib.setPropertyBoolean("pause", !playWhenReady)
+                playbackState.update {
+                    it.copy(isPaused = !playWhenReady)
+                }
+                notifyListeners(EVENT_PLAY_WHEN_READY_CHANGED) {
+                    onPlayWhenReadyChanged(
+                        playWhenReady,
+                        PLAY_WHEN_READY_CHANGE_REASON_USER_REQUEST,
+                    )
+                }
+            }
+
+            MpvCommand.SET_TRACK_SELECTION -> {
+                val (propertyName, trackId) = msg.obj as TrackSelection
+                MPVLib.setPropertyString(propertyName, trackId)
+                updateTracksAndNotify()
+            }
+
+            MpvCommand.SEEK -> {
+                val positionMs = msg.obj as Long
+                MPVLib.setPropertyDouble("time-pos", positionMs / 1000.0)
+                playbackState.update {
+                    it.copy(positionMs = positionMs)
+                }
+            }
+
+            MpvCommand.SET_SPEED -> {
+                val value = msg.obj as Float
+                MPVLib.setPropertyDouble("speed", value.toDouble())
+                playbackState.update {
+                    it.copy(speed = value)
+                }
+            }
+
+            MpvCommand.SET_SUBTITLE_DELAY -> {
+                val value = msg.obj as Double
+                MPVLib.setPropertyDouble("sub-delay", value)
+                playbackState.update {
+                    it.copy(subtitleDelay = value)
+                }
+            }
+
+            MpvCommand.LOAD_FILE -> {
+                loadFile(msg.obj as MediaAndPosition)
             }
         }
+        return true
+    }
 }
 
 fun MPVLib.setPropertyColor(
@@ -842,12 +895,14 @@ private val Color.mpvFormat: String get() = "$red/$green/$blue/$alpha"
 
 data class PlaybackState(
     val timestamp: Long,
+    val media: MediaAndPosition?,
     val positionMs: Long,
     val bufferMs: Long,
     val durationMs: Long,
     val isSeeking: Boolean,
     val isPaused: Boolean,
     val speed: Float,
+    val subtitleDelay: Double,
     val videoSize: VideoSize,
     @param:Player.State val state: Int,
     val tracks: Tracks,
@@ -856,6 +911,7 @@ data class PlaybackState(
         val EMPTY =
             PlaybackState(
                 timestamp = C.TIME_UNSET,
+                media = null,
                 positionMs = C.TIME_UNSET,
                 durationMs = C.TIME_UNSET,
                 isSeeking = false,
@@ -865,6 +921,7 @@ data class PlaybackState(
                 speed = 1f,
                 videoSize = VideoSize.UNKNOWN,
                 state = Player.STATE_IDLE,
+                subtitleDelay = 0.0,
             )
     }
 }
@@ -927,4 +984,23 @@ private fun createTracks(): Tracks {
             }
         }
     return Tracks(groups)
+}
+
+private data class TrackSelection(
+    val property: String,
+    val trackId: String,
+)
+
+data class MediaAndPosition(
+    val mediaItem: MediaItem,
+    val startPositionMs: Long,
+)
+
+enum class MpvCommand {
+    PLAY_PAUSE,
+    SEEK,
+    SET_TRACK_SELECTION,
+    SET_SPEED,
+    SET_SUBTITLE_DELAY,
+    LOAD_FILE,
 }
