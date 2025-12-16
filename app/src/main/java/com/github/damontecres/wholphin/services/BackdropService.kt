@@ -68,11 +68,14 @@ class BackdropService
         private suspend fun extractColors(item: BaseItem) {
             delay(500)
             val imageUrl = imageUrlService.getItemImageUrl(item, ImageType.BACKDROP)
-            val dynamicEnabled =
+            val backdropStyle =
                 preferences.data
                     .firstOrNull()
                     ?.interfacePreferences
-                    ?.backdropStyle == BackdropStyle.BACKDROP_DYNAMIC_COLOR
+                    ?.backdropStyle
+            val dynamicEnabled =
+                backdropStyle == BackdropStyle.BACKDROP_DYNAMIC_COLOR ||
+                    backdropStyle == BackdropStyle.UNRECOGNIZED
             val (primaryColor, secondaryColor, tertiaryColor) =
                 if (dynamicEnabled) {
                     extractColorsFromBackdrop(imageUrl)

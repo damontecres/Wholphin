@@ -75,7 +75,9 @@ fun ApplicationContent(
         modifier = modifier,
     ) {
         val baseBackgroundColor = MaterialTheme.colorScheme.background
-        if (backdrop.hasColors && backdropStyle == BackdropStyle.BACKDROP_DYNAMIC_COLOR) {
+        if (backdrop.hasColors &&
+            (backdropStyle == BackdropStyle.BACKDROP_DYNAMIC_COLOR || backdropStyle == BackdropStyle.UNRECOGNIZED)
+        ) {
             val animPrimary by animateColorAsState(
                 backdrop.primaryColor,
                 animationSpec = tween(1250),
