@@ -354,4 +354,5 @@
     <string name="favorite_channels_at_beginning">Näita esmalt lemmikkanaleid</string>
     <string name="sort_channels_recently_watched">Järjesta kanalid viimase vaatamise alusel</string>
     <string name="color_code_programs">Märgi programmid värvidega</string>
+    <string name="subtitle_delay">Subtiitrite viivitus</string>
 </resources>
