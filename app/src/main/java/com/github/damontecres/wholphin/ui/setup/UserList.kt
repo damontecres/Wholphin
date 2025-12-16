@@ -44,15 +44,15 @@ import androidx.tv.material3.Surface
 import androidx.tv.material3.Text
 import coil3.compose.AsyncImage
 import com.github.damontecres.wholphin.R
-import org.jellyfin.sdk.api.client.ApiClient
-import org.jellyfin.sdk.api.client.extensions.imageApi
 import com.github.damontecres.wholphin.data.model.JellyfinUser
-import java.util.UUID
+import com.github.damontecres.wholphin.ui.AspectRatios
+import com.github.damontecres.wholphin.ui.Cards
 import com.github.damontecres.wholphin.ui.FontAwesome
 import com.github.damontecres.wholphin.ui.components.DialogItem
 import com.github.damontecres.wholphin.ui.components.DialogPopup
-import com.github.damontecres.wholphin.ui.Cards
-import com.github.damontecres.wholphin.ui.AspectRatios
+import org.jellyfin.sdk.api.client.ApiClient
+import org.jellyfin.sdk.api.client.extensions.imageApi
+import java.util.UUID
 
 /**
  * Display a list of users plus option to add a new one or switch servers
@@ -107,9 +107,10 @@ fun UserList(
         // Switch servers button below user list - centered
         Row(
             horizontalArrangement = Arrangement.Center,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 8.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp),
         ) {
             Button(
                 onClick = { onSwitchServer.invoke() },
@@ -166,35 +167,35 @@ fun UserList(
  * Generate a consistent color for a user based on their ID
  */
 @Composable
-private fun getUserColor(userId: UUID): Color {
-    return remember(userId) {
+private fun getUserColor(userId: UUID): Color =
+    remember(userId) {
         // Generate a color based on the user ID hash
         val hash = userId.hashCode()
         val hue = (hash % 360).toFloat()
         val saturation = 0.6f + ((hash / 360) % 40).toFloat() / 100f // 0.6-1.0
         val brightness = 0.4f + ((hash / 14400) % 30).toFloat() / 100f // 0.4-0.7 (darker colors)
-        
+
         // Convert HSV to RGB
         val c = brightness * saturation
         val x = c * (1 - kotlin.math.abs((hue / 60f) % 2f - 1))
         val m = brightness - c
-        
-        val (r, g, b) = when {
-            hue < 60 -> Triple(c, x, 0f)
-            hue < 120 -> Triple(x, c, 0f)
-            hue < 180 -> Triple(0f, c, x)
-            hue < 240 -> Triple(0f, x, c)
-            hue < 300 -> Triple(x, 0f, c)
-            else -> Triple(c, 0f, x)
-        }
-        
+
+        val (r, g, b) =
+            when {
+                hue < 60 -> Triple(c, x, 0f)
+                hue < 120 -> Triple(x, c, 0f)
+                hue < 180 -> Triple(0f, c, x)
+                hue < 240 -> Triple(0f, x, c)
+                hue < 300 -> Triple(x, 0f, c)
+                else -> Triple(c, 0f, x)
+            }
+
         Color(
             red = (r + m).coerceIn(0f, 1f),
             green = (g + m).coerceIn(0f, 1f),
-            blue = (b + m).coerceIn(0f, 1f)
+            blue = (b + m).coerceIn(0f, 1f),
         )
     }
-}
 
 @Composable
 private fun UserIconCard(
@@ -206,21 +207,22 @@ private fun UserIconCard(
     apiClient: ApiClient? = null,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
-    
+
     // Generate unique color for this user
     val userColor = getUserColor(user.id)
-    
+
     // Get user profile image URL from Jellyfin API
-    val userImageUrl = remember(user.id, apiClient) {
-        apiClient?.imageApi?.getUserImageUrl(user.id)
-    }
-    
+    val userImageUrl =
+        remember(user.id, apiClient) {
+            apiClient?.imageApi?.getUserImageUrl(user.id)
+        }
+
     // Track image loading errors
     var imageError by remember { mutableStateOf(false) }
-    
+
     // Card dimensions - circular card
     val cardSize = Cards.height2x3 * 0.75f // ~120dp (same size as before)
-    
+
     Column(
         modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -233,27 +235,33 @@ private fun UserIconCard(
             interactionSource = interactionSource,
             modifier = Modifier.size(cardSize),
             shape = ClickableSurfaceDefaults.shape(shape = CircleShape),
-            colors = ClickableSurfaceDefaults.colors(
-                containerColor = if (isCurrentUser) {
-                    userColor.copy(alpha = 0.7f)
-                } else {
-                    userColor.copy(alpha = 0.5f)
-                },
-                focusedContainerColor = if (isCurrentUser) {
-                    userColor.copy(alpha = 0.9f)
-                } else {
-                    userColor.copy(alpha = 0.7f)
-                },
-            ),
-            border = ClickableSurfaceDefaults.border(
-                focusedBorder = Border(
-                    border = BorderStroke(
-                        width = 3.dp,
-                        color = MaterialTheme.colorScheme.onSurface
-                    ),
-                    shape = CircleShape
+            colors =
+                ClickableSurfaceDefaults.colors(
+                    containerColor =
+                        if (isCurrentUser) {
+                            userColor.copy(alpha = 0.7f)
+                        } else {
+                            userColor.copy(alpha = 0.5f)
+                        },
+                    focusedContainerColor =
+                        if (isCurrentUser) {
+                            userColor.copy(alpha = 0.9f)
+                        } else {
+                            userColor.copy(alpha = 0.7f)
+                        },
                 ),
-            ),
+            border =
+                ClickableSurfaceDefaults.border(
+                    focusedBorder =
+                        Border(
+                            border =
+                                BorderStroke(
+                                    width = 3.dp,
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                ),
+                            shape = CircleShape,
+                        ),
+                ),
             scale = ClickableSurfaceDefaults.scale(focusedScale = 1.2f),
         ) {
             Box(
@@ -266,40 +274,50 @@ private fun UserIconCard(
                         contentDescription = user.name,
                         contentScale = ContentScale.Crop,
                         onError = { imageError = true },
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .clip(CircleShape),
+                        modifier =
+                            Modifier
+                                .fillMaxSize()
+                                .clip(CircleShape),
                     )
                 } else {
                     // Show big bold first letter of username
-                    val firstLetter = remember(user.name) {
-                        (user.name?.firstOrNull()?.uppercaseChar() ?: user.id.toString().firstOrNull()?.uppercaseChar())?.toString() ?: "?"
-                    }
+                    val firstLetter =
+                        remember(user.name) {
+                            (
+                                user.name?.firstOrNull()?.uppercaseChar() ?: user.id
+                                    .toString()
+                                    .firstOrNull()
+                                    ?.uppercaseChar()
+                            )?.toString() ?: "?"
+                        }
                     Text(
                         text = firstLetter,
-                        style = MaterialTheme.typography.displayLarge.copy(
-                            fontWeight = FontWeight.Bold,
-                        ),
+                        style =
+                            MaterialTheme.typography.displayLarge.copy(
+                                fontWeight = FontWeight.Bold,
+                            ),
                         color = MaterialTheme.colorScheme.onSurface,
                         textAlign = TextAlign.Center,
                     )
                 }
             }
         }
-        
+
         // Username below the card
         Text(
             text = user.name ?: user.id.toString(),
-            style = MaterialTheme.typography.bodyLarge.copy(
-                fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
-            ),
+            style =
+                MaterialTheme.typography.bodyLarge.copy(
+                    fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                ),
             color = MaterialTheme.colorScheme.onSurface,
             textAlign = TextAlign.Center,
             maxLines = 2,
             overflow = TextOverflow.Ellipsis,
-            modifier = Modifier
-                .width(cardSize)
-                .padding(horizontal = 4.dp),
+            modifier =
+                Modifier
+                    .width(cardSize)
+                    .padding(horizontal = 4.dp),
         )
     }
 }
@@ -313,13 +331,13 @@ private fun AddUserCard(
     modifier: Modifier = Modifier,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
-    
+
     // Use a neutral gray color for the add user card
     val addUserColor = MaterialTheme.colorScheme.surfaceVariant
-    
+
     // Card dimensions - circular card (same as user cards)
     val cardSize = Cards.height2x3 * 0.75f // ~120dp
-    
+
     Column(
         modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -331,19 +349,23 @@ private fun AddUserCard(
             interactionSource = interactionSource,
             modifier = Modifier.size(cardSize),
             shape = ClickableSurfaceDefaults.shape(shape = CircleShape),
-            colors = ClickableSurfaceDefaults.colors(
-                containerColor = addUserColor.copy(alpha = 0.4f),
-                focusedContainerColor = addUserColor.copy(alpha = 0.6f),
-            ),
-            border = ClickableSurfaceDefaults.border(
-                focusedBorder = Border(
-                    border = BorderStroke(
-                        width = 3.dp,
-                        color = MaterialTheme.colorScheme.onSurface
-                    ),
-                    shape = CircleShape
+            colors =
+                ClickableSurfaceDefaults.colors(
+                    containerColor = addUserColor.copy(alpha = 0.4f),
+                    focusedContainerColor = addUserColor.copy(alpha = 0.6f),
                 ),
-            ),
+            border =
+                ClickableSurfaceDefaults.border(
+                    focusedBorder =
+                        Border(
+                            border =
+                                BorderStroke(
+                                    width = 3.dp,
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                ),
+                            shape = CircleShape,
+                        ),
+                ),
             scale = ClickableSurfaceDefaults.scale(focusedScale = 1.2f),
         ) {
             Box(
@@ -358,20 +380,22 @@ private fun AddUserCard(
                 )
             }
         }
-        
+
         // "Add User" text below the card
         Text(
             text = stringResource(R.string.add_user),
-            style = MaterialTheme.typography.bodyLarge.copy(
-                fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
-            ),
+            style =
+                MaterialTheme.typography.bodyLarge.copy(
+                    fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                ),
             color = MaterialTheme.colorScheme.onSurface,
             textAlign = TextAlign.Center,
             maxLines = 2,
             overflow = TextOverflow.Ellipsis,
-            modifier = Modifier
-                .width(cardSize)
-                .padding(horizontal = 4.dp),
+            modifier =
+                Modifier
+                    .width(cardSize)
+                    .padding(horizontal = 4.dp),
         )
     }
 }

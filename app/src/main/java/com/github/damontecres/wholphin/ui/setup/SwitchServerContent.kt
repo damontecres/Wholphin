@@ -2,23 +2,25 @@ package com.github.damontecres.wholphin.ui.setup
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.wrapContentWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -31,8 +33,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusRestorer
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
-import com.github.damontecres.wholphin.ui.ifElse
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
@@ -44,23 +46,21 @@ import androidx.tv.material3.ListItem
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.R
+import com.github.damontecres.wholphin.data.model.JellyfinServer
+import com.github.damontecres.wholphin.ui.FontAwesome
 import com.github.damontecres.wholphin.ui.components.BasicDialog
 import com.github.damontecres.wholphin.ui.components.CircularProgress
+import com.github.damontecres.wholphin.ui.components.DialogItem
+import com.github.damontecres.wholphin.ui.components.DialogPopup
 import com.github.damontecres.wholphin.ui.components.EditTextBox
 import com.github.damontecres.wholphin.ui.components.TextButton
 import com.github.damontecres.wholphin.ui.dimAndBlur
+import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
-import com.github.damontecres.wholphin.ui.tryRequestFocus
-import com.github.damontecres.wholphin.data.model.JellyfinServer
-import com.github.damontecres.wholphin.ui.components.DialogItem
-import com.github.damontecres.wholphin.ui.components.DialogPopup
 import com.github.damontecres.wholphin.ui.setup.ServerConnectionStatus
+import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.LoadingState
 import org.jellyfin.sdk.model.api.PublicSystemInfo
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.ui.graphics.Color
-import com.github.damontecres.wholphin.ui.FontAwesome
 
 @Composable
 fun SwitchServerContent(
@@ -107,7 +107,7 @@ fun SwitchServerContent(
                     color = Color.Transparent,
                 )
             }
-            
+
             // Horizontal scrollable list of server icons - centered
             Box(
                 modifier = Modifier.fillMaxWidth(),
@@ -117,9 +117,10 @@ fun SwitchServerContent(
                 LazyRow(
                     horizontalArrangement = Arrangement.spacedBy(24.dp),
                     contentPadding = PaddingValues(horizontal = 48.dp, vertical = 16.dp),
-                    modifier = Modifier
-                        .wrapContentWidth()
-                        .focusRestorer(firstServerFocus),
+                    modifier =
+                        Modifier
+                            .wrapContentWidth()
+                            .focusRestorer(firstServerFocus),
                 ) {
                     itemsIndexed(servers) { index, server ->
                         val status = serverStatus[server.id] ?: ServerConnectionStatus.Pending
@@ -132,9 +133,11 @@ fun SwitchServerContent(
                                     is ServerConnectionStatus.Success -> {
                                         viewModel.switchServer(server)
                                     }
+
                                     ServerConnectionStatus.Pending -> {
                                         // Do nothing while pending
                                     }
+
                                     is ServerConnectionStatus.Error -> {
                                         viewModel.testServer(server)
                                     }
@@ -157,12 +160,14 @@ fun SwitchServerContent(
             }
             // Non-focusable spacer to mirror the space occupied by the "Switch Servers" button
             Spacer(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp), // approximate TV button height
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .height(56.dp),
+                // approximate TV button height
             )
         }
-        
+
         // Delete server dialog
         showDeleteDialog?.let { server ->
             DialogPopup(
@@ -196,39 +201,40 @@ fun SwitchServerContent(
 
         if (showAddServer) {
             var showEnterAddress by remember { mutableStateOf(false) }
-            
+
             LaunchedEffect(Unit) {
                 viewModel.clearAddServerState()
                 if (!showEnterAddress) {
                     viewModel.discoverServers()
                 }
             }
-            
+
             val discoveredServers by viewModel.discoveredServers.observeAsState(listOf())
-            
+
             // Filter out duplicates within the discovered servers list (same URL appearing multiple times)
-            val filteredDiscoveredServers = remember(discoveredServers) {
-                val seenUrls = mutableSetOf<String>()
-                discoveredServers.filter { server ->
-                    val normalizedUrl = server.url.lowercase().trim()
-                    if (normalizedUrl in seenUrls) {
-                        false // Duplicate, filter it out
-                    } else {
-                        seenUrls.add(normalizedUrl)
-                        true // First occurrence, keep it
+            val filteredDiscoveredServers =
+                remember(discoveredServers) {
+                    val seenUrls = mutableSetOf<String>()
+                    discoveredServers.filter { server ->
+                        val normalizedUrl = server.url.lowercase().trim()
+                        if (normalizedUrl in seenUrls) {
+                            false // Duplicate, filter it out
+                        } else {
+                            seenUrls.add(normalizedUrl)
+                            true // First occurrence, keep it
+                        }
                     }
                 }
-            }
-            
+
             val firstDiscoveredServerFocusRequester = remember { FocusRequester() }
-            
+
             // Default focus to first discovered server if available
             LaunchedEffect(filteredDiscoveredServers.isNotEmpty(), showEnterAddress) {
                 if (!showEnterAddress && filteredDiscoveredServers.isNotEmpty()) {
                     firstDiscoveredServerFocusRequester.tryRequestFocus()
                 }
             }
-            
+
             BasicDialog(
                 onDismissRequest = {
                     showAddServer = false
@@ -253,7 +259,7 @@ fun SwitchServerContent(
                             style = MaterialTheme.typography.titleMedium,
                             color = MaterialTheme.colorScheme.onSurface,
                         )
-                        
+
                         if (filteredDiscoveredServers.isEmpty() && discoveredServers.isEmpty()) {
                             Text(
                                 text = stringResource(R.string.searching),
@@ -268,21 +274,23 @@ fun SwitchServerContent(
                             )
                         } else {
                             LazyColumn(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .heightIn(max = 300.dp),
+                                modifier =
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .heightIn(max = 300.dp),
                             ) {
                                 items(
                                     filteredDiscoveredServers.size,
                                     key = { filteredDiscoveredServers[it].url },
                                 ) { index ->
                                     val server = filteredDiscoveredServers[index]
-                                    val focusRequester = if (index == 0) {
-                                        firstDiscoveredServerFocusRequester
-                                    } else {
-                                        remember { FocusRequester() }
-                                    }
-                                    
+                                    val focusRequester =
+                                        if (index == 0) {
+                                            firstDiscoveredServerFocusRequester
+                                        } else {
+                                            remember { FocusRequester() }
+                                        }
+
                                     ListItem(
                                         enabled = true,
                                         selected = false,
@@ -306,7 +314,7 @@ fun SwitchServerContent(
                                 }
                             }
                         }
-                        
+
                         TextButton(
                             onClick = {
                                 showEnterAddress = true
@@ -323,11 +331,11 @@ fun SwitchServerContent(
                             viewModel.addServer(url)
                         }
                         val textBoxFocusRequester = remember { FocusRequester() }
-                        
+
                         LaunchedEffect(Unit) {
                             textBoxFocusRequester.tryRequestFocus()
                         }
-                        
+
                         Text(
                             text = stringResource(R.string.enter_server_url),
                         )

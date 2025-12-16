@@ -179,35 +179,35 @@ fun ServerList(
  * Generate a consistent color for a server based on its ID or URL
  */
 @Composable
-private fun getServerColor(server: JellyfinServer): Color {
-    return remember(server.id, server.url) {
+private fun getServerColor(server: JellyfinServer): Color =
+    remember(server.id, server.url) {
         // Generate a color based on the server ID hash, fallback to URL hash
         val hash = server.id.hashCode().takeIf { it != 0 } ?: server.url.hashCode()
         val hue = (hash % 360).toFloat()
         val saturation = 0.6f + ((hash / 360) % 40).toFloat() / 100f // 0.6-1.0
         val brightness = 0.4f + ((hash / 14400) % 30).toFloat() / 100f // 0.4-0.7 (darker colors)
-        
+
         // Convert HSV to RGB
         val c = brightness * saturation
         val x = c * (1 - kotlin.math.abs((hue / 60f) % 2f - 1))
         val m = brightness - c
-        
-        val (r, g, b) = when {
-            hue < 60 -> Triple(c, x, 0f)
-            hue < 120 -> Triple(x, c, 0f)
-            hue < 180 -> Triple(0f, c, x)
-            hue < 240 -> Triple(0f, x, c)
-            hue < 300 -> Triple(x, 0f, c)
-            else -> Triple(c, 0f, x)
-        }
-        
+
+        val (r, g, b) =
+            when {
+                hue < 60 -> Triple(c, x, 0f)
+                hue < 120 -> Triple(x, c, 0f)
+                hue < 180 -> Triple(0f, c, x)
+                hue < 240 -> Triple(0f, x, c)
+                hue < 300 -> Triple(x, 0f, c)
+                else -> Triple(c, 0f, x)
+            }
+
         Color(
             red = (r + m).coerceIn(0f, 1f),
             green = (g + m).coerceIn(0f, 1f),
-            blue = (b + m).coerceIn(0f, 1f)
+            blue = (b + m).coerceIn(0f, 1f),
         )
     }
-}
 
 /**
  * Server icon card component - displays a circular card with server name/letter
@@ -223,13 +223,13 @@ fun ServerIconCard(
     allowDelete: Boolean = false,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
-    
+
     // Generate unique color for this server
     val serverColor = getServerColor(server)
-    
+
     // Card dimensions - circular card
     val cardSize = Cards.height2x3 * 0.75f // ~120dp
-    
+
     Column(
         modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -242,27 +242,33 @@ fun ServerIconCard(
             interactionSource = interactionSource,
             modifier = Modifier.size(cardSize),
             shape = ClickableSurfaceDefaults.shape(shape = CircleShape),
-            colors = ClickableSurfaceDefaults.colors(
-                containerColor = if (isCurrentServer) {
-                    serverColor.copy(alpha = 0.7f)
-                } else {
-                    serverColor.copy(alpha = 0.5f)
-                },
-                focusedContainerColor = if (isCurrentServer) {
-                    serverColor.copy(alpha = 0.9f)
-                } else {
-                    serverColor.copy(alpha = 0.7f)
-                },
-            ),
-            border = ClickableSurfaceDefaults.border(
-                focusedBorder = Border(
-                    border = BorderStroke(
-                        width = 3.dp,
-                        color = MaterialTheme.colorScheme.onSurface
-                    ),
-                    shape = CircleShape
+            colors =
+                ClickableSurfaceDefaults.colors(
+                    containerColor =
+                        if (isCurrentServer) {
+                            serverColor.copy(alpha = 0.7f)
+                        } else {
+                            serverColor.copy(alpha = 0.5f)
+                        },
+                    focusedContainerColor =
+                        if (isCurrentServer) {
+                            serverColor.copy(alpha = 0.9f)
+                        } else {
+                            serverColor.copy(alpha = 0.7f)
+                        },
                 ),
-            ),
+            border =
+                ClickableSurfaceDefaults.border(
+                    focusedBorder =
+                        Border(
+                            border =
+                                BorderStroke(
+                                    width = 3.dp,
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                ),
+                            shape = CircleShape,
+                        ),
+                ),
             scale = ClickableSurfaceDefaults.scale(focusedScale = 1.2f),
         ) {
             Box(
@@ -273,25 +279,36 @@ fun ServerIconCard(
                 when (connectionStatus) {
                     is ServerConnectionStatus.Success -> {
                         // Show server name/letter
-                        val displayText = remember(server.name, server.url) {
-                            server.name?.firstOrNull()?.uppercaseChar()?.toString()
-                                ?: server.url.replace(Regex("^https?://"), "").firstOrNull()?.uppercaseChar()?.toString()
-                                ?: "?"
-                        }
+                        val displayText =
+                            remember(server.name, server.url) {
+                                server.name
+                                    ?.firstOrNull()
+                                    ?.uppercaseChar()
+                                    ?.toString()
+                                    ?: server.url
+                                        .replace(Regex("^https?://"), "")
+                                        .firstOrNull()
+                                        ?.uppercaseChar()
+                                        ?.toString()
+                                    ?: "?"
+                            }
                         Text(
                             text = displayText,
-                            style = MaterialTheme.typography.displayLarge.copy(
-                                fontWeight = FontWeight.Bold,
-                            ),
+                            style =
+                                MaterialTheme.typography.displayLarge.copy(
+                                    fontWeight = FontWeight.Bold,
+                                ),
                             color = MaterialTheme.colorScheme.onSurface,
                             textAlign = TextAlign.Center,
                         )
                     }
+
                     ServerConnectionStatus.Pending -> {
                         CircularProgress(
                             modifier = Modifier.size(cardSize * 0.4f),
                         )
                     }
+
                     is ServerConnectionStatus.Error -> {
                         // Show warning icon with server letter behind
                         Column(
@@ -304,16 +321,25 @@ fun ServerIconCard(
                                 tint = MaterialTheme.colorScheme.errorContainer,
                                 modifier = Modifier.size(cardSize * 0.3f),
                             )
-                            val displayText = remember(server.name, server.url) {
-                                server.name?.firstOrNull()?.uppercaseChar()?.toString()
-                                    ?: server.url.replace(Regex("^https?://"), "").firstOrNull()?.uppercaseChar()?.toString()
-                                    ?: "?"
-                            }
+                            val displayText =
+                                remember(server.name, server.url) {
+                                    server.name
+                                        ?.firstOrNull()
+                                        ?.uppercaseChar()
+                                        ?.toString()
+                                        ?: server.url
+                                            .replace(Regex("^https?://"), "")
+                                            .firstOrNull()
+                                            ?.uppercaseChar()
+                                            ?.toString()
+                                        ?: "?"
+                                }
                             Text(
                                 text = displayText,
-                                style = MaterialTheme.typography.titleLarge.copy(
-                                    fontWeight = FontWeight.Bold,
-                                ),
+                                style =
+                                    MaterialTheme.typography.titleLarge.copy(
+                                        fontWeight = FontWeight.Bold,
+                                    ),
                                 color = MaterialTheme.colorScheme.onSurface,
                                 textAlign = TextAlign.Center,
                             )
@@ -322,20 +348,22 @@ fun ServerIconCard(
                 }
             }
         }
-        
+
         // Server name below the card
         Text(
             text = server.name?.ifBlank { null } ?: server.url,
-            style = MaterialTheme.typography.bodyLarge.copy(
-                fontWeight = FontWeight.Bold,
-            ),
+            style =
+                MaterialTheme.typography.bodyLarge.copy(
+                    fontWeight = FontWeight.Bold,
+                ),
             color = MaterialTheme.colorScheme.onSurface,
             textAlign = TextAlign.Center,
             maxLines = 2,
             overflow = TextOverflow.Ellipsis,
-            modifier = Modifier
-                .width(cardSize)
-                .padding(horizontal = 4.dp),
+            modifier =
+                Modifier
+                    .width(cardSize)
+                    .padding(horizontal = 4.dp),
         )
     }
 }
@@ -349,13 +377,13 @@ fun AddServerCard(
     modifier: Modifier = Modifier,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
-    
+
     // Use a neutral gray color for the add server card
     val addServerColor = MaterialTheme.colorScheme.surfaceVariant
-    
+
     // Card dimensions - circular card (same as server cards)
     val cardSize = Cards.height2x3 * 0.75f // ~120dp
-    
+
     Column(
         modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -367,19 +395,23 @@ fun AddServerCard(
             interactionSource = interactionSource,
             modifier = Modifier.size(cardSize),
             shape = ClickableSurfaceDefaults.shape(shape = CircleShape),
-            colors = ClickableSurfaceDefaults.colors(
-                containerColor = addServerColor.copy(alpha = 0.4f),
-                focusedContainerColor = addServerColor.copy(alpha = 0.6f),
-            ),
-            border = ClickableSurfaceDefaults.border(
-                focusedBorder = Border(
-                    border = BorderStroke(
-                        width = 3.dp,
-                        color = MaterialTheme.colorScheme.onSurface
-                    ),
-                    shape = CircleShape
+            colors =
+                ClickableSurfaceDefaults.colors(
+                    containerColor = addServerColor.copy(alpha = 0.4f),
+                    focusedContainerColor = addServerColor.copy(alpha = 0.6f),
                 ),
-            ),
+            border =
+                ClickableSurfaceDefaults.border(
+                    focusedBorder =
+                        Border(
+                            border =
+                                BorderStroke(
+                                    width = 3.dp,
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                ),
+                            shape = CircleShape,
+                        ),
+                ),
             scale = ClickableSurfaceDefaults.scale(focusedScale = 1.2f),
         ) {
             Box(
@@ -394,20 +426,22 @@ fun AddServerCard(
                 )
             }
         }
-        
+
         // "Add Server" text below the card
         Text(
             text = stringResource(R.string.add_server),
-            style = MaterialTheme.typography.bodyLarge.copy(
-                fontWeight = FontWeight.Bold,
-            ),
+            style =
+                MaterialTheme.typography.bodyLarge.copy(
+                    fontWeight = FontWeight.Bold,
+                ),
             color = MaterialTheme.colorScheme.onSurface,
             textAlign = TextAlign.Center,
             maxLines = 2,
             overflow = TextOverflow.Ellipsis,
-            modifier = Modifier
-                .width(cardSize)
-                .padding(horizontal = 4.dp),
+            modifier =
+                Modifier
+                    .width(cardSize)
+                    .padding(horizontal = 4.dp),
         )
     }
 }

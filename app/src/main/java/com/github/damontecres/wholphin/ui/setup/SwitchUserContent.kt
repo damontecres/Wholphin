@@ -87,10 +87,11 @@ fun SwitchUserContent(
 
     currentServer?.let { server ->
         // Create API client for fetching user images (no auth needed for public user images)
-        val apiClient = remember(server.url) {
-            viewModel.jellyfin.createApi(server.url)
-        }
-        
+        val apiClient =
+            remember(server.url) {
+                viewModel.jellyfin.createApi(server.url)
+            }
+
         Box(
             modifier = modifier.dimAndBlur(showAddUser || switchUserWithPin != null),
         ) {
