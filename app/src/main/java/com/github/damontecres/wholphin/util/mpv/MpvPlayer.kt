@@ -38,6 +38,7 @@ import androidx.media3.common.util.Util
 import androidx.media3.exoplayer.trackselection.DefaultTrackSelector
 import androidx.media3.exoplayer.trackselection.TrackSelector
 import androidx.media3.exoplayer.upstream.DefaultBandwidthMeter
+import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.util.mpv.MPVLib.MpvEndFileReason.MPV_END_FILE_REASON_EOF
 import com.github.damontecres.wholphin.util.mpv.MPVLib.MpvEndFileReason.MPV_END_FILE_REASON_ERROR
 import com.github.damontecres.wholphin.util.mpv.MPVLib.MpvEndFileReason.MPV_END_FILE_REASON_STOP
@@ -51,7 +52,6 @@ import timber.log.Timber
 import kotlin.concurrent.atomics.AtomicReference
 import kotlin.concurrent.atomics.ExperimentalAtomicApi
 import kotlin.concurrent.atomics.update
-import kotlin.concurrent.atomics.updateAndFetch
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
@@ -64,8 +64,8 @@ import kotlin.time.Duration.Companion.seconds
 @OptIn(UnstableApi::class)
 class MpvPlayer(
     private val context: Context,
-    enableHardwareDecoding: Boolean,
-    useGpuNext: Boolean,
+    private val enableHardwareDecoding: Boolean,
+    private val useGpuNext: Boolean,
 ) : BasePlayer(),
     MPVLib.EventObserver,
     TrackSelector.InvalidationListener,
@@ -87,8 +87,6 @@ class MpvPlayer(
         }
     private val availableCommands: Player.Commands
     private val trackSelector = DefaultTrackSelector(context)
-
-    private var mediaItem: MediaItem? = null
 
     private val thread: HandlerThread
     private val internalHandler: Handler
@@ -292,7 +290,7 @@ class MpvPlayer(
         if (DEBUG) Timber.v("stop")
         if (isReleased) return
         pause()
-        mediaItem = null
+        internalHandler.removeCallbacks(updatePlaybackState)
         internalHandler.removeCallbacks(periodicUpdateRunnable)
         playbackState.update {
             PlaybackState.EMPTY
@@ -303,6 +301,7 @@ class MpvPlayer(
 
     override fun release() {
         Timber.i("release")
+        internalHandler.removeCallbacks(updatePlaybackState)
         internalHandler.removeCallbacks(periodicUpdateRunnable)
         playbackState.update {
             PlaybackState.EMPTY
@@ -480,11 +479,14 @@ class MpvPlayer(
     }
 
     override fun clearVideoSurfaceView(surfaceView: SurfaceView?) {
-        Timber.d("clearVideoSurfaceView")
-        MPVLib.detachSurface()
-        MPVLib.setPropertyString("vo", "null")
-        MPVLib.setPropertyString("force-window", "no")
-        mediaItem = null
+        if (surface == surfaceView?.holder?.surface) {
+            Timber.d("clearVideoSurfaceView")
+            MPVLib.detachSurface()
+            MPVLib.setPropertyString("vo", "null")
+            MPVLib.setPropertyString("force-window", "no")
+        } else {
+            Timber.w("clearVideoSurfaceView called with different surface")
+        }
     }
 
     override fun setVideoTextureView(textureView: TextureView?): Unit = throw UnsupportedOperationException()
@@ -623,20 +625,24 @@ class MpvPlayer(
         Timber.v("event: thread=${Thread.currentThread().name}, eventId=$eventId")
         when (eventId) {
             MPV_EVENT_START_FILE -> {
-                internalHandler.post(periodicUpdateRunnable)
+                internalHandler.post(updatePlaybackState)
             }
 
             MPV_EVENT_FILE_LOADED -> {
                 isLoadingFile = false
                 notifyListeners(EVENT_IS_LOADING_CHANGED) { onIsLoadingChanged(false) }
                 Timber.d("event: MPV_EVENT_FILE_LOADED")
-                internalHandler.post(periodicUpdateRunnable)
-                mediaItem?.let {
-                    it.localConfiguration?.subtitleConfigurations?.forEach {
+                internalHandler.post(updatePlaybackState)
+                playbackState.load().media?.mediaItem?.let { media ->
+                    media.localConfiguration?.subtitleConfigurations?.forEach {
                         val url = it.uri.toString()
                         val title = it.label ?: "External Subtitles"
                         Timber.v("Adding external subtitle track '$title'")
-                        MPVLib.command(arrayOf("sub-add", url, "auto", title))
+                        if (it.language.isNotNullOrBlank()) {
+                            MPVLib.command(arrayOf("sub-add", url, "auto", title, it.language!!))
+                        } else {
+                            MPVLib.command(arrayOf("sub-add", url, "auto", title))
+                        }
                     }
                 }
                 notifyListeners(EVENT_RENDERED_FIRST_FRAME) { onRenderedFirstFrame() }
@@ -710,12 +716,11 @@ class MpvPlayer(
     }
 
     private fun updateTracksAndNotify() {
-        playbackState
-            .updateAndFetch {
-                it.copy(tracks = createTracks())
-            }.let {
-                notifyListeners(EVENT_TRACKS_CHANGED) { onTracksChanged(it.tracks) }
-            }
+        val tracks = createTracks()
+        playbackState.update {
+            it.copy(tracks = tracks)
+        }
+        notifyListeners(EVENT_TRACKS_CHANGED) { onTracksChanged(tracks) }
     }
 
     private fun loadFile(media: MediaAndPosition) {
@@ -743,7 +748,9 @@ class MpvPlayer(
             MPVLib.command(arrayOf("loadfile", url, "replace", "-1"))
         }
 
-        MPVLib.setPropertyString("vo", "gpu")
+        if (enableHardwareDecoding) {
+            MPVLib.setOptionString("vo", if (useGpuNext) "gpu-next" else "gpu")
+        }
         Timber.d("Called loadfile")
     }
 
@@ -791,41 +798,49 @@ class MpvPlayer(
             subtitleDelaySeconds = value.inWholeMilliseconds / 1000.0
         }
 
+    private val updatePlaybackState: Runnable =
+        Runnable {
+            if (playbackState.load().media == null) {
+                return@Runnable
+            }
+            val positionMs =
+                MPVLib.getPropertyDouble("time-pos/full")?.seconds?.inWholeMilliseconds
+                    ?: C.TIME_UNSET
+            val bufferMs =
+                MPVLib.getPropertyDouble("demuxer-cache-duration")?.seconds?.inWholeMilliseconds
+                    ?: C.TIME_UNSET
+            val durationMs =
+                MPVLib.getPropertyDouble("duration/full")?.seconds?.inWholeMilliseconds
+                    ?: C.TIME_UNSET
+            val speed = MPVLib.getPropertyDouble("speed")?.toFloat() ?: 1f
+            val paused = MPVLib.getPropertyBoolean("pause") ?: false
+            val width = MPVLib.getPropertyInt("width")
+            val height = MPVLib.getPropertyInt("height")
+            val videoSize =
+                if (width != null && height != null) {
+                    VideoSize(width, height)
+                } else {
+                    VideoSize.UNKNOWN
+                }
+
+            playbackState.update {
+                it.copy(
+                    timestamp = System.currentTimeMillis(),
+                    positionMs = positionMs,
+                    bufferMs = bufferMs,
+                    durationMs = durationMs,
+                    speed = speed,
+                    isPaused = paused,
+                    videoSize = videoSize,
+                )
+            }
+        }
+
     private val periodicUpdateRunnable =
         object : Runnable {
             override fun run() {
                 Timber.d("Starting periodic update, thread=${Thread.currentThread().name}")
-                val positionMs =
-                    MPVLib.getPropertyDouble("time-pos/full")?.seconds?.inWholeMilliseconds
-                        ?: C.TIME_UNSET
-                val bufferMs =
-                    MPVLib.getPropertyDouble("demuxer-cache-duration")?.seconds?.inWholeMilliseconds
-                        ?: C.TIME_UNSET
-                val durationMs =
-                    MPVLib.getPropertyDouble("duration/full")?.seconds?.inWholeMilliseconds
-                        ?: C.TIME_UNSET
-                val speed = MPVLib.getPropertyDouble("speed")?.toFloat() ?: 1f
-                val paused = MPVLib.getPropertyBoolean("pause") ?: false
-                val width = MPVLib.getPropertyInt("width")
-                val height = MPVLib.getPropertyInt("height")
-                val videoSize =
-                    if (width != null && height != null) {
-                        VideoSize(width, height)
-                    } else {
-                        VideoSize.UNKNOWN
-                    }
-
-                playbackState.update {
-                    it.copy(
-                        timestamp = System.currentTimeMillis(),
-                        positionMs = positionMs,
-                        bufferMs = bufferMs,
-                        durationMs = durationMs,
-                        speed = speed,
-                        isPaused = paused,
-                        videoSize = videoSize,
-                    )
-                }
+                updatePlaybackState.run()
                 internalHandler.postDelayed(this, 2_500)
             }
         }
@@ -937,7 +952,7 @@ private fun createTracks(): Tracks {
             val codecDescription = MPVLib.getPropertyString("track-list/$idx/codec-desc")
             val isDefault = MPVLib.getPropertyBoolean("track-list/$idx/default") ?: false
             val isForced = MPVLib.getPropertyBoolean("track-list/$idx/forced") ?: false
-//            val isExternal = MPVLib.getPropertyBoolean("track-list/$idx/external") ?: false
+            val isExternal = MPVLib.getPropertyBoolean("track-list/$idx/external") ?: false
             val isSelected = MPVLib.getPropertyBoolean("track-list/$idx/selected") ?: false
             val channelCount = MPVLib.getPropertyInt("track-list/$idx/demux-channel-count")
             val title = MPVLib.getPropertyString("track-list/$idx/title")
@@ -957,8 +972,13 @@ private fun createTracks(): Tracks {
                 val builder =
                     Format
                         .Builder()
-                        .setId("$idx:$id")
-                        .setCodecs(codec)
+                        .apply {
+                            if (isExternal) {
+                                setId("$idx:e:$id")
+                            } else {
+                                setId("$idx:$id")
+                            }
+                        }.setCodecs(codec)
                         .setSampleMimeType(mimeType)
                         .setLanguage(lang)
                         .setLabel(listOfNotNull(title, codecDescription).joinToString(","))
@@ -969,6 +989,7 @@ private fun createTracks(): Tracks {
                 }
                 channelCount?.let(builder::setChannelCount)
                 val format = builder.build()
+//                Timber.v("$idx=$format")
 
                 val trackGroup = TrackGroup(format)
                 val group =
