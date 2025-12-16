@@ -338,4 +338,5 @@
     <string name="favorite_channels_at_beginning">优先显示收藏频道</string>
     <string name="sort_channels_recently_watched">按最近观看的频道排序</string>
     <string name="color_code_programs">节目颜色标记</string>
+    <string name="subtitle_delay">字幕延迟</string>
 </resources>
