@@ -144,4 +144,69 @@
     <string name="sort_by_name">Όνομα</string>
     <string name="sort_by_random">Τυχαία</string>
     <string name="submit">Υποβολή</string>
+    <string name="active_recordings">Ενεργές καταγραφές</string>
+    <string name="none">Κανένας</string>
+    <string name="playback_debug_info">Εμφάνιση πληροφοριών αναπαραγωγής σφαλμάτων</string>
+    <string name="subtitle_download_too_long">Λήψη αρχείων διαρκεί πολύ χρονο, ίσως χρειαστεί να επανεκκινήσετε την αναπαραγωγή</string>
+    <string name="switch_servers">Αλλαγή διακομιστή</string>
+    <string name="switch_user">Αντικατάσταση</string>
+    <string name="top_unwatched">Κορυφαίες βαθμολογίες σε ταινίες που δεν έχω δει</string>
+    <string name="tv_guide">Οδηγός</string>
+    <string name="tv_season">Σεζόν</string>
+    <string name="tv_seasons">Περισσότερες Σεζόν</string>
+    <string name="unknown">Άγνωστο</string>
+    <string name="updates">Αναβαθμίσεις</string>
+    <string name="version">Εκδοχή</string>
+    <string name="video_scale">Κλίμακα βίντεο</string>
+    <string name="watch_live">Ζωντανή μετάδοση</string>
+    <string name="media_information">Πληροφορίες μέσων</string>
+    <string name="show_clock">Εμφάνιση ώρας</string>
+    <string name="create_playlist">Δημιουργία νέας λίστας αναπαραγωγής</string>
+    <string name="add_to_playlist">Προσθήκη στη λίστα αναπαραγωγής</string>
+    <string name="one_click_pause">Παύση με ένα κουμπί</string>
+    <string name="italic_font">Πλάγια γραμματοσειρά</string>
+    <string name="success">Επιτυχής</string>
+    <string name="official_rating">Γονεική αξιολόγηση</string>
+    <string name="runtime_sort">Χρόνος εκτέλεσης</string>
+    <string name="extras">Επιπρόσθετα</string>
+    <plurals name="other_extras">
+        <item quantity="one">Άλλο</item>
+        <item quantity="other"></item>
+    </plurals>
+    <plurals name="behind_the_scenes">
+        <item quantity="one">Παρασκήνια</item>
+        <item quantity="other"></item>
+    </plurals>
+    <plurals name="clips">
+        <item quantity="one">Αποσπάσματα</item>
+        <item quantity="other"></item>
+    </plurals>
+    <plurals name="deleted_scenes">
+        <item quantity="one">Διαγραμμένες σκηνές</item>
+        <item quantity="other"></item>
+    </plurals>
+    <plurals name="interviews">
+        <item quantity="one">Συνεντεύξεις</item>
+        <item quantity="other"></item>
+    </plurals>
+    <plurals name="scenes">
+        <item quantity="one">Σκηνές</item>
+        <item quantity="other"></item>
+    </plurals>
+    <plurals name="samples">
+        <item quantity="one">Δείγματα</item>
+        <item quantity="other"></item>
+    </plurals>
+    <plurals name="featurettes">
+        <item quantity="one">Χαρακτηριστικά</item>
+        <item quantity="other"></item>
+    </plurals>
+    <string name="auto_check_for_updates">Αυτόματος έλεγχος για ενημερώσεις</string>
+    <string name="auto_play_next_delay">Καθυστέρηση πριν την έναρξη του επόμενου</string>
+    <string name="auto_play_next">Αυτόματη έναρξη επόμενου</string>
+    <string name="check_for_updates">Έλεχγος για ενημερώσεις</string>
+    <string name="combine_continue_next_summary">Ισχύει μόνο για τηλεοπτικές σειρές</string>
+    <string name="global_content_scale">Προεπιλεγμένη αναπαραγωγή περιεχομένου</string>
+    <string name="install_update">Εγκατάσταση ενημέρωσης</string>
+    <string name="installed_version">Εγκατεστημένη εκδοχή</string>
 </resources>
