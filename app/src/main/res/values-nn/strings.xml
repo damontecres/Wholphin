@@ -1,3 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="about">Om</string>
+    <string name="active_recordings">Aktive opptak</string>
+    <string name="add_favorite">Favoritt</string>
+    <string name="add_server">Legg til Server</string>
+    <string name="add_user">Legg til Brukar</string>
+    <string name="audio">Lyd</string>
+    <string name="birthplace">Fødestad</string>
+    <string name="bitrate">Bitrate</string>
+    <string name="born">Født</string>
+    <string name="cancel_recording">Avbryt opptak</string>
+    <string name="cancel_series_recording">Avbryt opptak av serie</string>
+    <string name="cancel">Avbryt</string>
+    <string name="chapters">Kapittel</string>
+    <string name="choose_stream">Vel %1$s</string>
+    <string name="collection">Samling</string>
+    <string name="collections">Samlingar</string>
+    <string name="confirm">Bekreft</string>
+    <string name="default_track">Standard</string>
+    <string name="delete">Slett</string>
+    <string name="died">Dødd</string>
+    <string name="directed_by">Regissert av %1$s</string>
 </resources>
