@@ -75,7 +75,9 @@ class MpvPlayer(
     }
 
     private var surface: Surface? = null
+    private val playbackState = AtomicReference<PlaybackState>(PlaybackState.EMPTY)
 
+    // This looper will sent events to the main thread
     private val looper = Util.getCurrentOrMainLooper()
     private val mainHandler = Handler(looper)
     private val listeners =
@@ -88,22 +90,17 @@ class MpvPlayer(
     private val availableCommands: Player.Commands
     private val trackSelector = DefaultTrackSelector(context)
 
-    private val thread: HandlerThread
-    private val internalHandler: Handler
-    private val playbackState = AtomicReference<PlaybackState>(PlaybackState.EMPTY)
+    // This thread/looper will receive commands from the main thread to execute
+    private val thread: HandlerThread =
+        HandlerThread("MpvPlayer:Playback", Process.THREAD_PRIORITY_AUDIO)
+            .also { it.start() }
+    private val internalHandler: Handler = Handler(thread.looper, this)
 
     @Volatile
     var isReleased = false
         private set
 
-    @Volatile
-    private var isLoadingFile = false
-
     init {
-        thread = HandlerThread("MpvPlayer:Playback", Process.THREAD_PRIORITY_AUDIO)
-        thread.start()
-        internalHandler = Handler(thread.looper, this)
-
         Timber.v("config-dir=${context.filesDir.path}")
         MPVLib.create(context)
         MPVLib.setOptionString("config", "yes")
@@ -268,7 +265,7 @@ class MpvPlayer(
 
     override fun getShuffleModeEnabled(): Boolean = false
 
-    override fun isLoading(): Boolean = isLoadingFile
+    override fun isLoading(): Boolean = playbackState.load().isLoadingFile
 
     override fun getSeekBackIncrement(): Long = 10_000
 
@@ -291,7 +288,6 @@ class MpvPlayer(
         if (isReleased) return
         pause()
         internalHandler.removeCallbacks(updatePlaybackState)
-        internalHandler.removeCallbacks(periodicUpdateRunnable)
         playbackState.update {
             PlaybackState.EMPTY
         }
@@ -302,7 +298,6 @@ class MpvPlayer(
     override fun release() {
         Timber.i("release")
         internalHandler.removeCallbacks(updatePlaybackState)
-        internalHandler.removeCallbacks(periodicUpdateRunnable)
         playbackState.update {
             PlaybackState.EMPTY
         }
@@ -332,7 +327,7 @@ class MpvPlayer(
     override fun setTrackSelectionParameters(parameters: TrackSelectionParameters) {
         Timber.v("TrackSelection: setTrackSelectionParameters %s", parameters)
         if (isReleased) return
-        val tracks = getTracks()
+        val tracks = playbackState.load().tracks
         if (C.TRACK_TYPE_TEXT in parameters.disabledTrackTypes) {
             // Subtitles disabled
             Timber.v("TrackSelection: disabling subtitles")
@@ -415,8 +410,6 @@ class MpvPlayer(
     override fun getCurrentPosition(): Long {
         if (DEBUG) Timber.v("getCurrentPosition")
         val state = playbackState.load()
-        // TODO seeking, delta?
-        val delta = System.currentTimeMillis() - state.timestamp
         return state.positionMs
     }
 
@@ -560,11 +553,8 @@ class MpvPlayer(
         sendCommand(MpvCommand.SEEK, positionMs)
     }
 
-    private fun sendCommand(
-        cmd: MpvCommand,
-        obj: Any?,
-    ) {
-        internalHandler.obtainMessage(cmd.ordinal, obj).sendToTarget()
+    override fun onTrackSelectionsInvalidated() {
+        // no-op
     }
 
     override fun eventProperty(property: String) {
@@ -629,7 +619,9 @@ class MpvPlayer(
             }
 
             MPV_EVENT_FILE_LOADED -> {
-                isLoadingFile = false
+                playbackState.update {
+                    it.copy(isLoadingFile = false)
+                }
                 notifyListeners(EVENT_IS_LOADING_CHANGED) { onIsLoadingChanged(false) }
                 Timber.d("event: MPV_EVENT_FILE_LOADED")
                 internalHandler.post(updatePlaybackState)
@@ -725,11 +717,13 @@ class MpvPlayer(
 
     private fun loadFile(media: MediaAndPosition) {
         Timber.v("loadFile: media=$media")
-        isLoadingFile = true
-        notifyListeners(EVENT_IS_LOADING_CHANGED) { onIsLoadingChanged(true) }
         playbackState.update {
-            it.copy(media = media)
+            it.copy(
+                isLoadingFile = true,
+                media = media,
+            )
         }
+        notifyListeners(EVENT_IS_LOADING_CHANGED) { onIsLoadingChanged(true) }
         val url =
             media.mediaItem.localConfiguration
                 ?.uri
@@ -770,12 +764,6 @@ class MpvPlayer(
             }
             listeners.flushEvents()
         }
-    }
-
-    private fun getTracks(): Tracks = playbackState.load().tracks
-
-    override fun onTrackSelectionsInvalidated() {
-        // no-op
     }
 
     var subtitleDelaySeconds: Double
@@ -836,14 +824,12 @@ class MpvPlayer(
             }
         }
 
-    private val periodicUpdateRunnable =
-        object : Runnable {
-            override fun run() {
-                Timber.d("Starting periodic update, thread=${Thread.currentThread().name}")
-                updatePlaybackState.run()
-                internalHandler.postDelayed(this, 2_500)
-            }
-        }
+    private fun sendCommand(
+        cmd: MpvCommand,
+        obj: Any?,
+    ) {
+        internalHandler.obtainMessage(cmd.ordinal, obj).sendToTarget()
+    }
 
     override fun handleMessage(msg: Message): Boolean {
         val cmd = MpvCommand.entries[msg.what]
@@ -904,42 +890,9 @@ class MpvPlayer(
 fun MPVLib.setPropertyColor(
     property: String,
     color: Color,
-) = MPVLib.setPropertyString(property, color.mpvFormat)
+) = setPropertyString(property, color.mpvFormat)
 
 private val Color.mpvFormat: String get() = "$red/$green/$blue/$alpha"
-
-data class PlaybackState(
-    val timestamp: Long,
-    val media: MediaAndPosition?,
-    val positionMs: Long,
-    val bufferMs: Long,
-    val durationMs: Long,
-    val isSeeking: Boolean,
-    val isPaused: Boolean,
-    val speed: Float,
-    val subtitleDelay: Double,
-    val videoSize: VideoSize,
-    @param:Player.State val state: Int,
-    val tracks: Tracks,
-) {
-    companion object {
-        val EMPTY =
-            PlaybackState(
-                timestamp = C.TIME_UNSET,
-                media = null,
-                positionMs = C.TIME_UNSET,
-                durationMs = C.TIME_UNSET,
-                isSeeking = false,
-                tracks = Tracks.EMPTY,
-                bufferMs = C.TIME_UNSET,
-                isPaused = false,
-                speed = 1f,
-                videoSize = VideoSize.UNKNOWN,
-                state = Player.STATE_IDLE,
-                subtitleDelay = 0.0,
-            )
-    }
-}
 
 private fun createTracks(): Tracks {
     val trackCount = MPVLib.getPropertyInt("track-list/count") ?: return Tracks.EMPTY
@@ -1007,12 +960,45 @@ private fun createTracks(): Tracks {
     return Tracks(groups)
 }
 
+private data class PlaybackState(
+    val timestamp: Long,
+    val isLoadingFile: Boolean,
+    val media: MediaAndPosition?,
+    val positionMs: Long,
+    val bufferMs: Long,
+    val durationMs: Long,
+    val isPaused: Boolean,
+    val speed: Float,
+    val subtitleDelay: Double,
+    val videoSize: VideoSize,
+    @param:Player.State val state: Int,
+    val tracks: Tracks,
+) {
+    companion object {
+        val EMPTY =
+            PlaybackState(
+                timestamp = C.TIME_UNSET,
+                isLoadingFile = false,
+                media = null,
+                positionMs = C.TIME_UNSET,
+                durationMs = C.TIME_UNSET,
+                tracks = Tracks.EMPTY,
+                bufferMs = C.TIME_UNSET,
+                isPaused = false,
+                speed = 1f,
+                videoSize = VideoSize.UNKNOWN,
+                state = Player.STATE_IDLE,
+                subtitleDelay = 0.0,
+            )
+    }
+}
+
 private data class TrackSelection(
     val property: String,
     val trackId: String,
 )
 
-data class MediaAndPosition(
+private data class MediaAndPosition(
     val mediaItem: MediaItem,
     val startPositionMs: Long,
 )
