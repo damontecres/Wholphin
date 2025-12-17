@@ -14,12 +14,13 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -27,6 +28,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
@@ -50,6 +54,7 @@ import com.github.damontecres.wholphin.ui.FontAwesome
 import com.github.damontecres.wholphin.ui.components.DialogItem
 import com.github.damontecres.wholphin.ui.components.DialogPopup
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
+import com.github.damontecres.wholphin.ui.tryRequestFocus
 import java.util.UUID
 
 /**
@@ -78,17 +83,27 @@ fun UserList(
             modifier = Modifier.fillMaxWidth(),
             contentAlignment = Alignment.Center,
         ) {
+            val focusRequester = remember { FocusRequester() }
+            val firstFocusRequester = remember { FocusRequester() }
+            if (users.isNotEmpty()) {
+                LaunchedEffect(Unit) { focusRequester.tryRequestFocus() }
+            }
             LazyRow(
                 horizontalArrangement = Arrangement.spacedBy(24.dp), // Spacing to accommodate 20% scale
                 contentPadding = PaddingValues(horizontal = 48.dp, vertical = 16.dp), // Increased padding to accommodate 20% scale
-                modifier = Modifier.wrapContentWidth(),
+                modifier =
+                    Modifier
+                        .wrapContentWidth()
+                        .focusRestorer(firstFocusRequester)
+                        .focusRequester(focusRequester),
             ) {
-                items(users) { user ->
+                itemsIndexed(users) { index, user ->
                     UserIconCard(
                         user = user,
                         isCurrentUser = user.user.id == currentUser?.id,
                         onClick = { onSwitchUser.invoke(user.user) },
                         onLongClick = { showDeleteDialog = user.user },
+                        modifier = if (index == 0) Modifier.focusRequester(firstFocusRequester) else Modifier,
                     )
                 }
                 // Add User card - always rightmost
