@@ -145,6 +145,8 @@ class ImageUrlService
                 imageIndex = imageIndex,
             )
 
+        fun getUserImageUrl(userId: UUID) = api.imageApi.getUserImageUrl(userId)
+
         /**
          * Just a convenient way to get the image URL and remember it
          */

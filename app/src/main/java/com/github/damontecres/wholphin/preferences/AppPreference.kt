@@ -659,6 +659,19 @@ sealed interface AppPreference<Pref, T> {
                 summaryOff = R.string.disabled,
             )
 
+        val BackdropStylePref =
+            AppChoicePreference<AppPreferences, BackdropStyle>(
+                title = R.string.backdrop_display,
+                defaultValue = BackdropStyle.BACKDROP_DYNAMIC_COLOR,
+                getter = { it.interfacePreferences.backdropStyle },
+                setter = { prefs, value ->
+                    prefs.updateInterfacePreferences { backdropStyle = value }
+                },
+                displayValues = R.array.backdrop_style_options,
+                indexToValue = { BackdropStyle.forNumber(it) },
+                valueToIndex = { it.number },
+            )
+
         val OneClickPause =
             AppSwitchPreference<AppPreferences>(
                 title = R.string.one_click_pause,
@@ -909,6 +922,7 @@ val advancedPreferences =
                         // Temporarily disabled, see https://github.com/damontecres/Wholphin/pull/127#issuecomment-3478058418
 //                    AppPreference.NavDrawerSwitchOnFocus,
                         AppPreference.ControllerTimeout,
+                        AppPreference.BackdropStylePref,
                     ),
             ),
         )

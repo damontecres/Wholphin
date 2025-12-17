@@ -79,6 +79,7 @@ val SlimItemFields =
 object Cards {
     val height2x3 = 172.dp
     val playedPercentHeight = 6.dp
+    val serverUserCircle = height2x3 * .75f
 }
 
 object AspectRatios {

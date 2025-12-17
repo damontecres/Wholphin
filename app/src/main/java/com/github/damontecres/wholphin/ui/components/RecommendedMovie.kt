@@ -12,6 +12,7 @@ import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.preferences.AppPreference
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.UserPreferences
+import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.FavoriteWatchManager
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.ui.SlimItemFields
@@ -56,7 +57,8 @@ class RecommendedMovieViewModel
         @Assisted val parentId: UUID,
         navigationManager: NavigationManager,
         favoriteWatchManager: FavoriteWatchManager,
-    ) : RecommendedViewModel(context, navigationManager, favoriteWatchManager) {
+        backdropService: BackdropService,
+    ) : RecommendedViewModel(context, navigationManager, favoriteWatchManager, backdropService) {
         @AssistedFactory
         interface Factory {
             fun create(parentId: UUID): RecommendedMovieViewModel

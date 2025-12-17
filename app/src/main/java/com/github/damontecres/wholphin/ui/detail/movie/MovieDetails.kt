@@ -54,7 +54,6 @@ import com.github.damontecres.wholphin.ui.cards.ExtrasRow
 import com.github.damontecres.wholphin.ui.cards.ItemRow
 import com.github.damontecres.wholphin.ui.cards.PersonRow
 import com.github.damontecres.wholphin.ui.cards.SeasonCard
-import com.github.damontecres.wholphin.ui.components.DetailsBackdropImage
 import com.github.damontecres.wholphin.ui.components.DialogParams
 import com.github.damontecres.wholphin.ui.components.DialogPopup
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
@@ -396,7 +395,6 @@ fun MovieDetailsContent(
         focusRequesters.getOrNull(position)?.tryRequestFocus()
     }
     Box(modifier = modifier) {
-        DetailsBackdropImage(movie)
         LazyColumn(
             verticalArrangement = Arrangement.spacedBy(16.dp),
             contentPadding = PaddingValues(horizontal = 32.dp, vertical = 8.dp),

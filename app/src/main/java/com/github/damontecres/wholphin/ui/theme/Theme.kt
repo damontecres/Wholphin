@@ -15,22 +15,24 @@ import com.github.damontecres.wholphin.ui.theme.colors.PurpleThemeColors
 val LocalTheme =
     compositionLocalOf<AppThemeColors> { AppThemeColors.PURPLE }
 
+fun getThemeColors(appThemeColors: AppThemeColors): ThemeColors =
+    when (appThemeColors) {
+        AppThemeColors.PURPLE -> PurpleThemeColors
+        AppThemeColors.BLUE -> BlueThemeColors
+        AppThemeColors.GREEN -> GreenThemeColors
+        AppThemeColors.ORANGE -> OrangeThemeColors
+        AppThemeColors.OLED_BLACK -> OledThemeColors
+        AppThemeColors.BOLD_BLUE -> BoldBlueThemeColors
+        AppThemeColors.UNRECOGNIZED -> PurpleThemeColors
+    }
+
 @Composable
 fun WholphinTheme(
     darkTheme: Boolean = true,
     appThemeColors: AppThemeColors = AppThemeColors.PURPLE,
     content: @Composable () -> Unit,
 ) {
-    val themeColors =
-        when (appThemeColors) {
-            AppThemeColors.PURPLE -> PurpleThemeColors
-            AppThemeColors.BLUE -> BlueThemeColors
-            AppThemeColors.GREEN -> GreenThemeColors
-            AppThemeColors.ORANGE -> OrangeThemeColors
-            AppThemeColors.OLED_BLACK -> OledThemeColors
-            AppThemeColors.BOLD_BLUE -> BoldBlueThemeColors
-            AppThemeColors.UNRECOGNIZED -> PurpleThemeColors
-        }
+    val themeColors = getThemeColors(appThemeColors)
 
     val colorScheme =
         when {
