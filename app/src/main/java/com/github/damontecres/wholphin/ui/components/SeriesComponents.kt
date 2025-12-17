@@ -15,9 +15,9 @@ import com.github.damontecres.wholphin.ui.roundMinutes
 import com.github.damontecres.wholphin.ui.seasonEpisode
 import com.github.damontecres.wholphin.ui.seriesProductionYears
 import com.github.damontecres.wholphin.ui.timeRemaining
+import com.github.damontecres.wholphin.ui.util.LocalClock
 import org.jellyfin.sdk.model.api.BaseItemDto
 import org.jellyfin.sdk.model.extensions.ticks
-import java.time.LocalTime
 
 @Composable
 fun SeriesName(
@@ -62,15 +62,16 @@ fun EpisodeQuickDetails(
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
+    val now = LocalClock.current.now
     val details =
-        remember(dto) {
+        remember(dto, now) {
             buildList {
                 dto?.seasonEpisode?.let(::add)
                 dto?.premiereDate?.let { add(formatDateTime(it)) }
                 val duration = dto?.runTimeTicks?.ticks?.roundMinutes
                 duration?.let {
                     add(it.toString())
-                    val endTime = LocalTime.now().plusSeconds(it.inWholeSeconds)
+                    val endTime = now.toLocalTime().plusSeconds(it.inWholeSeconds)
                     val endTimeStr = TimeFormatter.format(endTime)
                     add(context.getString(R.string.ends_at, endTimeStr))
                 }
@@ -93,14 +94,15 @@ fun SeriesQuickDetails(
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
+    val now = LocalClock.current.now
     val details =
-        remember(dto) {
+        remember(dto, now) {
             buildList {
                 dto?.seriesProductionYears?.let(::add)
                 val duration = dto?.runTimeTicks?.ticks?.roundMinutes
                 duration?.let {
                     add(it.toString())
-                    val endTime = LocalTime.now().plusSeconds(it.inWholeSeconds)
+                    val endTime = now.toLocalTime().plusSeconds(it.inWholeSeconds)
                     val endTimeStr = TimeFormatter.format(endTime)
                     add(context.getString(R.string.ends_at, endTimeStr))
                 }

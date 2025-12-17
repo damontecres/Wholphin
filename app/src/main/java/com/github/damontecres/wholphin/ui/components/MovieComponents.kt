@@ -9,9 +9,9 @@ import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.ui.TimeFormatter
 import com.github.damontecres.wholphin.ui.roundMinutes
 import com.github.damontecres.wholphin.ui.timeRemaining
+import com.github.damontecres.wholphin.ui.util.LocalClock
 import org.jellyfin.sdk.model.api.BaseItemDto
 import org.jellyfin.sdk.model.extensions.ticks
-import java.time.LocalTime
 
 @Composable
 fun MovieQuickDetails(
@@ -19,13 +19,14 @@ fun MovieQuickDetails(
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
+    val now = LocalClock.current.now
     val details =
-        remember(dto) {
+        remember(dto, now) {
             buildList {
                 dto?.productionYear?.let { add(it.toString()) }
                 dto?.runTimeTicks?.ticks?.roundMinutes?.let { duration ->
                     add(duration.toString())
-                    val endTime = LocalTime.now().plusSeconds(duration.inWholeSeconds)
+                    val endTime = now.toLocalTime().plusSeconds(duration.inWholeSeconds)
                     val endTimeStr = TimeFormatter.format(endTime)
                     add(context.getString(R.string.ends_at, endTimeStr))
                 }

@@ -67,6 +67,7 @@ import com.github.damontecres.wholphin.ui.enableMarquee
 import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.nav.Destination
+import com.github.damontecres.wholphin.ui.util.LocalClock
 import com.github.damontecres.wholphin.ui.roundMinutes
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.ApiRequestPager
@@ -80,7 +81,6 @@ import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.model.api.request.GetPlaylistItemsRequest
 import org.jellyfin.sdk.model.extensions.ticks
-import java.time.LocalTime
 import java.util.UUID
 import javax.inject.Inject
 import kotlin.time.Duration
@@ -410,12 +410,15 @@ fun PlaylistItem(
         },
         trailingContent = {
             item?.data?.runTimeTicks?.ticks?.roundMinutes?.let { duration ->
+                val now = LocalClock.current.now
+                val endTimeStr = remember(item, now) {
+                    val endTime = now.toLocalTime().plusSeconds(duration.inWholeSeconds)
+                    TimeFormatter.format(endTime)
+                }
                 Column {
                     Text(
                         text = duration.toString(),
                     )
-                    val endTime = LocalTime.now().plusSeconds(duration.inWholeSeconds)
-                    val endTimeStr = TimeFormatter.format(endTime)
                     Text(
                         text = stringResource(R.string.ends_at, endTimeStr),
                         style = MaterialTheme.typography.bodySmall,
