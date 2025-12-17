@@ -355,4 +355,7 @@
     <string name="sort_channels_recently_watched">Järjesta kanalid viimase vaatamise alusel</string>
     <string name="color_code_programs">Märgi programmid värvidega</string>
     <string name="subtitle_delay">Subtiitrite viivitus</string>
+    <string name="enter_server_address">Sisesta serveri aadress</string>
+    <string name="no_servers_found">Ühtegi serverit ei leidu</string>
+    <string name="backdrop_display">Tausta dekoratsioon</string>
 </resources>
