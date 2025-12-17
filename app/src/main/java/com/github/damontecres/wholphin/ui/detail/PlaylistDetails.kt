@@ -67,9 +67,9 @@ import com.github.damontecres.wholphin.ui.enableMarquee
 import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.nav.Destination
-import com.github.damontecres.wholphin.ui.util.LocalClock
 import com.github.damontecres.wholphin.ui.roundMinutes
 import com.github.damontecres.wholphin.ui.tryRequestFocus
+import com.github.damontecres.wholphin.ui.util.LocalClock
 import com.github.damontecres.wholphin.util.ApiRequestPager
 import com.github.damontecres.wholphin.util.GetPlaylistItemsRequestHandler
 import com.github.damontecres.wholphin.util.LoadingExceptionHandler
@@ -411,10 +411,11 @@ fun PlaylistItem(
         trailingContent = {
             item?.data?.runTimeTicks?.ticks?.roundMinutes?.let { duration ->
                 val now = LocalClock.current.now
-                val endTimeStr = remember(item, now) {
-                    val endTime = now.toLocalTime().plusSeconds(duration.inWholeSeconds)
-                    TimeFormatter.format(endTime)
-                }
+                val endTimeStr = 
+                    remember(item, now) {
+                        val endTime = now.toLocalTime().plusSeconds(duration.inWholeSeconds)
+                        TimeFormatter.format(endTime)
+                    }
                 Column {
                     Text(
                         text = duration.toString(),
