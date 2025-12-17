@@ -14,6 +14,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
+import com.github.damontecres.wholphin.ui.OsdTextShadow
 import com.github.damontecres.wholphin.ui.TimeFormatter
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -32,6 +33,7 @@ fun BoxScope.TimeDisplay(modifier: Modifier = Modifier) {
         text = TimeFormatter.format(now),
         fontSize = 18.sp,
         color = MaterialTheme.colorScheme.onSurface,
+        style = MaterialTheme.typography.bodyLarge.copy(shadow = OsdTextShadow),
         modifier =
             modifier
                 .align(Alignment.TopEnd)

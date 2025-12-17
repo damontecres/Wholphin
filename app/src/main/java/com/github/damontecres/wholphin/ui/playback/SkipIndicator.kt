@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.sp
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.R
+import com.github.damontecres.wholphin.ui.OsdTextShadow
 import com.github.damontecres.wholphin.ui.ifElse
 import kotlin.math.abs
 
@@ -61,6 +62,7 @@ fun SkipIndicator(
             modifier = Modifier.align(Alignment.Center),
             color = MaterialTheme.colorScheme.onBackground,
             fontSize = 13.sp,
+            style = MaterialTheme.typography.bodySmall.copy(shadow = OsdTextShadow),
             text = abs(durationMs / 1000).toString(),
         )
     }
