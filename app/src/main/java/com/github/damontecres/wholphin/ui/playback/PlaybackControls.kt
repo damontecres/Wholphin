@@ -60,6 +60,7 @@ import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.preferences.AppThemeColors
 import com.github.damontecres.wholphin.ui.AppColors
+import com.github.damontecres.wholphin.ui.OsdTextShadow
 import com.github.damontecres.wholphin.ui.PreviewTvSpec
 import com.github.damontecres.wholphin.ui.components.Button
 import com.github.damontecres.wholphin.ui.components.TextButton
@@ -268,7 +269,7 @@ fun SeekBar(
             Text(
                 text = (position / 1000).seconds.toString(),
                 color = MaterialTheme.colorScheme.onSurface,
-                style = MaterialTheme.typography.labelLarge,
+                style = MaterialTheme.typography.labelLarge.copy(shadow = OsdTextShadow),
                 modifier =
                     Modifier
                         .padding(8.dp),
@@ -276,7 +277,7 @@ fun SeekBar(
             Text(
                 text = "-$remaining",
                 color = MaterialTheme.colorScheme.onSurface,
-                style = MaterialTheme.typography.labelLarge,
+                style = MaterialTheme.typography.labelLarge.copy(shadow = OsdTextShadow),
                 modifier =
                     Modifier
                         .padding(8.dp),

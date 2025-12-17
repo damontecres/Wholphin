@@ -56,6 +56,7 @@ import com.github.damontecres.wholphin.data.model.Playlist
 import com.github.damontecres.wholphin.data.model.aspectRatioFloat
 import com.github.damontecres.wholphin.ui.AppColors
 import com.github.damontecres.wholphin.ui.AspectRatios
+import com.github.damontecres.wholphin.ui.OsdTextShadow
 import com.github.damontecres.wholphin.ui.LocalImageUrlService
 import com.github.damontecres.wholphin.ui.TimeFormatter
 import com.github.damontecres.wholphin.ui.cards.ChapterCard
@@ -216,7 +217,7 @@ fun PlaybackOverlay(
                     OverlayViewState.CHAPTERS -> {
                         Text(
                             text = stringResource(R.string.chapters),
-                            style = MaterialTheme.typography.titleLarge,
+                            style = MaterialTheme.typography.titleLarge.copy(shadow = OsdTextShadow),
                             modifier =
                                 Modifier
                                     .padding(start = 16.dp, top = 0.dp)
@@ -229,7 +230,7 @@ fun PlaybackOverlay(
                     OverlayViewState.QUEUE -> {
                         Text(
                             text = stringResource(R.string.queue),
-                            style = MaterialTheme.typography.titleLarge,
+                            style = MaterialTheme.typography.titleLarge.copy(shadow = OsdTextShadow),
                             modifier =
                                 Modifier
                                     .padding(start = 16.dp, top = 0.dp)
@@ -270,7 +271,7 @@ fun PlaybackOverlay(
                 ) {
                     Text(
                         text = stringResource(R.string.chapters),
-                        style = MaterialTheme.typography.titleLarge,
+                        style = MaterialTheme.typography.titleLarge.copy(shadow = OsdTextShadow),
                     )
                     LazyRow(
                         contentPadding = PaddingValues(16.dp),
@@ -312,7 +313,7 @@ fun PlaybackOverlay(
                     if (playlist.hasNext()) {
                         Text(
                             text = stringResource(R.string.queue),
-                            style = MaterialTheme.typography.titleLarge,
+                            style = MaterialTheme.typography.titleLarge.copy(shadow = OsdTextShadow),
                             modifier =
                                 Modifier
                                     .padding(bottom = 8.dp)
@@ -356,7 +357,7 @@ fun PlaybackOverlay(
                 ) {
                     Text(
                         text = stringResource(R.string.queue),
-                        style = MaterialTheme.typography.titleLarge,
+                        style = MaterialTheme.typography.titleLarge.copy(shadow = OsdTextShadow),
                     )
                     LazyRow(
                         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
@@ -442,7 +443,7 @@ fun PlaybackOverlay(
                     Text(
                         text = (seekProgressMs / 1000L).seconds.toString(),
                         color = MaterialTheme.colorScheme.onSurface,
-                        style = MaterialTheme.typography.labelLarge,
+                        style = MaterialTheme.typography.labelLarge.copy(shadow = OsdTextShadow),
                     )
                 }
             }
@@ -536,7 +537,7 @@ fun Controller(
             title?.let {
                 Text(
                     text = it,
-                    style = MaterialTheme.typography.titleLarge,
+                    style = MaterialTheme.typography.titleLarge.copy(shadow = OsdTextShadow),
                     fontSize = titleTextSize,
                 )
             }
@@ -550,7 +551,7 @@ fun Controller(
                 subtitle?.let {
                     Text(
                         text = it,
-                        style = MaterialTheme.typography.titleMedium,
+                        style = MaterialTheme.typography.titleMedium.copy(shadow = OsdTextShadow),
                         fontSize = subtitleTextSize,
                     )
                 }
@@ -568,7 +569,7 @@ fun Controller(
                     Text(
                         text = "Ends $endTimeStr",
                         color = MaterialTheme.colorScheme.onSurface,
-                        style = MaterialTheme.typography.labelLarge,
+                        style = MaterialTheme.typography.labelLarge.copy(shadow = OsdTextShadow),
                         modifier =
                             Modifier
                                 .padding(end = 32.dp),
