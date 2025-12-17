@@ -162,7 +162,7 @@ fun SwitchUserContent(
                         Modifier
                             .focusGroup()
                             .padding(16.dp)
-                            .fillMaxWidth(.66f),
+                            .fillMaxWidth(.4f),
                 ) {
                     if (useQuickConnect) {
                         if (quickConnect == null && userState !is LoadingState.Error) {

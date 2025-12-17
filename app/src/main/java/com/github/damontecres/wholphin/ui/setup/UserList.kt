@@ -55,7 +55,6 @@ import com.github.damontecres.wholphin.ui.components.DialogItem
 import com.github.damontecres.wholphin.ui.components.DialogPopup
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.tryRequestFocus
-import java.util.UUID
 
 /**
  * Display a list of users plus option to add a new one or switch servers
@@ -174,40 +173,6 @@ fun UserList(
     }
 }
 
-/**
- * Generate a consistent color for a user based on their ID
- */
-@Composable
-private fun getUserColor(userId: UUID): Color =
-    remember(userId) {
-        // Generate a color based on the user ID hash
-        val hash = userId.hashCode()
-        val hue = (hash % 360).toFloat()
-        val saturation = 0.6f + ((hash / 360) % 40).toFloat() / 100f // 0.6-1.0
-        val brightness = 0.4f + ((hash / 14400) % 30).toFloat() / 100f // 0.4-0.7 (darker colors)
-
-        // Convert HSV to RGB
-        val c = brightness * saturation
-        val x = c * (1 - kotlin.math.abs((hue / 60f) % 2f - 1))
-        val m = brightness - c
-
-        val (r, g, b) =
-            when {
-                hue < 60 -> Triple(c, x, 0f)
-                hue < 120 -> Triple(x, c, 0f)
-                hue < 180 -> Triple(0f, c, x)
-                hue < 240 -> Triple(0f, x, c)
-                hue < 300 -> Triple(x, 0f, c)
-                else -> Triple(c, 0f, x)
-            }
-
-        Color(
-            red = (r + m).coerceIn(0f, 1f),
-            green = (g + m).coerceIn(0f, 1f),
-            blue = (b + m).coerceIn(0f, 1f),
-        )
-    }
-
 @Composable
 private fun UserIconCard(
     user: JellyfinUserAndImage,
@@ -218,13 +183,13 @@ private fun UserIconCard(
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     // Generate unique color for this user
-    val userColor = getUserColor(user.user.id)
+    val userColor = rememberIdColor(user.user.id)
 
     // Track image loading errors
     var imageError by remember { mutableStateOf(false) }
 
     // Card dimensions - circular card
-    val cardSize = Cards.height2x3 * 0.75f // ~120dp (same size as before)
+    val cardSize = Cards.serverUserCircle
 
     Column(
         modifier = modifier,

@@ -176,13 +176,13 @@ fun ServerList(
 }
 
 /**
- * Generate a consistent color for a server based on its ID or URL
+ * Generate a consistent color for a UUID
  */
 @Composable
-private fun getServerColor(server: JellyfinServer): Color =
-    remember(server.id, server.url) {
+fun rememberIdColor(id: UUID): Color =
+    remember(id) {
         // Generate a color based on the server ID hash, fallback to URL hash
-        val hash = server.id.hashCode().takeIf { it != 0 } ?: server.url.hashCode()
+        val hash = id.hashCode()
         val hue = (hash % 360).toFloat()
         val saturation = 0.6f + ((hash / 360) % 40).toFloat() / 100f // 0.6-1.0
         val brightness = 0.4f + ((hash / 14400) % 30).toFloat() / 100f // 0.4-0.7 (darker colors)
@@ -225,10 +225,18 @@ fun ServerIconCard(
     val interactionSource = remember { MutableInteractionSource() }
 
     // Generate unique color for this server
-    val serverColor = getServerColor(server)
+    val serverColor = rememberIdColor(server.id)
 
     // Card dimensions - circular card
-    val cardSize = Cards.height2x3 * 0.75f // ~120dp
+    val cardSize = Cards.serverUserCircle
+
+    val displayText =
+        remember(server) {
+            (server.name ?: server.url.replace(Regex("^https?://"), ""))
+                .firstOrNull()
+                ?.uppercase()
+                ?: "?"
+        }
 
     Column(
         modifier = modifier,
@@ -279,19 +287,7 @@ fun ServerIconCard(
                 when (connectionStatus) {
                     is ServerConnectionStatus.Success -> {
                         // Show server name/letter
-                        val displayText =
-                            remember(server.name, server.url) {
-                                server.name
-                                    ?.firstOrNull()
-                                    ?.uppercaseChar()
-                                    ?.toString()
-                                    ?: server.url
-                                        .replace(Regex("^https?://"), "")
-                                        .firstOrNull()
-                                        ?.uppercaseChar()
-                                        ?.toString()
-                                    ?: "?"
-                            }
+
                         Text(
                             text = displayText,
                             style =
@@ -310,7 +306,7 @@ fun ServerIconCard(
                     }
 
                     is ServerConnectionStatus.Error -> {
-                        // Show warning icon with server letter behind
+                        // Show warning icon with server letter below
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.spacedBy(4.dp),
@@ -321,19 +317,6 @@ fun ServerIconCard(
                                 tint = MaterialTheme.colorScheme.errorContainer,
                                 modifier = Modifier.size(cardSize * 0.3f),
                             )
-                            val displayText =
-                                remember(server.name, server.url) {
-                                    server.name
-                                        ?.firstOrNull()
-                                        ?.uppercaseChar()
-                                        ?.toString()
-                                        ?: server.url
-                                            .replace(Regex("^https?://"), "")
-                                            .firstOrNull()
-                                            ?.uppercaseChar()
-                                            ?.toString()
-                                        ?: "?"
-                                }
                             Text(
                                 text = displayText,
                                 style =
@@ -352,11 +335,9 @@ fun ServerIconCard(
         // Server name below the card
         Text(
             text = server.name?.ifBlank { null } ?: server.url,
-            style =
-                MaterialTheme.typography.bodyLarge.copy(
-                    fontWeight = FontWeight.Bold,
-                ),
+            style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurface,
+            fontWeight = FontWeight.Bold,
             textAlign = TextAlign.Center,
             maxLines = 2,
             overflow = TextOverflow.Ellipsis,
