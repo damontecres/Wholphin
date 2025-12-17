@@ -37,6 +37,7 @@
     <string name="downloading">Downloading…</string>
     <string name="enabled">Enabled</string>
     <string name="enter_server_url">Enter Server IP or URL</string>
+    <string name="enter_server_address">Enter server address</string>
     <string name="episodes">Episodes</string>
     <string name="error_loading_collection">Error loading collection %1$s</string>
     <string name="external_track">External</string>
@@ -69,6 +70,7 @@
     <string name="next_up">Next Up</string>
     <string name="no_data">No data</string>
     <string name="no_results">No results</string>
+    <string name="no_servers_found">No servers found</string>
     <string name="no_scheduled_recordings">No scheduled recordings</string>
     <string name="no_update_available">No update available</string>
     <string name="none">None</string>
