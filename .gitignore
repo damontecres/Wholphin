@@ -53,7 +53,9 @@ app/libs/
 ffmpeg_decoder/
 app/release/
 app/debug/
-<<<<<<< HEAD
+.vscode
+.kotlin
+docs/
 
 # mpv
 app/src/main/obj/

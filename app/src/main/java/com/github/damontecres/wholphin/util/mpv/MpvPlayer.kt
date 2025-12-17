@@ -444,6 +444,14 @@ class MpvPlayer(
 
     override fun getVolume(): Float = 1f
 
+    override fun mute() {
+        volume = 0f
+    }
+
+    override fun unmute() {
+        volume = 1f
+    }
+
     override fun clearVideoSurface(): Unit = throw UnsupportedOperationException()
 
     override fun clearVideoSurface(surface: Surface?): Unit = throw UnsupportedOperationException()
