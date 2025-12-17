@@ -436,7 +436,6 @@ fun AlphabetButtons(
     letterClicked: (Char) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val listState = rememberLazyListState()
 
@@ -448,22 +447,21 @@ fun AlphabetButtons(
                 listState.layoutInfo.visibleItemsInfo
                     .lastOrNull()
                     ?.index ?: -1
-            if (index < firstVisibleItemIndex || index > lastVisibleItemIndex) {
+            if (index !in firstVisibleItemIndex..lastVisibleItemIndex) {
                 listState.animateScrollToItem(index)
             }
         }
     }
+    // Focus & interaction states for each letter button
     val focusRequesters = remember { List(letters.length) { FocusRequester() } }
-
-    // Track focus state for each letter
     val interactionSources = remember { List(letters.length) { MutableInteractionSource() } }
 
     // Track if the entire alphabet picker component has focus
     var alphabetPickerFocused by remember { mutableStateOf(false) }
 
     LazyColumn(
-        contentPadding = PaddingValues(vertical = 1.1.dp, horizontal = 2.dp), // Add horizontal padding to prevent side clipping
-        verticalArrangement = Arrangement.spacedBy(1.1.dp), // Reduced spacing between letters to fit all on screen
+        contentPadding = PaddingValues(vertical = 1.1.dp, horizontal = 2.dp),
+        verticalArrangement = Arrangement.spacedBy(1.1.dp),
         state = listState,
         modifier =
             modifier
@@ -485,10 +483,10 @@ fun AlphabetButtons(
             val isCurrentLetter = letters[index] == currentLetter
             // Apply alpha to individual items, but keep selected letter fully visible when picker is unfocused
             val itemAlpha =
-                if (isCurrentLetter && !alphabetPickerFocused) {
-                    1f // Selected letter stays fully visible when picker is unfocused
-                } else {
-                    if (alphabetPickerFocused) 0.85f else 0.2f // Match navdrawer: 0.85f when focused, 0.2f when not
+                when {
+                    isCurrentLetter && !alphabetPickerFocused -> 1f
+                    alphabetPickerFocused -> .85f
+                    else -> .25f
                 }
 
             // Only show circle background for the current letter (or when focused)
@@ -503,7 +501,7 @@ fun AlphabetButtons(
                 Button(
                     modifier =
                         Modifier
-                            .size(14.dp) // Reduced button size to fit all letters on screen
+                            .size(14.dp)
                             .focusRequester(focusRequesters[index]),
                     contentPadding = PaddingValues(0.dp), // No padding to maximize text space
                     interactionSource = interactionSource,
@@ -524,27 +522,20 @@ fun AlphabetButtons(
                             )
                         },
                 ) {
-                    // Use border color (blue highlight) for selected letter when focused, tertiary for unfocused-selected
+                    // Use border color for selected letter when focused, tertiary for unfocused-selected
                     val color =
                         when {
                             isCurrentLetter && focused -> MaterialTheme.colorScheme.border
-
-                            // Blue highlight when selected and focused
                             isCurrentLetter -> MaterialTheme.colorScheme.tertiary
-
-                            // Tertiary color for selected letter when unfocused
                             focused -> LocalContentColor.current
-
-                            // Normal color when focused but not selected
-                            else -> MaterialTheme.colorScheme.onSurface // Base color
+                            else -> MaterialTheme.colorScheme.onSurface
                         }
                     Text(
                         text = letters[index].toString(),
                         color = color,
                         textAlign = TextAlign.Center,
                         modifier = Modifier.fillMaxWidth(),
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontSize = MaterialTheme.typography.bodyMedium.fontSize * 0.85f,
+                        style = MaterialTheme.typography.bodySmall,
                     )
                 }
             }
