@@ -31,7 +31,6 @@ import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.ChosenStreams
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.preferences.UserPreferences
-import com.github.damontecres.wholphin.ui.components.DetailsBackdropImage
 import com.github.damontecres.wholphin.ui.components.DialogParams
 import com.github.damontecres.wholphin.ui.components.DialogPopup
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
@@ -296,7 +295,6 @@ fun EpisodeDetailsContent(
         focusRequesters.getOrNull(position)?.tryRequestFocus()
     }
     Box(modifier = modifier) {
-        DetailsBackdropImage(ep)
         LazyColumn(
             verticalArrangement = Arrangement.spacedBy(16.dp),
             contentPadding = PaddingValues(horizontal = 32.dp, vertical = 8.dp),

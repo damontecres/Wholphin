@@ -62,6 +62,7 @@ import com.github.damontecres.wholphin.data.model.GetItemsFilter
 import com.github.damontecres.wholphin.data.model.GetItemsFilterOverride
 import com.github.damontecres.wholphin.data.model.LibraryDisplayInfo
 import com.github.damontecres.wholphin.preferences.UserPreferences
+import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.FavoriteWatchManager
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.ui.AspectRatios
@@ -76,6 +77,7 @@ import com.github.damontecres.wholphin.ui.detail.MoreDialogActions
 import com.github.damontecres.wholphin.ui.detail.PlaylistDialog
 import com.github.damontecres.wholphin.ui.detail.PlaylistLoadingState
 import com.github.damontecres.wholphin.ui.detail.buildMoreDialogItemsForHome
+import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.main.HomePageHeader
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.playback.scale
@@ -123,6 +125,7 @@ class CollectionFolderViewModel
         private val serverRepository: ServerRepository,
         private val libraryDisplayInfoDao: LibraryDisplayInfoDao,
         private val favoriteWatchManager: FavoriteWatchManager,
+        private val backdropService: BackdropService,
         val navigationManager: NavigationManager,
     ) : ItemViewModel(api) {
         val loading = MutableLiveData<LoadingState>(LoadingState.Loading)
@@ -454,6 +457,12 @@ class CollectionFolderViewModel
             favoriteWatchManager.setFavorite(itemId, favorite)
             (pager.value as? ApiRequestPager<*>)?.refreshItem(position, itemId)
         }
+
+        fun updateBackdrop(item: BaseItem) {
+            viewModelScope.launchIO {
+                backdropService.submit(item)
+            }
+        }
     }
 
 /**
@@ -578,6 +587,7 @@ fun CollectionFolderGrid(
                         viewOptions = viewOptions,
                         defaultViewOptions = defaultViewOptions,
                         onSaveViewOptions = { viewModel.saveViewOptions(it) },
+                        onChangeBackdrop = viewModel::updateBackdrop,
                         playEnabled = playEnabled,
                         onClickPlay = { _, item ->
                             viewModel.navigationManager.navigateTo(Destination.Playback(item))
@@ -687,6 +697,7 @@ fun CollectionFolderGridContent(
     viewOptions: ViewOptions,
     onClickPlayAll: (shuffle: Boolean) -> Unit,
     onClickPlay: (Int, BaseItem) -> Unit,
+    onChangeBackdrop: (BaseItem) -> Unit,
     modifier: Modifier = Modifier,
     showTitle: Boolean = true,
     positionCallback: ((columns: Int, position: Int) -> Unit)? = null,
@@ -707,14 +718,13 @@ fun CollectionFolderGridContent(
 
     var position by rememberInt(0)
     val focusedItem = pager.getOrNull(position)
+    if (viewOptions.showDetails) {
+        LaunchedEffect(focusedItem) {
+            focusedItem?.let(onChangeBackdrop)
+        }
+    }
 
     Box(modifier = modifier) {
-        if (viewOptions.showDetails) {
-            DelayedDetailsBackdropImage(
-                item = focusedItem,
-                modifier = Modifier,
-            )
-        }
         Column(
             verticalArrangement = Arrangement.spacedBy(0.dp),
             modifier = Modifier.fillMaxSize(),
