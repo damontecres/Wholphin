@@ -129,6 +129,7 @@ class MpvPlayer(
         internalHandler.post {
             MPVLib.addObserver(this@MpvPlayer)
             MPVProperty.observedProperties.forEach(MPVLib::observeProperty)
+            MPVLib.addLogObserver(MpvLogger())
         }
 
         availableCommands =
