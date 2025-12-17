@@ -47,6 +47,7 @@ import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.nav.ApplicationContent
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.theme.WholphinTheme
+import com.github.damontecres.wholphin.ui.util.ProvideLocalClock
 import com.github.damontecres.wholphin.util.DebugLogTree
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
@@ -222,13 +223,15 @@ class MainActivity : AppCompatActivity() {
                                             )
                                         }
                                     }
-                                    ApplicationContent(
-                                        user = current?.user,
-                                        server = current?.server,
-                                        navigationManager = navigationManager,
-                                        preferences = preferences,
-                                        modifier = Modifier.fillMaxSize(),
-                                    )
+                                    ProvideLocalClock {
+                                        ApplicationContent(
+                                            user = current?.user,
+                                            server = current?.server,
+                                            navigationManager = navigationManager,
+                                            preferences = preferences,
+                                            modifier = Modifier.fillMaxSize(),
+                                        )
+                                    }
                                 }
                             }
                         }
