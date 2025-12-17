@@ -45,13 +45,11 @@ import androidx.tv.material3.Text
 import coil3.compose.AsyncImage
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.JellyfinUser
-import com.github.damontecres.wholphin.ui.AspectRatios
 import com.github.damontecres.wholphin.ui.Cards
 import com.github.damontecres.wholphin.ui.FontAwesome
 import com.github.damontecres.wholphin.ui.components.DialogItem
 import com.github.damontecres.wholphin.ui.components.DialogPopup
-import org.jellyfin.sdk.api.client.ApiClient
-import org.jellyfin.sdk.api.client.extensions.imageApi
+import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import java.util.UUID
 
 /**
@@ -60,14 +58,13 @@ import java.util.UUID
  */
 @Composable
 fun UserList(
-    users: List<JellyfinUser>,
+    users: List<JellyfinUserAndImage>,
     currentUser: JellyfinUser?,
     onSwitchUser: (JellyfinUser) -> Unit,
     onAddUser: () -> Unit,
     onRemoveUser: (JellyfinUser) -> Unit,
     onSwitchServer: () -> Unit,
     modifier: Modifier = Modifier,
-    apiClient: ApiClient? = null,
 ) {
     var showDeleteDialog by remember { mutableStateOf<JellyfinUser?>(null) }
 
@@ -89,10 +86,9 @@ fun UserList(
                 items(users) { user ->
                     UserIconCard(
                         user = user,
-                        isCurrentUser = user.id == currentUser?.id,
-                        onClick = { onSwitchUser.invoke(user) },
-                        onLongClick = { showDeleteDialog = user },
-                        apiClient = apiClient,
+                        isCurrentUser = user.user.id == currentUser?.id,
+                        onClick = { onSwitchUser.invoke(user.user) },
+                        onLongClick = { showDeleteDialog = user.user },
                     )
                 }
                 // Add User card - always rightmost
@@ -199,23 +195,15 @@ private fun getUserColor(userId: UUID): Color =
 
 @Composable
 private fun UserIconCard(
-    user: JellyfinUser,
+    user: JellyfinUserAndImage,
     isCurrentUser: Boolean,
     onClick: () -> Unit,
     onLongClick: () -> Unit,
     modifier: Modifier = Modifier,
-    apiClient: ApiClient? = null,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
-
     // Generate unique color for this user
-    val userColor = getUserColor(user.id)
-
-    // Get user profile image URL from Jellyfin API
-    val userImageUrl =
-        remember(user.id, apiClient) {
-            apiClient?.imageApi?.getUserImageUrl(user.id)
-        }
+    val userColor = getUserColor(user.user.id)
 
     // Track image loading errors
     var imageError by remember { mutableStateOf(false) }
@@ -226,7 +214,7 @@ private fun UserIconCard(
     Column(
         modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(24.dp), // Increased to accommodate 20% scale
+        verticalArrangement = Arrangement.spacedBy(24.dp),
     ) {
         // Circular card with colored background
         Surface(
@@ -268,10 +256,10 @@ private fun UserIconCard(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center,
             ) {
-                if (userImageUrl != null && !imageError) {
+                if (user.imageUrl.isNotNullOrBlank() && !imageError) {
                     AsyncImage(
-                        model = userImageUrl,
-                        contentDescription = user.name,
+                        model = user.imageUrl,
+                        contentDescription = user.user.name,
                         contentScale = ContentScale.Crop,
                         onError = { imageError = true },
                         modifier =
@@ -282,13 +270,10 @@ private fun UserIconCard(
                 } else {
                     // Show big bold first letter of username
                     val firstLetter =
-                        remember(user.name) {
-                            (
-                                user.name?.firstOrNull()?.uppercaseChar() ?: user.id
-                                    .toString()
-                                    .firstOrNull()
-                                    ?.uppercaseChar()
-                            )?.toString() ?: "?"
+                        remember(user) {
+                            user.user.let {
+                                (it.name ?: it.id.toString()).firstOrNull()?.uppercase()
+                            } ?: "?"
                         }
                     Text(
                         text = firstLetter,
@@ -305,11 +290,9 @@ private fun UserIconCard(
 
         // Username below the card
         Text(
-            text = user.name ?: user.id.toString(),
-            style =
-                MaterialTheme.typography.bodyLarge.copy(
-                    fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
-                ),
+            text = user.user.name ?: user.user.id.toString(),
+            style = MaterialTheme.typography.bodyLarge,
+            fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onSurface,
             textAlign = TextAlign.Center,
             maxLines = 2,
