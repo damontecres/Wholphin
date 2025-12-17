@@ -903,6 +903,7 @@ fun MPVLib.setPropertyColor(
 
 private val Color.mpvFormat: String get() = "$red/$green/$blue/$alpha"
 
+@OptIn(UnstableApi::class)
 private fun createTracks(): Tracks {
     val trackCount = MPVLib.getPropertyInt("track-list/count") ?: return Tracks.EMPTY
     val groups =

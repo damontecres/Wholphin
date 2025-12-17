@@ -188,7 +188,7 @@ suspend fun upgradeApp(
         }
     }
 
-    if (previous.isEqualOrBefore(Version.fromString("0.3.6-11-g0"))) {
+    if (previous.isEqualOrBefore(Version.fromString("0.3.6-52-g0"))) {
         if (Build.MODEL.equals("shield android tv", ignoreCase = true)) {
             appPreferences.updateData {
                 it.updateMpvOptions {
