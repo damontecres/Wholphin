@@ -39,7 +39,7 @@ interface ItemPlaybackDao {
         userId: Int,
         itemId: UUID,
         trackIndex: Int,
-    ): ItemTrackModification
+    ): ItemTrackModification?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun saveItem(item: ItemTrackModification): Long

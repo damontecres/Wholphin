@@ -10,6 +10,7 @@ import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.ItemPlayback
 import com.github.damontecres.wholphin.preferences.ThemeSongVolume
+import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.FavoriteWatchManager
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.StreamChoiceService
@@ -50,6 +51,7 @@ class EpisodeViewModel
         private val themeSongPlayer: ThemeSongPlayer,
         private val favoriteWatchManager: FavoriteWatchManager,
         private val userPreferencesService: UserPreferencesService,
+        private val backdropService: BackdropService,
         @Assisted val itemId: UUID,
     ) : ViewModel() {
         @AssistedFactory
@@ -96,6 +98,7 @@ class EpisodeViewModel
                     this@EpisodeViewModel.item.value = item
                     chosenStreams.value = result
                     loading.value = LoadingState.Success
+                    backdropService.submit(item)
                 }
             }
 
