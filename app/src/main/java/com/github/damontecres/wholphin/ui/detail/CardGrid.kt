@@ -383,6 +383,7 @@ fun CardGrid(
                             }
                         Timber.d("Alphabet jump to $jumpPosition")
                         if (jumpPosition >= 0) {
+                            pager.getOrNull(jumpPosition)
                             gridState.scrollToItem(jumpPosition)
                             focusOn(jumpPosition)
                             alphabetFocus = true
