@@ -205,6 +205,9 @@ class CollectionFolderViewModel
             this.viewOptions.value = viewOptions
             viewModelScope.launch(ExceptionHandler() + Dispatchers.IO) {
                 saveLibraryDisplayInfo(viewOptions = viewOptions)
+                if (!viewOptions.showDetails) {
+                    backdropService.clearBackdrop()
+                }
             }
         }
 
@@ -514,7 +517,7 @@ fun CollectionFolderGrid(
     playEnabled: Boolean,
     defaultViewOptions: ViewOptions,
     modifier: Modifier = Modifier,
-    viewModel: CollectionFolderViewModel = hiltViewModel(),
+    viewModel: CollectionFolderViewModel = hiltViewModel(key = itemId),
     playlistViewModel: AddPlaylistViewModel = hiltViewModel(),
     initialSortAndDirection: SortAndDirection? = null,
     showTitle: Boolean = true,
