@@ -8,13 +8,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
-import com.github.damontecres.wholphin.R
-import com.github.damontecres.wholphin.ui.TimeFormatter
 import com.github.damontecres.wholphin.ui.formatDateTime
 import com.github.damontecres.wholphin.ui.roundMinutes
 import com.github.damontecres.wholphin.ui.seasonEpisode
 import com.github.damontecres.wholphin.ui.seriesProductionYears
-import com.github.damontecres.wholphin.ui.timeRemaining
 import com.github.damontecres.wholphin.ui.util.LocalClock
 import org.jellyfin.sdk.model.api.BaseItemDto
 import org.jellyfin.sdk.model.extensions.ticks
@@ -68,14 +65,7 @@ fun EpisodeQuickDetails(
             buildList {
                 dto?.seasonEpisode?.let(::add)
                 dto?.premiereDate?.let { add(formatDateTime(it)) }
-                val duration = dto?.runTimeTicks?.ticks?.roundMinutes
-                duration?.let {
-                    add(it.toString())
-                    val endTime = now.toLocalTime().plusSeconds(it.inWholeSeconds)
-                    val endTimeStr = TimeFormatter.format(endTime)
-                    add(context.getString(R.string.ends_at, endTimeStr))
-                }
-                dto?.timeRemaining?.roundMinutes?.let { add("$it left") }
+                addRuntimeDetails(context, now, dto)
                 dto?.officialRating?.let(::add)
             }
         }
@@ -93,18 +83,12 @@ fun SeriesQuickDetails(
     dto: BaseItemDto?,
     modifier: Modifier = Modifier,
 ) {
-    val context = LocalContext.current
-    val now = LocalClock.current.now
     val details =
-        remember(dto, now) {
+        remember(dto) {
             buildList {
                 dto?.seriesProductionYears?.let(::add)
-                val duration = dto?.runTimeTicks?.ticks?.roundMinutes
-                duration?.let {
+                dto?.runTimeTicks?.ticks?.roundMinutes?.let {
                     add(it.toString())
-                    val endTime = now.toLocalTime().plusSeconds(it.inWholeSeconds)
-                    val endTimeStr = TimeFormatter.format(endTime)
-                    add(context.getString(R.string.ends_at, endTimeStr))
                 }
                 dto?.officialRating?.let(::add)
             }
