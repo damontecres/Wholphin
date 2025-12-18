@@ -147,7 +147,6 @@ fun PlaybackOverlay(
         modifier = modifier,
         contentAlignment = Alignment.BottomCenter,
     ) {
-        // Global scrim/gradient for OSD readability
         AnimatedVisibility(
             visible = controllerViewState.controlsVisible,
             enter = fadeIn(),
