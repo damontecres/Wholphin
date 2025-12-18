@@ -9,7 +9,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
-import com.github.damontecres.wholphin.ui.OsdTextShadow
 import com.github.damontecres.wholphin.ui.util.LocalClock
 
 @Composable
@@ -18,7 +17,7 @@ fun BoxScope.TimeDisplay(modifier: Modifier = Modifier) {
         text = LocalClock.current.timeString,
         fontSize = 18.sp,
         color = MaterialTheme.colorScheme.onSurface,
-        style = MaterialTheme.typography.bodyLarge.copy(shadow = OsdTextShadow),
+        style = MaterialTheme.typography.bodyLarge,
         modifier =
             modifier
                 .align(Alignment.TopEnd)
