@@ -41,11 +41,12 @@ sealed class AppColors private constructor() {
 /**
  * Text shadow for OSD/playback overlay text to ensure readability against light video content
  */
-val OsdTextShadow = Shadow(
-    color = Color.Black.copy(alpha = 0.8f),
-    offset = Offset(1f, 1f),
-    blurRadius = 3f,
-)
+val OsdTextShadow =
+    Shadow(
+        color = Color.Black.copy(alpha = 0.8f),
+        offset = Offset(1f, 1f),
+        blurRadius = 3f,
+    )
 
 const val DEFAULT_PAGE_SIZE = 100
 
