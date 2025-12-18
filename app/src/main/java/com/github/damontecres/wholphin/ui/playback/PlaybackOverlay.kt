@@ -57,7 +57,6 @@ import com.github.damontecres.wholphin.data.model.aspectRatioFloat
 import com.github.damontecres.wholphin.ui.AppColors
 import com.github.damontecres.wholphin.ui.AspectRatios
 import com.github.damontecres.wholphin.ui.LocalImageUrlService
-import com.github.damontecres.wholphin.ui.OsdTextShadow
 import com.github.damontecres.wholphin.ui.TimeFormatter
 import com.github.damontecres.wholphin.ui.cards.ChapterCard
 import com.github.damontecres.wholphin.ui.cards.SeasonCard
@@ -148,6 +147,21 @@ fun PlaybackOverlay(
         modifier = modifier,
         contentAlignment = Alignment.BottomCenter,
     ) {
+        // Global scrim/gradient for OSD readability
+        AnimatedVisibility(
+            visible = controllerViewState.controlsVisible,
+            enter = fadeIn(),
+            exit = fadeOut(),
+            modifier = Modifier.matchParentSize(),
+        ) {
+            Box(
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .background(scrimBrush),
+            )
+        }
+
         AnimatedVisibility(
             visible = controllerViewState.controlsVisible,
             enter = fadeIn(),
@@ -217,7 +231,7 @@ fun PlaybackOverlay(
                     OverlayViewState.CHAPTERS -> {
                         Text(
                             text = stringResource(R.string.chapters),
-                            style = MaterialTheme.typography.titleLarge.copy(shadow = OsdTextShadow),
+                            style = MaterialTheme.typography.titleLarge,
                             modifier =
                                 Modifier
                                     .padding(start = 16.dp, top = 0.dp)
@@ -230,7 +244,7 @@ fun PlaybackOverlay(
                     OverlayViewState.QUEUE -> {
                         Text(
                             text = stringResource(R.string.queue),
-                            style = MaterialTheme.typography.titleLarge.copy(shadow = OsdTextShadow),
+                            style = MaterialTheme.typography.titleLarge,
                             modifier =
                                 Modifier
                                     .padding(start = 16.dp, top = 0.dp)
@@ -271,7 +285,7 @@ fun PlaybackOverlay(
                 ) {
                     Text(
                         text = stringResource(R.string.chapters),
-                        style = MaterialTheme.typography.titleLarge.copy(shadow = OsdTextShadow),
+                        style = MaterialTheme.typography.titleLarge,
                     )
                     LazyRow(
                         contentPadding = PaddingValues(16.dp),
@@ -313,7 +327,7 @@ fun PlaybackOverlay(
                     if (playlist.hasNext()) {
                         Text(
                             text = stringResource(R.string.queue),
-                            style = MaterialTheme.typography.titleLarge.copy(shadow = OsdTextShadow),
+                            style = MaterialTheme.typography.titleLarge,
                             modifier =
                                 Modifier
                                     .padding(bottom = 8.dp)
@@ -357,7 +371,7 @@ fun PlaybackOverlay(
                 ) {
                     Text(
                         text = stringResource(R.string.queue),
-                        style = MaterialTheme.typography.titleLarge.copy(shadow = OsdTextShadow),
+                        style = MaterialTheme.typography.titleLarge,
                     )
                     LazyRow(
                         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
@@ -443,7 +457,7 @@ fun PlaybackOverlay(
                     Text(
                         text = (seekProgressMs / 1000L).seconds.toString(),
                         color = MaterialTheme.colorScheme.onSurface,
-                        style = MaterialTheme.typography.labelLarge.copy(shadow = OsdTextShadow),
+                        style = MaterialTheme.typography.labelLarge,
                     )
                 }
             }
@@ -537,7 +551,7 @@ fun Controller(
             title?.let {
                 Text(
                     text = it,
-                    style = MaterialTheme.typography.titleLarge.copy(shadow = OsdTextShadow),
+                    style = MaterialTheme.typography.titleLarge,
                     fontSize = titleTextSize,
                 )
             }
@@ -551,7 +565,7 @@ fun Controller(
                 subtitle?.let {
                     Text(
                         text = it,
-                        style = MaterialTheme.typography.titleMedium.copy(shadow = OsdTextShadow),
+                        style = MaterialTheme.typography.titleMedium,
                         fontSize = subtitleTextSize,
                     )
                 }
@@ -569,7 +583,7 @@ fun Controller(
                     Text(
                         text = "Ends $endTimeStr",
                         color = MaterialTheme.colorScheme.onSurface,
-                        style = MaterialTheme.typography.labelLarge.copy(shadow = OsdTextShadow),
+                        style = MaterialTheme.typography.labelLarge,
                         modifier =
                             Modifier
                                 .padding(end = 32.dp),

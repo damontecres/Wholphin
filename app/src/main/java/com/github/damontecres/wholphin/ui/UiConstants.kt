@@ -2,9 +2,7 @@ package com.github.damontecres.wholphin.ui
 
 import android.content.res.Configuration.UI_MODE_TYPE_TELEVISION
 import androidx.compose.runtime.staticCompositionLocalOf
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.tooling.preview.Preview
@@ -37,16 +35,6 @@ sealed class AppColors private constructor() {
         val GoldenYellow = Color(0xFFDAB440)
     }
 }
-
-/**
- * Text shadow for OSD/playback overlay text to ensure readability against light video content
- */
-val OsdTextShadow =
-    Shadow(
-        color = Color.Black.copy(alpha = 0.8f),
-        offset = Offset(1f, 1f),
-        blurRadius = 3f,
-    )
 
 const val DEFAULT_PAGE_SIZE = 100
 
