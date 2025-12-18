@@ -31,6 +31,7 @@ import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.GetItemsFilter
 import com.github.damontecres.wholphin.preferences.UserPreferences
+import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.ui.components.CollectionFolderGrid
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
@@ -59,6 +60,7 @@ class LiveTvCollectionViewModel
         val serverRepository: ServerRepository,
         val navigationManager: NavigationManager,
         val rememberTabManager: RememberTabManager,
+        val backdropService: BackdropService,
     ) : ViewModel(),
         RememberTabManager by rememberTabManager {
         val recordingFolders = MutableLiveData<List<TabId>>()
@@ -106,6 +108,7 @@ fun CollectionFolderLiveTv(
     LaunchedEffect(selectedTabIndex) {
         logTab("livetv", selectedTabIndex)
         viewModel.saveRememberedTab(preferences, destination.itemId, selectedTabIndex)
+        viewModel.backdropService.clearBackdrop()
     }
     val onClickItem = { position: Int, item: BaseItem ->
         viewModel.navigationManager.navigateTo(item.destination())

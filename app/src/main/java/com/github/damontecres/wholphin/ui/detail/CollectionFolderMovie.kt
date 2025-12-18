@@ -65,6 +65,7 @@ fun CollectionFolderMovie(
     LaunchedEffect(selectedTabIndex) {
         logTab("movie", selectedTabIndex)
         preferencesViewModel.saveRememberedTab(preferences, destination.itemId, selectedTabIndex)
+        preferencesViewModel.backdropService.clearBackdrop()
     }
 
     var showHeader by rememberSaveable { mutableStateOf(true) }

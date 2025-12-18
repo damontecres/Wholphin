@@ -64,6 +64,7 @@ fun CollectionFolderTv(
     LaunchedEffect(selectedTabIndex) {
         logTab("tv", selectedTabIndex)
         preferencesViewModel.saveRememberedTab(preferences, destination.itemId, selectedTabIndex)
+        preferencesViewModel.backdropService.clearBackdrop()
     }
 
     val onClickItem = { item: BaseItem ->
