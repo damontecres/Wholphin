@@ -239,7 +239,7 @@
     <string name="send_app_logs_summary">Nützlich zum Debuggen</string>
     <string name="send_crash_reports">Sende Absturzmeldung</string>
     <string name="skip_back_on_resume_preference">Zurückspringen wenn wiedergabe fortgesetzt wird</string>
-    <string name="skip_commercials_behavior">Überspringe Werbung verhalten</string>
+    <string name="skip_commercials_behavior">Werbung überspringen</string>
     <string name="skip_forward_preference">Vorspringen</string>
     <string name="skip_intro_behavior">Überspringe Intro verhalten</string>
     <string name="skip_outro_behavior">Überspringe Outro verhalten</string>
