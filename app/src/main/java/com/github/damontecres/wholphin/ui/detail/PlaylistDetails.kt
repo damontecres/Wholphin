@@ -53,6 +53,7 @@ import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.ui.DefaultItemFields
+import com.github.damontecres.wholphin.ui.TimeFormatter
 import com.github.damontecres.wholphin.ui.cards.ItemCardImage
 import com.github.damontecres.wholphin.ui.components.DialogItem
 import com.github.damontecres.wholphin.ui.components.DialogParams
@@ -68,6 +69,7 @@ import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.roundMinutes
 import com.github.damontecres.wholphin.ui.tryRequestFocus
+import com.github.damontecres.wholphin.ui.util.LocalClock
 import com.github.damontecres.wholphin.util.ApiRequestPager
 import com.github.damontecres.wholphin.util.GetPlaylistItemsRequestHandler
 import com.github.damontecres.wholphin.util.LoadingExceptionHandler
@@ -407,10 +409,22 @@ fun PlaylistItem(
             )
         },
         trailingContent = {
-            item?.data?.runTimeTicks?.ticks?.roundMinutes?.let {
-                Text(
-                    text = it.toString(),
-                )
+            item?.data?.runTimeTicks?.ticks?.roundMinutes?.let { duration ->
+                val now = LocalClock.current.now
+                val endTimeStr =
+                    remember(item, now) {
+                        val endTime = now.toLocalTime().plusSeconds(duration.inWholeSeconds)
+                        TimeFormatter.format(endTime)
+                    }
+                Column {
+                    Text(
+                        text = duration.toString(),
+                    )
+                    Text(
+                        text = stringResource(R.string.ends_at, endTimeStr),
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                }
             }
         },
         leadingContent = {
