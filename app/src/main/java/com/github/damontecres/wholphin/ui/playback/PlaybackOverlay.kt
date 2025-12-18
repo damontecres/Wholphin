@@ -130,8 +130,7 @@ fun PlaybackOverlay(
     var controllerHeight by remember { mutableStateOf(0.dp) }
     var state by remember { mutableStateOf(OverlayViewState.CONTROLLER) }
 
-    // Optimized Background Scrim (Fade Only, No Slide)
-    // We remember the brush to avoid recreating the shader 60 times a second during animation
+    // Background scrim for OSD readability
     val scrimBrush =
         remember {
             Brush.verticalGradient(
@@ -148,7 +147,6 @@ fun PlaybackOverlay(
         modifier = modifier,
         contentAlignment = Alignment.BottomCenter,
     ) {
-        // Global scrim/gradient for OSD readability
         AnimatedVisibility(
             visible = controllerViewState.controlsVisible,
             enter = fadeIn(),
