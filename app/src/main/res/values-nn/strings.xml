@@ -21,4 +21,5 @@
     <string name="delete">Slett</string>
     <string name="died">Dødd</string>
     <string name="directed_by">Regissert av %1$s</string>
+    <string name="ac3_supported">Eininga støttar AC3/Dolby Digital</string>
 </resources>
