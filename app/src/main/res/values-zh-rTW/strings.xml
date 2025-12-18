@@ -299,4 +299,7 @@
     <string name="username_or_password">使用帳號/密碼</string>
     <string name="login">登入</string>
     <string name="subtitle_delay">字幕同步</string>
+    <string name="show_titles">顯示標題</string>
+    <string name="enter_server_address">輸入伺服器位址</string>
+    <string name="no_servers_found">未找到伺服器</string>
 </resources>
