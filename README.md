@@ -17,6 +17,10 @@ This is not a fork of the [official client](https://github.com/jellyfin/jellyfin
 <a href="https://play.google.com/store/apps/details?id=com.github.damontecres.wholphin">
 <img width="180" alt="Get Wholphin on Google Play" src="https://github.com/user-attachments/assets/2550a4cb-ce46-47a1-ae24-f33a169234b7"/>
 </a>
+<a href="https://www.amazon.com/gp/product/B0G8RQQR9T/ref=mas_pm_wholphin">
+<img width="180" alt="Get Wholphin on Amazon AppStore" src="https://github.com/user-attachments/assets/1f3a3b26-4b4f-44b1-9741-f4c895c8a53b"/>
+</a>
+
 
 </p>
 
