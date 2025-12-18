@@ -123,7 +123,7 @@
     <string name="trailer">Előzetes</string>
     <plurals name="trailers">
         <item quantity="one">Előzetesek</item>
-        <item quantity="other"></item>
+        <item quantity="other"/>
     </plurals>
     <string name="tv_dvr_schedule">DVR Időzítés</string>
     <string name="tv_guide">Műsorújság</string>
@@ -155,47 +155,47 @@
     <string name="extras">Extrák</string>
     <plurals name="other_extras">
         <item quantity="one">Egyéb</item>
-        <item quantity="other"></item>
+        <item quantity="other"/>
     </plurals>
     <plurals name="behind_the_scenes">
         <item quantity="one">Színfalak mögött</item>
-        <item quantity="other"></item>
+        <item quantity="other"/>
     </plurals>
     <plurals name="theme_songs">
         <item quantity="one">Téma zenék</item>
-        <item quantity="other"></item>
+        <item quantity="other"/>
     </plurals>
     <plurals name="theme_videos">
         <item quantity="one">Téma videók</item>
-        <item quantity="other"></item>
+        <item quantity="other"/>
     </plurals>
     <plurals name="clips">
         <item quantity="one">Klippek</item>
-        <item quantity="other"></item>
+        <item quantity="other"/>
     </plurals>
     <plurals name="deleted_scenes">
         <item quantity="one">Törölt jelenetek</item>
-        <item quantity="other"></item>
+        <item quantity="other"/>
     </plurals>
     <plurals name="interviews">
         <item quantity="one">Interjúk</item>
-        <item quantity="other"></item>
+        <item quantity="other"/>
     </plurals>
     <plurals name="scenes">
         <item quantity="one">Jelenetek</item>
-        <item quantity="other"></item>
+        <item quantity="other"/>
     </plurals>
     <plurals name="samples">
         <item quantity="one">Minták</item>
-        <item quantity="other"></item>
+        <item quantity="other"/>
     </plurals>
     <plurals name="featurettes">
         <item quantity="one">Rövidfilmek</item>
-        <item quantity="other"></item>
+        <item quantity="other"/>
     </plurals>
     <plurals name="shorts">
         <item quantity="one">Rövidek</item>
-        <item quantity="other"></item>
+        <item quantity="other"/>
     </plurals>
     <plurals name="downloads">
         <item quantity="one">%s letöltés</item>
@@ -213,4 +213,89 @@
         <item quantity="one">%d másodperc</item>
         <item quantity="other">%d másodpercek</item>
     </plurals>
+    <string name="ends_at">Véget ér ekkor: %1$s</string>
+    <string name="no_servers_found">Nem található szerver</string>
+    <string name="recap">Visszatekintés</string>
+    <string name="media_information">Média Információ</string>
+    <string name="ac3_supported">A készülék támogatja az AC3/Dolby Digital formátumot</string>
+    <string name="advanced_settings">Haladó Beállítások</string>
+    <string name="advanced_ui">Haladó Felhasználói Felület</string>
+    <string name="app_theme">Alkalmazás Témája</string>
+    <string name="auto_check_for_updates">Frissítések automatikus keresése</string>
+    <string name="auto_play_next_delay">Késleltetés a következő elem lejátszása előtt</string>
+    <string name="auto_play_next">Következő elem automatikus lejátszása</string>
+    <string name="check_for_updates">Frissítések keresése</string>
+    <string name="combine_continue_next_summary">Csak a sorozatokra vonatkzik</string>
+    <string name="direct_play_ass">ASS feliratok közvetlen lejátszása</string>
+    <string name="direct_play_pgs">PGS feliratok közvetlen lejátszása</string>
+    <string name="downmix_stereo">Mindig konvertálja sztereóvá</string>
+    <string name="ffmpeg_extension_pref">Használja az FFmpeg dekóder modulját</string>
+    <string name="global_content_scale">A tartalom alapértelmezett mérete</string>
+    <string name="install_update">Frissítés telepítése</string>
+    <string name="installed_version">Telepített verzió</string>
+    <string name="max_homepage_items">Elemek maximális száma a kezdőlapi sorokon</string>
+    <string name="nav_drawer_pins_summary">Válaszd ki az alapértelmezett elemeket, amelyek megjelennek, a többi el lesz rejtve</string>
+    <string name="nav_drawer_pins">Navigációs Fiók elemeinek testreszabása</string>
+    <string name="nav_drawer_switch_on_focus_summary_off">Klikkelj az oldalak közti váltáshoz</string>
+    <string name="pass_out_protection">Automatikus leállítás inaktivitás esetén</string>
+    <string name="play_theme_music">Főcímdal lejátszása</string>
+    <string name="remember_selected_tab">Kiválasztott lapok megjegyzése</string>
+    <string name="rewatch_next_up">Újranézés engedélyezése a Következő menüben</string>
+    <string name="seek_bar_steps">Előre/hátra ugrás intervallum</string>
+    <string name="send_app_logs_summary">Hibakereséshez hasznos</string>
+    <string name="send_app_logs">Naplófájlok küldése a jelenlegi szerverre</string>
+    <string name="send_crash_reports_summary">Megpróbálja elküldeni az legutóbb csatlakozott szerverre</string>
+    <string name="send_crash_reports">Összeomlási napló küldése</string>
+    <string name="settings">Beállítások</string>
+    <string name="skip_back_on_resume_preference">Visszaugrás a lejátszás folytatásakor</string>
+    <string name="skip_back_preference">Visszaugrás</string>
+    <string name="skip_commercials_behavior">Reklámok átugrása</string>
+    <string name="skip_forward_preference">Előreugrás</string>
+    <string name="skip_intro_behavior">Intró átugrása</string>
+    <string name="skip_outro_behavior">Befejezés átugrása</string>
+    <string name="skip_previews_behavior">Epizódelőzetesek átugrása</string>
+    <string name="skip_recap_behavior">Összefoglaló átugrása</string>
+    <string name="update_available">Frissítés érhető el</string>
+    <string name="update_url_summary">Az alkalmazás frissítéseinek ellenőrzésére használt URL</string>
+    <string name="update_url">Frissítés URL</string>
+    <string name="font_size">Betűméret</string>
+    <string name="font_color">Betűszín</string>
+    <string name="font_opacity">Betűk áttetszősége</string>
+    <string name="edge_style">Szegély stílusa</string>
+    <string name="edge_color">Szegély színe</string>
+    <string name="background_opacity">Háttér áttetszősége</string>
+    <string name="background_style">Háttér stílusa</string>
+    <string name="subtitle_style">Felirat stílusa</string>
+    <string name="background_color">Háttér színe</string>
+    <string name="reset">Visszaállítás</string>
+    <string name="bold_font">Félkövér betűk</string>
+    <string name="mpv_hardware_decoding">MPV: hardveres dekódolás használata</string>
+    <string name="disable_if_crash">Tiltsd le, ha összeomlást tapasztalsz</string>
+    <string name="mpv_options">MPV beállítások</string>
+    <string name="exoplayer_options">ExoPlayer beállítások</string>
+    <string name="skip_segment_unknown">Szegmens átugrása</string>
+    <string name="skip_segment_commercial">Reklám átugrása</string>
+    <string name="skip_segment_preview">Előzetes átugrása</string>
+    <string name="skip_segment_recap">Összefoglaló átugrása</string>
+    <string name="skip_segment_outro">Stáblista átugrása</string>
+    <string name="skip_segment_intro">Intró átugrása</string>
+    <string name="played">Lejátszott</string>
+    <string name="filter">Szűrő</string>
+    <string name="year">Év</string>
+    <string name="decade">Évtized</string>
+    <string name="remove">Eltávolítás</string>
+    <string name="dolby_vision">Dolby Vision</string>
+    <string name="dolby_atmos">Dolby Atmos</string>
+    <string name="mpv_use_gpu_next">MPV: gpu-next használata</string>
+    <string name="mpv_conf">mpv.conf szerkesztése</string>
+    <string name="discard_change">Változások elvetése?</string>
+    <string name="subtitle_margin">Margók</string>
+    <string name="verbose_logging">Részletes naplózás</string>
+    <string name="enter_pin">Adja meg a PIN-kódot</string>
+    <string name="sign_in_auto">Automatikus bejelentkezés</string>
+    <string name="use_server_credentials">Bejelentkezés szerveren keresztül</string>
+    <string name="press_enter_to_confirm">Nyomja meg a középső gombot a megerősítéshez</string>
+    <string name="require_pin_code">Kérjen PIN-kódot a profillal történő bejelentkezéshez</string>
+    <string name="confirm_pin">PIN-kód megerősítése</string>
+    <string name="incorrect">Helytelen</string>
 </resources>
