@@ -298,4 +298,14 @@
     <string name="require_pin_code">Kérjen PIN-kódot a profillal történő bejelentkezéshez</string>
     <string name="confirm_pin">PIN-kód megerősítése</string>
     <string name="incorrect">Helytelen</string>
+    <string name="pin_too_short">A PIN-kódnak legalább 4 karakterből kell állnia</string>
+    <string name="will_remove_pin">PIN-kód eltávolítása</string>
+    <string name="view_options">Nézet beállítások</string>
+    <string name="columns">Oszlopok</string>
+    <string name="spacing">Helykihagyás</string>
+    <string name="aspect_ratio">Képarány</string>
+    <string name="show_details">Részletek mutatása</string>
+    <string name="image_type">Kép típusa</string>
+    <string name="guest_stars">Vendégszereplők</string>
+    <string name="edge_size">Szegély mérete</string>
 </resources>
