@@ -374,4 +374,5 @@
     <string name="enter_server_address">Inserisci indirizzo server</string>
     <string name="no_servers_found">Nessun server trovato</string>
     <string name="backdrop_display">Stile backdrop</string>
+    <string name="ends_at">Termina alle %1$s</string>
 </resources>
