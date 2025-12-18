@@ -302,4 +302,8 @@
     <string name="show_titles">顯示標題</string>
     <string name="enter_server_address">輸入伺服器位址</string>
     <string name="no_servers_found">未找到伺服器</string>
+    <string name="backdrop_display">背景圖樣式</string>
+    <string name="color_code_programs">節目顏色標記</string>
+    <string name="favorite_channels_at_beginning">優先顯示最愛頻道</string>
+    <string name="sort_channels_recently_watched">按最近觀看的頻道排序</string>
 </resources>
