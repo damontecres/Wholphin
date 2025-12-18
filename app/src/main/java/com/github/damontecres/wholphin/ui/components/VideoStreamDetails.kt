@@ -31,6 +31,7 @@ import com.github.damontecres.wholphin.data.ChosenStreams
 import com.github.damontecres.wholphin.preferences.AppThemeColors
 import com.github.damontecres.wholphin.ui.FontAwesome
 import com.github.damontecres.wholphin.ui.PreviewTvSpec
+import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.playback.audioStreamCount
 import com.github.damontecres.wholphin.ui.playback.embeddedSubtitleCount
 import com.github.damontecres.wholphin.ui.playback.externalSubtitlesCount
@@ -84,7 +85,7 @@ fun VideoStreamDetails(
                             } else {
                                 null
                             }
-                        val range = formatVideoRange(context, it.videoRange, it.videoRangeType)
+                        val range = formatVideoRange(context, it.videoRange, it.videoRangeType, it.videoDoViTitle)
                         listOfNotNull(
                             resName.concatWithSpace(range),
                             it.codec?.uppercase(),
@@ -255,6 +256,7 @@ fun formatVideoRange(
     context: Context,
     videoRange: VideoRange?,
     type: VideoRangeType?,
+    doviTitle: String?,
 ): String? =
     when (videoRange) {
         VideoRange.UNKNOWN,
@@ -264,23 +266,27 @@ fun formatVideoRange(
         }
 
         VideoRange.HDR -> {
-            when (type) {
-                VideoRangeType.UNKNOWN,
-                VideoRangeType.SDR,
-                null,
-                -> null
+            if (doviTitle.isNotNullOrBlank()) {
+                context.getString(R.string.dolby_vision)
+            } else {
+                when (type) {
+                    VideoRangeType.UNKNOWN,
+                    VideoRangeType.SDR,
+                    null,
+                    -> null
 
-                VideoRangeType.HDR10 -> "HDR10"
+                    VideoRangeType.HDR10 -> "HDR10"
 
-                VideoRangeType.HDR10_PLUS -> "HDR10+"
+                    VideoRangeType.HDR10_PLUS -> "HDR10+"
 
-                VideoRangeType.HLG -> "HLG"
+                    VideoRangeType.HLG -> "HLG"
 
-                VideoRangeType.DOVI,
-                VideoRangeType.DOVI_WITH_HDR10,
-                VideoRangeType.DOVI_WITH_HLG,
-                VideoRangeType.DOVI_WITH_SDR,
-                -> context.getString(R.string.dolby_vision)
+                    VideoRangeType.DOVI,
+                    VideoRangeType.DOVI_WITH_HDR10,
+                    VideoRangeType.DOVI_WITH_HLG,
+                    VideoRangeType.DOVI_WITH_SDR,
+                    -> context.getString(R.string.dolby_vision)
+                }
             }
         }
     }
