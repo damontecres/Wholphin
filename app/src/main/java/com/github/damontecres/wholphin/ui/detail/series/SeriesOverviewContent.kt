@@ -74,7 +74,6 @@ fun SeriesOverviewContent(
     chosenStreams: ChosenStreams?,
     peopleInEpisode: List<Person>,
     position: SeriesOverviewPosition,
-    backdropImageUrl: String?,
     firstItemFocusRequester: FocusRequester,
     episodeRowFocusRequester: FocusRequester,
     castCrewRowFocusRequester: FocusRequester,

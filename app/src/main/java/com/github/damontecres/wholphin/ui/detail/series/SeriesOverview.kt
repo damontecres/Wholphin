@@ -46,7 +46,6 @@ import com.github.damontecres.wholphin.util.LoadingState
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.UseSerializers
 import org.jellyfin.sdk.model.api.BaseItemKind
-import org.jellyfin.sdk.model.api.ImageType
 import org.jellyfin.sdk.model.api.MediaType
 import org.jellyfin.sdk.model.api.PersonKind
 import org.jellyfin.sdk.model.extensions.ticks
@@ -298,13 +297,6 @@ fun SeriesOverview(
                     chosenStreams = chosenStreams,
                     peopleInEpisode = peopleInEpisode,
                     position = position,
-                    backdropImageUrl =
-                        remember {
-                            viewModel.imageUrl(
-                                series.id,
-                                ImageType.BACKDROP,
-                            )
-                        },
                     firstItemFocusRequester = firstItemFocusRequester,
                     episodeRowFocusRequester = episodeRowFocusRequester,
                     castCrewRowFocusRequester = castCrewRowFocusRequester,

@@ -82,6 +82,7 @@ fun FavoritesPage(
             NavDrawerItem.Favorites.id,
             selectedTabIndex,
         )
+        preferencesViewModel.backdropService.clearBackdrop()
     }
     var showHeader by rememberSaveable { mutableStateOf(true) }
 
