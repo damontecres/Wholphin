@@ -137,8 +137,8 @@ fun PlaybackOverlay(
                 colors =
                     listOf(
                         Color.Transparent,
-                        Color.Black.copy(alpha = 0.6f),
-                        Color.Black.copy(alpha = 0.95f),
+                        Color.Black.copy(alpha = 0.5f),
+                        Color.Black.copy(alpha = 0.80f),
                     ),
             )
         }
