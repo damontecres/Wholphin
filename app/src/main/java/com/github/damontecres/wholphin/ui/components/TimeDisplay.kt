@@ -17,6 +17,7 @@ fun BoxScope.TimeDisplay(modifier: Modifier = Modifier) {
         text = LocalClock.current.timeString,
         fontSize = 18.sp,
         color = MaterialTheme.colorScheme.onSurface,
+        style = MaterialTheme.typography.bodyLarge,
         modifier =
             modifier
                 .align(Alignment.TopEnd)
