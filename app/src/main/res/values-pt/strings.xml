@@ -374,4 +374,5 @@
     <string name="enter_server_address">Insira o endereço do servidor</string>
     <string name="no_servers_found">Nenhum servidor encontrado</string>
     <string name="backdrop_display">Estilo de fundo</string>
+    <string name="ends_at">Termina às %1$s</string>
 </resources>
