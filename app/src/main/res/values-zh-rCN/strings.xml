@@ -342,4 +342,5 @@
     <string name="enter_server_address">输入服务器地址</string>
     <string name="no_servers_found">未找到服务器</string>
     <string name="backdrop_display">背景幕样式</string>
+    <string name="ends_at">结束于 %1$s</string>
 </resources>
