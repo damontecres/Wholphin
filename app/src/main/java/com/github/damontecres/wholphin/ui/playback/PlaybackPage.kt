@@ -332,37 +332,6 @@ fun PlaybackPage(
                         }
                     }
 
-                    // Subtitles
-                    if (skipIndicatorDuration == 0L && currentItemPlayback.subtitleIndexEnabled) {
-                        val maxSize by animateFloatAsState(if (controllerViewState.controlsVisible) .7f else 1f)
-                        AndroidView(
-                            factory = { context ->
-                                SubtitleView(context).apply {
-                                    preferences.appPreferences.interfacePreferences.subtitlesPreferences.let {
-                                        setStyle(it.toSubtitleStyle())
-                                        setFixedTextSize(Dimension.SP, it.fontSize.toFloat())
-                                        setBottomPaddingFraction(it.margin.toFloat() / 100f)
-                                    }
-                                }
-                            },
-                            update = {
-                                it.setCues(cues)
-                                Media3SubtitleOverride(
-                                    preferences.appPreferences.interfacePreferences.subtitlesPreferences
-                                        .calculateEdgeSize(density),
-                                ).apply(it)
-                            },
-                            onReset = {
-                                it.setCues(null)
-                            },
-                            modifier =
-                                Modifier
-                                    .fillMaxSize(maxSize)
-                                    .align(Alignment.TopCenter)
-                                    .background(Color.Transparent),
-                        )
-                    }
-
                     // The playback controls
                     AnimatedVisibility(
                         controllerViewState.controlsVisible,
@@ -400,6 +369,37 @@ fun PlaybackPage(
                             },
                             currentSegment = currentSegment,
                             showClock = preferences.appPreferences.interfacePreferences.showClock,
+                        )
+                    }
+
+                    // Subtitles
+                    if (skipIndicatorDuration == 0L && currentItemPlayback.subtitleIndexEnabled) {
+                        val maxSize by animateFloatAsState(if (controllerViewState.controlsVisible) .7f else 1f)
+                        AndroidView(
+                            factory = { context ->
+                                SubtitleView(context).apply {
+                                    preferences.appPreferences.interfacePreferences.subtitlesPreferences.let {
+                                        setStyle(it.toSubtitleStyle())
+                                        setFixedTextSize(Dimension.SP, it.fontSize.toFloat())
+                                        setBottomPaddingFraction(it.margin.toFloat() / 100f)
+                                    }
+                                }
+                            },
+                            update = {
+                                it.setCues(cues)
+                                Media3SubtitleOverride(
+                                    preferences.appPreferences.interfacePreferences.subtitlesPreferences
+                                        .calculateEdgeSize(density),
+                                ).apply(it)
+                            },
+                            onReset = {
+                                it.setCues(null)
+                            },
+                            modifier =
+                                Modifier
+                                    .fillMaxSize(maxSize)
+                                    .align(Alignment.TopCenter)
+                                    .background(Color.Transparent),
                         )
                     }
                 }
