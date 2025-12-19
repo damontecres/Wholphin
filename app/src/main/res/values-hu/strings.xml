@@ -215,7 +215,7 @@
     </plurals>
     <string name="ends_at">Véget ér: %1$s</string>
     <string name="no_servers_found">Nem található szerver</string>
-    <string name="recap">Visszatekintés</string>
+    <string name="recap">Összefoglalás</string>
     <string name="media_information">Média információ</string>
     <string name="ac3_supported">A készülék támogatja az AC3/Dolby Digital formátumot</string>
     <string name="advanced_settings">Haladó beállítások</string>
