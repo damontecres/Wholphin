@@ -1,8 +1,10 @@
 package com.github.damontecres.wholphin.data.model
 
+import com.github.damontecres.wholphin.ui.detail.CardGridItem
 import com.github.damontecres.wholphin.ui.detail.series.SeasonEpisodeIds
 import com.github.damontecres.wholphin.ui.formatDateTime
 import com.github.damontecres.wholphin.ui.nav.Destination
+import com.github.damontecres.wholphin.ui.playback.playable
 import com.github.damontecres.wholphin.ui.seasonEpisode
 import com.github.damontecres.wholphin.ui.seasonEpisodePadded
 import com.github.damontecres.wholphin.ui.seriesProductionYears
@@ -18,8 +20,14 @@ import kotlin.time.Duration
 data class BaseItem(
     val data: BaseItemDto,
     val useSeriesForPrimary: Boolean,
-) {
-    val id get() = data.id
+) : CardGridItem {
+    override val id get() = data.id
+
+    override val playable: Boolean
+        get() = type.playable
+
+    override val sortName: String
+        get() = data.sortName ?: data.name ?: ""
 
     val type get() = data.type
 

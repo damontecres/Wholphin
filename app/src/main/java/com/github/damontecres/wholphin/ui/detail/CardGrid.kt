@@ -67,23 +67,29 @@ import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.playback.isBackwardButton
 import com.github.damontecres.wholphin.ui.playback.isForwardButton
 import com.github.damontecres.wholphin.ui.playback.isPlayKeyUp
-import com.github.damontecres.wholphin.ui.playback.playable
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import timber.log.Timber
+import java.util.UUID
 
 private const val DEBUG = false
 
+interface CardGridItem {
+    val id: UUID
+    val playable: Boolean
+    val sortName: String
+}
+
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun CardGrid(
-    pager: List<BaseItem?>,
-    onClickItem: (Int, BaseItem) -> Unit,
-    onLongClickItem: (Int, BaseItem) -> Unit,
-    onClickPlay: (Int, BaseItem) -> Unit,
+fun <T : CardGridItem> CardGrid(
+    pager: List<T?>,
+    onClickItem: (Int, T) -> Unit,
+    onLongClickItem: (Int, T) -> Unit,
+    onClickPlay: (Int, T) -> Unit,
     letterPosition: suspend (Char) -> Int,
     gridFocusRequester: FocusRequester,
     showJumpButtons: Boolean,
@@ -92,13 +98,13 @@ fun CardGrid(
     initialPosition: Int = 0,
     positionCallback: ((columns: Int, position: Int) -> Unit)? = null,
     cardContent: @Composable (
-        item: BaseItem?,
+        item: T?,
         onClick: () -> Unit,
         onLongClick: () -> Unit,
         mod: Modifier,
     ) -> Unit = { item, onClick, onLongClick, mod ->
         GridCard(
-            item = item,
+            item = item as BaseItem?,
             onClick = onClick,
             onLongClick = onLongClick,
             imageContentScale = ContentScale.FillBounds,
@@ -220,7 +226,7 @@ fun CardGrid(
                         return@onKeyEvent true
                     } else if (isPlayKeyUp(it)) {
                         val item = pager.getOrNull(focusedIndex)
-                        if (item?.type?.playable == true) {
+                        if (item?.playable == true) {
                             Timber.v("Clicked play on ${item.id}")
                             onClickPlay.invoke(focusedIndex, item)
                         }
@@ -351,7 +357,6 @@ fun CardGrid(
             remember(focusedIndex) {
                 pager
                     .getOrNull(focusedIndex)
-                    ?.data
                     ?.sortName
                     ?.first()
                     ?.uppercaseChar()

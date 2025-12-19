@@ -179,8 +179,14 @@ fun ServerList(
  * Generate a consistent color for a UUID
  */
 @Composable
-fun rememberIdColor(id: UUID): Color =
+fun rememberIdColor(
+    id: UUID?,
+    nullColor: Color = MaterialTheme.colorScheme.surfaceVariant,
+): Color =
     remember(id) {
+        if (id == null) {
+            return@remember nullColor
+        }
         // Generate a color based on the server ID hash, fallback to URL hash
         val hash = id.hashCode()
         val hue = (hash % 360).toFloat()
