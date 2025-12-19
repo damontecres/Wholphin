@@ -30,15 +30,42 @@ data class TrackSupport(
         } else {
             val type =
                 when (codecs) {
-                    MimeTypes.TEXT_VTT -> "vtt"
-                    MimeTypes.APPLICATION_VOBSUB -> "vobsub"
-                    MimeTypes.APPLICATION_SUBRIP -> "srt"
-                    MimeTypes.TEXT_SSA -> "ssa"
-                    MimeTypes.APPLICATION_PGS -> "pgs"
-                    MimeTypes.APPLICATION_DVBSUBS -> "dvd"
-                    MimeTypes.APPLICATION_TTML -> "ttml"
-                    MimeTypes.TEXT_UNKNOWN -> "unknown"
-                    null -> "unknown"
+                    MimeTypes.TEXT_VTT -> {
+                        "vtt"
+                    }
+
+                    MimeTypes.APPLICATION_VOBSUB -> {
+                        "vobsub"
+                    }
+
+                    MimeTypes.APPLICATION_SUBRIP -> {
+                        "srt"
+                    }
+
+                    MimeTypes.TEXT_SSA -> {
+                        "ssa"
+                    }
+
+                    MimeTypes.APPLICATION_PGS -> {
+                        "pgs"
+                    }
+
+                    MimeTypes.APPLICATION_DVBSUBS -> {
+                        "dvd"
+                    }
+
+                    MimeTypes.APPLICATION_TTML -> {
+                        "ttml"
+                    }
+
+                    MimeTypes.TEXT_UNKNOWN -> {
+                        "unknown"
+                    }
+
+                    null -> {
+                        "unknown"
+                    }
+
                     else -> {
                         val split = codecs.split("/")
                         if (split.size > 1) split[1] else codecs

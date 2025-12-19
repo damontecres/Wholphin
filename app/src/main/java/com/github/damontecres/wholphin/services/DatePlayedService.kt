@@ -8,7 +8,6 @@ import com.github.damontecres.wholphin.preferences.AppPreference
 import com.github.damontecres.wholphin.services.hilt.IoCoroutineScope
 import com.github.damontecres.wholphin.util.GetEpisodesRequestHandler
 import com.google.common.cache.CacheBuilder
-import com.google.common.cache.CacheLoader
 import dagger.hilt.android.qualifiers.ActivityContext
 import dagger.hilt.android.scopes.ActivityScoped
 import kotlinx.coroutines.CoroutineScope
@@ -40,20 +39,20 @@ class DatePlayedService
                 .newBuilder()
                 .maximumSize(AppPreference.HomePageItems.max)
                 .expireAfterWrite(2, TimeUnit.HOURS)
-                .build<SeriesItemId, Deferred<LocalDateTime>>(
-                    object : CacheLoader<SeriesItemId, Deferred<LocalDateTime>>() {
-                        override fun load(key: SeriesItemId): Deferred<LocalDateTime> = getLastPlayed(key)
-                    },
-                )
+                .build<SeriesItemId, Deferred<LocalDateTime>>()
 
-        private fun getLastPlayed(key: SeriesItemId): Deferred<LocalDateTime> {
+        private fun getLastPlayed(
+            seriesId: UUID,
+            item: BaseItem,
+        ): Deferred<LocalDateTime> {
             val request =
                 GetEpisodesRequest(
-                    seriesId = key.seriesId,
-                    adjacentTo = key.itemId,
+                    seriesId = seriesId,
+                    adjacentTo = item.id,
                     limit = 1,
                 )
             return scope.async(Dispatchers.IO) {
+                val premiereDate = item.data.premiereDate
                 try {
                     val result =
                         GetEpisodesRequestHandler
@@ -61,10 +60,22 @@ class DatePlayedService
                                 api,
                                 request,
                             ).content.items
-                    result.firstOrNull()?.userData?.lastPlayedDate ?: LocalDateTime.MIN
+                            .firstOrNull()
+                            ?.userData
+                            ?.lastPlayedDate ?: LocalDateTime.MIN
+                    if (premiereDate != null && result.isBefore(premiereDate)) {
+                        premiereDate
+                    } else {
+                        result
+                    }
                 } catch (ex: InvalidStatusException) {
-                    Timber.w("Error fetching %s: %s", key, ex.localizedMessage)
-                    LocalDateTime.MIN
+                    Timber.w(
+                        "Error fetching series=%s, item=%s: %s",
+                        seriesId,
+                        item.id,
+                        ex.localizedMessage,
+                    )
+                    LocalDateTime.MIN.coerceAtLeast(premiereDate ?: LocalDateTime.MIN)
                 }
             }
         }
@@ -73,7 +84,10 @@ class DatePlayedService
             withContext(Dispatchers.IO) {
                 val seriesId = item.data.seriesId
                 return@withContext if (seriesId != null) {
-                    datePlayedCache.get(SeriesItemId(seriesId, item.id)).await()
+                    datePlayedCache
+                        .get(SeriesItemId(seriesId, item.id)) {
+                            getLastPlayed(seriesId, item)
+                        }.await()
                 } else {
                     null
                 }

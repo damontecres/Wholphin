@@ -51,11 +51,9 @@ import com.github.damontecres.wholphin.ui.cards.ItemRow
 import com.github.damontecres.wholphin.ui.cards.PersonRow
 import com.github.damontecres.wholphin.ui.cards.SeasonCard
 import com.github.damontecres.wholphin.ui.components.ConfirmDialog
-import com.github.damontecres.wholphin.ui.components.DetailsBackdropImage
 import com.github.damontecres.wholphin.ui.components.DialogItem
 import com.github.damontecres.wholphin.ui.components.DialogParams
 import com.github.damontecres.wholphin.ui.components.DialogPopup
-import com.github.damontecres.wholphin.ui.components.DotSeparatedRow
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.ExpandableFaButton
 import com.github.damontecres.wholphin.ui.components.ExpandablePlayButton
@@ -63,6 +61,7 @@ import com.github.damontecres.wholphin.ui.components.GenreText
 import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.components.Optional
 import com.github.damontecres.wholphin.ui.components.OverviewText
+import com.github.damontecres.wholphin.ui.components.SeriesQuickDetails
 import com.github.damontecres.wholphin.ui.data.AddPlaylistViewModel
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialog
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialogInfo
@@ -75,14 +74,12 @@ import com.github.damontecres.wholphin.ui.detail.movie.TrailerRow
 import com.github.damontecres.wholphin.ui.letNotEmpty
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.rememberInt
-import com.github.damontecres.wholphin.ui.roundMinutes
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
 import kotlinx.coroutines.launch
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.MediaType
-import org.jellyfin.sdk.model.extensions.ticks
 import java.util.UUID
 import kotlin.time.Duration
 
@@ -114,10 +111,16 @@ fun SeriesDetails(
     val playlistState by playlistViewModel.playlistState.observeAsState(PlaylistLoadingState.Pending)
 
     when (val state = loading) {
-        is LoadingState.Error -> ErrorMessage(state)
+        is LoadingState.Error -> {
+            ErrorMessage(state)
+        }
+
         LoadingState.Loading,
         LoadingState.Pending,
-        -> LoadingPage()
+        -> {
+            LoadingPage()
+        }
+
         LoadingState.Success -> {
             item?.let { item ->
                 LifecycleStartEffect(destination.itemId) {
@@ -316,8 +319,6 @@ fun SeriesDetailsContent(
     Box(
         modifier = modifier,
     ) {
-        DetailsBackdropImage(series)
-
         Column(
             modifier =
                 Modifier
@@ -572,17 +573,6 @@ fun SeriesDetailsHeader(
 ) {
     val scope = rememberCoroutineScope()
     val dto = series.data
-    val details =
-        remember(series) {
-            buildList {
-                dto.productionYear?.let { add(it.toString()) }
-                dto.runTimeTicks
-                    ?.ticks
-                    ?.roundMinutes
-                    ?.let { add(it.toString()) }
-                dto.officialRating?.let(::add)
-            }
-        }
     Column(
         verticalArrangement = Arrangement.spacedBy(8.dp),
         modifier = modifier,
@@ -598,13 +588,7 @@ fun SeriesDetailsHeader(
             verticalArrangement = Arrangement.spacedBy(4.dp),
             modifier = Modifier.fillMaxWidth(.60f),
         ) {
-            DotSeparatedRow(
-                texts = details,
-                communityRating = dto.communityRating,
-                criticRating = dto.criticRating,
-                textStyle = MaterialTheme.typography.titleSmall,
-                modifier = Modifier,
-            )
+            SeriesQuickDetails(dto)
             dto.genres?.letNotEmpty {
                 GenreText(it)
             }

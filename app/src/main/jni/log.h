@@ -2,7 +2,7 @@
 
 #include <android/log.h>
 
-#define DEBUG 1
+#define DEBUG 0
 
 #define LOG_TAG "mpv"
 #define ALOGE(...) __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)

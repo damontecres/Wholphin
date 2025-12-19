@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -22,13 +23,13 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import androidx.tv.material3.Button
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import androidx.tv.material3.surfaceColorAtElevation
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.ui.components.ConfirmDialog
 import com.github.damontecres.wholphin.ui.components.EditTextBox
+import com.github.damontecres.wholphin.ui.components.TextButton
 
 @Composable
 fun StringInputDialog(
@@ -38,9 +39,14 @@ fun StringInputDialog(
     elevation: Dp = 3.dp,
 ) {
     val mutableValue = rememberTextFieldState(input.value ?: "")
+    var mutableText by remember { mutableStateOf(input.value ?: "") }
 //    var mutableValue by remember { mutableStateOf(input.value ?: "") }
     val onDone = {
-        onSave.invoke(mutableValue.text.toString())
+        if (input.maxLines > 1) {
+            onSave.invoke(mutableValue.text.toString())
+        } else {
+            onSave.invoke(mutableText)
+        }
     }
     var showConfirm by remember { mutableStateOf(false) }
     Dialog(
@@ -79,38 +85,49 @@ fun StringInputDialog(
                     color = MaterialTheme.colorScheme.onSecondaryContainer,
                     modifier = Modifier,
                 )
-                EditTextBox(
-                    state = mutableValue,
-                    keyboardOptions = input.keyboardOptions,
-                    onKeyboardAction = {
-                        onDone.invoke()
-                    },
-                    leadingIcon = null,
-                    isInputValid = { true },
-                    maxLines = input.maxLines,
-                    modifier = Modifier.fillMaxWidth(),
-                )
+                if (input.maxLines > 1) {
+                    EditTextBox(
+                        state = mutableValue,
+                        keyboardOptions = input.keyboardOptions,
+                        onKeyboardAction = {
+                            onDone.invoke()
+                        },
+                        leadingIcon = null,
+                        isInputValid = { true },
+                        maxLines = input.maxLines,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                } else {
+                    EditTextBox(
+                        value = mutableText,
+                        onValueChange = { mutableText = it },
+                        keyboardOptions = input.keyboardOptions,
+                        keyboardActions =
+                            KeyboardActions(
+                                onDone = {
+                                    onDone.invoke()
+                                },
+                            ),
+                        leadingIcon = null,
+                        isInputValid = { true },
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
 
                 Row(
                     horizontalArrangement = Arrangement.SpaceAround,
                     modifier = Modifier.fillMaxWidth(),
                 ) {
-                    Button(
+                    TextButton(
+                        stringRes = R.string.cancel,
                         onClick = onDismissRequest,
                         modifier = Modifier,
-                    ) {
-                        Text(
-                            text = stringResource(R.string.cancel),
-                        )
-                    }
-                    Button(
+                    )
+                    TextButton(
+                        stringRes = R.string.save,
                         onClick = onDone,
                         modifier = Modifier,
-                    ) {
-                        Text(
-                            text = stringResource(R.string.save),
-                        )
-                    }
+                    )
                 }
             }
         }

@@ -30,9 +30,7 @@ import androidx.lifecycle.compose.LifecycleStartEffect
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.ChosenStreams
 import com.github.damontecres.wholphin.data.model.BaseItem
-import com.github.damontecres.wholphin.data.model.chooseSource
 import com.github.damontecres.wholphin.preferences.UserPreferences
-import com.github.damontecres.wholphin.ui.components.DetailsBackdropImage
 import com.github.damontecres.wholphin.ui.components.DialogParams
 import com.github.damontecres.wholphin.ui.components.DialogPopup
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
@@ -57,6 +55,7 @@ import kotlinx.coroutines.launch
 import org.jellyfin.sdk.model.api.MediaType
 import org.jellyfin.sdk.model.extensions.ticks
 import org.jellyfin.sdk.model.serializer.toUUID
+import org.jellyfin.sdk.model.serializer.toUUIDOrNull
 import java.util.UUID
 import kotlin.time.Duration
 
@@ -102,10 +101,15 @@ fun EpisodeDetails(
         )
 
     when (val state = loading) {
-        is LoadingState.Error -> ErrorMessage(state)
+        is LoadingState.Error -> {
+            ErrorMessage(state)
+        }
+
         LoadingState.Loading,
         LoadingState.Pending,
-        -> LoadingPage()
+        -> {
+            LoadingPage()
+        }
 
         LoadingState.Success -> {
             item?.let { ep ->
@@ -152,7 +156,7 @@ fun EpisodeDetails(
                                         watched = ep.data.userData?.played ?: false,
                                         favorite = ep.data.userData?.isFavorite ?: false,
                                         seriesId = ep.data.seriesId,
-                                        sourceId = chosenStreams?.sourceId,
+                                        sourceId = chosenStreams?.source?.id?.toUUIDOrNull(),
                                         actions = moreActions,
                                         onChooseVersion = {
                                             chooseVersion =
@@ -169,23 +173,36 @@ fun EpisodeDetails(
                                             moreDialog = null
                                         },
                                         onChooseTracks = { type ->
-                                            chooseSource(
-                                                ep.data,
-                                                chosenStreams?.itemPlayback,
-                                            )?.let { source ->
-                                                chooseVersion =
-                                                    chooseStream(
-                                                        context = context,
-                                                        streams = source.mediaStreams.orEmpty(),
-                                                        type = type,
-                                                        onClick = { trackIndex ->
-                                                            viewModel.saveTrackSelection(
-                                                                ep,
-                                                                chosenStreams?.itemPlayback,
-                                                                trackIndex,
-                                                                type,
-                                                            )
-                                                        },
+                                            viewModel.streamChoiceService
+                                                .chooseSource(
+                                                    ep.data,
+                                                    chosenStreams?.itemPlayback,
+                                                )?.let { source ->
+                                                    chooseVersion =
+                                                        chooseStream(
+                                                            context = context,
+                                                            streams = source.mediaStreams.orEmpty(),
+                                                            type = type,
+                                                            onClick = { trackIndex ->
+                                                                viewModel.saveTrackSelection(
+                                                                    ep,
+                                                                    chosenStreams?.itemPlayback,
+                                                                    trackIndex,
+                                                                    type,
+                                                                )
+                                                            },
+                                                        )
+                                                }
+                                        },
+                                        onShowOverview = {
+                                            val source = chosenStreams?.source ?: ep.data.mediaSources?.firstOrNull()
+                                            if (source != null) {
+                                                overviewDialog =
+                                                    ItemDetailsDialogInfo(
+                                                        title = ep.name ?: context.getString(R.string.unknown),
+                                                        overview = ep.data.overview,
+                                                        genres = ep.data.genres.orEmpty(),
+                                                        files = listOf(source),
                                                     )
                                             }
                                         },
@@ -278,7 +295,6 @@ fun EpisodeDetailsContent(
         focusRequesters.getOrNull(position)?.tryRequestFocus()
     }
     Box(modifier = modifier) {
-        DetailsBackdropImage(ep)
         LazyColumn(
             verticalArrangement = Arrangement.spacedBy(16.dp),
             contentPadding = PaddingValues(horizontal = 32.dp, vertical = 8.dp),
@@ -324,6 +340,7 @@ fun EpisodeDetailsContent(
                         },
                         modifier =
                             Modifier
+                                .fillMaxWidth()
                                 .padding(bottom = 16.dp)
                                 .focusRequester(focusRequesters[HEADER_ROW]),
                     )

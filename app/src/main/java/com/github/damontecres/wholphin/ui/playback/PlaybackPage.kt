@@ -42,7 +42,6 @@ import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -57,9 +56,7 @@ import androidx.media3.ui.compose.SURFACE_TYPE_SURFACE_VIEW
 import androidx.media3.ui.compose.modifiers.resizeWithContentScale
 import androidx.media3.ui.compose.state.rememberPlayPauseButtonState
 import androidx.media3.ui.compose.state.rememberPresentationState
-import androidx.tv.material3.Button
 import androidx.tv.material3.MaterialTheme
-import androidx.tv.material3.Text
 import androidx.tv.material3.surfaceColorAtElevation
 import com.github.damontecres.wholphin.data.model.ItemPlayback
 import com.github.damontecres.wholphin.data.model.Playlist
@@ -71,19 +68,24 @@ import com.github.damontecres.wholphin.ui.LocalImageUrlService
 import com.github.damontecres.wholphin.ui.OneTimeLaunchedEffect
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.LoadingPage
+import com.github.damontecres.wholphin.ui.components.TextButton
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.preferences.subtitle.SubtitleSettings.applyToMpv
+import com.github.damontecres.wholphin.ui.preferences.subtitle.SubtitleSettings.calculateEdgeSize
 import com.github.damontecres.wholphin.ui.preferences.subtitle.SubtitleSettings.toSubtitleStyle
 import com.github.damontecres.wholphin.ui.seasonEpisode
 import com.github.damontecres.wholphin.ui.skipStringRes
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
+import com.github.damontecres.wholphin.util.Media3SubtitleOverride
+import com.github.damontecres.wholphin.util.mpv.MpvPlayer
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.jellyfin.sdk.model.extensions.ticks
 import java.util.UUID
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
@@ -109,10 +111,15 @@ fun PlaybackPage(
 
     val loading by viewModel.loading.observeAsState(LoadingState.Loading)
     when (val st = loading) {
-        is LoadingState.Error -> ErrorMessage(st, modifier)
+        is LoadingState.Error -> {
+            ErrorMessage(st, modifier)
+        }
+
         LoadingState.Pending,
         LoadingState.Loading,
-        -> LoadingPage(modifier.background(Color.Black))
+        -> {
+            LoadingPage(modifier.background(Color.Black))
+        }
 
         LoadingState.Success -> {
             val prefs = preferences.appPreferences.playbackPreferences
@@ -158,6 +165,11 @@ fun PlaybackPage(
             var playbackSpeed by remember { mutableFloatStateOf(1.0f) }
             LaunchedEffect(playbackSpeed) { player.setPlaybackSpeed(playbackSpeed) }
 
+            val subtitleDelay = currentPlayback?.subtitleDelay ?: Duration.ZERO
+            LaunchedEffect(subtitleDelay) {
+                (player as? MpvPlayer)?.subtitleDelay = subtitleDelay
+            }
+
             val presentationState = rememberPresentationState(player, false)
             val scaledModifier =
                 Modifier.resizeWithContentScale(contentScale, presentationState.videoSizeDp)
@@ -177,7 +189,7 @@ fun PlaybackPage(
             }
             var skipPosition by remember { mutableLongStateOf(0L) }
             val updateSkipIndicator = { delta: Long ->
-                if (skipIndicatorDuration > 0 && delta < 0 || skipIndicatorDuration < 0 && delta > 0) {
+                if ((skipIndicatorDuration > 0 && delta < 0) || (skipIndicatorDuration < 0 && delta > 0)) {
                     skipIndicatorDuration = 0
                 }
                 skipIndicatorDuration += delta
@@ -216,8 +228,14 @@ fun PlaybackPage(
                         showDebugInfo = !showDebugInfo
                     }
 
-                    PlaybackAction.ShowPlaylist -> TODO()
-                    PlaybackAction.ShowVideoFilterDialog -> TODO()
+                    PlaybackAction.ShowPlaylist -> {
+                        TODO()
+                    }
+
+                    PlaybackAction.ShowVideoFilterDialog -> {
+                        TODO()
+                    }
+
                     is PlaybackAction.ToggleAudio -> {
                         viewModel.changeAudioStream(it.index)
                     }
@@ -314,33 +332,6 @@ fun PlaybackPage(
                         }
                     }
 
-                    // Subtitles
-                    if (skipIndicatorDuration == 0L && currentItemPlayback.subtitleIndexEnabled) {
-                        val maxSize by animateFloatAsState(if (controllerViewState.controlsVisible) .7f else 1f)
-                        AndroidView(
-                            factory = { context ->
-                                SubtitleView(context).apply {
-                                    preferences.appPreferences.interfacePreferences.subtitlesPreferences.let {
-                                        setStyle(it.toSubtitleStyle())
-                                        setFixedTextSize(Dimension.SP, it.fontSize.toFloat())
-                                        setBottomPaddingFraction(it.margin.toFloat() / 100f)
-                                    }
-                                }
-                            },
-                            update = {
-                                it.setCues(cues)
-                            },
-                            onReset = {
-                                it.setCues(null)
-                            },
-                            modifier =
-                                Modifier
-                                    .fillMaxSize(maxSize)
-                                    .align(Alignment.TopCenter)
-                                    .background(Color.Transparent),
-                        )
-                    }
-
                     // The playback controls
                     AnimatedVisibility(
                         controllerViewState.controlsVisible,
@@ -380,6 +371,37 @@ fun PlaybackPage(
                             showClock = preferences.appPreferences.interfacePreferences.showClock,
                         )
                     }
+
+                    // Subtitles
+                    if (skipIndicatorDuration == 0L && currentItemPlayback.subtitleIndexEnabled) {
+                        val maxSize by animateFloatAsState(if (controllerViewState.controlsVisible) .7f else 1f)
+                        AndroidView(
+                            factory = { context ->
+                                SubtitleView(context).apply {
+                                    preferences.appPreferences.interfacePreferences.subtitlesPreferences.let {
+                                        setStyle(it.toSubtitleStyle())
+                                        setFixedTextSize(Dimension.SP, it.fontSize.toFloat())
+                                        setBottomPaddingFraction(it.margin.toFloat() / 100f)
+                                    }
+                                }
+                            },
+                            update = {
+                                it.setCues(cues)
+                                Media3SubtitleOverride(
+                                    preferences.appPreferences.interfacePreferences.subtitlesPreferences
+                                        .calculateEdgeSize(density),
+                                ).apply(it)
+                            },
+                            onReset = {
+                                it.setCues(null)
+                            },
+                            modifier =
+                                Modifier
+                                    .fillMaxSize(maxSize)
+                                    .align(Alignment.TopCenter)
+                                    .background(Color.Transparent),
+                        )
+                    }
                 }
 
                 // Ask to skip intros, etc button
@@ -397,17 +419,14 @@ fun PlaybackPage(
                             delay(10.seconds)
                             segmentCancelled = true
                         }
-                        Button(
+                        TextButton(
+                            stringRes = segment.type.skipStringRes,
                             onClick = {
                                 segmentCancelled = true
                                 player.seekTo(segment.endTicks.ticks.inWholeMilliseconds)
                             },
                             modifier = Modifier.focusRequester(focusRequester),
-                        ) {
-                            Text(
-                                text = stringResource(segment.type.skipStringRes),
-                            )
-                        }
+                        )
                     }
                 }
 
@@ -461,9 +480,7 @@ fun PlaybackPage(
                                 ).joinToString(" - "),
                             description = it.data.overview,
                             imageUrl = LocalImageUrlService.current.rememberImageUrl(it),
-                            aspectRatio =
-                                it.data.primaryImageAspectRatio?.toFloat()
-                                    ?: AspectRatios.WIDE,
+                            aspectRatio = it.aspectRatio ?: AspectRatios.WIDE,
                             onClick = {
                                 viewModel.reportInteraction()
                                 viewModel.playNextUp()
@@ -533,6 +550,7 @@ fun PlaybackPage(
                             subtitleStreams = mediaInfo?.subtitleStreams.orEmpty(),
                             playbackSpeed = playbackSpeed,
                             contentScale = contentScale,
+                            subtitleDelay = subtitleDelay,
                         ),
                     onDismissRequest = {
                         playbackDialog = null
@@ -543,8 +561,16 @@ fun PlaybackPage(
                     onControllerInteraction = {
                         controllerViewState.pulseControls(Long.MAX_VALUE)
                     },
-                    onClickPlaybackDialogType = { playbackDialog = it },
+                    onClickPlaybackDialogType = {
+                        if (it == PlaybackDialogType.SUBTITLE_DELAY) {
+                            // Hide controls so subtitles are fully visible
+                            controllerViewState.hideControls()
+                        }
+                        playbackDialog = it
+                    },
                     onPlaybackActionClick = onPlaybackActionClick,
+                    onChangeSubtitleDelay = { viewModel.updateSubtitleDelay(it) },
+                    enableSubtitleDelay = player is MpvPlayer,
                 )
             }
         }

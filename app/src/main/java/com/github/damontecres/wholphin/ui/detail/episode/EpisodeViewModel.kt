@@ -10,9 +10,12 @@ import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.ItemPlayback
 import com.github.damontecres.wholphin.preferences.ThemeSongVolume
+import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.FavoriteWatchManager
 import com.github.damontecres.wholphin.services.NavigationManager
+import com.github.damontecres.wholphin.services.StreamChoiceService
 import com.github.damontecres.wholphin.services.ThemeSongPlayer
+import com.github.damontecres.wholphin.services.UserPreferencesService
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.setValueOnMain
@@ -44,8 +47,11 @@ class EpisodeViewModel
         private val navigationManager: NavigationManager,
         val serverRepository: ServerRepository,
         val itemPlaybackRepository: ItemPlaybackRepository,
+        val streamChoiceService: StreamChoiceService,
         private val themeSongPlayer: ThemeSongPlayer,
         private val favoriteWatchManager: FavoriteWatchManager,
+        private val userPreferencesService: UserPreferencesService,
+        private val backdropService: BackdropService,
         @Assisted val itemId: UUID,
     ) : ViewModel() {
         @AssistedFactory
@@ -85,12 +91,14 @@ class EpisodeViewModel
                         "Error fetching movie",
                     ),
             ) {
+                val prefs = userPreferencesService.getCurrent()
                 val item = fetchAndSetItem().await()
-                val result = itemPlaybackRepository.getSelectedTracks(item.id, item)
+                val result = itemPlaybackRepository.getSelectedTracks(item.id, item, prefs)
                 withContext(Dispatchers.Main) {
                     this@EpisodeViewModel.item.value = item
                     chosenStreams.value = result
                     loading.value = LoadingState.Success
+                    backdropService.submit(item)
                 }
             }
 
@@ -115,10 +123,12 @@ class EpisodeViewModel
             sourceId: UUID,
         ) {
             viewModelScope.launchIO {
+                val prefs = userPreferencesService.getCurrent()
+                val plc = streamChoiceService.getPlaybackLanguageChoice(item.data)
                 val result = itemPlaybackRepository.savePlayVersion(item.id, sourceId)
                 val chosen =
                     result?.let {
-                        itemPlaybackRepository.getChosenItemFromPlayback(item, result)
+                        itemPlaybackRepository.getChosenItemFromPlayback(item, result, plc, prefs)
                     }
                 withContext(Dispatchers.Main) {
                     chosenStreams.value = chosen
@@ -133,6 +143,8 @@ class EpisodeViewModel
             type: MediaStreamType,
         ) {
             viewModelScope.launchIO {
+                val prefs = userPreferencesService.getCurrent()
+                val plc = streamChoiceService.getPlaybackLanguageChoice(item.data)
                 val result =
                     itemPlaybackRepository.saveTrackSelection(
                         item = item,
@@ -142,7 +154,7 @@ class EpisodeViewModel
                     )
                 val chosen =
                     result?.let {
-                        itemPlaybackRepository.getChosenItemFromPlayback(item, result)
+                        itemPlaybackRepository.getChosenItemFromPlayback(item, result, plc, prefs)
                     }
                 withContext(Dispatchers.Main) {
                     chosenStreams.value = chosen

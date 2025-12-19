@@ -7,34 +7,53 @@ Wholphin is an open-source Android TV client for Jellyfin. It aims to provide a 
 This is not a fork of the [official client](https://github.com/jellyfin/jellyfin-androidtv). Wholphin's user interface and controls have been written completely from scratch. Wholphin `v0.3.0+` supports playing media using either ExoPlayer/Media3 or MPV (experimental).
 
 <p align="center">
-<a href="https://github.com/damontecres/Wholphin/issues/303"><b>Help get Wholphin listed on the Play Store</b></a>
-<br/>
-<br/>
 <a href="https://github.com/damontecres/Wholphin/releases">
 <img alt="Current Release" src="https://img.shields.io/github/release/damontecres/wholphin.svg"/>
 </a>
 <a href="https://translate.codeberg.org/engage/wholphin/">
 <img src="https://translate.codeberg.org/widget/wholphin/wholphin/svg-badge.svg" alt="Translation status" />
 </a>
+<br/>
+<a href="https://play.google.com/store/apps/details?id=com.github.damontecres.wholphin">
+<img width="180" alt="Get Wholphin on Google Play" src="https://github.com/user-attachments/assets/2550a4cb-ce46-47a1-ae24-f33a169234b7"/>
+</a>
+<a href="https://www.amazon.com/gp/product/B0G8RQQR9T/ref=mas_pm_wholphin">
+<img width="180" alt="Get Wholphin on Amazon AppStore" src="https://github.com/user-attachments/assets/1f3a3b26-4b4f-44b1-9741-f4c895c8a53b"/>
+</a>
+
+
 </p>
 
-<img width="1280" height="771" alt="0 3 0_home" src="https://github.com/user-attachments/assets/23be4786-a4c3-45e5-a710-8d1ade2be2a3" />
+<img width="1280" height="720" alt="0_3_5_home" src="https://github.com/user-attachments/assets/a485c015-ec21-442d-a757-1f18381bf799" />
 
 ## Features
 
-- A navigation drawer for quick access to libraries, search, and settings from almost anywhere in the app
+### User interface
+
+- A navigation drawer for quick access to libraries, favorites, search, and settings from almost anywhere in the app
+- Option to combine Continue Watching & Next Up rows
 - Show Movie/TV Show titles when browsing libraries
-- Play TV Show theme music, if available
-- Plex inspired playback controls, such as:
-  - Using D-Pad left/right for seeking during playback
-  - Quickly access video chapters during playback
-  - Optionally skip back a few seconds when resuming playback
-- Other (subjective) enhancements:
-  - Subtly show playback position along the bottom of the screen while seeking w/ D-Pad
-  - Force Continue Watching & Next Up TV episodes to use their Series posters
+- Play theme music, if available
+- Search & download subtitles (requires compatible server plugin such as [OpenSubtitles](https://github.com/jellyfin/jellyfin-plugin-opensubtitles))
+- Customize layout grids for libraries
+- Multiple app color themes
+
+### Playback
+
 - Different media playback engines, including:
   - Default ExoPlayer/Media3
   - Experimental MPV
+- Plex inspired playback controls, such as:
+  - Using D-Pad left/right for seeking during playback
+  - Quickly access video chapters & queue during playback
+  - Optionally skip back a few seconds when resuming playback
+- Live TV & DVR support
+- Auto play next episodes with pass out protection
+- Option for automatic refresh rate switching on supported displays
+- Trickplay support
+- Other (subjective) enhancements:
+  - Subtly show playback position along the bottom of the screen while seeking w/ D-Pad
+  - Force Continue Watching & Next Up TV episodes to use their Series posters
 
 ### Roadmap
 
@@ -88,8 +107,11 @@ You can [help translate Wholphin](https://translate.codeberg.org/engage/wholphin
 ### Movie library browsing
 <img width="1280" height="771" alt="0 3 0_movies" src="https://github.com/user-attachments/assets/a49829b5-bc2c-4af9-8d5d-2f7d0973ce01" />
 
+### Movie page
+<img width="1280" height="720" alt="0_3_5_movie" src="https://github.com/user-attachments/assets/86af5889-6761-426a-8649-422f9d0a1dc0" />
+
 ### Series page
-<img width="1280" height="771" alt="0 3 0_series_overview" src="https://github.com/user-attachments/assets/2d26f34e-3ee8-4599-ba59-32524637dab7" />
+<img width="1280" height="720" alt="0_3_5_series" src="https://github.com/user-attachments/assets/2dcb2260-53ce-49d6-9088-72cbd4563c48" />
 
 ### Playlist
 <img width="1280" height="771" alt="0 3 0_playlist" src="https://github.com/user-attachments/assets/7ca589ab-9c88-483a-b769-35ffb5663d9e" />

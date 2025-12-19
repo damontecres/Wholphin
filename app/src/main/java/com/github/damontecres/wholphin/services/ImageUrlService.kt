@@ -31,7 +31,7 @@ class ImageUrlService
             imageType: ImageType,
             fillWidth: Int? = null,
             fillHeight: Int? = null,
-        ): String? =
+        ): String =
             when (imageType) {
                 ImageType.BACKDROP,
                 ImageType.LOGO,
@@ -76,13 +76,14 @@ class ImageUrlService
                     }
                 }
 
-                else ->
+                else -> {
                     getItemImageUrl(
                         itemId = itemId,
                         imageType = imageType,
                         fillWidth = fillWidth,
                         fillHeight = fillHeight,
                     )
+                }
             }
 
         fun getItemImageUrl(
@@ -143,6 +144,8 @@ class ImageUrlService
                 foregroundLayer = foregroundLayer,
                 imageIndex = imageIndex,
             )
+
+        fun getUserImageUrl(userId: UUID) = api.imageApi.getUserImageUrl(userId)
 
         /**
          * Just a convenient way to get the image URL and remember it

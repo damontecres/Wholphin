@@ -20,6 +20,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -32,7 +33,9 @@ import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.ui.preferences.PreferenceScreenOption
 import com.github.damontecres.wholphin.ui.preferences.PreferencesContent
 import com.github.damontecres.wholphin.ui.preferences.PreferencesViewModel
+import com.github.damontecres.wholphin.ui.preferences.subtitle.SubtitleSettings.calculateEdgeSize
 import com.github.damontecres.wholphin.ui.preferences.subtitle.SubtitleSettings.toSubtitleStyle
+import com.github.damontecres.wholphin.util.Media3SubtitleOverride
 
 @OptIn(UnstableApi::class)
 @Composable
@@ -41,6 +44,7 @@ fun SubtitleStylePage(
     modifier: Modifier = Modifier,
     viewModel: PreferencesViewModel = hiltViewModel(),
 ) {
+    val density = LocalDensity.current
     var preferences by remember { mutableStateOf(initialPreferences) }
     LaunchedEffect(Unit) {
         viewModel.preferenceDataStore.data.collect {
@@ -95,6 +99,7 @@ fun SubtitleStylePage(
                                         Cue.Builder().setText(text).build(),
                                     ),
                                 )
+                                Media3SubtitleOverride(prefs.calculateEdgeSize(density)).apply(it)
                             },
                             modifier =
                                 Modifier

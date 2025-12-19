@@ -124,7 +124,7 @@
     <string name="trailer">Trailer</string>
     <plurals name="trailers">
         <item quantity="one">Trailers</item>
-        <item quantity="other"></item>
+        <item quantity="other"/>
     </plurals>
     <string name="tv_dvr_schedule">DVR-schema</string>
     <string name="tv_guide">Gids</string>
@@ -156,47 +156,47 @@
     <string name="extras">Extra\'s</string>
     <plurals name="other_extras">
         <item quantity="one">Overig</item>
-        <item quantity="other"></item>
+        <item quantity="other"/>
     </plurals>
     <plurals name="behind_the_scenes">
         <item quantity="one">Achter de schermen</item>
-        <item quantity="other"></item>
+        <item quantity="other"/>
     </plurals>
     <plurals name="theme_songs">
         <item quantity="one">Titelmuziek</item>
-        <item quantity="other"></item>
+        <item quantity="other"/>
     </plurals>
     <plurals name="theme_videos">
         <item quantity="one">Titelvideo\'s</item>
-        <item quantity="other"></item>
+        <item quantity="other"/>
     </plurals>
     <plurals name="clips">
         <item quantity="one">Clips</item>
-        <item quantity="other"></item>
+        <item quantity="other"/>
     </plurals>
     <plurals name="deleted_scenes">
         <item quantity="one">Verwijderde scènes</item>
-        <item quantity="other"></item>
+        <item quantity="other"/>
     </plurals>
     <plurals name="interviews">
         <item quantity="one">Interviews</item>
-        <item quantity="other"></item>
+        <item quantity="other"/>
     </plurals>
     <plurals name="scenes">
         <item quantity="one">Scènes</item>
-        <item quantity="other"></item>
+        <item quantity="other"/>
     </plurals>
     <plurals name="samples">
         <item quantity="one">Voorvertoningen</item>
-        <item quantity="other"></item>
+        <item quantity="other"/>
     </plurals>
     <plurals name="featurettes">
         <item quantity="one">Featurettes</item>
-        <item quantity="other"></item>
+        <item quantity="other"/>
     </plurals>
     <plurals name="shorts">
         <item quantity="one">Shorts</item>
-        <item quantity="other"></item>
+        <item quantity="other"/>
     </plurals>
     <plurals name="downloads">
         <item quantity="one">%s download</item>
@@ -287,4 +287,71 @@
     <string name="remove">Verwijderen</string>
     <string name="dolby_vision">Dolby Vision</string>
     <string name="dolby_atmos">Dolby Atmos</string>
+    <string name="subtitle_margin">Marge</string>
+    <string name="verbose_logging">Uitgebreid logboek aanleggen</string>
+    <string name="image_cache_size">Omvang van afbeeldingscache (in MB)</string>
+    <string name="mpv_use_gpu_next">Mpv: gpu-next gebruiken</string>
+    <string name="mpv_conf">mpv.conf bewerken</string>
+    <string name="discard_change">Wijzigingen negeren?</string>
+    <string name="enter_pin">Pincode invoeren</string>
+    <string name="sign_in_auto">Automatisch inloggen</string>
+    <string name="use_server_credentials">Inloggen via server</string>
+    <string name="press_enter_to_confirm">Druk op het midden om te bevestigen</string>
+    <string name="require_pin_code">Profiel voorzien van pincode</string>
+    <string name="confirm_pin">Pincode bevestigen</string>
+    <string name="incorrect">Onjuist</string>
+    <string name="pin_too_short">De pincode dient 4 of meer tekens te bevatten</string>
+    <string name="will_remove_pin">De pincode wordt gewist</string>
+    <string name="view_options">Weergaveopties</string>
+    <string name="columns">Kolommen</string>
+    <string name="spacing">Tussenruimte</string>
+    <string name="aspect_ratio">Beeldverhouding</string>
+    <string name="show_details">Details bekijken</string>
+    <string name="image_type">Afbeeldingstype</string>
+    <string name="cast_and_crew"><![CDATA[Cast en crew]]></string>
+    <string name="guest_stars">Gastrollen</string>
+    <string name="edge_size">Randbreedte</string>
+    <string name="refresh_rate_switching">Automatische ververssnelheid toepassen</string>
+    <string name="automatic">Automatisch</string>
+    <string name="username_or_password">Gebruikersnaam/wachtwoord gebruiken</string>
+    <string name="login">Inloggen</string>
+    <string name="show_titles">Titels tonen</string>
+    <string name="media_information">Media-informatie</string>
+    <string name="general">Algemeen</string>
+    <string name="container">Container</string>
+    <string name="title">Titel</string>
+    <string name="codec">Codec</string>
+    <string name="profile">Profiel</string>
+    <string name="level">Niveau</string>
+    <string name="resolution">Resolutie</string>
+    <string name="anamorphic">Anamorfisch</string>
+    <string name="interlaced">Met interlatie</string>
+    <string name="framerate">Framesnelheid</string>
+    <string name="bit_depth">Bitdiepte</string>
+    <string name="video_range">Videobereik</string>
+    <string name="video_range_type">Soort videobereik</string>
+    <string name="color_space">Kleurruimte</string>
+    <string name="color_transfer">Kleuroverdracht</string>
+    <string name="color_primaries">Voorkeurskleuren</string>
+    <string name="pixel_format">Pixelformaat</string>
+    <string name="ref_frames">Referentieframes</string>
+    <string name="nal">NAL</string>
+    <string name="language">Taal</string>
+    <string name="layout">Indeling</string>
+    <string name="channels">Kanalen</string>
+    <string name="sample_rate">Samplesnelheid</string>
+    <string name="avc">AVC</string>
+    <string name="yes">Ja</string>
+    <string name="no">Nee</string>
+    <string name="sdr">Sdr</string>
+    <string name="hdr">Hdr</string>
+    <string name="hdr10">Hdr10</string>
+    <string name="hdr10_plus">Hdr10+</string>
+    <string name="hlg">Hlg</string>
+    <string name="bit_unit">bit</string>
+    <string name="sample_rate_unit">Hz</string>
+    <string name="live_tv_repeat">Herhalen</string>
+    <string name="favorite_channels_at_beginning">Favoriete kanalen eerst tonen</string>
+    <string name="sort_channels_recently_watched">Kanalen sorteren op onlangs bekeken</string>
+    <string name="color_code_programs">Programma\'s voorzien van kleurcode</string>
 </resources>

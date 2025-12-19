@@ -8,8 +8,12 @@ import coil3.compose.setSingletonImageLoaderFactory
 import coil3.disk.DiskCache
 import coil3.disk.directory
 import coil3.memory.MemoryCache
+import coil3.network.CacheStrategy
+import coil3.network.NetworkRequest
+import coil3.network.NetworkResponse
 import coil3.network.cachecontrol.CacheControlCacheStrategy
 import coil3.network.okhttp.OkHttpNetworkFetcherFactory
+import coil3.request.Options
 import coil3.request.crossfade
 import coil3.util.DebugLogger
 import okhttp3.OkHttpClient
@@ -67,10 +71,39 @@ fun CoilConfig(
             .components {
                 add(
                     OkHttpNetworkFetcherFactory(
-                        cacheStrategy = { CacheControlCacheStrategy() },
+                        cacheStrategy = { WholphinCacheStrategy(CacheControlCacheStrategy()) },
                         callFactory = { client },
                     ),
                 )
             }.build()
     }
+}
+
+/**
+ * This [CacheStrategy] always prefers the cached response for Trickplay images,
+ * otherwise the decision is delegated to the provided [CacheStrategy]
+ *
+ * The expectation is that Trickplay images will be prefetched so the cache will always be warm
+ */
+@OptIn(ExperimentalCoilApi::class)
+private class WholphinCacheStrategy(
+    private val delegate: CacheStrategy,
+) : CacheStrategy {
+    override suspend fun read(
+        cacheResponse: NetworkResponse,
+        networkRequest: NetworkRequest,
+        options: Options,
+    ): CacheStrategy.ReadResult =
+        if (networkRequest.url.contains("/Trickplay/")) {
+            CacheStrategy.ReadResult(cacheResponse)
+        } else {
+            delegate.read(cacheResponse, networkRequest, options)
+        }
+
+    override suspend fun write(
+        cacheResponse: NetworkResponse?,
+        networkRequest: NetworkRequest,
+        networkResponse: NetworkResponse,
+        options: Options,
+    ): CacheStrategy.WriteResult = delegate.write(cacheResponse, networkRequest, networkResponse, options)
 }

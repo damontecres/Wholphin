@@ -18,9 +18,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.LifecycleStartEffect
+import androidx.lifecycle.map
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.BaseItem
-import com.github.damontecres.wholphin.data.model.chooseSource
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.OneTimeLaunchedEffect
 import com.github.damontecres.wholphin.ui.components.DialogParams
@@ -39,16 +39,19 @@ import com.github.damontecres.wholphin.ui.detail.buildMoreDialogItems
 import com.github.damontecres.wholphin.ui.equalsNotNull
 import com.github.damontecres.wholphin.ui.indexOfFirstOrNull
 import com.github.damontecres.wholphin.ui.nav.Destination
+import com.github.damontecres.wholphin.ui.rememberInt
 import com.github.damontecres.wholphin.ui.seasonEpisode
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.LoadingState
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.UseSerializers
-import org.jellyfin.sdk.model.api.ImageType
+import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.MediaType
+import org.jellyfin.sdk.model.api.PersonKind
 import org.jellyfin.sdk.model.extensions.ticks
 import org.jellyfin.sdk.model.serializer.UUIDSerializer
 import org.jellyfin.sdk.model.serializer.toUUID
+import org.jellyfin.sdk.model.serializer.toUUIDOrNull
 import timber.log.Timber
 import java.util.UUID
 import kotlin.time.Duration
@@ -85,6 +88,8 @@ fun SeriesOverview(
     val context = LocalContext.current
     val firstItemFocusRequester = remember { FocusRequester() }
     val episodeRowFocusRequester = remember { FocusRequester() }
+    val castCrewRowFocusRequester = remember { FocusRequester() }
+    val guestStarRowFocusRequester = remember { FocusRequester() }
 
     var initialLoadDone by rememberSaveable { mutableStateOf(false) }
     OneTimeLaunchedEffect {
@@ -103,6 +108,7 @@ fun SeriesOverview(
     val series by viewModel.item.observeAsState(null)
     val seasons by viewModel.seasons.observeAsState(listOf())
     val episodes by viewModel.episodes.observeAsState(EpisodeList.Loading)
+    val peopleInEpisode by viewModel.peopleInEpisode.map { it.people }.observeAsState(listOf())
     val episodeList = (episodes as? EpisodeList.Success)?.episodes
 
     var position by rememberSaveable(
@@ -138,6 +144,8 @@ fun SeriesOverview(
     var showPlaylistDialog by remember { mutableStateOf<UUID?>(null) }
     val playlistState by playlistViewModel.playlistState.observeAsState(PlaylistLoadingState.Pending)
 
+    var rowFocused by rememberInt()
+
     LaunchedEffect(episodes) {
         episodes?.let { episodes ->
             if (episodes is EpisodeList.Success) {
@@ -152,26 +160,40 @@ fun SeriesOverview(
         }
     }
 
-    LaunchedEffect(position) {
-        (episodes as? EpisodeList.Success)
-            ?.episodes
-            ?.getOrNull(position.episodeRowIndex)
-            ?.let {
-                viewModel.lookUpChosenTracks(it.id, it)
-            }
+    LaunchedEffect(position, episodes) {
+        val focusedEpisode =
+            (episodes as? EpisodeList.Success)
+                ?.episodes
+                ?.getOrNull(position.episodeRowIndex)
+
+        focusedEpisode?.let {
+            viewModel.lookUpChosenTracks(it.id, it)
+            viewModel.lookupPeopleInEpisode(it)
+        }
     }
     val chosenStreams by viewModel.chosenStreams.observeAsState(null)
 
     when (val state = loading) {
-        is LoadingState.Error -> ErrorMessage(state)
+        is LoadingState.Error -> {
+            ErrorMessage(state)
+        }
 
         LoadingState.Loading,
         LoadingState.Pending,
-        -> LoadingPage()
+        -> {
+            LoadingPage()
+        }
 
         LoadingState.Success -> {
             series?.let { series ->
-                LaunchedEffect(Unit) { episodeRowFocusRequester.tryRequestFocus() }
+
+                LaunchedEffect(Unit) {
+                    when (rowFocused) {
+                        EPISODE_ROW -> episodeRowFocusRequester.tryRequestFocus()
+                        CAST_AND_CREW_ROW -> castCrewRowFocusRequester.tryRequestFocus()
+                        GUEST_STAR_ROW -> guestStarRowFocusRequester.tryRequestFocus()
+                    }
+                }
                 LifecycleStartEffect(destination.itemId) {
                     viewModel.maybePlayThemeSong(
                         destination.itemId,
@@ -196,7 +218,7 @@ fun SeriesOverview(
                                 watched = ep.data.userData?.played ?: false,
                                 favorite = ep.data.userData?.isFavorite ?: false,
                                 seriesId = series.id,
-                                sourceId = chosenStreams?.sourceId,
+                                sourceId = chosenStreams?.source?.id?.toUUIDOrNull(),
                                 actions =
                                     MoreDialogActions(
                                         navigateTo = viewModel::navigateTo,
@@ -234,25 +256,35 @@ fun SeriesOverview(
                                     moreDialog = null
                                 },
                                 onChooseTracks = { type ->
-                                    chooseSource(
-                                        ep.data,
-                                        chosenStreams?.itemPlayback,
-                                    )?.let { source ->
-                                        chooseVersion =
-                                            chooseStream(
-                                                context = context,
-                                                streams = source.mediaStreams.orEmpty(),
-                                                type = type,
-                                                onClick = { trackIndex ->
-                                                    viewModel.saveTrackSelection(
-                                                        ep,
-                                                        chosenStreams?.itemPlayback,
-                                                        trackIndex,
-                                                        type,
-                                                    )
-                                                },
-                                            )
-                                    }
+                                    viewModel.streamChoiceService
+                                        .chooseSource(
+                                            ep.data,
+                                            chosenStreams?.itemPlayback,
+                                        )?.let { source ->
+                                            chooseVersion =
+                                                chooseStream(
+                                                    context = context,
+                                                    streams = source.mediaStreams.orEmpty(),
+                                                    type = type,
+                                                    onClick = { trackIndex ->
+                                                        viewModel.saveTrackSelection(
+                                                            ep,
+                                                            chosenStreams?.itemPlayback,
+                                                            trackIndex,
+                                                            type,
+                                                        )
+                                                    },
+                                                )
+                                        }
+                                },
+                                onShowOverview = {
+                                    overviewDialog =
+                                        ItemDetailsDialogInfo(
+                                            title = ep.name ?: context.getString(R.string.unknown),
+                                            overview = ep.data.overview,
+                                            genres = ep.data.genres.orEmpty(),
+                                            files = ep.data.mediaSources.orEmpty(),
+                                        )
                                 },
                             ),
                     )
@@ -263,16 +295,12 @@ fun SeriesOverview(
                     seasons = seasons,
                     episodes = episodes,
                     chosenStreams = chosenStreams,
+                    peopleInEpisode = peopleInEpisode,
                     position = position,
-                    backdropImageUrl =
-                        remember {
-                            viewModel.imageUrl(
-                                series.id,
-                                ImageType.BACKDROP,
-                            )
-                        },
                     firstItemFocusRequester = firstItemFocusRequester,
                     episodeRowFocusRequester = episodeRowFocusRequester,
+                    castCrewRowFocusRequester = castCrewRowFocusRequester,
+                    guestStarRowFocusRequester = guestStarRowFocusRequester,
                     onFocus = {
                         if (it.seasonTabIndex != position.seasonTabIndex) {
                             seasons.getOrNull(it.seasonTabIndex)?.let { season ->
@@ -282,6 +310,7 @@ fun SeriesOverview(
                         position = it
                     },
                     onClick = {
+                        rowFocused = EPISODE_ROW
                         val resumePosition =
                             it.data.userData
                                 ?.playbackPositionTicks
@@ -298,6 +327,7 @@ fun SeriesOverview(
                         moreDialog = buildMoreForEpisode(ep, true)
                     },
                     playOnClick = { resume ->
+                        rowFocused = EPISODE_ROW
                         episodeList?.getOrNull(position.episodeRowIndex)?.let {
                             viewModel.release()
                             viewModel.navigateTo(
@@ -336,6 +366,16 @@ fun SeriesOverview(
                                     files = it.data.mediaSources.orEmpty(),
                                 )
                         }
+                    },
+                    personOnClick = {
+                        rowFocused =
+                            if (it.type == PersonKind.GUEST_STAR) GUEST_STAR_ROW else CAST_AND_CREW_ROW
+                        viewModel.navigateTo(
+                            Destination.MediaItem(
+                                it.id,
+                                BaseItemKind.PERSON,
+                            ),
+                        )
                     },
                     modifier = modifier,
                 )
@@ -391,3 +431,7 @@ fun SeriesOverview(
         )
     }
 }
+
+private const val EPISODE_ROW = 0
+private const val CAST_AND_CREW_ROW = EPISODE_ROW + 1
+private const val GUEST_STAR_ROW = CAST_AND_CREW_ROW + 1

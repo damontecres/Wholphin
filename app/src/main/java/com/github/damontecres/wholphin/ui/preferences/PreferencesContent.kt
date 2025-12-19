@@ -456,7 +456,7 @@ fun PreferencesPage(
             PreferenceScreenOption.BASIC,
             PreferenceScreenOption.ADVANCED,
             PreferenceScreenOption.USER_INTERFACE,
-            ->
+            -> {
                 PreferencesContent(
                     initialPreferences,
                     preferenceScreenOption,
@@ -465,11 +465,13 @@ fun PreferencesPage(
                         .fillMaxHeight()
                         .align(Alignment.TopEnd),
                 )
+            }
 
-            PreferenceScreenOption.SUBTITLES ->
+            PreferenceScreenOption.SUBTITLES -> {
                 SubtitleStylePage(
                     initialPreferences,
                 )
+            }
         }
     }
 }

@@ -94,14 +94,29 @@ class PlaybackKeyHandler(
                     updateSkipIndicator(-seekBack.inWholeMilliseconds)
                 }
 
-                Key.MediaNext -> if (player.isCommandAvailable(Player.COMMAND_SEEK_TO_NEXT)) player.seekToNext()
-                Key.MediaPrevious -> if (player.isCommandAvailable(Player.COMMAND_SEEK_TO_PREVIOUS)) player.seekToPrevious()
+                Key.MediaNext -> {
+                    if (player.isCommandAvailable(Player.COMMAND_SEEK_TO_NEXT)) player.seekToNext()
+                }
 
-                Key.Captions -> onPlaybackDialogTypeClick.invoke(PlaybackDialogType.CAPTIONS)
-                Key.MediaAudioTrack -> onPlaybackDialogTypeClick.invoke(PlaybackDialogType.AUDIO)
-                Key.MediaStop -> onStop.invoke()
+                Key.MediaPrevious -> {
+                    if (player.isCommandAvailable(Player.COMMAND_SEEK_TO_PREVIOUS)) player.seekToPrevious()
+                }
 
-                else -> result = false
+                Key.Captions -> {
+                    onPlaybackDialogTypeClick.invoke(PlaybackDialogType.CAPTIONS)
+                }
+
+                Key.MediaAudioTrack -> {
+                    onPlaybackDialogTypeClick.invoke(PlaybackDialogType.AUDIO)
+                }
+
+                Key.MediaStop -> {
+                    onStop.invoke()
+                }
+
+                else -> {
+                    result = false
+                }
             }
         } else if (isEnterKey(it) && !controllerViewState.controlsVisible) {
             controllerViewState.showControls()

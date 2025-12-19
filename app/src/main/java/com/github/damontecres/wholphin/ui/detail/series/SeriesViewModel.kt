@@ -14,16 +14,20 @@ import com.github.damontecres.wholphin.data.model.Person
 import com.github.damontecres.wholphin.data.model.Trailer
 import com.github.damontecres.wholphin.preferences.ThemeSongVolume
 import com.github.damontecres.wholphin.preferences.UserPreferences
+import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.ExtrasService
 import com.github.damontecres.wholphin.services.FavoriteWatchManager
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.PeopleFavorites
+import com.github.damontecres.wholphin.services.StreamChoiceService
 import com.github.damontecres.wholphin.services.ThemeSongPlayer
 import com.github.damontecres.wholphin.services.TrailerService
+import com.github.damontecres.wholphin.services.UserPreferencesService
 import com.github.damontecres.wholphin.ui.SlimItemFields
 import com.github.damontecres.wholphin.ui.detail.ItemViewModel
 import com.github.damontecres.wholphin.ui.equalsNotNull
 import com.github.damontecres.wholphin.ui.launchIO
+import com.github.damontecres.wholphin.ui.letNotEmpty
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.setValueOnMain
 import com.github.damontecres.wholphin.ui.showToast
@@ -37,6 +41,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
@@ -68,6 +73,9 @@ class SeriesViewModel
         private val peopleFavorites: PeopleFavorites,
         private val trailerService: TrailerService,
         private val extrasService: ExtrasService,
+        val streamChoiceService: StreamChoiceService,
+        private val userPreferencesService: UserPreferencesService,
+        private val backdropService: BackdropService,
     ) : ItemViewModel(api) {
         private lateinit var seriesId: UUID
         private lateinit var prefs: UserPreferences
@@ -79,6 +87,8 @@ class SeriesViewModel
         val extras = MutableLiveData<List<ExtrasItem>>(listOf())
         val people = MutableLiveData<List<Person>>(listOf())
         val similar = MutableLiveData<List<BaseItem>>()
+
+        val peopleInEpisode = MutableLiveData<PeopleInItem>(PeopleInItem())
 
         fun init(
             prefs: UserPreferences,
@@ -95,6 +105,7 @@ class SeriesViewModel
                 ) + Dispatchers.IO,
             ) {
                 val item = fetchItem(seriesId)
+                backdropService.submit(item)
                 val seasons = getSeasons(item)
 
                 // If a particular season was requested, fetch those episodes, otherwise get the first season
@@ -218,6 +229,7 @@ class SeriesViewModel
                             ItemFields.CUSTOM_RATING,
                             ItemFields.TRICKPLAY,
                             ItemFields.PRIMARY_IMAGE_ASPECT_RATIO,
+                            ItemFields.PEOPLE,
                         ),
                 )
             val pager = ApiRequestPager(api, request, GetEpisodesRequestHandler, viewModelScope)
@@ -237,11 +249,15 @@ class SeriesViewModel
                     0
                 }
             Timber.v("Loaded ${pager.size} episodes for season $seasonId, initialIndex=$initialIndex")
-            return EpisodeList.Success(pager, initialIndex)
+            return EpisodeList.Success(seasonId, pager, initialIndex)
         }
 
         fun loadEpisodes(seasonId: UUID) {
-            this@SeriesViewModel.episodes.value = EpisodeList.Loading
+            val currentEpisodes = (this@SeriesViewModel.episodes.value as? EpisodeList.Success)
+            if (currentEpisodes == null || currentEpisodes.seasonId != seasonId) {
+                this@SeriesViewModel.peopleInEpisode.value = PeopleInItem()
+                this@SeriesViewModel.episodes.value = EpisodeList.Loading
+            }
             viewModelScope.launchIO(ExceptionHandler(true)) {
                 val episodes =
                     try {
@@ -252,6 +268,12 @@ class SeriesViewModel
                     }
                 withContext(Dispatchers.Main) {
                     this@SeriesViewModel.episodes.value = episodes
+                }
+                if (currentEpisodes == null || currentEpisodes.seasonId != seasonId) {
+                    (episodes as? EpisodeList.Success)
+                        ?.let {
+                            it.episodes.getOrNull(it.initialIndex)
+                        }?.let { lookupPeopleInEpisode(it) }
                 }
             }
         }
@@ -313,6 +335,8 @@ class SeriesViewModel
                     episodes.value = eps
                 }
             }
+            // Kind of hack to ensure the backdrop is reloaded if needed
+            item.value?.let { backdropService.submit(it) }
         }
 
         /**
@@ -357,7 +381,12 @@ class SeriesViewModel
             chosenStreamsJob?.cancel()
             chosenStreamsJob =
                 viewModelScope.launchIO {
-                    val result = itemPlaybackRepository.getSelectedTracks(itemId, item)
+                    val result =
+                        itemPlaybackRepository.getSelectedTracks(
+                            itemId,
+                            item,
+                            userPreferencesService.getCurrent(),
+                        )
                     withContext(Dispatchers.Main) {
                         chosenStreams.value = result
                     }
@@ -369,10 +398,12 @@ class SeriesViewModel
             sourceId: UUID,
         ) {
             viewModelScope.launchIO {
+                val prefs = userPreferencesService.getCurrent()
+                val plc = streamChoiceService.getPlaybackLanguageChoice(item.data)
                 val result = itemPlaybackRepository.savePlayVersion(item.id, sourceId)
                 val chosen =
                     result?.let {
-                        itemPlaybackRepository.getChosenItemFromPlayback(item, result)
+                        itemPlaybackRepository.getChosenItemFromPlayback(item, result, plc, prefs)
                     }
                 withContext(Dispatchers.Main) {
                     chosenStreams.value = chosen
@@ -387,6 +418,8 @@ class SeriesViewModel
             type: MediaStreamType,
         ) {
             viewModelScope.launchIO {
+                val prefs = userPreferencesService.getCurrent()
+                val plc = streamChoiceService.getPlaybackLanguageChoice(item.data)
                 val result =
                     itemPlaybackRepository.saveTrackSelection(
                         item = item,
@@ -396,11 +429,29 @@ class SeriesViewModel
                     )
                 val chosen =
                     result?.let {
-                        itemPlaybackRepository.getChosenItemFromPlayback(item, result)
+                        itemPlaybackRepository.getChosenItemFromPlayback(item, result, plc, prefs)
                     }
                 withContext(Dispatchers.Main) {
                     chosenStreams.value = chosen
                 }
+            }
+        }
+
+        private var peopleInEpisodeJob: Job? = null
+
+        suspend fun lookupPeopleInEpisode(item: BaseItem) {
+            peopleInEpisodeJob?.cancel()
+            if (peopleInEpisode.value?.itemId != item.id) {
+                peopleInEpisode.setValueOnMain(PeopleInItem())
+                peopleInEpisodeJob =
+                    viewModelScope.launch(ExceptionHandler()) {
+                        delay(250)
+                        val people =
+                            item.data.people
+                                ?.letNotEmpty { it.map { Person.fromDto(it, api) } }
+                                .orEmpty()
+                        peopleInEpisode.setValueOnMain(PeopleInItem(item.id, people))
+                    }
             }
         }
     }
@@ -416,7 +467,13 @@ sealed interface EpisodeList {
     }
 
     data class Success(
+        val seasonId: UUID,
         val episodes: ApiRequestPager<GetEpisodesRequest>,
         val initialIndex: Int,
     ) : EpisodeList
 }
+
+data class PeopleInItem(
+    val itemId: UUID? = null,
+    val people: List<Person> = listOf(),
+)

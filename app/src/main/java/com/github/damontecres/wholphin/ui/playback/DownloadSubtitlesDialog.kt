@@ -11,14 +11,18 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
@@ -75,7 +79,9 @@ fun DownloadSubtitlesContent(
             }
         }
 
-        is SubtitleSearch.Error -> Wrapper { ErrorMessage(null, s.ex, modifier) }
+        is SubtitleSearch.Error -> {
+            Wrapper { ErrorMessage(null, s.ex, modifier) }
+        }
 
         is SubtitleSearch.Success -> {
             val dialogItems = convertRemoteSubtitles(s.options, onClickDownload)
@@ -100,7 +106,8 @@ fun DownloadSubtitlesContent(
                     style = MaterialTheme.typography.titleLarge,
                     color = MaterialTheme.colorScheme.onSurface,
                 )
-                val lang = rememberTextFieldState(language)
+//                val lang = rememberTextFieldState(language)
+                var lang by rememberSaveable { mutableStateOf("") }
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically,
@@ -111,10 +118,17 @@ fun DownloadSubtitlesContent(
                         color = MaterialTheme.colorScheme.onSurface,
                     )
                     EditTextBox(
-                        state = lang,
-                        onKeyboardAction = {
-                            onSearch(lang.text.toString())
-                        },
+                        value = lang,
+                        onValueChange = { lang = it },
+                        keyboardActions =
+                            KeyboardActions(
+                                onSearch = {
+                                    onSearch(lang)
+                                },
+                            ),
+                        //                        onKeyboardAction = {
+//                            onSearch(lang.text.toString())
+//                        },
                         keyboardOptions =
                             KeyboardOptions(
                                 imeAction = ImeAction.Search,
@@ -133,9 +147,11 @@ fun DownloadSubtitlesContent(
                     ) {
                         itemsIndexed(dialogItems) { index, item ->
                             when (item) {
-                                is DialogItemDivider -> HorizontalDivider(Modifier.height(16.dp))
+                                is DialogItemDivider -> {
+                                    HorizontalDivider(Modifier.height(16.dp))
+                                }
 
-                                is DialogItem ->
+                                is DialogItem -> {
                                     ListItem(
                                         selected = false,
                                         enabled = item.enabled,
@@ -153,6 +169,7 @@ fun DownloadSubtitlesContent(
                                                 Modifier.focusRequester(focusRequester),
                                             ),
                                     )
+                                }
                             }
                         }
                     }

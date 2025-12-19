@@ -1,10 +1,13 @@
 package com.github.damontecres.wholphin.data.model
 
+import com.github.damontecres.wholphin.ui.detail.CardGridItem
 import com.github.damontecres.wholphin.ui.detail.series.SeasonEpisodeIds
 import com.github.damontecres.wholphin.ui.formatDateTime
 import com.github.damontecres.wholphin.ui.nav.Destination
+import com.github.damontecres.wholphin.ui.playback.playable
 import com.github.damontecres.wholphin.ui.seasonEpisode
 import com.github.damontecres.wholphin.ui.seasonEpisodePadded
+import com.github.damontecres.wholphin.ui.seriesProductionYears
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import org.jellyfin.sdk.api.client.ApiClient
@@ -17,8 +20,14 @@ import kotlin.time.Duration
 data class BaseItem(
     val data: BaseItemDto,
     val useSeriesForPrimary: Boolean,
-) {
-    val id get() = data.id
+) : CardGridItem {
+    override val id get() = data.id
+
+    override val playable: Boolean
+        get() = type.playable
+
+    override val sortName: String
+        get() = data.sortName ?: data.name ?: ""
 
     val type get() = data.type
 
@@ -28,7 +37,11 @@ data class BaseItem(
 
     val subtitle
         get() =
-            if (type == BaseItemKind.EPISODE) data.seasonEpisode + " - " + name else data.productionYear?.toString()
+            when (type) {
+                BaseItemKind.EPISODE -> data.seasonEpisode + " - " + name
+                BaseItemKind.SERIES -> data.seriesProductionYears
+                else -> data.productionYear?.toString()
+            }
 
     val subtitleLong: String? by lazy {
         if (type == BaseItemKind.EPISODE) {
@@ -41,6 +54,9 @@ data class BaseItem(
             data.productionYear?.toString()
         }
     }
+
+    @Transient
+    val aspectRatio: Float? = data.primaryImageAspectRatio?.toFloat()?.takeIf { it > 0 }
 
     @Transient
     val indexNumber = data.indexNumber ?: dateAsIndex()
@@ -76,15 +92,18 @@ data class BaseItem(
                     } ?: Destination.MediaItem(id, type, this)
                 }
 
-                BaseItemKind.SEASON ->
+                BaseItemKind.SEASON -> {
                     Destination.SeriesOverview(
                         data.seriesId!!,
                         BaseItemKind.SERIES,
                         this,
                         SeasonEpisodeIds(id, indexNumber, null, null),
                     )
+                }
 
-                else -> Destination.MediaItem(id, type, this)
+                else -> {
+                    Destination.MediaItem(id, type, this)
+                }
             }
         return result
     }

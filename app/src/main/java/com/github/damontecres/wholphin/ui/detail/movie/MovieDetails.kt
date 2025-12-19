@@ -45,7 +45,6 @@ import com.github.damontecres.wholphin.data.model.Person
 import com.github.damontecres.wholphin.data.model.RemoteTrailer
 import com.github.damontecres.wholphin.data.model.Trailer
 import com.github.damontecres.wholphin.data.model.aspectRatioFloat
-import com.github.damontecres.wholphin.data.model.chooseSource
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.TrailerService
 import com.github.damontecres.wholphin.ui.AspectRatios
@@ -55,7 +54,6 @@ import com.github.damontecres.wholphin.ui.cards.ExtrasRow
 import com.github.damontecres.wholphin.ui.cards.ItemRow
 import com.github.damontecres.wholphin.ui.cards.PersonRow
 import com.github.damontecres.wholphin.ui.cards.SeasonCard
-import com.github.damontecres.wholphin.ui.components.DetailsBackdropImage
 import com.github.damontecres.wholphin.ui.components.DialogParams
 import com.github.damontecres.wholphin.ui.components.DialogPopup
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
@@ -83,6 +81,7 @@ import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.MediaType
 import org.jellyfin.sdk.model.extensions.ticks
 import org.jellyfin.sdk.model.serializer.toUUID
+import org.jellyfin.sdk.model.serializer.toUUIDOrNull
 import java.util.UUID
 import kotlin.time.Duration
 
@@ -133,10 +132,16 @@ fun MovieDetails(
         )
 
     when (val state = loading) {
-        is LoadingState.Error -> ErrorMessage(state)
+        is LoadingState.Error -> {
+            ErrorMessage(state)
+        }
+
         LoadingState.Loading,
         LoadingState.Pending,
-        -> LoadingPage()
+        -> {
+            LoadingPage()
+        }
+
         LoadingState.Success -> {
             item?.let { movie ->
                 LifecycleStartEffect(destination.itemId) {
@@ -198,7 +203,7 @@ fun MovieDetails(
                                         watched = movie.data.userData?.played ?: false,
                                         favorite = movie.data.userData?.isFavorite ?: false,
                                         seriesId = null,
-                                        sourceId = chosenStreams?.sourceId,
+                                        sourceId = chosenStreams?.source?.id?.toUUIDOrNull(),
                                         actions = moreActions,
                                         onChooseVersion = {
                                             chooseVersion =
@@ -215,25 +220,37 @@ fun MovieDetails(
                                             moreDialog = null
                                         },
                                         onChooseTracks = { type ->
-                                            chooseSource(
-                                                movie.data,
-                                                chosenStreams?.itemPlayback,
-                                            )?.let { source ->
-                                                chooseVersion =
-                                                    chooseStream(
-                                                        context = context,
-                                                        streams = source.mediaStreams.orEmpty(),
-                                                        type = type,
-                                                        onClick = { trackIndex ->
-                                                            viewModel.saveTrackSelection(
-                                                                movie,
-                                                                chosenStreams?.itemPlayback,
-                                                                trackIndex,
-                                                                type,
-                                                            )
-                                                        },
-                                                    )
-                                            }
+                                            viewModel.streamChoiceService
+                                                .chooseSource(
+                                                    movie.data,
+                                                    chosenStreams?.itemPlayback,
+                                                )?.let { source ->
+                                                    chooseVersion =
+                                                        chooseStream(
+                                                            context = context,
+                                                            streams = source.mediaStreams.orEmpty(),
+                                                            type = type,
+                                                            onClick = { trackIndex ->
+                                                                viewModel.saveTrackSelection(
+                                                                    movie,
+                                                                    chosenStreams?.itemPlayback,
+                                                                    trackIndex,
+                                                                    type,
+                                                                )
+                                                            },
+                                                        )
+                                                }
+                                        },
+                                        onShowOverview = {
+                                            overviewDialog =
+                                                ItemDetailsDialogInfo(
+                                                    title =
+                                                        movie.name
+                                                            ?: context.getString(R.string.unknown),
+                                                    overview = movie.data.overview,
+                                                    genres = movie.data.genres.orEmpty(),
+                                                    files = movie.data.mediaSources.orEmpty(),
+                                                )
                                         },
                                     ),
                             )
@@ -378,7 +395,6 @@ fun MovieDetailsContent(
         focusRequesters.getOrNull(position)?.tryRequestFocus()
     }
     Box(modifier = modifier) {
-        DetailsBackdropImage(movie)
         LazyColumn(
             verticalArrangement = Arrangement.spacedBy(16.dp),
             contentPadding = PaddingValues(horizontal = 32.dp, vertical = 8.dp),
@@ -424,6 +440,7 @@ fun MovieDetailsContent(
                         },
                         modifier =
                             Modifier
+                                .fillMaxWidth()
                                 .padding(bottom = 16.dp)
                                 .focusRequester(focusRequesters[HEADER_ROW]),
                     )
@@ -565,7 +582,7 @@ fun TrailerRow(
                         Modifier
                     }
                 when (item) {
-                    is LocalTrailer ->
+                    is LocalTrailer -> {
                         SeasonCard(
                             item = item.baseItem,
                             onClick = { onClickTrailer.invoke(item) },
@@ -575,6 +592,7 @@ fun TrailerRow(
                             showImageOverlay = false,
                             modifier = cardModifier,
                         )
+                    }
 
                     is RemoteTrailer -> {
                         val subtitle =

@@ -140,6 +140,23 @@ object SubtitleSettings {
             },
         )
 
+    val EdgeThickness =
+        AppSliderPreference<AppPreferences>(
+            title = R.string.edge_size,
+            defaultValue = 4,
+            min = 1,
+            max = 32,
+            interval = 1,
+            getter = {
+                it.interfacePreferences.subtitlesPreferences.edgeThickness
+                    .toLong()
+            },
+            setter = { prefs, value ->
+                prefs.updateSubtitlePreferences { edgeThickness = value.toInt() }
+            },
+            summarizer = { value -> value?.let { "${it / 2.0}" } },
+        )
+
     val BackgroundColor =
         AppChoicePreference<AppPreferences, Color>(
             title = R.string.background_color,
@@ -230,6 +247,7 @@ object SubtitleSettings {
                     listOf(
                         EdgeStylePref,
                         EdgeColor,
+                        EdgeThickness,
                     ),
             ),
             PreferenceGroup(
@@ -261,7 +279,7 @@ object SubtitleSettings {
         val bg = combine(backgroundColor, backgroundOpacity)
         return CaptionStyleCompat(
             combine(fontColor, fontOpacity),
-            if (backgroundStyle == BackgroundStyle.BG_WRAP)bg else 0,
+            if (backgroundStyle == BackgroundStyle.BG_WRAP) bg else 0,
             if (backgroundStyle == BackgroundStyle.BG_BOXED) bg else 0,
             when (edgeStyle) {
                 EdgeStyle.EDGE_NONE, EdgeStyle.UNRECOGNIZED -> CaptionStyleCompat.EDGE_TYPE_NONE
@@ -277,6 +295,8 @@ object SubtitleSettings {
             },
         )
     }
+
+    fun SubtitlePreferences.calculateEdgeSize(density: Density): Float = with(density) { (edgeThickness / 2f).dp.toPx() }
 
     fun SubtitlePreferences.applyToMpv(
         configuration: Configuration,
@@ -316,6 +336,8 @@ object SubtitleSettings {
                 MPVLib.setPropertyDouble("sub-outline-size", 0.0)
             }
         }
+        val outlineSizePx = calculateEdgeSize(density) * .8
+        MPVLib.setPropertyDouble("sub-outline-size", outlineSizePx)
 
 //        if (fontBold) {
 //            MPVLib.setPropertyString("sub-font", "Roboto Bold")
@@ -333,6 +355,7 @@ object SubtitleSettings {
                 -> "outline-and-shadow"
 
                 BackgroundStyle.BG_WRAP -> "opaque-box"
+
                 BackgroundStyle.BG_BOXED -> "background-box"
             }
         MPVLib.setPropertyString("sub-border-style", borderStyle)

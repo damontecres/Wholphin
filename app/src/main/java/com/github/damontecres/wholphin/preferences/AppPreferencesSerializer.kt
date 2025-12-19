@@ -50,6 +50,8 @@ class AppPreferencesSerializer
                                     AppPreference.PassOutProtection.defaultValue.hours.inWholeMilliseconds
                                 showNextUpWhen = AppPreference.ShowNextUpTiming.defaultValue
                                 playerBackend = AppPreference.PlayerBackendPref.defaultValue
+                                refreshRateSwitching =
+                                    AppPreference.RefreshRateSwitching.defaultValue
 
                                 overrides =
                                     PlaybackOverrides
@@ -89,12 +91,26 @@ class AppPreferencesSerializer
                                 navDrawerSwitchOnFocus =
                                     AppPreference.NavDrawerSwitchOnFocus.defaultValue
                                 showClock = AppPreference.ShowClock.defaultValue
+                                backdropStyle = AppPreference.BackdropStylePref.defaultValue
 
                                 subtitlesPreferences =
                                     SubtitlePreferences
                                         .newBuilder()
                                         .apply {
                                             resetSubtitles()
+                                        }.build()
+
+                                liveTvPreferences =
+                                    LiveTvPreferences
+                                        .newBuilder()
+                                        .apply {
+                                            showHeader = AppPreference.LiveTvShowHeader.defaultValue
+                                            favoriteChannelsAtBeginning =
+                                                AppPreference.LiveTvFavoriteChannelsBeginning.defaultValue
+                                            sortByRecentlyWatched =
+                                                AppPreference.LiveTvChannelSortByWatched.defaultValue
+                                            colorCodePrograms =
+                                                AppPreference.LiveTvColorCodePrograms.defaultValue
                                         }.build()
                             }.build()
 
@@ -153,6 +169,11 @@ inline fun AppPreferences.updateSubtitlePreferences(block: SubtitlePreferences.B
         subtitlesPreferences = subtitlesPreferences.toBuilder().apply(block).build()
     }
 
+inline fun AppPreferences.updateLiveTvPreferences(block: LiveTvPreferences.Builder.() -> Unit): AppPreferences =
+    updateInterfacePreferences {
+        liveTvPreferences = liveTvPreferences.toBuilder().apply(block).build()
+    }
+
 inline fun AppPreferences.updateAdvancedPreferences(block: AdvancedPreferences.Builder.() -> Unit): AppPreferences =
     update {
         advancedPreferences = advancedPreferences.toBuilder().apply(block).build()
@@ -170,4 +191,5 @@ fun SubtitlePreferences.Builder.resetSubtitles() {
     backgroundOpacity = SubtitleSettings.BackgroundOpacity.defaultValue.toInt()
     backgroundStyle = SubtitleSettings.BackgroundStylePref.defaultValue
     margin = SubtitleSettings.Margin.defaultValue.toInt()
+    edgeThickness = SubtitleSettings.EdgeThickness.defaultValue.toInt()
 }

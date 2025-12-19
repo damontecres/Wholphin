@@ -77,6 +77,7 @@ import com.github.damontecres.wholphin.data.model.JellyfinServer
 import com.github.damontecres.wholphin.data.model.JellyfinUser
 import com.github.damontecres.wholphin.preferences.AppThemeColors
 import com.github.damontecres.wholphin.preferences.UserPreferences
+import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.ui.FontAwesome
 import com.github.damontecres.wholphin.ui.components.TimeDisplay
@@ -105,6 +106,7 @@ class NavDrawerViewModel
     constructor(
         private val navDrawerItemRepository: NavDrawerItemRepository,
         val navigationManager: NavigationManager,
+        val backdropService: BackdropService,
     ) : ViewModel() {
         private var all: List<NavDrawerItem>? = null
         val moreLibraries = MutableLiveData<List<NavDrawerItem>>(null)
@@ -210,6 +212,7 @@ fun NavDrawer(
     preferences: UserPreferences,
     user: JellyfinUser,
     server: JellyfinServer,
+    onClearBackdrop: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: NavDrawerViewModel =
         hiltViewModel(
@@ -300,11 +303,9 @@ fun NavDrawer(
     val drawerPadding by animateDpAsState(if (drawerState.isOpen) 0.dp else 8.dp)
     val drawerBackground by animateColorAsState(
         if (drawerState.isOpen) {
-            MaterialTheme.colorScheme.surfaceColorAtElevation(
-                1.dp,
-            )
-        } else {
             MaterialTheme.colorScheme.surface
+        } else {
+            Color.Transparent
         },
     )
     val spacedBy = 4.dp
@@ -528,6 +529,7 @@ fun NavDrawer(
             DestinationContent(
                 destination = destination,
                 preferences = preferences,
+                onClearBackdrop = onClearBackdrop,
                 modifier =
                     Modifier
                         .fillMaxSize(),
@@ -598,10 +600,15 @@ fun NavigationDrawerScope.NavItem(
     val useFont = library !is ServerNavDrawerItem || library.type != CollectionType.LIVETV
     val icon =
         when (library) {
-            NavDrawerItem.Favorites -> R.string.fa_heart
-            NavDrawerItem.More -> R.string.fa_ellipsis
+            NavDrawerItem.Favorites -> {
+                R.string.fa_heart
+            }
 
-            is ServerNavDrawerItem ->
+            NavDrawerItem.More -> {
+                R.string.fa_ellipsis
+            }
+
+            is ServerNavDrawerItem -> {
                 when (library.type) {
                     CollectionType.MOVIES -> R.string.fa_film
                     CollectionType.TVSHOWS -> R.string.fa_tv
@@ -612,6 +619,7 @@ fun NavigationDrawerScope.NavItem(
                     CollectionType.PLAYLISTS -> R.string.fa_list_ul
                     else -> R.string.fa_film
                 }
+            }
         }
     val focused by interactionSource.collectIsFocusedAsState()
     NavigationDrawerItem(
@@ -686,7 +694,7 @@ fun navItemColor(
                 else -> .2f
             }
         return when {
-            selected && focused ->
+            selected && focused -> {
                 when (theme) {
                     AppThemeColors.UNRECOGNIZED,
                     AppThemeColors.PURPLE,
@@ -699,10 +707,19 @@ fun navItemColor(
                     AppThemeColors.OLED_BLACK,
                     -> MaterialTheme.colorScheme.primary
                 }
+            }
 
-            selected -> MaterialTheme.colorScheme.border
-            focused -> LocalContentColor.current
-            else -> MaterialTheme.colorScheme.onSurface
+            selected -> {
+                MaterialTheme.colorScheme.border
+            }
+
+            focused -> {
+                LocalContentColor.current
+            }
+
+            else -> {
+                MaterialTheme.colorScheme.onSurface
+            }
         }.copy(alpha = alpha)
     }
 }

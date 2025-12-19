@@ -1,5 +1,6 @@
 package com.github.damontecres.wholphin.ui.cards
 
+import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -28,6 +29,7 @@ fun PersonRow(
     people: List<Person>,
     onClick: (Person) -> Unit,
     modifier: Modifier = Modifier,
+    @StringRes title: Int = R.string.people,
     onLongClick: ((Int, Person) -> Unit)? = null,
 ) {
     val firstFocus = remember { FocusRequester() }
@@ -36,7 +38,7 @@ fun PersonRow(
         modifier = modifier,
     ) {
         Text(
-            text = stringResource(R.string.people),
+            text = stringResource(title),
             style = MaterialTheme.typography.titleLarge,
             color = MaterialTheme.colorScheme.onBackground,
         )
@@ -58,7 +60,8 @@ fun PersonRow(
                     modifier =
                         Modifier
                             .width(120.dp)
-                            .ifElse(index == 0, Modifier.focusRequester(firstFocus)),
+                            .ifElse(index == 0, Modifier.focusRequester(firstFocus))
+                            .animateItem(),
                 )
             }
         }

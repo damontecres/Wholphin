@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -21,6 +22,7 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.layout.LazyLayoutCacheWindow
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -32,11 +34,14 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
@@ -45,9 +50,11 @@ import androidx.compose.ui.input.key.type
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.tv.material3.Button
+import androidx.tv.material3.ButtonDefaults
 import androidx.tv.material3.LocalContentColor
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
@@ -66,15 +73,23 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import timber.log.Timber
+import java.util.UUID
 
 private const val DEBUG = false
 
+interface CardGridItem {
+    val id: UUID
+    val playable: Boolean
+    val sortName: String
+}
+
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun CardGrid(
-    pager: List<BaseItem?>,
-    onClickItem: (Int, BaseItem) -> Unit,
-    onLongClickItem: (Int, BaseItem) -> Unit,
+fun <T : CardGridItem> CardGrid(
+    pager: List<T?>,
+    onClickItem: (Int, T) -> Unit,
+    onLongClickItem: (Int, T) -> Unit,
+    onClickPlay: (Int, T) -> Unit,
     letterPosition: suspend (Char) -> Int,
     gridFocusRequester: FocusRequester,
     showJumpButtons: Boolean,
@@ -83,13 +98,13 @@ fun CardGrid(
     initialPosition: Int = 0,
     positionCallback: ((columns: Int, position: Int) -> Unit)? = null,
     cardContent: @Composable (
-        item: BaseItem?,
+        item: T?,
         onClick: () -> Unit,
         onLongClick: () -> Unit,
         mod: Modifier,
     ) -> Unit = { item, onClick, onLongClick, mod ->
         GridCard(
-            item = item,
+            item = item as BaseItem?,
             onClick = onClick,
             onLongClick = onLongClick,
             imageContentScale = ContentScale.FillBounds,
@@ -210,7 +225,11 @@ fun CardGrid(
                         jumpToTop()
                         return@onKeyEvent true
                     } else if (isPlayKeyUp(it)) {
-                        // TODO play the focused item
+                        val item = pager.getOrNull(focusedIndex)
+                        if (item?.playable == true) {
+                            Timber.v("Clicked play on ${item.id}")
+                            onClickPlay.invoke(focusedIndex, item)
+                        }
                         return@onKeyEvent true
                     } else if (useJumpRemoteButtons && isForwardButton(it)) {
                         jump(jump1)
@@ -338,7 +357,6 @@ fun CardGrid(
             remember(focusedIndex) {
                 pager
                     .getOrNull(focusedIndex)
-                    ?.data
                     ?.sortName
                     ?.first()
                     ?.uppercaseChar()
@@ -357,7 +375,11 @@ fun CardGrid(
             AlphabetButtons(
                 letters = letters,
                 currentLetter = currentLetter,
-                modifier = Modifier.align(Alignment.CenterVertically),
+                modifier =
+                    Modifier
+                        .align(Alignment.CenterVertically)
+                        .padding(end = 16.dp),
+                // Add end padding to push away from edge
                 letterClicked = { letter ->
                     scope.launch(ExceptionHandler()) {
                         val jumpPosition =
@@ -366,6 +388,7 @@ fun CardGrid(
                             }
                         Timber.d("Alphabet jump to $jumpPosition")
                         if (jumpPosition >= 0) {
+                            pager.getOrNull(jumpPosition)
                             gridState.scrollToItem(jumpPosition)
                             focusOn(jumpPosition)
                             alphabetFocus = true
@@ -419,7 +442,6 @@ fun AlphabetButtons(
     letterClicked: (Char) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val listState = rememberLazyListState()
 
@@ -431,48 +453,97 @@ fun AlphabetButtons(
                 listState.layoutInfo.visibleItemsInfo
                     .lastOrNull()
                     ?.index ?: -1
-            if (index < firstVisibleItemIndex || index > lastVisibleItemIndex) {
+            if (index !in firstVisibleItemIndex..lastVisibleItemIndex) {
                 listState.animateScrollToItem(index)
             }
         }
     }
+    // Focus & interaction states for each letter button
     val focusRequesters = remember { List(letters.length) { FocusRequester() } }
+    val interactionSources = remember { List(letters.length) { MutableInteractionSource() } }
+
+    // Track if the entire alphabet picker component has focus
+    var alphabetPickerFocused by remember { mutableStateOf(false) }
+
     LazyColumn(
+        contentPadding = PaddingValues(vertical = 1.1.dp, horizontal = 2.dp),
+        verticalArrangement = Arrangement.spacedBy(1.1.dp),
         state = listState,
         modifier =
-            modifier.focusProperties {
-                onEnter = {
-                    focusRequesters[index.coerceIn(0, letters.length - 1)].tryRequestFocus()
-                }
-            },
+            modifier
+                .onFocusChanged { focusState ->
+                    alphabetPickerFocused = focusState.hasFocus
+                }.focusProperties {
+                    onEnter = {
+                        focusRequesters[index.coerceIn(0, letters.length - 1)].tryRequestFocus()
+                    }
+                },
     ) {
         items(
             letters.length,
             key = { letters[it] },
         ) { index ->
-            val interactionSource = remember { MutableInteractionSource() }
+            val interactionSource = interactionSources[index]
             val focused by interactionSource.collectIsFocusedAsState()
-            Button(
+
+            val isCurrentLetter = letters[index] == currentLetter
+            // Apply alpha to individual items, but keep selected letter fully visible when picker is unfocused
+            val itemAlpha =
+                when {
+                    isCurrentLetter && !alphabetPickerFocused -> 1f
+                    alphabetPickerFocused -> .85f
+                    else -> .25f
+                }
+
+            // Only show circle background for the current letter (or when focused)
+            // Wrap in Box with clipping to prevent focus indicator from overflowing
+            Box(
                 modifier =
                     Modifier
-                        .size(24.dp)
-                        .focusRequester(focusRequesters[index]),
-                contentPadding = PaddingValues(2.dp),
-                interactionSource = interactionSource,
-                onClick = {
-                    letterClicked.invoke(letters[index])
-                },
+                        .size(14.dp)
+                        .clip(CircleShape)
+                        .alpha(itemAlpha),
             ) {
-                val color =
-                    if (!focused && letters[index] == currentLetter) {
-                        MaterialTheme.colorScheme.tertiary
-                    } else {
-                        LocalContentColor.current
-                    }
-                Text(
-                    text = letters[index].toString(),
-                    color = color,
-                )
+                Button(
+                    modifier =
+                        Modifier
+                            .size(14.dp)
+                            .focusRequester(focusRequesters[index]),
+                    contentPadding = PaddingValues(0.dp), // No padding to maximize text space
+                    interactionSource = interactionSource,
+                    onClick = {
+                        letterClicked.invoke(letters[index])
+                    },
+                    colors =
+                        if (isCurrentLetter || focused) {
+                            // Use default button colors for current letter or focused
+                            ButtonDefaults.colors()
+                        } else {
+                            // Transparent background for non-current letters (no circle)
+                            ButtonDefaults.colors(
+                                containerColor = Color.Transparent,
+                                contentColor = MaterialTheme.colorScheme.onSurface,
+                                focusedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                                focusedContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                            )
+                        },
+                ) {
+                    // Use border color for selected letter when focused, tertiary for unfocused-selected
+                    val color =
+                        when {
+                            isCurrentLetter && focused -> MaterialTheme.colorScheme.border
+                            isCurrentLetter -> MaterialTheme.colorScheme.tertiary
+                            focused -> LocalContentColor.current
+                            else -> MaterialTheme.colorScheme.onSurface
+                        }
+                    Text(
+                        text = letters[index].toString(),
+                        color = color,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth(),
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                }
             }
         }
     }

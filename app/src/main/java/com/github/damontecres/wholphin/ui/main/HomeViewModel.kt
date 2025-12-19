@@ -7,11 +7,14 @@ import androidx.lifecycle.viewModelScope
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.NavDrawerItemRepository
 import com.github.damontecres.wholphin.data.ServerRepository
+import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.preferences.UserPreferences
+import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.DatePlayedService
 import com.github.damontecres.wholphin.services.FavoriteWatchManager
 import com.github.damontecres.wholphin.services.LatestNextUpService
 import com.github.damontecres.wholphin.services.NavigationManager
+import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.nav.ServerNavDrawerItem
 import com.github.damontecres.wholphin.ui.setValueOnMain
 import com.github.damontecres.wholphin.util.ExceptionHandler
@@ -43,6 +46,7 @@ class HomeViewModel
         private val favoriteWatchManager: FavoriteWatchManager,
         private val datePlayedService: DatePlayedService,
         private val latestNextUpService: LatestNextUpService,
+        private val backdropService: BackdropService,
     ) : ViewModel() {
         val loadingState = MutableLiveData<LoadingState>(LoadingState.Pending)
         val refreshState = MutableLiveData<LoadingState>(LoadingState.Pending)
@@ -150,6 +154,12 @@ class HomeViewModel
             favoriteWatchManager.setFavorite(itemId, favorite)
             withContext(Dispatchers.Main) {
                 init(preferences)
+            }
+        }
+
+        fun updateBackdrop(item: BaseItem) {
+            viewModelScope.launchIO {
+                backdropService.submit(item)
             }
         }
     }

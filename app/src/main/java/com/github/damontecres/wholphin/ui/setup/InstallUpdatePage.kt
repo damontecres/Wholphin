@@ -42,7 +42,6 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.tv.material3.Button
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import androidx.tv.material3.surfaceColorAtElevation
@@ -54,8 +53,10 @@ import com.github.damontecres.wholphin.services.Release
 import com.github.damontecres.wholphin.services.UpdateChecker
 import com.github.damontecres.wholphin.ui.PreviewTvSpec
 import com.github.damontecres.wholphin.ui.components.BasicDialog
+import com.github.damontecres.wholphin.ui.components.Button
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.LoadingPage
+import com.github.damontecres.wholphin.ui.components.TextButton
 import com.github.damontecres.wholphin.ui.dimAndBlur
 import com.github.damontecres.wholphin.ui.formatBytes
 import com.github.damontecres.wholphin.ui.setValueOnMain
@@ -173,10 +174,15 @@ fun InstallUpdatePage(
             }
         }
     when (val state = loading) {
-        is LoadingState.Error -> ErrorMessage(state, modifier)
+        is LoadingState.Error -> {
+            ErrorMessage(state, modifier)
+        }
+
         LoadingState.Loading,
         LoadingState.Pending,
-        -> LoadingPage(modifier)
+        -> {
+            LoadingPage(modifier)
+        }
 
         LoadingState.Success -> {
             release?.let {
@@ -299,20 +305,14 @@ fun InstallUpdatePageContent(
                 style = MaterialTheme.typography.titleLarge,
                 color = MaterialTheme.colorScheme.onSurface,
             )
-            Button(
+            TextButton(
+                stringRes = R.string.download_and_update,
                 onClick = onInstallRelease,
-            ) {
-                Text(
-                    text = stringResource(R.string.download_and_update),
-                )
-            }
-            Button(
+            )
+            TextButton(
+                stringRes = R.string.cancel,
                 onClick = onCancel,
-            ) {
-                Text(
-                    text = stringResource(R.string.cancel),
-                )
-            }
+            )
         }
     }
 }

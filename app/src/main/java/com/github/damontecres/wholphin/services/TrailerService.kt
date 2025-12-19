@@ -62,7 +62,7 @@ class TrailerService
                 navigateTo: (Destination) -> Unit,
             ) {
                 when (trailer) {
-                    is LocalTrailer ->
+                    is LocalTrailer -> {
                         navigateTo.invoke(
                             Destination.Playback(
                                 itemId = trailer.baseItem.id,
@@ -70,6 +70,7 @@ class TrailerService
                                 positionMs = 0L,
                             ),
                         )
+                    }
 
                     is RemoteTrailer -> {
                         val intent = Intent(Intent.ACTION_VIEW, trailer.url.toUri())

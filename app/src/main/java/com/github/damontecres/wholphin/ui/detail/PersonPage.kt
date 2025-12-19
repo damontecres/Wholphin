@@ -178,10 +178,15 @@ fun PersonPage(
 
     val loading by viewModel.loading.observeAsState(LoadingState.Loading)
     when (val state = loading) {
-        is LoadingState.Error -> ErrorMessage(state, modifier)
+        is LoadingState.Error -> {
+            ErrorMessage(state, modifier)
+        }
+
         LoadingState.Loading,
         LoadingState.Pending,
-        -> LoadingPage(modifier)
+        -> {
+            LoadingPage(modifier)
+        }
 
         LoadingState.Success -> {
             person?.let { person ->

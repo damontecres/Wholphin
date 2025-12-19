@@ -113,8 +113,7 @@ fun BannerItemRow(
             name = title,
             item = item,
             aspectRatio =
-                aspectRatioOverride ?: item?.data?.primaryImageAspectRatio?.toFloat()
-                    ?: AspectRatios.WIDE,
+                aspectRatioOverride ?: item?.aspectRatio ?: AspectRatios.WIDE,
             cornerText = item?.data?.indexNumber?.let { "E$it" },
             played = item?.data?.userData?.played ?: false,
             playPercent = item?.data?.userData?.playedPercentage ?: 0.0,

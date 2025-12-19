@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -34,6 +35,8 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
@@ -127,10 +130,37 @@ fun PlaybackOverlay(
     var controllerHeight by remember { mutableStateOf(0.dp) }
     var state by remember { mutableStateOf(OverlayViewState.CONTROLLER) }
 
+    // Background scrim for OSD readability
+    val scrimBrush =
+        remember {
+            Brush.verticalGradient(
+                colors =
+                    listOf(
+                        Color.Transparent,
+                        Color.Black.copy(alpha = 0.5f),
+                        Color.Black.copy(alpha = 0.80f),
+                    ),
+            )
+        }
+
     Box(
         modifier = modifier,
         contentAlignment = Alignment.BottomCenter,
     ) {
+        AnimatedVisibility(
+            visible = controllerViewState.controlsVisible,
+            enter = fadeIn(),
+            exit = fadeOut(),
+            modifier = Modifier.matchParentSize(),
+        ) {
+            Box(
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .background(scrimBrush),
+            )
+        }
+
         AnimatedVisibility(
             state == OverlayViewState.CONTROLLER,
             enter = slideInVertically() + fadeIn(),
@@ -144,38 +174,76 @@ fun PlaybackOverlay(
                 } else {
                     null
                 }
-            Controller(
-                title = item?.title,
-                subtitle = item?.subtitleLong,
-                playerControls = playerControls,
-                controllerViewState = controllerViewState,
-                showPlay = showPlay,
-                showClock = showClock,
-                previousEnabled = previousEnabled,
-                nextEnabled = nextEnabled,
-                seekEnabled = seekEnabled,
-                seekBack = seekBack,
-                skipBackOnResume = skipBackOnResume,
-                seekForward = seekForward,
-                onPlaybackActionClick = onPlaybackActionClick,
-                onClickPlaybackDialogType = onClickPlaybackDialogType,
-                onSeekProgress = {
-                    onSeekBarChange(it)
-                    seekProgressMs = it
-                },
-                seekBarInteractionSource = seekBarInteractionSource,
-                nextState = nextState,
-                onNextStateFocus = {
-                    nextState?.let { state = it }
-                },
-                currentSegment = currentSegment,
+            Column(
+                verticalArrangement = Arrangement.spacedBy(8.dp),
                 modifier =
                     Modifier
-                        // Don't use key events because this control has vertical items so up/down is tough to manage
+                        .padding(bottom = 8.dp)
                         .onGloballyPositioned {
                             controllerHeight = with(density) { it.size.height.toDp() }
                         },
-            )
+            ) {
+                Controller(
+                    title = item?.title,
+                    subtitle = item?.subtitleLong,
+                    playerControls = playerControls,
+                    controllerViewState = controllerViewState,
+                    showPlay = showPlay,
+                    showClock = showClock,
+                    previousEnabled = previousEnabled,
+                    nextEnabled = nextEnabled,
+                    seekEnabled = seekEnabled,
+                    seekBack = seekBack,
+                    skipBackOnResume = skipBackOnResume,
+                    seekForward = seekForward,
+                    onPlaybackActionClick = onPlaybackActionClick,
+                    onClickPlaybackDialogType = onClickPlaybackDialogType,
+                    onSeekProgress = {
+                        onSeekBarChange(it)
+                        seekProgressMs = it
+                    },
+                    seekBarInteractionSource = seekBarInteractionSource,
+                    nextState = nextState,
+                    onNextStateFocus = {
+                        nextState?.let { state = it }
+                    },
+                    currentSegment = currentSegment,
+                    modifier =
+                    Modifier,
+                    // Don't use key events because this control has vertical items so up/down is tough to manage
+                )
+                when (nextState) {
+                    OverlayViewState.CHAPTERS -> {
+                        Text(
+                            text = stringResource(R.string.chapters),
+                            style = MaterialTheme.typography.titleLarge,
+                            modifier =
+                                Modifier
+                                    .padding(start = 16.dp, top = 0.dp)
+                                    .onFocusChanged {
+                                        if (it.isFocused) state = nextState
+                                    }.focusable(),
+                        )
+                    }
+
+                    OverlayViewState.QUEUE -> {
+                        Text(
+                            text = stringResource(R.string.queue),
+                            style = MaterialTheme.typography.titleLarge,
+                            modifier =
+                                Modifier
+                                    .padding(start = 16.dp, top = 0.dp)
+                                    .onFocusChanged {
+                                        if (it.isFocused) state = nextState
+                                    }.focusable(),
+                        )
+                    }
+
+                    else -> {
+                        Spacer(Modifier.height(32.dp))
+                    }
+                }
+            }
         }
         AnimatedVisibility(
             state == OverlayViewState.CHAPTERS,
@@ -189,8 +257,8 @@ fun PlaybackOverlay(
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                     modifier =
                         Modifier
+                            .padding(horizontal = 8.dp)
                             .fillMaxWidth()
-                            .padding(8.dp)
                             .onPreviewKeyEvent { e ->
                                 if (e.type == KeyEventType.KeyUp && isUp(e)) {
                                     state = OverlayViewState.CONTROLLER
@@ -247,7 +315,7 @@ fun PlaybackOverlay(
                             style = MaterialTheme.typography.titleLarge,
                             modifier =
                                 Modifier
-                                    .padding(start = 16.dp, top = 16.dp)
+                                    .padding(bottom = 8.dp)
                                     .onFocusChanged {
                                         if (it.isFocused) state = OverlayViewState.QUEUE
                                     }.focusable(),
@@ -269,8 +337,8 @@ fun PlaybackOverlay(
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                     modifier =
                         Modifier
-                            .fillMaxWidth()
                             .padding(8.dp)
+                            .fillMaxWidth()
                             .onPreviewKeyEvent { e ->
                                 if (e.type == KeyEventType.KeyUp && isUp(e)) {
                                     if (chapters.isNotEmpty()) {
@@ -291,7 +359,7 @@ fun PlaybackOverlay(
                         style = MaterialTheme.typography.titleLarge,
                     )
                     LazyRow(
-                        contentPadding = PaddingValues(16.dp),
+                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
                         horizontalArrangement = Arrangement.spacedBy(16.dp),
                         modifier =
                             Modifier
@@ -360,17 +428,13 @@ fun PlaybackOverlay(
                         val tilesPerImage = trickplayInfo.tileWidth * trickplayInfo.tileHeight
                         val index =
                             (seekProgressMs / trickplayInfo.interval).toInt() / tilesPerImage
-                        val imageUrl = trickplayUrlFor(index)
+                        val imageUrl = remember(index) { trickplayUrlFor(index) }
 
                         if (imageUrl != null) {
                             SeekPreviewImage(
-                                modifier =
-                                Modifier,
+                                modifier = Modifier,
                                 previewImageUrl = imageUrl,
-                                duration = playerControls.duration,
                                 seekProgressMs = seekProgressMs,
-                                videoWidth = trickplayInfo.width,
-                                videoHeight = trickplayInfo.height,
                                 trickPlayInfo = trickplayInfo,
                             )
                         }
@@ -538,32 +602,5 @@ fun Controller(
             captionFocusRequester = captionFocusRequester,
             settingsFocusRequester = settingsFocusRequester,
         )
-        when (nextState) {
-            OverlayViewState.CHAPTERS ->
-                Text(
-                    text = stringResource(R.string.chapters),
-                    style = MaterialTheme.typography.titleLarge,
-                    modifier =
-                        Modifier
-                            .padding(start = 16.dp, top = 16.dp)
-                            .onFocusChanged {
-                                if (it.isFocused) onNextStateFocus.invoke()
-                            }.focusable(),
-                )
-
-            OverlayViewState.QUEUE ->
-                Text(
-                    text = stringResource(R.string.queue),
-                    style = MaterialTheme.typography.titleLarge,
-                    modifier =
-                        Modifier
-                            .padding(start = 16.dp, top = 16.dp)
-                            .onFocusChanged {
-                                if (it.isFocused) onNextStateFocus.invoke()
-                            }.focusable(),
-                )
-
-            else -> Spacer(Modifier.height(32.dp))
-        }
     }
 }

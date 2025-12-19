@@ -94,10 +94,15 @@ fun ItemGrid(
     val loading by viewModel.loading.observeAsState(LoadingState.Loading)
     val items by viewModel.items.observeAsState(listOf())
     when (val state = loading) {
-        is LoadingState.Error -> ErrorMessage(state)
+        is LoadingState.Error -> {
+            ErrorMessage(state)
+        }
+
         LoadingState.Loading,
         LoadingState.Pending,
-        -> LoadingPage()
+        -> {
+            LoadingPage()
+        }
 
         LoadingState.Success -> {
             val focusRequester = remember { FocusRequester() }
@@ -119,6 +124,7 @@ fun ItemGrid(
                         viewModel.navigateTo(Destination.Playback(item.id, 0))
                     },
                     onLongClickItem = { index: Int, item: BaseItem -> },
+                    onClickPlay = { _, item -> viewModel.navigateTo(Destination.Playback(item)) },
                     letterPosition = { c: Char -> 0 },
                     gridFocusRequester = focusRequester,
                     showJumpButtons = false,

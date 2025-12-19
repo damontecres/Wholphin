@@ -45,7 +45,6 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import androidx.tv.material3.Button
 import androidx.tv.material3.Icon
 import androidx.tv.material3.ListItem
 import androidx.tv.material3.LocalContentColor
@@ -260,9 +259,11 @@ fun DialogPopupContent(
         }
         items(dialogItems) {
             when (it) {
-                is DialogItemDivider -> HorizontalDivider(Modifier.height(16.dp))
+                is DialogItemDivider -> {
+                    HorizontalDivider(Modifier.height(16.dp))
+                }
 
-                is DialogItem ->
+                is DialogItem -> {
                     ListItem(
                         selected = false,
                         enabled = !waiting && it.enabled,
@@ -279,6 +280,7 @@ fun DialogPopupContent(
                         trailingContent = it.trailingContent,
                         modifier = Modifier,
                     )
+                }
             }
         }
     }
@@ -308,6 +310,9 @@ fun DialogPopup(
 @Composable
 fun ScrollableDialog(
     onDismissRequest: () -> Unit,
+    width: Dp = 600.dp,
+    maxHeight: Dp = 380.dp,
+    itemSpacing: Dp = 8.dp,
     content: LazyListScope.() -> Unit,
 ) {
     val scrollAmount = 100f
@@ -329,12 +334,12 @@ fun ScrollableDialog(
         LazyColumn(
             state = columnState,
             contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(itemSpacing),
             content = content,
             modifier =
                 Modifier
-                    .width(600.dp)
-                    .heightIn(max = 380.dp)
+                    .width(width)
+                    .heightIn(max = maxHeight)
                     .focusable()
                     .background(
                         MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp),
@@ -443,20 +448,14 @@ fun ConfirmDialogContent(
                 horizontalArrangement = Arrangement.SpaceEvenly,
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                Button(
+                TextButton(
+                    stringRes = R.string.cancel,
                     onClick = onCancel,
-                ) {
-                    Text(
-                        text = stringResource(R.string.cancel),
-                    )
-                }
-                Button(
+                )
+                TextButton(
+                    stringRes = R.string.confirm,
                     onClick = onConfirm,
-                ) {
-                    Text(
-                        text = stringResource(R.string.confirm),
-                    )
-                }
+                )
             }
         }
     }

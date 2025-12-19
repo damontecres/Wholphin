@@ -70,13 +70,19 @@ fun createDeviceProfile(
 ) = buildDeviceProfile {
     val allowedAudioCodecs =
         when {
-            downMixAudio -> downmixSupportedAudioCodecs
-            !isAC3Enabled ->
+            downMixAudio -> {
+                downmixSupportedAudioCodecs
+            }
+
+            !isAC3Enabled -> {
                 supportedAudioCodecs
                     .filterNot { it == Codec.Audio.EAC3 || it == Codec.Audio.AC3 }
                     .toTypedArray()
+            }
 
-            else -> supportedAudioCodecs
+            else -> {
+                supportedAudioCodecs
+            }
         }
 
     val supportsHevc = mediaTest.supportsHevc()
@@ -193,8 +199,11 @@ fun createDeviceProfile(
 
         conditions {
             when {
-                !supportsAVC -> ProfileConditionValue.VIDEO_PROFILE equals "none"
-                else ->
+                !supportsAVC -> {
+                    ProfileConditionValue.VIDEO_PROFILE equals "none"
+                }
+
+                else -> {
                     ProfileConditionValue.VIDEO_PROFILE inCollection
                         listOfNotNull(
                             "high",
@@ -203,6 +212,7 @@ fun createDeviceProfile(
                             "constrained baseline",
                             if (supportsAVCHigh10) "main 10" else null,
                         )
+                }
             }
         }
     }
@@ -276,13 +286,17 @@ fun createDeviceProfile(
 
         conditions {
             when {
-                !supportsHevc -> ProfileConditionValue.VIDEO_PROFILE equals "none"
-                else ->
+                !supportsHevc -> {
+                    ProfileConditionValue.VIDEO_PROFILE equals "none"
+                }
+
+                else -> {
                     ProfileConditionValue.VIDEO_PROFILE inCollection
                         listOfNotNull(
                             "main",
                             if (supportsHevcMain10) "main 10" else null,
                         )
+                }
             }
         }
     }

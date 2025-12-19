@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -33,6 +34,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -49,7 +51,6 @@ import com.github.damontecres.wholphin.ui.Cards
 import com.github.damontecres.wholphin.ui.cards.BannerCard
 import com.github.damontecres.wholphin.ui.cards.ItemRow
 import com.github.damontecres.wholphin.ui.components.CircularProgress
-import com.github.damontecres.wholphin.ui.components.DelayedDetailsBackdropImage
 import com.github.damontecres.wholphin.ui.components.DialogParams
 import com.github.damontecres.wholphin.ui.components.DialogPopup
 import com.github.damontecres.wholphin.ui.components.EpisodeQuickDetails
@@ -66,12 +67,16 @@ import com.github.damontecres.wholphin.ui.detail.PlaylistLoadingState
 import com.github.damontecres.wholphin.ui.detail.buildMoreDialogItemsForHome
 import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
+import com.github.damontecres.wholphin.ui.nav.Destination
+import com.github.damontecres.wholphin.ui.playback.isPlayKeyUp
+import com.github.damontecres.wholphin.ui.playback.playable
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.HomeRowLoadingState
 import com.github.damontecres.wholphin.util.LoadingState
 import kotlinx.coroutines.delay
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.MediaType
+import timber.log.Timber
 import java.util.UUID
 
 @Composable
@@ -106,11 +111,15 @@ fun HomePage(
     }
 
     when (val state = loading) {
-        is LoadingState.Error -> ErrorMessage(state)
+        is LoadingState.Error -> {
+            ErrorMessage(state)
+        }
 
         LoadingState.Loading,
         LoadingState.Pending,
-        -> LoadingPage()
+        -> {
+            LoadingPage()
+        }
 
         LoadingState.Success -> {
             var dialog by remember { mutableStateOf<DialogParams?>(null) }
@@ -152,8 +161,12 @@ fun HomePage(
                             items = dialogItems,
                         )
                 },
+                onClickPlay = { _, item ->
+                    viewModel.navigationManager.navigateTo(Destination.Playback(item))
+                },
                 loadingState = refreshing,
                 showClock = preferences.appPreferences.interfacePreferences.showClock,
+                onUpdateBackdrop = viewModel::updateBackdrop,
                 modifier = modifier,
             )
             dialog?.let { params ->
@@ -188,7 +201,9 @@ fun HomePageContent(
     homeRows: List<HomeRowLoadingState>,
     onClickItem: (RowColumn, BaseItem) -> Unit,
     onLongClickItem: (RowColumn, BaseItem) -> Unit,
+    onClickPlay: (RowColumn, BaseItem) -> Unit,
     showClock: Boolean,
+    onUpdateBackdrop: (BaseItem) -> Unit,
     modifier: Modifier = Modifier,
     onFocusPosition: ((RowColumn) -> Unit)? = null,
     loadingState: LoadingState? = null,
@@ -235,20 +250,17 @@ fun HomePageContent(
     LaunchedEffect(position) {
         listState.animateScrollToItem(position.row)
     }
+    LaunchedEffect(focusedItem) {
+        focusedItem?.let(onUpdateBackdrop)
+    }
     Box(modifier = modifier) {
-        DelayedDetailsBackdropImage(
-            item = focusedItem,
-            modifier = Modifier,
-        )
-
         Column(modifier = Modifier.fillMaxSize()) {
             HomePageHeader(
                 item = focusedItem,
                 modifier =
                     Modifier
-                        .fillMaxWidth(.6f)
-                        .fillMaxHeight(.33f)
-                        .padding(16.dp),
+                        .padding(top = 48.dp, bottom = 32.dp, start = 32.dp)
+                        .fillMaxHeight(.33f),
             )
             LazyColumn(
                 state = listState,
@@ -260,7 +272,18 @@ fun HomePageContent(
                         top = 0.dp,
                         bottom = Cards.height2x3,
                     ),
-                modifier = Modifier.focusRestorer(),
+                modifier =
+                    Modifier
+                        .focusRestorer()
+                        .onKeyEvent {
+                            val item = focusedItem
+                            if (isPlayKeyUp(it) && item?.type?.playable == true) {
+                                Timber.v("Clicked play on ${item.id}")
+                                onClickPlay.invoke(position, item)
+                                return@onKeyEvent true
+                            }
+                            return@onKeyEvent false
+                        },
             ) {
                 itemsIndexed(homeRows) { rowIndex, row ->
                     when (val r = row) {
@@ -391,7 +414,7 @@ fun HomePageContent(
         when (loadingState) {
             LoadingState.Pending,
             LoadingState.Loading,
-            ->
+            -> {
                 Box(
                     modifier =
                         Modifier
@@ -401,6 +424,7 @@ fun HomePageContent(
                 ) {
                     CircularProgress(Modifier.fillMaxSize())
                 }
+            }
 
             else -> {}
         }
@@ -412,28 +436,32 @@ fun HomePageHeader(
     item: BaseItem?,
     modifier: Modifier = Modifier,
 ) {
-    Box(
-        modifier = modifier,
-    ) {
+    item?.let {
+        val dto = item.data
         Column(
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+            modifier = modifier,
         ) {
-            item?.let {
-                val dto = item.data
+            item.title?.let {
+                Text(
+                    text = it,
+                    style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.SemiBold),
+                    color = MaterialTheme.colorScheme.onBackground,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.fillMaxWidth(.75f),
+                )
+            }
+            Column(
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                modifier =
+                    Modifier
+                        .fillMaxWidth(.6f)
+                        .fillMaxHeight(),
+            ) {
                 val isEpisode = item.type == BaseItemKind.EPISODE
-                val title = if (isEpisode) dto.seriesName ?: item.name else item.name
                 val subtitle = if (isEpisode) dto.name else null
                 val overview = dto.overview
-                title?.let {
-                    Text(
-                        text = title,
-                        style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.SemiBold),
-                        color = MaterialTheme.colorScheme.onBackground,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                }
                 subtitle?.let {
                     Text(
                         text = subtitle,
@@ -452,6 +480,7 @@ fun HomePageHeader(
                     Modifier
                         .padding(0.dp)
                         .height(48.dp + if (!isEpisode) 12.dp else 0.dp)
+                        .width(400.dp)
                 if (overview.isNotNullOrBlank()) {
                     Text(
                         text = overview,

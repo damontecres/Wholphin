@@ -1,8 +1,6 @@
 package com.github.damontecres.wholphin.services.hilt
 
-import android.annotation.SuppressLint
 import android.content.Context
-import android.provider.Settings
 import androidx.datastore.core.DataStore
 import com.github.damontecres.wholphin.BuildConfig
 import com.github.damontecres.wholphin.R
@@ -23,6 +21,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import okhttp3.OkHttpClient
 import org.jellyfin.sdk.Jellyfin
+import org.jellyfin.sdk.android.androidDevice
 import org.jellyfin.sdk.api.client.util.AuthorizationHeaderBuilder
 import org.jellyfin.sdk.api.okhttp.OkHttpFactory
 import org.jellyfin.sdk.createJellyfin
@@ -60,14 +59,7 @@ object AppModule {
     @Singleton
     fun deviceInfo(
         @ApplicationContext context: Context,
-    ): DeviceInfo =
-        DeviceInfo(
-            id = @SuppressLint("HardwareIds") Settings.Secure.getString(
-                context.contentResolver,
-                Settings.Secure.ANDROID_ID,
-            ),
-            name = Settings.Global.getString(context.contentResolver, Settings.Global.DEVICE_NAME),
-        )
+    ): DeviceInfo = androidDevice(context)
 
     @StandardOkHttpClient
     @Provides

@@ -20,6 +20,7 @@ import androidx.lifecycle.viewModelScope
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.preferences.UserPreferences
+import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.FavoriteWatchManager
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.ui.OneTimeLaunchedEffect
@@ -31,6 +32,7 @@ import com.github.damontecres.wholphin.ui.detail.PlaylistLoadingState
 import com.github.damontecres.wholphin.ui.detail.buildMoreDialogItemsForHome
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.main.HomePageContent
+import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.util.ApiRequestPager
 import com.github.damontecres.wholphin.util.HomeRowLoadingState
 import com.github.damontecres.wholphin.util.LoadingState
@@ -44,6 +46,7 @@ abstract class RecommendedViewModel(
     val context: Context,
     val navigationManager: NavigationManager,
     val favoriteWatchManager: FavoriteWatchManager,
+    private val backdropService: BackdropService,
 ) : ViewModel() {
     abstract fun init()
 
@@ -82,6 +85,12 @@ abstract class RecommendedViewModel(
         viewModelScope.launchIO {
             favoriteWatchManager.setFavorite(itemId, watched)
             refreshItem(position, itemId)
+        }
+    }
+
+    fun updateBackdrop(item: BaseItem) {
+        viewModelScope.launchIO {
+            backdropService.submit(item)
         }
     }
 
@@ -127,13 +136,17 @@ fun RecommendedContent(
     val rows by viewModel.rows.collectAsState()
 
     when (val state = loading) {
-        is LoadingState.Error -> ErrorMessage(state)
+        is LoadingState.Error -> {
+            ErrorMessage(state)
+        }
 
         LoadingState.Loading,
         LoadingState.Pending,
-        -> LoadingPage()
+        -> {
+            LoadingPage()
+        }
 
-        LoadingState.Success ->
+        LoadingState.Success -> {
             HomePageContent(
                 homeRows = rows,
                 onClickItem = { _, item ->
@@ -142,10 +155,15 @@ fun RecommendedContent(
                 onLongClickItem = { position, item ->
                     moreDialog.makePresent(RowColumnItem(position, item))
                 },
+                onClickPlay = { _, item ->
+                    viewModel.navigationManager.navigateTo(Destination.Playback(item))
+                },
                 onFocusPosition = onFocusPosition,
                 showClock = preferences.appPreferences.interfacePreferences.showClock,
+                onUpdateBackdrop = viewModel::updateBackdrop,
                 modifier = modifier,
             )
+        }
     }
     moreDialog.compose { (position, item) ->
         DialogPopup(

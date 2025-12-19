@@ -23,9 +23,17 @@ We follow GitHub's fork & pull request model for contributions.
 
 After forking and cloning your fork, you can import the project into Android Studio.
 
-You need a compatible Android Studio version for the configured AGP. This is generally `Narwhal 3 Feature Drop | 2025.1.3` or newer. See https://developer.android.com/build/releases/gradle-plugin and [`libs.versions.toml](./gradle/libs.versions.toml).
+### Development environment
 
-### Code organization
+It is recommended to use a recent version of [Android Studio](https://developer.android.com/studio). Make sure the [version is compatible](https://developer.android.com/build/releases/gradle-plugin#android_gradle_plugin_and_android_studio_compatibility) with Wholphin's AGP version.
+
+Code formatting should follow [ktlint's](https://github.com/pinterest/ktlint) rules. Find the `ktlint` version in [`.pre-commit-config.yaml`](./.pre-commit-config.yaml). Optionally, install the [ktlint plugin](https://plugins.jetbrains.com/plugin/15057-ktlint) in Android Studio to run automatically. Configure the version in `Settings->Tools->KtLint->Ruleset Version`.
+
+Also, it's recommend to add an extra ruleset jar for Compose-specific KtLint: https://mrmans0n.github.io/compose-rules/ktlint/#using-with-ktlint-cli-or-the-ktlint-intellij-plugin
+
+Also setup [pre-commit](https://github.com/pre-commit/pre-commit) which will run `ktlint` as well on each commit, plus check for other common issues.
+
+## Code organization
 
 Code is split into several packages:
 - `data` - app-specific data models and services
@@ -49,3 +57,18 @@ You can build the module on MacOS or Linux with the [`build_ffmpeg_decoder.sh`](
 Wholphin has a playback engine that uses [`libmpv`](https://github.com/mpv-player/mpv). The app uses JNI code from [`mpv-android`](https://github.com/mpv-android/mpv-android) and has an implementation of `androidx.media3.common.Player` to swap out for `ExoPlayer`.
 
 See the [build scripts](scripts/mpv/) for details on building this component.
+
+### App settings
+
+App settings are available with the `AppPreferences` object and defined by different `AppPreference` objects (note the `s` differences).
+
+The `AppPreference` objects are used to create the UI for configuring settings using the composable functions in `com.github.damontecres.wholphin.ui.preferences`.
+
+#### How to add a new app setting
+
+1. Add entry in `WholphinDataStore.proto` & build to generate classes
+2. Add new `AppPreference` object in `AppPreference.kt`
+3. Add new object to a `PreferenceGroup` (listed in `AppPreference.kt`)
+4. Update `AppPreferencesSerializer` to set the default value for new installs
+5. If needed, update `AppUpgradeHandler` to set the default value for app upgrades
+    - Since preferences use proto3, the [default values](https://protobuf.dev/programming-guides/proto3/#default) are zero, false, or the first enum, so only need this step if the default value is different

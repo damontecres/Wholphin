@@ -65,6 +65,7 @@ fun CollectionFolderMovie(
     LaunchedEffect(selectedTabIndex) {
         logTab("movie", selectedTabIndex)
         preferencesViewModel.saveRememberedTab(preferences, destination.itemId, selectedTabIndex)
+        preferencesViewModel.backdropService.clearBackdrop()
     }
 
     var showHeader by rememberSaveable { mutableStateOf(true) }
@@ -104,6 +105,7 @@ fun CollectionFolderMovie(
                             .focusRequester(focusRequester),
                 )
             }
+
             // Library
             1 -> {
                 CollectionFolderGrid(
@@ -131,6 +133,7 @@ fun CollectionFolderMovie(
                     playEnabled = true,
                 )
             }
+
             // Collections
             2 -> {
                 CollectionFolderGrid(
@@ -158,6 +161,7 @@ fun CollectionFolderMovie(
                     playEnabled = false,
                 )
             }
+
             // Genres
             3 -> {
                 GenreCardGrid(
@@ -169,7 +173,10 @@ fun CollectionFolderMovie(
                             .focusRequester(focusRequester),
                 )
             }
-            else -> ErrorMessage("Invalid tab index $selectedTabIndex", null)
+
+            else -> {
+                ErrorMessage("Invalid tab index $selectedTabIndex", null)
+            }
         }
     }
 }

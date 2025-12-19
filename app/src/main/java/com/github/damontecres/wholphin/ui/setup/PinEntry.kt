@@ -27,13 +27,14 @@ import androidx.compose.ui.input.key.type
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.tv.material3.Button
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.ui.FontAwesome
 import com.github.damontecres.wholphin.ui.PreviewTvSpec
 import com.github.damontecres.wholphin.ui.components.BasicDialog
+import com.github.damontecres.wholphin.ui.components.Button
+import com.github.damontecres.wholphin.ui.components.TextButton
 import com.github.damontecres.wholphin.ui.playback.isEnterKey
 import com.github.damontecres.wholphin.ui.theme.WholphinTheme
 
@@ -57,7 +58,7 @@ fun PinEntry(
         PinArrowRow(Modifier.align(Alignment.CenterHorizontally))
         PinEntryDots(input.length, Modifier.align(Alignment.CenterHorizontally))
 
-        Button(
+        TextButton(
             onClick = onClickServerAuth,
             modifier =
                 Modifier

@@ -61,6 +61,7 @@ fun SkipIndicator(
             modifier = Modifier.align(Alignment.Center),
             color = MaterialTheme.colorScheme.onBackground,
             fontSize = 13.sp,
+            style = MaterialTheme.typography.bodySmall,
             text = abs(durationMs / 1000).toString(),
         )
     }

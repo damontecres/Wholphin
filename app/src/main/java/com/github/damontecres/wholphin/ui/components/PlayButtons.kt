@@ -6,10 +6,14 @@ import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredSizeIn
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.material.icons.Icons
@@ -18,6 +22,7 @@ import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.FocusState
@@ -31,16 +36,18 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.tv.material3.Button
 import androidx.tv.material3.Icon
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.R
-import com.github.damontecres.wholphin.ui.DefaultButtonPadding
 import com.github.damontecres.wholphin.ui.FontAwesome
 import com.github.damontecres.wholphin.ui.PreviewTvSpec
+import com.github.damontecres.wholphin.ui.data.SortAndDirection
 import com.github.damontecres.wholphin.ui.ifElse
+import com.github.damontecres.wholphin.ui.theme.PreviewInteractionSource
 import com.github.damontecres.wholphin.ui.theme.WholphinTheme
+import org.jellyfin.sdk.model.api.ItemSortBy
+import org.jellyfin.sdk.model.api.SortOrder
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
@@ -71,35 +78,37 @@ fun ExpandablePlayButtons(
         if (resumePosition > Duration.ZERO) {
             item("play") {
                 ExpandablePlayButton(
-                    R.string.resume,
-                    resumePosition,
-                    Icons.Default.PlayArrow,
-                    playOnClick,
-                    Modifier
-                        .onFocusChanged(buttonOnFocusChanged)
-                        .focusRequester(firstFocus),
+                    title = R.string.resume,
+                    resume = resumePosition,
+                    icon = Icons.Default.PlayArrow,
+                    onClick = playOnClick,
+                    modifier =
+                        Modifier
+                            .onFocusChanged(buttonOnFocusChanged)
+                            .focusRequester(firstFocus),
                 )
             }
             item("restart") {
                 ExpandablePlayButton(
-                    R.string.restart,
-                    Duration.ZERO,
-                    Icons.Default.Refresh,
-                    playOnClick,
-                    Modifier.onFocusChanged(buttonOnFocusChanged),
+                    title = R.string.restart,
+                    resume = Duration.ZERO,
+                    icon = Icons.Default.Refresh,
+                    onClick = playOnClick,
+                    modifier = Modifier.onFocusChanged(buttonOnFocusChanged),
                     mirrorIcon = true,
                 )
             }
         } else {
             item("play") {
                 ExpandablePlayButton(
-                    R.string.play,
-                    Duration.ZERO,
-                    Icons.Default.PlayArrow,
-                    playOnClick,
-                    Modifier
-                        .onFocusChanged(buttonOnFocusChanged)
-                        .focusRequester(firstFocus),
+                    title = R.string.play,
+                    resume = Duration.ZERO,
+                    icon = Icons.Default.PlayArrow,
+                    onClick = playOnClick,
+                    modifier =
+                        Modifier
+                            .onFocusChanged(buttonOnFocusChanged)
+                            .focusRequester(firstFocus),
                 )
             }
         }
@@ -128,15 +137,17 @@ fun ExpandablePlayButtons(
         // More button
         item("more") {
             ExpandablePlayButton(
-                R.string.more,
-                Duration.ZERO,
-                Icons.Default.MoreVert,
-                { moreOnClick.invoke() },
-                Modifier.onFocusChanged(buttonOnFocusChanged),
+                title = R.string.more,
+                resume = Duration.ZERO,
+                icon = Icons.Default.MoreVert,
+                onClick = { moreOnClick.invoke() },
+                modifier = Modifier.onFocusChanged(buttonOnFocusChanged),
             )
         }
     }
 }
+
+val MinButtonSize = 40.dp
 
 /**
  * An icon button typically used in a row for playing media
@@ -156,20 +167,36 @@ fun ExpandablePlayButton(
     val isFocused = interactionSource.collectIsFocusedAsState().value
     Button(
         onClick = { onClick.invoke(resume) },
-        modifier = modifier,
+        modifier =
+            modifier.requiredSizeIn(
+                minWidth = MinButtonSize,
+                minHeight = MinButtonSize,
+                maxHeight = MinButtonSize,
+            ),
         contentPadding = DefaultButtonPadding,
         interactionSource = interactionSource,
     ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            modifier = Modifier.ifElse(mirrorIcon, Modifier.graphicsLayer { scaleX = -1f }),
-        )
+        Box(
+            modifier =
+                Modifier
+                    .padding(start = 2.dp, top = 2.dp)
+                    .height(MinButtonSize),
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                modifier =
+                    Modifier
+                        .size(28.dp)
+                        .ifElse(mirrorIcon, Modifier.graphicsLayer { scaleX = -1f }),
+            )
+        }
         AnimatedVisibility(isFocused) {
             Spacer(Modifier.size(8.dp))
             Text(
                 text = stringResource(title),
                 style = MaterialTheme.typography.titleSmall,
+                modifier = Modifier.padding(end = 4.dp),
             )
         }
     }
@@ -190,24 +217,35 @@ fun ExpandableFaButton(
     val isFocused = interactionSource.collectIsFocusedAsState().value
     Button(
         onClick = onClick,
-        modifier = modifier.heightIn(min = 40.dp),
+        modifier =
+            modifier.requiredSizeIn(
+                minWidth = MinButtonSize,
+                minHeight = MinButtonSize,
+                maxHeight = MinButtonSize,
+            ),
         contentPadding = DefaultButtonPadding,
         interactionSource = interactionSource,
     ) {
-        Text(
-            text = stringResource(iconStringRes),
-            style = MaterialTheme.typography.titleSmall,
-            color = iconColor,
-            fontSize = 16.sp,
-            fontFamily = FontAwesome,
-            textAlign = TextAlign.Center,
-            modifier = Modifier,
-        )
+        Box(
+            modifier =
+                Modifier
+                    .size(32.dp),
+        ) {
+            Text(
+                text = stringResource(iconStringRes),
+                style = MaterialTheme.typography.titleSmall,
+                color = iconColor,
+                fontSize = 16.sp,
+                fontFamily = FontAwesome,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.align(Alignment.Center),
+            )
+        }
         AnimatedVisibility(isFocused) {
             Text(
                 text = stringResource(title),
                 style = MaterialTheme.typography.titleSmall,
-                modifier = Modifier.padding(start = 4.dp),
+                modifier = Modifier.padding(end = 4.dp),
             )
         }
     }
@@ -228,5 +266,46 @@ private fun ExpandablePlayButtonsPreview() {
             buttonOnFocusChanged = {},
             modifier = Modifier,
         )
+    }
+}
+
+@PreviewTvSpec
+@Composable
+private fun ViewOptionsPreview() {
+    val source = remember { PreviewInteractionSource() }
+    WholphinTheme {
+        Column(
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            modifier = Modifier.padding(16.dp),
+        ) {
+            ExpandablePlayButton(
+                title = R.string.play,
+                resume = Duration.ZERO,
+                icon = Icons.Default.PlayArrow,
+                onClick = {},
+                interactionSource = source,
+            )
+            ExpandableFaButton(
+                title = R.string.play,
+                iconStringRes = R.string.fa_eye,
+                onClick = {},
+                modifier = Modifier,
+                interactionSource = source,
+            )
+
+            Row {
+                ExpandableFaButton(
+                    title = R.string.mark_unwatched,
+                    iconStringRes = R.string.fa_eye,
+                    onClick = {},
+                    modifier = Modifier,
+                )
+                SortByButton(
+                    sortOptions = listOf(),
+                    current = SortAndDirection(ItemSortBy.DEFAULT, SortOrder.ASCENDING),
+                    onSortChange = {},
+                )
+            }
+        }
     }
 }

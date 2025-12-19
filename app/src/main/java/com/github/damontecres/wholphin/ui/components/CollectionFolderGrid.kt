@@ -62,6 +62,7 @@ import com.github.damontecres.wholphin.data.model.GetItemsFilter
 import com.github.damontecres.wholphin.data.model.GetItemsFilterOverride
 import com.github.damontecres.wholphin.data.model.LibraryDisplayInfo
 import com.github.damontecres.wholphin.preferences.UserPreferences
+import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.FavoriteWatchManager
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.ui.AspectRatios
@@ -76,6 +77,7 @@ import com.github.damontecres.wholphin.ui.detail.MoreDialogActions
 import com.github.damontecres.wholphin.ui.detail.PlaylistDialog
 import com.github.damontecres.wholphin.ui.detail.PlaylistLoadingState
 import com.github.damontecres.wholphin.ui.detail.buildMoreDialogItemsForHome
+import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.main.HomePageHeader
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.playback.scale
@@ -123,6 +125,7 @@ class CollectionFolderViewModel
         private val serverRepository: ServerRepository,
         private val libraryDisplayInfoDao: LibraryDisplayInfoDao,
         private val favoriteWatchManager: FavoriteWatchManager,
+        private val backdropService: BackdropService,
         val navigationManager: NavigationManager,
     ) : ItemViewModel(api) {
         val loading = MutableLiveData<LoadingState>(LoadingState.Loading)
@@ -202,6 +205,9 @@ class CollectionFolderViewModel
             this.viewOptions.value = viewOptions
             viewModelScope.launch(ExceptionHandler() + Dispatchers.IO) {
                 saveLibraryDisplayInfo(viewOptions = viewOptions)
+                if (!viewOptions.showDetails) {
+                    backdropService.clearBackdrop()
+                }
             }
         }
 
@@ -352,11 +358,12 @@ class CollectionFolderViewModel
 
                     FavoriteFilter,
                     PlayedFilter,
-                    ->
+                    -> {
                         listOf(
                             FilterValueOption("True", null),
                             FilterValueOption("False", null),
                         )
+                    }
 
                     OfficialRatingFilter -> {
                         api.localizationApi.getParentalRatings().content.map {
@@ -364,10 +371,11 @@ class CollectionFolderViewModel
                         }
                     }
 
-                    VideoTypeFilter ->
+                    VideoTypeFilter -> {
                         FilterVideoType.entries.map {
                             FilterValueOption(it.readable, it)
                         }
+                    }
 
                     YearFilter -> {
                         api.yearsApi
@@ -400,10 +408,11 @@ class CollectionFolderViewModel
                         items.toList().sorted().map { FilterValueOption("$it's", it) }
                     }
 
-                    CommunityRatingFilter ->
+                    CommunityRatingFilter -> {
                         (1..10).map {
                             FilterValueOption("$it", it)
                         }
+                    }
                 }
             } catch (ex: Exception) {
                 Timber.e(ex, "Exception get filter value options for $filterOption")
@@ -418,7 +427,6 @@ class CollectionFolderViewModel
                             CollectionType.MOVIES -> listOf(BaseItemKind.MOVIE)
                             CollectionType.TVSHOWS -> listOf(BaseItemKind.SERIES)
                             CollectionType.HOMEVIDEOS -> listOf(BaseItemKind.VIDEO)
-
                             else -> listOf()
                         }
                     val request =
@@ -451,6 +459,12 @@ class CollectionFolderViewModel
         ) = viewModelScope.launch(ExceptionHandler() + Dispatchers.IO) {
             favoriteWatchManager.setFavorite(itemId, favorite)
             (pager.value as? ApiRequestPager<*>)?.refreshItem(position, itemId)
+        }
+
+        fun updateBackdrop(item: BaseItem) {
+            viewModelScope.launchIO {
+                backdropService.submit(item)
+            }
         }
     }
 
@@ -503,7 +517,7 @@ fun CollectionFolderGrid(
     playEnabled: Boolean,
     defaultViewOptions: ViewOptions,
     modifier: Modifier = Modifier,
-    viewModel: CollectionFolderViewModel = hiltViewModel(),
+    viewModel: CollectionFolderViewModel = hiltViewModel(key = itemId),
     playlistViewModel: AddPlaylistViewModel = hiltViewModel(),
     initialSortAndDirection: SortAndDirection? = null,
     showTitle: Boolean = true,
@@ -535,10 +549,16 @@ fun CollectionFolderGrid(
     val playlistState by playlistViewModel.playlistState.observeAsState(PlaylistLoadingState.Pending)
 
     when (val state = loading) {
-        is LoadingState.Error -> ErrorMessage(state)
+        is LoadingState.Error -> {
+            ErrorMessage(state)
+        }
+
         LoadingState.Loading,
         LoadingState.Pending,
-        -> LoadingPage()
+        -> {
+            LoadingPage()
+        }
+
         LoadingState.Success -> {
             pager?.let { pager ->
                 Box(modifier = modifier) {
@@ -570,8 +590,12 @@ fun CollectionFolderGrid(
                         viewOptions = viewOptions,
                         defaultViewOptions = defaultViewOptions,
                         onSaveViewOptions = { viewModel.saveViewOptions(it) },
+                        onChangeBackdrop = viewModel::updateBackdrop,
                         playEnabled = playEnabled,
-                        onClickPlay = { shuffle ->
+                        onClickPlay = { _, item ->
+                            viewModel.navigationManager.navigateTo(Destination.Playback(item))
+                        },
+                        onClickPlayAll = { shuffle ->
                             itemId.toUUIDOrNull()?.let {
                                 viewModel.navigationManager.navigateTo(
                                     Destination.PlaybackList(
@@ -670,17 +694,19 @@ fun CollectionFolderGridContent(
     letterPosition: suspend (Char) -> Int,
     sortOptions: List<ItemSortBy>,
     playEnabled: Boolean,
-    onClickPlay: (shuffle: Boolean) -> Unit,
+    getPossibleFilterValues: suspend (ItemFilterBy<*>) -> List<FilterValueOption>,
+    defaultViewOptions: ViewOptions,
+    onSaveViewOptions: (ViewOptions) -> Unit,
+    viewOptions: ViewOptions,
+    onClickPlayAll: (shuffle: Boolean) -> Unit,
+    onClickPlay: (Int, BaseItem) -> Unit,
+    onChangeBackdrop: (BaseItem) -> Unit,
     modifier: Modifier = Modifier,
     showTitle: Boolean = true,
     positionCallback: ((columns: Int, position: Int) -> Unit)? = null,
     currentFilter: GetItemsFilter = GetItemsFilter(),
     filterOptions: List<ItemFilterBy<*>> = listOf(),
     onFilterChange: (GetItemsFilter) -> Unit = {},
-    getPossibleFilterValues: suspend (ItemFilterBy<*>) -> List<FilterValueOption>,
-    defaultViewOptions: ViewOptions,
-    viewOptions: ViewOptions,
-    onSaveViewOptions: (ViewOptions) -> Unit,
 ) {
     val context = LocalContext.current
     val title = item?.name ?: item?.data?.collectionType?.name ?: stringResource(R.string.collection)
@@ -695,14 +721,13 @@ fun CollectionFolderGridContent(
 
     var position by rememberInt(0)
     val focusedItem = pager.getOrNull(position)
+    if (viewOptions.showDetails) {
+        LaunchedEffect(focusedItem) {
+            focusedItem?.let(onChangeBackdrop)
+        }
+    }
 
     Box(modifier = modifier) {
-        if (viewOptions.showDetails) {
-            DelayedDetailsBackdropImage(
-                item = focusedItem,
-                modifier = Modifier,
-            )
-        }
         Column(
             verticalArrangement = Arrangement.spacedBy(0.dp),
             modifier = Modifier.fillMaxSize(),
@@ -778,12 +803,12 @@ fun CollectionFolderGridContent(
                                     title = R.string.play,
                                     resume = Duration.ZERO,
                                     icon = Icons.Default.PlayArrow,
-                                    onClick = { onClickPlay.invoke(false) },
+                                    onClick = { onClickPlayAll.invoke(false) },
                                 )
                                 ExpandableFaButton(
                                     title = R.string.shuffle,
                                     iconStringRes = R.string.fa_shuffle,
-                                    onClick = { onClickPlay.invoke(true) },
+                                    onClick = { onClickPlayAll.invoke(true) },
                                 )
                             }
                         }
@@ -805,6 +830,7 @@ fun CollectionFolderGridContent(
                 pager = pager,
                 onClickItem = onClickItem,
                 onLongClickItem = onLongClickItem,
+                onClickPlay = onClickPlay,
                 letterPosition = letterPosition,
                 gridFocusRequester = gridFocusRequester,
                 showJumpButtons = false, // TODO add preference
@@ -824,6 +850,7 @@ fun CollectionFolderGridContent(
                         imageContentScale = viewOptions.contentScale.scale,
                         imageAspectRatio = viewOptions.aspectRatio.ratio,
                         imageType = viewOptions.imageType,
+                        showTitle = viewOptions.showTitles,
                         modifier = mod,
                     )
                 },
@@ -920,18 +947,35 @@ data class CollectionFolderGridParameters(
 val CollectionType.baseItemKinds: List<BaseItemKind>
     get() =
         when (this) {
-            CollectionType.MOVIES -> listOf(BaseItemKind.MOVIE)
-            CollectionType.TVSHOWS -> listOf(BaseItemKind.SERIES)
-            CollectionType.HOMEVIDEOS -> listOf(BaseItemKind.VIDEO)
-            CollectionType.MUSIC ->
+            CollectionType.MOVIES -> {
+                listOf(BaseItemKind.MOVIE)
+            }
+
+            CollectionType.TVSHOWS -> {
+                listOf(BaseItemKind.SERIES)
+            }
+
+            CollectionType.HOMEVIDEOS -> {
+                listOf(BaseItemKind.VIDEO)
+            }
+
+            CollectionType.MUSIC -> {
                 listOf(
                     BaseItemKind.AUDIO,
                     BaseItemKind.MUSIC_ARTIST,
                     BaseItemKind.MUSIC_ALBUM,
                 )
+            }
 
-            CollectionType.BOXSETS -> listOf(BaseItemKind.BOX_SET)
-            CollectionType.PLAYLISTS -> listOf(BaseItemKind.PLAYLIST)
+            CollectionType.BOXSETS -> {
+                listOf(BaseItemKind.BOX_SET)
+            }
 
-            else -> listOf()
+            CollectionType.PLAYLISTS -> {
+                listOf(BaseItemKind.PLAYLIST)
+            }
+
+            else -> {
+                listOf()
+            }
         }
