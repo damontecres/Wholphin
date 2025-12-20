@@ -96,7 +96,7 @@ fun GridCard(
                 modifier =
                     Modifier
                         .fillMaxWidth()
-                        .aspectRatio(imageAspectRatio)
+                        .aspectRatio(imageAspectRatio.coerceAtLeast(AspectRatios.MIN))
                         .background(MaterialTheme.colorScheme.surfaceVariant),
             )
         }

@@ -252,13 +252,26 @@ class CollectionFolderViewModel
                     this@CollectionFolderViewModel.sortAndDirection.value = sortAndDirection
                     this@CollectionFolderViewModel.filter.value = filter
                 }
-                val newPager = createPager(sortAndDirection, recursive, filter, useSeriesForPrimary)
-                newPager.init()
-                if (newPager.isNotEmpty()) newPager.getBlocking(0)
-                withContext(Dispatchers.Main) {
-                    pager.value = newPager
-                    loading.value = LoadingState.Success
-                    backgroundLoading.value = LoadingState.Success
+                try {
+                    val newPager =
+                        createPager(sortAndDirection, recursive, filter, useSeriesForPrimary).init()
+                    if (newPager.isNotEmpty()) newPager.getBlocking(0)
+                    withContext(Dispatchers.Main) {
+                        pager.value = newPager
+                        loading.value = LoadingState.Success
+                        backgroundLoading.value = LoadingState.Success
+                    }
+                } catch (ex: Exception) {
+                    Timber.e(
+                        ex,
+                        "Exception while loading data: sort=%s, filter=%s",
+                        sortAndDirection,
+                        filter,
+                    )
+                    withContext(Dispatchers.Main) {
+                        loading.value = LoadingState.Error(ex)
+                        pager.value = listOf()
+                    }
                 }
             }
         }
