@@ -49,7 +49,6 @@ import com.github.damontecres.wholphin.ui.cards.DiscoverItemCard
 import com.github.damontecres.wholphin.ui.cards.ItemRow
 import com.github.damontecres.wholphin.ui.cards.PersonRow
 import com.github.damontecres.wholphin.ui.cards.SeasonCard
-import com.github.damontecres.wholphin.ui.components.DetailsBackdropImage
 import com.github.damontecres.wholphin.ui.components.DialogParams
 import com.github.damontecres.wholphin.ui.components.DialogPopup
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
@@ -227,9 +226,6 @@ fun DiscoverMovieDetailsContent(
         focusRequesters.getOrNull(position)?.tryRequestFocus()
     }
     Box(modifier = modifier) {
-        movie.backdropPath?.let {
-            DetailsBackdropImage("https://image.tmdb.org/t/p/w1920_and_h800_multi_faces/$it")
-        }
         LazyColumn(
             verticalArrangement = Arrangement.spacedBy(16.dp),
             contentPadding = PaddingValues(horizontal = 32.dp, vertical = 8.dp),
@@ -326,6 +322,7 @@ fun DiscoverMovieDetailsContent(
                                 item = item,
                                 onClick = onClick,
                                 onLongClick = onLongClick,
+                                showOverlay = false,
                                 modifier = mod,
                             )
                         },
@@ -354,6 +351,7 @@ fun DiscoverMovieDetailsContent(
                                 item = item,
                                 onClick = onClick,
                                 onLongClick = onLongClick,
+                                showOverlay = true,
                                 modifier = mod,
                             )
                         },

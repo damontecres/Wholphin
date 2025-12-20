@@ -284,6 +284,10 @@ fun DestinationContent(
                 SeerrItemType.PERSON -> {
                     TODO()
                 }
+
+                SeerrItemType.UNKNOWN -> {
+                    TODO()
+                }
             }
         }
     }

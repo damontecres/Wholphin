@@ -9,11 +9,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.api.seerr.MediaApi
 import com.github.damontecres.wholphin.data.model.DiscoverItem
 import com.github.damontecres.wholphin.preferences.UserPreferences
@@ -83,7 +85,7 @@ fun SeerrDiscoverPage(
                 .padding(16.dp),
     ) {
         ItemRow(
-            title = "Movies",
+            title = stringResource(R.string.movies),
             items = movies,
             onClickItem = { index, item ->
                 viewModel.navigationManager.navigateTo(Destination.DiscoveredItem(item))
@@ -94,12 +96,13 @@ fun SeerrDiscoverPage(
                     item = item,
                     onClick = onClick,
                     onLongClick = onLongClick,
+                    showOverlay = false,
                     modifier = mod,
                 )
             },
         )
         ItemRow(
-            title = "TV",
+            title = stringResource(R.string.tv_shows),
             items = tv,
             onClickItem = { index, item ->
                 viewModel.navigationManager.navigateTo(Destination.DiscoveredItem(item))
@@ -110,6 +113,7 @@ fun SeerrDiscoverPage(
                     item = item,
                     onClick = onClick,
                     onLongClick = onLongClick,
+                    showOverlay = false,
                     modifier = mod,
                 )
             },

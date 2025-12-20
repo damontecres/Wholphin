@@ -39,12 +39,14 @@ import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.BaseItem
+import com.github.damontecres.wholphin.data.model.DiscoverItem
+import com.github.damontecres.wholphin.data.model.SeerrItemType
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.NavigationManager
-import com.github.damontecres.wholphin.services.SeerrSearchResult
 import com.github.damontecres.wholphin.services.SeerrService
 import com.github.damontecres.wholphin.ui.Cards
 import com.github.damontecres.wholphin.ui.SlimItemFields
+import com.github.damontecres.wholphin.ui.cards.DiscoverItemCard
 import com.github.damontecres.wholphin.ui.cards.EpisodeCard
 import com.github.damontecres.wholphin.ui.cards.ItemRow
 import com.github.damontecres.wholphin.ui.cards.SeasonCard
@@ -144,7 +146,11 @@ class SearchViewModel
             if (seerrService.active) {
                 viewModelScope.launchIO {
                     seerrResults.setValueOnMain(SearchResult.Searching)
-                    val results = seerrService.search(query)
+                    val results =
+                        seerrService
+                            .search(query)
+                            .map { DiscoverItem(it) }
+                            .filter { it.type == SeerrItemType.MOVIE || it.type == SeerrItemType.TV }
                     seerrResults.setValueOnMain(SearchResult.SuccessSeerr(results))
                 }
             }
@@ -170,7 +176,7 @@ sealed interface SearchResult {
     ) : SearchResult
 
     data class SuccessSeerr(
-        val items: List<SeerrSearchResult>,
+        val items: List<DiscoverItem>,
     ) : SearchResult
 }
 
@@ -416,19 +422,12 @@ fun LazyListScope.searchResultRow(
                         onClickItem = { index, item -> },
                         onLongClickItem = { _, _ -> },
                         modifier = modifier,
-                        cardContent = { index: Int, item: SeerrSearchResult?, mod: Modifier, onClick: () -> Unit, onLongClick: () -> Unit ->
-                            SeasonCard(
-                                title = item?.title ?: item?.name,
-                                subtitle = null,
-                                name = item?.title ?: item?.name,
-                                imageUrl = item?.posterPath?.let { "https://image.tmdb.org/t/p/w500$it" }, // TODO
-                                isFavorite = false,
-                                isPlayed = false,
-                                unplayedItemCount = -1,
-                                playedPercentage = -1.0,
+                        cardContent = { index: Int, item: DiscoverItem?, mod: Modifier, onClick: () -> Unit, onLongClick: () -> Unit ->
+                            DiscoverItemCard(
+                                item = item,
                                 onClick = onClick,
                                 onLongClick = onLongClick,
-                                imageHeight = Cards.height2x3,
+                                showOverlay = true,
                                 modifier = mod,
                             )
                         },

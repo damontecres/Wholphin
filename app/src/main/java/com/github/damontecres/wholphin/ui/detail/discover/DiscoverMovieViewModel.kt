@@ -12,6 +12,7 @@ import com.github.damontecres.wholphin.data.model.DiscoverRating
 import com.github.damontecres.wholphin.data.model.Person
 import com.github.damontecres.wholphin.data.model.RemoteTrailer
 import com.github.damontecres.wholphin.data.model.Trailer
+import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.SeerrService
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
@@ -42,6 +43,7 @@ class DiscoverMovieViewModel
         private val api: ApiClient,
         @param:ApplicationContext private val context: Context,
         private val navigationManager: NavigationManager,
+        private val backdropService: BackdropService,
         val serverRepository: ServerRepository,
         val seerrService: SeerrService,
         @Assisted val item: DiscoverItem,
@@ -86,6 +88,9 @@ class DiscoverMovieViewModel
                     ),
             ) {
                 val movie = fetchAndSetItem().await()
+                // TODO backdrop url = "https://image.tmdb.org/t/p/w1920_and_h800_multi_faces/$it"
+//                backdropService.submit(movie)
+
                 withContext(Dispatchers.Main) {
                     loading.value = LoadingState.Success
                 }
