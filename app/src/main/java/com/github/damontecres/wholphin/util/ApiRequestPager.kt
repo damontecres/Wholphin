@@ -66,7 +66,7 @@ class ApiRequestPager<T>(
 
     suspend fun init(initialPosition: Int = 0): ApiRequestPager<T> {
         if (totalCount < 0) {
-            fetchPage(initialPosition, true).join()
+            fetchPageBlocking(initialPosition, true)
         }
         return this
     }
@@ -75,7 +75,7 @@ class ApiRequestPager<T>(
         if (index in 0..<totalCount) {
             val item = items[index]
             if (item == null) {
-                fetchPage(index, false)
+                fetchPage(index)
             }
             return item
         } else {
@@ -87,7 +87,7 @@ class ApiRequestPager<T>(
         if (index in 0..<totalCount) {
             val item = items[index]
             if (item == null) {
-                fetchPage(index, false).join()
+                fetchPageBlocking(index, false)
                 return items[index]
             }
             return item
@@ -110,33 +110,37 @@ class ApiRequestPager<T>(
     override val size: Int
         get() = totalCount
 
-    private fun fetchPage(
+    private fun fetchPage(position: Int): Job =
+        scope.launch(ExceptionHandler() + Dispatchers.IO) {
+            fetchPageBlocking(position, false)
+        }
+
+    private suspend fun fetchPageBlocking(
         position: Int,
         setTotalCount: Boolean,
-    ): Job =
-        scope.launch(ExceptionHandler() + Dispatchers.IO) {
-            mutex.withLock {
-                val pageNumber = position / pageSize
-                if (cachedPages.getIfPresent(pageNumber) == null) {
-                    if (DEBUG) Timber.v("fetchPage: $pageNumber")
-                    val newRequest =
-                        requestHandler.prepare(
-                            request,
-                            pageNumber * pageSize,
-                            pageSize,
-                            setTotalCount,
-                        )
-                    val result = requestHandler.execute(api, newRequest).content
-                    if (setTotalCount) {
-                        totalCount = result.totalRecordCount
-                    }
-                    val data = mutableListOf<BaseItem>()
-                    result.items.forEach { data.add(BaseItem.from(it, api, useSeriesForPrimary)) }
-                    cachedPages.put(pageNumber, data)
-                    items = ItemList(totalCount, pageSize, cachedPages.asMap())
+    ) {
+        mutex.withLock {
+            val pageNumber = position / pageSize
+            if (cachedPages.getIfPresent(pageNumber) == null || setTotalCount) {
+                if (DEBUG) Timber.v("fetchPage: $pageNumber")
+                val newRequest =
+                    requestHandler.prepare(
+                        request,
+                        pageNumber * pageSize,
+                        pageSize,
+                        setTotalCount,
+                    )
+                val result = requestHandler.execute(api, newRequest).content
+                if (setTotalCount) {
+                    totalCount = result.totalRecordCount.coerceAtLeast(0)
                 }
+                val data = mutableListOf<BaseItem>()
+                result.items.forEach { data.add(BaseItem.from(it, api, useSeriesForPrimary)) }
+                cachedPages.put(pageNumber, data)
+                items = ItemList(totalCount, pageSize, cachedPages.asMap())
             }
         }
+    }
 
     suspend fun refreshItem(
         position: Int,
