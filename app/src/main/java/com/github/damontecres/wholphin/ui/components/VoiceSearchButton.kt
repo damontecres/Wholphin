@@ -102,6 +102,7 @@ fun VoiceSearchButton(
                 modifier.requiredSizeIn(
                     minWidth = MinButtonSize,
                     minHeight = MinButtonSize,
+                    maxWidth = MinButtonSize,
                     maxHeight = MinButtonSize,
                 ),
             contentPadding = PaddingValues(0.dp),
