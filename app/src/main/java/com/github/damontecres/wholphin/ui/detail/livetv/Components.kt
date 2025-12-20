@@ -13,6 +13,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -21,6 +22,8 @@ import androidx.tv.material3.Text
 import androidx.tv.material3.contentColorFor
 import androidx.tv.material3.surfaceColorAtElevation
 import coil3.compose.AsyncImage
+import com.github.damontecres.wholphin.R
+import com.github.damontecres.wholphin.ui.FontAwesome
 import java.time.LocalDateTime
 
 @Composable
@@ -56,14 +59,7 @@ fun Program(
                 RoundedCornerShape(cornerSize)
             }
         }
-    val title =
-        remember(startedBeforeGuide) {
-            if (startedBeforeGuide) {
-                "< "
-            } else {
-                ""
-            } + (program.name ?: program.id.toString())
-        }
+    val title = program.name ?: program.id.toString()
     Box(
         modifier =
             modifier
@@ -74,35 +70,51 @@ fun Program(
                     shape = shape,
                 ),
     ) {
-        Column(
-            verticalArrangement = Arrangement.spacedBy(4.dp),
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .padding(4.dp),
+        Row(
+            modifier = Modifier.fillMaxSize(),
         ) {
-            Text(
-                text = title,
-                color = textColor,
-                fontSize = 16.sp,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier,
-            )
-            listOfNotNull(
-                program.seasonEpisode?.let { "S${it.season} E${it.episode}" },
-                program.subtitle,
-            ).joinToString(" - ")
-                .ifBlank { null }
-                ?.let {
-                    Text(
-                        text = it,
-                        color = textColor,
-                        fontSize = 14.sp,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier,
-                    )
-                }
+            if (startedBeforeGuide) {
+                Text(
+                    text = stringResource(R.string.fa_caret_left),
+                    fontFamily = FontAwesome,
+                    color = textColor,
+                    fontSize = 16.sp,
+                    modifier =
+                        Modifier
+                            .align(Alignment.CenterVertically)
+                            .padding(start = 2.dp),
+                )
+            }
+            Column(
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .padding(start = 2.dp, end = 4.dp, top = 4.dp, bottom = 4.dp),
+            ) {
+                Text(
+                    text = title,
+                    color = textColor,
+                    fontSize = 16.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier,
+                )
+                listOfNotNull(
+                    program.seasonEpisode?.let { "S${it.season} E${it.episode}" },
+                    program.subtitle,
+                ).joinToString(" - ")
+                    .ifBlank { null }
+                    ?.let {
+                        Text(
+                            text = it,
+                            color = textColor,
+                            fontSize = 14.sp,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier,
+                        )
+                    }
+            }
         }
         RecordingMarker(
             isRecording = program.isRecording,
