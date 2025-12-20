@@ -229,11 +229,12 @@ class LiveTvViewModel
                             } else {
                                 null
                             }
-                        val name = (dto.seriesName ?: dto.name)?.replace(Regex("[\n\r]"), "")
+                        // Clean up name/subtitles by collapsing whitespace (including newlines) into single spaces
+                        val name = (dto.seriesName ?: dto.name)?.replace(Regex("\\s+"), " ")
                         val subtitle =
                             dto.episodeTitle
                                 .takeIf { dto.isSeries ?: false }
-                                ?.replace(Regex("[\n\r]"), "")
+                                ?.replace(Regex("\\s+"), " ")
                         val p =
                             TvProgram(
                                 id = dto.id,
