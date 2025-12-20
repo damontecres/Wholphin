@@ -76,6 +76,8 @@ object AspectRatios {
     const val FOUR_THREE = 4f / 3f
     const val TALL = 2f / 3f
     const val SQUARE = 1f
+
+    const val MIN = TALL
 }
 
 enum class AspectRatio(
