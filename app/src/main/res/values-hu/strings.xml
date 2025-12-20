@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="about">Névjegy</string>
-    <string name="add_favorite">Kedvenc</string>
+    <string name="add_favorite">Hozzáadás kedvencekhez</string>
     <string name="add_server">Szerver hozzáadása</string>
     <string name="add_user">Felhasználó hozzáadása</string>
     <string name="audio">Audio</string>
@@ -87,7 +87,7 @@
     <string name="recently_added_in">Nemrég hozzáadva: %1$s</string>
     <string name="recently_added">Nemrég hozzáadott</string>
     <string name="recently_recorded">Nemrég rögzített</string>
-    <string name="recently_released">Nemrég kiadott</string>
+    <string name="recently_released">Nemrég megjelent</string>
     <string name="recommended">Ajánlott</string>
     <string name="record_program">Műsor felvétele</string>
     <string name="record_series">Sorozat felvétele</string>
@@ -113,7 +113,7 @@
     <string name="sort_by_random">Véletlenszerűen</string>
     <string name="studios">Stúdiók</string>
     <string name="submit">Beküld</string>
-    <string name="subtitle_download_too_long">A letöltés sok időt vesz igénybe, előfordulhat, hogy újra kell indítanod a lejátszást</string>
+    <string name="subtitle_download_too_long">A letöltés sok időt vesz igénybe, előfordulhat, hogy újra kell indítani a lejátszást</string>
     <string name="subtitle">Felirat</string>
     <string name="subtitles">Feliratok</string>
     <string name="suggestions">Ajánlások</string>
@@ -137,7 +137,7 @@
     <string name="video_scale">Kép méretezése</string>
     <string name="video">Videó</string>
     <string name="videos">Videók</string>
-    <string name="watch_live">Nézd élőben</string>
+    <string name="watch_live">Nézze élőben</string>
     <string name="years_old">%1$d éves</string>
     <string name="play_with_transcoding">Lejátszás átalakítással</string>
     <string name="show_clock">Aktuális idő mutatása</string>
@@ -145,12 +145,12 @@
     <string name="create_playlist">Új lejátszási lista létrehozása</string>
     <string name="add_to_playlist">Hozzáadás lejátszási listához</string>
     <string name="one_click_pause">Szüneteltetés egy klikkel</string>
-    <string name="one_click_pause_summary_on">Nyomd a D-Pad közepét megállításhoz/lejátszáshoz</string>
+    <string name="one_click_pause_summary_on">Nyomja le a D-Pad közepét megállításhoz/lejátszáshoz</string>
     <string name="italic_font">Dőlt betűk</string>
     <string name="font">Betűtípus</string>
     <string name="background">Háttérszín</string>
     <string name="success">Sikeres</string>
-    <string name="official_rating">Szülői besorolás</string>
+    <string name="official_rating">Korhatár-besorolás</string>
     <string name="runtime_sort">Műsoridő</string>
     <string name="extras">Extrák</string>
     <plurals name="other_extras">
@@ -162,8 +162,8 @@
         <item quantity="other"/>
     </plurals>
     <plurals name="theme_songs">
-        <item quantity="one">Téma zenék</item>
-        <item quantity="other"/>
+        <item quantity="one">Főcímdal</item>
+        <item quantity="other">Főcímdalok</item>
     </plurals>
     <plurals name="theme_videos">
         <item quantity="one">Téma videó</item>
@@ -357,4 +357,6 @@
     <string name="player_backend">Lejátszás backend</string>
     <string name="image_cache_size">Kép gyorsítótár méret (MB)</string>
     <string name="cast_and_crew"><![CDATA[Stáblista]]></string>
+    <string name="nav_drawer_switch_on_focus">Navigációs menü oldalainak váltása fókusznál</string>
+    <string name="playback_overrides">Lejátszás felülbírálatai</string>
 </resources>
