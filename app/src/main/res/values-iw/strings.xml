@@ -17,4 +17,17 @@
     <string name="collections">אוספים</string>
     <string name="commercial">מסחרי</string>
     <string name="community_rating">דירוג קהילתי</string>
+    <string name="compose_error_message_title">אירעה שגיאה! לחץ על הכפתור על מנת לשלוח יומני אירועים לשרת שלך.</string>
+    <string name="confirm">לאשר</string>
+    <string name="continue_watching">המשך צפייה</string>
+    <string name="critic_rating">דירוג מבקרים</string>
+    <string name="decimal_seconds">%.1f שניות</string>
+    <string name="default_track">ברירת מחדל</string>
+    <string name="delete">מחק</string>
+    <string name="died">מת</string>
+    <string name="directed_by">בבימויו של %1$s</string>
+    <string name="director">במאי</string>
+    <string name="disabled">מושבת</string>
+    <string name="born">נולד</string>
+    <string name="choose_stream">בחר %1$s</string>
 </resources>
