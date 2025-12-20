@@ -238,17 +238,6 @@ class PlaybackViewModel
                     }
                 val base =
                     if (queriedItem.type.playable) {
-                        val parts = queriedItem.partCount ?: 1
-                        if (parts > 1) {
-                            val parts =
-                                api.videosApi
-                                    .getAdditionalPart(itemId)
-                                    .content.items
-                                    .map { BaseItem.from(it, api) }
-                            withContext(Dispatchers.Main) {
-                                this@PlaybackViewModel.playlist.value = Playlist(parts)
-                            }
-                        }
                         queriedItem
                     } else if (destination is Destination.PlaybackList) {
                         isPlaylist = true
@@ -297,15 +286,12 @@ class PlaybackViewModel
                     playNextUp()
                 }
 
-                if (!isPlaylist && queriedItem.type == BaseItemKind.EPISODE) {
-                    val playlist =
-                        playlistCreator.createFromEpisode(queriedItem.seriesId!!, queriedItem.id)
-                    val combinedList =
-                        this@PlaybackViewModel.playlist.value.let {
-                            if (it != null) Playlist(it.items + playlist.items) else playlist
+                if (!isPlaylist) {
+                    val result = playlistCreator.createFrom(queriedItem)
+                    if (result is PlaylistCreationResult.Success && result.playlist.items.isNotEmpty()) {
+                        withContext(Dispatchers.Main) {
+                            this@PlaybackViewModel.playlist.value = result.playlist
                         }
-                    withContext(Dispatchers.Main) {
-                        this@PlaybackViewModel.playlist.value = combinedList
                     }
                 }
             }
