@@ -98,7 +98,7 @@ fun NextUpEpisode(
                     modifier =
                         Modifier
                             .fillMaxHeight()
-                            .aspectRatio(aspectRatio)
+                            .aspectRatio(aspectRatio.coerceAtLeast(AspectRatios.MIN))
 //                            .fillMaxSize()
 //                            .weight(1f)
                             .focusRequester(focusRequester),

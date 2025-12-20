@@ -7,15 +7,21 @@ Wholphin is an open-source Android TV client for Jellyfin. It aims to provide a 
 This is not a fork of the [official client](https://github.com/jellyfin/jellyfin-androidtv). Wholphin's user interface and controls have been written completely from scratch. Wholphin `v0.3.0+` supports playing media using either ExoPlayer/Media3 or MPV (experimental).
 
 <p align="center">
-<a href="https://github.com/damontecres/Wholphin/issues/303"><b>Help get Wholphin listed on the Play Store</b></a>
-<br/>
-<br/>
 <a href="https://github.com/damontecres/Wholphin/releases">
 <img alt="Current Release" src="https://img.shields.io/github/release/damontecres/wholphin.svg"/>
 </a>
 <a href="https://translate.codeberg.org/engage/wholphin/">
 <img src="https://translate.codeberg.org/widget/wholphin/wholphin/svg-badge.svg" alt="Translation status" />
 </a>
+<br/>
+<a href="https://play.google.com/store/apps/details?id=com.github.damontecres.wholphin">
+<img width="180" alt="Get Wholphin on Google Play" src="https://github.com/user-attachments/assets/2550a4cb-ce46-47a1-ae24-f33a169234b7"/>
+</a>
+<a href="https://www.amazon.com/gp/product/B0G8RQQR9T/ref=mas_pm_wholphin">
+<img width="180" alt="Get Wholphin on Amazon AppStore" src="https://github.com/user-attachments/assets/1f3a3b26-4b4f-44b1-9741-f4c895c8a53b"/>
+</a>
+
+
 </p>
 
 <img width="1280" height="720" alt="0_3_5_home" src="https://github.com/user-attachments/assets/a485c015-ec21-442d-a757-1f18381bf799" />
@@ -24,12 +30,12 @@ This is not a fork of the [official client](https://github.com/jellyfin/jellyfin
 
 ### User interface
 
-- A navigation drawer for quick access to libraries, search, and settings from almost anywhere in the app
+- A navigation drawer for quick access to libraries, favorites, search, and settings from almost anywhere in the app
 - Option to combine Continue Watching & Next Up rows
 - Show Movie/TV Show titles when browsing libraries
 - Play theme music, if available
+- Search & download subtitles (requires compatible server plugin such as [OpenSubtitles](https://github.com/jellyfin/jellyfin-plugin-opensubtitles))
 - Customize layout grids for libraries
-- Access all your favorites quickly from the nav drawer
 - Multiple app color themes
 
 ### Playback
@@ -43,6 +49,8 @@ This is not a fork of the [official client](https://github.com/jellyfin/jellyfin
   - Optionally skip back a few seconds when resuming playback
 - Live TV & DVR support
 - Auto play next episodes with pass out protection
+- Option for automatic refresh rate switching on supported displays
+- Trickplay support
 - Other (subjective) enhancements:
   - Subtly show playback position along the bottom of the screen while seeking w/ D-Pad
   - Force Continue Watching & Next Up TV episodes to use their Series posters

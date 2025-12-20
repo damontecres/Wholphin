@@ -659,6 +659,19 @@ sealed interface AppPreference<Pref, T> {
                 summaryOff = R.string.disabled,
             )
 
+        val BackdropStylePref =
+            AppChoicePreference<AppPreferences, BackdropStyle>(
+                title = R.string.backdrop_display,
+                defaultValue = BackdropStyle.BACKDROP_DYNAMIC_COLOR,
+                getter = { it.interfacePreferences.backdropStyle },
+                setter = { prefs, value ->
+                    prefs.updateInterfacePreferences { backdropStyle = value }
+                },
+                displayValues = R.array.backdrop_style_options,
+                indexToValue = { BackdropStyle.forNumber(it) },
+                valueToIndex = { it.number },
+            )
+
         val OneClickPause =
             AppSwitchPreference<AppPreferences>(
                 title = R.string.one_click_pause,
@@ -784,6 +797,51 @@ sealed interface AppPreference<Pref, T> {
                     }
                 },
             )
+
+        val LiveTvShowHeader =
+            AppSwitchPreference<AppPreferences>(
+                title = R.string.show_details,
+                defaultValue = true,
+                getter = { it.interfacePreferences.liveTvPreferences.showHeader },
+                setter = { prefs, value ->
+                    prefs.updateLiveTvPreferences { showHeader = value }
+                },
+                summaryOn = R.string.enabled,
+                summaryOff = R.string.disabled,
+            )
+        val LiveTvFavoriteChannelsBeginning =
+            AppSwitchPreference<AppPreferences>(
+                title = R.string.favorite_channels_at_beginning,
+                defaultValue = true,
+                getter = { it.interfacePreferences.liveTvPreferences.favoriteChannelsAtBeginning },
+                setter = { prefs, value ->
+                    prefs.updateLiveTvPreferences { favoriteChannelsAtBeginning = value }
+                },
+                summaryOn = R.string.enabled,
+                summaryOff = R.string.disabled,
+            )
+        val LiveTvChannelSortByWatched =
+            AppSwitchPreference<AppPreferences>(
+                title = R.string.sort_channels_recently_watched,
+                defaultValue = false,
+                getter = { it.interfacePreferences.liveTvPreferences.sortByRecentlyWatched },
+                setter = { prefs, value ->
+                    prefs.updateLiveTvPreferences { sortByRecentlyWatched = value }
+                },
+                summaryOn = R.string.enabled,
+                summaryOff = R.string.disabled,
+            )
+        val LiveTvColorCodePrograms =
+            AppSwitchPreference<AppPreferences>(
+                title = R.string.color_code_programs,
+                defaultValue = true,
+                getter = { it.interfacePreferences.liveTvPreferences.colorCodePrograms },
+                setter = { prefs, value ->
+                    prefs.updateLiveTvPreferences { colorCodePrograms = value }
+                },
+                summaryOn = R.string.enabled,
+                summaryOff = R.string.disabled,
+            )
     }
 }
 
@@ -864,6 +922,7 @@ val advancedPreferences =
                         // Temporarily disabled, see https://github.com/damontecres/Wholphin/pull/127#issuecomment-3478058418
 //                    AppPreference.NavDrawerSwitchOnFocus,
                         AppPreference.ControllerTimeout,
+                        AppPreference.BackdropStylePref,
                     ),
             ),
         )
@@ -947,6 +1006,14 @@ val advancedPreferences =
             ),
         )
     }
+
+val liveTvPreferences =
+    listOf(
+        AppPreference.LiveTvShowHeader,
+        AppPreference.LiveTvFavoriteChannelsBeginning,
+        AppPreference.LiveTvChannelSortByWatched,
+        AppPreference.LiveTvColorCodePrograms,
+    )
 
 data class AppSwitchPreference<Pref>(
     @get:StringRes override val title: Int,

@@ -78,39 +78,37 @@ fun ExpandablePlayButtons(
         if (resumePosition > Duration.ZERO) {
             item("play") {
                 ExpandablePlayButton(
-                    R.string.resume,
-                    resumePosition,
-                    Icons.Default.PlayArrow,
-                    playOnClick,
-                    Modifier
-                        .onFocusChanged(buttonOnFocusChanged)
-                        .focusRequester(firstFocus)
-                        .animateItem(),
+                    title = R.string.resume,
+                    resume = resumePosition,
+                    icon = Icons.Default.PlayArrow,
+                    onClick = playOnClick,
+                    modifier =
+                        Modifier
+                            .onFocusChanged(buttonOnFocusChanged)
+                            .focusRequester(firstFocus),
                 )
             }
             item("restart") {
                 ExpandablePlayButton(
-                    R.string.restart,
-                    Duration.ZERO,
-                    Icons.Default.Refresh,
-                    playOnClick,
-                    Modifier
-                        .onFocusChanged(buttonOnFocusChanged)
-                        .animateItem(),
+                    title = R.string.restart,
+                    resume = Duration.ZERO,
+                    icon = Icons.Default.Refresh,
+                    onClick = playOnClick,
+                    modifier = Modifier.onFocusChanged(buttonOnFocusChanged),
                     mirrorIcon = true,
                 )
             }
         } else {
             item("play") {
                 ExpandablePlayButton(
-                    R.string.play,
-                    Duration.ZERO,
-                    Icons.Default.PlayArrow,
-                    playOnClick,
-                    Modifier
-                        .onFocusChanged(buttonOnFocusChanged)
-                        .focusRequester(firstFocus)
-                        .animateItem(),
+                    title = R.string.play,
+                    resume = Duration.ZERO,
+                    icon = Icons.Default.PlayArrow,
+                    onClick = playOnClick,
+                    modifier =
+                        Modifier
+                            .onFocusChanged(buttonOnFocusChanged)
+                            .focusRequester(firstFocus),
                 )
             }
         }
@@ -121,10 +119,7 @@ fun ExpandablePlayButtons(
                 title = if (watched) R.string.mark_unwatched else R.string.mark_watched,
                 iconStringRes = if (watched) R.string.fa_eye else R.string.fa_eye_slash,
                 onClick = watchOnClick,
-                modifier =
-                    Modifier
-                        .onFocusChanged(buttonOnFocusChanged)
-                        .animateItem(),
+                modifier = Modifier.onFocusChanged(buttonOnFocusChanged),
             )
         }
 
@@ -135,23 +130,18 @@ fun ExpandablePlayButtons(
                 iconStringRes = R.string.fa_heart,
                 onClick = favoriteOnClick,
                 iconColor = if (favorite) Color.Red else Color.Unspecified,
-                modifier =
-                    Modifier
-                        .onFocusChanged(buttonOnFocusChanged)
-                        .animateItem(),
+                modifier = Modifier.onFocusChanged(buttonOnFocusChanged),
             )
         }
 
         // More button
         item("more") {
             ExpandablePlayButton(
-                R.string.more,
-                Duration.ZERO,
-                Icons.Default.MoreVert,
-                { moreOnClick.invoke() },
-                Modifier
-                    .onFocusChanged(buttonOnFocusChanged)
-                    .animateItem(),
+                title = R.string.more,
+                resume = Duration.ZERO,
+                icon = Icons.Default.MoreVert,
+                onClick = { moreOnClick.invoke() },
+                modifier = Modifier.onFocusChanged(buttonOnFocusChanged),
             )
         }
     }

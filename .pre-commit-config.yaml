@@ -18,3 +18,8 @@ repos:
       entry: val DEBUG = true
       language: pygrep
       files: '.+\.kt'
+    - id: check-debug-logging-enabled
+      name: Check debug enabled
+      entry: debugLogging = true
+      language: pygrep
+      files: '.+\.kt'

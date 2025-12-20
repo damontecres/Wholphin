@@ -1,5 +1,6 @@
 package com.github.damontecres.wholphin.ui.cards
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -44,6 +45,7 @@ fun GridCard(
     imageAspectRatio: Float = AspectRatios.TALL,
     imageContentScale: ContentScale = ContentScale.Fit,
     imageType: ViewOptionImageType = ViewOptionImageType.PRIMARY,
+    showTitle: Boolean = true,
 ) {
     val dto = item?.data
     val focused by interactionSource.collectIsFocusedAsState()
@@ -94,38 +96,40 @@ fun GridCard(
                 modifier =
                     Modifier
                         .fillMaxWidth()
-                        .aspectRatio(imageAspectRatio)
+                        .aspectRatio(imageAspectRatio.coerceAtLeast(AspectRatios.MIN))
                         .background(MaterialTheme.colorScheme.surfaceVariant),
             )
         }
-        Column(
-            verticalArrangement = Arrangement.spacedBy(0.dp),
-            modifier =
-                Modifier
-                    .padding(bottom = spaceBelow)
-                    .fillMaxWidth(),
-        ) {
-            Text(
-                text = item?.title ?: "",
-                maxLines = 1,
-                textAlign = TextAlign.Center,
-                overflow = TextOverflow.Ellipsis,
+        AnimatedVisibility(showTitle) {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(0.dp),
                 modifier =
                     Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 4.dp)
-                        .enableMarquee(focusedAfterDelay),
-            )
-            Text(
-                text = item?.subtitle ?: "",
-                maxLines = 1,
-                textAlign = TextAlign.Center,
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 4.dp)
-                        .enableMarquee(focusedAfterDelay),
-            )
+                        .padding(bottom = spaceBelow)
+                        .fillMaxWidth(),
+            ) {
+                Text(
+                    text = item?.title ?: "",
+                    maxLines = 1,
+                    textAlign = TextAlign.Center,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 4.dp)
+                            .enableMarquee(focusedAfterDelay),
+                )
+                Text(
+                    text = item?.subtitle ?: "",
+                    maxLines = 1,
+                    textAlign = TextAlign.Center,
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 4.dp)
+                            .enableMarquee(focusedAfterDelay),
+                )
+            }
         }
     }
 }

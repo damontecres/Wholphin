@@ -68,6 +68,7 @@ val SlimItemFields =
 object Cards {
     val height2x3 = 172.dp
     val playedPercentHeight = 6.dp
+    val serverUserCircle = height2x3 * .75f
 }
 
 object AspectRatios {
@@ -75,6 +76,8 @@ object AspectRatios {
     const val FOUR_THREE = 4f / 3f
     const val TALL = 2f / 3f
     const val SQUARE = 1f
+
+    const val MIN = TALL
 }
 
 enum class AspectRatio(

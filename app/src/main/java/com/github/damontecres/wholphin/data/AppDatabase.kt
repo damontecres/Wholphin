@@ -9,10 +9,12 @@ import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.github.damontecres.wholphin.data.model.GetItemsFilter
 import com.github.damontecres.wholphin.data.model.ItemPlayback
+import com.github.damontecres.wholphin.data.model.ItemTrackModification
 import com.github.damontecres.wholphin.data.model.JellyfinServer
 import com.github.damontecres.wholphin.data.model.JellyfinUser
 import com.github.damontecres.wholphin.data.model.LibraryDisplayInfo
 import com.github.damontecres.wholphin.data.model.NavDrawerPinnedItem
+import com.github.damontecres.wholphin.data.model.PlaybackLanguageChoice
 import com.github.damontecres.wholphin.ui.components.ViewOptions
 import kotlinx.serialization.json.Json
 import org.jellyfin.sdk.model.api.ItemSortBy
@@ -22,8 +24,16 @@ import timber.log.Timber
 import java.util.UUID
 
 @Database(
-    entities = [JellyfinServer::class, JellyfinUser::class, ItemPlayback::class, NavDrawerPinnedItem::class, LibraryDisplayInfo::class],
-    version = 10,
+    entities = [
+        JellyfinServer::class,
+        JellyfinUser::class,
+        ItemPlayback::class,
+        NavDrawerPinnedItem::class,
+        LibraryDisplayInfo::class,
+        PlaybackLanguageChoice::class,
+        ItemTrackModification::class,
+    ],
+    version = 12,
     exportSchema = true,
     autoMigrations = [
         AutoMigration(3, 4),
@@ -33,6 +43,8 @@ import java.util.UUID
         AutoMigration(7, 8),
         AutoMigration(8, 9),
         AutoMigration(9, 10),
+        AutoMigration(10, 11),
+        AutoMigration(11, 12),
     ],
 )
 @TypeConverters(Converters::class)
@@ -44,6 +56,8 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun serverPreferencesDao(): ServerPreferencesDao
 
     abstract fun libraryDisplayInfoDao(): LibraryDisplayInfoDao
+
+    abstract fun playbackLanguageChoiceDao(): PlaybackLanguageChoiceDao
 }
 
 class Converters {

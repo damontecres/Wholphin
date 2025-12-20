@@ -7,6 +7,7 @@ import com.github.damontecres.wholphin.data.JellyfinServerDao
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.JellyfinServer
 import com.github.damontecres.wholphin.data.model.JellyfinUser
+import com.github.damontecres.wholphin.services.ImageUrlService
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.setValueOnMain
@@ -25,6 +26,7 @@ import org.jellyfin.sdk.Jellyfin
 import org.jellyfin.sdk.api.client.HttpClientOptions
 import org.jellyfin.sdk.api.client.exception.InvalidStatusException
 import org.jellyfin.sdk.api.client.extensions.authenticateUserByName
+import org.jellyfin.sdk.api.client.extensions.imageApi
 import org.jellyfin.sdk.api.client.extensions.quickConnectApi
 import org.jellyfin.sdk.api.client.extensions.systemApi
 import org.jellyfin.sdk.api.client.extensions.userApi
@@ -41,6 +43,7 @@ class SwitchUserViewModel
         val serverRepository: ServerRepository,
         val serverDao: JellyfinServerDao,
         val navigationManager: NavigationManager,
+        val imageUrlService: ImageUrlService,
         @Assisted val server: JellyfinServer,
     ) : ViewModel() {
         @AssistedFactory
@@ -50,7 +53,7 @@ class SwitchUserViewModel
 
         val serverQuickConnect = MutableLiveData<Boolean>(false)
 
-        val users = MutableLiveData<List<JellyfinUser>>(listOf())
+        val users = MutableLiveData<List<JellyfinUserAndImage>>(listOf())
         val quickConnectState = MutableLiveData<QuickConnectResult?>(null)
 
         private var quickConnectJob: Job? = null
@@ -78,8 +81,7 @@ class SwitchUserViewModel
             quickConnectJob?.cancel()
             viewModelScope.launchIO {
                 users.setValueOnMain(listOf())
-                val serverUsers =
-                    serverDao.getServer(server.id)?.users?.sortedBy { it.name } ?: listOf()
+                val serverUsers = getUsers()
                 withContext(Dispatchers.Main) {
                     users.setValueOnMain(serverUsers)
                 }
@@ -215,12 +217,21 @@ class SwitchUserViewModel
         fun removeUser(user: JellyfinUser) {
             viewModelScope.launchIO {
                 serverRepository.removeUser(user)
-                val serverUsers =
-                    serverDao.getServer(user.serverId)?.users?.sortedBy { it.name } ?: listOf()
+                val serverUsers = getUsers()
                 withContext(Dispatchers.Main) {
                     users.value = serverUsers
                 }
             }
+        }
+
+        private suspend fun getUsers(): List<JellyfinUserAndImage> {
+            val api = jellyfin.createApi(server.url)
+            return serverDao
+                .getServer(server.id)
+                ?.users
+                ?.sortedBy { it.name }
+                ?.map { JellyfinUserAndImage(it, api.imageApi.getUserImageUrl(it.id)) }
+                .orEmpty()
         }
 
         private suspend fun setError(
@@ -231,3 +242,8 @@ class SwitchUserViewModel
             switchUserState.value = LoadingState.Error(msg, ex)
         }
     }
+
+data class JellyfinUserAndImage(
+    val user: JellyfinUser,
+    val imageUrl: String?,
+)

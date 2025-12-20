@@ -1,7 +1,6 @@
 package com.github.damontecres.wholphin.ui.setup
 
 import android.widget.Toast
-import androidx.compose.foundation.background
 import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -11,9 +10,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -36,7 +34,6 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
-import androidx.tv.material3.surfaceColorAtElevation
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.JellyfinServer
 import com.github.damontecres.wholphin.data.model.JellyfinUser
@@ -94,27 +91,28 @@ fun SwitchUserContent(
         ) {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(24.dp),
                 modifier =
                     Modifier
-                        .fillMaxWidth(.5f)
+                        .fillMaxWidth()
                         .align(Alignment.Center)
-                        .padding(16.dp)
-                        .background(
-                            MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp),
-                            shape = RoundedCornerShape(16.dp),
-                        ),
+                        .padding(16.dp),
             ) {
-                Text(
-                    text = stringResource(R.string.select_user),
-                    style = MaterialTheme.typography.displaySmall,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
-                Text(
-                    text = server.name ?: server.url,
-                    style = MaterialTheme.typography.titleLarge,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Text(
+                        text = stringResource(R.string.select_user),
+                        style = MaterialTheme.typography.displaySmall,
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
+                    Text(
+                        text = server.name ?: server.url,
+                        style = MaterialTheme.typography.titleLarge,
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
+                }
                 UserList(
                     users = users,
                     currentUser = currentUser,
@@ -134,13 +132,7 @@ fun SwitchUserContent(
                     onSwitchServer = {
                         viewModel.navigationManager.navigateTo(Destination.ServerList)
                     },
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .background(
-                                MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp),
-                                shape = RoundedCornerShape(16.dp),
-                            ),
+                    modifier = Modifier.fillMaxWidth(),
                 )
             }
         }
@@ -170,7 +162,7 @@ fun SwitchUserContent(
                         Modifier
                             .focusGroup()
                             .padding(16.dp)
-                            .fillMaxWidth(.66f),
+                            .fillMaxWidth(.4f),
                 ) {
                     if (useQuickConnect) {
                         if (quickConnect == null && userState !is LoadingState.Error) {
@@ -196,6 +188,8 @@ fun SwitchUserContent(
                                 text = "Use Quick Connect on your device to authenticate to ${server.name ?: server.url}",
                                 style = MaterialTheme.typography.titleMedium,
                                 color = MaterialTheme.colorScheme.onSurface,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.fillMaxWidth(),
                             )
                             Text(
                                 text = quickConnect?.code ?: "Failed to get code",
@@ -215,13 +209,15 @@ fun SwitchUserContent(
                             modifier = Modifier.align(Alignment.CenterHorizontally),
                         )
                     } else {
-                        val username = rememberTextFieldState()
-                        val password = rememberTextFieldState()
+//                        val username = rememberTextFieldState()
+//                        val password = rememberTextFieldState()
+                        var username by remember { mutableStateOf("") }
+                        var password by remember { mutableStateOf("") }
                         val onSubmit = {
                             viewModel.login(
                                 server,
-                                username.text.toString(),
-                                password.text.toString(),
+                                username,
+                                password,
                             )
                         }
                         val focusRequester = remember { FocusRequester() }
@@ -231,6 +227,8 @@ fun SwitchUserContent(
                             text = "Enter username/password to login to ${server.name ?: server.url}",
                             style = MaterialTheme.typography.titleMedium,
                             color = MaterialTheme.colorScheme.onSurface,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth(),
                         )
                         UserStateError(userState)
                         Row(
@@ -242,7 +240,8 @@ fun SwitchUserContent(
                                 modifier = Modifier.padding(end = 8.dp),
                             )
                             EditTextBox(
-                                state = username,
+                                value = username,
+                                onValueChange = { username = it },
                                 keyboardOptions =
                                     KeyboardOptions(
                                         capitalization = KeyboardCapitalization.None,
@@ -250,9 +249,15 @@ fun SwitchUserContent(
                                         keyboardType = KeyboardType.Text,
                                         imeAction = ImeAction.Next,
                                     ),
-                                onKeyboardAction = {
-                                    passwordFocusRequester.tryRequestFocus()
-                                },
+                                keyboardActions =
+                                    KeyboardActions(
+                                        onNext = {
+                                            passwordFocusRequester.tryRequestFocus()
+                                        },
+                                    ),
+                                //                                onKeyboardAction = {
+//                                    passwordFocusRequester.tryRequestFocus()
+//                                },
                                 isInputValid = { userState !is LoadingState.Error },
                                 modifier = Modifier.focusRequester(focusRequester),
                             )
@@ -265,12 +270,12 @@ fun SwitchUserContent(
                                 text = "Password",
                                 modifier = Modifier.padding(end = 8.dp),
                             )
-                            LaunchedEffect(password.text) {
+                            LaunchedEffect(password) {
                                 viewModel.clearSwitchUserState()
                             }
                             EditTextBox(
-                                isPassword = true,
-                                state = password,
+                                value = password,
+                                onValueChange = { password = it },
                                 keyboardOptions =
                                     KeyboardOptions(
                                         capitalization = KeyboardCapitalization.None,
@@ -278,7 +283,10 @@ fun SwitchUserContent(
                                         keyboardType = KeyboardType.Password,
                                         imeAction = ImeAction.Go,
                                     ),
-                                onKeyboardAction = { onSubmit.invoke() },
+                                keyboardActions =
+                                    KeyboardActions(
+                                        onGo = { onSubmit.invoke() },
+                                    ),
                                 isInputValid = { userState !is LoadingState.Error },
                                 modifier = Modifier.focusRequester(passwordFocusRequester),
                             )
@@ -286,7 +294,7 @@ fun SwitchUserContent(
                         TextButton(
                             stringRes = R.string.login,
                             onClick = { onSubmit.invoke() },
-                            enabled = username.text.isNotNullOrBlank() && password.text.isNotNullOrBlank(),
+                            enabled = username.isNotNullOrBlank(),
                             modifier = Modifier.align(Alignment.CenterHorizontally),
                         )
                     }

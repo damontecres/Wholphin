@@ -13,6 +13,7 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -53,6 +54,7 @@ fun MovieDetailsHeader(
             text = movie.name ?: "",
             color = MaterialTheme.colorScheme.onSurface,
             style = MaterialTheme.typography.displaySmall,
+            fontWeight = FontWeight.SemiBold,
             maxLines = 2,
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.fillMaxWidth(.75f),
@@ -70,9 +72,7 @@ fun MovieDetailsHeader(
             }
 
             VideoStreamDetails(
-                preferences = preferences,
-                dto = dto,
-                itemPlayback = chosenStreams?.itemPlayback,
+                chosenStreams = chosenStreams,
                 modifier = Modifier.padding(bottom = padding),
             )
             dto.taglines?.firstOrNull()?.let { tagline ->

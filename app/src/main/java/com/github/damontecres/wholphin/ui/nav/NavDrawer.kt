@@ -77,6 +77,7 @@ import com.github.damontecres.wholphin.data.model.JellyfinServer
 import com.github.damontecres.wholphin.data.model.JellyfinUser
 import com.github.damontecres.wholphin.preferences.AppThemeColors
 import com.github.damontecres.wholphin.preferences.UserPreferences
+import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.ui.FontAwesome
 import com.github.damontecres.wholphin.ui.components.TimeDisplay
@@ -105,6 +106,7 @@ class NavDrawerViewModel
     constructor(
         private val navDrawerItemRepository: NavDrawerItemRepository,
         val navigationManager: NavigationManager,
+        val backdropService: BackdropService,
     ) : ViewModel() {
         private var all: List<NavDrawerItem>? = null
         val moreLibraries = MutableLiveData<List<NavDrawerItem>>(null)
@@ -217,6 +219,7 @@ fun NavDrawer(
     preferences: UserPreferences,
     user: JellyfinUser,
     server: JellyfinServer,
+    onClearBackdrop: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: NavDrawerViewModel =
         hiltViewModel(
@@ -314,11 +317,9 @@ fun NavDrawer(
     val drawerPadding by animateDpAsState(if (drawerState.isOpen) 0.dp else 8.dp)
     val drawerBackground by animateColorAsState(
         if (drawerState.isOpen) {
-            MaterialTheme.colorScheme.surfaceColorAtElevation(
-                1.dp,
-            )
-        } else {
             MaterialTheme.colorScheme.surface
+        } else {
+            Color.Transparent
         },
     )
     val spacedBy = 4.dp
@@ -542,6 +543,7 @@ fun NavDrawer(
             DestinationContent(
                 destination = destination,
                 preferences = preferences,
+                onClearBackdrop = onClearBackdrop,
                 modifier =
                     Modifier
                         .fillMaxSize(),

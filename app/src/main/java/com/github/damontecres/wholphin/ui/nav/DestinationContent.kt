@@ -1,6 +1,7 @@
 package com.github.damontecres.wholphin.ui.nav
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.data.filter.DefaultForGenresFilterOptions
@@ -44,8 +45,12 @@ import timber.log.Timber
 fun DestinationContent(
     destination: Destination,
     preferences: UserPreferences,
+    onClearBackdrop: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    if (destination.fullScreen) {
+        LaunchedEffect(Unit) { onClearBackdrop.invoke() }
+    }
     when (destination) {
         is Destination.Home -> {
             HomePage(
@@ -125,6 +130,7 @@ fun DestinationContent(
                 }
 
                 BaseItemKind.BOX_SET -> {
+                    LaunchedEffect(Unit) { onClearBackdrop.invoke() }
                     CollectionFolderBoxSet(
                         preferences = preferences,
                         itemId = destination.itemId,
@@ -136,6 +142,7 @@ fun DestinationContent(
                 }
 
                 BaseItemKind.PLAYLIST -> {
+                    LaunchedEffect(Unit) { onClearBackdrop.invoke() }
                     PlaylistDetails(
                         destination = destination,
                         modifier = modifier,
@@ -143,6 +150,7 @@ fun DestinationContent(
                 }
 
                 BaseItemKind.COLLECTION_FOLDER -> {
+                    LaunchedEffect(Unit) { onClearBackdrop.invoke() }
                     CollectionFolder(
                         preferences = preferences,
                         destination = destination,
@@ -154,6 +162,7 @@ fun DestinationContent(
                 }
 
                 BaseItemKind.FOLDER -> {
+                    LaunchedEffect(Unit) { onClearBackdrop.invoke() }
                     CollectionFolder(
                         preferences = preferences,
                         destination = destination,
@@ -165,6 +174,7 @@ fun DestinationContent(
                 }
 
                 BaseItemKind.USER_VIEW -> {
+                    LaunchedEffect(Unit) { onClearBackdrop.invoke() }
                     CollectionFolder(
                         preferences = preferences,
                         destination = destination,
@@ -176,6 +186,7 @@ fun DestinationContent(
                 }
 
                 BaseItemKind.PERSON -> {
+                    LaunchedEffect(Unit) { onClearBackdrop.invoke() }
                     PersonPage(
                         preferences,
                         destination,
@@ -191,6 +202,7 @@ fun DestinationContent(
         }
 
         is Destination.FilteredCollection -> {
+            LaunchedEffect(Unit) { onClearBackdrop.invoke() }
             CollectionFolderGeneric(
                 preferences = preferences,
                 itemId = destination.itemId,
@@ -204,6 +216,7 @@ fun DestinationContent(
         }
 
         is Destination.Recordings -> {
+            LaunchedEffect(Unit) { onClearBackdrop.invoke() }
             CollectionFolderRecordings(
                 preferences,
                 destination.itemId,
@@ -213,6 +226,7 @@ fun DestinationContent(
         }
 
         is Destination.ItemGrid -> {
+            LaunchedEffect(Unit) { onClearBackdrop.invoke() }
             ItemGrid(
                 destination,
                 modifier,
@@ -220,6 +234,7 @@ fun DestinationContent(
         }
 
         Destination.Favorites -> {
+            LaunchedEffect(Unit) { onClearBackdrop.invoke() }
             FavoritesPage(
                 preferences = preferences,
                 modifier = modifier,
@@ -235,6 +250,7 @@ fun DestinationContent(
         }
 
         Destination.Search -> {
+            LaunchedEffect(Unit) { onClearBackdrop.invoke() }
             SearchPage(
                 userPreferences = preferences,
                 modifier = modifier,

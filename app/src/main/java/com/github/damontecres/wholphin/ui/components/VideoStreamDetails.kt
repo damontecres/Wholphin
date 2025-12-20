@@ -9,7 +9,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.NonRestartableComposable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -23,30 +27,41 @@ import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.ProvideTextStyle
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.R
-import com.github.damontecres.wholphin.data.model.ItemPlayback
-import com.github.damontecres.wholphin.data.model.TrackIndex
-import com.github.damontecres.wholphin.data.model.chooseSource
-import com.github.damontecres.wholphin.data.model.chooseStream
+import com.github.damontecres.wholphin.data.ChosenStreams
 import com.github.damontecres.wholphin.preferences.AppThemeColors
-import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.FontAwesome
 import com.github.damontecres.wholphin.ui.PreviewTvSpec
+import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.playback.audioStreamCount
 import com.github.damontecres.wholphin.ui.playback.embeddedSubtitleCount
 import com.github.damontecres.wholphin.ui.playback.externalSubtitlesCount
 import com.github.damontecres.wholphin.ui.theme.WholphinTheme
 import com.github.damontecres.wholphin.util.languageName
 import com.github.damontecres.wholphin.util.profile.Codec
-import org.jellyfin.sdk.model.api.BaseItemDto
-import org.jellyfin.sdk.model.api.MediaStreamType
+import org.jellyfin.sdk.model.api.MediaSourceInfo
+import org.jellyfin.sdk.model.api.MediaStream
 import org.jellyfin.sdk.model.api.VideoRange
 import org.jellyfin.sdk.model.api.VideoRangeType
 
 @Composable
+@NonRestartableComposable
 fun VideoStreamDetails(
-    preferences: UserPreferences,
-    dto: BaseItemDto,
-    itemPlayback: ItemPlayback?,
+    chosenStreams: ChosenStreams?,
+    modifier: Modifier = Modifier,
+) = VideoStreamDetails(
+    chosenStreams?.source,
+    chosenStreams?.videoStream,
+    chosenStreams?.audioStream,
+    chosenStreams?.subtitleStream,
+    modifier,
+)
+
+@Composable
+fun VideoStreamDetails(
+    source: MediaSourceInfo?,
+    videoStream: MediaStream?,
+    audioStream: MediaStream?,
+    subtitleStream: MediaStream?,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -54,17 +69,6 @@ fun VideoStreamDetails(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         modifier = modifier,
     ) {
-        val source = remember(dto, itemPlayback) { chooseSource(dto, itemPlayback) }
-
-        val videoStream =
-            remember(dto, itemPlayback) {
-                chooseStream(
-                    dto,
-                    itemPlayback,
-                    MediaStreamType.VIDEO,
-                    preferences,
-                )
-            }
         val video =
             remember(videoStream) {
                 videoStream
@@ -81,7 +85,7 @@ fun VideoStreamDetails(
                             } else {
                                 null
                             }
-                        val range = formatVideoRange(context, it.videoRange, it.videoRangeType)
+                        val range = formatVideoRange(context, it.videoRange, it.videoRangeType, it.videoDoViTitle)
                         listOfNotNull(
                             resName.concatWithSpace(range),
                             it.codec?.uppercase(),
@@ -92,25 +96,18 @@ fun VideoStreamDetails(
             StreamLabel(it)
         }
 
-        val audioStream =
-            remember(dto, itemPlayback) {
-                chooseStream(
-                    dto,
-                    itemPlayback,
-                    MediaStreamType.AUDIO,
-                    preferences,
-                )
-            }
         val audioCount = remember(source) { source?.audioStreamCount ?: 0 }
         val audio =
-            if (audioCount == 0 || audioStream == null) {
-                stringResource(R.string.none)
-            } else {
-                listOfNotNull(
-                    languageName(audioStream.language),
-                    formatAudioCodec(context, audioStream.codec, audioStream.profile),
-                    audioStream.channelLayout,
-                ).joinToString(" ")
+            remember(audioCount, audioStream) {
+                if (audioCount == 0 || audioStream == null) {
+                    context.getString(R.string.none)
+                } else {
+                    listOfNotNull(
+                        languageName(audioStream.language),
+                        formatAudioCodec(context, audioStream.codec, audioStream.profile),
+                        audioStream.channelLayout,
+                    ).joinToString(" ")
+                }
             }
         StreamLabel(
             text = audio,
@@ -119,30 +116,26 @@ fun VideoStreamDetails(
             modifier = Modifier.widthIn(max = 200.dp),
         )
 
-        val subtitleStream =
-            remember(dto, itemPlayback) {
-                chooseStream(
-                    dto,
-                    itemPlayback,
-                    MediaStreamType.SUBTITLE,
-                    preferences,
-                )
-            }
         val subtitleCount =
             remember(source) {
                 (source?.embeddedSubtitleCount ?: 0) + (source?.externalSubtitlesCount ?: 0)
             }
+        var disabled by remember { mutableStateOf(false) }
         val subtitle =
-            if (itemPlayback?.subtitleIndex == TrackIndex.DISABLED) {
-                stringResource(R.string.disabled)
-            } else if (subtitleCount == 0 || subtitleStream == null) {
-                null
-            } else {
-                listOfNotNull(
-                    languageName(subtitleStream.language),
-                    "SDH".takeIf { subtitleStream.isHearingImpaired },
-                    formatSubtitleCodec(subtitleStream.codec),
-                ).joinToString(" ")
+            remember(subtitleCount, subtitleStream) {
+                if (subtitleCount > 0 && subtitleStream == null) {
+                    disabled = true
+                    context.getString(R.string.disabled)
+                } else if (subtitleCount == 0 || subtitleStream == null) {
+                    null
+                } else {
+                    disabled = false
+                    listOfNotNull(
+                        languageName(subtitleStream.language),
+                        "SDH".takeIf { subtitleStream.isHearingImpaired },
+                        formatSubtitleCodec(subtitleStream.codec),
+                    ).joinToString(" ")
+                }
             }
         subtitle?.let {
             StreamLabel(
@@ -150,6 +143,7 @@ fun VideoStreamDetails(
                 count = subtitleCount,
                 icon = R.string.fa_closed_captioning,
                 modifier = Modifier.widthIn(max = 160.dp),
+                disabled = disabled,
             )
         }
     }
@@ -190,6 +184,7 @@ fun StreamLabel(
     modifier: Modifier = Modifier,
     @StringRes icon: Int? = null,
     count: Int = 0,
+    disabled: Boolean = false,
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -222,9 +217,10 @@ fun StreamLabel(
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier,
             )
-            if (count > 1) {
+            val countToUse = if (disabled) count else count - 1
+            if (countToUse > 0) {
                 Text(
-                    text = "(+${count - 1})",
+                    text = "(+$countToUse)",
                     maxLines = 1,
                     modifier = Modifier,
                 )
@@ -248,6 +244,10 @@ private fun StreamLabelPreview() {
             StreamLabel("HDR")
             StreamLabel("H264")
             StreamLabel("AC3 5.1", icon = R.string.fa_volume_high, count = 2)
+
+            StreamLabel("PGS", count = 1)
+            StreamLabel("PGS", count = 1, disabled = true)
+            StreamLabel("PGS", count = 2)
         }
     }
 }
@@ -256,6 +256,7 @@ fun formatVideoRange(
     context: Context,
     videoRange: VideoRange?,
     type: VideoRangeType?,
+    doviTitle: String?,
 ): String? =
     when (videoRange) {
         VideoRange.UNKNOWN,
@@ -265,23 +266,27 @@ fun formatVideoRange(
         }
 
         VideoRange.HDR -> {
-            when (type) {
-                VideoRangeType.UNKNOWN,
-                VideoRangeType.SDR,
-                null,
-                -> null
+            if (doviTitle.isNotNullOrBlank()) {
+                context.getString(R.string.dolby_vision)
+            } else {
+                when (type) {
+                    VideoRangeType.UNKNOWN,
+                    VideoRangeType.SDR,
+                    null,
+                    -> null
 
-                VideoRangeType.HDR10 -> "HDR10"
+                    VideoRangeType.HDR10 -> "HDR10"
 
-                VideoRangeType.HDR10_PLUS -> "HDR10+"
+                    VideoRangeType.HDR10_PLUS -> "HDR10+"
 
-                VideoRangeType.HLG -> "HLG"
+                    VideoRangeType.HLG -> "HLG"
 
-                VideoRangeType.DOVI,
-                VideoRangeType.DOVI_WITH_HDR10,
-                VideoRangeType.DOVI_WITH_HLG,
-                VideoRangeType.DOVI_WITH_SDR,
-                -> context.getString(R.string.dolby_vision)
+                    VideoRangeType.DOVI,
+                    VideoRangeType.DOVI_WITH_HDR10,
+                    VideoRangeType.DOVI_WITH_HLG,
+                    VideoRangeType.DOVI_WITH_SDR,
+                    -> context.getString(R.string.dolby_vision)
+                }
             }
         }
     }

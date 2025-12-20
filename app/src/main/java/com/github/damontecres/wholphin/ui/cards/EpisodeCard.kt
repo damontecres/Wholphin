@@ -64,7 +64,7 @@ fun EpisodeCard(
     } else {
         focusedAfterDelay = false
     }
-    val aspectRatio = dto?.primaryImageAspectRatio?.toFloat() ?: AspectRatios.TALL
+    val aspectRatio = item?.aspectRatio?.coerceAtLeast(AspectRatios.MIN) ?: AspectRatios.MIN
     val width = imageHeight * aspectRatio
     val height = imageWidth * (1f / aspectRatio)
     Column(

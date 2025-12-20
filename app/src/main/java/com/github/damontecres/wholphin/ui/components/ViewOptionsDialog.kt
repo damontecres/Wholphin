@@ -113,6 +113,7 @@ data class ViewOptions(
     val aspectRatio: AspectRatio = AspectRatio.TALL,
     val showDetails: Boolean = false,
     val imageType: ViewOptionImageType = ViewOptionImageType.PRIMARY,
+    val showTitles: Boolean = true,
 ) {
     companion object {
         val ViewOptionsColumns =
@@ -165,6 +166,13 @@ data class ViewOptions(
                 getter = { it.showDetails },
                 setter = { vo, value -> vo.copy(showDetails = value) },
             )
+        val ViewOptionsShowTitles =
+            AppSwitchPreference<ViewOptions>(
+                title = R.string.show_titles,
+                defaultValue = true,
+                getter = { it.showTitles },
+                setter = { vo, value -> vo.copy(showTitles = value) },
+            )
 
         val ViewOptionsImageType =
             AppChoicePreference<ViewOptions, ViewOptionImageType>(
@@ -194,6 +202,7 @@ data class ViewOptions(
                 ViewOptionsImageType,
                 ViewOptionsAspectRatio,
                 ViewOptionsDetailHeader,
+                ViewOptionsShowTitles,
                 ViewOptionsColumns,
                 ViewOptionsSpacing,
                 ViewOptionsContentScale,

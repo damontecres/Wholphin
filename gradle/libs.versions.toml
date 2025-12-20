@@ -1,7 +1,7 @@
 [versions]
 aboutLibraries = "13.1.0"
 acra = "5.13.1"
-agp = "8.13.1"
+agp = "8.13.2"
 auto-service = "1.1.1"
 autoServiceKsp = "1.2.0"
 desugar_jdk_libs = "2.1.5"
@@ -11,7 +11,7 @@ kotlinxCoroutinesCore = "1.10.2"
 ksp = "2.3.0"
 coreKtx = "1.17.0"
 appcompat = "1.7.1"
-composeBom = "2025.12.00"
+composeBom = "2025.12.01"
 multiplatformMarkdownRenderer = "0.38.1"
 okhttpBom = "5.3.2"
 programguide = "1.6.0"
@@ -20,8 +20,8 @@ timber = "5.0.1"
 tvFoundation = "1.0.0-alpha12"
 tvMaterial = "1.0.1"
 lifecycleRuntimeKtx = "2.10.0"
-activityCompose = "1.12.1"
-androidx-media3 = "1.8.0"
+activityCompose = "1.12.2"
+androidx-media3 = "1.9.0"
 coil = "3.3.0"
 jellyfin-sdk = "1.7.1"
 nav3Core = "1.0.0"
@@ -30,10 +30,11 @@ material3AdaptiveNav3 = "1.0.0-alpha03"
 protobuf = "0.9.5"
 datastore = "1.2.0"
 kotlinx-serialization = "1.9.0"
-protobuf-javalite = "4.33.1"
+protobuf-javalite = "4.33.2"
 hilt = "2.57.2"
 room = "2.8.4"
 preferenceKtx = "1.2.1"
+paletteKtx = "1.0.0"
 
 [libraries]
 aboutlibraries-core = { module = "com.mikepenz:aboutlibraries-core", version.ref = "aboutLibraries" }
@@ -105,6 +106,7 @@ slf4j2-timber = { module = "uk.kulikov:slf4j2-timber", version.ref = "slf4j2Timb
 timber = { module = "com.jakewharton.timber:timber", version.ref = "timber" }
 androidx-preference-ktx = { group = "androidx.preference", name = "preference-ktx", version.ref = "preferenceKtx" }
 androidx-room-testing = { group = "androidx.room", name = "room-testing", version.ref = "room" }
+androidx-palette-ktx = { group = "androidx.palette", name = "palette-ktx", version.ref = "paletteKtx" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

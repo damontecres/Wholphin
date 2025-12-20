@@ -33,7 +33,7 @@
     <string name="download_and_update"><![CDATA[Stiahnuť a aktualizovať]]></string>
     <string name="downloading">Sťahovanie…</string>
     <string name="enabled">Povolené</string>
-    <string name="enter_server_url">Zadajte IP adresu alebo URL servera vrátane portu</string>
+    <string name="enter_server_url">Zadajte IP adresu alebo URL servera</string>
     <string name="episodes">Epizódy</string>
     <string name="error_loading_collection">Chyba pri načítaní kolekcie %1$s</string>
     <string name="external_track">Externé</string>
@@ -101,4 +101,5 @@
     <string name="select_server">Vybrať server</string>
     <string name="select_user">Vybrať používateľa</string>
     <string name="show_debug_info">Zobraziť informácie o debugu</string>
+    <string name="compose_error_message_title">Došlo k chybe! Stlačte tlačidlo, aby ste odoslali logy na svoj server.</string>
 </resources>

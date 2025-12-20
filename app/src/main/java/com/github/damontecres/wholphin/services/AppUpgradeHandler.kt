@@ -11,6 +11,7 @@ import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.update
 import com.github.damontecres.wholphin.preferences.updateAdvancedPreferences
 import com.github.damontecres.wholphin.preferences.updateInterfacePreferences
+import com.github.damontecres.wholphin.preferences.updateLiveTvPreferences
 import com.github.damontecres.wholphin.preferences.updateMpvOptions
 import com.github.damontecres.wholphin.preferences.updatePlaybackOverrides
 import com.github.damontecres.wholphin.preferences.updateSubtitlePreferences
@@ -169,6 +170,29 @@ suspend fun upgradeApp(
             it.updateSubtitlePreferences {
                 if (edgeThickness < 1) {
                     edgeThickness = SubtitleSettings.EdgeThickness.defaultValue.toInt()
+                }
+            }
+        }
+    }
+    if (previous.isEqualOrBefore(Version.fromString("0.3.5-56-g0"))) {
+        appPreferences.updateData {
+            it.updateLiveTvPreferences {
+                showHeader = AppPreference.LiveTvShowHeader.defaultValue
+                favoriteChannelsAtBeginning =
+                    AppPreference.LiveTvFavoriteChannelsBeginning.defaultValue
+                sortByRecentlyWatched =
+                    AppPreference.LiveTvChannelSortByWatched.defaultValue
+                colorCodePrograms =
+                    AppPreference.LiveTvColorCodePrograms.defaultValue
+            }
+        }
+    }
+
+    if (previous.isEqualOrBefore(Version.fromString("0.3.6-52-g0"))) {
+        if (Build.MODEL.equals("shield android tv", ignoreCase = true)) {
+            appPreferences.updateData {
+                it.updateMpvOptions {
+                    useGpuNext = false
                 }
             }
         }

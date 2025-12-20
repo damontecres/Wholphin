@@ -36,7 +36,9 @@
     <string name="download_and_update"><![CDATA[Download & Update]]></string>
     <string name="downloading">Downloading…</string>
     <string name="enabled">Enabled</string>
+    <string name="ends_at">Ends at %1$s</string>
     <string name="enter_server_url">Enter Server IP or URL</string>
+    <string name="enter_server_address">Enter server address</string>
     <string name="episodes">Episodes</string>
     <string name="error_loading_collection">Error loading collection %1$s</string>
     <string name="external_track">External</string>
@@ -69,6 +71,7 @@
     <string name="next_up">Next Up</string>
     <string name="no_data">No data</string>
     <string name="no_results">No results</string>
+    <string name="no_servers_found">No servers found</string>
     <string name="no_scheduled_recordings">No scheduled recordings</string>
     <string name="no_update_available">No update available</string>
     <string name="none">None</string>
@@ -140,6 +143,7 @@
     <string name="watch_live">Watch live</string>
     <string name="years_old">%1$d years old</string>
     <string name="play_with_transcoding">Play with transcoding</string>
+    <string name="media_information">Media Information</string>
     <string name="show_clock">Show Clock</string>
     <string name="aired_episode_order">Aired Episode Order</string>
     <string name="create_playlist">Create new playlist</string>
@@ -354,6 +358,47 @@
     <string name="automatic">Automatic</string>
     <string name="username_or_password">Use username/password</string>
     <string name="login">Login</string>
+    <string name="general">General</string>
+    <string name="container">Container</string>
+    <string name="title">Title</string>
+    <string name="codec">Codec</string>
+    <string name="profile">Profile</string>
+    <string name="level">Level</string>
+    <string name="resolution">Resolution</string>
+    <string name="anamorphic">Anamorphic</string>
+    <string name="interlaced">Interlaced</string>
+    <string name="framerate">Framerate</string>
+    <string name="bit_depth">Bit depth</string>
+    <string name="video_range">Video range</string>
+    <string name="video_range_type">Video range type</string>
+    <string name="color_space">Color space</string>
+    <string name="color_transfer">Color transfer</string>
+    <string name="color_primaries">Color primaries</string>
+    <string name="pixel_format">Pixel format</string>
+    <string name="ref_frames">Ref frames</string>
+    <string name="nal">NAL</string>
+    <string name="language">Language</string>
+    <string name="layout">Layout</string>
+    <string name="channels">Channels</string>
+    <string name="sample_rate">Sample rate</string>
+    <string name="avc">AVC</string>
+    <string name="yes">Yes</string>
+    <string name="no">No</string>
+    <string name="sdr">SDR</string>
+    <string name="hdr">HDR</string>
+    <string name="hdr10">HDR10</string>
+    <string name="hdr10_plus">HDR10+</string>
+    <string name="hlg">HLG</string>
+    <string name="bit_unit">bit</string>
+    <string name="sample_rate_unit">Hz</string>
+    <string name="show_titles">Show titles</string>
+    <string name="live_tv_repeat">Repeat</string>
+    <string name="favorite_channels_at_beginning">Show favorite channels first</string>
+    <string name="sort_channels_recently_watched">Sort channels by recently watched</string>
+    <string name="color_code_programs">Color-code programs</string>
+    <string name="subtitle_delay">Subtitle delay</string>
+    <string name="backdrop_display">Backdrop style</string>
+
     <string name="discover">Discover</string>
     <string name="request">Request</string>
 
@@ -442,6 +487,12 @@
         <item>Primary</item>
         <item>Thumb</item>
         <!--        <item>Banner</item>-->
+    </string-array>
+
+    <string-array name="backdrop_style_options">
+        <item>Image with dynamic color</item>
+        <item>Image only</item>
+        <item>None</item>
     </string-array>
 
 </resources>

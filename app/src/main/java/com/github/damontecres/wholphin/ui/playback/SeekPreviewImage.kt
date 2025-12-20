@@ -1,24 +1,29 @@
 package com.github.damontecres.wholphin.ui.playback
 
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.drawscope.scale
+import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.tv.material3.MaterialTheme
-import coil3.compose.AsyncImage
-import coil3.request.CachePolicy
+import coil3.compose.rememberAsyncImagePainter
 import coil3.request.ImageRequest
-import coil3.request.transformations
-import com.github.damontecres.wholphin.ui.CoilTrickplayTransformation
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import org.jellyfin.sdk.model.api.TrickplayInfo
 
@@ -70,54 +75,70 @@ fun Modifier.offsetByPercent(xPercentage: Float) =
 @Composable
 fun SeekPreviewImage(
     previewImageUrl: String,
-    duration: Long,
     seekProgressMs: Long,
-    videoWidth: Int?,
-    videoHeight: Int?,
     trickPlayInfo: TrickplayInfo,
     modifier: Modifier = Modifier,
-    placeHolder: Painter? = null,
 ) {
     val context = LocalContext.current
 
-    if (previewImageUrl.isNotNullOrBlank() &&
-        videoWidth != null &&
-        videoHeight != null
-    ) {
+    if (previewImageUrl.isNotNullOrBlank()) {
         val height = 160.dp
-        val width = height * (videoWidth.toFloat() / videoHeight)
-        val heightPx = with(LocalDensity.current) { height.toPx().toInt() }
-        val widthPx = with(LocalDensity.current) { width.toPx().toInt() }
+        val width = height * (trickPlayInfo.width.toFloat() / trickPlayInfo.height)
+        val scale = with(LocalDensity.current) { width.toPx() / trickPlayInfo.width }
 
-        val index = (seekProgressMs.toDouble() / trickPlayInfo.interval).toInt() // Which tile
-        val numberOfTitlesPerImage = trickPlayInfo.tileHeight * trickPlayInfo.tileWidth
-        val imageIndex = index % numberOfTitlesPerImage
-
-        AsyncImage(
-            modifier =
-                modifier
-                    .width(width)
-                    .height(height)
-                    .background(Color.Black)
-                    .border(1.5.dp, color = MaterialTheme.colorScheme.border),
-            model =
+        val model =
+            remember(previewImageUrl) {
                 ImageRequest
                     .Builder(context)
                     .data(previewImageUrl)
-                    .memoryCachePolicy(CachePolicy.ENABLED)
-                    .transformations(
-                        CoilTrickplayTransformation(
-                            widthPx,
-                            heightPx,
-                            trickPlayInfo.tileHeight,
-                            trickPlayInfo.tileWidth,
-                            imageIndex,
-                            index,
-                        ),
-                    ).build(),
-            contentScale = ContentScale.None,
-            contentDescription = null,
-            placeholder = placeHolder,
-        )
+                    .size(coil3.size.Size.ORIGINAL)
+                    .build()
+            }
+        val painter =
+            rememberAsyncImagePainter(
+                model = model,
+                contentScale = ContentScale.None,
+            )
+        val index =
+            (seekProgressMs.toDouble() / trickPlayInfo.interval).toInt() // Index of tile across images
+        val numberOfTilesPerImage = trickPlayInfo.tileHeight * trickPlayInfo.tileWidth
+        val tileIndex =
+            index % numberOfTilesPerImage // Index of tile within the current image
+        val x = (tileIndex % trickPlayInfo.tileWidth) // x position within tile grid
+        val y = (tileIndex / trickPlayInfo.tileHeight) // y position
+        Box(
+            modifier =
+                modifier
+                    .border(1.5.dp, color = MaterialTheme.colorScheme.border)
+                    .background(Color.Black)
+                    .height(height)
+                    .width(width),
+        ) {
+            Canvas(
+                modifier =
+                    Modifier
+                        .height(height)
+                        .width(width)
+                        .clip(RectangleShape),
+            ) {
+                with(painter) {
+                    // Scale and translate to the right position in the tile grid
+                    scale(scale, scale, pivot = Offset.Zero) {
+                        translate(
+                            left = -x.toFloat() * trickPlayInfo.width,
+                            top = -y.toFloat() * trickPlayInfo.height,
+                        ) {
+                            draw(
+                                size =
+                                    Size(
+                                        trickPlayInfo.width * trickPlayInfo.tileWidth.toFloat(),
+                                        trickPlayInfo.height * trickPlayInfo.tileHeight.toFloat(),
+                                    ),
+                            )
+                        }
+                    }
+                }
+            }
+        }
     }
 }

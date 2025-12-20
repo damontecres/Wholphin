@@ -6,7 +6,6 @@ import androidx.lifecycle.viewModelScope
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.TrackIndex
-import com.github.damontecres.wholphin.data.model.chooseSource
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.onMain
 import com.github.damontecres.wholphin.ui.setValueOnMain
@@ -101,7 +100,7 @@ fun PlaybackViewModel.downloadAndSwitchSubtitles(
                                 api.userLibraryApi.getItem(itemId = it.itemId).content,
                                 api,
                             )
-                        val mediaSource = chooseSource(item.data, it)
+                        val mediaSource = streamChoiceService.chooseSource(item.data, it)
                         if (mediaSource == null) {
                             // This shouldn't happen, but just in case
                             showToast(

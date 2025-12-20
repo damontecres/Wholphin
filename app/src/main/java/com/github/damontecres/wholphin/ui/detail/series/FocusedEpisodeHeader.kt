@@ -37,9 +37,7 @@ fun FocusedEpisodeHeader(
 
         if (dto != null) {
             VideoStreamDetails(
-                preferences = preferences,
-                dto = dto,
-                itemPlayback = chosenStreams?.itemPlayback,
+                chosenStreams = chosenStreams,
                 modifier = Modifier,
             )
         }

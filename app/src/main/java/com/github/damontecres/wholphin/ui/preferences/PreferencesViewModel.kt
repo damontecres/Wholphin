@@ -15,6 +15,7 @@ import com.github.damontecres.wholphin.data.model.NavPinType
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.resetSubtitles
 import com.github.damontecres.wholphin.preferences.updateSubtitlePreferences
+import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.ui.detail.DebugViewModel.Companion.sendAppLogs
 import com.github.damontecres.wholphin.ui.launchIO
@@ -37,6 +38,7 @@ class PreferencesViewModel
         private val api: ApiClient,
         val preferenceDataStore: DataStore<AppPreferences>,
         val navigationManager: NavigationManager,
+        val backdropService: BackdropService,
         private val rememberTabManager: RememberTabManager,
         private val serverRepository: ServerRepository,
         private val navDrawerItemRepository: NavDrawerItemRepository,
