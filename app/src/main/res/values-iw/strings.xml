@@ -1,3 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="about">אודות</string>
+    <string name="active_recordings">הקלטות פעילות</string>
+    <string name="add_favorite">הוספה למועדפים</string>
+    <string name="add_server">הוסף שרת</string>
+    <string name="add_user">הוסף משתמש</string>
+    <string name="audio">שמע</string>
+    <string name="birthplace">מקום לידה</string>
+    <string name="bitrate">קצב נתונים</string>
+    <string name="cancel_recording">בטל הקלטה</string>
+    <string name="cancel_series_recording">בטל הקלטת סדרה</string>
+    <string name="cancel">בטל</string>
+    <string name="chapters">פרקים</string>
+    <string name="clear_image_cache">נקה זיכרון מטמון</string>
+    <string name="collection">אוסף</string>
+    <string name="collections">אוספים</string>
+    <string name="commercial">מסחרי</string>
+    <string name="community_rating">דירוג קהילתי</string>
 </resources>
