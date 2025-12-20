@@ -589,7 +589,7 @@ fun TvGuideGridContent(
                 val program = programs.programs[programIndex]
                 val focused =
                     gridHasFocus && !channelColumnFocused && programIndex == focusedProgramIndex
-                Program(program, focused, preferences.colorCodePrograms, Modifier)
+                Program(guideStart, program, focused, preferences.colorCodePrograms, Modifier)
             }
 
             channels(
