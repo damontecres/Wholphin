@@ -41,6 +41,7 @@ import com.github.damontecres.wholphin.data.model.DiscoverRating
 import com.github.damontecres.wholphin.data.model.LocalTrailer
 import com.github.damontecres.wholphin.data.model.Person
 import com.github.damontecres.wholphin.data.model.RemoteTrailer
+import com.github.damontecres.wholphin.data.model.SeerrAvailability
 import com.github.damontecres.wholphin.data.model.Trailer
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.TrailerService
@@ -122,7 +123,10 @@ fun DiscoverMovieDetails(
                     similar = similar,
                     recommended = recommended,
                     requestOnClick = {
-                        // TODO seerr
+                        movie.id?.let { viewModel.request(it) }
+                    },
+                    cancelOnClick = {
+                        movie.id?.let { viewModel.cancelRequest(it) }
                     },
                     onClickItem = { index, item ->
                         viewModel.navigateTo(Destination.DiscoveredItem(item))
@@ -207,6 +211,7 @@ fun DiscoverMovieDetailsContent(
     similar: List<DiscoverItem>,
     recommended: List<DiscoverItem>,
     requestOnClick: () -> Unit,
+    cancelOnClick: () -> Unit,
     trailerOnClick: (Trailer) -> Unit,
     overviewOnClick: () -> Unit,
     moreOnClick: () -> Unit,
@@ -251,7 +256,11 @@ fun DiscoverMovieDetailsContent(
                                 .padding(top = 32.dp, bottom = 16.dp),
                     )
                     ExpandableDiscoverButtons(
+                        availability =
+                            SeerrAvailability.from(movie.mediaInfo?.status)
+                                ?: SeerrAvailability.UNKNOWN,
                         requestOnClick = requestOnClick,
+                        cancelOnClick = cancelOnClick,
                         moreOnClick = moreOnClick,
                         buttonOnFocusChanged = {
                             if (it.isFocused) {

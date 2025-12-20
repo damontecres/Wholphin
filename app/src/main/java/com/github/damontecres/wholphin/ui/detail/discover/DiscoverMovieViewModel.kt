@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.github.damontecres.wholphin.api.seerr.model.MovieDetails
 import com.github.damontecres.wholphin.api.seerr.model.RelatedVideo
+import com.github.damontecres.wholphin.api.seerr.model.RequestPostRequest
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.DiscoverItem
 import com.github.damontecres.wholphin.data.model.DiscoverRating
@@ -156,5 +157,29 @@ class DiscoverMovieViewModel
 
         fun navigateTo(destination: Destination) {
             navigationManager.navigateTo(destination)
+        }
+
+        fun request(id: Int) {
+            viewModelScope.launchIO {
+                val request =
+                    seerrService.api.requestApi.requestPost(
+                        RequestPostRequest(
+                            is4k = false,
+                            mediaid = id,
+                            mediaType = RequestPostRequest.MediaType.MOVIE,
+                        ),
+                    )
+                fetchAndSetItem().await()
+            }
+        }
+
+        fun cancelRequest(id: Int) {
+            viewModelScope.launchIO {
+                movie.value?.mediaInfo?.requests?.firstOrNull()?.let {
+                    // TODO handle multiple requests? Or just delete self's request?
+                    seerrService.api.requestApi.requestRequestIdDelete(it.id.toString())
+                    fetchAndSetItem().await()
+                }
+            }
         }
     }

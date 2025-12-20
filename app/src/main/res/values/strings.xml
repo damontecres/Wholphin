@@ -401,6 +401,7 @@
 
     <string name="discover">Discover</string>
     <string name="request">Request</string>
+    <string name="pending">Pending</string>
 
     <string-array name="theme_song_volume">
         <item>Disabled</item>
