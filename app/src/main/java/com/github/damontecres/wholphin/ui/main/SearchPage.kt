@@ -4,10 +4,12 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -25,6 +27,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.focusRestorer
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
@@ -47,6 +51,7 @@ import com.github.damontecres.wholphin.ui.cards.EpisodeCard
 import com.github.damontecres.wholphin.ui.cards.ItemRow
 import com.github.damontecres.wholphin.ui.cards.SeasonCard
 import com.github.damontecres.wholphin.ui.components.SearchEditTextBox
+import com.github.damontecres.wholphin.ui.components.VoiceSearchButton
 import com.github.damontecres.wholphin.ui.data.RowColumn
 import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
@@ -209,25 +214,63 @@ fun SearchPage(
             ) {
                 val interactionSource = remember { MutableInteractionSource() }
                 val focused by interactionSource.collectIsFocusedAsState()
-                BackHandler(focused) {
-                    keyboardController?.hide()
-                    focusManager.moveFocus(FocusDirection.Next)
+                val pressed by interactionSource.collectIsPressedAsState()
+                var isSearchActive by remember { mutableStateOf(false) }
+                LaunchedEffect(pressed) {
+                    if (pressed && !isSearchActive) {
+                        isSearchActive = true
+                    }
                 }
-                SearchEditTextBox(
-                    value = query,
-                    onValueChange = { query = it },
-                    onSearchClick = {
-                        viewModel.search(query)
-                        searchClicked = true
-                    },
+                BackHandler(focused) {
+                    if (isSearchActive) {
+                        isSearchActive = false
+                        keyboardController?.hide()
+                    } else {
+                        focusManager.moveFocus(FocusDirection.Next)
+                    }
+                }
+                val textFieldFocusRequester = remember { FocusRequester() }
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
                     modifier =
                         Modifier
+                            .focusGroup()
+                            .focusRestorer(textFieldFocusRequester)
                             .ifElse(
                                 position.row < MOVIE_ROW,
                                 Modifier.focusRequester(focusRequester),
                             ),
-                    interactionSource = interactionSource,
-                )
+                ) {
+                    SearchEditTextBox(
+                        value = query,
+                        onValueChange = {
+                            isSearchActive = true
+                            query = it
+                        },
+                        onSearchClick = {
+                            viewModel.search(query)
+                            searchClicked = true
+                        },
+                        readOnly = !isSearchActive,
+                        modifier =
+                            Modifier
+                                .focusRequester(textFieldFocusRequester)
+                                .onFocusChanged {
+                                    if (!it.isFocused) {
+                                        isSearchActive = false
+                                    }
+                                },
+                        interactionSource = interactionSource,
+                    )
+                    VoiceSearchButton(
+                        onSpeechResult = { spokenText ->
+                            query = spokenText
+                            viewModel.search(query)
+                            searchClicked = true
+                        },
+                    )
+                }
             }
         }
         searchResultRow(

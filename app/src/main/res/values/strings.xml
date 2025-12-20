@@ -104,6 +104,8 @@
     <string name="search_and_download"><![CDATA[Search & Download]]></string>
     <string name="search">Search</string>
     <string name="searching">Searching…</string>
+    <string name="voice_search">Voice search</string>
+    <string name="voice_search_prompt">Say what you want to search for</string>
     <string name="select_server">Select Server</string>
     <string name="select_user">Select User</string>
     <string name="show_debug_info">Show debug info</string>
