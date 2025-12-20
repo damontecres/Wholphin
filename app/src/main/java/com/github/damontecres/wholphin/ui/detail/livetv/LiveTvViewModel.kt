@@ -216,7 +216,11 @@ class LiveTvViewModel
                             } else {
                                 null
                             }
-
+                        val name = (dto.seriesName ?: dto.name)?.replace(Regex("[\n\r]"), "")
+                        val subtitle =
+                            dto.episodeTitle
+                                .takeIf { dto.isSeries ?: false }
+                                ?.replace(Regex("[\n\r]"), "")
                         val p =
                             TvProgram(
                                 id = dto.id,
@@ -230,8 +234,8 @@ class LiveTvViewModel
                                     ).coerceAtLeast(0f),
                                 endHours = hoursBetween(guideStart, dto.endDate!!),
                                 duration = dto.runTimeTicks!!.ticks,
-                                name = dto.seriesName ?: dto.name,
-                                subtitle = dto.episodeTitle.takeIf { dto.isSeries ?: false },
+                                name = name,
+                                subtitle = subtitle,
                                 overview = dto.overview,
                                 officialRating = dto.officialRating,
                                 seasonEpisode =
