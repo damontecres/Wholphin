@@ -165,7 +165,7 @@ class DiscoverMovieViewModel
                     seerrService.api.requestApi.requestPost(
                         RequestPostRequest(
                             is4k = false,
-                            mediaid = id,
+                            mediaId = id,
                             mediaType = RequestPostRequest.MediaType.MOVIE,
                         ),
                     )

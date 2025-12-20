@@ -192,7 +192,8 @@ aboutLibraries {
 
 openApiGenerate {
     generatorName.set("kotlin")
-    inputSpec.set("$projectDir/src/main/seerr-api.yml")
+    inputSpec.set("$projectDir/src/main/seerr/seerr-api.yml")
+    templateDir.set("$projectDir/src/main/seerr/templates")
     outputDir.set("$buildDir/generated/seerr_api")
     apiPackage.set("com.github.damontecres.wholphin.api.seerr")
     modelPackage.set("com.github.damontecres.wholphin.api.seerr.model")

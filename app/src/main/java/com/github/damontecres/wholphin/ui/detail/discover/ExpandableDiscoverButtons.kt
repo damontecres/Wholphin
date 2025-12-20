@@ -42,7 +42,7 @@ fun ExpandableDiscoverButtons(
                 .focusRestorer(firstFocus),
     ) {
         if (availability == SeerrAvailability.UNKNOWN) {
-            item("request") {
+            item("first") {
                 ExpandableFaButton(
                     title = R.string.request,
                     iconStringRes = R.string.fa_download,
@@ -54,7 +54,7 @@ fun ExpandableDiscoverButtons(
                 )
             }
         } else if (availability == SeerrAvailability.PENDING || availability == SeerrAvailability.PROCESSING) {
-            item("pending") {
+            item("first") {
                 ExpandableFaButton(
                     title = R.string.pending,
                     iconStringRes = R.string.fa_clock,
@@ -75,12 +75,11 @@ fun ExpandableDiscoverButtons(
                     resume = Duration.ZERO,
                     modifier =
                         Modifier
-                            .focusRequester(firstFocus)
                             .onFocusChanged(buttonOnFocusChanged),
                 )
             }
         } else if (availability == SeerrAvailability.PARTIALLY_AVAILABLE || availability == SeerrAvailability.AVAILABLE) {
-            item("goto") {
+            item("first") {
                 ExpandablePlayButton(
                     title = R.string.go_to,
                     icon = Icons.Default.PlayArrow,

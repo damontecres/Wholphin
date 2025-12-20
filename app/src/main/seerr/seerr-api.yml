@@ -6117,20 +6117,24 @@ paths:
                   type: string
                   enum: [movie, tv]
                   example: movie
-                mediaid:
+                mediaId:
                   type: integer
                   example: 123
                 tvdbid:
                   type: integer
                   example: 123
                 seasons:
-                  oneOf:
-                    - type: array
-                      items:
-                        type: integer
-                        minimum: 0
-                    - type: string
-                      enum: [all]
+                  # oneOf:
+                  #   - type: array
+                  #     items:
+                  #       type: integer
+                  #       minimum: 0
+                  #   - type: string
+                  #     enum: [all]
+                  # TODO
+                  type: string
+                  enum: [all]
+                  nullable: true
                 is4k:
                   type: boolean
                   example: false
@@ -6140,6 +6144,7 @@ paths:
                   type: integer
                 rootFolder:
                   type: string
+                  nullable: true
                 languageProfileid:
                   type: integer
                 userid:
