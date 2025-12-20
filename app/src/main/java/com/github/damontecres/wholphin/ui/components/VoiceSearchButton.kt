@@ -6,11 +6,14 @@ import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.requiredSizeIn
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
@@ -107,11 +110,16 @@ fun VoiceSearchButton(
                 ),
             contentPadding = PaddingValues(0.dp),
         ) {
-            Icon(
-                imageVector = MicIcon,
-                contentDescription = stringResource(R.string.voice_search),
-                modifier = Modifier.size(28.dp),
-            )
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    imageVector = MicIcon,
+                    contentDescription = stringResource(R.string.voice_search),
+                    modifier = Modifier.size(28.dp),
+                )
+            }
         }
     }
 }
