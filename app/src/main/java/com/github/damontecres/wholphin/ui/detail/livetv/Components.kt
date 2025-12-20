@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
@@ -20,9 +21,11 @@ import androidx.tv.material3.Text
 import androidx.tv.material3.contentColorFor
 import androidx.tv.material3.surfaceColorAtElevation
 import coil3.compose.AsyncImage
+import java.time.LocalDateTime
 
 @Composable
 fun Program(
+    guideStart: LocalDateTime,
     program: TvProgram,
     focused: Boolean,
     colorCode: Boolean,
@@ -38,14 +41,37 @@ fun Program(
             MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp)
         }
     val textColor = MaterialTheme.colorScheme.contentColorFor(background)
+    val startedBeforeGuide = program.start.isBefore(guideStart)
+    val shape =
+        remember(startedBeforeGuide) {
+            val cornerSize = 4.dp
+            if (startedBeforeGuide) {
+                RoundedCornerShape(
+                    topEnd = cornerSize,
+                    bottomEnd = cornerSize,
+                    topStart = 0.dp,
+                    bottomStart = 0.dp,
+                )
+            } else {
+                RoundedCornerShape(cornerSize)
+            }
+        }
+    val title =
+        remember(startedBeforeGuide) {
+            if (startedBeforeGuide) {
+                "< "
+            } else {
+                ""
+            } + (program.name ?: program.id.toString())
+        }
     Box(
         modifier =
             modifier
                 .padding(2.dp)
                 .fillMaxSize()
                 .background(
-                    background,
-                    shape = RoundedCornerShape(4.dp),
+                    color = background,
+                    shape = shape,
                 ),
     ) {
         Column(
@@ -56,7 +82,7 @@ fun Program(
                     .padding(4.dp),
         ) {
             Text(
-                text = program.name ?: program.id.toString(),
+                text = title,
                 color = textColor,
                 fontSize = 16.sp,
                 maxLines = 1,
