@@ -26,7 +26,7 @@ class SeerrApi(
 
     fun update(
         baseUrl: String,
-        apiKey: String,
+        apiKey: String?,
     ) {
         api = SeerrApiClient(baseUrl, apiKey, okHttpClient)
     }

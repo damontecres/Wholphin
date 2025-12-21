@@ -20,10 +20,10 @@ import org.jellyfin.sdk.model.serializer.UUIDSerializer
 @Serializable
 data class SeerrServer(
     @PrimaryKey(autoGenerate = true)
-    val id: Int,
-    val name: String?,
+    val id: Int = 0,
     val url: String,
-    val version: String?,
+    val name: String? = null,
+    val version: String? = null,
 )
 
 @Entity(
