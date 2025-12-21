@@ -21,7 +21,7 @@
     <string name="decimal_seconds">%.1f másodperc</string>
     <string name="default_track">Alapértelmezett</string>
     <string name="delete">Törlés</string>
-    <string name="directed_by">Rendezte %1$s</string>
+    <string name="directed_by">Rendezte: %1$s</string>
     <string name="director">Rendező</string>
     <string name="disabled">Letiltva</string>
     <string name="discovered_servers">Felfedezett szerverek</string>
@@ -72,7 +72,7 @@
     <string name="none">Nincs</string>
     <string name="outro">Stáblista</string>
     <string name="path">Elérési út</string>
-    <string name="people">Emberek</string>
+    <string name="people">Stáb</string>
     <string name="play_count">Lejátszások száma</string>
     <string name="play_from_here">Lejátszás innen</string>
     <string name="play">Lejátszás</string>
