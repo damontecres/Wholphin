@@ -303,10 +303,10 @@ class MpvPlayer(
             PlaybackState.EMPTY
         }
         if (!isReleased) {
-            thread.quit()
-            MPVLib.removeObserver(this)
-            clearVideoSurfaceView(null)
-            MPVLib.destroy()
+            internalHandler.removeCallbacks(updatePlaybackState)
+            MPVLib.removeObserver(this@MpvPlayer)
+            sendCommand(MpvCommand.DESTROY, null)
+            thread.quitSafely()
         }
         isReleased = true
     }
@@ -891,6 +891,11 @@ class MpvPlayer(
             MpvCommand.LOAD_FILE -> {
                 loadFile(msg.obj as MediaAndPosition)
             }
+
+            MpvCommand.DESTROY -> {
+                clearVideoSurfaceView(null)
+                MPVLib.destroy()
+            }
         }
         return true
     }
@@ -1020,4 +1025,5 @@ enum class MpvCommand {
     SET_SPEED,
     SET_SUBTITLE_DELAY,
     LOAD_FILE,
+    DESTROY,
 }
