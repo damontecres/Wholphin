@@ -87,7 +87,7 @@ class MpvPlayer(
         ) { listener, eventFlags ->
             listener.onEvents(this@MpvPlayer, Player.Events(eventFlags))
         }
-    private val availableCommands: Player.Commands
+    private var availableCommands: Player.Commands = Player.Commands.Builder().build()
     private val trackSelector = DefaultTrackSelector(context)
 
     // This thread/looper will receive commands from the main thread to execute
@@ -101,6 +101,10 @@ class MpvPlayer(
         private set
 
     init {
+        sendCommand(MpvCommand.INITIALIZE, null)
+    }
+
+    private fun init() {
         Timber.v("config-dir=${context.filesDir.path}")
         MPVLib.create(context)
         MPVLib.setOptionString("config", "yes")
@@ -126,11 +130,9 @@ class MpvPlayer(
         MPVLib.setOptionString("idle", "yes")
 //        MPVLib.setOptionString("sub-fonts-dir", File(context.filesDir, "fonts").absolutePath)
 
-        internalHandler.post {
-            MPVLib.addObserver(this@MpvPlayer)
-            MPVProperty.observedProperties.forEach(MPVLib::observeProperty)
-            MPVLib.addLogObserver(MpvLogger())
-        }
+        MPVLib.addObserver(this@MpvPlayer)
+        MPVProperty.observedProperties.forEach(MPVLib::observeProperty)
+        MPVLib.addLogObserver(MpvLogger())
 
         availableCommands =
             Player.Commands
@@ -892,6 +894,10 @@ class MpvPlayer(
                 loadFile(msg.obj as MediaAndPosition)
             }
 
+            MpvCommand.INITIALIZE -> {
+                init()
+            }
+
             MpvCommand.DESTROY -> {
                 clearVideoSurfaceView(null)
                 MPVLib.destroy()
@@ -1025,5 +1031,6 @@ enum class MpvCommand {
     SET_SPEED,
     SET_SUBTITLE_DELAY,
     LOAD_FILE,
+    INITIALIZE,
     DESTROY,
 }
