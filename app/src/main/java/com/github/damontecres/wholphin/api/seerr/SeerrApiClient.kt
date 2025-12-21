@@ -1,13 +1,14 @@
 package com.github.damontecres.wholphin.api.seerr
 
 import com.github.damontecres.wholphin.api.seerr.infrastructure.ApiClient
+import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import okhttp3.Call
 import okhttp3.OkHttpClient
 import timber.log.Timber
 
 class SeerrApiClient(
     val baseUrl: String,
-    val apiKey: String,
+    val apiKey: String?,
     okHttpClient: OkHttpClient,
 ) {
     private val client =
@@ -19,8 +20,9 @@ class SeerrApiClient(
                     it
                         .request()
                         .newBuilder()
-                        .header("X-Api-Key", apiKey)
-                        .build(),
+                        .apply {
+                            if (apiKey.isNotNullOrBlank()) header("X-Api-Key", apiKey)
+                        }.build(),
                 )
             }.build()
 
