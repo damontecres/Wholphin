@@ -39,7 +39,6 @@ import com.github.damontecres.wholphin.services.ImageUrlService
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.PlaybackLifecycleObserver
 import com.github.damontecres.wholphin.services.RefreshRateService
-import com.github.damontecres.wholphin.services.ServerEventListener
 import com.github.damontecres.wholphin.services.SetupDestination
 import com.github.damontecres.wholphin.services.SetupNavigationManager
 import com.github.damontecres.wholphin.services.UpdateChecker
@@ -69,9 +68,6 @@ class MainActivity : AppCompatActivity() {
     private val viewModel: MainActivityViewModel by viewModels()
 
     @Inject
-    lateinit var serverRepository: ServerRepository
-
-    @Inject
     lateinit var userPreferencesDataStore: DataStore<AppPreferences>
 
     @AuthOkHttpClient
@@ -91,13 +87,7 @@ class MainActivity : AppCompatActivity() {
     lateinit var appUpgradeHandler: AppUpgradeHandler
 
     @Inject
-    lateinit var serverEventListener: ServerEventListener
-
-    @Inject
     lateinit var playbackLifecycleObserver: PlaybackLifecycleObserver
-
-    @Inject
-    lateinit var deviceProfileService: DeviceProfileService
 
     @Inject
     lateinit var imageUrlService: ImageUrlService
@@ -206,6 +196,11 @@ class MainActivity : AppCompatActivity() {
                                                             ?: DefaultUserConfiguration,
                                                     )
                                                 ProvideLocalClock {
+                                                    LaunchedEffect(Unit) {
+                                                        updateChecker.maybeShowUpdateToast(
+                                                            appPreferences.updateUrl,
+                                                        )
+                                                    }
                                                     ApplicationContent(
                                                         user = current.user,
                                                         server = current.server,
@@ -255,6 +250,7 @@ class MainActivityViewModel
         private val preferences: DataStore<AppPreferences>,
         private val serverRepository: ServerRepository,
         private val navigationManager: SetupNavigationManager,
+        private val deviceProfileService: DeviceProfileService,
     ) : ViewModel() {
         fun appStart() {
             viewModelScope.launch {
@@ -291,6 +287,10 @@ class MainActivityViewModel
                         navigationManager.navigateTo(SetupDestination.ServerList)
                     }
                 }
+            }
+            viewModelScope.launchIO {
+                // Create the mediaCodecCapabilitiesTest if needed
+                deviceProfileService.mediaCodecCapabilitiesTest.supportsAVC()
             }
         }
     }
