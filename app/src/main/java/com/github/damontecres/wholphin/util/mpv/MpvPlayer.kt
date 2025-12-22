@@ -127,7 +127,7 @@ class MpvPlayer(
         MPVLib.setOptionString("demuxer-max-bytes", "${cacheMegs * 1024 * 1024}")
         MPVLib.setOptionString("demuxer-max-back-bytes", "${cacheMegs * 1024 * 1024}")
 
-        MPVLib.init()
+        MPVLib.initialize()
 
         MPVLib.setOptionString("force-window", "no")
         MPVLib.setOptionString("idle", "yes")
@@ -902,7 +902,7 @@ class MpvPlayer(
             MpvCommand.DESTROY -> {
                 clearVideoSurfaceView(null)
                 MPVLib.removeLogObserver(mpvLogger)
-                MPVLib.destroy()
+                MPVLib.tearDown()
                 Timber.d("MPVLib destroyed")
             }
         }
