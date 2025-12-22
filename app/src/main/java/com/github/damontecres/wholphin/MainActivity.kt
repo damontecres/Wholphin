@@ -148,8 +148,7 @@ class MainActivity : AppCompatActivity() {
                             var singleServerForUserSelection by remember { mutableStateOf<JellyfinServer?>(null) }
                             LaunchedEffect(Unit) {
                                 val serverId = appPreferences.currentServerId?.toUUIDOrNull()
-                                val hasMultipleUsers = serverRepository.hasMultipleUsersOnServer(serverId)
-                                val shouldAutoSignIn = appPreferences.signInAutomatically || !hasMultipleUsers
+                                val shouldAutoSignIn = appPreferences.signInAutomatically
 
                                 if (shouldAutoSignIn) {
                                     try {
@@ -161,7 +160,7 @@ class MainActivity : AppCompatActivity() {
                                         Timber.e(ex, "Exception restoring session")
                                     }
                                 } else {
-                                    Timber.i("Skipping auto sign-in: multiple users on server")
+                                    Timber.i("Skipping auto sign-in: user preference disabled")
                                     singleServerForUserSelection = serverRepository.getSingleServer()
                                 }
                                 isRestoringSession = false
