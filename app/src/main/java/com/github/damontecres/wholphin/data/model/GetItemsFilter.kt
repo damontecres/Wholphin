@@ -15,6 +15,16 @@ import org.jellyfin.sdk.model.serializer.UUIDSerializer
 import java.util.UUID
 
 @Serializable
+data class CollectionFolderFilter(
+    val nameOverride: String? = null,
+    val filter: GetItemsFilter = GetItemsFilter(),
+    /**
+     * Whether to use the libray's saved sort & filter
+     */
+    val useSavedLibraryDisplayInfo: Boolean = true,
+)
+
+@Serializable
 data class GetItemsFilter(
     val favorite: Boolean? = null,
     val genres: List<UUID>? = null,

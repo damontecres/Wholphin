@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.BaseItem
+import com.github.damontecres.wholphin.data.model.CollectionFolderFilter
 import com.github.damontecres.wholphin.data.model.GetItemsFilter
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.components.CollectionFolderGrid
@@ -115,8 +116,11 @@ fun CollectionFolderTv(
                     preferences = preferences,
                     itemId = destination.itemId,
                     initialFilter =
-                        GetItemsFilter(
-                            includeItemTypes = listOf(BaseItemKind.SERIES),
+                        CollectionFolderFilter(
+                            filter =
+                                GetItemsFilter(
+                                    includeItemTypes = listOf(BaseItemKind.SERIES),
+                                ),
                         ),
                     showTitle = false,
                     recursive = true,

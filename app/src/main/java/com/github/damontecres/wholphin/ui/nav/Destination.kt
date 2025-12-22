@@ -5,6 +5,7 @@ package com.github.damontecres.wholphin.ui.nav
 import androidx.annotation.StringRes
 import androidx.navigation3.runtime.NavKey
 import com.github.damontecres.wholphin.data.model.BaseItem
+import com.github.damontecres.wholphin.data.model.CollectionFolderFilter
 import com.github.damontecres.wholphin.data.model.GetItemsFilter
 import com.github.damontecres.wholphin.data.model.ItemPlayback
 import com.github.damontecres.wholphin.ui.data.SortAndDirection
@@ -94,7 +95,7 @@ sealed class Destination(
     @Serializable
     data class FilteredCollection(
         val itemId: UUID,
-        val filter: GetItemsFilter,
+        val filter: CollectionFolderFilter,
         val recursive: Boolean,
     ) : Destination(false)
 
