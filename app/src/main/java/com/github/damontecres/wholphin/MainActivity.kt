@@ -34,6 +34,7 @@ import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.DefaultUserConfiguration
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.AppUpgradeHandler
+import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.DeviceProfileService
 import com.github.damontecres.wholphin.services.ImageUrlService
 import com.github.damontecres.wholphin.services.NavigationManager
@@ -160,7 +161,6 @@ class MainActivity : AppCompatActivity() {
                                         rememberViewModelStoreNavEntryDecorator(),
                                     ),
                                 entryProvider = { key ->
-                                    Timber.v("key=$key")
                                     key as SetupDestination
                                     NavEntry(key) {
                                         when (key) {
@@ -251,6 +251,7 @@ class MainActivityViewModel
         private val serverRepository: ServerRepository,
         private val navigationManager: SetupNavigationManager,
         private val deviceProfileService: DeviceProfileService,
+        private val backdropService: BackdropService,
     ) : ViewModel() {
         fun appStart() {
             viewModelScope.launch {
@@ -272,6 +273,7 @@ class MainActivityViewModel
                     }
                 } else {
                     navigationManager.navigateTo(SetupDestination.Loading)
+                    backdropService.clearBackdrop()
                     val currentServerId = prefs.currentServerId?.toUUIDOrNull()
                     if (currentServerId != null) {
                         val currentServer =
