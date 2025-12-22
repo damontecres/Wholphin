@@ -469,15 +469,9 @@ class MpvPlayer(
         throwIfReleased()
         if (DEBUG) Timber.v("setVideoSurfaceView")
         val surface = surfaceView?.holder?.surface
-        if (surface != null) {
-            this.surface = surface
+        if (surface != null && surface.isValid) {
             Timber.v("Queued attach")
-            MPVLib.attachSurface(surface)
-            MPVLib.setOptionString("force-window", "yes")
-            Timber.d("Attached surface")
-            playbackState.load().media?.let {
-                sendCommand(MpvCommand.LOAD_FILE, it)
-            }
+            sendCommand(MpvCommand.ATTACH_SURFACE, surface)
         } else {
             clearVideoSurfaceView(null)
         }
@@ -486,9 +480,7 @@ class MpvPlayer(
     override fun clearVideoSurfaceView(surfaceView: SurfaceView?) {
         if (surface == surfaceView?.holder?.surface) {
             Timber.d("clearVideoSurfaceView")
-            MPVLib.detachSurface()
-            MPVLib.setPropertyString("vo", "null")
-            MPVLib.setPropertyString("force-window", "no")
+            sendCommand(MpvCommand.ATTACH_SURFACE, null)
         } else {
             Timber.w("clearVideoSurfaceView called with different surface")
         }
@@ -895,6 +887,22 @@ class MpvPlayer(
                 loadFile(msg.obj as MediaAndPosition)
             }
 
+            MpvCommand.ATTACH_SURFACE -> {
+                val surface = msg.obj as Surface?
+                if (surface == null || (this.surface != null && this.surface != surface)) {
+                    // If clearing or changing the surface
+                    MPVLib.detachSurface()
+                    MPVLib.setPropertyString("vo", "null")
+                    MPVLib.setPropertyString("force-window", "no")
+                }
+                if (surface != null) {
+                    MPVLib.attachSurface(surface)
+                    this.surface = surface
+                    MPVLib.setOptionString("force-window", "yes")
+                    Timber.d("Attached surface")
+                }
+            }
+
             MpvCommand.INITIALIZE -> {
                 init()
             }
@@ -1034,6 +1042,7 @@ enum class MpvCommand {
     SET_SPEED,
     SET_SUBTITLE_DELAY,
     LOAD_FILE,
+    ATTACH_SURFACE,
     INITIALIZE,
     DESTROY,
 }
