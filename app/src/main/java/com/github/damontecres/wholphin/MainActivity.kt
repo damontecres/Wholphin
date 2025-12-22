@@ -13,6 +13,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.RectangleShape
@@ -189,18 +190,32 @@ class MainActivity : AppCompatActivity() {
 
                                             is SetupDestination.AppContent -> {
                                                 val current = key.current
-                                                val preferences =
-                                                    UserPreferences(
-                                                        appPreferences,
-                                                        current.userDto.configuration
-                                                            ?: DefaultUserConfiguration,
-                                                    )
                                                 ProvideLocalClock {
-                                                    LaunchedEffect(Unit) {
-                                                        updateChecker.maybeShowUpdateToast(
-                                                            appPreferences.updateUrl,
-                                                        )
+                                                    if (UpdateChecker.ACTIVE && appPreferences.autoCheckForUpdates) {
+                                                        LaunchedEffect(Unit) {
+                                                            try {
+                                                                updateChecker.maybeShowUpdateToast(
+                                                                    appPreferences.updateUrl,
+                                                                )
+                                                            } catch (ex: Exception) {
+                                                                Timber.w(
+                                                                    ex,
+                                                                    "Exception during update check",
+                                                                )
+                                                            }
+                                                        }
                                                     }
+                                                    val appPreferences by userPreferencesDataStore.data.collectAsState(
+                                                        appPreferences,
+                                                    )
+                                                    val preferences =
+                                                        remember(appPreferences, current) {
+                                                            UserPreferences(
+                                                                appPreferences,
+                                                                current.userDto.configuration
+                                                                    ?: DefaultUserConfiguration,
+                                                            )
+                                                        }
                                                     ApplicationContent(
                                                         user = current.user,
                                                         server = current.server,
