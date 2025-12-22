@@ -28,6 +28,7 @@ import androidx.tv.material3.ExperimentalTvMaterial3Api
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Surface
 import com.github.damontecres.wholphin.data.ServerRepository
+import com.github.damontecres.wholphin.data.model.JellyfinServer
 import com.github.damontecres.wholphin.preferences.AppPreference
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.DefaultUserConfiguration
@@ -143,6 +144,8 @@ class MainActivity : AppCompatActivity() {
                             shape = RectangleShape,
                         ) {
                             var isRestoringSession by remember { mutableStateOf(true) }
+                            // If only one server exists when skipping auto sign-in, navigate directly to user selection
+                            var singleServerForUserSelection by remember { mutableStateOf<JellyfinServer?>(null) }
                             LaunchedEffect(Unit) {
                                 val serverId = appPreferences.currentServerId?.toUUIDOrNull()
                                 val hasMultipleUsers = serverRepository.hasMultipleUsersOnServer(serverId)
@@ -159,6 +162,7 @@ class MainActivity : AppCompatActivity() {
                                     }
                                 } else {
                                     Timber.i("Skipping auto sign-in: multiple users on server")
+                                    singleServerForUserSelection = serverRepository.getSingleServer()
                                 }
                                 isRestoringSession = false
                             }
@@ -208,6 +212,9 @@ class MainActivity : AppCompatActivity() {
 
                                             // TODO PIN-related
                                             // !appPreferences.signInAutomatically -> Destination.ServerList
+
+                                            singleServerForUserSelection != null ->
+                                                Destination.UserList(singleServerForUserSelection!!)
 
                                             else -> Destination.ServerList
                                         }
@@ -267,7 +274,12 @@ class MainActivity : AppCompatActivity() {
 
             if (!signInAutomatically && hasMultipleUsers) {
                 serverRepository.closeSession()
-                navigationManager.navigateToFromDrawer(Destination.ServerList)
+                val singleServer = serverRepository.getSingleServer()
+                if (singleServer != null) {
+                    navigationManager.navigateToFromDrawer(Destination.UserList(singleServer))
+                } else {
+                    navigationManager.navigateToFromDrawer(Destination.ServerList)
+                }
             }
 
             // TODO PIN-related

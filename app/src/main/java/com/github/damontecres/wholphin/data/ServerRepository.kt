@@ -151,6 +151,16 @@ class ServerRepository
         }
 
         /**
+         * Returns the single server if only one exists, otherwise null
+         */
+        suspend fun getSingleServer(): JellyfinServer? {
+            return withContext(Dispatchers.IO) {
+                val servers = serverDao.getServers()
+                if (servers.size == 1) servers.first().server else null
+            }
+        }
+
+        /**
          * Given a successful [AuthenticationResult], switch to the user that just authenticated
          */
         suspend fun changeUser(
