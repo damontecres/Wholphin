@@ -51,6 +51,8 @@ import com.github.damontecres.wholphin.ui.util.ProvideLocalClock
 import com.github.damontecres.wholphin.util.DebugLogTree
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import org.jellyfin.sdk.model.serializer.toUUIDOrNull
@@ -255,12 +257,23 @@ class MainActivity : AppCompatActivity() {
 
     override fun onRestart() {
         super.onRestart()
-        // TODO PIN-related
-//        val signInAutomatically =
-//            runBlocking { userPreferencesDataStore.data.firstOrNull()?.signInAutomatically } ?: true
-//        Timber.i("onRestart: signInAutomatically=$signInAutomatically")
-//        if (!signInAutomatically || serverRepository.currentUser.value?.hasPin == true) {
-//            serverRepository.closeSession()
-//        }
+        lifecycleScope.launch {
+            val prefs = userPreferencesDataStore.data.firstOrNull()
+            val signInAutomatically = prefs?.signInAutomatically ?: true
+            val serverId = prefs?.currentServerId?.toUUIDOrNull()
+            val hasMultipleUsers = serverRepository.hasMultipleUsersOnServer(serverId)
+
+            Timber.i("onRestart: signInAutomatically=$signInAutomatically, hasMultipleUsers=$hasMultipleUsers")
+
+            if (!signInAutomatically && hasMultipleUsers) {
+                serverRepository.closeSession()
+                navigationManager.navigateToFromDrawer(Destination.ServerList)
+            }
+
+            // TODO PIN-related
+            // if (serverRepository.currentUser.value?.hasPin == true) {
+            //     serverRepository.closeSession()
+            // }
+        }
     }
 }
