@@ -136,6 +136,11 @@ class ServerRepository
             return false
         }
 
+        suspend fun fetchLastUsedServer(serverId: UUID?): JellyfinServer? =
+            withContext(Dispatchers.IO) {
+                serverId?.let { serverDao.getServer(serverId)?.server }
+            }
+
         fun closeSession() {
             _current.value = null
         }

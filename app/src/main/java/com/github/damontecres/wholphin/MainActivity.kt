@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -28,6 +29,7 @@ import androidx.tv.material3.ExperimentalTvMaterial3Api
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Surface
 import com.github.damontecres.wholphin.data.ServerRepository
+import com.github.damontecres.wholphin.data.model.JellyfinServer
 import com.github.damontecres.wholphin.preferences.AppPreference
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.DefaultUserConfiguration
@@ -51,6 +53,8 @@ import com.github.damontecres.wholphin.ui.util.ProvideLocalClock
 import com.github.damontecres.wholphin.util.DebugLogTree
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import org.jellyfin.sdk.model.serializer.toUUIDOrNull
@@ -141,18 +145,21 @@ class MainActivity : AppCompatActivity() {
                             shape = RectangleShape,
                         ) {
                             var isRestoringSession by remember { mutableStateOf(true) }
+                            var lastUsedServer by remember { mutableStateOf<JellyfinServer?>(null) }
                             LaunchedEffect(Unit) {
-                                // TODO PIN-related
-//                                if (appPreferences.signInAutomatically) {
                                 try {
-                                    serverRepository.restoreSession(
-                                        appPreferences.currentServerId?.toUUIDOrNull(),
-                                        appPreferences.currentUserId?.toUUIDOrNull(),
-                                    )
+                                    if (appPreferences.signInAutomatically) {
+                                        serverRepository.restoreSession(
+                                            appPreferences.currentServerId?.toUUIDOrNull(),
+                                            appPreferences.currentUserId?.toUUIDOrNull(),
+                                        )
+                                    } else {
+                                        lastUsedServer =
+                                            serverRepository.fetchLastUsedServer(appPreferences.currentServerId?.toUUIDOrNull())
+                                    }
                                 } catch (ex: Exception) {
                                     Timber.e(ex, "Exception restoring session")
                                 }
-//                                }
                                 isRestoringSession = false
                             }
                             val current by serverRepository.current.observeAsState()
@@ -174,14 +181,18 @@ class MainActivity : AppCompatActivity() {
                                     )
                                 }
                             } else {
-                                // TODO PIN-related
-//                                DisposableEffect(Unit) {
-//                                    onDispose {
+                                DisposableEffect(Unit) {
+                                    onDispose {
+                                        // TODO PIN-related
 //                                        if (!appPreferences.signInAutomatically || current?.user?.hasPin == true) {
-//                                            serverRepository.closeSession()
-//                                        }
-//                                    }
-//                                }
+                                        if (!appPreferences.signInAutomatically) {
+                                            serverRepository.closeSession()
+                                        }
+                                    }
+                                }
+                                LaunchedEffect(current?.server) {
+                                    lastUsedServer = current?.server
+                                }
                                 key(current?.server?.id, current?.user?.id) {
                                     // TODO PIN-related
 //                                    LaunchedEffect(current?.user?.pin) {
@@ -197,12 +208,19 @@ class MainActivity : AppCompatActivity() {
 //                                    }
                                     val initialDestination =
                                         when {
-                                            current != null -> Destination.Home()
+                                            current != null -> {
+                                                Destination.Home()
+                                            }
 
-                                            // TODO PIN-related
-                                            // !appPreferences.signInAutomatically -> Destination.ServerList
+                                            !appPreferences.signInAutomatically -> {
+                                                lastUsedServer?.let {
+                                                    Destination.UserList(it)
+                                                } ?: Destination.ServerList
+                                            }
 
-                                            else -> Destination.ServerList
+                                            else -> {
+                                                Destination.ServerList
+                                            }
                                         }
                                     val backStack = rememberNavBackStack(initialDestination)
                                     navigationManager.backStack = backStack
@@ -250,12 +268,14 @@ class MainActivity : AppCompatActivity() {
 
     override fun onRestart() {
         super.onRestart()
+
+        val signInAutomatically =
+            runBlocking { userPreferencesDataStore.data.firstOrNull()?.signInAutomatically } ?: true
+        Timber.i("onRestart: signInAutomatically=$signInAutomatically")
         // TODO PIN-related
-//        val signInAutomatically =
-//            runBlocking { userPreferencesDataStore.data.firstOrNull()?.signInAutomatically } ?: true
-//        Timber.i("onRestart: signInAutomatically=$signInAutomatically")
 //        if (!signInAutomatically || serverRepository.currentUser.value?.hasPin == true) {
-//            serverRepository.closeSession()
-//        }
+        if (!signInAutomatically) {
+            serverRepository.closeSession()
+        }
     }
 }
