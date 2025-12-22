@@ -286,4 +286,5 @@
     <string name="remove">Entfernen</string>
     <string name="dolby_vision">Dolby Vision</string>
     <string name="dolby_atmos">Dolby Atmos</string>
+    <string name="ends_at">Endet um %1$s</string>
 </resources>
