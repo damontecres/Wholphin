@@ -125,7 +125,7 @@
     <string name="trailer">Trailer</string>
     <plurals name="trailers">
         <item quantity="one">Trailerar</item>
-        <item quantity="other"></item>
+        <item quantity="other"/>
     </plurals>
     <string name="tv_dvr_schedule">DVR-plan</string>
     <string name="tv_guide">Programoversikt</string>
@@ -158,47 +158,47 @@
     <string name="extras">Ekstra</string>
     <plurals name="other_extras">
         <item quantity="one">Anna</item>
-        <item quantity="other"></item>
+        <item quantity="other"/>
     </plurals>
     <plurals name="behind_the_scenes">
         <item quantity="one">Bak kulissane</item>
-        <item quantity="other"></item>
+        <item quantity="other"/>
     </plurals>
     <plurals name="theme_songs">
         <item quantity="one">Temasongar</item>
-        <item quantity="other"></item>
+        <item quantity="other"/>
     </plurals>
     <plurals name="theme_videos">
         <item quantity="one">Temavideoar</item>
-        <item quantity="other"></item>
+        <item quantity="other"/>
     </plurals>
     <plurals name="clips">
         <item quantity="one">Klipp</item>
-        <item quantity="other"></item>
+        <item quantity="other"/>
     </plurals>
     <plurals name="deleted_scenes">
         <item quantity="one">Sletta sener</item>
-        <item quantity="other"></item>
+        <item quantity="other"/>
     </plurals>
     <plurals name="interviews">
         <item quantity="one">Intervju</item>
-        <item quantity="other"></item>
+        <item quantity="other"/>
     </plurals>
     <plurals name="scenes">
         <item quantity="one">Scener</item>
-        <item quantity="other"></item>
+        <item quantity="other"/>
     </plurals>
     <plurals name="samples">
         <item quantity="one">Smakebitar</item>
-        <item quantity="other"></item>
+        <item quantity="other"/>
     </plurals>
     <plurals name="featurettes">
         <item quantity="one">Bakomfilmar</item>
-        <item quantity="other"></item>
+        <item quantity="other"/>
     </plurals>
     <plurals name="shorts">
         <item quantity="one">Kortfilmar</item>
-        <item quantity="other"></item>
+        <item quantity="other"/>
     </plurals>
     <string name="advanced_settings">Avanserte innstillingar</string>
     <string name="advanced_ui">Avansert grensesnitt</string>
@@ -358,4 +358,5 @@
         <item quantity="other">%d sekund</item>
     </plurals>
     <string name="nav_drawer_pins_summary">Vel standardelementa som skal visast, andre vert skjulde</string>
+    <string name="ends_at">Sluttar %1$s</string>
 </resources>
