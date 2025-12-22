@@ -76,6 +76,7 @@ class MpvPlayer(
 
     private var surface: Surface? = null
     private val playbackState = AtomicReference<PlaybackState>(PlaybackState.EMPTY)
+    private val mpvLogger = MpvLogger()
 
     // This looper will sent events to the main thread
     private val looper = Util.getCurrentOrMainLooper()
@@ -106,6 +107,8 @@ class MpvPlayer(
 
     private fun init() {
         Timber.v("config-dir=${context.filesDir.path}")
+        MPVLib.addLogObserver(mpvLogger)
+
         MPVLib.create(context)
         MPVLib.setOptionString("config", "yes")
         MPVLib.setOptionString("config-dir", context.filesDir.path)
@@ -132,7 +135,6 @@ class MpvPlayer(
 
         MPVLib.addObserver(this@MpvPlayer)
         MPVProperty.observedProperties.forEach(MPVLib::observeProperty)
-        MPVLib.addLogObserver(MpvLogger())
 
         availableCommands =
             Player.Commands
@@ -300,7 +302,6 @@ class MpvPlayer(
 
     override fun release() {
         Timber.i("release")
-        internalHandler.removeCallbacks(updatePlaybackState)
         playbackState.update {
             PlaybackState.EMPTY
         }
@@ -623,7 +624,7 @@ class MpvPlayer(
     }
 
     override fun event(eventId: Int) {
-        Timber.v("event: thread=${Thread.currentThread().name}, eventId=$eventId")
+        Timber.v("event: eventId=%s", eventId)
         when (eventId) {
             MPV_EVENT_START_FILE -> {
                 internalHandler.post(updatePlaybackState)
@@ -900,7 +901,9 @@ class MpvPlayer(
 
             MpvCommand.DESTROY -> {
                 clearVideoSurfaceView(null)
+                MPVLib.removeLogObserver(mpvLogger)
                 MPVLib.destroy()
+                Timber.d("MPVLib destroyed")
             }
         }
         return true
