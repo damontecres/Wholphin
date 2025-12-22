@@ -851,8 +851,7 @@ val basicPreferences =
             title = R.string.ui_interface,
             preferences =
                 listOf(
-                    // TODO PIN-related
-                    // AppPreference.SignInAuto,
+                    AppPreference.SignInAuto,
                     AppPreference.HomePageItems,
                     AppPreference.CombineContinueNext,
                     AppPreference.RewatchNextUp,

@@ -9,6 +9,8 @@ import com.github.damontecres.wholphin.data.model.JellyfinServer
 import com.github.damontecres.wholphin.data.model.JellyfinUser
 import com.github.damontecres.wholphin.services.ImageUrlService
 import com.github.damontecres.wholphin.services.NavigationManager
+import com.github.damontecres.wholphin.services.SetupDestination
+import com.github.damontecres.wholphin.services.SetupNavigationManager
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.setValueOnMain
 import com.github.damontecres.wholphin.util.ExceptionHandler
@@ -43,6 +45,7 @@ class SwitchUserViewModel
         val serverRepository: ServerRepository,
         val serverDao: JellyfinServerDao,
         val navigationManager: NavigationManager,
+        val setupNavigationManager: SetupNavigationManager,
         val imageUrlService: ImageUrlService,
         @Assisted val server: JellyfinServer,
     ) : ViewModel() {
@@ -120,9 +123,11 @@ class SwitchUserViewModel
         fun switchUser(user: JellyfinUser) {
             viewModelScope.launchIO {
                 try {
-                    serverRepository.changeUser(server, user)
-                    withContext(Dispatchers.Main) {
-                        navigationManager.goToHome()
+                    val current = serverRepository.changeUser(server, user)
+                    if (current != null) {
+                        withContext(Dispatchers.Main) {
+                            setupNavigationManager.navigateTo(SetupDestination.AppContent(current))
+                        }
                     }
                 } catch (ex: Exception) {
                     Timber.e(ex, "Error switching user")
@@ -144,9 +149,11 @@ class SwitchUserViewModel
                         username = username,
                         password = password,
                     )
-                    serverRepository.changeUser(server.url, authenticationResult)
-                    withContext(Dispatchers.Main) {
-                        navigationManager.goToHome()
+                    val current = serverRepository.changeUser(server.url, authenticationResult)
+                    if (current != null) {
+                        withContext(Dispatchers.Main) {
+                            setupNavigationManager.navigateTo(SetupDestination.AppContent(current))
+                        }
                     }
                 } catch (ex: Exception) {
                     Timber.e(ex, "Error logging in user")
@@ -192,9 +199,13 @@ class SwitchUserViewModel
                         val authenticationResult by api.userApi.authenticateWithQuickConnect(
                             QuickConnectDto(secret = state.secret),
                         )
-                        serverRepository.changeUser(server.url, authenticationResult)
-                        withContext(Dispatchers.Main) {
-                            navigationManager.goToHome()
+                        val current = serverRepository.changeUser(server.url, authenticationResult)
+                        if (current != null) {
+                            withContext(Dispatchers.Main) {
+                                setupNavigationManager.navigateTo(
+                                    SetupDestination.AppContent(current),
+                                )
+                            }
                         }
                     } catch (ex: Exception) {
                         Timber.e(ex, "Error during quick connect")
