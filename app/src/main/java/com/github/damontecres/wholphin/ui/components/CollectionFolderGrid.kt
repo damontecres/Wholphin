@@ -846,8 +846,7 @@ fun CollectionFolderGridContent(
                     item = focusedItem,
                     modifier =
                         Modifier
-                            .fillMaxWidth(.6f)
-//                            .fillMaxHeight(.25f)
+                            .fillMaxWidth()
                             .height(140.dp)
                             .padding(16.dp),
                 )
