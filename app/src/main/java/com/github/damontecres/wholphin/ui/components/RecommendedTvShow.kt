@@ -9,14 +9,15 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.viewModelScope
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.ServerRepository
-import com.github.damontecres.wholphin.preferences.AppPreference
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.BackdropService
+import com.github.damontecres.wholphin.services.DatePlayedService
 import com.github.damontecres.wholphin.services.FavoriteWatchManager
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.ui.SlimItemFields
 import com.github.damontecres.wholphin.ui.data.RowColumn
+import com.github.damontecres.wholphin.ui.main.buildCombinedNextUp
 import com.github.damontecres.wholphin.ui.setValueOnMain
 import com.github.damontecres.wholphin.ui.toBaseItems
 import com.github.damontecres.wholphin.util.ExceptionHandler
@@ -57,6 +58,7 @@ class RecommendedTvShowViewModel
         private val api: ApiClient,
         private val serverRepository: ServerRepository,
         private val preferencesDataStore: DataStore<AppPreferences>,
+        private val datePlayedService: DatePlayedService,
         @Assisted val parentId: UUID,
         navigationManager: NavigationManager,
         favoriteWatchManager: FavoriteWatchManager,
@@ -78,17 +80,17 @@ class RecommendedTvShowViewModel
 
         override fun init() {
             viewModelScope.launch(Dispatchers.IO + ExceptionHandler()) {
-                val itemsPerRow =
-                    preferencesDataStore.data
-                        .firstOrNull()
-                        ?.homePagePreferences
-                        ?.maxItemsPerRow
-                        ?: AppPreference.HomePageItems.defaultValue.toInt()
+                val preferences =
+                    preferencesDataStore.data.firstOrNull() ?: AppPreferences.getDefaultInstance()
+                val combineNextUp = preferences.homePagePreferences.combineContinueNext
+                val itemsPerRow = preferences.homePagePreferences.maxItemsPerRow
+                val userId = serverRepository.currentUser.value?.id
                 try {
                     val resumeItemsDeferred =
                         viewModelScope.async(Dispatchers.IO) {
                             val resumeItemsRequest =
                                 GetResumeItemsRequest(
+                                    userId = userId,
                                     parentId = parentId,
                                     fields = SlimItemFields,
                                     includeItemTypes = listOf(BaseItemKind.EPISODE),
@@ -106,12 +108,14 @@ class RecommendedTvShowViewModel
                         viewModelScope.async(Dispatchers.IO) {
                             val nextUpRequest =
                                 GetNextUpRequest(
-                                    parentId = parentId,
+                                    userId = userId,
                                     fields = SlimItemFields,
-                                    enableUserData = true,
-                                    startIndex = 0,
+                                    imageTypeLimit = 1,
+                                    parentId = parentId,
                                     limit = itemsPerRow,
-                                    enableTotalRecordCount = false,
+                                    enableResumable = false,
+                                    enableUserData = true,
+                                    enableRewatching = preferences.homePagePreferences.enableRewatchingNextUp,
                                 )
 
                             GetNextUpRequestHandler
@@ -119,21 +123,45 @@ class RecommendedTvShowViewModel
                                 .toBaseItems(api, true)
                         }
                     val resumeItems = resumeItemsDeferred.await()
-                    update(
-                        R.string.continue_watching,
-                        HomeRowLoadingState.Success(
-                            context.getString(R.string.continue_watching),
-                            resumeItems,
-                        ),
-                    )
                     val nextUpItems = nextUpItemsDeferred.await()
-                    update(
-                        R.string.next_up,
-                        HomeRowLoadingState.Success(
-                            context.getString(R.string.next_up),
-                            nextUpItems,
-                        ),
-                    )
+                    if (combineNextUp) {
+                        val combined =
+                            buildCombinedNextUp(
+                                viewModelScope,
+                                datePlayedService,
+                                resumeItems,
+                                nextUpItems,
+                            )
+                        update(
+                            R.string.continue_watching,
+                            HomeRowLoadingState.Success(
+                                context.getString(R.string.continue_watching),
+                                combined,
+                            ),
+                        )
+                        update(
+                            R.string.next_up,
+                            HomeRowLoadingState.Success(
+                                context.getString(R.string.next_up),
+                                listOf(),
+                            ),
+                        )
+                    } else {
+                        update(
+                            R.string.continue_watching,
+                            HomeRowLoadingState.Success(
+                                context.getString(R.string.continue_watching),
+                                resumeItems,
+                            ),
+                        )
+                        update(
+                            R.string.next_up,
+                            HomeRowLoadingState.Success(
+                                context.getString(R.string.next_up),
+                                nextUpItems,
+                            ),
+                        )
+                    }
 
                     if (resumeItems.isNotEmpty() || nextUpItems.isNotEmpty()) {
                         loading.setValueOnMain(LoadingState.Success)

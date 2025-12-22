@@ -418,3 +418,10 @@ fun rememberBackDropImage(item: BaseItem): String? {
     val imageUrlService = LocalImageUrlService.current
     return remember(item) { imageUrlService.getItemImageUrl(item, ImageType.BACKDROP) }
 }
+
+/**
+ * Check if this, coalescing nulls to zero, is greater than that
+ */
+fun Int?.gt(that: Int) = (this ?: 0) > that
+
+fun Int?.lt(that: Int) = (this ?: 0) < that

@@ -40,6 +40,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -59,6 +60,7 @@ import com.github.damontecres.wholphin.ui.components.TabRow
 import com.github.damontecres.wholphin.ui.formatDateTime
 import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.logTab
+import com.github.damontecres.wholphin.ui.playback.isPlayKeyUp
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.ui.util.rememberDelayedNestedScroll
 import kotlinx.coroutines.launch
@@ -249,6 +251,12 @@ fun SeriesOverviewContent(
                                                             bringIntoViewRequester.bringIntoView()
                                                         }
                                                     }
+                                                }.onKeyEvent {
+                                                    if (episode != null && isPlayKeyUp(it)) {
+                                                        onClick.invoke(episode)
+                                                        return@onKeyEvent true
+                                                    }
+                                                    return@onKeyEvent false
                                                 },
                                         interactionSource = interactionSource,
                                         cardHeight = 120.dp,

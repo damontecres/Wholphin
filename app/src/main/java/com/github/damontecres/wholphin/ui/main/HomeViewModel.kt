@@ -24,6 +24,7 @@ import com.github.damontecres.wholphin.util.LoadingState
 import com.github.damontecres.wholphin.util.supportItemKinds
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
@@ -90,6 +91,7 @@ class HomeViewModel
                     ),
             ) {
                 Timber.d("init HomeViewModel")
+                backdropService.clearBackdrop()
 
                 serverRepository.currentUserDto.value?.let { userDto ->
                     val includedIds =
@@ -109,7 +111,13 @@ class HomeViewModel
                     val watching =
                         buildList {
                             if (prefs.combineContinueNext) {
-                                val items = buildCombined(resume, nextUp)
+                                val items =
+                                    buildCombinedNextUp(
+                                        viewModelScope,
+                                        datePlayedService,
+                                        resume,
+                                        nextUp,
+                                    )
                                 add(
                                     HomeRowLoadingState.Success(
                                         title = context.getString(R.string.continue_watching),
@@ -267,39 +275,6 @@ class HomeViewModel
             latestRows.setValueOnMain(rows)
         }
 
-        private suspend fun buildCombined(
-            resume: List<BaseItem>,
-            nextUp: List<BaseItem>,
-        ): List<BaseItem> =
-            withContext(Dispatchers.IO) {
-                val start = System.currentTimeMillis()
-                val semaphore = Semaphore(3)
-                val deferred =
-                    nextUp
-                        .filter { it.data.seriesId != null }
-                        .map { item ->
-                            viewModelScope.async(Dispatchers.IO) {
-                                try {
-                                    semaphore.withPermit {
-                                        datePlayedService.getLastPlayed(item)
-                                    }
-                                } catch (ex: Exception) {
-                                    Timber.e(ex, "Error fetching %s", item.id)
-                                    null
-                                }
-                            }
-                        }
-
-                val nextUpLastPlayed = deferred.awaitAll()
-                val timestamps = mutableMapOf<UUID, LocalDateTime?>()
-                nextUp.map { it.id }.zip(nextUpLastPlayed).toMap(timestamps)
-                resume.forEach { timestamps[it.id] = it.data.userData?.lastPlayedDate }
-                val result = (resume + nextUp).sortedByDescending { timestamps[it.id] }
-                val duration = (System.currentTimeMillis() - start).milliseconds
-                Timber.v("buildCombined took %s", duration)
-                return@withContext result
-            }
-
         fun setWatched(
             itemId: UUID,
             played: Boolean,
@@ -340,3 +315,38 @@ data class LatestData(
     val title: String,
     val request: GetLatestMediaRequest,
 )
+
+suspend fun buildCombinedNextUp(
+    scope: CoroutineScope,
+    datePlayedService: DatePlayedService,
+    resume: List<BaseItem>,
+    nextUp: List<BaseItem>,
+): List<BaseItem> =
+    withContext(Dispatchers.IO) {
+        val start = System.currentTimeMillis()
+        val semaphore = Semaphore(3)
+        val deferred =
+            nextUp
+                .filter { it.data.seriesId != null }
+                .map { item ->
+                    scope.async(Dispatchers.IO) {
+                        try {
+                            semaphore.withPermit {
+                                datePlayedService.getLastPlayed(item)
+                            }
+                        } catch (ex: Exception) {
+                            Timber.e(ex, "Error fetching %s", item.id)
+                            null
+                        }
+                    }
+                }
+
+        val nextUpLastPlayed = deferred.awaitAll()
+        val timestamps = mutableMapOf<UUID, LocalDateTime?>()
+        nextUp.map { it.id }.zip(nextUpLastPlayed).toMap(timestamps)
+        resume.forEach { timestamps[it.id] = it.data.userData?.lastPlayedDate }
+        val result = (resume + nextUp).sortedByDescending { timestamps[it.id] }
+        val duration = (System.currentTimeMillis() - start).milliseconds
+        Timber.v("buildCombined took %s", duration)
+        return@withContext result
+    }
