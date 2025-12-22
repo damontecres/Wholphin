@@ -25,6 +25,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.filter.DefaultForFavoritesFilterOptions
 import com.github.damontecres.wholphin.data.model.BaseItem
+import com.github.damontecres.wholphin.data.model.CollectionFolderFilter
 import com.github.damontecres.wholphin.data.model.GetItemsFilter
 import com.github.damontecres.wholphin.data.model.GetItemsFilterOverride
 import com.github.damontecres.wholphin.preferences.UserPreferences
@@ -117,9 +118,12 @@ fun FavoritesPage(
                     onClickItem = { _, item -> onClickItem.invoke(item) },
                     itemId = "${NavDrawerItem.Favorites.id}_movies",
                     initialFilter =
-                        GetItemsFilter(
-                            favorite = true,
-                            includeItemTypes = listOf(BaseItemKind.MOVIE),
+                        CollectionFolderFilter(
+                            filter =
+                                GetItemsFilter(
+                                    favorite = true,
+                                    includeItemTypes = listOf(BaseItemKind.MOVIE),
+                                ),
                         ),
                     showTitle = false,
                     recursive = true,
@@ -145,9 +149,12 @@ fun FavoritesPage(
                     onClickItem = { _, item -> onClickItem.invoke(item) },
                     itemId = "${NavDrawerItem.Favorites.id}_series",
                     initialFilter =
-                        GetItemsFilter(
-                            favorite = true,
-                            includeItemTypes = listOf(BaseItemKind.SERIES),
+                        CollectionFolderFilter(
+                            filter =
+                                GetItemsFilter(
+                                    favorite = true,
+                                    includeItemTypes = listOf(BaseItemKind.SERIES),
+                                ),
                         ),
                     showTitle = false,
                     recursive = true,
@@ -173,9 +180,12 @@ fun FavoritesPage(
                     onClickItem = { _, item -> onClickItem.invoke(item) },
                     itemId = "${NavDrawerItem.Favorites.id}_episodes",
                     initialFilter =
-                        GetItemsFilter(
-                            favorite = true,
-                            includeItemTypes = listOf(BaseItemKind.EPISODE),
+                        CollectionFolderFilter(
+                            filter =
+                                GetItemsFilter(
+                                    favorite = true,
+                                    includeItemTypes = listOf(BaseItemKind.EPISODE),
+                                ),
                         ),
                     showTitle = false,
                     recursive = true,
@@ -202,9 +212,12 @@ fun FavoritesPage(
                     onClickItem = { _, item -> onClickItem.invoke(item) },
                     itemId = "${NavDrawerItem.Favorites.id}_videos",
                     initialFilter =
-                        GetItemsFilter(
-                            favorite = true,
-                            includeItemTypes = listOf(BaseItemKind.VIDEO),
+                        CollectionFolderFilter(
+                            filter =
+                                GetItemsFilter(
+                                    favorite = true,
+                                    includeItemTypes = listOf(BaseItemKind.VIDEO),
+                                ),
                         ),
                     showTitle = false,
                     recursive = true,
@@ -230,9 +243,12 @@ fun FavoritesPage(
                     onClickItem = { _, item -> onClickItem.invoke(item) },
                     itemId = "${NavDrawerItem.Favorites.id}_playlists",
                     initialFilter =
-                        GetItemsFilter(
-                            favorite = true,
-                            includeItemTypes = listOf(BaseItemKind.PLAYLIST),
+                        CollectionFolderFilter(
+                            filter =
+                                GetItemsFilter(
+                                    favorite = true,
+                                    includeItemTypes = listOf(BaseItemKind.PLAYLIST),
+                                ),
                         ),
                     showTitle = false,
                     recursive = true,
@@ -258,9 +274,12 @@ fun FavoritesPage(
                     onClickItem = { _, item -> onClickItem.invoke(item) },
                     itemId = "${NavDrawerItem.Favorites.id}_people",
                     initialFilter =
-                        GetItemsFilter(
-                            favorite = true,
-                            override = GetItemsFilterOverride.PERSON,
+                        CollectionFolderFilter(
+                            filter =
+                                GetItemsFilter(
+                                    favorite = true,
+                                    override = GetItemsFilterOverride.PERSON,
+                                ),
                         ),
                     initialSortAndDirection =
                         SortAndDirection(
