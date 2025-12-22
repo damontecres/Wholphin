@@ -91,6 +91,7 @@ class HomeViewModel
                     ),
             ) {
                 Timber.d("init HomeViewModel")
+                backdropService.clearBackdrop()
 
                 serverRepository.currentUserDto.value?.let { userDto ->
                     val includedIds =

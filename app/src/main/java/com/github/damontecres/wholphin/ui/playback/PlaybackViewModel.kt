@@ -286,11 +286,12 @@ class PlaybackViewModel
                     playNextUp()
                 }
 
-                if (!isPlaylist && queriedItem.type == BaseItemKind.EPISODE) {
-                    val playlist =
-                        playlistCreator.createFromEpisode(queriedItem.seriesId!!, queriedItem.id)
-                    withContext(Dispatchers.Main) {
-                        this@PlaybackViewModel.playlist.value = playlist
+                if (!isPlaylist) {
+                    val result = playlistCreator.createFrom(queriedItem)
+                    if (result is PlaylistCreationResult.Success && result.playlist.items.isNotEmpty()) {
+                        withContext(Dispatchers.Main) {
+                            this@PlaybackViewModel.playlist.value = result.playlist
+                        }
                     }
                 }
             }
