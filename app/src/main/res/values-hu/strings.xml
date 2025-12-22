@@ -72,7 +72,7 @@
     <string name="none">Nincs</string>
     <string name="outro">Stáblista</string>
     <string name="path">Elérési út</string>
-    <string name="people">Stáb</string>
+    <string name="people">Stábtagok</string>
     <string name="play_count">Lejátszások száma</string>
     <string name="play_from_here">Lejátszás innen</string>
     <string name="play">Lejátszás</string>
@@ -105,7 +105,7 @@
     <string name="show">Megmutat</string>
     <string name="shuffle">Véletlenszerű</string>
     <string name="skip">Átugrás</string>
-    <string name="sort_by_date_added">Hozzáadva</string>
+    <string name="sort_by_date_added">Hozzáadás dátuma</string>
     <string name="sort_by_date_episode_added">Epizód hozzáadásának dátuma</string>
     <string name="sort_by_date_played">Lejátszás dátuma</string>
     <string name="sort_by_date_released">Megjelenés dátuma</string>
@@ -151,7 +151,7 @@
     <string name="background">Háttérszín</string>
     <string name="success">Sikeres</string>
     <string name="official_rating">Korhatár-besorolás</string>
-    <string name="runtime_sort">Műsoridő</string>
+    <string name="runtime_sort">Hossz</string>
     <string name="extras">Extrák</string>
     <plurals name="other_extras">
         <item quantity="one">Egyéb</item>
@@ -203,7 +203,7 @@
     </plurals>
     <plurals name="hours">
         <item quantity="one">%d óra</item>
-        <item quantity="other">%d órák</item>
+        <item quantity="other">%d óra</item>
     </plurals>
     <plurals name="items">
         <item quantity="one">%d elem</item>
@@ -211,7 +211,7 @@
     </plurals>
     <plurals name="seconds">
         <item quantity="one">%d másodperc</item>
-        <item quantity="other">%d másodpercek</item>
+        <item quantity="other">%d másodperc</item>
     </plurals>
     <string name="ends_at">Véget ér: %1$s</string>
     <string name="no_servers_found">Nem található szerver</string>
@@ -289,7 +289,7 @@
     <string name="mpv_use_gpu_next">MPV: gpu-next használata</string>
     <string name="mpv_conf">mpv.conf szerkesztése</string>
     <string name="discard_change">Elveti a változtatásokat?</string>
-    <string name="subtitle_margin">Margók</string>
+    <string name="subtitle_margin">Függőleges eltolás</string>
     <string name="verbose_logging">Részletes naplózás</string>
     <string name="enter_pin">Adja meg a PIN-kódot</string>
     <string name="sign_in_auto">Automatikus bejelentkezés</string>
