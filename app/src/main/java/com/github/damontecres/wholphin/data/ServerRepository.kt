@@ -141,6 +141,16 @@ class ServerRepository
         }
 
         /**
+         * Checks if the given server has multiple users registered
+         */
+        suspend fun hasMultipleUsersOnServer(serverId: UUID?): Boolean {
+            if (serverId == null) return false
+            return withContext(Dispatchers.IO) {
+                (serverDao.getServer(serverId)?.users?.size ?: 0) > 1
+            }
+        }
+
+        /**
          * Given a successful [AuthenticationResult], switch to the user that just authenticated
          */
         suspend fun changeUser(

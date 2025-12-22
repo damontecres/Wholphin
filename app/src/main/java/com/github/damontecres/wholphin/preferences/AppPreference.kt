@@ -915,6 +915,15 @@ val advancedPreferences =
     buildList {
         add(
             PreferenceGroup(
+                title = R.string.account,
+                preferences =
+                    listOf(
+                        AppPreference.SignInAuto,
+                    ),
+            ),
+        )
+        add(
+            PreferenceGroup(
                 title = R.string.ui_interface,
                 preferences =
                     listOf(

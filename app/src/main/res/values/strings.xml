@@ -3,6 +3,7 @@
     <string name="app_name_long" translatable="false">Wholphin</string>
 
     <string name="about">About</string>
+    <string name="account">Account</string>
     <string name="active_recordings">Active Recordings</string>
     <string name="add_favorite">Favorite</string>
     <string name="add_server">Add Server</string>

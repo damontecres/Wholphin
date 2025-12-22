@@ -142,17 +142,22 @@ class MainActivity : AppCompatActivity() {
                         ) {
                             var isRestoringSession by remember { mutableStateOf(true) }
                             LaunchedEffect(Unit) {
-                                // TODO PIN-related
-//                                if (appPreferences.signInAutomatically) {
-                                try {
-                                    serverRepository.restoreSession(
-                                        appPreferences.currentServerId?.toUUIDOrNull(),
-                                        appPreferences.currentUserId?.toUUIDOrNull(),
-                                    )
-                                } catch (ex: Exception) {
-                                    Timber.e(ex, "Exception restoring session")
+                                val serverId = appPreferences.currentServerId?.toUUIDOrNull()
+                                val hasMultipleUsers = serverRepository.hasMultipleUsersOnServer(serverId)
+                                val shouldAutoSignIn = appPreferences.signInAutomatically || !hasMultipleUsers
+
+                                if (shouldAutoSignIn) {
+                                    try {
+                                        serverRepository.restoreSession(
+                                            serverId,
+                                            appPreferences.currentUserId?.toUUIDOrNull(),
+                                        )
+                                    } catch (ex: Exception) {
+                                        Timber.e(ex, "Exception restoring session")
+                                    }
+                                } else {
+                                    Timber.i("Skipping auto sign-in: multiple users on server")
                                 }
-//                                }
                                 isRestoringSession = false
                             }
                             val current by serverRepository.current.observeAsState()
