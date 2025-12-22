@@ -79,6 +79,8 @@ import com.github.damontecres.wholphin.preferences.AppThemeColors
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.NavigationManager
+import com.github.damontecres.wholphin.services.SetupDestination
+import com.github.damontecres.wholphin.services.SetupNavigationManager
 import com.github.damontecres.wholphin.ui.FontAwesome
 import com.github.damontecres.wholphin.ui.components.TimeDisplay
 import com.github.damontecres.wholphin.ui.ifElse
@@ -106,6 +108,7 @@ class NavDrawerViewModel
     constructor(
         private val navDrawerItemRepository: NavDrawerItemRepository,
         val navigationManager: NavigationManager,
+        val setupNavigationManager: SetupNavigationManager,
         val backdropService: BackdropService,
     ) : ViewModel() {
         private var all: List<NavDrawerItem>? = null
@@ -361,10 +364,8 @@ fun NavDrawer(
                         drawerOpen = drawerState.isOpen,
                         interactionSource = interactionSource,
                         onClick = {
-                            viewModel.navigationManager.navigateToFromDrawer(
-                                Destination.UserList(
-                                    server,
-                                ),
+                            viewModel.setupNavigationManager.navigateTo(
+                                SetupDestination.UserList(server),
                             )
                         },
                         modifier = Modifier.padding(start = drawerPadding),
