@@ -206,12 +206,15 @@ fun SearchPage(
     val onClickItem = { index: Int, item: BaseItem ->
         viewModel.navigationManager.navigateTo(item.destination())
     }
-    // Resolve strings in Composable scope before LazyListScope
+
+    // stringResource() is @Composable and cannot be called from LazyListScope,
+    // so resolve these strings here before entering the LazyColumn block
     val moviesTitle = stringResource(R.string.movies)
     val collectionsTitle = stringResource(R.string.collections)
     val tvShowsTitle = stringResource(R.string.tv_shows)
     val episodesTitle = stringResource(R.string.episodes)
 
+    // After voice search, wait for results to load before moving focus to the first result row
     LaunchedEffect(pendingImmediateSearch, movies, collections, series, episodes) {
         if (pendingImmediateSearch) {
             if (listOf(movies, collections, series, episodes).any { it is SearchResult.Success }) {
