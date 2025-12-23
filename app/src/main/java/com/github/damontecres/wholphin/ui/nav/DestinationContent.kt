@@ -32,8 +32,6 @@ import com.github.damontecres.wholphin.ui.playback.PlaybackPage
 import com.github.damontecres.wholphin.ui.preferences.PreferencesPage
 import com.github.damontecres.wholphin.ui.seerr.SeerrDiscoverPage
 import com.github.damontecres.wholphin.ui.setup.InstallUpdatePage
-import com.github.damontecres.wholphin.ui.setup.SwitchServerContent
-import com.github.damontecres.wholphin.ui.setup.SwitchUserContent
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.CollectionType
 import timber.log.Timber
@@ -67,14 +65,6 @@ fun DestinationContent(
                 destination = destination,
                 modifier = modifier,
             )
-        }
-
-        Destination.ServerList -> {
-            SwitchServerContent(modifier)
-        }
-
-        is Destination.UserList -> {
-            SwitchUserContent(destination.server, modifier)
         }
 
         is Destination.Settings -> {

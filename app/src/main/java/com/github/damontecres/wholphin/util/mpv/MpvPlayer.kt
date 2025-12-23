@@ -76,6 +76,7 @@ class MpvPlayer(
 
     private var surface: Surface? = null
     private val playbackState = AtomicReference<PlaybackState>(PlaybackState.EMPTY)
+    private val mpvLogger = MpvLogger()
 
     // This looper will sent events to the main thread
     private val looper = Util.getCurrentOrMainLooper()
@@ -87,7 +88,7 @@ class MpvPlayer(
         ) { listener, eventFlags ->
             listener.onEvents(this@MpvPlayer, Player.Events(eventFlags))
         }
-    private val availableCommands: Player.Commands
+    private var availableCommands: Player.Commands = Player.Commands.Builder().build()
     private val trackSelector = DefaultTrackSelector(context)
 
     // This thread/looper will receive commands from the main thread to execute
@@ -101,7 +102,13 @@ class MpvPlayer(
         private set
 
     init {
+        sendCommand(MpvCommand.INITIALIZE, null)
+    }
+
+    private fun init() {
         Timber.v("config-dir=${context.filesDir.path}")
+        MPVLib.addLogObserver(mpvLogger)
+
         MPVLib.create(context)
         MPVLib.setOptionString("config", "yes")
         MPVLib.setOptionString("config-dir", context.filesDir.path)
@@ -120,17 +127,14 @@ class MpvPlayer(
         MPVLib.setOptionString("demuxer-max-bytes", "${cacheMegs * 1024 * 1024}")
         MPVLib.setOptionString("demuxer-max-back-bytes", "${cacheMegs * 1024 * 1024}")
 
-        MPVLib.init()
+        MPVLib.initialize()
 
         MPVLib.setOptionString("force-window", "no")
         MPVLib.setOptionString("idle", "yes")
 //        MPVLib.setOptionString("sub-fonts-dir", File(context.filesDir, "fonts").absolutePath)
 
-        internalHandler.post {
-            MPVLib.addObserver(this@MpvPlayer)
-            MPVProperty.observedProperties.forEach(MPVLib::observeProperty)
-            MPVLib.addLogObserver(MpvLogger())
-        }
+        MPVLib.addObserver(this@MpvPlayer)
+        MPVProperty.observedProperties.forEach(MPVLib::observeProperty)
 
         availableCommands =
             Player.Commands
@@ -298,15 +302,14 @@ class MpvPlayer(
 
     override fun release() {
         Timber.i("release")
-        internalHandler.removeCallbacks(updatePlaybackState)
         playbackState.update {
             PlaybackState.EMPTY
         }
         if (!isReleased) {
-            thread.quit()
-            MPVLib.removeObserver(this)
-            clearVideoSurfaceView(null)
-            MPVLib.destroy()
+            internalHandler.removeCallbacks(updatePlaybackState)
+            MPVLib.removeObserver(this@MpvPlayer)
+            sendCommand(MpvCommand.DESTROY, null)
+            thread.quitSafely()
         }
         isReleased = true
     }
@@ -466,15 +469,9 @@ class MpvPlayer(
         throwIfReleased()
         if (DEBUG) Timber.v("setVideoSurfaceView")
         val surface = surfaceView?.holder?.surface
-        if (surface != null) {
-            this.surface = surface
+        if (surface != null && surface.isValid) {
             Timber.v("Queued attach")
-            MPVLib.attachSurface(surface)
-            MPVLib.setOptionString("force-window", "yes")
-            Timber.d("Attached surface")
-            playbackState.load().media?.let {
-                sendCommand(MpvCommand.LOAD_FILE, it)
-            }
+            sendCommand(MpvCommand.ATTACH_SURFACE, surface)
         } else {
             clearVideoSurfaceView(null)
         }
@@ -483,9 +480,7 @@ class MpvPlayer(
     override fun clearVideoSurfaceView(surfaceView: SurfaceView?) {
         if (surface == surfaceView?.holder?.surface) {
             Timber.d("clearVideoSurfaceView")
-            MPVLib.detachSurface()
-            MPVLib.setPropertyString("vo", "null")
-            MPVLib.setPropertyString("force-window", "no")
+            sendCommand(MpvCommand.ATTACH_SURFACE, null)
         } else {
             Timber.w("clearVideoSurfaceView called with different surface")
         }
@@ -621,7 +616,7 @@ class MpvPlayer(
     }
 
     override fun event(eventId: Int) {
-        Timber.v("event: thread=${Thread.currentThread().name}, eventId=$eventId")
+        Timber.v("event: eventId=%s", eventId)
         when (eventId) {
             MPV_EVENT_START_FILE -> {
                 internalHandler.post(updatePlaybackState)
@@ -891,6 +886,33 @@ class MpvPlayer(
             MpvCommand.LOAD_FILE -> {
                 loadFile(msg.obj as MediaAndPosition)
             }
+
+            MpvCommand.ATTACH_SURFACE -> {
+                val surface = msg.obj as Surface?
+                if (surface == null || (this.surface != null && this.surface != surface)) {
+                    // If clearing or changing the surface
+                    MPVLib.detachSurface()
+                    MPVLib.setPropertyString("vo", "null")
+                    MPVLib.setPropertyString("force-window", "no")
+                }
+                if (surface != null) {
+                    MPVLib.attachSurface(surface)
+                    this.surface = surface
+                    MPVLib.setOptionString("force-window", "yes")
+                    Timber.d("Attached surface")
+                }
+            }
+
+            MpvCommand.INITIALIZE -> {
+                init()
+            }
+
+            MpvCommand.DESTROY -> {
+                clearVideoSurfaceView(null)
+                MPVLib.removeLogObserver(mpvLogger)
+                MPVLib.tearDown()
+                Timber.d("MPVLib destroyed")
+            }
         }
         return true
     }
@@ -1020,4 +1042,7 @@ enum class MpvCommand {
     SET_SPEED,
     SET_SUBTITLE_DELAY,
     LOAD_FILE,
+    ATTACH_SURFACE,
+    INITIALIZE,
+    DESTROY,
 }

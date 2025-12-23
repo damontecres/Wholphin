@@ -102,6 +102,7 @@ fun SimpleStarRating(
         if (text.isNotNullOrBlank()) {
             Text(
                 text = text,
+                maxLines = 1,
                 modifier = Modifier,
             )
             val height = with(LocalDensity.current) { LocalTextStyle.current.fontSize.toDp() }
@@ -130,6 +131,7 @@ fun TomatoRating(
             CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onSurface) {
                 Text(
                     text = rating.toInt().toString() + "%",
+                    maxLines = 1,
                     modifier = Modifier,
                 )
             }

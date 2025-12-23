@@ -41,6 +41,7 @@ data class JellyfinServer(
     ],
     indices = [Index("id", "serverId", unique = true)],
 )
+@Serializable
 data class JellyfinUser(
     @PrimaryKey(autoGenerate = true)
     val rowId: Int = 0,

@@ -5,10 +5,10 @@ package com.github.damontecres.wholphin.ui.nav
 import androidx.annotation.StringRes
 import androidx.navigation3.runtime.NavKey
 import com.github.damontecres.wholphin.data.model.BaseItem
+import com.github.damontecres.wholphin.data.model.CollectionFolderFilter
 import com.github.damontecres.wholphin.data.model.DiscoverItem
 import com.github.damontecres.wholphin.data.model.GetItemsFilter
 import com.github.damontecres.wholphin.data.model.ItemPlayback
-import com.github.damontecres.wholphin.data.model.JellyfinServer
 import com.github.damontecres.wholphin.ui.data.SortAndDirection
 import com.github.damontecres.wholphin.ui.detail.series.SeasonEpisode
 import com.github.damontecres.wholphin.ui.detail.series.SeasonEpisodeIds
@@ -29,14 +29,6 @@ import java.util.UUID
 sealed class Destination(
     val fullScreen: Boolean = false,
 ) : NavKey {
-    @Serializable
-    data object ServerList : Destination(true)
-
-    @Serializable
-    data class UserList(
-        val server: JellyfinServer,
-    ) : Destination(true)
-
     @Serializable
     data class Home(
         val id: Long = 0L,
@@ -104,7 +96,7 @@ sealed class Destination(
     @Serializable
     data class FilteredCollection(
         val itemId: UUID,
-        val filter: GetItemsFilter,
+        val filter: CollectionFolderFilter,
         val recursive: Boolean,
     ) : Destination(false)
 

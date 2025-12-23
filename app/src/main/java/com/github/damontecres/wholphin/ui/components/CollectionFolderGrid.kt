@@ -58,6 +58,7 @@ import com.github.damontecres.wholphin.data.filter.PlayedFilter
 import com.github.damontecres.wholphin.data.filter.VideoTypeFilter
 import com.github.damontecres.wholphin.data.filter.YearFilter
 import com.github.damontecres.wholphin.data.model.BaseItem
+import com.github.damontecres.wholphin.data.model.CollectionFolderFilter
 import com.github.damontecres.wholphin.data.model.GetItemsFilter
 import com.github.damontecres.wholphin.data.model.GetItemsFilterOverride
 import com.github.damontecres.wholphin.data.model.LibraryDisplayInfo
@@ -136,12 +137,13 @@ class CollectionFolderViewModel
         val viewOptions = MutableLiveData<ViewOptions>()
 
         private var useSeriesForPrimary: Boolean = true
+        private lateinit var collectionFilter: CollectionFolderFilter
 
         fun init(
             itemId: String,
             initialSortAndDirection: SortAndDirection?,
             recursive: Boolean,
-            filter: GetItemsFilter,
+            collectionFilter: CollectionFolderFilter,
             useSeriesForPrimary: Boolean,
             defaultViewOptions: ViewOptions,
         ): Job =
@@ -151,6 +153,7 @@ class CollectionFolderViewModel
                     context.getString(R.string.error_loading_collection, itemId),
                 ) + Dispatchers.IO,
             ) {
+                this@CollectionFolderViewModel.collectionFilter = collectionFilter
                 this@CollectionFolderViewModel.useSeriesForPrimary = useSeriesForPrimary
                 this@CollectionFolderViewModel.itemId = itemId
                 itemId.toUUIDOrNull()?.let {
@@ -166,15 +169,17 @@ class CollectionFolderViewModel
                 )
 
                 val sortAndDirection =
-                    libraryDisplayInfo?.sortAndDirection
-                        ?: initialSortAndDirection
-                        ?: SortAndDirection.DEFAULT
+                    if (collectionFilter.useSavedLibraryDisplayInfo) {
+                        libraryDisplayInfo?.sortAndDirection
+                    } else {
+                        null
+                    } ?: initialSortAndDirection ?: SortAndDirection.DEFAULT
 
                 val filterToUse =
-                    if (libraryDisplayInfo?.filter != null) {
-                        filter.merge(libraryDisplayInfo.filter)
+                    if (collectionFilter.useSavedLibraryDisplayInfo && libraryDisplayInfo?.filter != null) {
+                        collectionFilter.filter.merge(libraryDisplayInfo.filter)
                     } else {
-                        filter
+                        collectionFilter.filter
                     }
 
                 loadResults(true, sortAndDirection, recursive, filterToUse, useSeriesForPrimary)
@@ -185,18 +190,20 @@ class CollectionFolderViewModel
             newSort: SortAndDirection = this.sortAndDirection.value!!,
             viewOptions: ViewOptions? = this.viewOptions.value,
         ) {
-            serverRepository.currentUser.value?.let { user ->
-                viewModelScope.launch(Dispatchers.IO) {
-                    val libraryDisplayInfo =
-                        LibraryDisplayInfo(
-                            userId = user.rowId,
-                            itemId = itemId,
-                            sort = newSort.sort,
-                            direction = newSort.direction,
-                            filter = newFilter,
-                            viewOptions = viewOptions,
-                        )
-                    libraryDisplayInfoDao.saveItem(libraryDisplayInfo)
+            if (collectionFilter.useSavedLibraryDisplayInfo) {
+                serverRepository.currentUser.value?.let { user ->
+                    viewModelScope.launch(Dispatchers.IO) {
+                        val libraryDisplayInfo =
+                            LibraryDisplayInfo(
+                                userId = user.rowId,
+                                itemId = itemId,
+                                sort = newSort.sort,
+                                direction = newSort.direction,
+                                filter = newFilter,
+                                viewOptions = viewOptions,
+                            )
+                        libraryDisplayInfoDao.saveItem(libraryDisplayInfo)
+                    }
                 }
             }
         }
@@ -490,7 +497,7 @@ class CollectionFolderViewModel
 fun CollectionFolderGrid(
     preferences: UserPreferences,
     itemId: UUID,
-    initialFilter: GetItemsFilter,
+    initialFilter: CollectionFolderFilter,
     recursive: Boolean,
     onClickItem: (Int, BaseItem) -> Unit,
     sortOptions: List<ItemSortBy>,
@@ -523,7 +530,7 @@ fun CollectionFolderGrid(
 fun CollectionFolderGrid(
     preferences: UserPreferences,
     itemId: String,
-    initialFilter: GetItemsFilter,
+    initialFilter: CollectionFolderFilter,
     recursive: Boolean,
     onClickItem: (Int, BaseItem) -> Unit,
     sortOptions: List<ItemSortBy>,
@@ -550,7 +557,7 @@ fun CollectionFolderGrid(
         )
     }
     val sortAndDirection by viewModel.sortAndDirection.observeAsState(SortAndDirection.DEFAULT)
-    val filter by viewModel.filter.observeAsState(initialFilter)
+    val filter by viewModel.filter.observeAsState(initialFilter.filter)
     val loading by viewModel.loading.observeAsState(LoadingState.Loading)
     val backgroundLoading by viewModel.backgroundLoading.observeAsState(LoadingState.Loading)
     val item by viewModel.item.observeAsState()
@@ -574,11 +581,17 @@ fun CollectionFolderGrid(
 
         LoadingState.Success -> {
             pager?.let { pager ->
+                val title =
+                    initialFilter.nameOverride
+                        ?: item?.name
+                        ?: item?.data?.collectionType?.name
+                        ?: stringResource(R.string.collection)
                 Box(modifier = modifier) {
                     CollectionFolderGridContent(
-                        preferences,
-                        item,
-                        pager,
+                        preferences = preferences,
+                        item = item,
+                        title = title,
+                        pager = pager,
                         sortAndDirection = sortAndDirection!!,
                         modifier = Modifier.fillMaxSize(),
                         onClickItem = onClickItem,
@@ -699,6 +712,7 @@ fun CollectionFolderGrid(
 fun CollectionFolderGridContent(
     preferences: UserPreferences,
     item: BaseItem?,
+    title: String,
     pager: List<BaseItem?>,
     sortAndDirection: SortAndDirection,
     onClickItem: (Int, BaseItem) -> Unit,
@@ -722,7 +736,6 @@ fun CollectionFolderGridContent(
     onFilterChange: (GetItemsFilter) -> Unit = {},
 ) {
     val context = LocalContext.current
-    val title = item?.name ?: item?.data?.collectionType?.name ?: stringResource(R.string.collection)
 
     var showHeader by rememberSaveable { mutableStateOf(true) }
     var showViewOptions by rememberSaveable { mutableStateOf(false) }
@@ -833,8 +846,7 @@ fun CollectionFolderGridContent(
                     item = focusedItem,
                     modifier =
                         Modifier
-                            .fillMaxWidth(.6f)
-//                            .fillMaxHeight(.25f)
+                            .fillMaxWidth()
                             .height(140.dp)
                             .padding(16.dp),
                 )
