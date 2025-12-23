@@ -103,6 +103,7 @@ private fun normalizeRmsDb(rmsdB: Float): Float {
     return ((rmsdB - minRms) / (maxRms - minRms)).coerceIn(0f, 1f)
 }
 
+/** Main voice search button composable */
 @Composable
 fun VoiceSearchButton(
     onSpeechResult: (String) -> Unit,
@@ -119,6 +120,7 @@ fun VoiceSearchButton(
             SpeechRecognizer.isRecognitionAvailable(context)
         }
 
+    // Asks for record audio permissions
     val permissionLauncher =
         rememberLauncherForActivityResult(
             contract = ActivityResultContracts.RequestPermission(),
@@ -245,12 +247,14 @@ private fun VoiceSearchOverlay(
     val primaryColor = MaterialTheme.colorScheme.primary
     val onPrimaryColor = MaterialTheme.colorScheme.onPrimary
 
+    // Smooth transitions between sound level changes
     val animatedSoundLevel by animateFloatAsState(
         targetValue = soundLevel,
         animationSpec = tween(durationMillis = 100),
         label = "soundLevel",
     )
 
+    // Continuous subtle pulse animation (1.0x to 1.05x scale)
     val infiniteTransition = rememberInfiniteTransition(label = "pulse")
     val basePulse by infiniteTransition.animateFloat(
         initialValue = 1f,
@@ -263,6 +267,7 @@ private fun VoiceSearchOverlay(
         label = "basePulse",
     )
 
+    // Combine base pulse with sound-reactive scaling for the mic bubble
     val bubbleScale = basePulse + (animatedSoundLevel * 0.15f)
 
     Dialog(
