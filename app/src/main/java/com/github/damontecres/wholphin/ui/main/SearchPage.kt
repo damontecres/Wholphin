@@ -2,9 +2,6 @@ package com.github.damontecres.wholphin.ui.main
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.focusGroup
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsFocusedAsState
-import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -30,7 +27,11 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
@@ -168,7 +169,6 @@ fun SearchPage(
     modifier: Modifier = Modifier,
     viewModel: SearchViewModel = hiltViewModel(),
 ) {
-    val context = LocalContext.current
     val focusManager = LocalFocusManager.current
     val keyboardController = LocalSoftwareKeyboardController.current
     val movies by viewModel.movies.observeAsState(SearchResult.NoQuery)
@@ -193,6 +193,12 @@ fun SearchPage(
     val onClickItem = { index: Int, item: BaseItem ->
         viewModel.navigationManager.navigateTo(item.destination())
     }
+    // Resolve strings in Composable scope before LazyListScope
+    val moviesTitle = stringResource(R.string.movies)
+    val collectionsTitle = stringResource(R.string.collections)
+    val tvShowsTitle = stringResource(R.string.tv_shows)
+    val episodesTitle = stringResource(R.string.episodes)
+
     LaunchedEffect(searchClicked, movies, collections, series, episodes) {
         if (searchClicked) {
             if (listOf(movies, collections, series, episodes).any { it is SearchResult.Success }) {
@@ -212,16 +218,10 @@ fun SearchPage(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                val interactionSource = remember { MutableInteractionSource() }
-                val focused by interactionSource.collectIsFocusedAsState()
-                val pressed by interactionSource.collectIsPressedAsState()
                 var isSearchActive by remember { mutableStateOf(false) }
-                LaunchedEffect(pressed) {
-                    if (pressed && !isSearchActive) {
-                        isSearchActive = true
-                    }
-                }
-                BackHandler(focused) {
+                var isTextFieldFocused by remember { mutableStateOf(false) }
+
+                BackHandler(isTextFieldFocused) {
                     if (isSearchActive) {
                         isSearchActive = false
                         keyboardController?.hide()
@@ -256,12 +256,34 @@ fun SearchPage(
                         modifier =
                             Modifier
                                 .focusRequester(textFieldFocusRequester)
-                                .onFocusChanged {
-                                    if (!it.isFocused) {
+                                .onFocusChanged { focusState ->
+                                    isTextFieldFocused = focusState.isFocused
+                                    if (!focusState.isFocused) {
                                         isSearchActive = false
                                     }
+                                }
+                                // Use onPreviewKeyEvent for D-Pad navigation instead of
+                                // interactionSource, as D-Pad uses KeyEvents not touch events
+                                .onPreviewKeyEvent { keyEvent ->
+                                    if (keyEvent.type == KeyEventType.KeyUp) {
+                                        when (keyEvent.key) {
+                                            Key.DirectionCenter, Key.Enter -> {
+                                                if (!isSearchActive) {
+                                                    isSearchActive = true
+                                                    // Explicitly show keyboard - required on TV devices
+                                                    // where D-Pad events don't auto-trigger the keyboard
+                                                    keyboardController?.show()
+                                                    true
+                                                } else {
+                                                    false
+                                                }
+                                            }
+                                            else -> false
+                                        }
+                                    } else {
+                                        false
+                                    }
                                 },
-                        interactionSource = interactionSource,
                     )
                     VoiceSearchButton(
                         onSpeechResult = { spokenText ->
@@ -274,7 +296,7 @@ fun SearchPage(
             }
         }
         searchResultRow(
-            title = context.getString(R.string.movies),
+            title = moviesTitle,
             result = movies,
             rowIndex = MOVIE_ROW,
             position = position,
@@ -284,7 +306,7 @@ fun SearchPage(
             modifier = Modifier.fillMaxWidth(),
         )
         searchResultRow(
-            title = context.getString(R.string.collections),
+            title = collectionsTitle,
             result = collections,
             rowIndex = COLLECTION_ROW,
             position = position,
@@ -294,7 +316,7 @@ fun SearchPage(
             modifier = Modifier.fillMaxWidth(),
         )
         searchResultRow(
-            title = context.getString(R.string.tv_shows),
+            title = tvShowsTitle,
             result = series,
             rowIndex = SERIES_ROW,
             position = position,
@@ -304,7 +326,7 @@ fun SearchPage(
             modifier = Modifier.fillMaxWidth(),
         )
         searchResultRow(
-            title = context.getString(R.string.episodes),
+            title = episodesTitle,
             result = episodes,
             rowIndex = EPISODE_ROW,
             position = position,
