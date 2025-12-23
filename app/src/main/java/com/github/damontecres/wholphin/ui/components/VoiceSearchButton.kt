@@ -36,7 +36,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -248,9 +247,8 @@ private fun VoiceSearchOverlay(
     partialResult: String,
     onDismiss: () -> Unit,
 ) {
-    // Theme colors for gradient - adapts to user's selected theme
+    // Theme colors - adapts to user's selected theme (Purple, Green, Blue, etc.)
     val primaryColor = MaterialTheme.colorScheme.primary
-    val tertiaryColor = MaterialTheme.colorScheme.tertiary
     val onPrimaryColor = MaterialTheme.colorScheme.onPrimary
 
     // Smooth animation for sound level
@@ -294,17 +292,13 @@ private fun VoiceSearchOverlay(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.padding(horizontal = 64.dp),
             ) {
-                // The "Listening Bubble" - centered circle with gradient and pulsing animation
+                // The "Listening Bubble" - flat solid color circle with pulsing animation
                 Box(
                     modifier = Modifier
                         .size(160.dp)
                         .scale(bubbleScale)
                         .clip(CircleShape)
-                        .background(
-                            brush = Brush.linearGradient(
-                                colors = listOf(primaryColor, tertiaryColor),
-                            ),
-                        ),
+                        .background(primaryColor),
                     contentAlignment = Alignment.Center,
                 ) {
                     Icon(
