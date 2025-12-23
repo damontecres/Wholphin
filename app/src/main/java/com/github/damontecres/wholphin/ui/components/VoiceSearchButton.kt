@@ -115,6 +115,23 @@ fun VoiceSearchButton(
     var speechRecognizer by remember { mutableStateOf<SpeechRecognizer?>(null) }
     var partialResult by remember { mutableStateOf("") }
 
+    // Prevents race condition from rapid button taps
+    var isTransitioning by remember { mutableStateOf(false) }
+
+    fun cleanupRecognizer() {
+        speechRecognizer?.let { recognizer ->
+            try {
+                recognizer.cancel()
+                recognizer.destroy()
+            } catch (e: Exception) {
+                Timber.w(e, "Error cleaning up speech recognizer")
+            }
+        }
+        speechRecognizer = null
+        soundLevel = 0f
+        partialResult = ""
+    }
+
     val isAvailable =
         remember {
             SpeechRecognizer.isRecognitionAvailable(context)
@@ -145,8 +162,7 @@ fun VoiceSearchButton(
     // Cleanup on composable disposal
     DisposableEffect(Unit) {
         onDispose {
-            speechRecognizer?.destroy()
-            speechRecognizer = null
+            cleanupRecognizer()
         }
     }
 
@@ -154,9 +170,7 @@ fun VoiceSearchButton(
     DisposableEffect(voiceSearchState) {
         onDispose {
             if (voiceSearchState !is VoiceSearchState.Listening) {
-                speechRecognizer?.destroy()
-                speechRecognizer = null
-                soundLevel = 0f
+                cleanupRecognizer()
             }
         }
     }
@@ -167,12 +181,8 @@ fun VoiceSearchButton(
             soundLevel = soundLevel,
             partialResult = partialResult,
             onDismiss = {
-                speechRecognizer?.stopListening()
-                speechRecognizer?.destroy()
-                speechRecognizer = null
+                cleanupRecognizer()
                 voiceSearchState = VoiceSearchState.Idle
-                soundLevel = 0f
-                partialResult = ""
             },
         )
     }
@@ -181,16 +191,19 @@ fun VoiceSearchButton(
     if (isAvailable) {
         Button(
             onClick = {
+                if (isTransitioning) return@Button
+
                 when (voiceSearchState) {
                     is VoiceSearchState.Listening -> {
-                        speechRecognizer?.stopListening()
-                        speechRecognizer?.destroy()
-                        speechRecognizer = null
+                        isTransitioning = true
+                        cleanupRecognizer()
                         voiceSearchState = VoiceSearchState.Idle
-                        soundLevel = 0f
-                        partialResult = ""
+                        isTransitioning = false
                     }
                     else -> {
+                        isTransitioning = true
+                        cleanupRecognizer()
+
                         val hasPermission =
                             ContextCompat.checkSelfPermission(
                                 context,
@@ -206,9 +219,13 @@ fun VoiceSearchButton(
                                 onSoundLevelChange = { soundLevel = it },
                                 onPartialResult = { partialResult = it },
                                 onResult = onSpeechResult,
-                                onRecognizerCreated = { speechRecognizer = it },
+                                onRecognizerCreated = {
+                                    speechRecognizer = it
+                                    isTransitioning = false
+                                },
                             )
                         } else {
+                            isTransitioning = false
                             permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
                         }
                     }
