@@ -7,7 +7,6 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -28,6 +27,7 @@ fun ExpandableDiscoverButtons(
     availability: SeerrAvailability,
     requestOnClick: () -> Unit,
     cancelOnClick: () -> Unit,
+    goToOnClick: () -> Unit,
     moreOnClick: () -> Unit,
     buttonOnFocusChanged: (FocusState) -> Unit,
     modifier: Modifier = Modifier,
@@ -41,32 +41,71 @@ fun ExpandableDiscoverButtons(
                 .focusGroup()
                 .focusRestorer(firstFocus),
     ) {
-        if (availability == SeerrAvailability.UNKNOWN) {
-            item("first") {
-                ExpandableFaButton(
-                    title = R.string.request,
-                    iconStringRes = R.string.fa_download,
-                    onClick = requestOnClick,
-                    modifier =
-                        Modifier
-                            .focusRequester(firstFocus)
-                            .onFocusChanged(buttonOnFocusChanged),
-                )
+        val text =
+            when (availability) {
+                SeerrAvailability.UNKNOWN -> R.string.request
+
+                SeerrAvailability.PENDING,
+                SeerrAvailability.PROCESSING,
+                -> R.string.pending
+
+                SeerrAvailability.PARTIALLY_AVAILABLE,
+                SeerrAvailability.AVAILABLE,
+                -> R.string.go_to
+
+                SeerrAvailability.DELETED -> R.string.delete // TODO
             }
-        } else if (availability == SeerrAvailability.PENDING || availability == SeerrAvailability.PROCESSING) {
-            item("first") {
-                ExpandableFaButton(
-                    title = R.string.pending,
-                    iconStringRes = R.string.fa_clock,
-                    onClick = {
-                        // TODO show request dialog?
-                    },
-                    modifier =
-                        Modifier
-                            .focusRequester(firstFocus)
-                            .onFocusChanged(buttonOnFocusChanged),
-                )
+        val icon =
+            when (availability) {
+                SeerrAvailability.UNKNOWN -> R.string.fa_download
+
+                SeerrAvailability.PENDING,
+                SeerrAvailability.PROCESSING,
+                -> R.string.fa_clock
+
+                SeerrAvailability.PARTIALLY_AVAILABLE,
+                SeerrAvailability.AVAILABLE,
+                -> R.string.fa_play
+
+                SeerrAvailability.DELETED -> R.string.fa_video // TODO
             }
+
+        item("first") {
+            ExpandableFaButton(
+                title = text,
+                iconStringRes = icon,
+                onClick = {
+                    when (availability) {
+                        SeerrAvailability.UNKNOWN -> {
+                            requestOnClick.invoke()
+                        }
+
+                        SeerrAvailability.PENDING,
+                        SeerrAvailability.PROCESSING,
+                        -> {
+                            cancelOnClick.invoke()
+                        }
+
+                        SeerrAvailability.PARTIALLY_AVAILABLE,
+                        SeerrAvailability.AVAILABLE,
+                        -> {
+                            goToOnClick.invoke()
+                        }
+
+                        SeerrAvailability.DELETED -> {
+                            // TODO
+                        }
+                    }
+                },
+                modifier =
+                    Modifier
+                        .focusRequester(firstFocus)
+                        .onFocusChanged(buttonOnFocusChanged),
+            )
+        }
+
+        if (availability == SeerrAvailability.PENDING || availability == SeerrAvailability.PROCESSING) {
+            // TODO should only show if user can cancel
             item("cancel") {
                 ExpandablePlayButton(
                     title = R.string.cancel,
@@ -75,21 +114,6 @@ fun ExpandableDiscoverButtons(
                     resume = Duration.ZERO,
                     modifier =
                         Modifier
-                            .onFocusChanged(buttonOnFocusChanged),
-                )
-            }
-        } else if (availability == SeerrAvailability.PARTIALLY_AVAILABLE || availability == SeerrAvailability.AVAILABLE) {
-            item("first") {
-                ExpandablePlayButton(
-                    title = R.string.go_to,
-                    icon = Icons.Default.PlayArrow,
-                    onClick = {
-                        // TODO go to the item
-                    },
-                    resume = Duration.ZERO,
-                    modifier =
-                        Modifier
-                            .focusRequester(firstFocus)
                             .onFocusChanged(buttonOnFocusChanged),
                 )
             }

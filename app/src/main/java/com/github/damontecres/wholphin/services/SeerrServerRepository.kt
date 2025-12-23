@@ -21,6 +21,7 @@ import dagger.hilt.android.scopes.ActivityScoped
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.update
 import okhttp3.OkHttpClient
 import timber.log.Timber
@@ -50,6 +51,11 @@ class SeerrServerRepository
                     null
                 }
             }
+
+        /**
+         * Whether Seerr integration is currently active of not
+         */
+        suspend fun active(): Boolean = current.firstOrNull() != null && seerrApi.active
 
         fun clear() {
             _currentServer.update { null }

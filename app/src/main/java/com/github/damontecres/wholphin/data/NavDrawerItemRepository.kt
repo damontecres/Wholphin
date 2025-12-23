@@ -4,6 +4,7 @@ import android.content.Context
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.NavDrawerPinnedItem
 import com.github.damontecres.wholphin.data.model.NavPinType
+import com.github.damontecres.wholphin.services.SeerrServerRepository
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.nav.NavDrawerItem
 import com.github.damontecres.wholphin.ui.nav.ServerNavDrawerItem
@@ -24,6 +25,7 @@ class NavDrawerItemRepository
         private val api: ApiClient,
         private val serverRepository: ServerRepository,
         private val serverPreferencesDao: ServerPreferencesDao,
+        private val seerrServerRepository: SeerrServerRepository,
     ) {
         suspend fun getNavDrawerItems(): List<NavDrawerItem> {
             val user = serverRepository.currentUser.value
@@ -46,7 +48,13 @@ class NavDrawerItemRepository
                     setOf()
                 }
 
-            val builtins = listOf(NavDrawerItem.Favorites, NavDrawerItem.Discover)
+            val builtins =
+                if (seerrServerRepository.active()) {
+                    listOf(NavDrawerItem.Favorites, NavDrawerItem.Discover)
+                } else {
+                    listOf(NavDrawerItem.Favorites)
+                }
+
             val libraries =
                 userViews
                     .filter { it.collectionType in supportedCollectionTypes || it.id in recordingFolders }

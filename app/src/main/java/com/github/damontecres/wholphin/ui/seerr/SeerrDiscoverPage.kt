@@ -6,9 +6,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -26,6 +30,7 @@ import com.github.damontecres.wholphin.ui.cards.ItemRow
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.setValueOnMain
+import com.github.damontecres.wholphin.ui.tryRequestFocus
 import dagger.hilt.android.lifecycle.HiltViewModel
 import org.jellyfin.sdk.api.client.ApiClient
 import javax.inject.Inject
@@ -75,6 +80,8 @@ fun SeerrDiscoverPage(
     val movies by viewModel.discoverMovies.observeAsState(listOf())
     val tv by viewModel.discoverTv.observeAsState(listOf())
 
+    val focusRequester = remember { FocusRequester() }
+    LaunchedEffect(movies) { if (movies.isNotEmpty()) focusRequester.tryRequestFocus() }
     val scrollState = rememberScrollState()
     Column(
         verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -99,6 +106,7 @@ fun SeerrDiscoverPage(
                     modifier = mod,
                 )
             },
+            modifier = Modifier.focusRequester(focusRequester),
         )
         ItemRow(
             title = stringResource(R.string.tv_shows),

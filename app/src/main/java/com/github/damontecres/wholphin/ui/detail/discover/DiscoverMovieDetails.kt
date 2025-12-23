@@ -65,6 +65,8 @@ import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
 import kotlinx.coroutines.launch
+import org.jellyfin.sdk.model.api.BaseItemKind
+import org.jellyfin.sdk.model.serializer.toUUIDOrNull
 
 @Composable
 fun DiscoverMovieDetails(
@@ -142,6 +144,16 @@ fun DiscoverMovieDetails(
                                 files = listOf(),
                             )
                     },
+                    goToOnClick = {
+                        movie.mediaInfo?.jellyfinMediaId?.toUUIDOrNull()?.let {
+                            viewModel.navigateTo(
+                                Destination.MediaItem(
+                                    itemId = it,
+                                    type = BaseItemKind.MOVIE,
+                                ),
+                            )
+                        }
+                    },
                     moreOnClick = {
                         moreDialog =
                             DialogParams(
@@ -214,6 +226,7 @@ fun DiscoverMovieDetailsContent(
     cancelOnClick: () -> Unit,
     trailerOnClick: (Trailer) -> Unit,
     overviewOnClick: () -> Unit,
+    goToOnClick: () -> Unit,
     moreOnClick: () -> Unit,
     onClickItem: (Int, DiscoverItem) -> Unit,
     onClickPerson: (Person) -> Unit,
@@ -262,6 +275,7 @@ fun DiscoverMovieDetailsContent(
                         requestOnClick = requestOnClick,
                         cancelOnClick = cancelOnClick,
                         moreOnClick = moreOnClick,
+                        goToOnClick = goToOnClick,
                         buttonOnFocusChanged = {
                             if (it.isFocused) {
                                 position = HEADER_ROW

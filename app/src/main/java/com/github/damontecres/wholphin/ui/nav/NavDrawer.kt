@@ -111,7 +111,7 @@ class NavDrawerViewModel
         val setupNavigationManager: SetupNavigationManager,
         val backdropService: BackdropService,
     ) : ViewModel() {
-        private var all: List<NavDrawerItem>? = null
+        //        private var all: List<NavDrawerItem>? = null
         val moreLibraries = MutableLiveData<List<NavDrawerItem>>(null)
         val libraries = MutableLiveData<List<NavDrawerItem>>(listOf())
         val selectedIndex = MutableLiveData(-1)
@@ -119,8 +119,8 @@ class NavDrawerViewModel
 
         fun init() {
             viewModelScope.launchIO {
-                val all = all ?: navDrawerItemRepository.getNavDrawerItems()
-                this@NavDrawerViewModel.all = all
+                val all = navDrawerItemRepository.getNavDrawerItems()
+//                this@NavDrawerViewModel.all = all
                 val libraries = navDrawerItemRepository.getFilteredNavDrawerItems(all)
                 val moreLibraries = all.toMutableList().apply { removeAll(libraries) }
 
