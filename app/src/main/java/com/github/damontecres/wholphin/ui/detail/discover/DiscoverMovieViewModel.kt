@@ -89,8 +89,8 @@ class DiscoverMovieViewModel
                     ),
             ) {
                 val movie = fetchAndSetItem().await()
-                // TODO backdrop url = "https://image.tmdb.org/t/p/w1920_and_h800_multi_faces/$it"
-//                backdropService.submit(movie)
+                val discoveredItem = DiscoverItem(movie)
+                backdropService.submit(discoveredItem)
 
                 withContext(Dispatchers.Main) {
                     loading.value = LoadingState.Success

@@ -92,7 +92,7 @@ fun DiscoverItemCard(
                         .fillMaxSize(),
             ) {
                 ItemCardImage(
-                    imageUrl = item?.posterPath?.let { "https://image.tmdb.org/t/p/w500$it" },
+                    imageUrl = item?.posterUrl,
                     name = item?.title,
                     showOverlay = false,
                     favorite = false,

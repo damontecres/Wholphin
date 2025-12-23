@@ -10,6 +10,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -23,16 +24,21 @@ import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.api.seerr.MediaApi
 import com.github.damontecres.wholphin.data.model.DiscoverItem
 import com.github.damontecres.wholphin.preferences.UserPreferences
+import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.SeerrService
 import com.github.damontecres.wholphin.ui.cards.DiscoverItemCard
 import com.github.damontecres.wholphin.ui.cards.ItemRow
+import com.github.damontecres.wholphin.ui.data.RowColumn
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.nav.Destination
+import com.github.damontecres.wholphin.ui.rememberPosition
 import com.github.damontecres.wholphin.ui.setValueOnMain
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import dagger.hilt.android.lifecycle.HiltViewModel
 import org.jellyfin.sdk.api.client.ApiClient
+import org.jellyfin.sdk.model.api.BaseItemKind
+import timber.log.Timber
 import javax.inject.Inject
 
 @HiltViewModel
@@ -42,6 +48,7 @@ class SeerrDiscoverViewModel
         private val seerrService: SeerrService,
         val navigationManager: NavigationManager,
         private val api: ApiClient,
+        private val backdropService: BackdropService,
     ) : ViewModel() {
         val recentlyAdded = MutableLiveData<List<DiscoverItem>>(listOf())
         val discoverMovies = MutableLiveData<List<DiscoverItem>>(listOf())
@@ -49,7 +56,7 @@ class SeerrDiscoverViewModel
 
         init {
             viewModelScope.launchIO {
-
+                backdropService.clearBackdrop()
                 val tv =
                     seerrService.api.mediaApi
                         .mediaGet(
@@ -69,6 +76,14 @@ class SeerrDiscoverViewModel
                 discoverTv.setValueOnMain(tv)
             }
         }
+
+        fun updateBackdrop(item: DiscoverItem?) {
+            viewModelScope.launchIO {
+                if (item != null) {
+                    backdropService.submit("discover_${item.id}", item.backDropUrl)
+                }
+            }
+        }
     }
 
 @Composable
@@ -83,6 +98,16 @@ fun SeerrDiscoverPage(
     val focusRequester = remember { FocusRequester() }
     LaunchedEffect(movies) { if (movies.isNotEmpty()) focusRequester.tryRequestFocus() }
     val scrollState = rememberScrollState()
+
+    var position by rememberPosition(0, 0)
+    LaunchedEffect(position) {
+        position.let {
+            val item = if (it.row == 0) movies.getOrNull(it.column) else tv.getOrNull(it.column)
+            Timber.v("Backdrop for $item")
+            viewModel.updateBackdrop(item)
+        }
+    }
+
     Column(
         verticalArrangement = Arrangement.spacedBy(16.dp),
         modifier =
@@ -94,7 +119,16 @@ fun SeerrDiscoverPage(
             title = stringResource(R.string.movies),
             items = movies,
             onClickItem = { index, item ->
-                viewModel.navigationManager.navigateTo(Destination.DiscoveredItem(item))
+                if (item.jellyfinItemId != null) {
+                    viewModel.navigationManager.navigateTo(
+                        Destination.MediaItem(
+                            itemId = item.jellyfinItemId,
+                            type = BaseItemKind.MOVIE,
+                        ),
+                    )
+                } else {
+                    viewModel.navigationManager.navigateTo(Destination.DiscoveredItem(item))
+                }
             },
             onLongClickItem = { index, item -> },
             cardContent = { index: Int, item: DiscoverItem?, mod: Modifier, onClick: () -> Unit, onLongClick: () -> Unit ->
@@ -105,6 +139,11 @@ fun SeerrDiscoverPage(
                     showOverlay = false,
                     modifier = mod,
                 )
+            },
+            cardOnFocus = { isFocused, index ->
+                if (isFocused) {
+                    position = RowColumn(0, index)
+                }
             },
             modifier = Modifier.focusRequester(focusRequester),
         )
@@ -112,7 +151,16 @@ fun SeerrDiscoverPage(
             title = stringResource(R.string.tv_shows),
             items = tv,
             onClickItem = { index, item ->
-                viewModel.navigationManager.navigateTo(Destination.DiscoveredItem(item))
+                if (item.jellyfinItemId != null) {
+                    viewModel.navigationManager.navigateTo(
+                        Destination.MediaItem(
+                            itemId = item.jellyfinItemId,
+                            type = BaseItemKind.SERIES,
+                        ),
+                    )
+                } else {
+                    viewModel.navigationManager.navigateTo(Destination.DiscoveredItem(item))
+                }
             },
             onLongClickItem = { index, item -> },
             cardContent = { index: Int, item: DiscoverItem?, mod: Modifier, onClick: () -> Unit, onLongClick: () -> Unit ->
@@ -123,6 +171,11 @@ fun SeerrDiscoverPage(
                     showOverlay = false,
                     modifier = mod,
                 )
+            },
+            cardOnFocus = { isFocused, index ->
+                if (isFocused) {
+                    position = RowColumn(1, index)
+                }
             },
         )
     }

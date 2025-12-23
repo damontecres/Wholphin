@@ -1,11 +1,18 @@
+@file:UseSerializers(UUIDSerializer::class)
+
 package com.github.damontecres.wholphin.data.model
 
+import com.github.damontecres.wholphin.api.seerr.model.MovieDetails
 import com.github.damontecres.wholphin.api.seerr.model.MovieMovieIdRatingsGet200Response
 import com.github.damontecres.wholphin.api.seerr.model.MovieResult
 import com.github.damontecres.wholphin.api.seerr.model.TvResult
 import com.github.damontecres.wholphin.services.SeerrSearchResult
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.UseSerializers
+import org.jellyfin.sdk.model.serializer.UUIDSerializer
+import org.jellyfin.sdk.model.serializer.toUUIDOrNull
+import java.util.UUID
 
 @Serializable
 enum class SeerrItemType {
@@ -59,7 +66,11 @@ data class DiscoverItem(
     val releaseDate: String?,
     val posterPath: String?,
     val backdropPath: String?,
+    val jellyfinItemId: UUID?,
 ) {
+    val backDropUrl: String? get() = backdropPath?.let { "https://image.tmdb.org/t/p/w1920_and_h800_multi_faces$it" }
+    val posterUrl: String? get() = posterPath?.let { "https://image.tmdb.org/t/p/w500$it" }
+
     constructor(movie: MovieResult) : this(
         id = movie.id,
         type = SeerrItemType.MOVIE,
@@ -68,6 +79,18 @@ data class DiscoverItem(
         releaseDate = movie.releaseDate,
         posterPath = movie.posterPath,
         backdropPath = movie.backdropPath,
+        jellyfinItemId = movie.mediaInfo?.jellyfinMediaId?.toUUIDOrNull(),
+    )
+
+    constructor(movie: MovieDetails) : this(
+        id = movie.id ?: -1,
+        type = SeerrItemType.MOVIE,
+        title = movie.title,
+        availability = SeerrAvailability.from(movie.mediaInfo?.status) ?: SeerrAvailability.UNKNOWN,
+        releaseDate = movie.releaseDate,
+        posterPath = movie.posterPath,
+        backdropPath = movie.backdropPath,
+        jellyfinItemId = movie.mediaInfo?.jellyfinMediaId?.toUUIDOrNull(),
     )
 
     constructor(tv: TvResult) : this(
@@ -78,6 +101,7 @@ data class DiscoverItem(
         releaseDate = tv.firstAirDate,
         posterPath = tv.posterPath,
         backdropPath = tv.backdropPath,
+        jellyfinItemId = tv.mediaInfo?.jellyfinMediaId?.toUUIDOrNull(),
     )
 
     constructor(search: SeerrSearchResult) : this(
@@ -90,6 +114,7 @@ data class DiscoverItem(
         releaseDate = search.releaseDate ?: search.firstAirDate,
         posterPath = search.posterPath,
         backdropPath = search.backdropPath,
+        jellyfinItemId = search.mediaInfo?.jellyfinMediaId?.toUUIDOrNull(),
     )
 }
 
