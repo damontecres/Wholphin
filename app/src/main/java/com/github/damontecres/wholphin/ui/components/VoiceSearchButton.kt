@@ -61,6 +61,7 @@ sealed interface VoiceSearchState {
     ) : VoiceSearchState
 }
 
+/** Material Design mic icon path data (avoids adding material-icons dependency) */
 private val MicIcon: ImageVector by lazy {
     ImageVector
         .Builder(
@@ -158,6 +159,7 @@ fun VoiceSearchButton(
         }
     }
 
+    // Full-screen listening overlay with animated mic and partial results
     if (voiceSearchState is VoiceSearchState.Listening) {
         VoiceSearchOverlay(
             soundLevel = soundLevel,
@@ -173,6 +175,7 @@ fun VoiceSearchButton(
         )
     }
 
+    // Mic button: toggles listening on/off, requests permission if needed
     if (isAvailable) {
         Button(
             onClick = {
@@ -341,6 +344,7 @@ private fun startListening(
                 // Not used
             }
 
+            // Called when SpeechRecognizer detects silence after speech
             override fun onEndOfSpeech() {
                 Timber.d("Speech ended")
             }
@@ -364,6 +368,7 @@ private fun startListening(
                 onSoundLevelChange(0f)
             }
 
+            // Called after onEndOfSpeech with final transcription, triggers the search
             override fun onResults(results: Bundle?) {
                 val matches = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
                 val spokenText = matches?.firstOrNull()

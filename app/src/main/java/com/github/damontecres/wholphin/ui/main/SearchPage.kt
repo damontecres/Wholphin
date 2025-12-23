@@ -239,6 +239,7 @@ fun SearchPage(
                 var isSearchActive by remember { mutableStateOf(false) }
                 var isTextFieldFocused by remember { mutableStateOf(false) }
 
+                // Handle back button: clear search first, then move focus away
                 BackHandler(isTextFieldFocused) {
                     if (isSearchActive) {
                         isSearchActive = false
@@ -260,6 +261,8 @@ fun SearchPage(
                                 Modifier.focusRequester(focusRequester),
                             ),
                 ) {
+                    // Text field is read-only until activated, preventing accidental input
+                    // during D-Pad navigation. Deactivates when focus is lost.
                     SearchEditTextBox(
                         value = query,
                         onValueChange = {
