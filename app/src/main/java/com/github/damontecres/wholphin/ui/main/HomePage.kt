@@ -437,62 +437,85 @@ fun HomePageHeader(
     modifier: Modifier = Modifier,
 ) {
     item?.let {
+        val isEpisode = item.type == BaseItemKind.EPISODE
         val dto = item.data
-        Column(
-            verticalArrangement = Arrangement.spacedBy(4.dp),
-            modifier = modifier,
-        ) {
-            item.title?.let {
-                Text(
-                    text = it,
-                    style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.SemiBold),
-                    color = MaterialTheme.colorScheme.onBackground,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.fillMaxWidth(.75f),
-                )
-            }
-            Column(
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                modifier =
-                    Modifier
-                        .fillMaxWidth(.6f)
-                        .fillMaxHeight(),
-            ) {
-                val isEpisode = item.type == BaseItemKind.EPISODE
-                val subtitle = if (isEpisode) dto.name else null
-                val overview = dto.overview
-                subtitle?.let {
-                    Text(
-                        text = subtitle,
-                        style = MaterialTheme.typography.headlineSmall,
-                        color = MaterialTheme.colorScheme.onBackground,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                }
+
+        HomePageHeader(
+            title = item.title,
+            subtitle = if (isEpisode) dto.name else null,
+            overview = dto.overview,
+            overviewTwoLines = isEpisode,
+            quickDetails = {
                 when (item.type) {
                     BaseItemKind.EPISODE -> EpisodeQuickDetails(dto, Modifier)
                     BaseItemKind.SERIES -> SeriesQuickDetails(dto, Modifier)
                     else -> MovieQuickDetails(dto, Modifier)
                 }
-                val overviewModifier =
-                    Modifier
-                        .padding(0.dp)
-                        .height(48.dp + if (!isEpisode) 12.dp else 0.dp)
-                        .width(400.dp)
-                if (overview.isNotNullOrBlank()) {
-                    Text(
-                        text = overview,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        maxLines = if (isEpisode) 2 else 3,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = overviewModifier,
-                    )
-                } else {
-                    Spacer(overviewModifier)
-                }
+            },
+            modifier = modifier,
+        )
+    }
+}
+
+@Composable
+fun HomePageHeader(
+    title: String?,
+    subtitle: String?,
+    overview: String?,
+    overviewTwoLines: Boolean,
+    quickDetails: (@Composable () -> Unit)?,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+        modifier = modifier,
+    ) {
+        title?.let {
+            Text(
+                text = it,
+                style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.SemiBold),
+                color = MaterialTheme.colorScheme.onBackground,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.fillMaxWidth(.75f),
+            )
+        }
+        Column(
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth(.6f)
+                    .fillMaxHeight(),
+        ) {
+//                val isEpisode = item.type == BaseItemKind.EPISODE
+//                val subtitle = if (isEpisode) dto.name else null
+//                val overview = dto.overview
+            subtitle?.let {
+                Text(
+                    text = subtitle,
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = MaterialTheme.colorScheme.onBackground,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+            quickDetails?.invoke()
+            val overviewModifier =
+                Modifier
+                    .padding(0.dp)
+                    .height(48.dp + if (!overviewTwoLines) 12.dp else 0.dp)
+                    .width(400.dp)
+            if (overview.isNotNullOrBlank()) {
+                Text(
+                    text = overview,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = if (overviewTwoLines) 2 else 3,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = overviewModifier,
+                )
+            } else {
+                Spacer(overviewModifier)
             }
         }
     }

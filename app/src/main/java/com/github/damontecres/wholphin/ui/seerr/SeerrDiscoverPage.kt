@@ -2,6 +2,7 @@ package com.github.damontecres.wholphin.ui.seerr
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -31,6 +32,7 @@ import com.github.damontecres.wholphin.ui.cards.DiscoverItemCard
 import com.github.damontecres.wholphin.ui.cards.ItemRow
 import com.github.damontecres.wholphin.ui.data.RowColumn
 import com.github.damontecres.wholphin.ui.launchIO
+import com.github.damontecres.wholphin.ui.main.HomePageHeader
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.rememberPosition
 import com.github.damontecres.wholphin.ui.setValueOnMain
@@ -38,7 +40,6 @@ import com.github.damontecres.wholphin.ui.tryRequestFocus
 import dagger.hilt.android.lifecycle.HiltViewModel
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.model.api.BaseItemKind
-import timber.log.Timber
 import javax.inject.Inject
 
 @HiltViewModel
@@ -99,84 +100,106 @@ fun SeerrDiscoverPage(
     LaunchedEffect(movies) { if (movies.isNotEmpty()) focusRequester.tryRequestFocus() }
     val scrollState = rememberScrollState()
 
-    var position by rememberPosition(0, 0)
+    var position by rememberPosition()
     LaunchedEffect(position) {
         position.let {
             val item = if (it.row == 0) movies.getOrNull(it.column) else tv.getOrNull(it.column)
-            Timber.v("Backdrop for $item")
             viewModel.updateBackdrop(item)
         }
     }
+    val focusedItem =
+        remember(position) {
+            position.let {
+                if (it.row == 0) movies.getOrNull(it.column) else tv.getOrNull(it.column)
+            }
+        }
 
     Column(
-        verticalArrangement = Arrangement.spacedBy(16.dp),
-        modifier =
-            modifier
-                .verticalScroll(scrollState)
-                .padding(16.dp),
+        modifier = modifier,
     ) {
-        ItemRow(
-            title = stringResource(R.string.movies),
-            items = movies,
-            onClickItem = { index, item ->
-                if (item.jellyfinItemId != null) {
-                    viewModel.navigationManager.navigateTo(
-                        Destination.MediaItem(
-                            itemId = item.jellyfinItemId,
-                            type = BaseItemKind.MOVIE,
-                        ),
-                    )
-                } else {
-                    viewModel.navigationManager.navigateTo(Destination.DiscoveredItem(item))
-                }
+        HomePageHeader(
+            title = focusedItem?.title,
+            subtitle = focusedItem?.subtitle,
+            overview = focusedItem?.overview,
+            overviewTwoLines = true,
+            quickDetails = {
+                // TODO
             },
-            onLongClickItem = { index, item -> },
-            cardContent = { index: Int, item: DiscoverItem?, mod: Modifier, onClick: () -> Unit, onLongClick: () -> Unit ->
-                DiscoverItemCard(
-                    item = item,
-                    onClick = onClick,
-                    onLongClick = onLongClick,
-                    showOverlay = false,
-                    modifier = mod,
-                )
-            },
-            cardOnFocus = { isFocused, index ->
-                if (isFocused) {
-                    position = RowColumn(0, index)
-                }
-            },
-            modifier = Modifier.focusRequester(focusRequester),
+            modifier =
+                Modifier
+                    .padding(top = 48.dp, bottom = 32.dp, start = 32.dp)
+                    .fillMaxHeight(.33f),
         )
-        ItemRow(
-            title = stringResource(R.string.tv_shows),
-            items = tv,
-            onClickItem = { index, item ->
-                if (item.jellyfinItemId != null) {
-                    viewModel.navigationManager.navigateTo(
-                        Destination.MediaItem(
-                            itemId = item.jellyfinItemId,
-                            type = BaseItemKind.SERIES,
-                        ),
+        Column(
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            modifier =
+                Modifier
+                    .verticalScroll(scrollState)
+                    .padding(horizontal = 16.dp),
+        ) {
+            ItemRow(
+                title = stringResource(R.string.movies),
+                items = movies,
+                onClickItem = { index, item ->
+                    if (item.jellyfinItemId != null) {
+                        viewModel.navigationManager.navigateTo(
+                            Destination.MediaItem(
+                                itemId = item.jellyfinItemId,
+                                type = BaseItemKind.MOVIE,
+                            ),
+                        )
+                    } else {
+                        viewModel.navigationManager.navigateTo(Destination.DiscoveredItem(item))
+                    }
+                },
+                onLongClickItem = { index, item -> },
+                cardContent = { index: Int, item: DiscoverItem?, mod: Modifier, onClick: () -> Unit, onLongClick: () -> Unit ->
+                    DiscoverItemCard(
+                        item = item,
+                        onClick = onClick,
+                        onLongClick = onLongClick,
+                        showOverlay = false,
+                        modifier = mod,
                     )
-                } else {
-                    viewModel.navigationManager.navigateTo(Destination.DiscoveredItem(item))
-                }
-            },
-            onLongClickItem = { index, item -> },
-            cardContent = { index: Int, item: DiscoverItem?, mod: Modifier, onClick: () -> Unit, onLongClick: () -> Unit ->
-                DiscoverItemCard(
-                    item = item,
-                    onClick = onClick,
-                    onLongClick = onLongClick,
-                    showOverlay = false,
-                    modifier = mod,
-                )
-            },
-            cardOnFocus = { isFocused, index ->
-                if (isFocused) {
-                    position = RowColumn(1, index)
-                }
-            },
-        )
+                },
+                cardOnFocus = { isFocused, index ->
+                    if (isFocused) {
+                        position = RowColumn(0, index)
+                    }
+                },
+                modifier = Modifier.focusRequester(focusRequester),
+            )
+            ItemRow(
+                title = stringResource(R.string.tv_shows),
+                items = tv,
+                onClickItem = { index, item ->
+                    if (item.jellyfinItemId != null) {
+                        viewModel.navigationManager.navigateTo(
+                            Destination.MediaItem(
+                                itemId = item.jellyfinItemId,
+                                type = BaseItemKind.SERIES,
+                            ),
+                        )
+                    } else {
+                        viewModel.navigationManager.navigateTo(Destination.DiscoveredItem(item))
+                    }
+                },
+                onLongClickItem = { index, item -> },
+                cardContent = { index: Int, item: DiscoverItem?, mod: Modifier, onClick: () -> Unit, onLongClick: () -> Unit ->
+                    DiscoverItemCard(
+                        item = item,
+                        onClick = onClick,
+                        onLongClick = onLongClick,
+                        showOverlay = false,
+                        modifier = mod,
+                    )
+                },
+                cardOnFocus = { isFocused, index ->
+                    if (isFocused) {
+                        position = RowColumn(1, index)
+                    }
+                },
+            )
+        }
     }
 }
