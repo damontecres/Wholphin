@@ -135,9 +135,6 @@ components:
           readOnly: true
       required:
         - id
-        - email
-        - createdAt
-        - updatedAt
     UserSettings:
       type: object
       properties:

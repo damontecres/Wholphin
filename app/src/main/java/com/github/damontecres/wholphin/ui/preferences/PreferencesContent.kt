@@ -19,6 +19,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableIntStateOf
@@ -58,6 +59,7 @@ import com.github.damontecres.wholphin.ui.playSoundOnFocus
 import com.github.damontecres.wholphin.ui.preferences.subtitle.SubtitleSettings
 import com.github.damontecres.wholphin.ui.preferences.subtitle.SubtitleStylePage
 import com.github.damontecres.wholphin.ui.setup.UpdateViewModel
+import com.github.damontecres.wholphin.ui.setup.seerr.AddSeerServerDialog
 import com.github.damontecres.wholphin.ui.showToast
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.ExceptionHandler
@@ -84,6 +86,8 @@ fun PreferencesContent(
 
     val navDrawerPins by viewModel.navDrawerPins.observeAsState(mapOf())
     var cacheUsage by remember { mutableStateOf(CacheUsage(0, 0, 0)) }
+    val seerrIntegrationEnabled by viewModel.seerrEnabled.collectAsState(false)
+    var showSeerrServerDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         viewModel.preferenceDataStore.data.collect {
@@ -381,6 +385,22 @@ fun PreferencesContent(
                                 )
                             }
 
+                            AppPreference.SeerrIntegration -> {
+                                ClickPreference(
+                                    title = stringResource(pref.title),
+                                    onClick = { showSeerrServerDialog = true },
+                                    modifier = Modifier,
+                                    summary =
+                                        if (seerrIntegrationEnabled) {
+                                            stringResource(R.string.enabled)
+                                        } else {
+                                            null
+                                        },
+                                    onLongClick = {},
+                                    interactionSource = interactionSource,
+                                )
+                            }
+
                             else -> {
                                 val value = pref.getter.invoke(preferences)
                                 ComposablePreference(
@@ -439,6 +459,11 @@ fun PreferencesContent(
                     onDismissRequest = { showPinFlow = false },
                 )
             }
+        }
+        if (showSeerrServerDialog) {
+            AddSeerServerDialog(
+                onDismissRequest = { showSeerrServerDialog = false },
+            )
         }
     }
 }

@@ -28,7 +28,6 @@ import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.setValueOnMain
 import dagger.hilt.android.lifecycle.HiltViewModel
 import org.jellyfin.sdk.api.client.ApiClient
-import timber.log.Timber
 import javax.inject.Inject
 
 @HiltViewModel
@@ -54,7 +53,7 @@ class SeerrDiscoverViewModel
                             sort = MediaApi.SortMediaGet.MEDIA_ADDED,
                         ).results
                         .orEmpty()
-                Timber.v(tv.firstOrNull()?.jellyfinMediaId)
+//                Timber.v(tv.firstOrNull()?.jellyfinMediaId)
             }
             viewModelScope.launchIO {
                 val movies = seerrService.discoverMovies()

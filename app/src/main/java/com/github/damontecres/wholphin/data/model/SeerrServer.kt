@@ -38,14 +38,14 @@ data class SeerrServer(
         ForeignKey(
             entity = JellyfinUser::class,
             parentColumns = arrayOf("rowId"),
-            childColumns = arrayOf("jellyfinRowId"),
+            childColumns = arrayOf("jellyfinUserRowId"),
             onDelete = ForeignKey.CASCADE,
         ),
     ],
-    primaryKeys = ["jellyfinRowId", "serverId"],
+    primaryKeys = ["jellyfinUserRowId", "serverId"],
 )
 data class SeerrUser(
-    val jellyfinRowId: Int,
+    val jellyfinUserRowId: Int,
     val serverId: Int,
     val authMethod: SeerrAuthMethod,
     val username: String?,
@@ -53,7 +53,7 @@ data class SeerrUser(
     val credential: String?,
 ) {
     override fun toString(): String =
-        "SeerrUser(jellyfinRowId=$jellyfinRowId, serverId=$serverId, authMethod=$authMethod, username=$username, password?=${password.isNotNullOrBlank()}, credential?=${credential.isNotNullOrBlank()})"
+        "SeerrUser(jellyfinUserRowId=$jellyfinUserRowId, serverId=$serverId, authMethod=$authMethod, username=$username, password?=${password.isNotNullOrBlank()}, credential?=${credential.isNotNullOrBlank()})"
 }
 
 enum class SeerrAuthMethod {

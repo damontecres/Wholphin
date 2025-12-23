@@ -31,14 +31,15 @@ import com.github.damontecres.wholphin.ui.components.EditTextBox
 import com.github.damontecres.wholphin.ui.components.TextButton
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.tryRequestFocus
+import com.github.damontecres.wholphin.util.LoadingState
 
 @Composable
-fun AddSeerrServerContent(
+fun AddSeerrServerApiKey(
     onSubmit: (url: String, apiKey: String) -> Unit,
-    errorMessage: String?,
+    status: LoadingState,
     modifier: Modifier = Modifier,
 ) {
-    var error by remember(errorMessage) { mutableStateOf(errorMessage) }
+    var error by remember(status) { mutableStateOf((status as? LoadingState.Error)?.localizedMessage) }
     Column(
         verticalArrangement = Arrangement.spacedBy(8.dp),
         modifier =
@@ -131,6 +132,144 @@ fun AddSeerrServerContent(
             stringRes = R.string.submit,
             onClick = { onSubmit.invoke(url, apiKey) },
             enabled = error.isNullOrBlank() && url.isNotNullOrBlank() && apiKey.isNotNullOrBlank(),
+            modifier = Modifier.align(Alignment.CenterHorizontally),
+        )
+    }
+}
+
+@Composable
+fun AddSeerrServerUsername(
+    onSubmit: (url: String, username: String, password: String) -> Unit,
+    username: String,
+    status: LoadingState,
+    modifier: Modifier = Modifier,
+) {
+    var error by remember(status) { mutableStateOf((status as? LoadingState.Error)?.localizedMessage) }
+    Column(
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        modifier =
+            modifier
+                .focusGroup()
+                .padding(16.dp)
+                .wrapContentSize(),
+    ) {
+        var url by remember { mutableStateOf("") }
+        var username by remember { mutableStateOf(username) }
+        var password by remember { mutableStateOf("") }
+
+        val focusRequester = remember { FocusRequester() }
+        val usernameFocusRequester = remember { FocusRequester() }
+        val passwordFocusRequester = remember { FocusRequester() }
+        LaunchedEffect(Unit) { focusRequester.tryRequestFocus() }
+        Text(
+            text = "Enter URL, username, & password",
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onSurface,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth(),
+        )
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.align(Alignment.CenterHorizontally),
+        ) {
+            Text(
+                text = "URL",
+                modifier = Modifier.padding(end = 8.dp),
+            )
+            EditTextBox(
+                value = url,
+                onValueChange = {
+                    error = null
+                    url = it
+                },
+                keyboardOptions =
+                    KeyboardOptions(
+                        capitalization = KeyboardCapitalization.None,
+                        autoCorrectEnabled = false,
+                        keyboardType = KeyboardType.Text,
+                        imeAction = ImeAction.Next,
+                    ),
+                keyboardActions =
+                    KeyboardActions(
+                        onNext = {
+                            usernameFocusRequester.tryRequestFocus()
+                        },
+                    ),
+                isInputValid = { true },
+                modifier = Modifier.focusRequester(focusRequester),
+            )
+        }
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.align(Alignment.CenterHorizontally),
+        ) {
+            Text(
+                text = "Username",
+                modifier = Modifier.padding(end = 8.dp),
+            )
+            EditTextBox(
+                value = username,
+                onValueChange = {
+                    error = null
+                    username = it
+                },
+                keyboardOptions =
+                    KeyboardOptions(
+                        capitalization = KeyboardCapitalization.None,
+                        autoCorrectEnabled = false,
+                        keyboardType = KeyboardType.Text,
+                        imeAction = ImeAction.Next,
+                    ),
+                keyboardActions =
+                    KeyboardActions(
+                        onNext = {
+                            passwordFocusRequester.tryRequestFocus()
+                        },
+                    ),
+                isInputValid = { true },
+                modifier = Modifier.focusRequester(focusRequester),
+            )
+        }
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.align(Alignment.CenterHorizontally),
+        ) {
+            Text(
+                text = "Password",
+                modifier = Modifier.padding(end = 8.dp),
+            )
+            EditTextBox(
+                value = password,
+                onValueChange = {
+                    error = null
+                    password = it
+                },
+                keyboardOptions =
+                    KeyboardOptions(
+                        capitalization = KeyboardCapitalization.None,
+                        autoCorrectEnabled = false,
+                        keyboardType = KeyboardType.Password,
+                        imeAction = ImeAction.Go,
+                    ),
+                keyboardActions =
+                    KeyboardActions(
+                        onGo = { onSubmit.invoke(url, username, password) },
+                    ),
+                isInputValid = { true },
+                modifier = Modifier.focusRequester(passwordFocusRequester),
+            )
+        }
+        error?.let {
+            Text(
+                text = it,
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.titleLarge,
+            )
+        }
+        TextButton(
+            stringRes = R.string.submit,
+            onClick = { onSubmit.invoke(url, username, password) },
+            enabled = error.isNullOrBlank() && url.isNotNullOrBlank() && username.isNotNullOrBlank() && password.isNotNullOrBlank(),
             modifier = Modifier.align(Alignment.CenterHorizontally),
         )
     }

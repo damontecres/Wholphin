@@ -9,7 +9,6 @@ import androidx.room.Update
 import com.github.damontecres.wholphin.data.model.SeerrServer
 import com.github.damontecres.wholphin.data.model.SeerrServerUsers
 import com.github.damontecres.wholphin.data.model.SeerrUser
-import java.util.UUID
 
 @Dao
 interface SeerrServerDao {
@@ -32,22 +31,25 @@ interface SeerrServerDao {
 
     suspend fun updateUser(user: SeerrUser) = addUser(user)
 
-    @Query("SELECT * FROM seerr_users WHERE serverId = :serverId AND jellyfinRowId = :userId")
+    @Query("SELECT * FROM seerr_users WHERE serverId = :serverId AND jellyfinUserRowId = :jellyfinUserRowId")
     suspend fun getUser(
         serverId: Int,
-        userId: UUID,
+        jellyfinUserRowId: Int,
     ): SeerrUser?
+
+    @Query("SELECT * FROM seerr_users WHERE jellyfinUserRowId = :jellyfinUserRowId")
+    suspend fun getUsersByJellyfinUser(jellyfinUserRowId: Int): List<SeerrUser>
 
     @Query("DELETE FROM seerr_servers WHERE id = :serverId")
     suspend fun deleteServer(serverId: Int)
 
-    @Query("DELETE FROM seerr_users WHERE serverId = :serverId AND jellyfinRowId = :jellyfinRowId")
+    @Query("DELETE FROM seerr_users WHERE serverId = :serverId AND jellyfinUserRowId = :jellyfinUserRowId")
     suspend fun deleteUser(
         serverId: Int,
-        jellyfinRowId: Int,
+        jellyfinUserRowId: Int,
     )
 
-    suspend fun deleteUser(user: SeerrUser) = deleteUser(user.serverId, user.jellyfinRowId)
+    suspend fun deleteUser(user: SeerrUser) = deleteUser(user.serverId, user.jellyfinUserRowId)
 
     @Transaction
     @Query("SELECT * FROM seerr_servers")
