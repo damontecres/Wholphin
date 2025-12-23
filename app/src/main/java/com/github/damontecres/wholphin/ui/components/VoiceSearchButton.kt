@@ -1,9 +1,9 @@
 package com.github.damontecres.wholphin.ui.components
 
 import android.app.Activity
+import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.speech.RecognizerIntent
-import android.speech.SpeechRecognizer
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Box
@@ -24,6 +24,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.tv.material3.Icon
 import com.github.damontecres.wholphin.R
+import timber.log.Timber
 
 private val MicIcon: ImageVector by lazy {
     ImageVector
@@ -34,7 +35,7 @@ private val MicIcon: ImageVector by lazy {
             viewportWidth = 24f,
             viewportHeight = 24f,
         ).apply {
-            path(fill = SolidColor(Color.Black)) {
+            path(fill = SolidColor(Color.White)) {
                 moveTo(12f, 14f)
                 curveToRelative(1.66f, 0f, 2.99f, -1.34f, 2.99f, -3f)
                 lineTo(15f, 5f)
@@ -80,9 +81,11 @@ fun VoiceSearchButton(
             }
         }
 
+    // Check if voice recognition Activity is available (more reliable than SpeechRecognizer.isRecognitionAvailable)
+    // Note: AndroidManifest.xml requires <queries> for android.speech.action.RECOGNIZE_SPEECH (Android 11+)
     val isAvailable =
         remember {
-            SpeechRecognizer.isRecognitionAvailable(context)
+            speechIntent.resolveActivity(context.packageManager) != null
         }
 
     val speechLauncher =
@@ -103,7 +106,11 @@ fun VoiceSearchButton(
     if (isAvailable) {
         Button(
             onClick = {
-                speechLauncher.launch(speechIntent)
+                try {
+                    speechLauncher.launch(speechIntent)
+                } catch (e: ActivityNotFoundException) {
+                    Timber.e(e, "Voice recognition Activity not found")
+                }
             },
             modifier =
                 modifier.requiredSizeIn(

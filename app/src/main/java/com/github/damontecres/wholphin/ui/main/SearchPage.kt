@@ -181,11 +181,23 @@ fun SearchPage(
     val focusRequester = remember { FocusRequester() }
 
     var position by rememberPosition()
-    var searchClicked by rememberSaveable { mutableStateOf(false) }
+    var pendingImmediateSearch by rememberSaveable { mutableStateOf(false) }
+    var immediateSearchQuery by rememberSaveable { mutableStateOf<String?>(null) }
+
+    fun triggerImmediateSearch(searchQuery: String) {
+        immediateSearchQuery = searchQuery
+        pendingImmediateSearch = true
+        viewModel.search(searchQuery)
+    }
 
     LaunchedEffect(query) {
-        delay(750L)
-        viewModel.search(query)
+        if (immediateSearchQuery != query) {
+            delay(750L)
+            viewModel.search(query)
+        }
+        if (immediateSearchQuery == query) {
+            immediateSearchQuery = null
+        }
     }
     LaunchedEffect(Unit) {
         focusRequester.tryRequestFocus()
@@ -199,11 +211,11 @@ fun SearchPage(
     val tvShowsTitle = stringResource(R.string.tv_shows)
     val episodesTitle = stringResource(R.string.episodes)
 
-    LaunchedEffect(searchClicked, movies, collections, series, episodes) {
-        if (searchClicked) {
+    LaunchedEffect(pendingImmediateSearch, movies, collections, series, episodes) {
+        if (pendingImmediateSearch) {
             if (listOf(movies, collections, series, episodes).any { it is SearchResult.Success }) {
                 focusManager.moveFocus(FocusDirection.Next)
-                searchClicked = false
+                pendingImmediateSearch = false
             }
         }
     }
@@ -249,8 +261,7 @@ fun SearchPage(
                             query = it
                         },
                         onSearchClick = {
-                            viewModel.search(query)
-                            searchClicked = true
+                            triggerImmediateSearch(query)
                         },
                         readOnly = !isSearchActive,
                         modifier =
@@ -288,8 +299,7 @@ fun SearchPage(
                     VoiceSearchButton(
                         onSpeechResult = { spokenText ->
                             query = spokenText
-                            viewModel.search(query)
-                            searchClicked = true
+                            triggerImmediateSearch(spokenText)
                         },
                     )
                 }
