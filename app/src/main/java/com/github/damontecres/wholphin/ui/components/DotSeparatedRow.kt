@@ -20,14 +20,17 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.tv.material3.LocalTextStyle
@@ -54,22 +57,24 @@ fun DotSeparatedRow(
                     text = text,
                     style = textStyle,
                     color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
                 )
                 if (communityRating != null || criticRating != null || index != texts.lastIndex) {
                     Dot()
                 }
             }
+            val height = with(LocalDensity.current) { textStyle.fontSize.toDp() }
             communityRating?.let {
                 SimpleStarRating(
                     communityRating = it,
-                    modifier = Modifier,
+                    modifier = Modifier.height(height),
                 )
                 if (criticRating != null) {
                     Dot()
                 }
             }
             criticRating?.let {
-                TomatoRating(it)
+                TomatoRating(it, Modifier.height(height))
             }
         }
     }
