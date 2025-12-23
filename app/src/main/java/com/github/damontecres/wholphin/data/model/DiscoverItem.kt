@@ -10,23 +10,26 @@ import com.github.damontecres.wholphin.services.SeerrSearchResult
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.UseSerializers
+import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.serializer.UUIDSerializer
 import org.jellyfin.sdk.model.serializer.toUUIDOrNull
 import java.util.UUID
 
 @Serializable
-enum class SeerrItemType {
+enum class SeerrItemType(
+    val baseItemKind: BaseItemKind?,
+) {
     @SerialName("movie")
-    MOVIE,
+    MOVIE(BaseItemKind.MOVIE),
 
     @SerialName("tv")
-    TV,
+    TV(BaseItemKind.SERIES),
 
     @SerialName("person")
-    PERSON,
+    PERSON(BaseItemKind.PERSON),
 
     @SerialName("unknown")
-    UNKNOWN,
+    UNKNOWN(null),
     ;
 
     companion object {

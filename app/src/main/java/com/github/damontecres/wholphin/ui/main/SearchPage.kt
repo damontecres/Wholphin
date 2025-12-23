@@ -55,6 +55,7 @@ import com.github.damontecres.wholphin.ui.data.RowColumn
 import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.launchIO
+import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.rememberPosition
 import com.github.damontecres.wholphin.ui.setValueOnMain
 import com.github.damontecres.wholphin.ui.tryRequestFocus
@@ -324,8 +325,20 @@ fun SearchPage(
             rowIndex = SEERR_ROW,
             position = position,
             focusRequester = focusRequester,
-            onClickItem = { index, item ->
-                // TODO seerr
+            onClickItem = { _, _ ->
+                // no-op
+            },
+            onClickDiscover = { _, item ->
+                val dest =
+                    if (item.jellyfinItemId != null && item.type.baseItemKind != null) {
+                        Destination.MediaItem(
+                            itemId = item.jellyfinItemId,
+                            type = item.type.baseItemKind,
+                        )
+                    } else {
+                        Destination.DiscoveredItem(item)
+                    }
+                viewModel.navigationManager.navigateTo(dest)
             },
             onClickPosition = { position = it },
             modifier = Modifier.fillMaxWidth(),
@@ -342,6 +355,7 @@ fun LazyListScope.searchResultRow(
     onClickItem: (Int, BaseItem) -> Unit,
     onClickPosition: (RowColumn) -> Unit,
     modifier: Modifier = Modifier,
+    onClickDiscover: ((Int, DiscoverItem) -> Unit)? = null,
     cardContent: @Composable (
         index: Int,
         item: BaseItem?,
@@ -419,7 +433,10 @@ fun LazyListScope.searchResultRow(
                     ItemRow(
                         title = title,
                         items = r.items,
-                        onClickItem = { index, item -> },
+                        onClickItem = { index, item ->
+                            onClickPosition.invoke(RowColumn(rowIndex, index))
+                            onClickDiscover?.invoke(index, item)
+                        },
                         onLongClickItem = { _, _ -> },
                         modifier = modifier,
                         cardContent = { index: Int, item: DiscoverItem?, mod: Modifier, onClick: () -> Unit, onLongClick: () -> Unit ->
