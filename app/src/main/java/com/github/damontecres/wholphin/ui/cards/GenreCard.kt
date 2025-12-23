@@ -65,7 +65,6 @@ fun GenreCard(
                     .fillMaxSize()
                     .clip(RoundedCornerShape(8.dp)),
         ) {
-            Timber.v("genre image=${genre?.imageUrl}")
             if (genre?.imageUrl.isNotNullOrBlank()) {
                 AsyncImage(
                     model =

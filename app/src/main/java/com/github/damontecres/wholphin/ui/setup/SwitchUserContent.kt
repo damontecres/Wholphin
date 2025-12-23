@@ -37,6 +37,7 @@ import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.JellyfinServer
 import com.github.damontecres.wholphin.data.model.JellyfinUser
+import com.github.damontecres.wholphin.services.SetupDestination
 import com.github.damontecres.wholphin.ui.components.BasicDialog
 import com.github.damontecres.wholphin.ui.components.CircularProgress
 import com.github.damontecres.wholphin.ui.components.EditTextBox
@@ -130,7 +131,9 @@ fun SwitchUserContent(
                         viewModel.removeUser(user)
                     },
                     onSwitchServer = {
-                        viewModel.navigationManager.navigateTo(Destination.ServerList)
+                        viewModel.setupNavigationManager.navigateTo(
+                            SetupDestination.ServerList,
+                        )
                     },
                     modifier = Modifier.fillMaxWidth(),
                 )

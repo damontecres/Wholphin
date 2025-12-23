@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.saveable.rememberSerializable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -24,8 +25,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
+import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavEntry
+import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
+import androidx.navigation3.runtime.serialization.NavBackStackSerializer
+import androidx.navigation3.runtime.serialization.NavKeySerializer
 import androidx.navigation3.ui.NavDisplay
 import androidx.tv.material3.MaterialTheme
 import coil3.compose.AsyncImage
@@ -62,13 +67,22 @@ class ApplicationContentViewModel
  */
 @Composable
 fun ApplicationContent(
-    server: JellyfinServer?,
-    user: JellyfinUser?,
+    server: JellyfinServer,
+    user: JellyfinUser,
     navigationManager: NavigationManager,
     preferences: UserPreferences,
     modifier: Modifier = Modifier,
     viewModel: ApplicationContentViewModel = hiltViewModel(),
 ) {
+    val backStack: MutableList<NavKey> =
+        rememberSerializable(
+            server,
+            user,
+            serializer = NavBackStackSerializer(elementSerializer = NavKeySerializer()),
+        ) {
+            NavBackStack(Destination.Home())
+        }
+    navigationManager.backStack = backStack
     val backdrop by viewModel.backdropService.backdropFlow.collectAsStateWithLifecycle()
     val backdropStyle = preferences.appPreferences.interfacePreferences.backdropStyle
     Box(

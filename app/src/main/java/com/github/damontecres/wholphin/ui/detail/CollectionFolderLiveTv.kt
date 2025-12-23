@@ -29,7 +29,7 @@ import androidx.lifecycle.viewModelScope
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.BaseItem
-import com.github.damontecres.wholphin.data.model.GetItemsFilter
+import com.github.damontecres.wholphin.data.model.CollectionFolderFilter
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.NavigationManager
@@ -164,7 +164,7 @@ fun CollectionFolderLiveTv(
                         preferences = preferences,
                         onClickItem = onClickItem,
                         itemId = folders[folderIndex].id,
-                        initialFilter = GetItemsFilter(),
+                        initialFilter = CollectionFolderFilter(),
                         showTitle = false,
                         recursive = false,
                         sortOptions = VideoSortOptions,
