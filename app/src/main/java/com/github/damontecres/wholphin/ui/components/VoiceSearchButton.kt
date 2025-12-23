@@ -9,14 +9,22 @@ import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSizeIn
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
@@ -26,22 +34,21 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.drawscope.DrawScope
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.path
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.core.content.ContextCompat
 import androidx.tv.material3.Icon
 import androidx.tv.material3.MaterialTheme
-import com.github.damontecres.wholphin.R
+import androidx.tv.material3.Text
 import timber.log.Timber
 
 /**
@@ -54,7 +61,7 @@ sealed interface VoiceSearchState {
 }
 
 /**
- * Microphone icon vector - fill color will be overridden by Icon's tint (LocalContentColor)
+ * Microphone icon vector - fill color will be overridden by Icon's tint
  */
 private val MicIcon: ImageVector by lazy {
     ImageVector
@@ -108,13 +115,7 @@ fun VoiceSearchButton(
     var voiceSearchState by remember { mutableStateOf<VoiceSearchState>(VoiceSearchState.Idle) }
     var soundLevel by remember { mutableFloatStateOf(0f) }
     var speechRecognizer by remember { mutableStateOf<SpeechRecognizer?>(null) }
-
-    // Smooth animation for sound level
-    val animatedSoundLevel by animateFloatAsState(
-        targetValue = soundLevel,
-        animationSpec = tween(durationMillis = 100),
-        label = "soundLevel",
-    )
+    var partialResult by remember { mutableStateOf("") }
 
     // Check if speech recognition is available
     val isAvailable = remember {
@@ -126,10 +127,14 @@ fun VoiceSearchButton(
         contract = ActivityResultContracts.RequestPermission(),
     ) { isGranted ->
         if (isGranted) {
+            // Zero-latency: Set state to Listening immediately
+            voiceSearchState = VoiceSearchState.Listening
+            partialResult = ""
             startListening(
                 context = context,
                 onStateChange = { voiceSearchState = it },
                 onSoundLevelChange = { soundLevel = it },
+                onPartialResult = { partialResult = it },
                 onResult = onSpeechResult,
                 onRecognizerCreated = { speechRecognizer = it },
             )
@@ -158,7 +163,21 @@ fun VoiceSearchButton(
         }
     }
 
-    val primaryColor = MaterialTheme.colorScheme.primary
+    // Show full-screen overlay when listening
+    if (voiceSearchState is VoiceSearchState.Listening) {
+        VoiceSearchOverlay(
+            soundLevel = soundLevel,
+            partialResult = partialResult,
+            onDismiss = {
+                speechRecognizer?.stopListening()
+                speechRecognizer?.destroy()
+                speechRecognizer = null
+                voiceSearchState = VoiceSearchState.Idle
+                soundLevel = 0f
+                partialResult = ""
+            },
+        )
+    }
 
     if (isAvailable) {
         Button(
@@ -171,6 +190,7 @@ fun VoiceSearchButton(
                         speechRecognizer = null
                         voiceSearchState = VoiceSearchState.Idle
                         soundLevel = 0f
+                        partialResult = ""
                     }
                     else -> {
                         // Check permission and start listening
@@ -180,10 +200,14 @@ fun VoiceSearchButton(
                         ) == PackageManager.PERMISSION_GRANTED
 
                         if (hasPermission) {
+                            // Zero-latency: Set state to Listening immediately
+                            voiceSearchState = VoiceSearchState.Listening
+                            partialResult = ""
                             startListening(
                                 context = context,
                                 onStateChange = { voiceSearchState = it },
                                 onSoundLevelChange = { soundLevel = it },
+                                onPartialResult = { partialResult = it },
                                 onResult = onSpeechResult,
                                 onRecognizerCreated = { speechRecognizer = it },
                             )
@@ -205,28 +229,98 @@ fun VoiceSearchButton(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center,
             ) {
-                // Layer 1: Sound wave animation (behind the icon)
-                if (voiceSearchState is VoiceSearchState.Listening) {
-                    Canvas(modifier = Modifier.fillMaxSize()) {
-                        val centerX = size.width / 2
-                        val centerY = size.height / 2
-
-                        drawSoundWaves(
-                            color = primaryColor,
-                            centerX = centerX,
-                            centerY = centerY,
-                            soundLevel = animatedSoundLevel,
-                        )
-                    }
-                }
-
-                // Layer 2: Standard Icon composable - automatically adapts to LocalContentColor
-                // This ensures the icon is visible regardless of button focus/press state
                 Icon(
                     imageVector = MicIcon,
-                    contentDescription = stringResource(R.string.voice_search),
+                    contentDescription = "Voice search",
                     modifier = Modifier.size(28.dp),
-                    // Don't set tint - let it use LocalContentColor from Button
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Full-screen overlay displayed when voice search is active
+ */
+@Composable
+private fun VoiceSearchOverlay(
+    soundLevel: Float,
+    partialResult: String,
+    onDismiss: () -> Unit,
+) {
+    // Theme colors for gradient - adapts to user's selected theme
+    val primaryColor = MaterialTheme.colorScheme.primary
+    val tertiaryColor = MaterialTheme.colorScheme.tertiary
+    val onPrimaryColor = MaterialTheme.colorScheme.onPrimary
+
+    // Smooth animation for sound level
+    val animatedSoundLevel by animateFloatAsState(
+        targetValue = soundLevel,
+        animationSpec = tween(durationMillis = 100),
+        label = "soundLevel",
+    )
+
+    // Infinite pulse animation
+    val infiniteTransition = rememberInfiniteTransition(label = "pulse")
+    val basePulse by infiniteTransition.animateFloat(
+        initialValue = 1f,
+        targetValue = 1.05f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 800),
+            repeatMode = RepeatMode.Reverse,
+        ),
+        label = "basePulse",
+    )
+
+    // Combined scale: base pulse + sound level response
+    val bubbleScale = basePulse + (animatedSoundLevel * 0.15f)
+
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(
+            dismissOnBackPress = true,
+            dismissOnClickOutside = true,
+            usePlatformDefaultWidth = false,
+        ),
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = 0.95f)),
+            contentAlignment = Alignment.Center,
+        ) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(48.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.padding(horizontal = 64.dp),
+            ) {
+                // The "Listening Bubble" - centered circle with gradient and pulsing animation
+                Box(
+                    modifier = Modifier
+                        .size(160.dp)
+                        .scale(bubbleScale)
+                        .clip(CircleShape)
+                        .background(
+                            brush = Brush.linearGradient(
+                                colors = listOf(primaryColor, tertiaryColor),
+                            ),
+                        ),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        imageVector = MicIcon,
+                        contentDescription = "Listening",
+                        modifier = Modifier.size(80.dp),
+                        tint = onPrimaryColor,
+                    )
+                }
+
+                // Text feedback - to the right of the bubble
+                Text(
+                    text = if (partialResult.isNotBlank()) partialResult else "Speak to search...",
+                    style = MaterialTheme.typography.headlineMedium,
+                    color = Color.White,
+                    modifier = Modifier.weight(1f),
                 )
             }
         }
@@ -237,6 +331,7 @@ private fun startListening(
     context: android.content.Context,
     onStateChange: (VoiceSearchState) -> Unit,
     onSoundLevelChange: (Float) -> Unit,
+    onPartialResult: (String) -> Unit,
     onResult: (String) -> Unit,
     onRecognizerCreated: (SpeechRecognizer) -> Unit,
 ) {
@@ -246,7 +341,7 @@ private fun startListening(
     val listener = object : RecognitionListener {
         override fun onReadyForSpeech(params: Bundle?) {
             Timber.d("Speech recognition ready")
-            onStateChange(VoiceSearchState.Listening)
+            // State is already set to Listening for zero-latency
         }
 
         override fun onBeginningOfSpeech() {
@@ -295,7 +390,12 @@ private fun startListening(
         }
 
         override fun onPartialResults(partialResults: Bundle?) {
-            // Could show partial results if desired
+            val matches = partialResults?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
+            val partialText = matches?.firstOrNull()
+            if (!partialText.isNullOrBlank()) {
+                Timber.d("Partial result: $partialText")
+                onPartialResult(partialText)
+            }
         }
 
         override fun onEvent(eventType: Int, params: Bundle?) {
@@ -316,67 +416,9 @@ private fun startListening(
 
     try {
         recognizer.startListening(intent)
-        onStateChange(VoiceSearchState.Listening)
+        // State is already set to Listening for zero-latency
     } catch (e: Exception) {
         Timber.e(e, "Failed to start speech recognition")
         onStateChange(VoiceSearchState.Error("Failed to start: ${e.message}"))
-    }
-}
-
-/**
- * Draws animated sound wave arcs emanating from the right side of the icon
- */
-private fun DrawScope.drawSoundWaves(
-    color: Color,
-    centerX: Float,
-    centerY: Float,
-    soundLevel: Float,
-) {
-    val baseStroke = 2.5f
-    val arcSpacing = 6f
-
-    // Arc 1: Always visible when listening
-    val arc1Alpha = 0.3f + (soundLevel * 0.4f)
-    val arc1Stroke = baseStroke + (soundLevel * 1f)
-    drawArc(
-        color = color.copy(alpha = arc1Alpha),
-        startAngle = -45f,
-        sweepAngle = 90f,
-        useCenter = false,
-        topLeft = Offset(centerX - 8f, centerY - 8f),
-        size = Size(16f, 16f),
-        style = Stroke(width = arc1Stroke, cap = StrokeCap.Round),
-    )
-
-    // Arc 2: Visible when soundLevel > 0.3
-    if (soundLevel > 0.3f) {
-        val arc2Progress = ((soundLevel - 0.3f) / 0.3f).coerceIn(0f, 1f)
-        val arc2Alpha = 0.2f + (arc2Progress * 0.4f)
-        val arc2Stroke = baseStroke + (arc2Progress * 0.8f)
-        drawArc(
-            color = color.copy(alpha = arc2Alpha),
-            startAngle = -45f,
-            sweepAngle = 90f,
-            useCenter = false,
-            topLeft = Offset(centerX - 8f - arcSpacing, centerY - 8f - arcSpacing),
-            size = Size(16f + arcSpacing * 2, 16f + arcSpacing * 2),
-            style = Stroke(width = arc2Stroke, cap = StrokeCap.Round),
-        )
-    }
-
-    // Arc 3: Visible when soundLevel > 0.6
-    if (soundLevel > 0.6f) {
-        val arc3Progress = ((soundLevel - 0.6f) / 0.4f).coerceIn(0f, 1f)
-        val arc3Alpha = 0.15f + (arc3Progress * 0.35f)
-        val arc3Stroke = baseStroke + (arc3Progress * 0.6f)
-        drawArc(
-            color = color.copy(alpha = arc3Alpha),
-            startAngle = -45f,
-            sweepAngle = 90f,
-            useCenter = false,
-            topLeft = Offset(centerX - 8f - arcSpacing * 2, centerY - 8f - arcSpacing * 2),
-            size = Size(16f + arcSpacing * 4, 16f + arcSpacing * 4),
-            style = Stroke(width = arc3Stroke, cap = StrokeCap.Round),
-        )
     }
 }
