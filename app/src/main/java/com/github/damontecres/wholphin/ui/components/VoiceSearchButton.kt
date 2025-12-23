@@ -64,6 +64,21 @@ fun VoiceSearchButton(
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
+    val voiceSearchPrompt = stringResource(R.string.voice_search_prompt)
+
+    val speechIntent =
+        remember(voiceSearchPrompt) {
+            Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                putExtra(
+                    RecognizerIntent.EXTRA_LANGUAGE_MODEL,
+                    RecognizerIntent.LANGUAGE_MODEL_FREE_FORM,
+                )
+                putExtra(
+                    RecognizerIntent.EXTRA_PROMPT,
+                    voiceSearchPrompt,
+                )
+            }
+        }
 
     val isAvailable =
         remember {
@@ -88,18 +103,7 @@ fun VoiceSearchButton(
     if (isAvailable) {
         Button(
             onClick = {
-                val intent =
-                    Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
-                        putExtra(
-                            RecognizerIntent.EXTRA_LANGUAGE_MODEL,
-                            RecognizerIntent.LANGUAGE_MODEL_FREE_FORM,
-                        )
-                        putExtra(
-                            RecognizerIntent.EXTRA_PROMPT,
-                            context.getString(R.string.voice_search_prompt),
-                        )
-                    }
-                speechLauncher.launch(intent)
+                speechLauncher.launch(speechIntent)
             },
             modifier =
                 modifier.requiredSizeIn(
