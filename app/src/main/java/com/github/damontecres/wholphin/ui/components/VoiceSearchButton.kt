@@ -50,18 +50,16 @@ import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import timber.log.Timber
 
-/**
- * State for the voice search functionality
- */
 sealed interface VoiceSearchState {
     data object Idle : VoiceSearchState
+
     data object Listening : VoiceSearchState
-    data class Error(val message: String) : VoiceSearchState
+
+    data class Error(
+        val message: String,
+    ) : VoiceSearchState
 }
 
-/**
- * Microphone icon vector - fill color will be overridden by Icon's tint
- */
 private val MicIcon: ImageVector by lazy {
     ImageVector
         .Builder(
@@ -95,10 +93,6 @@ private val MicIcon: ImageVector by lazy {
         }.build()
 }
 
-/**
- * Normalizes RMS dB value from SpeechRecognizer to a 0.0-1.0 range.
- * SpeechRecognizer typically returns values in the -2.0 to 10.0 range.
- */
 private fun normalizeRmsDb(rmsdB: Float): Float {
     val minRms = -2.0f
     val maxRms = 10.0f
@@ -116,34 +110,32 @@ fun VoiceSearchButton(
     var speechRecognizer by remember { mutableStateOf<SpeechRecognizer?>(null) }
     var partialResult by remember { mutableStateOf("") }
 
-    // Check if speech recognition is available
-    val isAvailable = remember {
-        SpeechRecognizer.isRecognitionAvailable(context)
-    }
-
-    // Permission launcher
-    val permissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission(),
-    ) { isGranted ->
-        if (isGranted) {
-            // Zero-latency: Set state to Listening immediately
-            voiceSearchState = VoiceSearchState.Listening
-            partialResult = ""
-            startListening(
-                context = context,
-                onStateChange = { voiceSearchState = it },
-                onSoundLevelChange = { soundLevel = it },
-                onPartialResult = { partialResult = it },
-                onResult = onSpeechResult,
-                onRecognizerCreated = { speechRecognizer = it },
-            )
-        } else {
-            Timber.w("RECORD_AUDIO permission denied")
-            voiceSearchState = VoiceSearchState.Error("Microphone permission required")
+    val isAvailable =
+        remember {
+            SpeechRecognizer.isRecognitionAvailable(context)
         }
-    }
 
-    // Clean up SpeechRecognizer when composable leaves composition
+    val permissionLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.RequestPermission(),
+        ) { isGranted ->
+            if (isGranted) {
+                voiceSearchState = VoiceSearchState.Listening
+                partialResult = ""
+                startListening(
+                    context = context,
+                    onStateChange = { voiceSearchState = it },
+                    onSoundLevelChange = { soundLevel = it },
+                    onPartialResult = { partialResult = it },
+                    onResult = onSpeechResult,
+                    onRecognizerCreated = { speechRecognizer = it },
+                )
+            } else {
+                Timber.w("RECORD_AUDIO permission denied")
+                voiceSearchState = VoiceSearchState.Error("Microphone permission required")
+            }
+        }
+
     DisposableEffect(Unit) {
         onDispose {
             speechRecognizer?.destroy()
@@ -151,7 +143,6 @@ fun VoiceSearchButton(
         }
     }
 
-    // Also clean up when state changes to Idle or Error
     DisposableEffect(voiceSearchState) {
         onDispose {
             if (voiceSearchState !is VoiceSearchState.Listening) {
@@ -162,7 +153,6 @@ fun VoiceSearchButton(
         }
     }
 
-    // Show full-screen overlay when listening
     if (voiceSearchState is VoiceSearchState.Listening) {
         VoiceSearchOverlay(
             soundLevel = soundLevel,
@@ -183,7 +173,6 @@ fun VoiceSearchButton(
             onClick = {
                 when (voiceSearchState) {
                     is VoiceSearchState.Listening -> {
-                        // Stop listening
                         speechRecognizer?.stopListening()
                         speechRecognizer?.destroy()
                         speechRecognizer = null
@@ -192,14 +181,13 @@ fun VoiceSearchButton(
                         partialResult = ""
                     }
                     else -> {
-                        // Check permission and start listening
-                        val hasPermission = ContextCompat.checkSelfPermission(
-                            context,
-                            Manifest.permission.RECORD_AUDIO,
-                        ) == PackageManager.PERMISSION_GRANTED
+                        val hasPermission =
+                            ContextCompat.checkSelfPermission(
+                                context,
+                                Manifest.permission.RECORD_AUDIO,
+                            ) == PackageManager.PERMISSION_GRANTED
 
                         if (hasPermission) {
-                            // Zero-latency: Set state to Listening immediately
                             voiceSearchState = VoiceSearchState.Listening
                             partialResult = ""
                             startListening(
@@ -216,12 +204,13 @@ fun VoiceSearchButton(
                     }
                 }
             },
-            modifier = modifier.requiredSizeIn(
-                minWidth = MinButtonSize,
-                minHeight = MinButtonSize,
-                maxWidth = MinButtonSize,
-                maxHeight = MinButtonSize,
-            ),
+            modifier =
+                modifier.requiredSizeIn(
+                    minWidth = MinButtonSize,
+                    minHeight = MinButtonSize,
+                    maxWidth = MinButtonSize,
+                    maxHeight = MinButtonSize,
+                ),
             contentPadding = PaddingValues(0.dp),
         ) {
             Box(
@@ -238,53 +227,49 @@ fun VoiceSearchButton(
     }
 }
 
-/**
- * Full-screen overlay displayed when voice search is active
- */
 @Composable
 private fun VoiceSearchOverlay(
     soundLevel: Float,
     partialResult: String,
     onDismiss: () -> Unit,
 ) {
-    // Theme colors - adapts to user's selected theme (Purple, Green, Blue, etc.)
     val primaryColor = MaterialTheme.colorScheme.primary
     val onPrimaryColor = MaterialTheme.colorScheme.onPrimary
 
-    // Smooth animation for sound level
     val animatedSoundLevel by animateFloatAsState(
         targetValue = soundLevel,
         animationSpec = tween(durationMillis = 100),
         label = "soundLevel",
     )
 
-    // Infinite pulse animation
     val infiniteTransition = rememberInfiniteTransition(label = "pulse")
     val basePulse by infiniteTransition.animateFloat(
         initialValue = 1f,
         targetValue = 1.05f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 800),
-            repeatMode = RepeatMode.Reverse,
-        ),
+        animationSpec =
+            infiniteRepeatable(
+                animation = tween(durationMillis = 800),
+                repeatMode = RepeatMode.Reverse,
+            ),
         label = "basePulse",
     )
 
-    // Combined scale: base pulse + sound level response
     val bubbleScale = basePulse + (animatedSoundLevel * 0.15f)
 
     Dialog(
         onDismissRequest = onDismiss,
-        properties = DialogProperties(
-            dismissOnBackPress = true,
-            dismissOnClickOutside = true,
-            usePlatformDefaultWidth = false,
-        ),
+        properties =
+            DialogProperties(
+                dismissOnBackPress = true,
+                dismissOnClickOutside = true,
+                usePlatformDefaultWidth = false,
+            ),
     ) {
         Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color.Black.copy(alpha = 0.95f)),
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.95f)),
             contentAlignment = Alignment.Center,
         ) {
             Row(
@@ -292,13 +277,13 @@ private fun VoiceSearchOverlay(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.padding(horizontal = 64.dp),
             ) {
-                // The "Listening Bubble" - flat solid color circle with pulsing animation
                 Box(
-                    modifier = Modifier
-                        .size(160.dp)
-                        .scale(bubbleScale)
-                        .clip(CircleShape)
-                        .background(primaryColor),
+                    modifier =
+                        Modifier
+                            .size(160.dp)
+                            .scale(bubbleScale)
+                            .clip(CircleShape)
+                            .background(primaryColor),
                     contentAlignment = Alignment.Center,
                 ) {
                     Icon(
@@ -309,7 +294,6 @@ private fun VoiceSearchOverlay(
                     )
                 }
 
-                // Text feedback - to the right of the bubble
                 Text(
                     text = if (partialResult.isNotBlank()) partialResult else "Speak to search...",
                     style = MaterialTheme.typography.headlineMedium,
@@ -332,85 +316,89 @@ private fun startListening(
     val recognizer = SpeechRecognizer.createSpeechRecognizer(context)
     onRecognizerCreated(recognizer)
 
-    val listener = object : RecognitionListener {
-        override fun onReadyForSpeech(params: Bundle?) {
-            Timber.d("Speech recognition ready")
-            // State is already set to Listening for zero-latency
-        }
-
-        override fun onBeginningOfSpeech() {
-            Timber.d("Speech started")
-        }
-
-        override fun onRmsChanged(rmsdB: Float) {
-            onSoundLevelChange(normalizeRmsDb(rmsdB))
-        }
-
-        override fun onBufferReceived(buffer: ByteArray?) {
-            // Not used
-        }
-
-        override fun onEndOfSpeech() {
-            Timber.d("Speech ended")
-        }
-
-        override fun onError(error: Int) {
-            val errorMessage = when (error) {
-                SpeechRecognizer.ERROR_AUDIO -> "Audio recording error"
-                SpeechRecognizer.ERROR_CLIENT -> "Client side error"
-                SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS -> "Insufficient permissions"
-                SpeechRecognizer.ERROR_NETWORK -> "Network error"
-                SpeechRecognizer.ERROR_NETWORK_TIMEOUT -> "Network timeout"
-                SpeechRecognizer.ERROR_NO_MATCH -> "No speech recognized"
-                SpeechRecognizer.ERROR_RECOGNIZER_BUSY -> "Recognition service busy"
-                SpeechRecognizer.ERROR_SERVER -> "Server error"
-                SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> "No speech input"
-                else -> "Unknown error: $error"
+    val listener =
+        object : RecognitionListener {
+            override fun onReadyForSpeech(params: Bundle?) {
+                Timber.d("Speech recognition ready")
             }
-            Timber.e("Speech recognition error: $errorMessage")
-            onStateChange(VoiceSearchState.Error(errorMessage))
-            onSoundLevelChange(0f)
-        }
 
-        override fun onResults(results: Bundle?) {
-            val matches = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
-            val spokenText = matches?.firstOrNull()
-            if (!spokenText.isNullOrBlank()) {
-                Timber.d("Speech result: $spokenText")
-                onResult(spokenText)
+            override fun onBeginningOfSpeech() {
+                Timber.d("Speech started")
             }
-            onStateChange(VoiceSearchState.Idle)
-            onSoundLevelChange(0f)
-        }
 
-        override fun onPartialResults(partialResults: Bundle?) {
-            val matches = partialResults?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
-            val partialText = matches?.firstOrNull()
-            if (!partialText.isNullOrBlank()) {
-                Timber.d("Partial result: $partialText")
-                onPartialResult(partialText)
+            override fun onRmsChanged(rmsdB: Float) {
+                onSoundLevelChange(normalizeRmsDb(rmsdB))
+            }
+
+            override fun onBufferReceived(buffer: ByteArray?) {
+                // Not used
+            }
+
+            override fun onEndOfSpeech() {
+                Timber.d("Speech ended")
+            }
+
+            override fun onError(error: Int) {
+                val errorMessage =
+                    when (error) {
+                        SpeechRecognizer.ERROR_AUDIO -> "Audio recording error"
+                        SpeechRecognizer.ERROR_CLIENT -> "Client side error"
+                        SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS -> "Insufficient permissions"
+                        SpeechRecognizer.ERROR_NETWORK -> "Network error"
+                        SpeechRecognizer.ERROR_NETWORK_TIMEOUT -> "Network timeout"
+                        SpeechRecognizer.ERROR_NO_MATCH -> "No speech recognized"
+                        SpeechRecognizer.ERROR_RECOGNIZER_BUSY -> "Recognition service busy"
+                        SpeechRecognizer.ERROR_SERVER -> "Server error"
+                        SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> "No speech input"
+                        else -> "Unknown error: $error"
+                    }
+                Timber.e("Speech recognition error: $errorMessage")
+                onStateChange(VoiceSearchState.Error(errorMessage))
+                onSoundLevelChange(0f)
+            }
+
+            override fun onResults(results: Bundle?) {
+                val matches = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
+                val spokenText = matches?.firstOrNull()
+                if (!spokenText.isNullOrBlank()) {
+                    Timber.d("Speech result: $spokenText")
+                    onResult(spokenText)
+                }
+                onStateChange(VoiceSearchState.Idle)
+                onSoundLevelChange(0f)
+            }
+
+            override fun onPartialResults(partialResults: Bundle?) {
+                val matches = partialResults?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
+                val partialText = matches?.firstOrNull()
+                if (!partialText.isNullOrBlank()) {
+                    Timber.d("Partial result: $partialText")
+                    onPartialResult(partialText)
+                }
+            }
+
+            override fun onEvent(
+                eventType: Int,
+                params: Bundle?,
+            ) {
+                // Not used
             }
         }
-
-        override fun onEvent(eventType: Int, params: Bundle?) {
-            // Not used
-        }
-    }
 
     recognizer.setRecognitionListener(listener)
 
-    val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
-        putExtra(
-            RecognizerIntent.EXTRA_LANGUAGE_MODEL,
-            RecognizerIntent.LANGUAGE_MODEL_FREE_FORM,
-        )
-        putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
-        putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1)
-    }
+    val intent =
+        Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+            putExtra(
+                RecognizerIntent.EXTRA_LANGUAGE_MODEL,
+                RecognizerIntent.LANGUAGE_MODEL_FREE_FORM,
+            )
+            putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
+            putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1)
+        }
 
     try {
         recognizer.startListening(intent)
-        // State is already set to Listening for zero-latency
     } catch (e: Exception) {
         Timber.e(e, "Failed to start speech recognition")
         onStateChange(VoiceSearchState.Error("Failed to start: ${e.message}"))
