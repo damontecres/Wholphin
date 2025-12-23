@@ -332,4 +332,8 @@
     <string name="resolution">Resolusi</string>
     <string name="sample_rate">Sampel rate</string>
     <string name="spacing">Jarak</string>
+    <string name="ends_at">Berakhir pada %1$s</string>
+    <string name="enter_server_address">Masukkan alamat server</string>
+    <string name="no_servers_found">Server tidak ditemukan</string>
+    <string name="subtitle_delay">Penundaan subtitel</string>
 </resources>
