@@ -17,6 +17,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -220,6 +221,8 @@ fun SearchPage(
         }
     }
 
+    val scope = rememberCoroutineScope()
+
     LazyColumn(
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 44.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -300,6 +303,12 @@ fun SearchPage(
                         onSpeechResult = { spokenText ->
                             query = spokenText
                             triggerImmediateSearch(spokenText)
+                            // Reclaim focus after voice search returns to prevent
+                            // focus from jumping to the Navigation Drawer
+                            scope.launch {
+                                delay(100L)
+                                textFieldFocusRequester.requestFocus()
+                            }
                         },
                     )
                 }
