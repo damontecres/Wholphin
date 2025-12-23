@@ -50,6 +50,7 @@ import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import timber.log.Timber
 
+/** Voice search UI state */
 sealed interface VoiceSearchState {
     data object Idle : VoiceSearchState
 
@@ -93,7 +94,9 @@ private val MicIcon: ImageVector by lazy {
         }.build()
 }
 
+/** Normalize RMS dB to 0.0-1.0 range for animation scaling */
 private fun normalizeRmsDb(rmsdB: Float): Float {
+    // SpeechRecognizer typically returns -2 to 10 dB
     val minRms = -2.0f
     val maxRms = 10.0f
     return ((rmsdB - minRms) / (maxRms - minRms)).coerceIn(0f, 1f)
@@ -136,6 +139,7 @@ fun VoiceSearchButton(
             }
         }
 
+    // Cleanup on composable disposal
     DisposableEffect(Unit) {
         onDispose {
             speechRecognizer?.destroy()
@@ -143,6 +147,7 @@ fun VoiceSearchButton(
         }
     }
 
+    // Cleanup when returning to Idle/Error state
     DisposableEffect(voiceSearchState) {
         onDispose {
             if (voiceSearchState !is VoiceSearchState.Listening) {
@@ -227,6 +232,7 @@ fun VoiceSearchButton(
     }
 }
 
+/** Full-screen overlay with pulsing mic icon that responds to voice input level */
 @Composable
 private fun VoiceSearchOverlay(
     soundLevel: Float,
@@ -305,6 +311,7 @@ private fun VoiceSearchOverlay(
     }
 }
 
+/** Initialize SpeechRecognizer and start listening for voice input */
 private fun startListening(
     context: android.content.Context,
     onStateChange: (VoiceSearchState) -> Unit,
