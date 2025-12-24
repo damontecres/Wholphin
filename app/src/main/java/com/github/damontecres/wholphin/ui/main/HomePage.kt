@@ -125,11 +125,21 @@ fun HomePage(
             var dialog by remember { mutableStateOf<DialogParams?>(null) }
             var showPlaylistDialog by remember { mutableStateOf<UUID?>(null) }
             val playlistState by playlistViewModel.playlistState.observeAsState(PlaylistLoadingState.Pending)
+            val playNextUpOnClick = preferences.appPreferences.homePagePreferences.playNextUpOnClick
             HomePageContent(
-                watchingRows + latestRows,
+                homeRows = watchingRows + latestRows,
+                numWatchingRows = watchingRows.size,
+                numLatestRows = latestRows.size,
+                playNextUpOnClick = playNextUpOnClick,
                 onClickItem = { position, item ->
-                    viewModel.navigationManager.navigateTo(item.destination())
+                    val isNextUpOrContinue = position.row < watchingRows.size
+                    if (playNextUpOnClick && isNextUpOrContinue && item.type == BaseItemKind.EPISODE) {
+                        viewModel.navigationManager.navigateTo(Destination.Playback(item))
+                    } else {
+                        viewModel.navigationManager.navigateTo(item.destination())
+                    }
                 },
+                showClock = preferences.appPreferences.interfacePreferences.showClock,
                 onLongClickItem = { position, item ->
                     val dialogItems =
                         buildMoreDialogItemsForHome(
@@ -165,7 +175,6 @@ fun HomePage(
                     viewModel.navigationManager.navigateTo(Destination.Playback(item))
                 },
                 loadingState = refreshing,
-                showClock = preferences.appPreferences.interfacePreferences.showClock,
                 onUpdateBackdrop = viewModel::updateBackdrop,
                 modifier = modifier,
             )
@@ -202,11 +211,14 @@ fun HomePageContent(
     onClickItem: (RowColumn, BaseItem) -> Unit,
     onLongClickItem: (RowColumn, BaseItem) -> Unit,
     onClickPlay: (RowColumn, BaseItem) -> Unit,
-    showClock: Boolean,
     onUpdateBackdrop: (BaseItem) -> Unit,
     modifier: Modifier = Modifier,
     onFocusPosition: ((RowColumn) -> Unit)? = null,
     loadingState: LoadingState? = null,
+    playNextUpOnClick: Boolean = false,
+    numWatchingRows: Int = 0,
+    numLatestRows: Int = 0,
+    showClock: Boolean = false,
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -360,17 +372,21 @@ fun HomePageContent(
                                             .fillMaxWidth()
                                             .animateItem(),
                                     cardContent = { index, item, cardModifier, onClick, onLongClick ->
+                                        // Display "Next Up" and "Continue Watching" as landscape if setting is enabled
+                                        val isNextUpOrContinue = rowIndex < numWatchingRows
+                                        val useLandscape = playNextUpOnClick && isNextUpOrContinue && item?.type == BaseItemKind.EPISODE
+                                        val cardItem = if (useLandscape) item?.copy(useSeriesForPrimary = false) else item
                                         BannerCard(
-                                            name = item?.data?.seriesName ?: item?.name,
-                                            item = item,
-                                            aspectRatio = AspectRatios.TALL,
+                                            name = cardItem?.data?.seriesName ?: cardItem?.name,
+                                            item = cardItem,
+                                            aspectRatio = if (useLandscape) AspectRatios.WIDE else AspectRatios.TALL,
                                             cornerText =
-                                                item?.data?.indexNumber?.let { "E$it" }
-                                                    ?: item?.data?.childCount?.let { if (it > 0) it.toString() else null },
-                                            played = item?.data?.userData?.played ?: false,
-                                            favorite = item?.favorite ?: false,
+                                                cardItem?.data?.indexNumber?.let { "E$it" }
+                                                    ?: cardItem?.data?.childCount?.let { if (it > 0) it.toString() else null },
+                                            played = cardItem?.data?.userData?.played ?: false,
+                                            favorite = cardItem?.favorite ?: false,
                                             playPercent =
-                                                item?.data?.userData?.playedPercentage
+                                                cardItem?.data?.userData?.playedPercentage
                                                     ?: 0.0,
                                             onClick = onClick,
                                             onLongClick = onLongClick,
@@ -396,12 +412,12 @@ fun HomePageContent(
                                                                 RowColumn(
                                                                     rowIndex - nonEmptyRowBefore,
                                                                     index,
-                                                                ),
+                                                                 ),
                                                             )
                                                         }
                                                     },
                                             interactionSource = null,
-                                            cardHeight = Cards.height2x3,
+                                            cardHeight = if (useLandscape) 120.dp else Cards.height2x3,
                                         )
                                     },
                                 )

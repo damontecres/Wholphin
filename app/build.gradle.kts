@@ -21,17 +21,23 @@ val isCI = if (System.getenv("CI") != null) System.getenv("CI").toBoolean() else
 val shouldSign = isCI && System.getenv("KEY_ALIAS") != null
 val ffmpegModuleExists = project.file("libs/lib-decoder-ffmpeg-release.aar").exists()
 
-val gitTags =
+val gitTags = try {
     providers
         .exec { commandLine("git", "tag", "--list", "v*", "p*") }
         .standardOutput.asText
         .get()
+} catch (e: Exception) {
+    ""
+}
 
-val gitDescribe =
+val gitDescribe = try {
     providers
         .exec { commandLine("git", "describe", "--tags", "--long", "--match=v*") }
         .standardOutput.asText
         .getOrElse("v0.0.0")
+} catch (e: Exception) {
+    "v0.0.0"
+}
 
 android {
     namespace = "com.github.damontecres.wholphin"

@@ -210,6 +210,18 @@ sealed interface AppPreference<Pref, T> {
                 summaryOff = R.string.disabled,
             )
 
+        val PlayNextUpOnClick =
+            AppSwitchPreference<AppPreferences>(
+                title = R.string.play_next_up_on_click,
+                defaultValue = false,
+                getter = { it.homePagePreferences.playNextUpOnClick },
+                setter = { prefs, value ->
+                    prefs.updateHomePagePreferences { playNextUpOnClick = value }
+                },
+                summaryOn = R.string.enabled,
+                summaryOff = R.string.disabled,
+            )
+
         val PlayThemeMusic =
             AppChoicePreference<AppPreferences, ThemeSongVolume>(
                 title = R.string.play_theme_music,
@@ -878,6 +890,7 @@ val basicPreferences =
                     AppPreference.AutoPlayNextUp,
                     AppPreference.AutoPlayNextDelay,
                     AppPreference.PassOutProtection,
+                    AppPreference.PlayNextUpOnClick,
                 ),
         ),
         PreferenceGroup(

@@ -39,6 +39,7 @@ import com.github.damontecres.wholphin.util.LoadingState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
+import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.MediaType
 import java.util.UUID
 
@@ -147,10 +148,15 @@ fun RecommendedContent(
         }
 
         LoadingState.Success -> {
+            val playNextUpOnClick = preferences.appPreferences.homePagePreferences.playNextUpOnClick
             HomePageContent(
                 homeRows = rows,
-                onClickItem = { _, item ->
-                    viewModel.navigationManager.navigateTo(item.destination())
+                onClickItem = { rowColumn, item ->
+                    if (playNextUpOnClick && rowColumn.row == 0 && item.type == BaseItemKind.EPISODE) {
+                        viewModel.navigationManager.navigateTo(Destination.Playback(item))
+                    } else {
+                        viewModel.navigationManager.navigateTo(item.destination())
+                    }
                 },
                 onLongClickItem = { position, item ->
                     moreDialog.makePresent(RowColumnItem(position, item))
@@ -159,9 +165,12 @@ fun RecommendedContent(
                     viewModel.navigationManager.navigateTo(Destination.Playback(item))
                 },
                 onFocusPosition = onFocusPosition,
-                showClock = preferences.appPreferences.interfacePreferences.showClock,
                 onUpdateBackdrop = viewModel::updateBackdrop,
                 modifier = modifier,
+                playNextUpOnClick = playNextUpOnClick,
+                numWatchingRows = if (rows.isNotEmpty()) 1 else 0,
+                numLatestRows = rows.size - (if (rows.isNotEmpty()) 1 else 0),
+                showClock = preferences.appPreferences.interfacePreferences.showClock,
             )
         }
     }
