@@ -5,7 +5,9 @@ package com.github.damontecres.wholphin.data.model
 import com.github.damontecres.wholphin.api.seerr.model.MovieDetails
 import com.github.damontecres.wholphin.api.seerr.model.MovieMovieIdRatingsGet200Response
 import com.github.damontecres.wholphin.api.seerr.model.MovieResult
+import com.github.damontecres.wholphin.api.seerr.model.TvDetails
 import com.github.damontecres.wholphin.api.seerr.model.TvResult
+import com.github.damontecres.wholphin.api.seerr.model.TvTvIdRatingsGet200Response
 import com.github.damontecres.wholphin.services.SeerrSearchResult
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -104,7 +106,20 @@ data class DiscoverItem(
 
     constructor(tv: TvResult) : this(
         id = tv.id!!,
-        type = SeerrItemType.MOVIE,
+        type = SeerrItemType.TV,
+        title = tv.name,
+        subtitle = null,
+        overview = tv.overview,
+        availability = SeerrAvailability.from(tv.mediaInfo?.status) ?: SeerrAvailability.UNKNOWN,
+        releaseDate = tv.firstAirDate,
+        posterPath = tv.posterPath,
+        backdropPath = tv.backdropPath,
+        jellyfinItemId = tv.mediaInfo?.jellyfinMediaId?.toUUIDOrNull(),
+    )
+
+    constructor(tv: TvDetails) : this(
+        id = tv.id!!,
+        type = SeerrItemType.TV,
         title = tv.name,
         subtitle = null,
         overview = tv.overview,
@@ -138,5 +153,9 @@ data class DiscoverRating(
     constructor(rating: MovieMovieIdRatingsGet200Response) : this(
         criticRating = rating.criticsScore,
         audienceRating = rating.audienceScore?.div(10f),
+    )
+    constructor(rating: TvTvIdRatingsGet200Response) : this(
+        criticRating = rating.criticsScore,
+        audienceRating = null,
     )
 }

@@ -3,6 +3,7 @@ package com.github.damontecres.wholphin.ui.seerr
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -135,7 +136,8 @@ fun SeerrDiscoverPage(
             modifier =
                 Modifier
                     .verticalScroll(scrollState)
-                    .padding(horizontal = 16.dp),
+                    .fillMaxSize()
+                    .padding(start = 16.dp, end = 16.dp, bottom = 40.dp),
         ) {
             ItemRow(
                 title = stringResource(R.string.movies),

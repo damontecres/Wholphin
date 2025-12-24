@@ -54,7 +54,6 @@ import com.github.damontecres.wholphin.ui.components.DialogParams
 import com.github.damontecres.wholphin.ui.components.DialogPopup
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.LoadingPage
-import com.github.damontecres.wholphin.ui.data.AddPlaylistViewModel
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialog
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialogInfo
 import com.github.damontecres.wholphin.ui.detail.MoreDialogActions
@@ -77,7 +76,6 @@ fun DiscoverMovieDetails(
         hiltViewModel<DiscoverMovieViewModel, DiscoverMovieViewModel.Factory>(
             creationCallback = { it.create(destination.item) },
         ),
-    playlistViewModel: AddPlaylistViewModel = hiltViewModel(),
 ) {
     val context = LocalContext.current
     LifecycleResumeEffect(Unit) {

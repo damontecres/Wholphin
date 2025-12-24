@@ -3,6 +3,7 @@ package com.github.damontecres.wholphin.ui.nav
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
+import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.data.filter.DefaultForGenresFilterOptions
 import com.github.damontecres.wholphin.data.model.SeerrItemType
@@ -22,6 +23,7 @@ import com.github.damontecres.wholphin.ui.detail.FavoritesPage
 import com.github.damontecres.wholphin.ui.detail.PersonPage
 import com.github.damontecres.wholphin.ui.detail.PlaylistDetails
 import com.github.damontecres.wholphin.ui.detail.discover.DiscoverMovieDetails
+import com.github.damontecres.wholphin.ui.detail.discover.DiscoverSeriesDetails
 import com.github.damontecres.wholphin.ui.detail.episode.EpisodeDetails
 import com.github.damontecres.wholphin.ui.detail.movie.MovieDetails
 import com.github.damontecres.wholphin.ui.detail.series.SeriesDetails
@@ -268,15 +270,24 @@ fun DestinationContent(
                 }
 
                 SeerrItemType.TV -> {
-                    TODO()
+                    DiscoverSeriesDetails(
+                        preferences = preferences,
+                        destination = destination,
+                    )
                 }
 
                 SeerrItemType.PERSON -> {
-                    TODO()
+                    Text(
+                        text = "Person not supported yet",
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
                 }
 
                 SeerrItemType.UNKNOWN -> {
-                    TODO()
+                    Text(
+                        text = "Unknown discover type",
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
                 }
             }
         }
