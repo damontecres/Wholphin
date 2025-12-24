@@ -156,7 +156,7 @@ class SeriesViewModel
                     viewModelScope.launchIO {
                         val index =
                             (seasons as? ApiRequestPager<*>)?.let {
-                                findSeason(
+                                findIndexOf(
                                     seasonEpisodeIds.seasonNumber,
                                     seasonEpisodeIds.seasonId,
                                     it,
@@ -296,14 +296,11 @@ class SeriesViewModel
                         ),
                 )
             val pager = ApiRequestPager(api, request, GetEpisodesRequestHandler, viewModelScope)
-            pager.init()
+            pager.init(episodeNumber ?: 0)
             val initialIndex =
                 if (episodeId != null || episodeNumber != null) {
-                    pager
-                        .indexOfBlocking {
-                            equalsNotNull(it?.id, episodeId) ||
-                                equalsNotNull(it?.indexNumber, episodeNumber)
-                        }.coerceAtLeast(0)
+                    findIndexOf(episodeNumber, episodeId, pager)
+                        .coerceAtLeast(0)
                 } else {
                     // Force the first page to to be fetched
                     if (pager.isNotEmpty()) {
@@ -546,37 +543,43 @@ enum class SeriesPageType {
     OVERVIEW,
 }
 
-private suspend fun findSeason(
-    seasonNum: Int?,
-    seasonId: UUID,
-    seasons: ApiRequestPager<*>,
+private suspend fun findIndexOf(
+    targetNum: Int?,
+    targetId: UUID?,
+    pager: ApiRequestPager<*>,
 ): Int {
     val index =
-        if (seasonNum == null || seasonNum !in seasons.indices) {
+        if (targetId != null && (targetNum == null || targetNum !in pager.indices)) {
             // No hint info, so have to check everything
-            seasons.indexOfBlocking { equalsNotNull(it?.id, seasonId) }
-        } else {
+            pager.indexOfBlocking { equalsNotNull(it?.id, targetId) }
+        } else if (targetNum != null && targetNum in pager.indices) {
             // Start searching from the season number and choose direction from there
-            val num = seasons.getBlocking(seasonNum)?.indexNumber
-            if (num.lt(seasonNum)) {
-                for (i in seasonNum + 1 until seasons.lastIndex) {
-                    val season = seasons.getBlocking(i)
-                    if (season?.id == seasonId) {
+            val num = pager.getBlocking(targetNum)?.indexNumber
+            if (num.lt(targetNum)) {
+                for (i in targetNum + 1 until pager.lastIndex) {
+                    val season = pager.getBlocking(i)
+                    if (equalsNotNull(season?.indexNumber, targetNum) ||
+                        equalsNotNull(season?.id, targetId)
+                    ) {
                         return i
                     }
                 }
                 return 0
-            } else if (num.gt(seasonNum)) {
-                for (i in seasonNum - 1 downTo 0) {
-                    val season = seasons.getBlocking(i)
-                    if (season?.id == seasonId) {
+            } else if (num.gt(targetNum)) {
+                for (i in targetNum - 1 downTo 0) {
+                    val season = pager.getBlocking(i)
+                    if (equalsNotNull(season?.indexNumber, targetNum) ||
+                        equalsNotNull(season?.id, targetId)
+                    ) {
                         return i
                     }
                 }
                 return 0
             } else {
-                seasonNum
+                targetNum
             }
+        } else {
+            0
         }
     return index
 }
