@@ -32,7 +32,6 @@ import androidx.tv.material3.Surface
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.preferences.AppPreference
 import com.github.damontecres.wholphin.preferences.AppPreferences
-import com.github.damontecres.wholphin.preferences.DefaultUserConfiguration
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.AppUpgradeHandler
 import com.github.damontecres.wholphin.services.BackdropService
@@ -102,7 +101,7 @@ class MainActivity : AppCompatActivity() {
     @OptIn(ExperimentalTvMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        Timber.i("MainActivity.onCreate")
+        Timber.i("MainActivity.onCreate: savedInstanceState is null=${savedInstanceState == null}")
         lifecycle.addObserver(playbackLifecycleObserver)
         if (savedInstanceState == null) {
             appUpgradeHandler.copySubfont(false)
@@ -209,12 +208,8 @@ class MainActivity : AppCompatActivity() {
                                                         appPreferences,
                                                     )
                                                     val preferences =
-                                                        remember(appPreferences, current) {
-                                                            UserPreferences(
-                                                                appPreferences,
-                                                                current.userDto.configuration
-                                                                    ?: DefaultUserConfiguration,
-                                                            )
+                                                        remember(appPreferences) {
+                                                            UserPreferences(appPreferences)
                                                         }
                                                     ApplicationContent(
                                                         user = current.user,
@@ -238,6 +233,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        Timber.i("onResume")
         lifecycleScope.launchIO {
             appUpgradeHandler.run()
         }
@@ -255,6 +251,36 @@ class MainActivity : AppCompatActivity() {
 //        if (!signInAutomatically) {
 //            serverRepository.closeSession()
 //        }
+    }
+
+    override fun onStop() {
+        super.onStop()
+        Timber.i("onStop")
+    }
+
+    override fun onPause() {
+        super.onPause()
+        Timber.i("onPause")
+    }
+
+    override fun onStart() {
+        super.onStart()
+        Timber.i("onStart")
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        Timber.i("onSaveInstanceState")
+    }
+
+    override fun onRestoreInstanceState(savedInstanceState: Bundle) {
+        super.onRestoreInstanceState(savedInstanceState)
+        Timber.i("onRestoreInstanceState")
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        Timber.i("onDestroy")
     }
 }
 
