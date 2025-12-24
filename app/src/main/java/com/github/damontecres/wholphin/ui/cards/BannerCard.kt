@@ -59,6 +59,7 @@ fun BannerCard(
     playPercent: Double = 0.0,
     cardHeight: Dp = 120.dp,
     aspectRatio: Float = AspectRatios.WIDE,
+    showLogo: Boolean = true,
     interactionSource: MutableInteractionSource? = null,
 ) {
     val imageUrlService = LocalImageUrlService.current
@@ -175,6 +176,28 @@ fun BannerCard(
                             .height(Cards.playedPercentHeight)
                             .fillMaxWidth((playPercent / 100).toFloat()),
                 )
+            }
+            if (showLogo && item?.type == org.jellyfin.sdk.model.api.BaseItemKind.EPISODE) {
+                val logoUrl =
+                    remember(item) {
+                        imageUrlService.getItemImageUrl(
+                            item,
+                            ImageType.LOGO,
+                            fillHeight = with(density) { (cardHeight * .2f).roundToPx() },
+                        )
+                    }
+                if (logoUrl.isNotNullOrBlank()) {
+                    AsyncImage(
+                        model = logoUrl,
+                        contentDescription = null,
+                        contentScale = ContentScale.Fit,
+                        modifier =
+                            Modifier
+                                .align(Alignment.BottomEnd)
+                                .padding(end = 4.dp, bottom = 4.dp + if (playPercent > 0 && playPercent < 100) Cards.playedPercentHeight else 0.dp)
+                                .height(cardHeight * .2f),
+                    )
+                }
             }
         }
     }

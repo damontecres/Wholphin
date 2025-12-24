@@ -171,6 +171,7 @@ fun RecommendedContent(
                 numWatchingRows = if (rows.isNotEmpty()) 1 else 0,
                 numLatestRows = rows.size - (if (rows.isNotEmpty()) 1 else 0),
                 showClock = preferences.appPreferences.interfacePreferences.showClock,
+                showLogoOnEpisodeCard = preferences.appPreferences.homePagePreferences.showLogoOnEpisodeCard,
             )
         }
     }

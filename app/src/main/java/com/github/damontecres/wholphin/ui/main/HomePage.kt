@@ -126,11 +126,13 @@ fun HomePage(
             var showPlaylistDialog by remember { mutableStateOf<UUID?>(null) }
             val playlistState by playlistViewModel.playlistState.observeAsState(PlaylistLoadingState.Pending)
             val playNextUpOnClick = preferences.appPreferences.homePagePreferences.playNextUpOnClick
+            val showLogoOnEpisodeCard = preferences.appPreferences.homePagePreferences.showLogoOnEpisodeCard
             HomePageContent(
                 homeRows = watchingRows + latestRows,
                 numWatchingRows = watchingRows.size,
                 numLatestRows = latestRows.size,
                 playNextUpOnClick = playNextUpOnClick,
+                showLogoOnEpisodeCard = showLogoOnEpisodeCard,
                 onClickItem = { position, item ->
                     val isNextUpOrContinue = position.row < watchingRows.size
                     if (playNextUpOnClick && isNextUpOrContinue && item.type == BaseItemKind.EPISODE) {
@@ -219,6 +221,7 @@ fun HomePageContent(
     numWatchingRows: Int = 0,
     numLatestRows: Int = 0,
     showClock: Boolean = false,
+    showLogoOnEpisodeCard: Boolean = true,
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -380,6 +383,7 @@ fun HomePageContent(
                                             name = cardItem?.data?.seriesName ?: cardItem?.name,
                                             item = cardItem,
                                             aspectRatio = if (useLandscape) AspectRatios.WIDE else AspectRatios.TALL,
+                                            showLogo = showLogoOnEpisodeCard,
                                             cornerText =
                                                 cardItem?.data?.indexNumber?.let { "E$it" }
                                                     ?: cardItem?.data?.childCount?.let { if (it > 0) it.toString() else null },

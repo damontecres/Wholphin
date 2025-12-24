@@ -267,6 +267,7 @@
     <string name="combine_continue_next_summary">Applies to TV Series only</string>
     <string name="combine_continue_next"><![CDATA[Combine Continue Watching & Next Up]]></string>
     <string name="play_next_up_on_click">Play Next Up on click</string>
+    <string name="show_logo_on_episode_card">Add Logo to Episode cards</string>
     <string name="direct_play_ass">Direct play ASS subtitles</string>
     <string name="direct_play_pgs">Direct play PGS subtitles</string>
     <string name="downmix_stereo">Always downmix to stereo</string>

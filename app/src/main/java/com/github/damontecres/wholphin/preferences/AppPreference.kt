@@ -221,6 +221,17 @@ sealed interface AppPreference<Pref, T> {
                 summaryOn = R.string.enabled,
                 summaryOff = R.string.disabled,
             )
+        val ShowLogoOnEpisodeCard =
+            AppSwitchPreference<AppPreferences>(
+                title = R.string.show_logo_on_episode_card,
+                defaultValue = true,
+                getter = { it.homePagePreferences.showLogoOnEpisodeCard },
+                setter = { prefs, value ->
+                    prefs.updateHomePagePreferences { showLogoOnEpisodeCard = value }
+                },
+                summaryOn = R.string.enabled,
+                summaryOff = R.string.disabled,
+            )
 
         val PlayThemeMusic =
             AppChoicePreference<AppPreferences, ThemeSongVolume>(
@@ -871,6 +882,7 @@ val basicPreferences =
                     AppPreference.RememberSelectedTab,
                     AppPreference.SubtitleStyle,
                     AppPreference.ThemeColors,
+                    AppPreference.ShowLogoOnEpisodeCard,
                 ),
         ),
         PreferenceGroup(

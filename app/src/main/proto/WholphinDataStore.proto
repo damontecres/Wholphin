@@ -79,6 +79,7 @@ message HomePagePreferences{
   bool enable_rewatching_next_up = 2;
   bool combine_continue_next = 3;
   bool play_next_up_on_click = 4;
+  bool show_logo_on_episode_card = 5;
 }
 
 enum ThemeSongVolume {
