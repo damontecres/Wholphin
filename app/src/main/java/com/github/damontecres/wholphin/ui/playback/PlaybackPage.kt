@@ -1,5 +1,8 @@
 package com.github.damontecres.wholphin.ui.playback
 
+import android.view.Gravity
+import android.view.ViewGroup
+import android.widget.FrameLayout
 import androidx.activity.compose.BackHandler
 import androidx.annotation.Dimension
 import androidx.annotation.OptIn
@@ -40,13 +43,16 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.intl.Locale
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import androidx.core.view.children
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.LifecycleStartEffect
 import androidx.media3.common.util.UnstableApi
@@ -80,10 +86,12 @@ import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
 import com.github.damontecres.wholphin.util.Media3SubtitleOverride
 import com.github.damontecres.wholphin.util.mpv.MpvPlayer
+import io.github.peerless2012.ass.media.widget.AssSubtitleView
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.jellyfin.sdk.model.extensions.ticks
+import timber.log.Timber
 import java.util.UUID
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
@@ -286,10 +294,14 @@ fun PlaybackPage(
                             .focusRequester(focusRequester)
                             .focusable(),
                 ) {
+                    var playerSize by remember { mutableStateOf(IntSize.Zero) }
                     PlayerSurface(
                         player = player,
                         surfaceType = SURFACE_TYPE_SURFACE_VIEW,
-                        modifier = scaledModifier,
+                        modifier =
+                            scaledModifier.onGloballyPositioned {
+                                playerSize = it.size
+                            },
                     )
                     if (presentationState.coverSurface) {
                         val isLoading by rememberPlayerLoadingState(player)
@@ -383,6 +395,21 @@ fun PlaybackPage(
                                         setFixedTextSize(Dimension.SP, it.fontSize.toFloat())
                                         setBottomPaddingFraction(it.margin.toFloat() / 100f)
                                     }
+                                    viewModel.assHandler?.let { assHandler ->
+                                        if (prefs.overrides.directPlayAss) {
+                                            Timber.v("Adding AssSubtitleView")
+                                            addView(
+                                                AssSubtitleView(context, assHandler).apply {
+                                                    layoutParams =
+                                                        FrameLayout
+                                                            .LayoutParams(
+                                                                ViewGroup.LayoutParams.MATCH_PARENT,
+                                                                ViewGroup.LayoutParams.MATCH_PARENT,
+                                                            ).apply { gravity = Gravity.CENTER }
+                                                },
+                                            )
+                                        }
+                                    }
                                 }
                             },
                             update = {
@@ -391,6 +418,17 @@ fun PlaybackPage(
                                     preferences.appPreferences.interfacePreferences.subtitlesPreferences
                                         .calculateEdgeSize(density),
                                 ).apply(it)
+                                it.children.firstOrNull { it is AssSubtitleView }?.let {
+                                    (it as? AssSubtitleView)?.apply {
+                                        Timber.v("Resize: $playerSize")
+                                        layoutParams =
+                                            FrameLayout
+                                                .LayoutParams(
+                                                    playerSize.width,
+                                                    playerSize.height,
+                                                ).apply { gravity = Gravity.CENTER }
+                                    }
+                                }
                             },
                             onReset = {
                                 it.setCues(null)

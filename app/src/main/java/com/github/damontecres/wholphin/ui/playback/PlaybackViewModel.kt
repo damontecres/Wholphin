@@ -63,6 +63,7 @@ import com.github.damontecres.wholphin.util.subtitleMimeTypes
 import com.github.damontecres.wholphin.util.supportItemKinds
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import io.github.peerless2012.ass.media.AssHandler
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -130,8 +131,11 @@ class PlaybackViewModel
     ) : ViewModel(),
         Player.Listener,
         AnalyticsListener {
+        var assHandler: AssHandler? = null
         val player by lazy {
-            playerFactory.createVideoPlayer()
+            val creation = playerFactory.createVideoPlayer()
+            assHandler = creation.assHandler
+            creation.player
         }
         internal val mutex = Mutex()
 
