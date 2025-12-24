@@ -33,6 +33,7 @@ import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
@@ -170,6 +171,7 @@ fun SearchPage(
     modifier: Modifier = Modifier,
     viewModel: SearchViewModel = hiltViewModel(),
 ) {
+    val context = LocalContext.current
     val focusManager = LocalFocusManager.current
     val keyboardController = LocalSoftwareKeyboardController.current
     val movies by viewModel.movies.observeAsState(SearchResult.NoQuery)
@@ -182,23 +184,24 @@ fun SearchPage(
     val focusRequester = remember { FocusRequester() }
 
     var position by rememberPosition()
-    var pendingImmediateSearch by rememberSaveable { mutableStateOf(false) }
-    var immediateSearchQuery by rememberSaveable { mutableStateOf<String?>(null) }
+    var awaitingFocusMove by rememberSaveable { mutableStateOf(false) }
+    var lastImmediateQuery by rememberSaveable { mutableStateOf<String?>(null) }
 
-    fun triggerImmediateSearch(searchQuery: String) {
-        immediateSearchQuery = searchQuery
-        pendingImmediateSearch = true
+    /** Triggers search immediately, bypassing the 750ms debounce delay */
+    fun searchImmediately(searchQuery: String) {
+        lastImmediateQuery = searchQuery
+        awaitingFocusMove = true
         viewModel.search(searchQuery)
     }
 
     LaunchedEffect(query) {
-        if (immediateSearchQuery != query) {
-            delay(750L)
-            viewModel.search(query)
+        // Skip debounced search if this query was already searched immediately
+        if (query == lastImmediateQuery) {
+            lastImmediateQuery = null
+            return@LaunchedEffect
         }
-        if (immediateSearchQuery == query) {
-            immediateSearchQuery = null
-        }
+        delay(750L)
+        viewModel.search(query)
     }
     LaunchedEffect(Unit) {
         focusRequester.tryRequestFocus()
@@ -207,19 +210,12 @@ fun SearchPage(
         viewModel.navigationManager.navigateTo(item.destination())
     }
 
-    // stringResource() is @Composable and cannot be called from LazyListScope,
-    // so resolve these strings here before entering the LazyColumn block
-    val moviesTitle = stringResource(R.string.movies)
-    val collectionsTitle = stringResource(R.string.collections)
-    val tvShowsTitle = stringResource(R.string.tv_shows)
-    val episodesTitle = stringResource(R.string.episodes)
-
-    // After voice search, wait for results to load before moving focus to the first result row
-    LaunchedEffect(pendingImmediateSearch, movies, collections, series, episodes) {
-        if (pendingImmediateSearch) {
+    // Move focus to first result row after immediate search completes
+    LaunchedEffect(awaitingFocusMove, movies, collections, series, episodes) {
+        if (awaitingFocusMove) {
             if (listOf(movies, collections, series, episodes).any { it is SearchResult.Success }) {
                 focusManager.moveFocus(FocusDirection.Next)
-                pendingImmediateSearch = false
+                awaitingFocusMove = false
             }
         }
     }
@@ -270,7 +266,7 @@ fun SearchPage(
                             query = it
                         },
                         onSearchClick = {
-                            triggerImmediateSearch(query)
+                            searchImmediately(query)
                         },
                         readOnly = !isSearchActive,
                         modifier =
@@ -308,7 +304,7 @@ fun SearchPage(
                     VoiceSearchButton(
                         onSpeechResult = { spokenText ->
                             query = spokenText
-                            triggerImmediateSearch(spokenText)
+                            searchImmediately(spokenText)
                             // Reclaim focus after voice search returns to prevent
                             // focus from jumping to the Navigation Drawer
                             scope.launch {
@@ -321,7 +317,7 @@ fun SearchPage(
             }
         }
         searchResultRow(
-            title = moviesTitle,
+            title = context.getString(R.string.movies),
             result = movies,
             rowIndex = MOVIE_ROW,
             position = position,
@@ -331,7 +327,7 @@ fun SearchPage(
             modifier = Modifier.fillMaxWidth(),
         )
         searchResultRow(
-            title = collectionsTitle,
+            title = context.getString(R.string.collections),
             result = collections,
             rowIndex = COLLECTION_ROW,
             position = position,
@@ -341,7 +337,7 @@ fun SearchPage(
             modifier = Modifier.fillMaxWidth(),
         )
         searchResultRow(
-            title = tvShowsTitle,
+            title = context.getString(R.string.tv_shows),
             result = series,
             rowIndex = SERIES_ROW,
             position = position,
@@ -351,7 +347,7 @@ fun SearchPage(
             modifier = Modifier.fillMaxWidth(),
         )
         searchResultRow(
-            title = episodesTitle,
+            title = context.getString(R.string.episodes),
             result = episodes,
             rowIndex = EPISODE_ROW,
             position = position,

@@ -41,7 +41,9 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.path
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.github.damontecres.wholphin.R
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.core.content.ContextCompat
@@ -95,15 +97,22 @@ private val MicIcon: ImageVector by lazy {
         }.build()
 }
 
-/** Normalize RMS dB to 0.0-1.0 range for animation scaling */
-private fun normalizeRmsDb(rmsdB: Float): Float {
-    // SpeechRecognizer typically returns -2 to 10 dB
-    val minRms = -2.0f
-    val maxRms = 10.0f
-    return ((rmsdB - minRms) / (maxRms - minRms)).coerceIn(0f, 1f)
-}
+// SpeechRecognizer RMS dB typically ranges from -2 to 10
+private const val RMS_DB_MIN = -2.0f
+private const val RMS_DB_MAX = 10.0f
+private const val SOUND_LEVEL_SCALE_FACTOR = 0.15f
 
-/** Main voice search button composable */
+/** Normalizes RMS dB to 0.0-1.0 range for animation scaling */
+private fun normalizeRmsDb(rmsdB: Float): Float =
+    ((rmsdB - RMS_DB_MIN) / (RMS_DB_MAX - RMS_DB_MIN)).coerceIn(0f, 1f)
+
+/**
+ * Voice search button with full-screen listening overlay.
+ * Handles microphone permissions and speech recognition.
+ *
+ * @param onSpeechResult Callback invoked with transcribed text when speech recognition completes
+ * @param modifier Modifier for the button
+ */
 @Composable
 fun VoiceSearchButton(
     onSpeechResult: (String) -> Unit,
@@ -246,7 +255,7 @@ fun VoiceSearchButton(
             ) {
                 Icon(
                     imageVector = MicIcon,
-                    contentDescription = "Voice search",
+                    contentDescription = stringResource(R.string.voice_search),
                     modifier = Modifier.size(28.dp),
                 )
             }
@@ -285,7 +294,7 @@ private fun VoiceSearchOverlay(
     )
 
     // Combine base pulse with sound-reactive scaling for the mic bubble
-    val bubbleScale = basePulse + (animatedSoundLevel * 0.15f)
+    val bubbleScale = basePulse + (animatedSoundLevel * SOUND_LEVEL_SCALE_FACTOR)
 
     Dialog(
         onDismissRequest = onDismiss,
@@ -319,14 +328,14 @@ private fun VoiceSearchOverlay(
                 ) {
                     Icon(
                         imageVector = MicIcon,
-                        contentDescription = "Listening",
+                        contentDescription = stringResource(R.string.voice_search),
                         modifier = Modifier.size(80.dp),
                         tint = onPrimaryColor,
                     )
                 }
 
                 Text(
-                    text = if (partialResult.isNotBlank()) partialResult else "Speak to search...",
+                    text = if (partialResult.isNotBlank()) partialResult else stringResource(R.string.voice_search_prompt),
                     style = MaterialTheme.typography.headlineMedium,
                     color = Color.White,
                     modifier = Modifier.weight(1f),
@@ -336,7 +345,7 @@ private fun VoiceSearchOverlay(
     }
 }
 
-/** Initialize SpeechRecognizer and start listening for voice input */
+/** Initializes SpeechRecognizer and begins listening for voice input */
 private fun startListening(
     context: android.content.Context,
     onStateChange: (VoiceSearchState) -> Unit,
