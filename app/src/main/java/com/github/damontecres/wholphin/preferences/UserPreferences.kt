@@ -8,7 +8,6 @@ import org.jellyfin.sdk.model.api.UserConfiguration
  */
 data class UserPreferences(
     val appPreferences: AppPreferences,
-    val userConfig: UserConfiguration,
 )
 
 val DefaultUserConfiguration =

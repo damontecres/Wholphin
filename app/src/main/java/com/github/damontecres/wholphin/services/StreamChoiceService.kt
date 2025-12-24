@@ -13,6 +13,7 @@ import org.jellyfin.sdk.model.api.MediaSourceInfo
 import org.jellyfin.sdk.model.api.MediaStream
 import org.jellyfin.sdk.model.api.MediaStreamType
 import org.jellyfin.sdk.model.api.SubtitlePlaybackMode
+import org.jellyfin.sdk.model.api.UserConfiguration
 import org.jellyfin.sdk.model.serializer.toUUIDOrNull
 import timber.log.Timber
 import java.util.UUID
@@ -26,6 +27,8 @@ class StreamChoiceService
         private val serverRepository: ServerRepository,
         private val playbackLanguageChoiceDao: PlaybackLanguageChoiceDao,
     ) {
+        private val userConfig: UserConfiguration? get() = serverRepository.currentUserDto.value?.configuration
+
         suspend fun updateAudio(
             dto: BaseItemDto,
             audioLang: String,
@@ -117,7 +120,7 @@ class StreamChoiceService
                 val seriesLang =
                     playbackLanguageChoice?.audioLanguage?.takeIf { it.isNotNullOrBlank() }
                 // If the user has chosen a different language for the series, prefer that
-                val audioLanguage = seriesLang ?: prefs.userConfig.audioLanguagePreference
+                val audioLanguage = seriesLang ?: userConfig?.audioLanguagePreference
 
                 if (audioLanguage.isNotNullOrBlank()) {
                     val sorted =
@@ -174,7 +177,7 @@ class StreamChoiceService
                 val seriesLang =
                     playbackLanguageChoice?.subtitleLanguage?.takeIf { it.isNotNullOrBlank() }
                 val subtitleLanguage =
-                    (seriesLang ?: prefs.userConfig.subtitleLanguagePreference)
+                    (seriesLang ?: userConfig?.subtitleLanguagePreference)
                         ?.takeIf { it.isNotNullOrBlank() }
 
                 val subtitleMode =
@@ -192,7 +195,7 @@ class StreamChoiceService
 
                         else -> {
                             // Fallback to the user's preference
-                            prefs.userConfig.subtitleMode
+                            userConfig?.subtitleMode ?: SubtitlePlaybackMode.DEFAULT
                         }
                     }
                 return when (subtitleMode) {
@@ -213,7 +216,7 @@ class StreamChoiceService
                     }
 
                     SubtitlePlaybackMode.SMART -> {
-                        val audioLanguage = prefs.userConfig.audioLanguagePreference
+                        val audioLanguage = userConfig?.audioLanguagePreference
                         val audioStreamLang = audioStream?.language
                         if (audioLanguage.isNotNullOrBlank() && audioStreamLang.isNotNullOrBlank() && audioLanguage != audioStreamLang) {
                             candidates.firstOrNull { it.language == subtitleLanguage }
