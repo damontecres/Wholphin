@@ -26,8 +26,10 @@ import com.github.damontecres.wholphin.services.UserPreferencesService
 import com.github.damontecres.wholphin.ui.SlimItemFields
 import com.github.damontecres.wholphin.ui.detail.ItemViewModel
 import com.github.damontecres.wholphin.ui.equalsNotNull
+import com.github.damontecres.wholphin.ui.gt
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.letNotEmpty
+import com.github.damontecres.wholphin.ui.lt
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.setValueOnMain
 import com.github.damontecres.wholphin.ui.showToast
@@ -48,6 +50,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
@@ -96,7 +100,7 @@ class SeriesViewModel
 
         private lateinit var prefs: UserPreferences
         val loading = MutableLiveData<LoadingState>(LoadingState.Loading)
-        val seasons = MutableLiveData<List<BaseItem>>(listOf())
+        val seasons = MutableLiveData<List<BaseItem?>>(listOf())
         val episodes = MutableLiveData<EpisodeList>(EpisodeList.Loading)
 
         val trailers = MutableLiveData<List<Trailer>>(listOf())
@@ -105,6 +109,8 @@ class SeriesViewModel
         val similar = MutableLiveData<List<BaseItem>>()
 
         val peopleInEpisode = MutableLiveData<PeopleInItem>(PeopleInItem())
+
+        val position = MutableStateFlow(SeriesOverviewPosition(0, 0))
 
         init {
             viewModelScope.launch(
@@ -118,7 +124,7 @@ class SeriesViewModel
                 val item = fetchItem(seriesId)
                 backdropService.submit(item)
 
-                val seasonsDeferred = getSeasons(item)
+                val seasonsDeferred = getSeasons(item, seasonEpisodeIds?.seasonNumber)
 
                 val episodeListDeferred =
                     if (seriesPageType == SeriesPageType.OVERVIEW) {
@@ -145,7 +151,31 @@ class SeriesViewModel
                 val seasons = seasonsDeferred.await()
                 val episodes = episodeListDeferred.await()
                 Timber.v("Done")
+
+                if (seriesPageType == SeriesPageType.OVERVIEW && seasonEpisodeIds != null) {
+                    viewModelScope.launchIO {
+                        val index =
+                            (seasons as? ApiRequestPager<*>)?.let {
+                                findSeason(
+                                    seasonEpisodeIds.seasonNumber,
+                                    seasonEpisodeIds.seasonId,
+                                    it,
+                                )
+                            } ?: 0
+                        Timber.v("Got initial season index: $index")
+                        position.update {
+                            it.copy(seasonTabIndex = index)
+                        }
+                    }
+                }
+
                 withContext(Dispatchers.Main) {
+                    this@SeriesViewModel.position.update {
+                        it.copy(
+                            episodeRowIndex =
+                                (episodes as? EpisodeList.Success)?.initialEpisodeIndex ?: 0,
+                        )
+                    }
                     this@SeriesViewModel.seasons.value = seasons
                     this@SeriesViewModel.episodes.value = episodes
                     loading.value = LoadingState.Success
@@ -204,7 +234,10 @@ class SeriesViewModel
             themeSongPlayer.stop()
         }
 
-        private fun getSeasons(series: BaseItem): Deferred<List<BaseItem>> =
+        private fun getSeasons(
+            series: BaseItem,
+            seasonNum: Int?,
+        ): Deferred<List<BaseItem?>> =
             viewModelScope.async(Dispatchers.IO) {
                 val request =
                     GetItemsRequest(
@@ -222,15 +255,23 @@ class SeriesViewModel
                                 null
                             },
                     )
-                val seasons =
-                    GetItemsRequestHandler.execute(api, request).content.items.map {
-                        BaseItem.from(
-                            it,
-                            api,
-                        )
-                    }
-                Timber.v("Loaded ${seasons.size} seasons for series ${series.id}")
-                seasons
+                val pager =
+                    ApiRequestPager(
+                        api,
+                        request,
+                        GetItemsRequestHandler,
+                        viewModelScope,
+                        pageSize = 10,
+                    ).init(seasonNum ?: 0)
+//                val seasons =
+//                    GetItemsRequestHandler.execute(api, request).content.items.map {
+//                        BaseItem.from(
+//                            it,
+//                            api,
+//                        )
+//                    }
+//                Timber.v("Loaded ${seasons.size} seasons for series ${series.id}")
+                pager
             }
 
         private suspend fun loadEpisodesInternal(
@@ -281,7 +322,6 @@ class SeriesViewModel
                 this@SeriesViewModel.episodes.value = EpisodeList.Loading
             }
             viewModelScope.launchIO(ExceptionHandler(true)) {
-                val initialSeasonIndex = seasons.value.orEmpty().indexOfFirst { it.id == seasonId }
                 val episodes =
                     try {
                         loadEpisodesInternal(seasonId, null, null)
@@ -335,7 +375,7 @@ class SeriesViewModel
         ) = viewModelScope.launch(Dispatchers.IO + ExceptionHandler()) {
             setWatched(seasonId, played, null)
             val series = fetchItem(seriesId)
-            val seasons = getSeasons(series).await()
+            val seasons = getSeasons(series, null).await()
             this@SeriesViewModel.seasons.setValueOnMain(seasons)
         }
 
@@ -343,7 +383,7 @@ class SeriesViewModel
             viewModelScope.launch(ExceptionHandler() + Dispatchers.IO) {
                 favoriteWatchManager.setWatched(seriesId, played)
                 val series = fetchItem(seriesId)
-                val seasons = getSeasons(series).await()
+                val seasons = getSeasons(series, null).await()
                 this@SeriesViewModel.seasons.setValueOnMain(seasons)
             }
 
@@ -504,4 +544,39 @@ data class PeopleInItem(
 enum class SeriesPageType {
     DETAILS,
     OVERVIEW,
+}
+
+private suspend fun findSeason(
+    seasonNum: Int?,
+    seasonId: UUID,
+    seasons: ApiRequestPager<*>,
+): Int {
+    val index =
+        if (seasonNum == null || seasonNum !in seasons.indices) {
+            // No hint info, so have to check everything
+            seasons.indexOfBlocking { equalsNotNull(it?.id, seasonId) }
+        } else {
+            // Start searching from the season number and choose direction from there
+            val num = seasons.getBlocking(seasonNum)?.indexNumber
+            if (num.lt(seasonNum)) {
+                for (i in seasonNum + 1 until seasons.lastIndex) {
+                    val season = seasons.getBlocking(i)
+                    if (season?.id == seasonId) {
+                        return i
+                    }
+                }
+                return 0
+            } else if (num.gt(seasonNum)) {
+                for (i in seasonNum - 1 downTo 0) {
+                    val season = seasons.getBlocking(i)
+                    if (season?.id == seasonId) {
+                        return i
+                    }
+                }
+                return 0
+            } else {
+                seasonNum
+            }
+        }
+    return index
 }

@@ -287,7 +287,7 @@ private const val SIMILAR_ROW = EXTRAS_ROW + 1
 fun SeriesDetailsContent(
     preferences: UserPreferences,
     series: BaseItem,
-    seasons: List<BaseItem>,
+    seasons: List<BaseItem?>,
     similar: List<BaseItem>,
     trailers: List<Trailer>,
     extras: List<ExtrasItem>,
