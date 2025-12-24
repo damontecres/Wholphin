@@ -325,8 +325,11 @@ fun SearchPage(
                         onSpeechResult = { spokenText ->
                             query = spokenText
                             triggerImmediateSearch(spokenText)
-                            // Reclaim focus after voice search returns to prevent
-                            // focus from jumping to the Navigation Drawer
+                            // Reclaim focus after voice search overlay dismisses.
+                            // The 100ms delay is necessary to let Compose's focus system settle
+                            // after the Dialog closes. Without it, focus can jump to the Navigation
+                            // Drawer because requestFocus() fires before the overlay is fully removed
+                            // from the composition. This is a known Compose focus timing quirk.
                             scope.launch {
                                 delay(100L)
                                 textFieldFocusRequester.requestFocus()

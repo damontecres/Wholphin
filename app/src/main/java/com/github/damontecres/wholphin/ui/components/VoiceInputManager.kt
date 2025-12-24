@@ -105,7 +105,8 @@ class VoiceInputManager(
         val newRecognizer = SpeechRecognizer.createSpeechRecognizer(activity)
         recognizer = newRecognizer
 
-        newRecognizer.setRecognitionListener(createRecognitionListener())
+        // Pass the specific instance to the listener so it can validate callbacks
+        newRecognizer.setRecognitionListener(createRecognitionListener(newRecognizer))
 
         val intent =
             Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
@@ -168,17 +169,35 @@ class VoiceInputManager(
         state = VoiceInputState.Idle
     }
 
-    private fun createRecognitionListener() =
+    /**
+     * Creates a listener bound to a specific recognizer instance.
+     * All callbacks check if the current [recognizer] matches [activeRecognizer].
+     * If they don't match, the callback is from a "zombie" (destroyed) recognizer and is ignored.
+     * This prevents race conditions when rapidly restarting speech recognition.
+     */
+    private fun createRecognitionListener(activeRecognizer: SpeechRecognizer) =
         object : RecognitionListener {
+            /** Returns true if this callback is from the currently active recognizer */
+            private fun isValid(): Boolean {
+                if (recognizer !== activeRecognizer) {
+                    Timber.d("Ignoring callback from destroyed recognizer")
+                    return false
+                }
+                return true
+            }
+
             override fun onReadyForSpeech(params: Bundle?) {
+                if (!isValid()) return
                 Timber.d("Speech recognition ready")
             }
 
             override fun onBeginningOfSpeech() {
+                if (!isValid()) return
                 Timber.d("Speech started")
             }
 
             override fun onRmsChanged(rmsdB: Float) {
+                if (!isValid()) return
                 soundLevel = normalizeRmsDb(rmsdB)
             }
 
@@ -187,11 +206,14 @@ class VoiceInputManager(
             }
 
             override fun onEndOfSpeech() {
+                if (!isValid()) return
                 Timber.d("Speech ended")
                 state = VoiceInputState.Processing
             }
 
             override fun onError(error: Int) {
+                if (!isValid()) return
+
                 val errorResId =
                     when (error) {
                         SpeechRecognizer.ERROR_AUDIO -> R.string.voice_error_audio
@@ -211,6 +233,8 @@ class VoiceInputManager(
             }
 
             override fun onResults(results: Bundle?) {
+                if (!isValid()) return
+
                 val matches = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
                 val spokenText = matches?.firstOrNull()
                 if (!spokenText.isNullOrBlank()) {
@@ -223,6 +247,8 @@ class VoiceInputManager(
             }
 
             override fun onPartialResults(partialResults: Bundle?) {
+                if (!isValid()) return
+
                 val matches = partialResults?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
                 val text = matches?.firstOrNull()
                 if (!text.isNullOrBlank()) {
