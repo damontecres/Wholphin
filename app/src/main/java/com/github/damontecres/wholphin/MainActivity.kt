@@ -253,35 +253,35 @@ class MainActivity : AppCompatActivity() {
 //        }
     }
 
-    override fun onStop() {
-        super.onStop()
-        Timber.i("onStop")
-    }
-
-    override fun onPause() {
-        super.onPause()
-        Timber.i("onPause")
-    }
-
-    override fun onStart() {
-        super.onStart()
-        Timber.i("onStart")
-    }
-
-    override fun onSaveInstanceState(outState: Bundle) {
-        super.onSaveInstanceState(outState)
-        Timber.i("onSaveInstanceState")
-    }
-
-    override fun onRestoreInstanceState(savedInstanceState: Bundle) {
-        super.onRestoreInstanceState(savedInstanceState)
-        Timber.i("onRestoreInstanceState")
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        Timber.i("onDestroy")
-    }
+//    override fun onStop() {
+//        super.onStop()
+//        Timber.i("onStop")
+//    }
+//
+//    override fun onPause() {
+//        super.onPause()
+//        Timber.i("onPause")
+//    }
+//
+//    override fun onStart() {
+//        super.onStart()
+//        Timber.i("onStart")
+//    }
+//
+//    override fun onSaveInstanceState(outState: Bundle) {
+//        super.onSaveInstanceState(outState)
+//        Timber.i("onSaveInstanceState")
+//    }
+//
+//    override fun onRestoreInstanceState(savedInstanceState: Bundle) {
+//        super.onRestoreInstanceState(savedInstanceState)
+//        Timber.i("onRestoreInstanceState")
+//    }
+//
+//    override fun onDestroy() {
+//        super.onDestroy()
+//        Timber.i("onDestroy")
+//    }
 }
 
 @HiltViewModel
