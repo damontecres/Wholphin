@@ -43,13 +43,13 @@ import androidx.compose.ui.graphics.vector.path
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import com.github.damontecres.wholphin.R
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.core.content.ContextCompat
 import androidx.tv.material3.Icon
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
+import com.github.damontecres.wholphin.R
 import timber.log.Timber
 
 /** Voice search UI state */
@@ -103,8 +103,7 @@ private const val RMS_DB_MAX = 10.0f
 private const val SOUND_LEVEL_SCALE_FACTOR = 0.15f
 
 /** Normalizes RMS dB to 0.0-1.0 range for animation scaling */
-private fun normalizeRmsDb(rmsdB: Float): Float =
-    ((rmsdB - RMS_DB_MIN) / (RMS_DB_MAX - RMS_DB_MIN)).coerceIn(0f, 1f)
+private fun normalizeRmsDb(rmsdB: Float): Float = ((rmsdB - RMS_DB_MIN) / (RMS_DB_MAX - RMS_DB_MIN)).coerceIn(0f, 1f)
 
 /**
  * Voice search button with full-screen listening overlay.
