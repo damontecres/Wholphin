@@ -1,3 +1,46 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="about">Ɣef</string>
+    <string name="audio">Imesli</string>
+    <string name="birthplace">Adig n tlalit</string>
+    <string name="bitrate">Aktum</string>
+    <string name="cancel">Semmet</string>
+    <string name="chapters">Ixfawen</string>
+    <string name="collection">Tagrumma</string>
+    <string name="collections">Tigrummiwin</string>
+    <string name="confirm">Serggeg</string>
+    <string name="default_track">Amezwer</string>
+    <string name="delete">Kkes</string>
+    <string name="died">Yemmut</string>
+    <string name="hide">Ffer-it</string>
+    <string name="home">Tazwara</string>
+    <string name="jump_letters">#ABCDEFGHIJKLMNOPQRSTUVWXYZ</string>
+    <string name="library">Tamkarḍit</string>
+    <string name="restart">Ales asekker</string>
+    <string name="resume">Kemmel</string>
+    <string name="save">Sekles</string>
+    <string name="search">Nadi</string>
+    <string name="searching">Yettnadi…</string>
+    <string name="show">Sken-d</string>
+    <string name="sort_by_name">Isem</string>
+    <string name="sort_by_random">Agacuṛan</string>
+    <string name="version">Lqem</string>
+    <string name="video">Tavidyut</string>
+    <string name="videos">Tividyutin</string>
+    <string name="font">Tasefsit</string>
+    <string name="background">Agilal</string>
+    <string name="success">Yedda</string>
+    <string name="year">Aseggas</string>
+    <string name="automatic">Awurman</string>
+    <string name="login">Tuqqna</string>
+    <string name="general">Amatu</string>
+    <string name="container">Amagbar</string>
+    <string name="title">Azwel</string>
+    <string name="codec">Akudak</string>
+    <string name="profile">Amaɣnu</string>
+    <string name="level">Aswir</string>
+    <string name="hdr10">HDR10</string>
+    <string name="hdr10_plus">HDR10+</string>
+    <string name="hlg">HLG</string>
+    <string name="choose_stream">Fren %1$s</string>
 </resources>
