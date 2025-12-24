@@ -80,10 +80,15 @@ data class SeriesOverviewPosition(
 fun SeriesOverview(
     preferences: UserPreferences,
     destination: Destination.SeriesOverview,
+    initialSeasonEpisode: SeasonEpisodeIds?,
     modifier: Modifier = Modifier,
-    viewModel: SeriesViewModel = hiltViewModel(),
+    viewModel: SeriesViewModel =
+        hiltViewModel<SeriesViewModel, SeriesViewModel.Factory>(
+            creationCallback = {
+                it.create(destination.itemId, initialSeasonEpisode, SeriesPageType.OVERVIEW)
+            },
+        ),
     playlistViewModel: AddPlaylistViewModel = hiltViewModel(),
-    initialSeasonEpisode: SeasonEpisodeIds? = null,
 ) {
     val context = LocalContext.current
     val firstItemFocusRequester = remember { FocusRequester() }
@@ -94,12 +99,12 @@ fun SeriesOverview(
     var initialLoadDone by rememberSaveable { mutableStateOf(false) }
     OneTimeLaunchedEffect {
         Timber.v("SeriesDetailParent: itemId=${destination.itemId}, initialSeasonEpisode=$initialSeasonEpisode")
-        viewModel.init(
-            preferences,
-            destination.itemId,
-            initialSeasonEpisode,
-            false,
-        )
+//        viewModel.init(
+//            preferences,
+//            destination.itemId,
+//            initialSeasonEpisode,
+//            false,
+//        )
         initialLoadDone = true
     }
 
@@ -126,7 +131,7 @@ fun SeriesOverview(
                     equalsNotNull(it.id, initialSeasonEpisode?.seasonId) ||
                         equalsNotNull(it.indexNumber, initialSeasonEpisode?.seasonNumber)
                 } ?: 0,
-                (episodes as? EpisodeList.Success)?.initialIndex ?: 0,
+                (episodes as? EpisodeList.Success)?.initialEpisodeIndex ?: 0,
             ),
         )
     }
