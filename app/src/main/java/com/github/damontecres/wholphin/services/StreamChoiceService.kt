@@ -170,8 +170,12 @@ class StreamChoiceService
             prefs: UserPreferences,
         ): MediaStream? {
             if (itemPlayback?.subtitleIndex == TrackIndex.DISABLED) {
-                // User explicitly disabled subtitles for this video, but still honor forced tracks
-                return findForcedTrack(candidates, audioStream?.language)
+                // User explicitly disabled subtitles for this video
+                return if (prefs.appPreferences.interfacePreferences.subtitlesPreferences.autoSelectForcedSubtitles) {
+                    findForcedTrack(candidates, audioStream?.language)
+                } else {
+                    null
+                }
             } else if (itemPlayback?.subtitleIndexEnabled == true) {
                 return candidates.firstOrNull { it.index == itemPlayback.subtitleIndex }
             } else {
@@ -244,8 +248,12 @@ class StreamChoiceService
                     }
 
                     SubtitlePlaybackMode.NONE -> {
-                        // User prefers no subtitles, but still honor forced tracks
-                        findForcedTrack(candidates, audioStream?.language)
+                        // User prefers no subtitles
+                        if (prefs.appPreferences.interfacePreferences.subtitlesPreferences.autoSelectForcedSubtitles) {
+                            findForcedTrack(candidates, audioStream?.language)
+                        } else {
+                            null
+                        }
                     }
                 }
             }
