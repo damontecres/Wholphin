@@ -206,7 +206,7 @@ class StreamChoiceService
                 return when (subtitleMode) {
                     SubtitlePlaybackMode.ALWAYS -> {
                         if (subtitleLanguage != null) {
-                            candidates.firstOrNull { it.language == subtitleLanguage }
+                            findTrackForLanguage(candidates, subtitleLanguage)
                         } else {
                             candidates.firstOrNull()
                         }
@@ -224,7 +224,7 @@ class StreamChoiceService
                         val audioLanguage = userConfig?.audioLanguagePreference
                         val audioStreamLang = audioStream?.language
                         if (audioLanguage.isNotNullOrBlank() && audioStreamLang.isNotNullOrBlank() && audioLanguage != audioStreamLang) {
-                            candidates.firstOrNull { it.language == subtitleLanguage }
+                            subtitleLanguage?.let { findTrackForLanguage(candidates, it) }
                         } else {
                             null
                         }
@@ -290,6 +290,43 @@ class StreamChoiceService
             }
 
             return false
+        }
+
+        /**
+         * Detects if a subtitle track should be treated as a default track.
+         *
+         * A track is considered default if:
+         * 1. The container's `isDefault` disposition flag is set
+         * 2. The track title contains "default" (case-insensitive)
+         *
+         * @param track The subtitle MediaStream to check
+         * @return true if the track should be treated as a default track
+         */
+        private fun isDefaultTrack(track: MediaStream): Boolean {
+            if (track.isDefault) return true
+            val title = track.title ?: track.displayTitle ?: return false
+            return title.contains("default", ignoreCase = true)
+        }
+
+        /**
+         * Finds the best subtitle track for a given language.
+         *
+         * Prioritizes default tracks over non-default tracks.
+         *
+         * @param candidates List of subtitle MediaStreams
+         * @param language The target language code
+         * @return The best matching track, or null if none found
+         */
+        private fun findTrackForLanguage(
+            candidates: List<MediaStream>,
+            language: String,
+        ): MediaStream? {
+            // Priority 1: Language match + Default track
+            candidates
+                .firstOrNull { it.language == language && isDefaultTrack(it) }
+                ?.let { return it }
+            // Priority 2: Language match (any track)
+            return candidates.firstOrNull { it.language == language }
         }
 
         /**
