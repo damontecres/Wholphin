@@ -68,6 +68,7 @@ import com.github.damontecres.wholphin.services.FavoriteWatchManager
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.ui.AspectRatios
 import com.github.damontecres.wholphin.ui.OneTimeLaunchedEffect
+import com.github.damontecres.wholphin.ui.RequestOrRestoreFocus
 import com.github.damontecres.wholphin.ui.SlimItemFields
 import com.github.damontecres.wholphin.ui.cards.GridCard
 import com.github.damontecres.wholphin.ui.data.AddPlaylistViewModel
@@ -85,7 +86,6 @@ import com.github.damontecres.wholphin.ui.playback.scale
 import com.github.damontecres.wholphin.ui.rememberInt
 import com.github.damontecres.wholphin.ui.setValueOnMain
 import com.github.damontecres.wholphin.ui.toServerString
-import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.ApiRequestPager
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.GetItemsRequestHandler
@@ -742,7 +742,7 @@ fun CollectionFolderGridContent(
     var viewOptions by remember { mutableStateOf(viewOptions) }
 
     val gridFocusRequester = remember { FocusRequester() }
-    LaunchedEffect(Unit) { gridFocusRequester.tryRequestFocus() }
+    RequestOrRestoreFocus(gridFocusRequester)
     var backdropImageUrl by remember { mutableStateOf<String?>(null) }
 
     var position by rememberInt(0)

@@ -117,12 +117,16 @@ fun <T : CardGridItem> CardGrid(
     val startPosition = initialPosition.coerceIn(0, (pager.size - 1).coerceAtLeast(0))
 
     val fractionCacheWindow = LazyLayoutCacheWindow(aheadFraction = 1f, behindFraction = 0.5f)
-    val gridState = rememberLazyGridState(cacheWindow = fractionCacheWindow)
+    var focusedIndex by rememberSaveable { mutableIntStateOf(initialPosition) }
+    val gridState =
+        rememberLazyGridState(
+            cacheWindow = fractionCacheWindow,
+            initialFirstVisibleItemIndex = focusedIndex,
+        )
     val scope = rememberCoroutineScope()
     val firstFocus = remember { FocusRequester() }
     val zeroFocus = remember { FocusRequester() }
     var previouslyFocusedIndex by rememberSaveable { mutableIntStateOf(0) }
-    var focusedIndex by rememberSaveable { mutableIntStateOf(initialPosition) }
 
     var alphabetFocus by remember { mutableStateOf(false) }
     val focusOn = { index: Int ->

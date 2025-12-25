@@ -230,7 +230,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        Timber.i("onResume")
+        Timber.d("onResume")
         lifecycleScope.launchIO {
             appUpgradeHandler.run()
         }
@@ -238,7 +238,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onRestart() {
         super.onRestart()
-        Timber.i("onRestart")
+        Timber.d("onRestart")
         viewModel.appStart()
 //        val signInAutomatically =
 //            runBlocking { userPreferencesDataStore.data.firstOrNull()?.signInAutomatically } ?: true
@@ -250,35 +250,35 @@ class MainActivity : AppCompatActivity() {
 //        }
     }
 
-//    override fun onStop() {
-//        super.onStop()
-//        Timber.i("onStop")
-//    }
-//
-//    override fun onPause() {
-//        super.onPause()
-//        Timber.i("onPause")
-//    }
-//
-//    override fun onStart() {
-//        super.onStart()
-//        Timber.i("onStart")
-//    }
-//
-//    override fun onSaveInstanceState(outState: Bundle) {
-//        super.onSaveInstanceState(outState)
-//        Timber.i("onSaveInstanceState")
-//    }
-//
-//    override fun onRestoreInstanceState(savedInstanceState: Bundle) {
-//        super.onRestoreInstanceState(savedInstanceState)
-//        Timber.i("onRestoreInstanceState")
-//    }
-//
-//    override fun onDestroy() {
-//        super.onDestroy()
-//        Timber.i("onDestroy")
-//    }
+    override fun onStop() {
+        super.onStop()
+        Timber.d("onStop")
+    }
+
+    override fun onPause() {
+        super.onPause()
+        Timber.d("onPause")
+    }
+
+    override fun onStart() {
+        super.onStart()
+        Timber.d("onStart")
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        Timber.d("onSaveInstanceState")
+    }
+
+    override fun onRestoreInstanceState(savedInstanceState: Bundle) {
+        super.onRestoreInstanceState(savedInstanceState)
+        Timber.d("onRestoreInstanceState")
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        Timber.d("onDestroy")
+    }
 }
 
 @HiltViewModel
