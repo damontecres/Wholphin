@@ -260,19 +260,7 @@ class StreamChoiceService
         }
 
         /**
-         * Detects if a subtitle track should be treated as a forced/signs-only track.
-         *
-         * A track is considered forced if any of the following are true:
-         * 1. The container's `isForced` disposition flag is set
-         * 2. The track title contains "forced" (case-insensitive) AND matches the audio language
-         * 3. The track title contains "signs" (case-insensitive, e.g., "Signs & Songs") AND matches the audio language
-         *
-         * The title-based fallbacks (2 & 3) require language matching to avoid
-         * selecting unrelated foreign-language tracks.
-         *
-         * @param track The subtitle MediaStream to check
-         * @param audioLanguage The current audio track's language (for fallback matching)
-         * @return true if the track should be treated as a forced/signs track
+         * Returns true if the track is forced (via flag or title containing "forced"/"signs")
          */
         private fun isForcedOrSigns(
             track: MediaStream,
@@ -293,14 +281,7 @@ class StreamChoiceService
         }
 
         /**
-         * Detects if a subtitle track should be treated as a default track.
-         *
-         * A track is considered default if:
-         * 1. The container's `isDefault` disposition flag is set
-         * 2. The track title contains "default" (case-insensitive)
-         *
-         * @param track The subtitle MediaStream to check
-         * @return true if the track should be treated as a default track
+         * Returns true if the track is default (via flag or title containing "default")
          */
         private fun isDefaultTrack(track: MediaStream): Boolean {
             if (track.isDefault) return true
@@ -309,13 +290,7 @@ class StreamChoiceService
         }
 
         /**
-         * Finds the best subtitle track for a given language.
-         *
-         * Prioritizes default tracks over non-default tracks.
-         *
-         * @param candidates List of subtitle MediaStreams
-         * @param language The target language code
-         * @return The best matching track, or null if none found
+         * Finds a track matching the language, preferring default tracks
          */
         private fun findTrackForLanguage(
             candidates: List<MediaStream>,
@@ -330,14 +305,7 @@ class StreamChoiceService
         }
 
         /**
-         * Finds a forced or signs-only subtitle track.
-         *
-         * Prioritizes tracks that match the audio language, then falls back to
-         * any track with the container `isForced` flag set.
-         *
-         * @param candidates List of subtitle MediaStreams
-         * @param audioLanguage The current audio track's language
-         * @return The best matching forced/signs track, or null if none found
+         * Finds a forced/signs track, preferring those matching the audio language
          */
         private fun findForcedTrack(
             candidates: List<MediaStream>,
