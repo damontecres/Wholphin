@@ -226,7 +226,11 @@ class StreamChoiceService
                         if (audioLanguage.isNotNullOrBlank() && audioStreamLang.isNotNullOrBlank() && audioLanguage != audioStreamLang) {
                             subtitleLanguage?.let { findTrackForLanguage(candidates, it) }
                         } else {
-                            null
+                            if (prefs.appPreferences.interfacePreferences.subtitlesPreferences.autoSelectForcedSubtitles) {
+                                findForcedTrack(candidates, audioStream?.language)
+                            } else {
+                                null
+                            }
                         }
                     }
 
