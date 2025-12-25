@@ -47,12 +47,12 @@ sealed interface VoiceInputState {
     ) : VoiceInputState
 }
 
-// SpeechRecognizer RMS dB typically ranges from -2 to 10
-private const val RMS_DB_MIN = -2.0f
-private const val RMS_DB_MAX = 10.0f
-
 /** Normalizes RMS dB to 0.0-1.0 range for animation scaling */
-private fun normalizeRmsDb(rmsdB: Float): Float = ((rmsdB - RMS_DB_MIN) / (RMS_DB_MAX - RMS_DB_MIN)).coerceIn(0f, 1f)
+private fun normalizeRmsDb(rmsdB: Float): Float {
+    val min = VoiceInputManager.RMS_DB_MIN
+    val max = VoiceInputManager.RMS_DB_MAX
+    return ((rmsdB - min) / (max - min)).coerceIn(0f, 1f)
+}
 
 /**
  * Manages speech recognition lifecycle with proper cleanup and state management.
@@ -108,18 +108,8 @@ class VoiceInputManager(
         // Pass the specific instance to the listener so it can validate callbacks
         newRecognizer.setRecognitionListener(createRecognitionListener(newRecognizer))
 
-        val intent =
-            Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
-                putExtra(
-                    RecognizerIntent.EXTRA_LANGUAGE_MODEL,
-                    RecognizerIntent.LANGUAGE_MODEL_FREE_FORM,
-                )
-                putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
-                putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1)
-            }
-
         try {
-            newRecognizer.startListening(intent)
+            newRecognizer.startListening(buildRecognitionIntent())
             isTransitioning = false
         } catch (e: Exception) {
             Timber.e(e, "Failed to start speech recognition")
@@ -127,6 +117,14 @@ class VoiceInputManager(
             isTransitioning = false
         }
     }
+
+    /** Builds the intent for speech recognition with configured options */
+    private fun buildRecognitionIntent(): Intent =
+        Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+            putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+            putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
+            putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, MAX_RESULTS)
+        }
 
     /** Stops listening and returns to idle state */
     fun stopListening() {
@@ -171,13 +169,29 @@ class VoiceInputManager(
 
     /**
      * Creates a listener bound to a specific recognizer instance.
-     * All callbacks check if the current [recognizer] matches [activeRecognizer].
-     * If they don't match, the callback is from a "zombie" (destroyed) recognizer and is ignored.
-     * This prevents race conditions when rapidly restarting speech recognition.
+     *
+     * ## Zombie Recognizer Prevention
+     *
+     * All callbacks validate that [recognizer] === [activeRecognizer] before processing.
+     * This prevents race conditions when speech recognition is rapidly restarted:
+     *
+     * **Example scenario:**
+     * 1. User starts voice search → recognizer A created
+     * 2. User cancels and immediately restarts → recognizer A destroyed, B created
+     * 3. Recognizer A's onError callback fires asynchronously
+     * 4. Without validation, this would incorrectly update state for recognizer B
+     *
+     * The [isValid] guard ensures callbacks from destroyed "zombie" recognizers are ignored,
+     * maintaining state integrity even under rapid user interaction.
+     *
+     * @param activeRecognizer The recognizer instance this listener is bound to
      */
     private fun createRecognitionListener(activeRecognizer: SpeechRecognizer) =
         object : RecognitionListener {
-            /** Returns true if this callback is from the currently active recognizer */
+            /**
+             * Guard function to validate this callback is from the currently active recognizer.
+             * Returns false for "zombie" callbacks from destroyed recognizer instances.
+             */
             private fun isValid(): Boolean {
                 if (recognizer !== activeRecognizer) {
                     Timber.d("Ignoring callback from destroyed recognizer")
@@ -214,21 +228,8 @@ class VoiceInputManager(
             override fun onError(error: Int) {
                 if (!isValid()) return
 
-                val errorResId =
-                    when (error) {
-                        SpeechRecognizer.ERROR_AUDIO -> R.string.voice_error_audio
-                        SpeechRecognizer.ERROR_CLIENT -> R.string.voice_error_client
-                        SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS -> R.string.voice_error_permissions
-                        SpeechRecognizer.ERROR_NETWORK -> R.string.voice_error_network
-                        SpeechRecognizer.ERROR_NETWORK_TIMEOUT -> R.string.voice_error_network_timeout
-                        SpeechRecognizer.ERROR_NO_MATCH -> R.string.voice_error_no_match
-                        SpeechRecognizer.ERROR_RECOGNIZER_BUSY -> R.string.voice_error_busy
-                        SpeechRecognizer.ERROR_SERVER -> R.string.voice_error_server
-                        SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> R.string.voice_error_speech_timeout
-                        else -> R.string.voice_error_unknown
-                    }
                 Timber.e("Speech recognition error: $error")
-                state = VoiceInputState.Error(errorResId)
+                state = VoiceInputState.Error(getErrorResourceId(error))
                 soundLevel = 0f
             }
 
@@ -264,6 +265,32 @@ class VoiceInputManager(
                 // Not used
             }
         }
+
+    companion object {
+        // SpeechRecognizer RMS dB typically ranges from -2 to 10
+        internal const val RMS_DB_MIN = -2.0f
+        internal const val RMS_DB_MAX = 10.0f
+
+        /** Maximum number of recognition results to return */
+        private const val MAX_RESULTS = 1
+
+        /** Maps SpeechRecognizer error codes to localized string resource IDs */
+        private val ERROR_TO_RESOURCE_MAP =
+            mapOf(
+                SpeechRecognizer.ERROR_AUDIO to R.string.voice_error_audio,
+                SpeechRecognizer.ERROR_CLIENT to R.string.voice_error_client,
+                SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS to R.string.voice_error_permissions,
+                SpeechRecognizer.ERROR_NETWORK to R.string.voice_error_network,
+                SpeechRecognizer.ERROR_NETWORK_TIMEOUT to R.string.voice_error_network_timeout,
+                SpeechRecognizer.ERROR_NO_MATCH to R.string.voice_error_no_match,
+                SpeechRecognizer.ERROR_RECOGNIZER_BUSY to R.string.voice_error_busy,
+                SpeechRecognizer.ERROR_SERVER to R.string.voice_error_server,
+                SpeechRecognizer.ERROR_SPEECH_TIMEOUT to R.string.voice_error_speech_timeout,
+            )
+
+        /** Gets the error resource ID for a SpeechRecognizer error code */
+        internal fun getErrorResourceId(errorCode: Int): Int = ERROR_TO_RESOURCE_MAP[errorCode] ?: R.string.voice_error_unknown
+    }
 }
 
 /**
