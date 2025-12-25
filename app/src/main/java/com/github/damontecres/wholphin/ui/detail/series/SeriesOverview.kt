@@ -4,12 +4,11 @@ package com.github.damontecres.wholphin.ui.detail.series
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.Saver
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -22,7 +21,6 @@ import androidx.lifecycle.map
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.preferences.UserPreferences
-import com.github.damontecres.wholphin.ui.OneTimeLaunchedEffect
 import com.github.damontecres.wholphin.ui.components.DialogParams
 import com.github.damontecres.wholphin.ui.components.DialogPopup
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
@@ -36,13 +34,12 @@ import com.github.damontecres.wholphin.ui.detail.MoreDialogActions
 import com.github.damontecres.wholphin.ui.detail.PlaylistDialog
 import com.github.damontecres.wholphin.ui.detail.PlaylistLoadingState
 import com.github.damontecres.wholphin.ui.detail.buildMoreDialogItems
-import com.github.damontecres.wholphin.ui.equalsNotNull
-import com.github.damontecres.wholphin.ui.indexOfFirstOrNull
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.rememberInt
 import com.github.damontecres.wholphin.ui.seasonEpisode
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.LoadingState
+import kotlinx.coroutines.flow.update
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.UseSerializers
 import org.jellyfin.sdk.model.api.BaseItemKind
@@ -52,7 +49,6 @@ import org.jellyfin.sdk.model.extensions.ticks
 import org.jellyfin.sdk.model.serializer.UUIDSerializer
 import org.jellyfin.sdk.model.serializer.toUUID
 import org.jellyfin.sdk.model.serializer.toUUIDOrNull
-import timber.log.Timber
 import java.util.UUID
 import kotlin.time.Duration
 
@@ -80,28 +76,21 @@ data class SeriesOverviewPosition(
 fun SeriesOverview(
     preferences: UserPreferences,
     destination: Destination.SeriesOverview,
+    initialSeasonEpisode: SeasonEpisodeIds?,
     modifier: Modifier = Modifier,
-    viewModel: SeriesViewModel = hiltViewModel(),
+    viewModel: SeriesViewModel =
+        hiltViewModel<SeriesViewModel, SeriesViewModel.Factory>(
+            creationCallback = {
+                it.create(destination.itemId, initialSeasonEpisode, SeriesPageType.OVERVIEW)
+            },
+        ),
     playlistViewModel: AddPlaylistViewModel = hiltViewModel(),
-    initialSeasonEpisode: SeasonEpisodeIds? = null,
 ) {
     val context = LocalContext.current
     val firstItemFocusRequester = remember { FocusRequester() }
     val episodeRowFocusRequester = remember { FocusRequester() }
     val castCrewRowFocusRequester = remember { FocusRequester() }
     val guestStarRowFocusRequester = remember { FocusRequester() }
-
-    var initialLoadDone by rememberSaveable { mutableStateOf(false) }
-    OneTimeLaunchedEffect {
-        Timber.v("SeriesDetailParent: itemId=${destination.itemId}, initialSeasonEpisode=$initialSeasonEpisode")
-        viewModel.init(
-            preferences,
-            destination.itemId,
-            initialSeasonEpisode,
-            false,
-        )
-        initialLoadDone = true
-    }
 
     val loading by viewModel.loading.observeAsState(LoadingState.Loading)
 
@@ -111,27 +100,9 @@ fun SeriesOverview(
     val peopleInEpisode by viewModel.peopleInEpisode.map { it.people }.observeAsState(listOf())
     val episodeList = (episodes as? EpisodeList.Success)?.episodes
 
-    var position by rememberSaveable(
-        destination,
-        loading,
-        stateSaver =
-            Saver(
-                save = { listOf(it.seasonTabIndex, it.episodeRowIndex) },
-                restore = { SeriesOverviewPosition(it[0], it[1]) },
-            ),
-    ) {
-        mutableStateOf(
-            SeriesOverviewPosition(
-                seasons.indexOfFirstOrNull {
-                    equalsNotNull(it.id, initialSeasonEpisode?.seasonId) ||
-                        equalsNotNull(it.indexNumber, initialSeasonEpisode?.seasonNumber)
-                } ?: 0,
-                (episodes as? EpisodeList.Success)?.initialIndex ?: 0,
-            ),
-        )
-    }
-    if (initialLoadDone) {
-        LaunchedEffect(Unit) {
+    val position by viewModel.position.collectAsState(SeriesOverviewPosition(0, 0))
+    LaunchedEffect(Unit) {
+        if (seasons.isNotEmpty()) {
             seasons.getOrNull(position.seasonTabIndex)?.let {
                 viewModel.loadEpisodes(it.id)
             }
@@ -301,13 +272,20 @@ fun SeriesOverview(
                     episodeRowFocusRequester = episodeRowFocusRequester,
                     castCrewRowFocusRequester = castCrewRowFocusRequester,
                     guestStarRowFocusRequester = guestStarRowFocusRequester,
-                    onFocus = {
-                        if (it.seasonTabIndex != position.seasonTabIndex) {
-                            seasons.getOrNull(it.seasonTabIndex)?.let { season ->
+                    onChangeSeason = { index ->
+                        if (index != position.seasonTabIndex) {
+                            seasons.getOrNull(index)?.let { season ->
                                 viewModel.loadEpisodes(season.id)
+                                viewModel.position.update {
+                                    SeriesOverviewPosition(index, 0)
+                                }
                             }
                         }
-                        position = it
+                    },
+                    onFocusEpisode = { episodeIndex ->
+                        viewModel.position.update {
+                            it.copy(episodeRowIndex = episodeIndex)
+                        }
                     },
                     onClick = {
                         rowFocused = EPISODE_ROW

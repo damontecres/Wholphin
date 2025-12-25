@@ -302,7 +302,7 @@ fun DebugPage(
                     color = MaterialTheme.colorScheme.onSurface,
                 )
                 Text(
-                    text = "User server settings: ${preferences.userConfig}",
+                    text = "User server settings: ${viewModel.serverRepository.currentUserDto.value?.configuration}",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurface,
                 )

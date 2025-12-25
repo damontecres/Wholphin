@@ -19,6 +19,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -49,8 +50,8 @@ fun TabRow(
     modifier: Modifier = Modifier,
 ) {
     val state = rememberLazyListState()
-    LaunchedEffect(Unit) {
-        state.animateScrollToItem(selectedTabIndex)
+    LaunchedEffect(selectedTabIndex) {
+        state.animateScrollToItem(selectedTabIndex, -(state.layoutInfo.viewportSize.width / 3.5).toInt())
     }
     val focusRequesters = remember(tabs) { List(tabs.size) { FocusRequester() } }
     var rowHasFocus by remember { mutableStateOf(false) }

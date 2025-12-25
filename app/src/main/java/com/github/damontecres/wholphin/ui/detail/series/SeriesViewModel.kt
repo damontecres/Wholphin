@@ -26,8 +26,10 @@ import com.github.damontecres.wholphin.services.UserPreferencesService
 import com.github.damontecres.wholphin.ui.SlimItemFields
 import com.github.damontecres.wholphin.ui.detail.ItemViewModel
 import com.github.damontecres.wholphin.ui.equalsNotNull
+import com.github.damontecres.wholphin.ui.gt
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.letNotEmpty
+import com.github.damontecres.wholphin.ui.lt
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.setValueOnMain
 import com.github.damontecres.wholphin.ui.showToast
@@ -37,11 +39,19 @@ import com.github.damontecres.wholphin.util.GetEpisodesRequestHandler
 import com.github.damontecres.wholphin.util.GetItemsRequestHandler
 import com.github.damontecres.wholphin.util.LoadingExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedFactory
+import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
@@ -57,11 +67,10 @@ import org.jellyfin.sdk.model.api.request.GetItemsRequest
 import org.jellyfin.sdk.model.api.request.GetSimilarItemsRequest
 import timber.log.Timber
 import java.util.UUID
-import javax.inject.Inject
 
-@HiltViewModel
+@HiltViewModel(assistedFactory = SeriesViewModel.Factory::class)
 class SeriesViewModel
-    @Inject
+    @AssistedInject
     constructor(
         api: ApiClient,
         @param:ApplicationContext val context: Context,
@@ -76,11 +85,22 @@ class SeriesViewModel
         val streamChoiceService: StreamChoiceService,
         private val userPreferencesService: UserPreferencesService,
         private val backdropService: BackdropService,
+        @Assisted val seriesId: UUID,
+        @Assisted val seasonEpisodeIds: SeasonEpisodeIds?,
+        @Assisted val seriesPageType: SeriesPageType,
     ) : ItemViewModel(api) {
-        private lateinit var seriesId: UUID
+        @AssistedFactory
+        interface Factory {
+            fun create(
+                seriesId: UUID,
+                seasonEpisodeIds: SeasonEpisodeIds?,
+                seriesPageType: SeriesPageType,
+            ): SeriesViewModel
+        }
+
         private lateinit var prefs: UserPreferences
         val loading = MutableLiveData<LoadingState>(LoadingState.Loading)
-        val seasons = MutableLiveData<List<BaseItem>>(listOf())
+        val seasons = MutableLiveData<List<BaseItem?>>(listOf())
         val episodes = MutableLiveData<EpisodeList>(EpisodeList.Loading)
 
         val trailers = MutableLiveData<List<Trailer>>(listOf())
@@ -90,48 +110,77 @@ class SeriesViewModel
 
         val peopleInEpisode = MutableLiveData<PeopleInItem>(PeopleInItem())
 
-        fun init(
-            prefs: UserPreferences,
-            itemId: UUID,
-            seasonEpisodeIds: SeasonEpisodeIds?,
-            loadAdditionalDetails: Boolean,
-        ) {
-            this.seriesId = itemId
-            this.prefs = prefs
+        val position = MutableStateFlow(SeriesOverviewPosition(0, 0))
+
+        init {
             viewModelScope.launch(
                 LoadingExceptionHandler(
                     loading,
                     "Error loading series $seriesId",
                 ) + Dispatchers.IO,
             ) {
+                this@SeriesViewModel.prefs = userPreferencesService.getCurrent()
+                Timber.v("Start")
                 val item = fetchItem(seriesId)
                 backdropService.submit(item)
-                val seasons = getSeasons(item)
 
-                // If a particular season was requested, fetch those episodes, otherwise get the first season
-                val initialSeason =
-                    if (seasonEpisodeIds != null) {
-                        seasons.firstOrNull {
-                            equalsNotNull(it.id, seasonEpisodeIds.seasonId) ||
-                                equalsNotNull(it.indexNumber, seasonEpisodeIds.seasonNumber)
+                val seasonsDeferred = getSeasons(item, seasonEpisodeIds?.seasonNumber)
+
+                val episodeListDeferred =
+                    if (seriesPageType == SeriesPageType.OVERVIEW) {
+                        viewModelScope.async(Dispatchers.IO) {
+                            if (seasonEpisodeIds != null) {
+                                loadEpisodesInternal(
+                                    seasonEpisodeIds.seasonId,
+                                    seasonEpisodeIds.episodeId,
+                                    seasonEpisodeIds.episodeNumber,
+                                )
+                            } else {
+                                seasonsDeferred.await().firstOrNull()?.let {
+                                    loadEpisodesInternal(
+                                        it.id,
+                                        null,
+                                        null,
+                                    )
+                                } ?: EpisodeList.Error(message = "Could not determine season")
+                            }
                         }
                     } else {
-                        seasons.firstOrNull()
+                        CompletableDeferred(value = EpisodeList.Loading)
                     }
-                val episodeInfo =
-                    initialSeason?.let {
-                        loadEpisodesInternal(
-                            it.id,
-                            seasonEpisodeIds?.episodeId,
-                            seasonEpisodeIds?.episodeNumber,
-                        )
-                    } ?: EpisodeList.Error("Could not determine season for selected episode")
+                val seasons = seasonsDeferred.await()
+                val episodes = episodeListDeferred.await()
+                Timber.v("Done")
+
+                if (seriesPageType == SeriesPageType.OVERVIEW && seasonEpisodeIds != null) {
+                    viewModelScope.launchIO {
+                        val index =
+                            (seasons as? ApiRequestPager<*>)?.let {
+                                findIndexOf(
+                                    seasonEpisodeIds.seasonNumber,
+                                    seasonEpisodeIds.seasonId,
+                                    it,
+                                )
+                            } ?: 0
+                        Timber.v("Got initial season index: $index")
+                        position.update {
+                            it.copy(seasonTabIndex = index)
+                        }
+                    }
+                }
+
                 withContext(Dispatchers.Main) {
+                    this@SeriesViewModel.position.update {
+                        it.copy(
+                            episodeRowIndex =
+                                (episodes as? EpisodeList.Success)?.initialEpisodeIndex ?: 0,
+                        )
+                    }
                     this@SeriesViewModel.seasons.value = seasons
-                    episodes.value = episodeInfo
+                    this@SeriesViewModel.episodes.value = episodes
                     loading.value = LoadingState.Success
                 }
-                if (loadAdditionalDetails) {
+                if (seriesPageType == SeriesPageType.DETAILS) {
                     viewModelScope.launchIO {
                         val trailers = trailerService.getTrailers(item)
                         withContext(Dispatchers.Main) {
@@ -153,7 +202,7 @@ class SeriesViewModel
                                     .getSimilarItems(
                                         GetSimilarItemsRequest(
                                             userId = serverRepository.currentUser.value?.id,
-                                            itemId = itemId,
+                                            itemId = seriesId,
                                             fields = SlimItemFields,
                                             limit = 25,
                                         ),
@@ -185,31 +234,45 @@ class SeriesViewModel
             themeSongPlayer.stop()
         }
 
-        private suspend fun getSeasons(series: BaseItem): List<BaseItem> {
-            val request =
-                GetItemsRequest(
-                    parentId = series.id,
-                    recursive = false,
-                    includeItemTypes = listOf(BaseItemKind.SEASON),
-                    sortBy = listOf(ItemSortBy.INDEX_NUMBER),
-                    sortOrder = listOf(SortOrder.ASCENDING),
-                    fields =
-                        listOf(
-                            ItemFields.PRIMARY_IMAGE_ASPECT_RATIO,
-                            ItemFields.CHILD_COUNT,
-                            ItemFields.SEASON_USER_DATA,
-                        ),
-                )
-            val seasons =
-                GetItemsRequestHandler.execute(api, request).content.items.map {
-                    BaseItem.from(
-                        it,
-                        api,
+        private fun getSeasons(
+            series: BaseItem,
+            seasonNum: Int?,
+        ): Deferred<List<BaseItem?>> =
+            viewModelScope.async(Dispatchers.IO) {
+                val request =
+                    GetItemsRequest(
+                        parentId = series.id,
+                        recursive = false,
+                        includeItemTypes = listOf(BaseItemKind.SEASON),
+                        sortBy = listOf(ItemSortBy.INDEX_NUMBER),
+                        sortOrder = listOf(SortOrder.ASCENDING),
+                        fields =
+                            if (seriesPageType == SeriesPageType.DETAILS) {
+                                listOf(
+                                    ItemFields.PRIMARY_IMAGE_ASPECT_RATIO,
+                                )
+                            } else {
+                                null
+                            },
                     )
-                }
-            Timber.v("Loaded ${seasons.size} seasons for series ${series.id}")
-            return seasons
-        }
+                val pager =
+                    ApiRequestPager(
+                        api,
+                        request,
+                        GetItemsRequestHandler,
+                        viewModelScope,
+                        pageSize = 10,
+                    ).init(seasonNum ?: 0)
+//                val seasons =
+//                    GetItemsRequestHandler.execute(api, request).content.items.map {
+//                        BaseItem.from(
+//                            it,
+//                            api,
+//                        )
+//                    }
+//                Timber.v("Loaded ${seasons.size} seasons for series ${series.id}")
+                pager
+            }
 
         private suspend fun loadEpisodesInternal(
             seasonId: UUID,
@@ -233,14 +296,11 @@ class SeriesViewModel
                         ),
                 )
             val pager = ApiRequestPager(api, request, GetEpisodesRequestHandler, viewModelScope)
-            pager.init()
+            pager.init(episodeNumber ?: 0)
             val initialIndex =
                 if (episodeId != null || episodeNumber != null) {
-                    pager
-                        .indexOfBlocking {
-                            equalsNotNull(it?.id, episodeId) ||
-                                equalsNotNull(it?.indexNumber, episodeNumber)
-                        }.coerceAtLeast(0)
+                    findIndexOf(episodeNumber, episodeId, pager)
+                        .coerceAtLeast(0)
                 } else {
                     // Force the first page to to be fetched
                     if (pager.isNotEmpty()) {
@@ -272,7 +332,7 @@ class SeriesViewModel
                 if (currentEpisodes == null || currentEpisodes.seasonId != seasonId) {
                     (episodes as? EpisodeList.Success)
                         ?.let {
-                            it.episodes.getOrNull(it.initialIndex)
+                            it.episodes.getOrNull(it.initialEpisodeIndex)
                         }?.let { lookupPeopleInEpisode(it) }
                 }
             }
@@ -312,7 +372,7 @@ class SeriesViewModel
         ) = viewModelScope.launch(Dispatchers.IO + ExceptionHandler()) {
             setWatched(seasonId, played, null)
             val series = fetchItem(seriesId)
-            val seasons = getSeasons(series)
+            val seasons = getSeasons(series, null).await()
             this@SeriesViewModel.seasons.setValueOnMain(seasons)
         }
 
@@ -320,7 +380,7 @@ class SeriesViewModel
             viewModelScope.launch(ExceptionHandler() + Dispatchers.IO) {
                 favoriteWatchManager.setWatched(seriesId, played)
                 val series = fetchItem(seriesId)
-                val seasons = getSeasons(series)
+                val seasons = getSeasons(series, null).await()
                 this@SeriesViewModel.seasons.setValueOnMain(seasons)
             }
 
@@ -469,7 +529,7 @@ sealed interface EpisodeList {
     data class Success(
         val seasonId: UUID,
         val episodes: ApiRequestPager<GetEpisodesRequest>,
-        val initialIndex: Int,
+        val initialEpisodeIndex: Int,
     ) : EpisodeList
 }
 
@@ -477,3 +537,49 @@ data class PeopleInItem(
     val itemId: UUID? = null,
     val people: List<Person> = listOf(),
 )
+
+enum class SeriesPageType {
+    DETAILS,
+    OVERVIEW,
+}
+
+private suspend fun findIndexOf(
+    targetNum: Int?,
+    targetId: UUID?,
+    pager: ApiRequestPager<*>,
+): Int {
+    val index =
+        if (targetId != null && (targetNum == null || targetNum !in pager.indices)) {
+            // No hint info, so have to check everything
+            pager.indexOfBlocking { equalsNotNull(it?.id, targetId) }
+        } else if (targetNum != null && targetNum in pager.indices) {
+            // Start searching from the season number and choose direction from there
+            val num = pager.getBlocking(targetNum)?.indexNumber
+            if (num.lt(targetNum)) {
+                for (i in targetNum + 1 until pager.lastIndex) {
+                    val season = pager.getBlocking(i)
+                    if (equalsNotNull(season?.indexNumber, targetNum) ||
+                        equalsNotNull(season?.id, targetId)
+                    ) {
+                        return i
+                    }
+                }
+                return 0
+            } else if (num.gt(targetNum)) {
+                for (i in targetNum - 1 downTo 0) {
+                    val season = pager.getBlocking(i)
+                    if (equalsNotNull(season?.indexNumber, targetNum) ||
+                        equalsNotNull(season?.id, targetId)
+                    ) {
+                        return i
+                    }
+                }
+                return 0
+            } else {
+                targetNum
+            }
+        } else {
+            0
+        }
+    return index
+}

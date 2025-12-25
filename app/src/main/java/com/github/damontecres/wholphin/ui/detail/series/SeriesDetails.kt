@@ -88,13 +88,15 @@ fun SeriesDetails(
     preferences: UserPreferences,
     destination: Destination.MediaItem,
     modifier: Modifier = Modifier,
-    viewModel: SeriesViewModel = hiltViewModel(),
+    viewModel: SeriesViewModel =
+        hiltViewModel<SeriesViewModel, SeriesViewModel.Factory>(
+            creationCallback = {
+                it.create(destination.itemId, null, SeriesPageType.DETAILS)
+            },
+        ),
     playlistViewModel: AddPlaylistViewModel = hiltViewModel(),
 ) {
     val context = LocalContext.current
-    LaunchedEffect(Unit) {
-        viewModel.init(preferences, destination.itemId, null, true)
-    }
     val loading by viewModel.loading.observeAsState(LoadingState.Loading)
 
     val item by viewModel.item.observeAsState()
@@ -285,7 +287,7 @@ private const val SIMILAR_ROW = EXTRAS_ROW + 1
 fun SeriesDetailsContent(
     preferences: UserPreferences,
     series: BaseItem,
-    seasons: List<BaseItem>,
+    seasons: List<BaseItem?>,
     similar: List<BaseItem>,
     trailers: List<Trailer>,
     extras: List<ExtrasItem>,
