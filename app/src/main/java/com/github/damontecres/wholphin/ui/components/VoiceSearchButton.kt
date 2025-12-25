@@ -80,7 +80,66 @@ private val MicIcon: ImageVector by lazy {
         }.build()
 }
 
-private const val SOUND_LEVEL_SCALE_FACTOR = 0.15f
+/** Constants for VoiceSearchButton and VoiceSearchOverlay */
+private object VoiceSearchConstants {
+    /** Delay before auto-dismissing error messages */
+    const val ERROR_AUTO_DISMISS_DELAY_MS = 3000L
+
+    /** How much sound level affects the bubble scale (0-1 sound → 0-0.15 scale) */
+    const val SOUND_LEVEL_SCALE_FACTOR = 0.15f
+
+    /** Size of the main mic bubble */
+    val BUBBLE_SIZE = 160.dp
+
+    /** Size of the mic icon inside the bubble */
+    val MIC_ICON_SIZE = 80.dp
+
+    /** Spacing between mic bubble and status text */
+    val CONTENT_SPACING = 48.dp
+
+    /** Horizontal padding for the overlay content */
+    val HORIZONTAL_PADDING = 64.dp
+
+    /** Bottom padding for the dismiss hint */
+    val DISMISS_HINT_BOTTOM_PADDING = 32.dp
+
+    /** Alpha for the dismiss hint text */
+    const val HINT_TEXT_ALPHA = 0.5f
+
+    // Animation durations
+
+    /** Duration for sound level smoothing animation */
+    const val SOUND_LEVEL_ANIM_MS = 100
+
+    /** Duration for base pulse animation cycle */
+    const val BASE_PULSE_ANIM_MS = 800
+
+    /** Duration for ripple ring animation cycle */
+    const val RIPPLE_ANIM_MS = 1500
+
+    /** Duration for dots animation cycle */
+    const val DOTS_ANIM_MS = 1200
+
+    // Ripple ring constants
+
+    /** Canvas size relative to bubble size */
+    const val RIPPLE_CANVAS_SCALE = 1.8f
+
+    /** Maximum expansion of ripple rings relative to bubble size */
+    const val MAX_RIPPLE_EXPANSION = 0.35f
+
+    /** Stroke width for ripple rings */
+    val RIPPLE_STROKE_WIDTH = 2.dp
+
+    /** Maximum alpha for innermost ripple ring */
+    const val RIPPLE_MAX_ALPHA = 0.4f
+}
+
+/** Extension to determine if voice state should show the overlay */
+private fun VoiceInputState.shouldShowOverlay(): Boolean =
+    this is VoiceInputState.Listening ||
+        this is VoiceInputState.Processing ||
+        this is VoiceInputState.Error
 
 /**
  * Voice search button with full-screen listening overlay.
@@ -100,19 +159,20 @@ fun VoiceSearchButton(
 
     val state = voiceInputManager.state
 
-    // Handle result state - invoke callback and acknowledge
+    // Handle state transitions for results and errors
     LaunchedEffect(state) {
-        if (state is VoiceInputState.Result) {
-            onSpeechResult(state.text)
-            voiceInputManager.acknowledge()
-        }
-    }
+        when (state) {
+            is VoiceInputState.Result -> {
+                onSpeechResult(state.text)
+                voiceInputManager.acknowledge()
+            }
 
-    // Auto-dismiss error state after a short delay
-    LaunchedEffect(state) {
-        if (state is VoiceInputState.Error) {
-            delay(3000)
-            voiceInputManager.acknowledge()
+            is VoiceInputState.Error -> {
+                delay(VoiceSearchConstants.ERROR_AUTO_DISMISS_DELAY_MS)
+                voiceInputManager.acknowledge()
+            }
+
+            else -> { /* Idle, Listening, Processing - no action needed */ }
         }
     }
 
@@ -129,9 +189,8 @@ fun VoiceSearchButton(
         }
 
     // Show overlay when listening, processing, or showing error
-    if (state is VoiceInputState.Listening || state is VoiceInputState.Processing || state is VoiceInputState.Error) {
-        val errorResId = (state as? VoiceInputState.Error)?.messageResId
-        val errorMessage = errorResId?.let { stringResource(it) }
+    if (state.shouldShowOverlay()) {
+        val errorMessage = (state as? VoiceInputState.Error)?.messageResId?.let { stringResource(it) }
 
         VoiceSearchOverlay(
             soundLevel = voiceInputManager.soundLevel,
@@ -181,6 +240,65 @@ fun VoiceSearchButton(
     }
 }
 
+/**
+ * Expanding ripple rings that pulse outward from the center.
+ * Used to provide visual feedback during active listening.
+ */
+@Composable
+private fun VoiceRippleRings(
+    rippleProgress: Float,
+    bubbleSize: androidx.compose.ui.unit.Dp,
+    color: Color,
+    modifier: Modifier = Modifier,
+) {
+    val density = LocalDensity.current
+    val rippleStroke =
+        remember(density) {
+            Stroke(width = with(density) { VoiceSearchConstants.RIPPLE_STROKE_WIDTH.toPx() })
+        }
+
+    Canvas(modifier = modifier.size(bubbleSize * VoiceSearchConstants.RIPPLE_CANVAS_SCALE)) {
+        val canvasCenter = center
+        val baseRadius = bubbleSize.toPx() / 2
+        val maxExpansion = bubbleSize.toPx() * VoiceSearchConstants.MAX_RIPPLE_EXPANSION
+
+        for (i in 0..2) {
+            // Stagger each ring's progress (offset by 0.33 each)
+            val ringProgress = (rippleProgress + (i * 0.33f)) % 1f
+            val ringRadius = baseRadius + (ringProgress * maxExpansion)
+            val ringAlpha = (1f - ringProgress) * VoiceSearchConstants.RIPPLE_MAX_ALPHA
+
+            drawCircle(
+                color = color.copy(alpha = ringAlpha),
+                radius = ringRadius,
+                center = canvasCenter,
+                style = rippleStroke,
+            )
+        }
+    }
+}
+
+/**
+ * Determines the status text to display based on current voice input state.
+ * Returns a pair of (displayText, accessibilityText) where accessibilityText excludes animated dots.
+ */
+private fun getStatusText(
+    errorMessage: String?,
+    partialResult: String,
+    isProcessing: Boolean,
+    processingText: String,
+    listeningText: String,
+    dotCount: Int,
+): Pair<String, String> {
+    val dots = ".".repeat(dotCount)
+    return when {
+        errorMessage != null -> errorMessage to errorMessage
+        partialResult.isNotBlank() -> partialResult to partialResult
+        isProcessing -> (processingText + dots) to processingText
+        else -> (listeningText + dots) to listeningText
+    }
+}
+
 /** Full-screen overlay with pulsing mic icon that responds to voice input level */
 @Composable
 private fun VoiceSearchOverlay(
@@ -194,17 +312,10 @@ private fun VoiceSearchOverlay(
     val onPrimaryColor = MaterialTheme.colorScheme.onPrimary
     val errorColor = MaterialTheme.colorScheme.error
 
-    // Cache Stroke object to avoid allocation on every frame
-    val density = LocalDensity.current
-    val rippleStroke =
-        remember(density) {
-            Stroke(width = with(density) { 2.dp.toPx() })
-        }
-
     // Smooth transitions between sound level changes
     val animatedSoundLevel by animateFloatAsState(
         targetValue = soundLevel,
-        animationSpec = tween(durationMillis = 100),
+        animationSpec = tween(durationMillis = VoiceSearchConstants.SOUND_LEVEL_ANIM_MS),
         label = "soundLevel",
     )
 
@@ -215,41 +326,40 @@ private fun VoiceSearchOverlay(
         targetValue = 1.05f,
         animationSpec =
             infiniteRepeatable(
-                animation = tween(durationMillis = 800),
+                animation = tween(durationMillis = VoiceSearchConstants.BASE_PULSE_ANIM_MS),
                 repeatMode = RepeatMode.Reverse,
             ),
         label = "basePulse",
     )
 
     // Ripple rings animation (0.0 to 1.0, restarts)
-    // We use a constant duration but switch the target value to 0f when processing
-    // to "pause" the effect without causing the fast-looping issue.
+    // Target 0f when processing/error to "pause" the effect without fast-looping
+    val shouldAnimateRipples = !isProcessing && errorMessage == null
     val rippleProgress by infiniteTransition.animateFloat(
         initialValue = 0f,
-        targetValue = if (isProcessing || errorMessage != null) 0f else 1f,
+        targetValue = if (shouldAnimateRipples) 1f else 0f,
         animationSpec =
             infiniteRepeatable(
-                animation = tween(durationMillis = 1500),
+                animation = tween(durationMillis = VoiceSearchConstants.RIPPLE_ANIM_MS),
                 repeatMode = RepeatMode.Restart,
             ),
         label = "ripple",
     )
 
-    // Animated dots for "Listening..." text (cycles 0, 1, 2, 3)
+    // Animated dots for status text (cycles 0, 1, 2, 3)
     val dotAnimation by infiniteTransition.animateFloat(
         initialValue = 0f,
         targetValue = 4f,
         animationSpec =
             infiniteRepeatable(
-                animation = tween(durationMillis = 1200),
+                animation = tween(durationMillis = VoiceSearchConstants.DOTS_ANIM_MS),
                 repeatMode = RepeatMode.Restart,
             ),
         label = "dots",
     )
 
     // Combine base pulse with sound-reactive scaling for the mic bubble
-    val bubbleScale = basePulse + (animatedSoundLevel * SOUND_LEVEL_SCALE_FACTOR)
-    val bubbleSizeDp = 160.dp
+    val bubbleScale = basePulse + (animatedSoundLevel * VoiceSearchConstants.SOUND_LEVEL_SCALE_FACTOR)
 
     Dialog(
         onDismissRequest = onDismiss,
@@ -268,43 +378,26 @@ private fun VoiceSearchOverlay(
             contentAlignment = Alignment.Center,
         ) {
             Row(
-                horizontalArrangement = Arrangement.spacedBy(48.dp),
+                horizontalArrangement = Arrangement.spacedBy(VoiceSearchConstants.CONTENT_SPACING),
                 verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.padding(horizontal = 64.dp),
+                modifier = Modifier.padding(horizontal = VoiceSearchConstants.HORIZONTAL_PADDING),
             ) {
                 // Mic bubble with ripple rings
-                Box(
-                    contentAlignment = Alignment.Center,
-                ) {
-                    // Ripple rings expanding outward from the bubble
-                    // Only show ripple rings when actively listening (not processing or error)
-                    if (!isProcessing && errorMessage == null) {
-                        Canvas(modifier = Modifier.size(bubbleSizeDp * 1.8f)) {
-                            val canvasCenter = center
-                            val baseRadius = bubbleSizeDp.toPx() / 2
-                            val maxExpansion = bubbleSizeDp.toPx() * 0.35f
-
-                            for (i in 0..2) {
-                                // Stagger each ring's progress
-                                val ringProgress = (rippleProgress + (i * 0.33f)) % 1f
-                                val ringRadius = baseRadius + (ringProgress * maxExpansion)
-                                val ringAlpha = (1f - ringProgress) * 0.4f
-
-                                drawCircle(
-                                    color = primaryColor.copy(alpha = ringAlpha),
-                                    radius = ringRadius,
-                                    center = canvasCenter,
-                                    style = rippleStroke,
-                                )
-                            }
-                        }
+                Box(contentAlignment = Alignment.Center) {
+                    // Ripple rings (only when actively listening)
+                    if (shouldAnimateRipples) {
+                        VoiceRippleRings(
+                            rippleProgress = rippleProgress,
+                            bubbleSize = VoiceSearchConstants.BUBBLE_SIZE,
+                            color = primaryColor,
+                        )
                     }
 
                     // Main mic bubble
                     Box(
                         modifier =
                             Modifier
-                                .size(bubbleSizeDp)
+                                .size(VoiceSearchConstants.BUBBLE_SIZE)
                                 .graphicsLayer {
                                     scaleX = bubbleScale
                                     scaleY = bubbleScale
@@ -315,31 +408,24 @@ private fun VoiceSearchOverlay(
                         Icon(
                             imageVector = MicIcon,
                             contentDescription = stringResource(R.string.voice_search),
-                            modifier = Modifier.size(80.dp),
+                            modifier = Modifier.size(VoiceSearchConstants.MIC_ICON_SIZE),
                             tint = onPrimaryColor,
                         )
                     }
                 }
 
-                // Determine status text and accessibility description
+                // Status text
                 val processingText = stringResource(R.string.processing)
                 val listeningText = stringResource(R.string.voice_search_prompt)
-
-                val statusText =
-                    when {
-                        errorMessage != null -> errorMessage
-                        partialResult.isNotBlank() -> partialResult
-                        isProcessing -> processingText + ".".repeat(dotAnimation.toInt())
-                        else -> listeningText + ".".repeat(dotAnimation.toInt())
-                    }
-                // Accessibility description without animated dots
-                val accessibilityDescription =
-                    when {
-                        errorMessage != null -> errorMessage
-                        partialResult.isNotBlank() -> partialResult
-                        isProcessing -> processingText
-                        else -> listeningText
-                    }
+                val (statusText, accessibilityDescription) =
+                    getStatusText(
+                        errorMessage = errorMessage,
+                        partialResult = partialResult,
+                        isProcessing = isProcessing,
+                        processingText = processingText,
+                        listeningText = listeningText,
+                        dotCount = dotAnimation.toInt(),
+                    )
 
                 Text(
                     text = statusText,
@@ -356,11 +442,11 @@ private fun VoiceSearchOverlay(
             Text(
                 text = stringResource(R.string.press_back_to_cancel),
                 style = MaterialTheme.typography.bodySmall,
-                color = Color.White.copy(alpha = 0.5f),
+                color = Color.White.copy(alpha = VoiceSearchConstants.HINT_TEXT_ALPHA),
                 modifier =
                     Modifier
                         .align(Alignment.BottomCenter)
-                        .padding(bottom = 32.dp),
+                        .padding(bottom = VoiceSearchConstants.DISMISS_HINT_BOTTOM_PADDING),
             )
         }
     }

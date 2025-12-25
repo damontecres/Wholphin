@@ -165,6 +165,16 @@ private const val COLLECTION_ROW = MOVIE_ROW + 1
 private const val SERIES_ROW = COLLECTION_ROW + 1
 private const val EPISODE_ROW = SERIES_ROW + 1
 
+/**
+ * Delay in milliseconds before requesting focus after voice search overlay dismisses.
+ *
+ * This delay is necessary because Compose's focus system needs time to settle after the
+ * Dialog closes. Without it, focus can incorrectly jump to the Navigation Drawer because
+ * requestFocus() fires before the overlay is fully removed from the composition.
+ * This is a known Compose focus timing behavior with Dialog components.
+ */
+private const val VOICE_RESULT_FOCUS_DELAY_MS = 100L
+
 @Composable
 fun SearchPage(
     userPreferences: UserPreferences,
@@ -189,7 +199,21 @@ fun SearchPage(
     // Create voice input manager at top level to survive LazyColumn recompositions
     val voiceInputManager = rememberVoiceInputManager()
 
-    fun triggerImmediateSearch(searchQuery: String) {
+    /**
+     * Triggers an immediate search bypassing the debounce delay.
+     *
+     * Used for voice search results where we want instant feedback.
+     * Sets [immediateSearchQuery] to prevent the debounced LaunchedEffect from re-triggering
+     * the same search, and [pendingImmediateSearch] to enable automatic focus movement
+     * to results when they arrive.
+     *
+     * ## State Flow
+     * 1. Voice result received → triggerVoiceSearch() called
+     * 2. Search initiated immediately (no 750ms debounce)
+     * 3. When results arrive, focus moves to first result row
+     * 4. [immediateSearchQuery] cleared to re-enable debounce for typed queries
+     */
+    fun triggerVoiceSearch(searchQuery: String) {
         immediateSearchQuery = searchQuery
         pendingImmediateSearch = true
         viewModel.search(searchQuery)
@@ -218,8 +242,17 @@ fun SearchPage(
     val tvShowsTitle = stringResource(R.string.tv_shows)
     val episodesTitle = stringResource(R.string.episodes)
 
-    // After voice search, wait for results to load before moving focus to the first result row.
-    // Clears the flag if any search succeeded OR if all searches finished (even with errors).
+    // Voice Search Focus Flow:
+    // After voice search completes, we wait for search results before moving focus.
+    // This prevents the jarring UX of focus jumping to empty result rows.
+    //
+    // State Machine:
+    // - pendingImmediateSearch=true: Waiting for results after voice search
+    // - On first Success result: Move focus to results, clear flag
+    // - On all finished (no Success): Clear flag, keep focus on search field
+    //
+    // We check pendingImmediateSearch first to avoid unnecessary work when
+    // results change from regular typed searches (which don't set this flag).
     LaunchedEffect(pendingImmediateSearch, movies, collections, series, episodes) {
         if (pendingImmediateSearch) {
             val results = listOf(movies, collections, series, episodes)
@@ -282,7 +315,7 @@ fun SearchPage(
                             query = it
                         },
                         onSearchClick = {
-                            triggerImmediateSearch(query)
+                            triggerVoiceSearch(query)
                         },
                         readOnly = !isSearchActive,
                         modifier =
@@ -324,14 +357,10 @@ fun SearchPage(
                     VoiceSearchButton(
                         onSpeechResult = { spokenText ->
                             query = spokenText
-                            triggerImmediateSearch(spokenText)
-                            // Reclaim focus after voice search overlay dismisses.
-                            // The 100ms delay is necessary to let Compose's focus system settle
-                            // after the Dialog closes. Without it, focus can jump to the Navigation
-                            // Drawer because requestFocus() fires before the overlay is fully removed
-                            // from the composition. This is a known Compose focus timing quirk.
+                            triggerVoiceSearch(spokenText)
+                            // Reclaim focus after overlay dismisses (see VOICE_RESULT_FOCUS_DELAY_MS docs)
                             scope.launch {
-                                delay(100L)
+                                delay(VOICE_RESULT_FOCUS_DELAY_MS)
                                 textFieldFocusRequester.requestFocus()
                             }
                         },
