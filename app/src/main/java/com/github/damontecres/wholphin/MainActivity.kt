@@ -56,10 +56,7 @@ import com.github.damontecres.wholphin.ui.util.ProvideLocalClock
 import com.github.damontecres.wholphin.util.DebugLogTree
 import dagger.hilt.android.AndroidEntryPoint
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.firstOrNull
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import org.jellyfin.sdk.model.serializer.toUUIDOrNull
 import timber.log.Timber
@@ -269,40 +266,42 @@ class MainActivityViewModel
         private val backdropService: BackdropService,
     ) : ViewModel() {
         fun appStart() {
-            viewModelScope.launch {
-                val prefs = preferences.data.firstOrNull() ?: AppPreferences.getDefaultInstance()
-                if (prefs.signInAutomatically) {
-                    val current =
-                        withContext(Dispatchers.IO) {
+            viewModelScope.launchIO {
+                try {
+                    val prefs =
+                        preferences.data.firstOrNull() ?: AppPreferences.getDefaultInstance()
+                    if (prefs.signInAutomatically) {
+                        val current =
                             serverRepository.restoreSession(
                                 prefs.currentServerId?.toUUIDOrNull(),
                                 prefs.currentUserId?.toUUIDOrNull(),
                             )
-                        }
-                    if (current != null) {
-                        // Restored
-                        navigationManager.navigateTo(SetupDestination.AppContent(current))
-                    } else {
-                        // Did not restore
-                        navigationManager.navigateTo(SetupDestination.ServerList)
-                    }
-                } else {
-                    navigationManager.navigateTo(SetupDestination.Loading)
-                    backdropService.clearBackdrop()
-                    val currentServerId = prefs.currentServerId?.toUUIDOrNull()
-                    if (currentServerId != null) {
-                        val currentServer =
-                            withContext(Dispatchers.IO) {
-                                serverRepository.serverDao.getServer(currentServerId)?.server
-                            }
-                        if (currentServer != null) {
-                            navigationManager.navigateTo(SetupDestination.UserList(currentServer))
+                        if (current != null) {
+                            // Restored
+                            navigationManager.navigateTo(SetupDestination.AppContent(current))
                         } else {
+                            // Did not restore
                             navigationManager.navigateTo(SetupDestination.ServerList)
                         }
                     } else {
-                        navigationManager.navigateTo(SetupDestination.ServerList)
+                        navigationManager.navigateTo(SetupDestination.Loading)
+                        backdropService.clearBackdrop()
+                        val currentServerId = prefs.currentServerId?.toUUIDOrNull()
+                        if (currentServerId != null) {
+                            val currentServer =
+                                serverRepository.serverDao.getServer(currentServerId)?.server
+                            if (currentServer != null) {
+                                navigationManager.navigateTo(SetupDestination.UserList(currentServer))
+                            } else {
+                                navigationManager.navigateTo(SetupDestination.ServerList)
+                            }
+                        } else {
+                            navigationManager.navigateTo(SetupDestination.ServerList)
+                        }
                     }
+                } catch (ex: Exception) {
+                    Timber.e(ex, "Error during appStart")
+                    navigationManager.navigateTo(SetupDestination.ServerList)
                 }
             }
             viewModelScope.launchIO {
