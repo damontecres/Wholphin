@@ -245,7 +245,12 @@ class StreamChoiceService
                     }
 
                     SubtitlePlaybackMode.DEFAULT -> {
-                        candidates.firstOrNull { it.isDefault || it.isForced }
+                        if (subtitleLanguage.isNotNullOrBlank()) {
+                            candidates.firstOrNull { it.language == subtitleLanguage && (it.isDefault || it.isForced) }
+                                ?: candidates.firstOrNull { it.isDefault || it.isForced }
+                        } else {
+                            candidates.firstOrNull { it.isDefault || it.isForced }
+                        }
                     }
 
                     SubtitlePlaybackMode.NONE -> {

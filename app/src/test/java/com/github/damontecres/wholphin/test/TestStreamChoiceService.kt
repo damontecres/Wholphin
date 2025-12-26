@@ -3,13 +3,14 @@ package com.github.damontecres.wholphin.test
 import androidx.lifecycle.MutableLiveData
 import com.github.damontecres.wholphin.data.PlaybackLanguageChoiceDao
 import com.github.damontecres.wholphin.data.ServerRepository
+import com.github.damontecres.wholphin.data.model.ItemPlayback
+import com.github.damontecres.wholphin.data.model.PlaybackLanguageChoice
+import com.github.damontecres.wholphin.data.model.TrackIndex
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.DefaultUserConfiguration
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.StreamChoiceService
 import io.mockk.every
-import io.mockk.impl.annotations.MockK
-import io.mockk.junit4.MockKRule
 import io.mockk.mockk
 import org.jellyfin.sdk.model.UUID
 import org.jellyfin.sdk.model.api.MediaStream
@@ -17,61 +18,17 @@ import org.jellyfin.sdk.model.api.MediaStreamType
 import org.jellyfin.sdk.model.api.SubtitlePlaybackMode
 import org.jellyfin.sdk.model.api.UserDto
 import org.junit.Assert
-import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 
 @RunWith(Parameterized::class)
-class TestStreamChoiceService(
+class TestStreamChoiceServiceDefault(
     val input: TestInput,
 ) {
-    @get:Rule
-    val mockkRule = MockKRule(this)
-
-    @MockK
-    lateinit var mockPlaybackLanguageChoiceDao: PlaybackLanguageChoiceDao
-
-    private fun serverRepo(
-        audioLang: String?,
-        subtitleMode: SubtitlePlaybackMode?,
-        subtitleLang: String?,
-    ): ServerRepository {
-        val mocked = mockk<ServerRepository>()
-        every { mocked.currentUserDto } returns
-            MutableLiveData(
-                UserDto(
-                    id = UUID.randomUUID(),
-                    hasPassword = true,
-                    hasConfiguredPassword = true,
-                    hasConfiguredEasyPassword = true,
-                    configuration =
-                        DefaultUserConfiguration.copy(
-                            audioLanguagePreference = audioLang,
-                            subtitleMode = subtitleMode ?: SubtitlePlaybackMode.DEFAULT,
-                            subtitleLanguagePreference = subtitleLang,
-                        ),
-                ),
-            )
-        return mocked
-    }
-
     @Test
     fun test() {
-        val service =
-            StreamChoiceService(
-                serverRepo(input.userAudioLang, input.userSubtitleMode, input.userSubtitleLang),
-                mockPlaybackLanguageChoiceDao,
-            )
-        val result =
-            service.chooseSubtitleStream(
-                audioStreamLang = input.streamAudioLang,
-                candidates = input.subtitles,
-                itemPlayback = null,
-                playbackLanguageChoice = null,
-                prefs = UserPreferences(AppPreferences.getDefaultInstance()),
-            )
-        Assert.assertEquals(input.expectedIndex, result?.index)
+        runTest(input)
     }
 
     companion object {
@@ -79,7 +36,6 @@ class TestStreamChoiceService(
         @Parameterized.Parameters(name = "{index}: {0}")
         fun data(): Collection<TestInput> =
             listOf(
-                // DEFAULT
                 TestInput(
                     0,
                     SubtitlePlaybackMode.DEFAULT,
@@ -88,6 +44,36 @@ class TestStreamChoiceService(
                             subtitle(0, "eng", true),
                             subtitle(1, "spa", false),
                         ),
+                ),
+                TestInput(
+                    0,
+                    SubtitlePlaybackMode.DEFAULT,
+                    subtitles =
+                        listOf(
+                            subtitle(0, "eng", true),
+                            subtitle(1, "spa", false),
+                        ),
+                    userSubtitleLang = null,
+                ),
+                TestInput(
+                    0,
+                    SubtitlePlaybackMode.DEFAULT,
+                    subtitles =
+                        listOf(
+                            subtitle(0, "eng", true),
+                            subtitle(1, "spa", true),
+                        ),
+                    userSubtitleLang = null,
+                ),
+                TestInput(
+                    1,
+                    SubtitlePlaybackMode.DEFAULT,
+                    subtitles =
+                        listOf(
+                            subtitle(0, "eng", false),
+                            subtitle(1, "spa", true),
+                        ),
+                    userSubtitleLang = null,
                 ),
                 TestInput(
                     null,
@@ -107,7 +93,64 @@ class TestStreamChoiceService(
                             subtitle(1, "spa", false),
                         ),
                 ),
-                // SMART
+                TestInput(
+                    1,
+                    SubtitlePlaybackMode.DEFAULT,
+                    subtitles =
+                        listOf(
+                            subtitle(0, "eng", true),
+                            subtitle(1, "spa", false),
+                        ),
+                    itemPlayback = itemPlayback(subtitleIndex = 1),
+                ),
+                TestInput(
+                    1,
+                    SubtitlePlaybackMode.DEFAULT,
+                    subtitles =
+                        listOf(
+                            subtitle(0, "eng", forced = true),
+                            subtitle(1, "spa", false),
+                        ),
+                    plc = plc(subtitleLang = "spa"),
+                ),
+                TestInput(
+                    1,
+                    SubtitlePlaybackMode.DEFAULT,
+                    subtitles =
+                        listOf(
+                            subtitle(0, "eng", true),
+                            subtitle(1, "spa", false),
+                        ),
+                    plc = plc(subtitleLang = "spa"),
+                ),
+                TestInput(
+                    null,
+                    SubtitlePlaybackMode.DEFAULT,
+                    subtitles =
+                        listOf(
+                            subtitle(0, "eng", true),
+                            subtitle(1, "spa", false),
+                        ),
+                    plc = plc(subtitlesDisabled = true),
+                ),
+            )
+    }
+}
+
+@RunWith(Parameterized::class)
+class TestStreamChoiceServiceSmart(
+    val input: TestInput,
+) {
+    @Test
+    fun test() {
+        runTest(input)
+    }
+
+    companion object {
+        @JvmStatic
+        @Parameterized.Parameters(name = "{index}: {0}")
+        fun data(): Collection<TestInput> =
+            listOf(
                 TestInput(
                     0,
                     SubtitlePlaybackMode.SMART,
@@ -167,7 +210,24 @@ class TestStreamChoiceService(
                         ),
                     streamAudioLang = "eng",
                 ),
-                // ONLY_FORCED
+            )
+    }
+}
+
+@RunWith(Parameterized::class)
+class TestStreamChoiceServiceOnlyForced(
+    val input: TestInput,
+) {
+    @Test
+    fun test() {
+        runTest(input)
+    }
+
+    companion object {
+        @JvmStatic
+        @Parameterized.Parameters(name = "{index}: {0}")
+        fun data(): Collection<TestInput> =
+            listOf(
                 TestInput(
                     null,
                     SubtitlePlaybackMode.ONLY_FORCED,
@@ -220,8 +280,53 @@ data class TestInput(
     val userSubtitleLang: String? = "eng",
     val streamAudioLang: String? = "eng",
     val subtitles: List<MediaStream>,
+    val itemPlayback: ItemPlayback? = null,
+    val plc: PlaybackLanguageChoice? = null,
 ) {
-    override fun toString(): String = "test(mode=$userSubtitleMode, subtitles=$subtitles)"
+    override fun toString(): String = "test(mode=$userSubtitleMode, subtitles=${subtitles.map { it.toShortString() }})"
+}
+
+private fun MediaStream.toShortString(): String = "$type(index=$index, lang=$language, default=$isDefault, forced=$isForced)"
+
+private fun serverRepo(
+    audioLang: String?,
+    subtitleMode: SubtitlePlaybackMode?,
+    subtitleLang: String?,
+): ServerRepository {
+    val mocked = mockk<ServerRepository>()
+    every { mocked.currentUserDto } returns
+        MutableLiveData(
+            UserDto(
+                id = UUID.randomUUID(),
+                hasPassword = true,
+                hasConfiguredPassword = true,
+                hasConfiguredEasyPassword = true,
+                configuration =
+                    DefaultUserConfiguration.copy(
+                        audioLanguagePreference = audioLang,
+                        subtitleMode = subtitleMode ?: SubtitlePlaybackMode.DEFAULT,
+                        subtitleLanguagePreference = subtitleLang,
+                    ),
+            ),
+        )
+    return mocked
+}
+
+private fun runTest(input: TestInput) {
+    val service =
+        StreamChoiceService(
+            serverRepo(input.userAudioLang, input.userSubtitleMode, input.userSubtitleLang),
+            mockk<PlaybackLanguageChoiceDao>(),
+        )
+    val result =
+        service.chooseSubtitleStream(
+            audioStreamLang = input.streamAudioLang,
+            candidates = input.subtitles,
+            itemPlayback = input.itemPlayback,
+            playbackLanguageChoice = input.plc,
+            prefs = UserPreferences(AppPreferences.getDefaultInstance()),
+        )
+    Assert.assertEquals(input.expectedIndex, result?.index)
 }
 
 fun subtitle(
@@ -241,4 +346,30 @@ fun subtitle(
         isExternal = false,
         isTextSubtitleStream = true,
         supportsExternalStream = true,
+    )
+
+private fun itemPlayback(
+    audioIndex: Int = TrackIndex.UNSPECIFIED,
+    subtitleIndex: Int = TrackIndex.UNSPECIFIED,
+): ItemPlayback =
+    ItemPlayback(
+        rowId = 1,
+        userId = 1,
+        itemId = UUID.randomUUID(),
+        sourceId = UUID.randomUUID(),
+        audioIndex = audioIndex,
+        subtitleIndex = subtitleIndex,
+    )
+
+private fun plc(
+    audioLang: String? = null,
+    subtitleLang: String? = null,
+    subtitlesDisabled: Boolean? = if (subtitleLang != null) false else null,
+): PlaybackLanguageChoice =
+    PlaybackLanguageChoice(
+        userId = 1,
+        seriesId = UUID.randomUUID(),
+        audioLanguage = audioLang,
+        subtitleLanguage = subtitleLang,
+        subtitlesDisabled = subtitlesDisabled,
     )
