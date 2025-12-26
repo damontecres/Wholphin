@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="add_favorite">Añadir a Favoritos</string>
-    <string name="add_server">Agregar servidor</string>
-    <string name="add_user">Agregar usuario</string>
+    <string name="add_server">Añadir servidor</string>
+    <string name="add_user">Añadir usuario</string>
     <string name="audio">Audio</string>
     <string name="birthplace">Lugar de nacimiento</string>
     <string name="bitrate">Tasa de bits</string>
