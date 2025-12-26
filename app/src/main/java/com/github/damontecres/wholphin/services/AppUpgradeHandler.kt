@@ -197,4 +197,12 @@ suspend fun upgradeApp(
             }
         }
     }
+
+    if (previous.isEqualOrBefore(Version.fromString("0.3.8-5-g0"))) {
+        appPreferences.updateData {
+            it.updateSubtitlePreferences {
+                autoSelectForcedSubtitles = SubtitleSettings.AutoSelectForcedSubtitles.defaultValue
+            }
+        }
+    }
 }
