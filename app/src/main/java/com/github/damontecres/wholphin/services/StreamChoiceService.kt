@@ -153,7 +153,7 @@ class StreamChoiceService
             return source.mediaStreams?.letNotEmpty { streams ->
                 val candidates = streams.filter { it.type == MediaStreamType.SUBTITLE }
                 chooseSubtitleStream(
-                    audioStream,
+                    audioStream?.language,
                     candidates,
                     itemPlayback,
                     plc,
@@ -163,7 +163,7 @@ class StreamChoiceService
         }
 
         fun chooseSubtitleStream(
-            audioStream: MediaStream?,
+            audioStreamLang: String?,
             candidates: List<MediaStream>,
             itemPlayback: ItemPlayback?,
             playbackLanguageChoice: PlaybackLanguageChoice?,
@@ -198,48 +198,54 @@ class StreamChoiceService
                             userConfig?.subtitleMode ?: SubtitlePlaybackMode.DEFAULT
                         }
                     }
+                val candidates =
+                    candidates.sortedWith(
+                        compareBy<MediaStream>(
+                            { it.isDefault },
+                            { !it.isForced && it.language.equals(subtitleLanguage, true) },
+                            { it.isForced && it.language.equals(subtitleLanguage, true) },
+                            { it.isForced && it.language.isUnknown },
+                            { it.isForced },
+                        ),
+                    )
                 return when (subtitleMode) {
                     SubtitlePlaybackMode.ALWAYS -> {
-                        if (subtitleLanguage != null) {
-                            candidates.firstOrNull { it.language == subtitleLanguage }
+                        if (subtitleLanguage.isNotNullOrBlank()) {
+                            candidates.firstOrNull {
+                                it.language.equals(subtitleLanguage, true) ||
+                                    it.language.isUnknown
+                            }
                         } else {
                             candidates.firstOrNull()
                         }
                     }
 
                     SubtitlePlaybackMode.ONLY_FORCED -> {
-                        if (subtitleLanguage != null) {
+                        if (subtitleLanguage.isNotNullOrBlank()) {
                             candidates.firstOrNull { it.language == subtitleLanguage && it.isForced }
+                                ?: candidates.firstOrNull { it.language.isUnknown && it.isForced }
                         } else {
                             candidates.firstOrNull { it.isForced }
                         }
                     }
 
                     SubtitlePlaybackMode.SMART -> {
-                        val audioLanguage = userConfig?.audioLanguagePreference
-                        val audioStreamLang = audioStream?.language
-                        if (audioLanguage.isNotNullOrBlank() && audioStreamLang.isNotNullOrBlank() && audioLanguage != audioStreamLang) {
-                            candidates.firstOrNull { it.language == subtitleLanguage }
+                        if (subtitleLanguage.isNotNullOrBlank()) {
+                            val audioLanguage = userConfig?.audioLanguagePreference
+                            if (audioLanguage.isNotNullOrBlank() && audioLanguage != audioStreamLang) {
+                                candidates.firstOrNull { it.language == subtitleLanguage }
+                                    ?: candidates.firstOrNull { it.language.isUnknown }
+                            } else {
+                                candidates.firstOrNull { it.isForced && it.language == subtitleLanguage }
+                                    ?: candidates.firstOrNull { it.isForced && it.language.isUnknown }
+                            }
                         } else {
-                            null
+                            candidates.firstOrNull { it.isForced }
                         }
                     }
 
                     SubtitlePlaybackMode.DEFAULT -> {
-                        subtitleLanguage?.let { lang ->
-                            // Find best track that is in the preferred language
-                            (
-                                candidates.firstOrNull { it.isDefault && it.isForced && it.language == lang }
-                                    ?: candidates.firstOrNull { it.isDefault && it.language == lang }
-                                    ?: candidates.firstOrNull { it.isForced && it.language == lang }
-                            )
-                        }
-                            ?: (
-                                // If none in preferred language, just find the best track
-                                candidates.firstOrNull { it.isDefault && it.isForced }
-                                    ?: candidates.firstOrNull { it.isDefault }
-                                    ?: candidates.firstOrNull { it.isForced }
-                            )
+                        candidates.firstOrNull { it.isDefault || it.isForced }
                     }
 
                     SubtitlePlaybackMode.NONE -> {
@@ -249,3 +255,12 @@ class StreamChoiceService
             }
         }
     }
+
+private val String?.isUnknown: Boolean
+    get() =
+        this == null ||
+            this.equals("unknown", true) ||
+            this.equals("und", true) ||
+            this.equals("undetermined", true) ||
+            this.equals("mul", true) ||
+            this.equals("zxx", true)
