@@ -13,7 +13,6 @@ import com.github.damontecres.wholphin.data.model.ItemPlayback
 import com.github.damontecres.wholphin.data.model.Person
 import com.github.damontecres.wholphin.data.model.Trailer
 import com.github.damontecres.wholphin.preferences.ThemeSongVolume
-import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.ExtrasService
 import com.github.damontecres.wholphin.services.FavoriteWatchManager
@@ -98,7 +97,6 @@ class SeriesViewModel
             ): SeriesViewModel
         }
 
-        private lateinit var prefs: UserPreferences
         val loading = MutableLiveData<LoadingState>(LoadingState.Loading)
         val seasons = MutableLiveData<List<BaseItem?>>(listOf())
         val episodes = MutableLiveData<EpisodeList>(EpisodeList.Loading)
@@ -119,7 +117,6 @@ class SeriesViewModel
                     "Error loading series $seriesId",
                 ) + Dispatchers.IO,
             ) {
-                this@SeriesViewModel.prefs = userPreferencesService.getCurrent()
                 Timber.v("Start")
                 val item = fetchItem(seriesId)
                 backdropService.submit(item)

@@ -49,7 +49,7 @@ import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.Person
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.AspectRatios
-import com.github.damontecres.wholphin.ui.OneTimeLaunchedEffect
+import com.github.damontecres.wholphin.ui.RequestOrRestoreFocus
 import com.github.damontecres.wholphin.ui.cards.BannerCard
 import com.github.damontecres.wholphin.ui.cards.PersonRow
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
@@ -181,13 +181,9 @@ fun SeriesOverviewContent(
                     }
 
                     is EpisodeList.Success -> {
-                        val state = rememberLazyListState()
-                        OneTimeLaunchedEffect {
-                            if (state.firstVisibleItemIndex != position.episodeRowIndex) {
-                                state.scrollToItem(position.episodeRowIndex)
-                            }
-                            firstItemFocusRequester.tryRequestFocus()
-                        }
+                        val state = rememberLazyListState(position.episodeRowIndex)
+                        RequestOrRestoreFocus(firstItemFocusRequester)
+
                         LazyRow(
                             state = state,
                             horizontalArrangement = Arrangement.spacedBy(16.dp),

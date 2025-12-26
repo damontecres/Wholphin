@@ -39,6 +39,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
@@ -67,7 +68,7 @@ import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.FavoriteWatchManager
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.ui.AspectRatios
-import com.github.damontecres.wholphin.ui.OneTimeLaunchedEffect
+import com.github.damontecres.wholphin.ui.RequestOrRestoreFocus
 import com.github.damontecres.wholphin.ui.SlimItemFields
 import com.github.damontecres.wholphin.ui.cards.GridCard
 import com.github.damontecres.wholphin.ui.data.AddPlaylistViewModel
@@ -85,17 +86,18 @@ import com.github.damontecres.wholphin.ui.playback.scale
 import com.github.damontecres.wholphin.ui.rememberInt
 import com.github.damontecres.wholphin.ui.setValueOnMain
 import com.github.damontecres.wholphin.ui.toServerString
-import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.ApiRequestPager
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.GetItemsRequestHandler
 import com.github.damontecres.wholphin.util.GetPersonsHandler
 import com.github.damontecres.wholphin.util.LoadingExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedFactory
+import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
@@ -114,13 +116,13 @@ import org.jellyfin.sdk.model.serializer.toUUIDOrNull
 import timber.log.Timber
 import java.util.TreeSet
 import java.util.UUID
-import javax.inject.Inject
 import kotlin.time.Duration
 
-@HiltViewModel
+@HiltViewModel(assistedFactory = CollectionFolderViewModel.Factory::class)
 class CollectionFolderViewModel
-    @Inject
+    @AssistedInject
     constructor(
+        private val savedStateHandle: SavedStateHandle,
         api: ApiClient,
         @param:ApplicationContext private val context: Context,
         private val serverRepository: ServerRepository,
@@ -128,7 +130,25 @@ class CollectionFolderViewModel
         private val favoriteWatchManager: FavoriteWatchManager,
         private val backdropService: BackdropService,
         val navigationManager: NavigationManager,
+        @Assisted itemId: String,
+        @Assisted initialSortAndDirection: SortAndDirection?,
+        @Assisted("recursive") private val recursive: Boolean,
+        @Assisted private val collectionFilter: CollectionFolderFilter,
+        @Assisted("useSeriesForPrimary") private val useSeriesForPrimary: Boolean,
+        @Assisted defaultViewOptions: ViewOptions,
     ) : ItemViewModel(api) {
+        @AssistedFactory
+        interface Factory {
+            fun create(
+                itemId: String,
+                initialSortAndDirection: SortAndDirection?,
+                @Assisted("recursive") recursive: Boolean,
+                collectionFilter: CollectionFolderFilter,
+                @Assisted("useSeriesForPrimary") useSeriesForPrimary: Boolean,
+                defaultViewOptions: ViewOptions,
+            ): CollectionFolderViewModel
+        }
+
         val loading = MutableLiveData<LoadingState>(LoadingState.Loading)
         val backgroundLoading = MutableLiveData<LoadingState>(LoadingState.Loading)
         val pager = MutableLiveData<List<BaseItem?>>(listOf())
@@ -136,26 +156,19 @@ class CollectionFolderViewModel
         val filter = MutableLiveData<GetItemsFilter>(GetItemsFilter())
         val viewOptions = MutableLiveData<ViewOptions>()
 
-        private var useSeriesForPrimary: Boolean = true
-        private lateinit var collectionFilter: CollectionFolderFilter
+        var position: Int
+            get() = savedStateHandle.get<Int>("position") ?: 0
+            set(value) {
+                savedStateHandle["position"] = value
+            }
 
-        fun init(
-            itemId: String,
-            initialSortAndDirection: SortAndDirection?,
-            recursive: Boolean,
-            collectionFilter: CollectionFolderFilter,
-            useSeriesForPrimary: Boolean,
-            defaultViewOptions: ViewOptions,
-        ): Job =
+        init {
             viewModelScope.launch(
                 LoadingExceptionHandler(
                     loading,
                     context.getString(R.string.error_loading_collection, itemId),
                 ) + Dispatchers.IO,
             ) {
-                this@CollectionFolderViewModel.collectionFilter = collectionFilter
-                this@CollectionFolderViewModel.useSeriesForPrimary = useSeriesForPrimary
-                this@CollectionFolderViewModel.itemId = itemId
                 itemId.toUUIDOrNull()?.let {
                     fetchItem(it)
                 }
@@ -184,6 +197,7 @@ class CollectionFolderViewModel
 
                 loadResults(true, sortAndDirection, recursive, filterToUse, useSeriesForPrimary)
             }
+        }
 
         private fun saveLibraryDisplayInfo(
             newFilter: GetItemsFilter = this.filter.value!!,
@@ -537,25 +551,27 @@ fun CollectionFolderGrid(
     playEnabled: Boolean,
     defaultViewOptions: ViewOptions,
     modifier: Modifier = Modifier,
-    viewModel: CollectionFolderViewModel = hiltViewModel(key = itemId),
-    playlistViewModel: AddPlaylistViewModel = hiltViewModel(),
     initialSortAndDirection: SortAndDirection? = null,
     showTitle: Boolean = true,
     positionCallback: ((columns: Int, position: Int) -> Unit)? = null,
     useSeriesForPrimary: Boolean = true,
     filterOptions: List<ItemFilterBy<*>> = DefaultFilterOptions,
+    playlistViewModel: AddPlaylistViewModel = hiltViewModel(),
+    viewModel: CollectionFolderViewModel =
+        hiltViewModel<CollectionFolderViewModel, CollectionFolderViewModel.Factory>(
+            key = itemId,
+        ) {
+            it.create(
+                itemId = itemId,
+                initialSortAndDirection = initialSortAndDirection,
+                recursive = recursive,
+                collectionFilter = initialFilter,
+                useSeriesForPrimary = useSeriesForPrimary,
+                defaultViewOptions = defaultViewOptions,
+            )
+        },
 ) {
     val context = LocalContext.current
-    OneTimeLaunchedEffect {
-        viewModel.init(
-            itemId,
-            initialSortAndDirection,
-            recursive,
-            initialFilter,
-            useSeriesForPrimary,
-            defaultViewOptions,
-        )
-    }
     val sortAndDirection by viewModel.sortAndDirection.observeAsState(SortAndDirection.DEFAULT)
     val filter by viewModel.filter.observeAsState(initialFilter.filter)
     val loading by viewModel.loading.observeAsState(LoadingState.Loading)
@@ -589,6 +605,7 @@ fun CollectionFolderGrid(
                 Box(modifier = modifier) {
                     CollectionFolderGridContent(
                         preferences = preferences,
+                        initialPosition = viewModel.position,
                         item = item,
                         title = title,
                         pager = pager,
@@ -611,7 +628,10 @@ fun CollectionFolderGrid(
                         },
                         showTitle = showTitle,
                         sortOptions = sortOptions,
-                        positionCallback = positionCallback,
+                        positionCallback = { columns, position ->
+                            viewModel.position = position
+                            positionCallback?.invoke(columns, position)
+                        },
                         letterPosition = { viewModel.positionOfLetter(it) ?: -1 },
                         viewOptions = viewOptions,
                         defaultViewOptions = defaultViewOptions,
@@ -728,6 +748,7 @@ fun CollectionFolderGridContent(
     onClickPlayAll: (shuffle: Boolean) -> Unit,
     onClickPlay: (Int, BaseItem) -> Unit,
     onChangeBackdrop: (BaseItem) -> Unit,
+    initialPosition: Int,
     modifier: Modifier = Modifier,
     showTitle: Boolean = true,
     positionCallback: ((columns: Int, position: Int) -> Unit)? = null,
@@ -742,10 +763,10 @@ fun CollectionFolderGridContent(
     var viewOptions by remember { mutableStateOf(viewOptions) }
 
     val gridFocusRequester = remember { FocusRequester() }
-    LaunchedEffect(Unit) { gridFocusRequester.tryRequestFocus() }
+    RequestOrRestoreFocus(gridFocusRequester)
     var backdropImageUrl by remember { mutableStateOf<String?>(null) }
 
-    var position by rememberInt(0)
+    var position by rememberInt(initialPosition)
     val focusedItem = pager.getOrNull(position)
     if (viewOptions.showDetails) {
         LaunchedEffect(focusedItem) {
@@ -861,7 +882,7 @@ fun CollectionFolderGridContent(
                 showJumpButtons = false, // TODO add preference
                 showLetterButtons = sortAndDirection.sort == ItemSortBy.SORT_NAME,
                 modifier = Modifier.fillMaxSize(),
-                initialPosition = 0,
+                initialPosition = initialPosition,
                 positionCallback = { columns, newPosition ->
                     showHeader = newPosition < columns
                     position = newPosition
