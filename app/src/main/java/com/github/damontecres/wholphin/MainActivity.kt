@@ -32,7 +32,6 @@ import androidx.tv.material3.Surface
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.preferences.AppPreference
 import com.github.damontecres.wholphin.preferences.AppPreferences
-import com.github.damontecres.wholphin.preferences.DefaultUserConfiguration
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.AppUpgradeHandler
 import com.github.damontecres.wholphin.services.BackdropService
@@ -58,10 +57,7 @@ import com.github.damontecres.wholphin.ui.util.ProvideLocalClock
 import com.github.damontecres.wholphin.util.DebugLogTree
 import dagger.hilt.android.AndroidEntryPoint
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.firstOrNull
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import org.jellyfin.sdk.model.serializer.toUUIDOrNull
 import timber.log.Timber
@@ -110,7 +106,7 @@ class MainActivity : AppCompatActivity() {
     @OptIn(ExperimentalTvMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        Timber.i("MainActivity.onCreate")
+        Timber.i("MainActivity.onCreate: savedInstanceState is null=${savedInstanceState == null}")
         lifecycle.addObserver(playbackLifecycleObserver)
         if (savedInstanceState == null) {
             appUpgradeHandler.copySubfont(false)
@@ -217,12 +213,8 @@ class MainActivity : AppCompatActivity() {
                                                         appPreferences,
                                                     )
                                                     val preferences =
-                                                        remember(appPreferences, current) {
-                                                            UserPreferences(
-                                                                appPreferences,
-                                                                current.userDto.configuration
-                                                                    ?: DefaultUserConfiguration,
-                                                            )
+                                                        remember(appPreferences) {
+                                                            UserPreferences(appPreferences)
                                                         }
                                                     ApplicationContent(
                                                         user = current.user,
@@ -246,6 +238,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        Timber.d("onResume")
         lifecycleScope.launchIO {
             appUpgradeHandler.run()
         }
@@ -253,7 +246,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onRestart() {
         super.onRestart()
-        Timber.i("onRestart")
+        Timber.d("onRestart")
         viewModel.appStart()
 //        val signInAutomatically =
 //            runBlocking { userPreferencesDataStore.data.firstOrNull()?.signInAutomatically } ?: true
@@ -263,6 +256,36 @@ class MainActivity : AppCompatActivity() {
 //        if (!signInAutomatically) {
 //            serverRepository.closeSession()
 //        }
+    }
+
+    override fun onStop() {
+        super.onStop()
+        Timber.d("onStop")
+    }
+
+    override fun onPause() {
+        super.onPause()
+        Timber.d("onPause")
+    }
+
+    override fun onStart() {
+        super.onStart()
+        Timber.d("onStart")
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        Timber.d("onSaveInstanceState")
+    }
+
+    override fun onRestoreInstanceState(savedInstanceState: Bundle) {
+        super.onRestoreInstanceState(savedInstanceState)
+        Timber.d("onRestoreInstanceState")
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        Timber.d("onDestroy")
     }
 }
 
@@ -277,40 +300,42 @@ class MainActivityViewModel
         private val backdropService: BackdropService,
     ) : ViewModel() {
         fun appStart() {
-            viewModelScope.launch {
-                val prefs = preferences.data.firstOrNull() ?: AppPreferences.getDefaultInstance()
-                if (prefs.signInAutomatically) {
-                    val current =
-                        withContext(Dispatchers.IO) {
+            viewModelScope.launchIO {
+                try {
+                    val prefs =
+                        preferences.data.firstOrNull() ?: AppPreferences.getDefaultInstance()
+                    if (prefs.signInAutomatically) {
+                        val current =
                             serverRepository.restoreSession(
                                 prefs.currentServerId?.toUUIDOrNull(),
                                 prefs.currentUserId?.toUUIDOrNull(),
                             )
-                        }
-                    if (current != null) {
-                        // Restored
-                        navigationManager.navigateTo(SetupDestination.AppContent(current))
-                    } else {
-                        // Did not restore
-                        navigationManager.navigateTo(SetupDestination.ServerList)
-                    }
-                } else {
-                    navigationManager.navigateTo(SetupDestination.Loading)
-                    backdropService.clearBackdrop()
-                    val currentServerId = prefs.currentServerId?.toUUIDOrNull()
-                    if (currentServerId != null) {
-                        val currentServer =
-                            withContext(Dispatchers.IO) {
-                                serverRepository.serverDao.getServer(currentServerId)?.server
-                            }
-                        if (currentServer != null) {
-                            navigationManager.navigateTo(SetupDestination.UserList(currentServer))
+                        if (current != null) {
+                            // Restored
+                            navigationManager.navigateTo(SetupDestination.AppContent(current))
                         } else {
+                            // Did not restore
                             navigationManager.navigateTo(SetupDestination.ServerList)
                         }
                     } else {
-                        navigationManager.navigateTo(SetupDestination.ServerList)
+                        navigationManager.navigateTo(SetupDestination.Loading)
+                        backdropService.clearBackdrop()
+                        val currentServerId = prefs.currentServerId?.toUUIDOrNull()
+                        if (currentServerId != null) {
+                            val currentServer =
+                                serverRepository.serverDao.getServer(currentServerId)?.server
+                            if (currentServer != null) {
+                                navigationManager.navigateTo(SetupDestination.UserList(currentServer))
+                            } else {
+                                navigationManager.navigateTo(SetupDestination.ServerList)
+                            }
+                        } else {
+                            navigationManager.navigateTo(SetupDestination.ServerList)
+                        }
                     }
+                } catch (ex: Exception) {
+                    Timber.e(ex, "Error during appStart")
+                    navigationManager.navigateTo(SetupDestination.ServerList)
                 }
             }
             viewModelScope.launchIO {

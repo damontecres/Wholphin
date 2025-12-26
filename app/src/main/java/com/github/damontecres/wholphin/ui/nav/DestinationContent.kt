@@ -79,10 +79,10 @@ fun DestinationContent(
 
         is Destination.SeriesOverview -> {
             SeriesOverview(
-                preferences,
-                destination,
-                modifier,
+                preferences = preferences,
+                destination = destination,
                 initialSeasonEpisode = destination.seasonEpisode,
+                modifier = modifier,
             )
         }
 
