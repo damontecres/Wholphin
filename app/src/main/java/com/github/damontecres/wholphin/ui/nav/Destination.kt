@@ -6,6 +6,7 @@ import androidx.annotation.StringRes
 import androidx.navigation3.runtime.NavKey
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.CollectionFolderFilter
+import com.github.damontecres.wholphin.data.model.DiscoverItem
 import com.github.damontecres.wholphin.data.model.GetItemsFilter
 import com.github.damontecres.wholphin.data.model.ItemPlayback
 import com.github.damontecres.wholphin.ui.data.SortAndDirection
@@ -108,6 +109,14 @@ sealed class Destination(
 
     @Serializable
     data object Favorites : Destination(false)
+
+    @Serializable
+    data object Discover : Destination(false)
+
+    @Serializable
+    data class DiscoveredItem(
+        val item: DiscoverItem,
+    ) : Destination(false)
 
     @Serializable
     data object UpdateApp : Destination(true)

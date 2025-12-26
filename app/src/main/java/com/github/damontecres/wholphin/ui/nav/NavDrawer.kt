@@ -111,7 +111,7 @@ class NavDrawerViewModel
         val setupNavigationManager: SetupNavigationManager,
         val backdropService: BackdropService,
     ) : ViewModel() {
-        private var all: List<NavDrawerItem>? = null
+        //        private var all: List<NavDrawerItem>? = null
         val moreLibraries = MutableLiveData<List<NavDrawerItem>>(null)
         val libraries = MutableLiveData<List<NavDrawerItem>>(listOf())
         val selectedIndex = MutableLiveData(-1)
@@ -119,8 +119,8 @@ class NavDrawerViewModel
 
         fun init() {
             viewModelScope.launchIO {
-                val all = all ?: navDrawerItemRepository.getNavDrawerItems()
-                this@NavDrawerViewModel.all = all
+                val all = navDrawerItemRepository.getNavDrawerItems()
+//                this@NavDrawerViewModel.all = all
                 val libraries = navDrawerItemRepository.getFilteredNavDrawerItems(all)
                 val moreLibraries = all.toMutableList().apply { removeAll(libraries) }
 
@@ -192,6 +192,13 @@ sealed interface NavDrawerItem {
             get() = "a_more"
 
         override fun name(context: Context): String = context.getString(R.string.more)
+    }
+
+    object Discover : NavDrawerItem {
+        override val id: String
+            get() = "a_discover"
+
+        override fun name(context: Context): String = context.getString(R.string.discover)
     }
 }
 
@@ -266,6 +273,13 @@ fun NavDrawer(
 
             NavDrawerItem.More -> {
                 setShowMore(!showMore)
+            }
+
+            NavDrawerItem.Discover -> {
+                viewModel.setIndex(index)
+                viewModel.navigationManager.navigateToFromDrawer(
+                    Destination.Discover,
+                )
             }
 
             is ServerNavDrawerItem -> {
@@ -607,6 +621,11 @@ fun NavigationDrawerScope.NavItem(
 
             NavDrawerItem.More -> {
                 R.string.fa_ellipsis
+            }
+
+            NavDrawerItem.Discover -> {
+                // TODO seerr
+                R.string.fa_list_ul
             }
 
             is ServerNavDrawerItem -> {

@@ -8,6 +8,7 @@ import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.preferences.updateInterfacePreferences
+import com.github.damontecres.wholphin.services.SeerrApi
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.RememberTabManager
 import dagger.Module
@@ -174,4 +175,11 @@ object AppModule {
     @Singleton
     @IoCoroutineScope
     fun ioCoroutineScope(): CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
+    @Provides
+    @Singleton
+    fun seerrApi(
+        @ApplicationContext context: Context,
+        @StandardOkHttpClient okHttpClient: OkHttpClient,
+    ) = SeerrApi(context, okHttpClient)
 }

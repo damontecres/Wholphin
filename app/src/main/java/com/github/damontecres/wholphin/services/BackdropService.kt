@@ -15,6 +15,7 @@ import coil3.request.SuccessResult
 import coil3.request.allowHardware
 import coil3.request.bitmapConfig
 import com.github.damontecres.wholphin.data.model.BaseItem
+import com.github.damontecres.wholphin.data.model.DiscoverItem
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.BackdropStyle
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -27,7 +28,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.model.api.ImageType
 import timber.log.Timber
-import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -47,17 +47,26 @@ class BackdropService
 
         suspend fun submit(item: BaseItem) =
             withContext(Dispatchers.IO) {
-                val imageUrl = imageUrlService.getItemImageUrl(item, ImageType.BACKDROP)
-                if (backdropFlow.firstOrNull()?.imageUrl != imageUrl) {
-                    _backdropFlow.update {
-                        it.copy(
-                            itemId = item.id,
-                            imageUrl = null,
-                        )
-                    }
-                    extractColors(item)
-                }
+                val imageUrl = imageUrlService.getItemImageUrl(item, ImageType.BACKDROP)!!
+                submit(item.id.toString(), imageUrl)
             }
+
+        suspend fun submit(item: DiscoverItem) = submit("discover_${item.id}", item.backDropUrl)
+
+        suspend fun submit(
+            itemId: String,
+            imageUrl: String?,
+        ) = withContext(Dispatchers.IO) {
+            if (backdropFlow.firstOrNull()?.imageUrl != imageUrl) {
+                _backdropFlow.update {
+                    it.copy(
+                        itemId = itemId,
+                        imageUrl = null,
+                    )
+                }
+                extractColors(itemId, imageUrl)
+            }
+        }
 
         suspend fun clearBackdrop() {
             _backdropFlow.update {
@@ -65,9 +74,11 @@ class BackdropService
             }
         }
 
-        private suspend fun extractColors(item: BaseItem) {
+        private suspend fun extractColors(
+            itemId: String,
+            imageUrl: String?,
+        ) {
             delay(500)
-            val imageUrl = imageUrlService.getItemImageUrl(item, ImageType.BACKDROP)
             val backdropStyle =
                 preferences.data
                     .firstOrNull()
@@ -83,9 +94,9 @@ class BackdropService
                     ExtractedColors.DEFAULT
                 }
             _backdropFlow.update {
-                if (it.itemId == item.id) {
+                if (it.itemId == itemId) {
                     BackdropResult(
-                        itemId = item.id,
+                        itemId = itemId,
                         imageUrl = imageUrl,
                         primaryColor = primaryColor,
                         secondaryColor = secondaryColor,
@@ -208,7 +219,7 @@ class BackdropService
     }
 
 data class BackdropResult(
-    val itemId: UUID?,
+    val itemId: String?,
     val imageUrl: String?,
     val primaryColor: Color = Color.Unspecified,
     val secondaryColor: Color = Color.Unspecified,

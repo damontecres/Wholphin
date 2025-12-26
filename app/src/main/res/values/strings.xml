@@ -399,6 +399,11 @@
     <string name="subtitle_delay">Subtitle delay</string>
     <string name="backdrop_display">Backdrop style</string>
 
+    <string name="discover">Discover</string>
+    <string name="request">Request</string>
+    <string name="pending">Pending</string>
+    <string name="seerr_integration">Seerr integration</string>
+
     <string-array name="theme_song_volume">
         <item>Disabled</item>
         <item>Lowest</item>
