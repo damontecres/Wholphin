@@ -67,18 +67,18 @@ fun ItemDetailsDialog(
             Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 Text(
                     text = info.title,
-                    style = MaterialTheme.typography.headlineMedium,
+                    style = MaterialTheme.typography.headlineSmall,
                 )
                 if (info.genres.isNotEmpty()) {
                     Text(
                         text = info.genres.joinToString(", "),
-                        style = MaterialTheme.typography.titleMedium,
+                        style = MaterialTheme.typography.titleSmall,
                     )
                 }
                 if (info.overview.isNotNullOrBlank()) {
                     Text(
                         text = info.overview,
-                        style = MaterialTheme.typography.bodyLarge,
+                        style = MaterialTheme.typography.bodyMedium,
                     )
                 }
             }
