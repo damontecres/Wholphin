@@ -191,6 +191,9 @@ dependencies {
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.datastore)
     implementation(libs.protobuf.kotlin.lite)
+    implementation(libs.androidx.tvprovider)
+    implementation(libs.androidx.work.runtime.ktx)
+    implementation(libs.androidx.hilt.work)
 
     implementation(libs.androidx.media3.exoplayer)
     implementation(libs.androidx.media3.datasource.okhttp)
@@ -227,6 +230,7 @@ dependencies {
     implementation(libs.androidx.palette.ktx)
     ksp(libs.androidx.room.compiler)
     ksp(libs.hilt.android.compiler)
+    ksp(libs.androidx.hilt.compiler)
 
     implementation(libs.timber)
     implementation(libs.slf4j2.timber)

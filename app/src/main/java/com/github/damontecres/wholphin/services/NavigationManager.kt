@@ -68,9 +68,20 @@ class NavigationManager
             log()
         }
 
+        /**
+         * Resets the backstack to the specified destination
+         */
+        fun replace(destination: Destination) {
+            while (backStack.size > 1) {
+                backStack.removeLastOrNull()
+            }
+            backStack[0] = destination
+            log()
+        }
+
         private fun log() {
             val dest = backStack.lastOrNull().toString()
-            Timber.Forest.i("Current Destination: %s", dest)
+            Timber.i("Current Destination: %s", dest)
             ACRA.errorReporter.putCustomData("destination", dest)
         }
     }

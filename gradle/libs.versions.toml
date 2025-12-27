@@ -5,7 +5,9 @@ agp = "8.13.2"
 auto-service = "1.1.1"
 autoServiceKsp = "1.2.0"
 desugar_jdk_libs = "2.1.5"
+hiltCompiler = "1.3.0"
 hiltNavigationCompose = "1.3.0"
+hiltWork = "1.3.0"
 kotlin = "2.2.21"
 ksp = "2.3.0"
 coreKtx = "1.17.0"
@@ -33,6 +35,8 @@ protobuf-javalite = "4.33.2"
 hilt = "2.57.2"
 room = "2.8.4"
 preferenceKtx = "1.2.1"
+tvprovider = "1.1.0"
+workRuntimeKtx = "2.11.0"
 paletteKtx = "1.0.0"
 
 [libraries]
@@ -54,12 +58,16 @@ androidx-compose-material3 = { group = "androidx.compose.material3", name = "mat
 androidx-compose-runtime = { group = "androidx.compose.runtime", name = "runtime-android" }
 androidx-compose-runtime-livedata = { group = "androidx.compose.runtime", name = "runtime-livedata" }
 
+androidx-hilt-compiler = { module = "androidx.hilt:hilt-compiler", version.ref = "hiltWork" }
 androidx-hilt-navigation-compose = { module = "androidx.hilt:hilt-navigation-compose", version.ref = "hiltNavigationCompose" }
 androidx-tv-foundation = { group = "androidx.tv", name = "tv-foundation", version.ref = "tvFoundation" }
 androidx-tv-material = { group = "androidx.tv", name = "tv-material", version.ref = "tvMaterial" }
 androidx-lifecycle-runtime-ktx = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version.ref = "lifecycleRuntimeKtx" }
 androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }
 androidx-datastore = { module = "androidx.datastore:datastore", version.ref = "datastore" }
+androidx-tvprovider = { module = "androidx.tvprovider:tvprovider", version.ref = "tvprovider" }
+androidx-work-runtime-ktx = { module = "androidx.work:work-runtime-ktx", version.ref = "workRuntimeKtx" }
+androidx-hilt-work = { module = "androidx.hilt:hilt-work", version.ref = "hiltWork" }
 auto-service-annotations = { module = "com.google.auto.service:auto-service-annotations", version.ref = "auto-service" }
 auto-service-ksp = { module = "dev.zacsweers.autoservice:auto-service-ksp", version.ref = "autoServiceKsp" }
 desugar_jdk_libs = { module = "com.android.tools:desugar_jdk_libs", version.ref = "desugar_jdk_libs" }

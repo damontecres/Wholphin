@@ -69,6 +69,7 @@ class ApplicationContentViewModel
 fun ApplicationContent(
     server: JellyfinServer,
     user: JellyfinUser,
+    startDestination: Destination,
     navigationManager: NavigationManager,
     preferences: UserPreferences,
     modifier: Modifier = Modifier,
@@ -80,7 +81,7 @@ fun ApplicationContent(
             user,
             serializer = NavBackStackSerializer(elementSerializer = NavKeySerializer()),
         ) {
-            NavBackStack(Destination.Home())
+            NavBackStack(startDestination)
         }
     navigationManager.backStack = backStack
     val backdrop by viewModel.backdropService.backdropFlow.collectAsStateWithLifecycle()
