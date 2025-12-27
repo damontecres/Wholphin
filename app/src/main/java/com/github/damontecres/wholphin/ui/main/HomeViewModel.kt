@@ -134,8 +134,9 @@ class HomeViewModel
                         }
                         loadingState.value = LoadingState.Success
                     }
-                    latestNextUpService.loadLatest(latest)
                     refreshState.setValueOnMain(LoadingState.Success)
+                    val loadedLatest = latestNextUpService.loadLatest(latest)
+                    this@HomeViewModel.latestRows.setValueOnMain(loadedLatest)
                 }
             }
         }
