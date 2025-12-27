@@ -15,6 +15,7 @@ import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
@@ -42,8 +43,11 @@ import com.github.damontecres.wholphin.data.model.LocalTrailer
 import com.github.damontecres.wholphin.data.model.Person
 import com.github.damontecres.wholphin.data.model.RemoteTrailer
 import com.github.damontecres.wholphin.data.model.SeerrAvailability
+import com.github.damontecres.wholphin.data.model.SeerrPermission
 import com.github.damontecres.wholphin.data.model.Trailer
+import com.github.damontecres.wholphin.data.model.hasPermission
 import com.github.damontecres.wholphin.preferences.UserPreferences
+import com.github.damontecres.wholphin.services.SeerrUserConfig
 import com.github.damontecres.wholphin.services.TrailerService
 import com.github.damontecres.wholphin.ui.Cards
 import com.github.damontecres.wholphin.ui.cards.DiscoverItemCard
@@ -89,6 +93,7 @@ fun DiscoverMovieDetails(
     val similar by viewModel.similar.observeAsState(listOf())
     val recommended by viewModel.similar.observeAsState(listOf())
     val loading by viewModel.loading.observeAsState(LoadingState.Loading)
+    val userConfig by viewModel.userConfig.collectAsState(null)
 
     var overviewDialog by remember { mutableStateOf<ItemDetailsDialogInfo?>(null) }
     var moreDialog by remember { mutableStateOf<DialogParams?>(null) }
@@ -117,6 +122,7 @@ fun DiscoverMovieDetails(
                 DiscoverMovieDetailsContent(
                     preferences = preferences,
                     movie = movie,
+                    userConfig = userConfig,
                     rating = rating,
                     people = people,
                     trailers = trailers,
@@ -214,6 +220,7 @@ private const val RECOMMENDED_ROW = SIMILAR_ROW + 1
 @Composable
 fun DiscoverMovieDetailsContent(
     preferences: UserPreferences,
+    userConfig: SeerrUserConfig?,
     movie: MovieDetails,
     rating: DiscoverRating?,
     people: List<Person>,
@@ -266,6 +273,15 @@ fun DiscoverMovieDetailsContent(
                                 .fillMaxWidth()
                                 .padding(top = 32.dp, bottom = 16.dp),
                     )
+                    val canCancel =
+                        remember(movie, userConfig) {
+                            (
+                                // User requested this
+                                userConfig.hasPermission(SeerrPermission.REQUEST) &&
+                                    movie.mediaInfo?.requests?.any { it.requestedBy?.id == userConfig?.id } == true
+                            ) ||
+                                userConfig.hasPermission(SeerrPermission.MANAGE_REQUESTS)
+                        }
                     ExpandableDiscoverButtons(
                         availability =
                             SeerrAvailability.from(movie.mediaInfo?.status)
@@ -282,6 +298,8 @@ fun DiscoverMovieDetailsContent(
                                 }
                             }
                         },
+                        canRequest = userConfig.hasPermission(SeerrPermission.REQUEST),
+                        canCancel = canCancel,
                         modifier =
                             Modifier
                                 .fillMaxWidth()

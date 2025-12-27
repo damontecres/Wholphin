@@ -15,6 +15,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
@@ -41,8 +42,11 @@ import com.github.damontecres.wholphin.data.model.DiscoverItem
 import com.github.damontecres.wholphin.data.model.DiscoverRating
 import com.github.damontecres.wholphin.data.model.Person
 import com.github.damontecres.wholphin.data.model.SeerrAvailability
+import com.github.damontecres.wholphin.data.model.SeerrPermission
 import com.github.damontecres.wholphin.data.model.Trailer
+import com.github.damontecres.wholphin.data.model.hasPermission
 import com.github.damontecres.wholphin.preferences.UserPreferences
+import com.github.damontecres.wholphin.services.SeerrUserConfig
 import com.github.damontecres.wholphin.services.TrailerService
 import com.github.damontecres.wholphin.ui.cards.DiscoverItemCard
 import com.github.damontecres.wholphin.ui.cards.ItemRow
@@ -88,6 +92,7 @@ fun DiscoverSeriesDetails(
     val people by viewModel.people.observeAsState(listOf())
     val similar by viewModel.similar.observeAsState(listOf())
     val recommended by viewModel.recommended.observeAsState(listOf())
+    val userConfig by viewModel.userConfig.collectAsState(null)
 
     var overviewDialog by remember { mutableStateOf<ItemDetailsDialogInfo?>(null) }
     var seasonDialog by remember { mutableStateOf<DialogParams?>(null) }
@@ -109,6 +114,7 @@ fun DiscoverSeriesDetails(
                 DiscoverSeriesDetailsContent(
                     preferences = preferences,
                     series = item,
+                    userConfig = userConfig,
                     rating = rating,
                     seasons = seasons,
                     people = people,
@@ -192,6 +198,7 @@ private const val RECOMMENDED_ROW = SIMILAR_ROW + 1
 @Composable
 fun DiscoverSeriesDetailsContent(
     preferences: UserPreferences,
+    userConfig: SeerrUserConfig?,
     series: TvDetails,
     rating: DiscoverRating?,
     seasons: List<Season>,
@@ -248,6 +255,15 @@ fun DiscoverSeriesDetailsContent(
                                 .bringIntoViewRequester(bringIntoViewRequester)
                                 .padding(top = 32.dp, bottom = 16.dp),
                     )
+                    val canCancel =
+                        remember(series, userConfig) {
+                            (
+                                // User requested this
+                                userConfig.hasPermission(SeerrPermission.REQUEST) &&
+                                    series.mediaInfo?.requests?.any { it.requestedBy?.id == userConfig?.id } == true
+                            ) ||
+                                userConfig.hasPermission(SeerrPermission.MANAGE_REQUESTS)
+                        }
                     ExpandableDiscoverButtons(
                         availability =
                             SeerrAvailability.from(series.mediaInfo?.status)
@@ -264,6 +280,8 @@ fun DiscoverSeriesDetailsContent(
                                 }
                             }
                         },
+                        canRequest = userConfig.hasPermission(SeerrPermission.REQUEST),
+                        canCancel = canCancel,
                         modifier =
                             Modifier
                                 .fillMaxWidth()

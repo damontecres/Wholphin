@@ -24,6 +24,8 @@ import kotlin.time.Duration
 
 @Composable
 fun ExpandableDiscoverButtons(
+    canRequest: Boolean,
+    canCancel: Boolean,
     availability: SeerrAvailability,
     requestOnClick: () -> Unit,
     cancelOnClick: () -> Unit,
@@ -69,11 +71,11 @@ fun ExpandableDiscoverButtons(
 
                 SeerrAvailability.DELETED -> R.string.fa_video // TODO
             }
-
         item("first") {
             ExpandableFaButton(
                 title = text,
                 iconStringRes = icon,
+                enabled = if (availability == SeerrAvailability.UNKNOWN) canRequest else true,
                 onClick = {
                     when (availability) {
                         SeerrAvailability.UNKNOWN -> {
@@ -83,7 +85,7 @@ fun ExpandableDiscoverButtons(
                         SeerrAvailability.PENDING,
                         SeerrAvailability.PROCESSING,
                         -> {
-                            cancelOnClick.invoke()
+                            // TODO?
                         }
 
                         SeerrAvailability.PARTIALLY_AVAILABLE,
@@ -112,6 +114,7 @@ fun ExpandableDiscoverButtons(
                     icon = Icons.Default.Delete,
                     onClick = { cancelOnClick.invoke() },
                     resume = Duration.ZERO,
+                    enabled = canCancel,
                     modifier =
                         Modifier
                             .onFocusChanged(buttonOnFocusChanged),

@@ -14,6 +14,7 @@ import com.github.damontecres.wholphin.data.model.Person
 import com.github.damontecres.wholphin.data.model.Trailer
 import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.NavigationManager
+import com.github.damontecres.wholphin.services.SeerrServerRepository
 import com.github.damontecres.wholphin.services.SeerrService
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.nav.Destination
@@ -29,6 +30,7 @@ import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
@@ -45,6 +47,7 @@ class DiscoverSeriesViewModel
         private val backdropService: BackdropService,
         val serverRepository: ServerRepository,
         val seerrService: SeerrService,
+        private val seerrServerRepository: SeerrServerRepository,
         @Assisted val item: DiscoverItem,
     ) : ViewModel() {
         @AssistedFactory
@@ -61,6 +64,8 @@ class DiscoverSeriesViewModel
         val people = MutableLiveData<List<Person>>(listOf())
         val similar = MutableLiveData<List<DiscoverItem>>(listOf())
         val recommended = MutableLiveData<List<DiscoverItem>>(listOf())
+
+        val userConfig = seerrServerRepository.current.map { it?.config }
 
         init {
             init()
