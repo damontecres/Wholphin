@@ -33,6 +33,7 @@ import androidx.tv.material3.CardDefaults
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.DiscoverItem
+import com.github.damontecres.wholphin.data.model.SeerrAvailability
 import com.github.damontecres.wholphin.data.model.SeerrItemType
 import com.github.damontecres.wholphin.ui.AspectRatios
 import com.github.damontecres.wholphin.ui.Cards
@@ -105,6 +106,30 @@ fun DiscoverItemCard(
                         Modifier
                             .fillMaxSize(),
                 )
+                val availabilityColor =
+                    when (item?.availability) {
+                        SeerrAvailability.PENDING,
+                        SeerrAvailability.PROCESSING,
+                        -> Color.Yellow
+
+                        SeerrAvailability.PARTIALLY_AVAILABLE,
+                        SeerrAvailability.AVAILABLE,
+                        -> Color.Green
+
+                        else -> null
+                    }
+                availabilityColor?.let {
+                    Box(
+                        modifier =
+                            Modifier
+                                .padding(4.dp)
+                                .background(
+                                    color = it,
+                                    shape = CircleShape,
+                                ).size(12.dp)
+                                .align(Alignment.TopEnd),
+                    )
+                }
                 if (showOverlay) {
                     // TODO better colors
                     val color =
