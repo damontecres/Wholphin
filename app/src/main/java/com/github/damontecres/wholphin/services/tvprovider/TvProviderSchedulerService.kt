@@ -48,7 +48,7 @@ class TvProviderSchedulerService
                             workManager
                                 .enqueueUniquePeriodicWork(
                                     uniqueWorkName = TvProviderWorker.WORK_NAME,
-                                    existingPeriodicWorkPolicy = ExistingPeriodicWorkPolicy.CANCEL_AND_REENQUEUE,
+                                    existingPeriodicWorkPolicy = ExistingPeriodicWorkPolicy.UPDATE,
                                     request =
                                         PeriodicWorkRequestBuilder<TvProviderWorker>(
                                             repeatInterval = 1.hours.toJavaDuration(),

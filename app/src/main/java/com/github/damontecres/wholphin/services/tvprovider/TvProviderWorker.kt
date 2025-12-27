@@ -21,6 +21,7 @@ import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import kotlinx.coroutines.flow.firstOrNull
 import org.jellyfin.sdk.api.client.ApiClient
+import org.jellyfin.sdk.api.client.exception.ApiClientException
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.ImageType
 import org.jellyfin.sdk.model.extensions.ticks
@@ -62,56 +63,72 @@ class TvProviderWorker
                     return Result.failure()
                 }
             }
-            val prefs = preferences.data.firstOrNull() ?: AppPreferences.getDefaultInstance()
-            val potentialItemsToAdd =
-                getPotentialItems(
-                    userId,
-                    prefs.homePagePreferences.enableRewatchingNextUp,
-                )
-            val potentialItemsToAddIds = potentialItemsToAdd.map { it.id.toString() }
+            try {
+                val prefs = preferences.data.firstOrNull() ?: AppPreferences.getDefaultInstance()
+                val potentialItemsToAdd =
+                    getPotentialItems(
+                        userId,
+                        prefs.homePagePreferences.enableRewatchingNextUp,
+                        prefs.homePagePreferences.combineContinueNext,
+                    )
+                val potentialItemsToAddIds = potentialItemsToAdd.map { it.id.toString() }
 
-            Timber.v("potentialItemsToAddIds=%s", potentialItemsToAddIds)
-            val currentItems = getCurrentTvChannelNextUp()
-            val currentItemIds = currentItems.map { it.internalProviderId }
+                Timber.v("potentialItemsToAddIds=%s", potentialItemsToAddIds)
+                val currentItems = getCurrentTvChannelNextUp()
+                val currentItemIds = currentItems.map { it.internalProviderId }
 
-            val toRemove =
-                currentItems.filterNot { it.internalProviderId in potentialItemsToAddIds }
-            Timber.v("toRemove (%s)=%s", toRemove.size, toRemove.map { it.internalProviderId })
-            val toAdd = potentialItemsToAdd.filterNot { it.id.toString() in currentItemIds }
-            Timber.v("toAdd (%s)=%s", toAdd.size, toAdd.map { it.id })
+                val toRemove =
+                    currentItems.filterNot { it.internalProviderId in potentialItemsToAddIds }
 
-            // Remove existing items if they are no longer in the next up from server
-            toRemove
-                .map { TvContractCompat.buildWatchNextProgramUri(it.id) }
-                .forEach {
-                    context.contentResolver.delete(it, null, null)
-                }
+                val userRemoved = currentItems.filterNot { it.isBrowsable }
+                val userRemovedIds = userRemoved.map { it.internalProviderId }
+                Timber.v("toRemove (%s)=%s", toRemove.size, toRemove.map { it.internalProviderId })
+                val toAdd =
+                    potentialItemsToAdd.filterNot { it.id.toString() in currentItemIds && it.id.toString() in userRemovedIds }
+                Timber.v("toAdd (%s)=%s", toAdd.size, toAdd.map { it.id })
 
-            // Add new ones
-            val addedCount =
-                context.contentResolver.bulkInsert(
-                    WatchNextPrograms.CONTENT_URI,
-                    toAdd
-                        .map { convert(it).toContentValues() }
-                        .toTypedArray(),
-                )
-            Timber.v("Added %s", addedCount)
+                // Remove existing items if they are no longer in the next up from server
+                (toRemove + userRemoved)
+                    .map { TvContractCompat.buildWatchNextProgramUri(it.id) }
+                    .forEach {
+                        context.contentResolver.delete(it, null, null)
+                    }
 
-            Timber.d("Completed successfully")
+                // Add new ones
+                val addedCount =
+                    context.contentResolver.bulkInsert(
+                        WatchNextPrograms.CONTENT_URI,
+                        toAdd
+                            .map { convert(it).toContentValues() }
+                            .toTypedArray(),
+                    )
+                Timber.v("Added %s", addedCount)
+
+                Timber.d("Completed successfully")
+            } catch (_: ApiClientException) {
+                return Result.retry()
+            } catch (_: Exception) {
+                return Result.failure()
+            }
             return Result.success()
         }
 
         private suspend fun getPotentialItems(
             userId: UUID,
             enableRewatching: Boolean,
+            combineContinueNext: Boolean,
         ): List<BaseItem> {
             val resumeItems = latestNextUpService.getResume(userId, 10, true)
             val seriesIds = resumeItems.mapNotNull { it.data.seriesId }
             val nextUpItems =
                 latestNextUpService
                     .getNextUp(userId, 10, enableRewatching, false)
-                    .filterNot { it.data.seriesId != null && it.data.seriesId in seriesIds }
-            return resumeItems + nextUpItems
+                    .filter { it.data.seriesId != null && it.data.seriesId !in seriesIds }
+            return if (combineContinueNext) {
+                latestNextUpService.buildCombined(resumeItems, nextUpItems)
+            } else {
+                resumeItems + nextUpItems
+            }
         }
 
         private suspend fun getCurrentTvChannelNextUp(): List<WatchNextProgram> =
@@ -184,7 +201,14 @@ class TvProviderWorker
                             .putExtra(MainActivity.INTENT_ITEM_TYPE, item.type.serialName)
                             .apply {
                                 if (item.type == BaseItemKind.EPISODE) {
-                                    putExtra(MainActivity.INTENT_SERIES_ID, dto.seriesId.toString())
+                                    putExtra(
+                                        MainActivity.INTENT_SERIES_ID,
+                                        dto.seriesId?.toString(),
+                                    )
+                                    putExtra(
+                                        MainActivity.INTENT_SEASON_ID,
+                                        dto.seasonId?.toString(),
+                                    )
                                     dto.parentIndexNumber?.let {
                                         putExtra(
                                             MainActivity.INTENT_SEASON_NUMBER,

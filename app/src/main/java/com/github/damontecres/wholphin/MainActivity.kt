@@ -45,6 +45,7 @@ import com.github.damontecres.wholphin.services.SetupDestination
 import com.github.damontecres.wholphin.services.SetupNavigationManager
 import com.github.damontecres.wholphin.services.UpdateChecker
 import com.github.damontecres.wholphin.services.hilt.AuthOkHttpClient
+import com.github.damontecres.wholphin.services.tvprovider.TvProviderSchedulerService
 import com.github.damontecres.wholphin.ui.CoilConfig
 import com.github.damontecres.wholphin.ui.LocalImageUrlService
 import com.github.damontecres.wholphin.ui.detail.series.SeasonEpisodeIds
@@ -96,6 +97,9 @@ class MainActivity : AppCompatActivity() {
 
     @Inject
     lateinit var refreshRateService: RefreshRateService
+
+    @Inject
+    lateinit var tvProviderSchedulerService: TvProviderSchedulerService
 
     private var signInAuto = true
 
@@ -261,6 +265,7 @@ class MainActivity : AppCompatActivity() {
     override fun onStop() {
         super.onStop()
         Timber.d("onStop")
+        tvProviderSchedulerService.launchOneTimeRefresh()
     }
 
     override fun onPause() {
@@ -292,7 +297,7 @@ class MainActivity : AppCompatActivity() {
         super.onNewIntent(intent)
         Timber.v("onNewIntent")
         extractDestination(intent)?.let {
-            navigationManager.navigateToFromDrawer(it)
+            navigationManager.replace(it)
         }
     }
 
