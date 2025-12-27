@@ -26,7 +26,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -50,7 +49,7 @@ import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.Person
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.AspectRatios
-import com.github.damontecres.wholphin.ui.OneTimeLaunchedEffect
+import com.github.damontecres.wholphin.ui.RequestOrRestoreFocus
 import com.github.damontecres.wholphin.ui.cards.BannerCard
 import com.github.damontecres.wholphin.ui.cards.PersonRow
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
@@ -80,7 +79,8 @@ fun SeriesOverviewContent(
     episodeRowFocusRequester: FocusRequester,
     castCrewRowFocusRequester: FocusRequester,
     guestStarRowFocusRequester: FocusRequester,
-    onFocus: (SeriesOverviewPosition) -> Unit,
+    onChangeSeason: (Int) -> Unit,
+    onFocusEpisode: (Int) -> Unit,
     onClick: (BaseItem) -> Unit,
     onLongClick: (BaseItem) -> Unit,
     playOnClick: (Duration) -> Unit,
@@ -141,11 +141,12 @@ fun SeriesOverviewContent(
                     tabs =
                         seasons.mapNotNull {
                             it?.name
-                                ?: (stringResource(R.string.tv_season) + " ${it?.data?.indexNumber}")
+                                ?: it?.data?.indexNumber?.let { stringResource(R.string.tv_season) + " $it" }
+                                ?: ""
                         },
                     onClick = {
                         selectedTabIndex = it
-                        onFocus.invoke(SeriesOverviewPosition(it, 0))
+                        onChangeSeason.invoke(it)
                     },
                     modifier =
                         Modifier
@@ -169,102 +170,93 @@ fun SeriesOverviewContent(
                     modifier = Modifier.fillMaxWidth(.6f),
                 )
 
-                key(position.seasonTabIndex) {
-                    when (val eps = episodes) {
-                        EpisodeList.Loading -> {
-                            LoadingPage()
-                        }
+//                key(position.seasonTabIndex) {
+                when (val eps = episodes) {
+                    EpisodeList.Loading -> {
+                        LoadingPage()
+                    }
 
-                        is EpisodeList.Error -> {
-                            ErrorMessage(eps.message, eps.exception)
-                        }
+                    is EpisodeList.Error -> {
+                        ErrorMessage(eps.message, eps.exception)
+                    }
 
-                        is EpisodeList.Success -> {
-                            val state = rememberLazyListState()
-                            OneTimeLaunchedEffect {
-                                if (state.firstVisibleItemIndex != position.episodeRowIndex) {
-                                    state.scrollToItem(position.episodeRowIndex)
+                    is EpisodeList.Success -> {
+                        val state = rememberLazyListState(position.episodeRowIndex)
+                        RequestOrRestoreFocus(firstItemFocusRequester)
+
+                        LazyRow(
+                            state = state,
+                            horizontalArrangement = Arrangement.spacedBy(16.dp),
+                            contentPadding = PaddingValues(horizontal = 16.dp),
+                            modifier =
+                                Modifier
+                                    .focusRestorer(firstItemFocusRequester)
+                                    .focusRequester(episodeRowFocusRequester)
+                                    .onFocusChanged {
+                                        cardRowHasFocus = it.hasFocus
+                                    },
+                        ) {
+                            itemsIndexed(eps.episodes) { episodeIndex, episode ->
+                                val interactionSource = remember { MutableInteractionSource() }
+                                if (interactionSource.collectIsFocusedAsState().value) {
+                                    onFocusEpisode.invoke(episodeIndex)
                                 }
-                                firstItemFocusRequester.tryRequestFocus()
-                            }
-                            LazyRow(
-                                state = state,
-                                horizontalArrangement = Arrangement.spacedBy(16.dp),
-                                contentPadding = PaddingValues(horizontal = 16.dp),
-                                modifier =
-                                    Modifier
-                                        .focusRestorer(firstItemFocusRequester)
-                                        .focusRequester(episodeRowFocusRequester)
-                                        .onFocusChanged {
-                                            cardRowHasFocus = it.hasFocus
-                                        },
-                            ) {
-                                itemsIndexed(eps.episodes) { episodeIndex, episode ->
-                                    val interactionSource = remember { MutableInteractionSource() }
-                                    if (interactionSource.collectIsFocusedAsState().value) {
-                                        onFocus.invoke(
-                                            SeriesOverviewPosition(
-                                                selectedTabIndex,
-                                                episodeIndex,
-                                            ),
-                                        )
-                                    }
-                                    val cornerText =
-                                        episode?.data?.indexNumber?.let { "E$it" }
-                                            ?: episode?.data?.premiereDate?.let(::formatDateTime)
-                                    BannerCard(
-                                        name = episode?.name,
-                                        item = episode,
-                                        aspectRatio =
-                                            episode
-                                                ?.aspectRatio
-                                                ?.coerceAtLeast(AspectRatios.FOUR_THREE)
-                                                ?: (AspectRatios.WIDE),
-                                        cornerText = cornerText,
-                                        played = episode?.data?.userData?.played ?: false,
-                                        playPercent =
-                                            episode?.data?.userData?.playedPercentage
-                                                ?: 0.0,
-                                        onClick = { if (episode != null) onClick.invoke(episode) },
-                                        onLongClick = {
-                                            if (episode != null) {
-                                                onLongClick.invoke(
-                                                    episode,
-                                                )
-                                            }
-                                        },
-                                        modifier =
-                                            Modifier
-                                                .ifElse(
-                                                    episodeIndex == position.episodeRowIndex,
-                                                    Modifier.focusRequester(firstItemFocusRequester),
-                                                ).ifElse(
-                                                    episodeIndex != position.episodeRowIndex,
-                                                    Modifier
-                                                        .background(
-                                                            Color.Black,
-                                                            shape = RoundedCornerShape(8.dp),
-                                                        ).alpha(dimming),
-                                                ).onFocusChanged {
-                                                    if (it.isFocused) {
-                                                        scope.launch {
-                                                            bringIntoViewRequester.bringIntoView()
-                                                        }
+                                val cornerText =
+                                    episode?.data?.indexNumber?.let { "E$it" }
+                                        ?: episode?.data?.premiereDate?.let(::formatDateTime)
+                                BannerCard(
+                                    name = episode?.name,
+                                    item = episode,
+                                    aspectRatio =
+                                        episode
+                                            ?.aspectRatio
+                                            ?.coerceAtLeast(AspectRatios.FOUR_THREE)
+                                            ?: (AspectRatios.WIDE),
+                                    cornerText = cornerText,
+                                    played = episode?.data?.userData?.played ?: false,
+                                    playPercent =
+                                        episode?.data?.userData?.playedPercentage
+                                            ?: 0.0,
+                                    onClick = { if (episode != null) onClick.invoke(episode) },
+                                    onLongClick = {
+                                        if (episode != null) {
+                                            onLongClick.invoke(
+                                                episode,
+                                            )
+                                        }
+                                    },
+                                    modifier =
+                                        Modifier
+                                            .ifElse(
+                                                episodeIndex == position.episodeRowIndex,
+                                                Modifier.focusRequester(firstItemFocusRequester),
+                                            ).ifElse(
+                                                episodeIndex != position.episodeRowIndex,
+                                                Modifier
+                                                    .background(
+                                                        Color.Black,
+                                                        shape = RoundedCornerShape(8.dp),
+                                                    ).alpha(dimming),
+                                            ).onFocusChanged {
+                                                if (it.isFocused) {
+                                                    scope.launch {
+                                                        bringIntoViewRequester.bringIntoView()
                                                     }
-                                                }.onKeyEvent {
-                                                    if (episode != null && isPlayKeyUp(it)) {
-                                                        onClick.invoke(episode)
-                                                        return@onKeyEvent true
-                                                    }
-                                                    return@onKeyEvent false
-                                                },
-                                        interactionSource = interactionSource,
-                                        cardHeight = 120.dp,
-                                    )
-                                }
+                                                }
+                                            }.onKeyEvent {
+                                                if (episode != null && isPlayKeyUp(it)) {
+                                                    onClick.invoke(episode)
+                                                    return@onKeyEvent true
+                                                }
+                                                return@onKeyEvent false
+                                            },
+                                    interactionSource = interactionSource,
+                                    cardHeight = 120.dp,
+                                )
                             }
                         }
                     }
+//                    }
                 }
 
                 focusedEpisode?.let { ep ->

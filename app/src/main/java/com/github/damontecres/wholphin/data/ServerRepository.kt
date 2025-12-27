@@ -46,9 +46,11 @@ class ServerRepository
         private var _current = EqualityMutableLiveData<CurrentUser?>(null)
         val current: LiveData<CurrentUser?> = _current
 
+        private var _currentUserDto = EqualityMutableLiveData<UserDto?>(null)
+        val currentUserDto: LiveData<UserDto?> = _currentUserDto
+
         val currentServer: LiveData<JellyfinServer?> get() = _current.map { it?.server }
         val currentUser: LiveData<JellyfinUser?> get() = _current.map { it?.user }
-        val currentUserDto: LiveData<UserDto?> get() = _current.map { it?.userDto }
 
         /**
          * Adds a server to the app database and updated the [ApiClient] to the server's URL
@@ -101,7 +103,8 @@ class ServerRepository
                         }.build()
                 }
                 withContext(Dispatchers.Main) {
-                    _current.value = CurrentUser(updatedServer, updatedUser, userDto)
+                    _current.value = CurrentUser(updatedServer, updatedUser)
+                    _currentUserDto.value = userDto
                 }
                 sharedPreferences.edit(true) {
                     putString(SERVER_URL_KEY, updatedServer.url)
@@ -128,11 +131,21 @@ class ServerRepository
                     serverDao.getServer(serverId)
                 }
             if (serverAndUsers != null) {
-                val user = serverAndUsers.users.firstOrNull { it.id == userId }
-                if (user != null) {
-                    // TODO pin-related
+                val current = _current.value
+                if (current != null && current.server.id == serverId && current.user.id == userId) {
+                    Timber.v("Restoring session for current user, so shortcut")
+                    apiClient.update(
+                        baseUrl = current.server.url,
+                        accessToken = current.user.accessToken,
+                    )
+                    return current
+                } else {
+                    val user = serverAndUsers.users.firstOrNull { it.id == userId }
+                    if (user != null) {
+                        // TODO pin-related
 //                if (user != null && !user.hasPin) {
-                    return changeUser(serverAndUsers.server, user)
+                        return changeUser(serverAndUsers.server, user)
+                    }
                 }
             }
             return null
@@ -229,7 +242,6 @@ class ServerRepository
         }
 
         suspend fun switchServerOrUser() {
-            apiClient.update(baseUrl = null, accessToken = null)
             userPreferencesDataStore.updateData {
                 it
                     .toBuilder()
@@ -271,5 +283,4 @@ class ServerRepository
 data class CurrentUser(
     val server: JellyfinServer,
     val user: JellyfinUser,
-    val userDto: UserDto,
 )

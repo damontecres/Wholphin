@@ -3,7 +3,6 @@ package com.github.damontecres.wholphin.services
 import androidx.datastore.core.DataStore
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.preferences.AppPreferences
-import com.github.damontecres.wholphin.preferences.DefaultUserConfiguration
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import kotlinx.coroutines.flow.firstOrNull
 import javax.inject.Inject
@@ -21,7 +20,6 @@ class UserPreferencesService
                 val appPrefs = preferencesDataStore.data.firstOrNull() ?: AppPreferences.getDefaultInstance()
                 UserPreferences(
                     appPrefs,
-                    userConfig ?: DefaultUserConfiguration,
                 )
             }
     }

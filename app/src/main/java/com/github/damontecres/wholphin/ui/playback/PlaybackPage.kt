@@ -483,6 +483,7 @@ fun PlaybackPage(
                             aspectRatio = it.aspectRatio ?: AspectRatios.WIDE,
                             onClick = {
                                 viewModel.reportInteraction()
+                                controllerViewState.hideControls()
                                 viewModel.playNextUp()
                             },
                             timeLeft = if (autoPlayEnabled) timeLeft.seconds else null,

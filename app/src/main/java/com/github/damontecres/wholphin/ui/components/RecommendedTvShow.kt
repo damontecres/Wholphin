@@ -12,12 +12,11 @@ import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.BackdropService
-import com.github.damontecres.wholphin.services.DatePlayedService
 import com.github.damontecres.wholphin.services.FavoriteWatchManager
+import com.github.damontecres.wholphin.services.LatestNextUpService
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.ui.SlimItemFields
 import com.github.damontecres.wholphin.ui.data.RowColumn
-import com.github.damontecres.wholphin.ui.main.buildCombinedNextUp
 import com.github.damontecres.wholphin.ui.setValueOnMain
 import com.github.damontecres.wholphin.ui.toBaseItems
 import com.github.damontecres.wholphin.util.ExceptionHandler
@@ -58,7 +57,7 @@ class RecommendedTvShowViewModel
         private val api: ApiClient,
         private val serverRepository: ServerRepository,
         private val preferencesDataStore: DataStore<AppPreferences>,
-        private val datePlayedService: DatePlayedService,
+        private val lastestNextUpService: LatestNextUpService,
         @Assisted val parentId: UUID,
         navigationManager: NavigationManager,
         favoriteWatchManager: FavoriteWatchManager,
@@ -126,9 +125,7 @@ class RecommendedTvShowViewModel
                     val nextUpItems = nextUpItemsDeferred.await()
                     if (combineNextUp) {
                         val combined =
-                            buildCombinedNextUp(
-                                viewModelScope,
-                                datePlayedService,
+                            lastestNextUpService.buildCombined(
                                 resumeItems,
                                 nextUpItems,
                             )

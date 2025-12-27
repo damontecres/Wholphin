@@ -1,5 +1,6 @@
 package com.github.damontecres.wholphin
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
@@ -13,13 +14,16 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.unit.dp
 import androidx.datastore.core.DataStore
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.compose.LifecycleStartEffect
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
@@ -32,7 +36,6 @@ import androidx.tv.material3.Surface
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.preferences.AppPreference
 import com.github.damontecres.wholphin.preferences.AppPreferences
-import com.github.damontecres.wholphin.preferences.DefaultUserConfiguration
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.AppUpgradeHandler
 import com.github.damontecres.wholphin.services.BackdropService
@@ -47,10 +50,13 @@ import com.github.damontecres.wholphin.services.SetupNavigationManager
 import com.github.damontecres.wholphin.services.UpdateChecker
 import com.github.damontecres.wholphin.services.UserSwitchListener
 import com.github.damontecres.wholphin.services.hilt.AuthOkHttpClient
+import com.github.damontecres.wholphin.services.tvprovider.TvProviderSchedulerService
 import com.github.damontecres.wholphin.ui.CoilConfig
 import com.github.damontecres.wholphin.ui.LocalImageUrlService
+import com.github.damontecres.wholphin.ui.detail.series.SeasonEpisodeIds
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.nav.ApplicationContent
+import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.setup.SwitchServerContent
 import com.github.damontecres.wholphin.ui.setup.SwitchUserContent
 import com.github.damontecres.wholphin.ui.theme.WholphinTheme
@@ -58,11 +64,9 @@ import com.github.damontecres.wholphin.ui.util.ProvideLocalClock
 import com.github.damontecres.wholphin.util.DebugLogTree
 import dagger.hilt.android.AndroidEntryPoint
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.firstOrNull
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
+import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.serializer.toUUIDOrNull
 import timber.log.Timber
 import javax.inject.Inject
@@ -105,12 +109,15 @@ class MainActivity : AppCompatActivity() {
     @Inject
     lateinit var userSwitchListener: UserSwitchListener
 
+    @Inject
+    lateinit var tvProviderSchedulerService: TvProviderSchedulerService
+
     private var signInAuto = true
 
     @OptIn(ExperimentalTvMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        Timber.i("MainActivity.onCreate")
+        Timber.i("MainActivity.onCreate: savedInstanceState is null=${savedInstanceState == null}")
         lifecycle.addObserver(playbackLifecycleObserver)
         if (savedInstanceState == null) {
             appUpgradeHandler.copySubfont(false)
@@ -124,6 +131,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
         viewModel.appStart()
+        val requestedDestination = this.intent?.let(::extractDestination)
         setContent {
             val appPreferences by userPreferencesDataStore.data.collectAsState(null)
             appPreferences?.let { appPreferences ->
@@ -217,20 +225,41 @@ class MainActivity : AppCompatActivity() {
                                                         appPreferences,
                                                     )
                                                     val preferences =
-                                                        remember(appPreferences, current) {
-                                                            UserPreferences(
-                                                                appPreferences,
-                                                                current.userDto.configuration
-                                                                    ?: DefaultUserConfiguration,
+                                                        remember(appPreferences) {
+                                                            UserPreferences(appPreferences)
+                                                        }
+                                                    var showContent by remember {
+                                                        mutableStateOf(true)
+                                                    }
+                                                    if (!preferences.appPreferences.signInAutomatically) {
+                                                        LifecycleStartEffect(Unit) {
+                                                            onStopOrDispose {
+                                                                showContent = false
+                                                            }
+                                                        }
+                                                    }
+                                                    if (showContent) {
+                                                        ApplicationContent(
+                                                            user = current.user,
+                                                            server = current.server,
+                                                            startDestination =
+                                                                requestedDestination
+                                                                    ?: Destination.Home(),
+                                                            navigationManager = navigationManager,
+                                                            preferences = preferences,
+                                                            modifier = Modifier.fillMaxSize(),
+                                                        )
+                                                    } else {
+                                                        Box(
+                                                            modifier = Modifier.size(200.dp),
+                                                            contentAlignment = Alignment.Center,
+                                                        ) {
+                                                            CircularProgressIndicator(
+                                                                color = MaterialTheme.colorScheme.border,
+                                                                modifier = Modifier.align(Alignment.Center),
                                                             )
                                                         }
-                                                    ApplicationContent(
-                                                        user = current.user,
-                                                        server = current.server,
-                                                        navigationManager = navigationManager,
-                                                        preferences = preferences,
-                                                        modifier = Modifier.fillMaxSize(),
-                                                    )
+                                                    }
                                                 }
                                             }
                                         }
@@ -246,6 +275,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        Timber.d("onResume")
         lifecycleScope.launchIO {
             appUpgradeHandler.run()
         }
@@ -253,7 +283,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onRestart() {
         super.onRestart()
-        Timber.i("onRestart")
+        Timber.d("onRestart")
         viewModel.appStart()
 //        val signInAutomatically =
 //            runBlocking { userPreferencesDataStore.data.firstOrNull()?.signInAutomatically } ?: true
@@ -263,6 +293,85 @@ class MainActivity : AppCompatActivity() {
 //        if (!signInAutomatically) {
 //            serverRepository.closeSession()
 //        }
+    }
+
+    override fun onStop() {
+        super.onStop()
+        Timber.d("onStop")
+        tvProviderSchedulerService.launchOneTimeRefresh()
+    }
+
+    override fun onPause() {
+        super.onPause()
+        Timber.d("onPause")
+    }
+
+    override fun onStart() {
+        super.onStart()
+        Timber.d("onStart")
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        Timber.d("onSaveInstanceState")
+    }
+
+    override fun onRestoreInstanceState(savedInstanceState: Bundle) {
+        super.onRestoreInstanceState(savedInstanceState)
+        Timber.d("onRestoreInstanceState")
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        Timber.d("onDestroy")
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        Timber.v("onNewIntent")
+        extractDestination(intent)?.let {
+            navigationManager.replace(it)
+        }
+    }
+
+    private fun extractDestination(intent: Intent): Destination? =
+        intent.let {
+            val itemId =
+                it.getStringExtra(INTENT_ITEM_ID)?.toUUIDOrNull()
+            val type =
+                it.getStringExtra(INTENT_ITEM_TYPE)?.let(BaseItemKind::fromNameOrNull)
+            if (itemId != null && type != null) {
+                val seriesId = it.getStringExtra(INTENT_SERIES_ID)?.toUUIDOrNull()
+                val seasonId = it.getStringExtra(INTENT_SEASON_ID)?.toUUIDOrNull()
+                val episodeNumber = it.getIntExtra(INTENT_EPISODE_NUMBER, -1)
+                val seasonNumber = it.getIntExtra(INTENT_SEASON_NUMBER, -1)
+                if (seriesId != null && seasonId != null && episodeNumber >= 0 && seasonNumber >= 0) {
+                    Destination.SeriesOverview(
+                        itemId = seriesId,
+                        type = BaseItemKind.SERIES,
+                        seasonEpisode =
+                            SeasonEpisodeIds(
+                                seasonId = seasonId,
+                                seasonNumber = seasonNumber,
+                                episodeId = itemId,
+                                episodeNumber = episodeNumber,
+                            ),
+                    )
+                } else {
+                    Destination.MediaItem(itemId, type)
+                }
+            } else {
+                null
+            }
+        }
+
+    companion object {
+        const val INTENT_ITEM_ID = "itemId"
+        const val INTENT_ITEM_TYPE = "itemType"
+        const val INTENT_SERIES_ID = "seriesId"
+        const val INTENT_EPISODE_NUMBER = "epNum"
+        const val INTENT_SEASON_NUMBER = "seaNum"
+        const val INTENT_SEASON_ID = "seaId"
     }
 }
 
@@ -277,40 +386,42 @@ class MainActivityViewModel
         private val backdropService: BackdropService,
     ) : ViewModel() {
         fun appStart() {
-            viewModelScope.launch {
-                val prefs = preferences.data.firstOrNull() ?: AppPreferences.getDefaultInstance()
-                if (prefs.signInAutomatically) {
-                    val current =
-                        withContext(Dispatchers.IO) {
+            viewModelScope.launchIO {
+                try {
+                    val prefs =
+                        preferences.data.firstOrNull() ?: AppPreferences.getDefaultInstance()
+                    if (prefs.signInAutomatically) {
+                        val current =
                             serverRepository.restoreSession(
                                 prefs.currentServerId?.toUUIDOrNull(),
                                 prefs.currentUserId?.toUUIDOrNull(),
                             )
-                        }
-                    if (current != null) {
-                        // Restored
-                        navigationManager.navigateTo(SetupDestination.AppContent(current))
-                    } else {
-                        // Did not restore
-                        navigationManager.navigateTo(SetupDestination.ServerList)
-                    }
-                } else {
-                    navigationManager.navigateTo(SetupDestination.Loading)
-                    backdropService.clearBackdrop()
-                    val currentServerId = prefs.currentServerId?.toUUIDOrNull()
-                    if (currentServerId != null) {
-                        val currentServer =
-                            withContext(Dispatchers.IO) {
-                                serverRepository.serverDao.getServer(currentServerId)?.server
-                            }
-                        if (currentServer != null) {
-                            navigationManager.navigateTo(SetupDestination.UserList(currentServer))
+                        if (current != null) {
+                            // Restored
+                            navigationManager.navigateTo(SetupDestination.AppContent(current))
                         } else {
+                            // Did not restore
                             navigationManager.navigateTo(SetupDestination.ServerList)
                         }
                     } else {
-                        navigationManager.navigateTo(SetupDestination.ServerList)
+                        navigationManager.navigateTo(SetupDestination.Loading)
+                        backdropService.clearBackdrop()
+                        val currentServerId = prefs.currentServerId?.toUUIDOrNull()
+                        if (currentServerId != null) {
+                            val currentServer =
+                                serverRepository.serverDao.getServer(currentServerId)?.server
+                            if (currentServer != null) {
+                                navigationManager.navigateTo(SetupDestination.UserList(currentServer))
+                            } else {
+                                navigationManager.navigateTo(SetupDestination.ServerList)
+                            }
+                        } else {
+                            navigationManager.navigateTo(SetupDestination.ServerList)
+                        }
                     }
+                } catch (ex: Exception) {
+                    Timber.e(ex, "Error during appStart")
+                    navigationManager.navigateTo(SetupDestination.ServerList)
                 }
             }
             viewModelScope.launchIO {

@@ -11,6 +11,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.times
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -68,7 +72,10 @@ class GenreViewModel
         val loading = MutableLiveData<LoadingState>(LoadingState.Pending)
         val genres = MutableLiveData<List<Genre>>(listOf())
 
-        fun init(itemId: UUID) {
+        fun init(
+            itemId: UUID,
+            cardWidthPx: Int,
+        ) {
             loading.value = LoadingState.Loading
             this.itemId = itemId
             viewModelScope.launch(Dispatchers.IO + LoadingExceptionHandler(loading, "Failed to fetch genres")) {
@@ -96,7 +103,7 @@ class GenreViewModel
                     loading.value = LoadingState.Success
                 }
 //                val excludeItemIds = mutableSetOf<UUID>()
-                val genreToUrl = ConcurrentHashMap<UUID, String>()
+                val genreToUrl = ConcurrentHashMap<UUID, String?>()
                 val semaphore = Semaphore(4)
                 genres
                     .map { genre ->
@@ -133,7 +140,8 @@ class GenreViewModel
                                             item.type,
                                             null,
                                             false,
-                                            ImageType.THUMB,
+                                            ImageType.BACKDROP,
+                                            fillWidth = cardWidthPx,
                                         )
                                 }
                             }
@@ -179,8 +187,23 @@ fun GenreCardGrid(
     modifier: Modifier = Modifier,
     viewModel: GenreViewModel = hiltViewModel(),
 ) {
+    val columns = 4
+    val spacing = 16.dp
+    val density = LocalDensity.current
+    val configuration = LocalConfiguration.current
+    val cardWidthPx =
+        remember {
+            with(density) {
+                // Grid has 16dp padding on either side & 16dp spacing between 4 cards
+                // This isn't exact though because it doesn't account for nav drawer or letters, but it's close and the calculation is much faster
+                // E.g. on 1080p, this results in 440px versus 395px actual, so only minimal scaling down is required
+                (configuration.screenWidthDp.dp - (2 * 16.dp + 3 * spacing))
+                    .div(columns)
+                    .roundToPx()
+            }
+        }
     OneTimeLaunchedEffect {
-        viewModel.init(itemId)
+        viewModel.init(itemId, cardWidthPx)
     }
     val loading by viewModel.loading.observeAsState(LoadingState.Pending)
     val genres by viewModel.genres.observeAsState(listOf())
@@ -231,7 +254,8 @@ fun GenreCardGrid(
                     initialPosition = 0,
                     positionCallback = { columns, position ->
                     },
-                    columns = 4,
+                    columns = columns,
+                    spacing = spacing,
                     cardContent = { item: Genre?, onClick: () -> Unit, onLongClick: () -> Unit, mod: Modifier ->
                         GenreCard(
                             genre = item,
