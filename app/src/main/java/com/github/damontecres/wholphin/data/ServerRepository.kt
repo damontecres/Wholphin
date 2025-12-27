@@ -242,7 +242,6 @@ class ServerRepository
         }
 
         suspend fun switchServerOrUser() {
-            apiClient.update(baseUrl = null, accessToken = null)
             userPreferencesDataStore.updateData {
                 it
                     .toBuilder()

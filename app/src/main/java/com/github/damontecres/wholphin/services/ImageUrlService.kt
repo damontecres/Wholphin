@@ -31,7 +31,7 @@ class ImageUrlService
             imageType: ImageType,
             fillWidth: Int? = null,
             fillHeight: Int? = null,
-        ): String =
+        ): String? =
             when (imageType) {
                 ImageType.BACKDROP,
                 ImageType.LOGO,
@@ -124,8 +124,9 @@ class ImageUrlService
             backgroundColor: String? = null,
             foregroundLayer: String? = null,
             imageIndex: Int? = null,
-        ): String =
-            api.imageApi.getItemImageUrl(
+        ): String? {
+            if (api.baseUrl.isNullOrBlank()) return null
+            return api.imageApi.getItemImageUrl(
                 itemId = itemId,
                 imageType = imageType,
                 maxWidth = maxWidth,
@@ -144,6 +145,7 @@ class ImageUrlService
                 foregroundLayer = foregroundLayer,
                 imageIndex = imageIndex,
             )
+        }
 
         fun getUserImageUrl(userId: UUID) = api.imageApi.getUserImageUrl(userId)
 
