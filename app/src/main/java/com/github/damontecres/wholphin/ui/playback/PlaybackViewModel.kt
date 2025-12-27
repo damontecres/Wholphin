@@ -730,11 +730,36 @@ class PlaybackViewModel
                         type = MediaStreamType.SUBTITLE,
                     )
                 this@PlaybackViewModel.currentItemPlayback.setValueOnMain(itemPlayback)
+
+                // Resolve ONLY_FORCED to an actual track index for immediate playback
+                // (The preference is already saved as ONLY_FORCED for future resume)
+                val resolvedIndex =
+                    if (index == TrackIndex.ONLY_FORCED) {
+                        val source = currentPlayback.value?.mediaSourceInfo
+                        val audioStream =
+                            currentMediaInfo.value?.audioStreams?.firstOrNull {
+                                it.index == itemPlayback.audioIndex
+                            }
+                        val candidates =
+                            source?.mediaStreams
+                                ?.filter { it.type == MediaStreamType.SUBTITLE }
+                                .orEmpty()
+                        streamChoiceService.chooseSubtitleStream(
+                            audioStream = candidates.firstOrNull { it.index == audioStream?.index },
+                            candidates = candidates,
+                            itemPlayback = itemPlayback,
+                            playbackLanguageChoice = null,
+                            prefs = preferences,
+                        )?.index
+                    } else {
+                        index
+                    }
+
                 changeStreams(
                     item,
                     itemPlayback,
                     itemPlayback.audioIndex,
-                    index,
+                    resolvedIndex,
                     onMain { player.currentPosition },
                     true,
                 )
