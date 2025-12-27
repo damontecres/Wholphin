@@ -398,9 +398,7 @@
     <string name="color_code_programs">Color-code programs</string>
     <string name="subtitle_delay">Subtitle delay</string>
     <string name="backdrop_display">Backdrop style</string>
-    <string name="auto_select_forced_subtitles">Auto-select forced subtitles</string>
-    <string name="auto_select_forced_subtitles_summary_on">Show forced subtitles even when subtitles are disabled</string>
-    <string name="auto_select_forced_subtitles_summary_off">Strictly respect disabled subtitle preference</string>
+    <string name="only_forced_subtitles">Only forced</string>
 
     <string-array name="theme_song_volume">
         <item>Disabled</item>

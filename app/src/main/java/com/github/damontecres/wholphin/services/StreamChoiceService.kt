@@ -170,12 +170,11 @@ class StreamChoiceService
             prefs: UserPreferences,
         ): MediaStream? {
             if (itemPlayback?.subtitleIndex == TrackIndex.DISABLED) {
-                // User explicitly disabled subtitles for this video
-                return if (prefs.appPreferences.interfacePreferences.subtitlesPreferences.autoSelectForcedSubtitles) {
-                    findForcedTrack(candidates, audioStream?.language)
-                } else {
-                    null
-                }
+                // User explicitly disabled subtitles for this video - strictly off
+                return null
+            } else if (itemPlayback?.subtitleIndex == TrackIndex.ONLY_FORCED) {
+                // User wants only forced subtitles
+                return findForcedTrack(candidates, audioStream?.language)
             } else if (itemPlayback?.subtitleIndexEnabled == true) {
                 return candidates.firstOrNull { it.index == itemPlayback.subtitleIndex }
             } else {
@@ -226,11 +225,8 @@ class StreamChoiceService
                         if (audioLanguage.isNotNullOrBlank() && audioStreamLang.isNotNullOrBlank() && audioLanguage != audioStreamLang) {
                             subtitleLanguage?.let { findTrackForLanguage(candidates, it) }
                         } else {
-                            if (prefs.appPreferences.interfacePreferences.subtitlesPreferences.autoSelectForcedSubtitles) {
-                                findForcedTrack(candidates, audioStream?.language)
-                            } else {
-                                null
-                            }
+                            // Audio matches preference - show forced subtitles only
+                            findForcedTrack(candidates, audioStream?.language)
                         }
                     }
 
@@ -252,12 +248,8 @@ class StreamChoiceService
                     }
 
                     SubtitlePlaybackMode.NONE -> {
-                        // User prefers no subtitles
-                        if (prefs.appPreferences.interfacePreferences.subtitlesPreferences.autoSelectForcedSubtitles) {
-                            findForcedTrack(candidates, audioStream?.language)
-                        } else {
-                            null
-                        }
+                        // User prefers no subtitles, but still show forced subtitles
+                        findForcedTrack(candidates, audioStream?.language)
                     }
                 }
             }
@@ -285,28 +277,12 @@ class StreamChoiceService
         }
 
         /**
-         * Returns true if the track is default (via flag or title containing "default")
-         */
-        private fun isDefaultTrack(track: MediaStream): Boolean {
-            if (track.isDefault) return true
-            val title = track.title ?: track.displayTitle ?: return false
-            return title.contains("default", ignoreCase = true)
-        }
-
-        /**
-         * Finds a track matching the language, preferring default tracks
+         * Finds a track matching the language
          */
         private fun findTrackForLanguage(
             candidates: List<MediaStream>,
             language: String,
-        ): MediaStream? {
-            // Priority 1: Language match + Default track
-            candidates
-                .firstOrNull { it.language == language && isDefaultTrack(it) }
-                ?.let { return it }
-            // Priority 2: Language match (any track)
-            return candidates.firstOrNull { it.language == language }
-        }
+        ): MediaStream? = candidates.firstOrNull { it.language == language }
 
         /**
          * Finds a forced/signs track, preferring those matching the audio language

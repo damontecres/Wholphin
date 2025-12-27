@@ -123,7 +123,6 @@ message SubtitlePreferences{
   bool font_italic = 10;
   int32 margin = 11;
   int32 edge_thickness = 12;
-  bool auto_select_forced_subtitles = 13;
 }
 
 message LiveTvPreferences {

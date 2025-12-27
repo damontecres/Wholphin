@@ -84,6 +84,7 @@ fun PlaybackDialog(
                     options +
                         listOf(
                             stringResource(R.string.none),
+                            stringResource(R.string.only_forced_subtitles),
                             stringResource(R.string.search_and_download),
                         ),
                 currentChoice = currentChoice,
@@ -101,10 +102,10 @@ fun PlaybackDialog(
                         onPlaybackActionClick.invoke(PlaybackAction.ToggleCaptions(subtitleStreams[index].index))
                     } else {
                         val idx = index - subtitleStreams.size
-                        if (idx == 0) {
-                            onPlaybackActionClick.invoke(PlaybackAction.ToggleCaptions(TrackIndex.DISABLED))
-                        } else {
-                            onPlaybackActionClick.invoke(PlaybackAction.SearchCaptions)
+                        when (idx) {
+                            0 -> onPlaybackActionClick.invoke(PlaybackAction.ToggleCaptions(TrackIndex.DISABLED))
+                            1 -> onPlaybackActionClick.invoke(PlaybackAction.ToggleCaptions(TrackIndex.ONLY_FORCED))
+                            else -> onPlaybackActionClick.invoke(PlaybackAction.SearchCaptions)
                         }
                     }
                 },

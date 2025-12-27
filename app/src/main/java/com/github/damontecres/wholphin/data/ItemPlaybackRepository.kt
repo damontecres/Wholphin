@@ -145,6 +145,9 @@ class ItemPlaybackRepository
                                 subtitleLang = null,
                                 subtitlesDisabled = true,
                             )
+                        } else if (trackIndex == TrackIndex.ONLY_FORCED) {
+                            // Don't update series-level preferences for ONLY_FORCED
+                            // Just store per-video via ItemPlayback.subtitleIndex
                         } else {
                             val stream = source.mediaStreams?.first { it.index == trackIndex }
                             if (stream?.language != null) {

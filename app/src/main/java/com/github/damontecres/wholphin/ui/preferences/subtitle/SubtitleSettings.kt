@@ -228,29 +228,6 @@ object SubtitleSettings {
             setter = { prefs, _ -> prefs },
         )
 
-    /**
-     * Controls whether forced subtitles (e.g., for foreign language dialogue)
-     * are automatically enabled even when the user's subtitle preference is
-     * set to "None" or explicitly disabled.
-     *
-     * When true (default): Forced subtitles will be shown regardless of the
-     * subtitle preference, ensuring foreign dialogue is always translated.
-     *
-     * When false: The "None" preference is strictly respected, and no subtitles
-     * will be shown under any circumstances.
-     */
-    val AutoSelectForcedSubtitles =
-        AppSwitchPreference<AppPreferences>(
-            title = R.string.auto_select_forced_subtitles,
-            defaultValue = true,
-            getter = { it.interfacePreferences.subtitlesPreferences.autoSelectForcedSubtitles },
-            setter = { prefs, value ->
-                prefs.updateSubtitlePreferences { autoSelectForcedSubtitles = value }
-            },
-            summaryOn = R.string.auto_select_forced_subtitles_summary_on,
-            summaryOff = R.string.auto_select_forced_subtitles_summary_off,
-        )
-
     val preferences =
         listOf(
             PreferenceGroup(
@@ -287,7 +264,6 @@ object SubtitleSettings {
                 preferences =
                     listOf(
                         Margin,
-                        AutoSelectForcedSubtitles,
                         Reset,
                     ),
             ),
