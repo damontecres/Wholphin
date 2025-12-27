@@ -23,6 +23,92 @@ import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 
 @RunWith(Parameterized::class)
+class TestStreamChoiceServiceBasic(
+    val input: TestInput,
+) {
+    @Test
+    fun test() {
+        runTest(input)
+    }
+
+    companion object {
+        @JvmStatic
+        @Parameterized.Parameters(name = "{index}: {0}")
+        fun data(): Collection<TestInput> =
+            listOf(
+                TestInput(
+                    null,
+                    SubtitlePlaybackMode.NONE,
+                    subtitles =
+                        listOf(
+                            subtitle(0, "eng", true),
+                            subtitle(1, "spa", false),
+                        ),
+                ),
+                TestInput(
+                    1,
+                    SubtitlePlaybackMode.NONE,
+                    subtitles =
+                        listOf(
+                            subtitle(0, "eng", true),
+                            subtitle(1, "spa", false),
+                        ),
+                    plc = plc(subtitleLang = "spa"),
+                ),
+                TestInput(
+                    0,
+                    SubtitlePlaybackMode.ALWAYS,
+                    subtitles =
+                        listOf(
+                            subtitle(0, "eng", true),
+                            subtitle(1, "spa", false),
+                        ),
+                ),
+                TestInput(
+                    1,
+                    SubtitlePlaybackMode.ALWAYS,
+                    subtitles =
+                        listOf(
+                            subtitle(0, "eng", true),
+                            subtitle(1, "spa", false),
+                        ),
+                    userSubtitleLang = "spa",
+                ),
+                TestInput(
+                    null,
+                    SubtitlePlaybackMode.ALWAYS,
+                    subtitles =
+                        listOf(
+                            subtitle(0, "eng", true),
+                            subtitle(1, "spa", false),
+                        ),
+                    plc = plc(subtitlesDisabled = true),
+                ),
+                TestInput(
+                    null,
+                    SubtitlePlaybackMode.ALWAYS,
+                    subtitles =
+                        listOf(
+                            subtitle(0, "eng", true),
+                            subtitle(1, "spa", false),
+                        ),
+                    itemPlayback = itemPlayback(subtitleIndex = TrackIndex.DISABLED),
+                ),
+                TestInput(
+                    0,
+                    SubtitlePlaybackMode.ALWAYS,
+                    subtitles =
+                        listOf(
+                            subtitle(0, "eng", true),
+                            subtitle(1, "spa", false),
+                        ),
+                    itemPlayback = itemPlayback(subtitleIndex = TrackIndex.UNSPECIFIED),
+                ),
+            )
+    }
+}
+
+@RunWith(Parameterized::class)
 class TestStreamChoiceServiceDefault(
     val input: TestInput,
 ) {
@@ -210,6 +296,52 @@ class TestStreamChoiceServiceSmart(
                         ),
                     streamAudioLang = "eng",
                 ),
+                TestInput(
+                    1,
+                    SubtitlePlaybackMode.SMART,
+                    subtitles =
+                        listOf(
+                            subtitle(0, "eng", false),
+                            subtitle(1, "spa", false),
+                        ),
+                    streamAudioLang = "spa",
+                    plc = plc(subtitleLang = "spa"),
+                ),
+                TestInput(
+                    null,
+                    SubtitlePlaybackMode.SMART,
+                    subtitles =
+                        listOf(
+                            subtitle(0, "eng", false),
+                            subtitle(1, "spa", false),
+                        ),
+                    streamAudioLang = "spa",
+                    plc = plc(subtitlesDisabled = true),
+                ),
+                TestInput(
+                    1,
+                    SubtitlePlaybackMode.SMART,
+                    subtitles =
+                        listOf(
+                            subtitle(0, "eng", true),
+                            subtitle(1, "spa", false),
+                        ),
+                    streamAudioLang = "eng",
+                    userSubtitleLang = "spa",
+                    userAudioLang = "spa",
+                ),
+                TestInput(
+                    null,
+                    SubtitlePlaybackMode.SMART,
+                    subtitles =
+                        listOf(
+                            subtitle(0, "eng", true),
+                            subtitle(1, "spa", false),
+                        ),
+                    streamAudioLang = "eng",
+                    userSubtitleLang = "spa",
+                    userAudioLang = "eng",
+                ),
             )
     }
 }
@@ -237,6 +369,39 @@ class TestStreamChoiceServiceOnlyForced(
                             subtitle(1, "spa", forced = false),
                         ),
                     streamAudioLang = "eng",
+                ),
+                TestInput(
+                    1,
+                    SubtitlePlaybackMode.ONLY_FORCED,
+                    subtitles =
+                        listOf(
+                            subtitle(0, "eng", forced = false),
+                            subtitle(1, "spa", forced = false),
+                        ),
+                    streamAudioLang = "eng",
+                    itemPlayback = itemPlayback(subtitleIndex = 1),
+                ),
+                TestInput(
+                    0,
+                    SubtitlePlaybackMode.ONLY_FORCED,
+                    subtitles =
+                        listOf(
+                            subtitle(0, "eng", forced = false),
+                            subtitle(1, "spa", forced = false),
+                        ),
+                    streamAudioLang = "eng",
+                    plc = plc(subtitleLang = "eng"),
+                ),
+                TestInput(
+                    null,
+                    SubtitlePlaybackMode.ONLY_FORCED,
+                    subtitles =
+                        listOf(
+                            subtitle(0, "eng", forced = false),
+                            subtitle(1, "spa", forced = false),
+                        ),
+                    streamAudioLang = "eng",
+                    plc = plc(subtitlesDisabled = true),
                 ),
                 TestInput(
                     0,
