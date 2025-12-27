@@ -253,4 +253,7 @@ dependencies {
     if (ffmpegModuleExists || isCI) {
         implementation(files("libs/lib-decoder-ffmpeg-release.aar"))
     }
+
+    testImplementation(libs.mockk.android)
+    testImplementation(libs.mockk.agent)
 }

@@ -13,6 +13,7 @@ ksp = "2.3.0"
 coreKtx = "1.17.0"
 appcompat = "1.7.1"
 composeBom = "2025.12.01"
+mockk = "1.14.7"
 multiplatformMarkdownRenderer = "0.38.1"
 programguide = "1.6.0"
 slf4j2Timber = "1.2"
@@ -72,6 +73,8 @@ auto-service-ksp = { module = "dev.zacsweers.autoservice:auto-service-ksp", vers
 desugar_jdk_libs = { module = "com.android.tools:desugar_jdk_libs", version.ref = "desugar_jdk_libs" }
 hilt-android = { module = "com.google.dagger:hilt-android", version.ref = "hilt" }
 hilt-android-compiler = { module = "com.google.dagger:hilt-android-compiler", version.ref = "hilt" }
+mockk-agent = { module = "io.mockk:mockk-agent", version.ref = "mockk" }
+mockk-android = { module = "io.mockk:mockk-android", version.ref = "mockk" }
 multiplatform-markdown-renderer = { module = "com.mikepenz:multiplatform-markdown-renderer", version.ref = "multiplatformMarkdownRenderer" }
 multiplatform-markdown-renderer-m3 = { module = "com.mikepenz:multiplatform-markdown-renderer-m3", version.ref = "multiplatformMarkdownRenderer" }
 programguide = { module = "io.github.oleksandrbalan:programguide", version.ref = "programguide" }
