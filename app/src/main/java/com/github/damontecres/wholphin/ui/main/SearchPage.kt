@@ -2,12 +2,11 @@ package com.github.damontecres.wholphin.ui.main
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.focusGroup
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -18,6 +17,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -25,8 +25,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.focusRestorer
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
@@ -47,6 +53,8 @@ import com.github.damontecres.wholphin.ui.cards.EpisodeCard
 import com.github.damontecres.wholphin.ui.cards.ItemRow
 import com.github.damontecres.wholphin.ui.cards.SeasonCard
 import com.github.damontecres.wholphin.ui.components.SearchEditTextBox
+import com.github.damontecres.wholphin.ui.components.VoiceSearchButton
+import com.github.damontecres.wholphin.ui.components.rememberVoiceInputManager
 import com.github.damontecres.wholphin.ui.data.RowColumn
 import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
@@ -157,13 +165,22 @@ private const val COLLECTION_ROW = MOVIE_ROW + 1
 private const val SERIES_ROW = COLLECTION_ROW + 1
 private const val EPISODE_ROW = SERIES_ROW + 1
 
+/**
+ * Delay in milliseconds before requesting focus after voice search overlay dismisses.
+ *
+ * This delay is necessary because Compose's focus system needs time to settle after the
+ * Dialog closes. Without it, focus can incorrectly jump to the Navigation Drawer because
+ * requestFocus() fires before the overlay is fully removed from the composition.
+ * This is a known Compose focus timing behavior with Dialog components.
+ */
+private const val VOICE_RESULT_FOCUS_DELAY_MS = 100L
+
 @Composable
 fun SearchPage(
     userPreferences: UserPreferences,
     modifier: Modifier = Modifier,
     viewModel: SearchViewModel = hiltViewModel(),
 ) {
-    val context = LocalContext.current
     val focusManager = LocalFocusManager.current
     val keyboardController = LocalSoftwareKeyboardController.current
     val movies by viewModel.movies.observeAsState(SearchResult.NoQuery)
@@ -176,11 +193,40 @@ fun SearchPage(
     val focusRequester = remember { FocusRequester() }
 
     var position by rememberPosition()
-    var searchClicked by rememberSaveable { mutableStateOf(false) }
+    var pendingImmediateSearch by rememberSaveable { mutableStateOf(false) }
+    var immediateSearchQuery by rememberSaveable { mutableStateOf<String?>(null) }
+
+    // Create voice input manager at top level to survive LazyColumn recompositions
+    val voiceInputManager = rememberVoiceInputManager()
+
+    /**
+     * Triggers an immediate search bypassing the debounce delay.
+     *
+     * Used for voice search results where we want instant feedback.
+     * Sets [immediateSearchQuery] to prevent the debounced LaunchedEffect from re-triggering
+     * the same search, and [pendingImmediateSearch] to enable automatic focus movement
+     * to results when they arrive.
+     *
+     * ## State Flow
+     * 1. Voice result received → triggerVoiceSearch() called
+     * 2. Search initiated immediately (no 750ms debounce)
+     * 3. When results arrive, focus moves to first result row
+     * 4. [immediateSearchQuery] cleared to re-enable debounce for typed queries
+     */
+    fun triggerVoiceSearch(searchQuery: String) {
+        immediateSearchQuery = searchQuery
+        pendingImmediateSearch = true
+        viewModel.search(searchQuery)
+    }
 
     LaunchedEffect(query) {
-        delay(750L)
-        viewModel.search(query)
+        if (immediateSearchQuery != query) {
+            delay(750L)
+            viewModel.search(query)
+        }
+        if (immediateSearchQuery == query) {
+            immediateSearchQuery = null
+        }
     }
     LaunchedEffect(Unit) {
         focusRequester.tryRequestFocus()
@@ -188,14 +234,42 @@ fun SearchPage(
     val onClickItem = { index: Int, item: BaseItem ->
         viewModel.navigationManager.navigateTo(item.destination())
     }
-    LaunchedEffect(searchClicked, movies, collections, series, episodes) {
-        if (searchClicked) {
-            if (listOf(movies, collections, series, episodes).any { it is SearchResult.Success }) {
+
+    // stringResource() is @Composable and cannot be called from LazyListScope,
+    // so resolve these strings here before entering the LazyColumn block
+    val moviesTitle = stringResource(R.string.movies)
+    val collectionsTitle = stringResource(R.string.collections)
+    val tvShowsTitle = stringResource(R.string.tv_shows)
+    val episodesTitle = stringResource(R.string.episodes)
+
+    // Voice Search Focus Flow:
+    // After voice search completes, we wait for search results before moving focus.
+    // This prevents the jarring UX of focus jumping to empty result rows.
+    //
+    // State Machine:
+    // - pendingImmediateSearch=true: Waiting for results after voice search
+    // - On first Success result: Move focus to results, clear flag
+    // - On all finished (no Success): Clear flag, keep focus on search field
+    //
+    // We check pendingImmediateSearch first to avoid unnecessary work when
+    // results change from regular typed searches (which don't set this flag).
+    LaunchedEffect(pendingImmediateSearch, movies, collections, series, episodes) {
+        if (pendingImmediateSearch) {
+            val results = listOf(movies, collections, series, episodes)
+            val hasSuccess = results.any { it is SearchResult.Success }
+            val allFinished = results.none { it is SearchResult.Searching }
+
+            if (hasSuccess) {
                 focusManager.moveFocus(FocusDirection.Next)
-                searchClicked = false
+                pendingImmediateSearch = false
+            } else if (allFinished) {
+                // All finished (likely all errors or empty), stop waiting
+                pendingImmediateSearch = false
             }
         }
     }
+
+    val scope = rememberCoroutineScope()
 
     LazyColumn(
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 44.dp),
@@ -207,31 +281,96 @@ fun SearchPage(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                val interactionSource = remember { MutableInteractionSource() }
-                val focused by interactionSource.collectIsFocusedAsState()
-                BackHandler(focused) {
-                    keyboardController?.hide()
-                    focusManager.moveFocus(FocusDirection.Next)
+                var isSearchActive by remember { mutableStateOf(false) }
+                var isTextFieldFocused by remember { mutableStateOf(false) }
+
+                // Handle back button: clear search first, then move focus away
+                BackHandler(isTextFieldFocused) {
+                    if (isSearchActive) {
+                        isSearchActive = false
+                        keyboardController?.hide()
+                    } else {
+                        focusManager.moveFocus(FocusDirection.Next)
+                    }
                 }
-                SearchEditTextBox(
-                    value = query,
-                    onValueChange = { query = it },
-                    onSearchClick = {
-                        viewModel.search(query)
-                        searchClicked = true
-                    },
+                val textFieldFocusRequester = remember { FocusRequester() }
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
                     modifier =
                         Modifier
+                            .focusGroup()
+                            .focusRestorer(textFieldFocusRequester)
                             .ifElse(
                                 position.row < MOVIE_ROW,
                                 Modifier.focusRequester(focusRequester),
                             ),
-                    interactionSource = interactionSource,
-                )
+                ) {
+                    // Text field is read-only until activated, preventing accidental input
+                    // during D-Pad navigation. Deactivates when focus is lost.
+                    SearchEditTextBox(
+                        value = query,
+                        onValueChange = {
+                            isSearchActive = true
+                            query = it
+                        },
+                        onSearchClick = {
+                            triggerVoiceSearch(query)
+                        },
+                        readOnly = !isSearchActive,
+                        modifier =
+                            Modifier
+                                .focusRequester(textFieldFocusRequester)
+                                .onFocusChanged { focusState ->
+                                    isTextFieldFocused = focusState.isFocused
+                                    if (!focusState.isFocused) {
+                                        isSearchActive = false
+                                    }
+                                }
+                                // Use onPreviewKeyEvent for D-Pad navigation instead of
+                                // interactionSource, as D-Pad uses KeyEvents not touch events
+                                .onPreviewKeyEvent { keyEvent ->
+                                    if (keyEvent.type == KeyEventType.KeyUp) {
+                                        when (keyEvent.key) {
+                                            Key.DirectionCenter, Key.Enter -> {
+                                                if (!isSearchActive) {
+                                                    isSearchActive = true
+                                                    // Explicitly show keyboard - required on TV devices
+                                                    // where D-Pad events don't auto-trigger the keyboard
+                                                    keyboardController?.show()
+                                                    true
+                                                } else {
+                                                    false
+                                                }
+                                            }
+
+                                            else -> {
+                                                false
+                                            }
+                                        }
+                                    } else {
+                                        false
+                                    }
+                                },
+                    )
+
+                    VoiceSearchButton(
+                        onSpeechResult = { spokenText ->
+                            query = spokenText
+                            triggerVoiceSearch(spokenText)
+                            // Reclaim focus after overlay dismisses (see VOICE_RESULT_FOCUS_DELAY_MS docs)
+                            scope.launch {
+                                delay(VOICE_RESULT_FOCUS_DELAY_MS)
+                                textFieldFocusRequester.requestFocus()
+                            }
+                        },
+                        voiceInputManager = voiceInputManager,
+                    )
+                }
             }
         }
         searchResultRow(
-            title = context.getString(R.string.movies),
+            title = moviesTitle,
             result = movies,
             rowIndex = MOVIE_ROW,
             position = position,
@@ -241,7 +380,7 @@ fun SearchPage(
             modifier = Modifier.fillMaxWidth(),
         )
         searchResultRow(
-            title = context.getString(R.string.collections),
+            title = collectionsTitle,
             result = collections,
             rowIndex = COLLECTION_ROW,
             position = position,
@@ -251,7 +390,7 @@ fun SearchPage(
             modifier = Modifier.fillMaxWidth(),
         )
         searchResultRow(
-            title = context.getString(R.string.tv_shows),
+            title = tvShowsTitle,
             result = series,
             rowIndex = SERIES_ROW,
             position = position,
@@ -261,7 +400,7 @@ fun SearchPage(
             modifier = Modifier.fillMaxWidth(),
         )
         searchResultRow(
-            title = context.getString(R.string.episodes),
+            title = episodesTitle,
             result = episodes,
             rowIndex = EPISODE_ROW,
             position = position,
