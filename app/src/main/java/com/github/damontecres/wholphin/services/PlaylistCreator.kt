@@ -10,6 +10,7 @@ import com.github.damontecres.wholphin.data.model.PlaylistInfo
 import com.github.damontecres.wholphin.ui.DefaultItemFields
 import com.github.damontecres.wholphin.ui.components.baseItemKinds
 import com.github.damontecres.wholphin.ui.data.SortAndDirection
+import com.github.damontecres.wholphin.ui.gt
 import com.github.damontecres.wholphin.ui.indexOfFirstOrNull
 import com.github.damontecres.wholphin.ui.playback.playable
 import com.github.damontecres.wholphin.ui.toServerString
@@ -22,6 +23,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.playlistsApi
+import org.jellyfin.sdk.api.client.extensions.videosApi
 import org.jellyfin.sdk.model.api.BaseItemDto
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.CreatePlaylistDto
@@ -64,10 +66,14 @@ class PlaylistCreator
                     sortBy = if (shuffled) ItemSortBy.RANDOM else null,
                     limit = Playlist.MAX_SIZE,
                 )
-            val episodes = GetEpisodesRequestHandler.execute(api, request).content.items
+            val episodes =
+                GetEpisodesRequestHandler
+                    .execute(api, request)
+                    .content.items
+                    .convertAndAddParts(false)
             val startIndex =
                 episodeId?.let { episodes.indexOfFirstOrNull { it.id == episodeId } } ?: 0
-            return Playlist(episodes.map { BaseItem.from(it, api) }, startIndex)
+            return Playlist(episodes, startIndex)
         }
 
         suspend fun createFromPlaylistId(
@@ -82,12 +88,11 @@ class PlaylistCreator
                     startIndex = startIndex,
                     limit = Playlist.MAX_SIZE,
                 )
-            val items = GetPlaylistItemsRequestHandler.execute(api, request).content.items
-            var baseItems = items.map { BaseItem.from(it, api) }
+            var items = GetPlaylistItemsRequestHandler.execute(api, request).content.items
             if (shuffled) {
-                baseItems = baseItems.shuffled()
+                items = items.shuffled()
             }
-            return Playlist(baseItems, 0)
+            return Playlist(items.convertAndAddParts(), 0)
         }
 
         private suspend fun createFromCollection(
@@ -120,19 +125,20 @@ class PlaylistCreator
                         ),
                 )
             val items =
-                GetItemsRequestHandler.execute(api, request).content.items.map {
-                    BaseItem.from(it, api)
-                }
+                GetItemsRequestHandler
+                    .execute(api, request)
+                    .content.items
+                    .convertAndAddParts()
             return Playlist(items, 0)
         }
 
         suspend fun createFrom(
             item: BaseItemDto,
             startIndex: Int = 0,
-            sortAndDirection: SortAndDirection?,
-            shuffled: Boolean,
-            recursive: Boolean,
-            filter: GetItemsFilter,
+            sortAndDirection: SortAndDirection? = SortAndDirection.DEFAULT,
+            shuffled: Boolean = false,
+            recursive: Boolean = false,
+            filter: GetItemsFilter = GetItemsFilter(),
         ): PlaylistCreationResult =
             when (item.type) {
                 BaseItemKind.BOX_SET,
@@ -166,7 +172,7 @@ class PlaylistCreator
                             ),
                         )
                     } else {
-                        PlaylistCreationResult.Error(null, "Episode has not seriesId")
+                        PlaylistCreationResult.Error(null, "Episode has no seriesId")
                     }
                 }
 
@@ -182,7 +188,7 @@ class PlaylistCreator
                             ),
                         )
                     } else {
-                        PlaylistCreationResult.Error(null, "Episode has not seriesId")
+                        PlaylistCreationResult.Error(null, "Episode has no seriesId")
                     }
                 }
 
@@ -207,6 +213,26 @@ class PlaylistCreator
                     )
                 }
 
+                BaseItemKind.MOVIE,
+                BaseItemKind.VIDEO,
+                BaseItemKind.MUSIC_VIDEO,
+                -> {
+                    val list =
+                        buildList {
+                            add(BaseItem(item, false))
+
+                            if (item.partCount.gt(1)) {
+                                api.videosApi
+                                    .getAdditionalPart(item.id)
+                                    .content.items
+                                    .map {
+                                        BaseItem(it, false)
+                                    }.let(::addAll)
+                            }
+                        }
+                    PlaylistCreationResult.Success(Playlist(list, 0))
+                }
+
                 // Not support yet
 //                BaseItemKind.AGGREGATE_FOLDER -> TODO()
 //                BaseItemKind.FOLDER -> TODO()
@@ -217,6 +243,20 @@ class PlaylistCreator
 
                 else -> {
                     PlaylistCreationResult.Error(null, "Unsupported type: ${item.type}")
+                }
+            }
+
+        private suspend fun List<BaseItemDto>.convertAndAddParts(useSeriesForPrimary: Boolean = false): List<BaseItem> =
+            buildList {
+                this@convertAndAddParts.forEach { ep ->
+                    add(BaseItem(ep, useSeriesForPrimary))
+                    if (ep.partCount.gt(1)) {
+                        val parts =
+                            api.videosApi.getAdditionalPart(ep.id).content.items.map { part ->
+                                BaseItem(part, useSeriesForPrimary)
+                            }
+                        addAll(parts)
+                    }
                 }
             }
 

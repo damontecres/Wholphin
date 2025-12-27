@@ -105,6 +105,7 @@ fun TvGuideGrid(
         LoadingState.Success,
         -> {
             val context = LocalContext.current
+            val guideTimes by viewModel.guideTimes.observeAsState(listOf())
             val fetchedItem by viewModel.fetchedItem.observeAsState(null)
             val loadingItem by viewModel.fetchingItem.observeAsState(LoadingState.Pending)
             var showItemDialog by remember { mutableStateOf<Int?>(null) }
@@ -156,7 +157,7 @@ fun TvGuideGrid(
                         channels = channels,
                         programs = programs,
                         channelProgramCount = viewModel.channelProgramCount,
-                        start = viewModel.guideStart,
+                        guideTimes = guideTimes,
                         onClickChannel = { index, channel ->
                             viewModel.navigationManager.navigateTo(
                                 Destination.Playback(
@@ -273,7 +274,7 @@ fun TvGuideGridContent(
     channels: List<TvChannel>,
     programs: FetchedPrograms,
     channelProgramCount: Map<UUID, Int>,
-    start: LocalDateTime,
+    guideTimes: List<LocalDateTime>,
     onClickChannel: (Int, TvChannel) -> Unit,
     onClickProgram: (Int, TvProgram) -> Unit,
     onFocus: (RowColumn) -> Unit,
@@ -284,6 +285,7 @@ fun TvGuideGridContent(
     val focusManager = LocalFocusManager.current
     val state = rememberSaveableProgramGuideState()
     val scope = rememberCoroutineScope()
+    val guideStart = guideTimes.first()
 
     var focusedItem by rememberPosition(RowColumn(0, 0))
     val focusedChannelIndex = focusedItem.row
@@ -506,7 +508,7 @@ fun TvGuideGridContent(
             currentTime(
                 layoutInfo = {
                     ProgramGuideItem.CurrentTime(
-                        hoursBetween(start, LocalDateTime.now()),
+                        hoursBetween(guideStart, LocalDateTime.now()),
                     )
                 },
             ) {
@@ -523,11 +525,18 @@ fun TvGuideGridContent(
                 }
             }
             timeline(
-                count = MAX_HOURS.toInt(),
+                count = guideTimes.size,
                 layoutInfo = { index ->
+                    val start = guideTimes[index]
+                    val end =
+                        if (index < guideTimes.lastIndex) {
+                            guideTimes[index + 1]
+                        } else {
+                            start.plusHours(1)
+                        }
                     ProgramGuideItem.Timeline(
-                        startHour = index.toFloat(),
-                        endHour = index + 1f,
+                        startHour = hoursBetween(guideStart, start),
+                        endHour = hoursBetween(guideStart, end),
                     )
                 },
             ) { index ->
@@ -545,16 +554,12 @@ fun TvGuideGridContent(
                                 shape = RoundedCornerShape(4.dp),
                             ),
                 ) {
-                    val differentDay =
-                        start.toLocalDate() !=
-                            start
-                                .plusHours(index.toLong())
-                                .toLocalDate()
+                    val guideTime = guideTimes[index]
+                    val differentDay = guideTime.toLocalDate() != guideStart.toLocalDate()
                     val time =
                         DateUtils.formatDateTime(
                             context,
-                            start
-                                .plusHours(index.toLong())
+                            guideTime
                                 .toInstant(OffsetDateTime.now().offset)
                                 .epochSecond * 1000,
                             DateUtils.FORMAT_SHOW_TIME or if (differentDay) DateUtils.FORMAT_SHOW_WEEKDAY else 0,
@@ -584,7 +589,7 @@ fun TvGuideGridContent(
                 val program = programs.programs[programIndex]
                 val focused =
                     gridHasFocus && !channelColumnFocused && programIndex == focusedProgramIndex
-                Program(program, focused, preferences.colorCodePrograms, Modifier)
+                Program(guideStart, program, focused, preferences.colorCodePrograms, Modifier)
             }
 
             channels(

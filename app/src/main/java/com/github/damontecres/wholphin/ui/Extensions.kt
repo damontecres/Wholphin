@@ -28,7 +28,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.media3.common.Player
 import coil3.request.ErrorResult
 import com.github.damontecres.wholphin.data.model.BaseItem
@@ -163,6 +165,26 @@ fun OneTimeLaunchedEffect(runOnceBlock: suspend CoroutineScope.() -> Unit) {
         LaunchedEffect(Unit) {
             hasRun = true
             runOnceBlock.invoke(this)
+        }
+    }
+}
+
+/**
+ * Calls [tryRequestFocus] on the provided [FocusRequester] when this composable launches or resumes
+ */
+@Composable
+fun RequestOrRestoreFocus(
+    focusRequester: FocusRequester?,
+    debugKey: String? = null,
+) {
+    if (focusRequester != null) {
+        LaunchedEffect(Unit) {
+            debugKey?.let { Timber.v("RequestOrRestoreFocus: %s", it) }
+            focusRequester.tryRequestFocus()
+        }
+        LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+            debugKey?.let { Timber.v("RequestOrRestoreFocus onResume: %s", it) }
+            focusRequester.tryRequestFocus()
         }
     }
 }
@@ -418,3 +440,10 @@ fun rememberBackDropImage(item: BaseItem): String? {
     val imageUrlService = LocalImageUrlService.current
     return remember(item) { imageUrlService.getItemImageUrl(item, ImageType.BACKDROP) }
 }
+
+/**
+ * Check if this, coalescing nulls to zero, is greater than that
+ */
+fun Int?.gt(that: Int) = (this ?: 0) > that
+
+fun Int?.lt(that: Int) = (this ?: 0) < that

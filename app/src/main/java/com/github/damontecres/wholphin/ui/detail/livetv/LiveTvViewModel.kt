@@ -74,11 +74,10 @@ class LiveTvViewModel
     ) : ViewModel() {
         val loading = MutableLiveData<LoadingState>(LoadingState.Pending)
 
-        lateinit var guideStart: LocalDateTime
-            private set
         private lateinit var channelsIdToIndex: Map<UUID, Int>
         private val mutex = Mutex()
 
+        val guideTimes = MutableLiveData<List<LocalDateTime>>(buildGuideTimes())
         val channels = MutableLiveData<List<TvChannel>>()
         val channelProgramCount = mutableMapOf<UUID, Int>()
         val programs = MutableLiveData<FetchedPrograms>()
@@ -106,7 +105,7 @@ class LiveTvViewModel
         }
 
         fun init() {
-            guideStart = LocalDateTime.now().truncatedTo(ChronoUnit.HOURS)
+            val guideStart = guideTimes.value!!.first()
             viewModelScope.launch(
                 Dispatchers.IO +
                     LoadingExceptionHandler(
@@ -153,7 +152,7 @@ class LiveTvViewModel
                 // Initially, quickly load the first 10 channels (only some are visible immediately), then below will load more
                 // This makes the guide appear faster, and load more usable data in the background
                 val initial = 10
-                fetchPrograms(channels, 0..<initial.coerceAtMost(channels.size))
+                fetchPrograms(guideStart, channels, 0..<initial.coerceAtMost(channels.size))
 
                 withContext(Dispatchers.Main) {
                     this@LiveTvViewModel.channels.value = channels
@@ -161,21 +160,35 @@ class LiveTvViewModel
                 }
                 // Now load the full range
                 if (channels.size > initial) {
-                    fetchPrograms(channels, 0..<range.coerceAtMost(channels.size))
+                    fetchPrograms(guideStart, channels, 0..<range.coerceAtMost(channels.size))
                 }
             }
         }
+
+        private fun buildGuideTimes() =
+            buildList {
+                val start = LocalDateTime.now().roundDownToHalfHour()
+                add(start)
+                if (start.minute == 30) {
+                    add(start.plusMinutes(30))
+                }
+                repeat(MAX_HOURS.toInt() - 1) {
+                    add(last().plusHours(1))
+                }
+            }
 
         private suspend fun fetchProgramsWithLoading(
             channels: List<TvChannel>,
             range: IntRange,
         ) {
             loading.setValueOnMain(LoadingState.Loading)
-            fetchPrograms(channels, range)
+            val guideStart = guideTimes.value!!.first()
+            fetchPrograms(guideStart, channels, range)
             loading.setValueOnMain(LoadingState.Success)
         }
 
         private suspend fun fetchPrograms(
+            guideStart: LocalDateTime,
             channels: List<TvChannel>,
             range: IntRange,
         ) = mutex.withLock {
@@ -216,7 +229,12 @@ class LiveTvViewModel
                             } else {
                                 null
                             }
-
+                        // Clean up name/subtitles by collapsing whitespace (including newlines) into single spaces
+                        val name = (dto.seriesName ?: dto.name)?.replace(Regex("\\s+"), " ")
+                        val subtitle =
+                            dto.episodeTitle
+                                .takeIf { dto.isSeries ?: false }
+                                ?.replace(Regex("\\s+"), " ")
                         val p =
                             TvProgram(
                                 id = dto.id,
@@ -230,8 +248,8 @@ class LiveTvViewModel
                                     ).coerceAtLeast(0f),
                                 endHours = hoursBetween(guideStart, dto.endDate!!),
                                 duration = dto.runTimeTicks!!.ticks,
-                                name = dto.seriesName ?: dto.name,
-                                subtitle = dto.episodeTitle.takeIf { dto.isSeries ?: false },
+                                name = name,
+                                subtitle = subtitle,
                                 overview = dto.overview,
                                 officialRating = dto.officialRating,
                                 seasonEpisode =
@@ -573,3 +591,8 @@ data class FetchedPrograms(
     val programs: List<TvProgram>,
     val programsByChannel: Map<UUID, List<TvProgram>>,
 )
+
+fun LocalDateTime.roundDownToHalfHour(): LocalDateTime {
+    val min = minute % 30L
+    return minusMinutes(min).truncatedTo(ChronoUnit.MINUTES)
+}

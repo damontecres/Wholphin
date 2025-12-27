@@ -107,7 +107,7 @@ fun DownloadSubtitlesContent(
                     color = MaterialTheme.colorScheme.onSurface,
                 )
 //                val lang = rememberTextFieldState(language)
-                var lang by rememberSaveable { mutableStateOf("") }
+                var lang by rememberSaveable { mutableStateOf(language) }
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically,

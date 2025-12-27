@@ -9,7 +9,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import com.github.damontecres.wholphin.data.model.GetItemsFilter
+import com.github.damontecres.wholphin.data.model.CollectionFolderFilter
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.components.CollectionFolderGrid
 import com.github.damontecres.wholphin.ui.components.ViewOptionsPoster
@@ -23,7 +23,7 @@ fun CollectionFolderRecordings(
     itemId: UUID,
     recursive: Boolean,
     modifier: Modifier = Modifier,
-    filter: GetItemsFilter = GetItemsFilter(),
+    filter: CollectionFolderFilter = CollectionFolderFilter(),
     preferencesViewModel: PreferencesViewModel = hiltViewModel(),
 ) {
     var showHeader by remember { mutableStateOf(true) }

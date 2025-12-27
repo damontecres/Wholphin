@@ -38,9 +38,17 @@ object MPVLib {
 
     external fun create(appctx: Context)
 
-    external fun init()
+    fun initialize() {
+        synchronized(this) { init() }
+    }
 
-    external fun destroy()
+    private external fun init()
+
+    fun tearDown() {
+        synchronized(this) { destroy() }
+    }
+
+    private external fun destroy()
 
     external fun attachSurface(surface: Surface)
 

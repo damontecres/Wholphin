@@ -16,6 +16,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -65,7 +66,6 @@ fun GenreCard(
                     .fillMaxSize()
                     .clip(RoundedCornerShape(8.dp)),
         ) {
-            Timber.v("genre image=${genre?.imageUrl}")
             if (genre?.imageUrl.isNotNullOrBlank()) {
                 AsyncImage(
                     model =
@@ -78,7 +78,7 @@ fun GenreCard(
                     contentDescription = null,
                     modifier =
                         Modifier
-                            .alpha(.6f)
+                            .alpha(.75f)
                             .aspectRatio(AspectRatios.WIDE)
                             .fillMaxSize(),
                 )

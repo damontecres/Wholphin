@@ -14,6 +14,8 @@
     <string name="fa_magnifying_glass_minus" translatable="false">&#xf010;</string>
     <string name="fa_caret_up" translatable="false">&#xf0d8;</string>
     <string name="fa_caret_down" translatable="false">&#xf0d7;</string>
+    <string name="fa_caret_left" translatable="false">&#xf0d9;</string>
+    <string name="fa_caret_right" translatable="false">&#xf0da;</string>
     <string name="fa_heart" translatable="false">&#xf004;</string>
     <string name="fa_video" translatable="false">&#xf03d;</string>
     <string name="fa_play" translatable="false">&#xf04b;</string>

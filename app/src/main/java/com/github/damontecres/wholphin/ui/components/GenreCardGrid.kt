@@ -11,10 +11,17 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.times
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.github.damontecres.wholphin.data.ServerRepository
+import com.github.damontecres.wholphin.data.model.BaseItem
+import com.github.damontecres.wholphin.data.model.CollectionFolderFilter
 import com.github.damontecres.wholphin.data.model.GetItemsFilter
 import com.github.damontecres.wholphin.services.ImageUrlService
 import com.github.damontecres.wholphin.services.NavigationManager
@@ -39,6 +46,7 @@ import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
+import org.jellyfin.sdk.api.client.extensions.userLibraryApi
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.ImageType
 import org.jellyfin.sdk.model.api.ItemFields
@@ -55,18 +63,30 @@ class GenreViewModel
     constructor(
         private val api: ApiClient,
         private val imageUrlService: ImageUrlService,
+        private val serverRepository: ServerRepository,
         val navigationManager: NavigationManager,
     ) : ViewModel() {
         private lateinit var itemId: UUID
+
+        val item = MutableLiveData<BaseItem?>(null)
         val loading = MutableLiveData<LoadingState>(LoadingState.Pending)
         val genres = MutableLiveData<List<Genre>>(listOf())
 
-        fun init(itemId: UUID) {
+        fun init(
+            itemId: UUID,
+            cardWidthPx: Int,
+        ) {
             loading.value = LoadingState.Loading
             this.itemId = itemId
             viewModelScope.launch(Dispatchers.IO + LoadingExceptionHandler(loading, "Failed to fetch genres")) {
+                val item =
+                    api.userLibraryApi.getItem(itemId = itemId).content.let {
+                        BaseItem(it, false)
+                    }
+                this@GenreViewModel.item.setValueOnMain(item)
                 val request =
                     GetGenresRequest(
+                        userId = serverRepository.currentUser.value?.id,
                         parentId = itemId,
                         fields = SlimItemFields,
                     )
@@ -120,7 +140,8 @@ class GenreViewModel
                                             item.type,
                                             null,
                                             false,
-                                            ImageType.THUMB,
+                                            ImageType.BACKDROP,
+                                            fillWidth = cardWidthPx,
                                         )
                                 }
                             }
@@ -166,8 +187,23 @@ fun GenreCardGrid(
     modifier: Modifier = Modifier,
     viewModel: GenreViewModel = hiltViewModel(),
 ) {
+    val columns = 4
+    val spacing = 16.dp
+    val density = LocalDensity.current
+    val configuration = LocalConfiguration.current
+    val cardWidthPx =
+        remember {
+            with(density) {
+                // Grid has 16dp padding on either side & 16dp spacing between 4 cards
+                // This isn't exact though because it doesn't account for nav drawer or letters, but it's close and the calculation is much faster
+                // E.g. on 1080p, this results in 440px versus 395px actual, so only minimal scaling down is required
+                (configuration.screenWidthDp.dp - (2 * 16.dp + 3 * spacing))
+                    .div(columns)
+                    .roundToPx()
+            }
+        }
     OneTimeLaunchedEffect {
-        viewModel.init(itemId)
+        viewModel.init(itemId, cardWidthPx)
     }
     val loading by viewModel.loading.observeAsState(LoadingState.Pending)
     val genres by viewModel.genres.observeAsState(listOf())
@@ -187,13 +223,23 @@ fun GenreCardGrid(
         LoadingState.Success -> {
             Box(modifier = modifier) {
                 LaunchedEffect(Unit) { gridFocusRequester.tryRequestFocus() }
+                val item by viewModel.item.observeAsState(null)
                 CardGrid(
                     pager = genres,
                     onClickItem = { _, genre ->
                         viewModel.navigationManager.navigateTo(
                             Destination.FilteredCollection(
                                 itemId = itemId,
-                                filter = GetItemsFilter(genres = listOf(genre.id)),
+                                filter =
+                                    CollectionFolderFilter(
+                                        nameOverride =
+                                            listOfNotNull(
+                                                genre.name,
+                                                item?.title,
+                                            ).joinToString(" "),
+                                        filter = GetItemsFilter(genres = listOf(genre.id)),
+                                        useSavedLibraryDisplayInfo = false,
+                                    ),
                                 recursive = true,
                             ),
                         )
@@ -208,7 +254,8 @@ fun GenreCardGrid(
                     initialPosition = 0,
                     positionCallback = { columns, position ->
                     },
-                    columns = 4,
+                    columns = columns,
+                    spacing = spacing,
                     cardContent = { item: Genre?, onClick: () -> Unit, onLongClick: () -> Unit, mod: Modifier ->
                         GenreCard(
                             genre = item,

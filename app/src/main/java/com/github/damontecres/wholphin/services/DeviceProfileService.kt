@@ -20,7 +20,7 @@ class DeviceProfileService
     constructor(
         @param:ApplicationContext private val context: Context,
     ) {
-        private val mediaCodecCapabilitiesTest by lazy {
+        val mediaCodecCapabilitiesTest by lazy {
             // Created lazily below on the IO thread since it cn take time
             MediaCodecCapabilitiesTest(context)
         }
