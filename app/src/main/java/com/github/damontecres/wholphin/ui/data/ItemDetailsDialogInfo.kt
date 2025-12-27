@@ -8,8 +8,10 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -57,30 +59,28 @@ fun ItemDetailsDialog(
 
     ScrollableDialog(
         onDismissRequest = onDismissRequest,
-        width = 720.dp,
-        maxHeight = 480.dp,
-        itemSpacing = 4.dp,
+        width = 680.dp,
+        maxHeight = 440.dp,
+        itemSpacing = 8.dp,
     ) {
         item {
-            Text(
-                text = info.title,
-                style = MaterialTheme.typography.titleLarge,
-            )
-        }
-        if (info.genres.isNotEmpty()) {
-            item {
+            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 Text(
-                    text = info.genres.joinToString(", "),
-                    style = MaterialTheme.typography.titleSmall,
+                    text = info.title,
+                    style = MaterialTheme.typography.headlineSmall,
                 )
-            }
-        }
-        if (info.overview.isNotNullOrBlank()) {
-            item {
-                Text(
-                    text = info.overview,
-                    style = MaterialTheme.typography.bodyLarge,
-                )
+                if (info.genres.isNotEmpty()) {
+                    Text(
+                        text = info.genres.joinToString(", "),
+                        style = MaterialTheme.typography.titleSmall,
+                    )
+                }
+                if (info.overview.isNotNullOrBlank()) {
+                    Text(
+                        text = info.overview,
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                }
             }
         }
 
@@ -89,13 +89,19 @@ fun ItemDetailsDialog(
             source.mediaStreams?.letNotEmpty { mediaStreams ->
                 item {
                     Spacer(Modifier.height(8.dp))
+                    HorizontalDivider()
                 }
 
                 // General file information
                 item {
                     val containerLabel = stringResource(R.string.container)
                     MediaInfoSection(
-                        title = stringResource(R.string.general),
+                        title =
+                            titleIndex(
+                                stringResource(R.string.general),
+                                index,
+                                info.files.size,
+                            ),
                         items =
                             buildList {
                                 source.container?.let { add(containerLabel to it) }
@@ -116,26 +122,30 @@ fun ItemDetailsDialog(
                 }
 
                 // Video streams
-                items(mediaStreams.filter { it.type == MediaStreamType.VIDEO }) { stream ->
+                val videoStreams = mediaStreams.filter { it.type == MediaStreamType.VIDEO }
+                itemsIndexed(videoStreams) { index, stream ->
                     MediaInfoSection(
-                        title = videoLabel,
-                        items = buildVideoStreamInfo(context, stream),
+                        title = titleIndex(videoLabel, index, videoStreams.size),
+                        items = remember { buildVideoStreamInfo(context, stream) },
+                        additional = remember { buildVideoStreamInfoAdditional(context, stream) },
                     )
                 }
 
                 // Audio streams - display multiple per row
-                items(
-                    mediaStreams
-                        .filter { it.type == MediaStreamType.AUDIO }
-                        .chunked(3),
-                ) { streamGroup ->
+                val audioStreams = mediaStreams.filter { it.type == MediaStreamType.AUDIO }
+                itemsIndexed(audioStreams.chunked(3)) { groupIndex, streamGroup ->
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         modifier = Modifier.fillMaxWidth(),
                     ) {
-                        streamGroup.forEach { stream ->
+                        streamGroup.forEachIndexed { index, stream ->
                             MediaInfoSection(
-                                title = audioLabel,
+                                title =
+                                    titleIndex(
+                                        audioLabel,
+                                        groupIndex * 3 + index,
+                                        audioStreams.size,
+                                    ),
                                 items = buildAudioStreamInfo(context, stream),
                                 modifier = Modifier.weight(1f),
                             )
@@ -148,19 +158,21 @@ fun ItemDetailsDialog(
                 }
 
                 // Subtitle streams - display multiple per row
-                items(
-                    mediaStreams
-                        .filter { it.type == MediaStreamType.SUBTITLE }
-                        .chunked(3),
-                ) { streamGroup ->
+                val subtitleStreams = mediaStreams.filter { it.type == MediaStreamType.SUBTITLE }
+                itemsIndexed(subtitleStreams.chunked(3)) { groupIndex, streamGroup ->
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         modifier = Modifier.fillMaxWidth(),
                     ) {
-                        streamGroup.forEach { stream ->
+                        streamGroup.forEachIndexed { index, stream ->
                             MediaInfoSection(
-                                title = subtitleLabel,
-                                items = buildSubtitleStreamInfo(context, stream),
+                                title =
+                                    titleIndex(
+                                        subtitleLabel,
+                                        groupIndex * 3 + index,
+                                        subtitleStreams.size,
+                                    ),
+                                items = buildSubtitleStreamInfo(context, stream, showFilePath),
                                 modifier = Modifier.weight(1f),
                             )
                         }
@@ -185,6 +197,7 @@ private fun MediaInfoSection(
     title: String,
     items: List<Pair<String, String>>,
     modifier: Modifier = Modifier,
+    additional: List<Pair<String, String>> = listOf(),
 ) {
     Column(
         verticalArrangement = Arrangement.spacedBy(2.dp),
@@ -192,25 +205,61 @@ private fun MediaInfoSection(
     ) {
         Text(
             text = title,
-            style = MaterialTheme.typography.titleSmall,
-            color = MaterialTheme.colorScheme.primary,
+            style = MaterialTheme.typography.titleLarge,
+            color = MaterialTheme.colorScheme.onSurface,
         )
-        items.forEach { (label, value) ->
-            Row(
-                modifier = Modifier.padding(start = 12.dp),
-            ) {
-                Text(
-                    text = "$label: ",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
-                )
-                Text(
-                    text = value,
-                    style = MaterialTheme.typography.bodyMedium,
-                )
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(24.dp),
+            modifier = Modifier.padding(start = 12.dp),
+        ) {
+            Column(modifier = Modifier.weight(1f, fill = false)) {
+                items.forEach { (label, value) ->
+                    Row(
+                        modifier = Modifier,
+                    ) {
+                        Text(
+                            text = "$label: ",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                        )
+                        Text(
+                            text = value,
+                            style = MaterialTheme.typography.bodyMedium,
+                        )
+                    }
+                }
+            }
+            if (additional.isNotEmpty()) {
+                Column(modifier = Modifier.weight(1f, fill = false)) {
+                    additional.forEach { (label, value) ->
+                        Row(
+                            modifier = Modifier,
+                        ) {
+                            Text(
+                                text = "$label: ",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                            )
+                            Text(
+                                text = value,
+                                style = MaterialTheme.typography.bodyMedium,
+                            )
+                        }
+                    }
+                }
             }
         }
     }
+}
+
+fun titleIndex(
+    title: String,
+    index: Int,
+    total: Int,
+) = if (total > 1) {
+    "$title (${index + 1})"
+} else {
+    title
 }
 
 private fun buildVideoStreamInfo(
@@ -218,40 +267,24 @@ private fun buildVideoStreamInfo(
     stream: MediaStream,
 ): List<Pair<String, String>> =
     buildList {
-        val titleLabel = context.getString(R.string.title)
-        val codecLabel = context.getString(R.string.codec)
-        val avcLabel = context.getString(R.string.avc)
-        val profileLabel = context.getString(R.string.profile)
-        val levelLabel = context.getString(R.string.level)
-        val resolutionLabel = context.getString(R.string.resolution)
-        val aspectRatioLabel = context.getString(R.string.aspect_ratio)
-        val anamorphicLabel = context.getString(R.string.anamorphic)
-        val interlacedLabel = context.getString(R.string.interlaced)
-        val framerateLabel = context.getString(R.string.framerate)
-        val bitrateLabel = context.getString(R.string.bitrate)
-        val bitDepthLabel = context.getString(R.string.bit_depth)
-        val videoRangeLabel = context.getString(R.string.video_range)
-        val videoRangeTypeLabel = context.getString(R.string.video_range_type)
-        val colorSpaceLabel = context.getString(R.string.color_space)
-        val colorTransferLabel = context.getString(R.string.color_transfer)
-        val colorPrimariesLabel = context.getString(R.string.color_primaries)
-        val pixelFormatLabel = context.getString(R.string.pixel_format)
-        val refFramesLabel = context.getString(R.string.ref_frames)
-        val nalLabel = context.getString(R.string.nal)
         val yesStr = context.getString(R.string.yes)
         val noStr = context.getString(R.string.no)
+
+        val titleLabel = context.getString(R.string.title)
+        val codecLabel = context.getString(R.string.codec)
+        val resolutionLabel = context.getString(R.string.resolution)
+        val aspectRatioLabel = context.getString(R.string.aspect_ratio)
+        val framerateLabel = context.getString(R.string.framerate)
+        val bitrateLabel = context.getString(R.string.bitrate)
+        val profileLabel = context.getString(R.string.profile)
+        val levelLabel = context.getString(R.string.level)
+        val interlacedLabel = context.getString(R.string.interlaced)
+        val videoRangeLabel = context.getString(R.string.video_range)
         val sdrStr = context.getString(R.string.sdr)
         val hdrStr = context.getString(R.string.hdr)
-        val hdr10Str = context.getString(R.string.hdr10)
-        val hdr10PlusStr = context.getString(R.string.hdr10_plus)
-        val hlgStr = context.getString(R.string.hlg)
-        val bitUnit = context.getString(R.string.bit_unit)
 
         stream.title?.let { add(titleLabel to it) }
         stream.codec?.let { add(codecLabel to it.uppercase()) }
-        stream.isAvc?.let { add(avcLabel to if (it) yesStr else noStr) }
-        stream.profile?.let { add(profileLabel to it) }
-        stream.level?.let { add(levelLabel to it.toString()) }
         if (stream.width != null && stream.height != null) {
             add(resolutionLabel to "${stream.width}x${stream.height}")
         }
@@ -259,23 +292,55 @@ private fun buildVideoStreamInfo(
             val aspectRatio = calculateAspectRatio(stream.width!!, stream.height!!)
             add(aspectRatioLabel to aspectRatio)
         }
-        stream.isAnamorphic?.let { add(anamorphicLabel to if (it) yesStr else noStr) }
-        stream.isInterlaced?.let { add(interlacedLabel to if (it) yesStr else noStr) }
+        stream.bitRate?.let { add(bitrateLabel to formatBytes(it, byteRateSuffixes)) }
         stream.averageFrameRate?.let {
             add(framerateLabel to String.format(Locale.getDefault(), "%.3f", it))
         }
-        stream.bitRate?.let { add(bitrateLabel to formatBytes(it, byteRateSuffixes)) }
-        stream.bitDepth?.let { add(bitDepthLabel to "$it $bitUnit") }
-        stream.videoRange?.let {
+
+        stream.videoRange.let {
             val rangeStr =
                 when (it) {
                     VideoRange.SDR -> sdrStr
                     VideoRange.HDR -> hdrStr
                     VideoRange.UNKNOWN -> null
-                    else -> null
                 }
             rangeStr?.let { add(videoRangeLabel to it) }
         }
+        stream.profile?.let { add(profileLabel to it) }
+        stream.level?.let { add(levelLabel to it.toString()) }
+        stream.isInterlaced.let { add(interlacedLabel to if (it) yesStr else noStr) }
+    }
+
+private fun buildVideoStreamInfoAdditional(
+    context: Context,
+    stream: MediaStream,
+): List<Pair<String, String>> =
+    buildList {
+        val yesStr = context.getString(R.string.yes)
+        val noStr = context.getString(R.string.no)
+
+        val avcLabel = context.getString(R.string.avc)
+        val anamorphicLabel = context.getString(R.string.anamorphic)
+        val bitDepthLabel = context.getString(R.string.bit_depth)
+
+        val videoRangeTypeLabel = context.getString(R.string.video_range_type)
+        val colorSpaceLabel = context.getString(R.string.color_space)
+        val colorTransferLabel = context.getString(R.string.color_transfer)
+        val colorPrimariesLabel = context.getString(R.string.color_primaries)
+        val pixelFormatLabel = context.getString(R.string.pixel_format)
+        val refFramesLabel = context.getString(R.string.ref_frames)
+        val nalLabel = context.getString(R.string.nal)
+        val dolbyVisionLabel = context.getString(R.string.dolby_vision)
+
+        val sdrStr = context.getString(R.string.sdr)
+        val hdr10Str = context.getString(R.string.hdr10)
+        val hdr10PlusStr = context.getString(R.string.hdr10_plus)
+        val hlgStr = context.getString(R.string.hlg)
+        val bitUnit = context.getString(R.string.bit_unit)
+
+        stream.isAvc?.let { add(avcLabel to if (it) yesStr else noStr) }
+        stream.isAnamorphic?.let { add(anamorphicLabel to if (it) yesStr else noStr) }
+        stream.bitDepth?.let { add(bitDepthLabel to "$it $bitUnit") }
         stream.videoRangeType?.let {
             val rangeTypeStr =
                 when (it) {
@@ -304,7 +369,8 @@ private fun buildVideoStreamInfo(
         stream.colorPrimaries?.let { add(colorPrimariesLabel to it) }
         stream.pixelFormat?.let { add(pixelFormatLabel to it) }
         stream.refFrames?.let { add(refFramesLabel to it.toString()) }
-        stream.nalLengthSize?.let { add(nalLabel to it.toString()) }
+        stream.nalLengthSize?.let { add(nalLabel to it) }
+        stream.videoDoViTitle?.let { add(dolbyVisionLabel to it) }
     }
 
 private fun buildAudioStreamInfo(
@@ -341,17 +407,18 @@ private fun buildAudioStreamInfo(
 private fun buildSubtitleStreamInfo(
     context: Context,
     stream: MediaStream,
+    showPath: Boolean,
 ): List<Pair<String, String>> =
     buildList {
         val titleLabel = context.getString(R.string.title)
         val languageLabel = context.getString(R.string.language)
         val codecLabel = context.getString(R.string.codec)
-        val avcLabel = context.getString(R.string.avc)
         val defaultLabel = context.getString(R.string.default_track)
         val forcedLabel = context.getString(R.string.forced_track)
         val externalLabel = context.getString(R.string.external_track)
         val yesStr = context.getString(R.string.yes)
         val noStr = context.getString(R.string.no)
+        val pathLabel = context.getString(R.string.path)
 
         stream.title?.let { add(titleLabel to it) }
         stream.language?.let { add(languageLabel to languageName(it)) }
@@ -359,10 +426,15 @@ private fun buildSubtitleStreamInfo(
             val formattedCodec = formatSubtitleCodec(it) ?: it.uppercase()
             add(codecLabel to formattedCodec)
         }
-        stream.isAvc?.let { add(avcLabel to if (it) yesStr else noStr) }
         stream.isDefault?.let { add(defaultLabel to if (it) yesStr else noStr) }
         stream.isForced?.let { add(forcedLabel to if (it) yesStr else noStr) }
         stream.isExternal?.let { add(externalLabel to if (it) yesStr else noStr) }
+        stream.isHearingImpaired?.let {
+            add((stream.localizedHearingImpaired ?: "SDH") to if (it) yesStr else noStr)
+        }
+        if (showPath) {
+            stream.path?.let { pathLabel to it }
+        }
     }
 
 private fun calculateAspectRatio(
