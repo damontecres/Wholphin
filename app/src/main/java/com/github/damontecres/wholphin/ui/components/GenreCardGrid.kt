@@ -103,7 +103,7 @@ class GenreViewModel
                     loading.value = LoadingState.Success
                 }
 //                val excludeItemIds = mutableSetOf<UUID>()
-                val genreToUrl = ConcurrentHashMap<UUID, String>()
+                val genreToUrl = ConcurrentHashMap<UUID, String?>()
                 val semaphore = Semaphore(4)
                 genres
                     .map { genre ->
