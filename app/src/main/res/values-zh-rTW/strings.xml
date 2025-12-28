@@ -183,8 +183,8 @@
     <string name="jump_letters">#ABCDEFGHIJKLMNOPQRSTUVWXYZ</string>
     <string name="license_info">授權資訊</string>
     <string name="live_tv">電視直播</string>
-    <string name="mark_entire_series_as_played">標記整部電視劇為已觀看？</string>
-    <string name="mark_entire_series_as_unplayed">標記整部電視劇為未觀看？</string>
+    <string name="mark_entire_series_as_played">標記整部劇為已觀看？</string>
+    <string name="mark_entire_series_as_unplayed">標記整部劇為未觀看？</string>
     <string name="mark_unwatched">標記為未觀看</string>
     <string name="mark_watched">標記為已觀看</string>
     <string name="max_bitrate">最大位元率</string>
@@ -307,7 +307,7 @@
     <string name="favorite_channels_at_beginning">優先顯示最愛頻道</string>
     <string name="sort_channels_recently_watched">按最近觀看的頻道排序</string>
     <string name="ends_at">結束於 %1$s</string>
-    <string name="general">一般資訊</string>
+    <string name="general">一般</string>
     <string name="container">封裝格式</string>
     <string name="title">標題</string>
     <string name="codec">編碼</string>
