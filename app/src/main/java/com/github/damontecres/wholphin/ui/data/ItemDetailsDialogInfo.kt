@@ -32,6 +32,7 @@ import org.jellyfin.sdk.model.api.MediaStream
 import org.jellyfin.sdk.model.api.MediaStreamType
 import org.jellyfin.sdk.model.api.VideoRange
 import org.jellyfin.sdk.model.api.VideoRangeType
+import org.jellyfin.sdk.model.extensions.ticks
 import java.util.Locale
 
 data class ItemDetailsDialogInfo(
@@ -56,6 +57,7 @@ fun ItemDetailsDialog(
     val subtitleLabel = stringResource(R.string.subtitle)
     val bitrateLabel = stringResource(R.string.bitrate)
     val unknown = stringResource(R.string.unknown)
+    val runtimeLabel = stringResource(R.string.runtime_sort)
 
     ScrollableDialog(
         onDismissRequest = onDismissRequest,
@@ -116,6 +118,9 @@ fun ItemDetailsDialog(
                                     add(
                                         bitrateLabel to formatBytes(it, byteRateSuffixes),
                                     )
+                                }
+                                source.runTimeTicks?.let {
+                                    add(runtimeLabel to it.ticks.toString())
                                 }
                             },
                     )
