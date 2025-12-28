@@ -77,6 +77,21 @@ class TvProviderWorker
                 val currentItems = getCurrentTvChannelNextUp()
                 val currentItemIds = currentItems.map { it.internalProviderId }
 
+                // TODO Remove after v0.3.10 release
+                // This cleans up duplicates added to the watch next due a bug in https://github.com/damontecres/Wholphin/pull/372
+                currentItems.groupBy { it.internalProviderId }.forEach { (id, items) ->
+                    if (items.size > 1) {
+                        Timber.v("Duplicate ID %s", id)
+                        items
+                            .subList(1, items.size)
+                            .map { TvContractCompat.buildWatchNextProgramUri(it.id) }
+                            .forEach {
+                                context.contentResolver.delete(it, null, null)
+                            }
+                    }
+                }
+                // End temporary clean up
+
                 val toRemove =
                     currentItems.filterNot { it.internalProviderId in potentialItemsToAddIds }
 
