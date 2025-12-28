@@ -84,7 +84,7 @@ class TvProviderWorker
                 val userRemovedIds = userRemoved.map { it.internalProviderId }
                 Timber.v("toRemove (%s)=%s", toRemove.size, toRemove.map { it.internalProviderId })
                 val toAdd =
-                    potentialItemsToAdd.filterNot { it.id.toString() in currentItemIds && it.id.toString() in userRemovedIds }
+                    potentialItemsToAdd.filter { it.id.toString() !in currentItemIds && it.id.toString() !in userRemovedIds }
                 Timber.v("toAdd (%s)=%s", toAdd.size, toAdd.map { it.id })
 
                 // Remove existing items if they are no longer in the next up from server
