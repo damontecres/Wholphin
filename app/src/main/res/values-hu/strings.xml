@@ -10,8 +10,8 @@
     <string name="born">Született</string>
     <string name="cancel">Mégse</string>
     <string name="chapters">Fejezetek</string>
-    <string name="choose_stream">Válasszon %1$s</string>
-    <string name="clear_image_cache">Kép gyorsítótár törlése</string>
+    <string name="choose_stream">%1$s kiválasztása</string>
+    <string name="clear_image_cache">Képgyorsítótár törlése</string>
     <string name="collection">Gyűjtemény</string>
     <string name="collections">Gyűjtemények</string>
     <string name="community_rating">Közösségi értékelés</string>
@@ -30,7 +30,7 @@
     <string name="enabled">Engedélyezve</string>
     <string name="enter_server_url">Adja meg a szerver IP-t vagy URL-t</string>
     <string name="episodes">Epizódok</string>
-    <string name="error_loading_collection">Hiba a gyűjtemény betöltése során: %1$s</string>
+    <string name="error_loading_collection">Hiba a következő gyűjtemény betöltése során: %1$s</string>
     <string name="external_track">Külső</string>
     <string name="favorites">Kedvencek</string>
     <string name="active_recordings">Aktív felvételek</string>
@@ -43,7 +43,7 @@
     <string name="forced_track">Kiegészítő</string>
     <string name="genres">Műfajok</string>
     <string name="go_to_series">Ugrás a sorozathoz</string>
-    <string name="go_to">Ugrás</string>
+    <string name="go_to">Ugrás ide:</string>
     <string name="hide_controller_timeout">Lejátszási gombok elrejtése</string>
     <string name="hide_debug_info">Hibakeresési infó elrejtése</string>
     <string name="hide">Elrejt</string>
@@ -59,7 +59,7 @@
     <string name="mark_entire_series_as_unplayed">Megjelöli az egész sorozatot megnézetlenként?</string>
     <string name="mark_unwatched">Jelölés megnézetlenként</string>
     <string name="mark_watched">Jelölés megnézettként</string>
-    <string name="max_bitrate">Max bitráta</string>
+    <string name="max_bitrate">Maximális bitráta</string>
     <string name="more_like_this">Hasonlóak</string>
     <string name="more">Továbbiak</string>
     <string name="movies">Filmek</string>
@@ -100,7 +100,7 @@
     <string name="searching">Keresés…</string>
     <string name="select_server">Szerver kiválasztása</string>
     <string name="select_user">Felhasználó kiválasztása</string>
-    <string name="show_debug_info">Hibakeresési info megjelenítése</string>
+    <string name="show_debug_info">Hibakeresési infó megjelenítése</string>
     <string name="show_next_up_when">Következő mutatása</string>
     <string name="show">Megmutat</string>
     <string name="shuffle">Véletlenszerű</string>
@@ -117,9 +117,9 @@
     <string name="subtitle">Felirat</string>
     <string name="subtitles">Feliratok</string>
     <string name="suggestions">Ajánlások</string>
-    <string name="switch_servers">Váltás szerverek között</string>
+    <string name="switch_servers">Váltás másik szerverre</string>
     <string name="switch_user">Váltás</string>
-    <string name="top_unwatched">Legjobbra értékelt nem megtekintett</string>
+    <string name="top_unwatched">Legjobbra értékelt, nem megnézett</string>
     <string name="trailer">Előzetes</string>
     <plurals name="trailers">
         <item quantity="one">Előzetesek</item>
@@ -130,7 +130,7 @@
     <string name="tv_season">Évad</string>
     <string name="tv_seasons">Évadok</string>
     <string name="tv_shows">Sorozatok</string>
-    <string name="ui_interface">Felület</string>
+    <string name="ui_interface">Kezelőfelület</string>
     <string name="unknown">Ismeretlen</string>
     <string name="updates">Frissítések</string>
     <string name="version">Verzió</string>
@@ -147,8 +147,8 @@
     <string name="one_click_pause">Szüneteltetés egy klikkel</string>
     <string name="one_click_pause_summary_on">Nyomja le a D-Pad közepét megállításhoz/lejátszáshoz</string>
     <string name="italic_font">Dőlt betűk</string>
-    <string name="font">Betűtípus</string>
-    <string name="background">Háttérszín</string>
+    <string name="font">Betűk stílusa</string>
+    <string name="background">Háttér</string>
     <string name="success">Sikeres</string>
     <string name="official_rating">Korhatár-besorolás</string>
     <string name="runtime_sort">Hossz</string>
@@ -199,7 +199,7 @@
     </plurals>
     <plurals name="downloads">
         <item quantity="one">%s letöltés</item>
-        <item quantity="other">%s letöltések</item>
+        <item quantity="other">%s letöltés</item>
     </plurals>
     <plurals name="hours">
         <item quantity="one">%d óra</item>
@@ -207,35 +207,35 @@
     </plurals>
     <plurals name="items">
         <item quantity="one">%d elem</item>
-        <item quantity="other">%d elemek</item>
+        <item quantity="other">%d elem</item>
     </plurals>
     <plurals name="seconds">
         <item quantity="one">%d másodperc</item>
         <item quantity="other">%d másodperc</item>
     </plurals>
-    <string name="ends_at">Véget ér: %1$s</string>
+    <string name="ends_at">%1$s-kor ér véget</string>
     <string name="no_servers_found">Nem található szerver</string>
-    <string name="recap">Összefoglalás</string>
-    <string name="media_information">Média információ</string>
+    <string name="recap">Összefoglaló</string>
+    <string name="media_information">Médiainformáció</string>
     <string name="ac3_supported">A készülék támogatja az AC3/Dolby Digital formátumot</string>
     <string name="advanced_settings">Haladó beállítások</string>
-    <string name="advanced_ui">Haladó felhasználói felület beállítások</string>
+    <string name="advanced_ui">Haladó kezelőfelület-beállítások</string>
     <string name="app_theme">Alkalmazás témája</string>
     <string name="auto_check_for_updates">Frissítések automatikus keresése</string>
     <string name="auto_play_next_delay">Késleltetés a következő elem lejátszása előtt</string>
     <string name="auto_play_next">Következő elem automatikus lejátszása</string>
     <string name="check_for_updates">Frissítések keresése</string>
-    <string name="combine_continue_next_summary">Csak a sorozatokra vonatkozik</string>
+    <string name="combine_continue_next_summary">Csak sorozatok esetén</string>
     <string name="direct_play_ass">ASS feliratok közvetlen lejátszása</string>
     <string name="direct_play_pgs">PGS feliratok közvetlen lejátszása</string>
     <string name="downmix_stereo">Mindig konvertálja sztereóvá</string>
-    <string name="ffmpeg_extension_pref">Használja az FFmpeg dekóder modulját</string>
-    <string name="global_content_scale">Tartalom alapértelmezett mérete</string>
+    <string name="ffmpeg_extension_pref">FFmpeg dekóder modul használata</string>
+    <string name="global_content_scale">Tartalom alapértelmezett méretezése</string>
     <string name="install_update">Frissítés telepítése</string>
     <string name="installed_version">Telepített verzió</string>
     <string name="max_homepage_items">Maximális elemek soronként a kezdőlapon</string>
     <string name="nav_drawer_pins_summary">Válassza ki az alapértelmezett elemeket, amelyek megjelennek, a többi el lesz rejtve</string>
-    <string name="nav_drawer_pins">Navigációs Fiók elemeinek testreszabása</string>
+    <string name="nav_drawer_pins">Navigációs menü elemeinek testreszabása</string>
     <string name="nav_drawer_switch_on_focus_summary_off">Kattintson az oldalak közti váltáshoz</string>
     <string name="pass_out_protection">Automatikus leállítás inaktivitás esetén</string>
     <string name="play_theme_music">Főcímdal lejátszása</string>
@@ -254,7 +254,7 @@
     <string name="skip_intro_behavior">Intró-átugrás viselkedés</string>
     <string name="skip_outro_behavior">Stáblista-átugrás viselkedés</string>
     <string name="skip_previews_behavior">Előzetes-átugrás viselkedés</string>
-    <string name="skip_recap_behavior">Összefoglalás-átugrás viselkedés</string>
+    <string name="skip_recap_behavior">Összefoglaló-átugrás viselkedés</string>
     <string name="update_available">Frissítés érhető el</string>
     <string name="update_url_summary">Az alkalmazás frissítéseinek ellenőrzésére használt URL</string>
     <string name="update_url">Frissítés URL</string>
@@ -264,7 +264,7 @@
     <string name="edge_style">Szegély stílusa</string>
     <string name="edge_color">Szegély színe</string>
     <string name="background_opacity">Háttér áttetszősége</string>
-    <string name="background_style">Háttér stílusa</string>
+    <string name="background_style">Háttér típusa</string>
     <string name="subtitle_style">Felirat stílusa</string>
     <string name="background_color">Háttér színe</string>
     <string name="reset">Visszaállítás</string>
@@ -276,7 +276,7 @@
     <string name="skip_segment_unknown">Szegmens átugrása</string>
     <string name="skip_segment_commercial">Reklám átugrása</string>
     <string name="skip_segment_preview">Előzetes átugrása</string>
-    <string name="skip_segment_recap">Összefoglalás átugrása</string>
+    <string name="skip_segment_recap">Összefoglaló átugrása</string>
     <string name="skip_segment_outro">Stáblista átugrása</string>
     <string name="skip_segment_intro">Intró átugrása</string>
     <string name="played">Lejátszott</string>
@@ -300,9 +300,9 @@
     <string name="incorrect">Helytelen</string>
     <string name="pin_too_short">A PIN-kódnak legalább 4 karakterből kell állnia</string>
     <string name="will_remove_pin">PIN-kód eltávolítása</string>
-    <string name="view_options">Nézet beállítások</string>
+    <string name="view_options">Nézetbeállítások</string>
     <string name="columns">Oszlopok</string>
-    <string name="spacing">Helykihagyás</string>
+    <string name="spacing">Helyköz</string>
     <string name="aspect_ratio">Képarány</string>
     <string name="show_details">Részletek mutatása</string>
     <string name="image_type">Kép típusa</string>
@@ -351,7 +351,7 @@
     <string name="sort_channels_recently_watched">Legutóbb nézett csatornák előre sorolása</string>
     <string name="color_code_programs">Műsorok kategória szerinti színezése</string>
     <string name="subtitle_delay">Felirat késleltetése</string>
-    <string name="backdrop_display">Feliratháttér stílusa</string>
+    <string name="backdrop_display">Háttér stílusa</string>
     <string name="enter_server_address">Adja meg a szerver címét</string>
     <string name="combine_continue_next"><![CDATA[Folytatás & Következő menü összevonása]]></string>
     <string name="player_backend">Lejátszás backend</string>
