@@ -295,12 +295,12 @@ class StreamChoiceService
             candidates: List<MediaStream>,
             audioLanguage: String?,
         ): MediaStream? {
-            // First: Find forced/signs track matching audio language
+            // Priority 1: Forced track matching audio language (via metadata or title patterns)
             candidates
-                .firstOrNull { isForcedOrSigns(it, audioLanguage) && it.language == audioLanguage }
+                .firstOrNull { it.language == audioLanguage && isForcedOrSigns(it, audioLanguage) }
                 ?.let { return it }
 
-            // Fallback: Any track with the metadata isForced flag (regardless of language)
+            // Priority 2: Any track with isForced metadata (regardless of language)
             return candidates.firstOrNull { it.isForced }
         }
     }
