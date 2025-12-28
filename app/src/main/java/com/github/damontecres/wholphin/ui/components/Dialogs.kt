@@ -521,6 +521,16 @@ fun chooseStream(
                             onClick = { onClick.invoke(TrackIndex.DISABLED) },
                         ),
                     )
+                    add(
+                        DialogItem(
+                            headlineContent = {
+                                Text(text = stringResource(R.string.only_forced_subtitles))
+                            },
+                            supportingContent = {
+                            },
+                            onClick = { onClick.invoke(TrackIndex.ONLY_FORCED) },
+                        ),
+                    )
                 }
                 addAll(
                     streams.filter { it.type == type }.mapIndexed { index, stream ->
