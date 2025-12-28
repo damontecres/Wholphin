@@ -356,7 +356,7 @@
     <string name="combine_continue_next"><![CDATA[Folytatás & Következő menü összevonása]]></string>
     <string name="player_backend">Lejátszás backend</string>
     <string name="image_cache_size">Kép gyorsítótár méret (MB)</string>
-    <string name="cast_and_crew"><![CDATA[Stáblista]]></string>
+    <string name="cast_and_crew"><![CDATA[Stábtagok]]></string>
     <string name="nav_drawer_switch_on_focus">Navigációs menü oldalainak váltása fókusznál</string>
     <string name="playback_overrides">Lejátszás felülbírálatai</string>
 </resources>
