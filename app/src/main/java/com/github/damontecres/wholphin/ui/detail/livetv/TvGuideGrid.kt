@@ -19,6 +19,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -56,7 +57,6 @@ import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.rememberPosition
 import com.github.damontecres.wholphin.ui.tryRequestFocus
-import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
 import eu.wewox.programguide.ProgramGuide
 import eu.wewox.programguide.ProgramGuideDimensions
@@ -289,22 +289,8 @@ fun TvGuideGridContent(
 
     var focusedItem by rememberPosition(RowColumn(0, 0))
     val focusedChannelIndex = focusedItem.row
-    val focusedProgramIndex =
-        remember(programs.range, focusedItem) {
-            focusedItem.let { focus ->
-                (programs.range.first..<focus.row).sumOf {
-                    val channelId = channels[it].id
-                    channelProgramCount[channelId] ?: 0
-                } + focus.column
-            }
-        }
+    var focusedProgramIndex by remember { mutableIntStateOf(0) }
 
-    LaunchedEffect(focusedProgramIndex) {
-//        Timber.v("Focusing on $focusedItem, programIndex=$focusedProgramIndex")
-        scope.launch(ExceptionHandler()) {
-            state.animateToProgram(focusedProgramIndex, Alignment.Center)
-        }
-    }
     var gridHasFocus by rememberSaveable { mutableStateOf(false) }
     var channelColumnFocused by rememberSaveable { mutableStateOf(false) }
     Box(modifier = modifier) {
@@ -485,7 +471,7 @@ fun TvGuideGridContent(
 
                         if (newFocusedItem != null) {
                             val channel = channels[newFocusedItem.row]
-                            val programs = programs.programsByChannel[channel.id].orEmpty()
+                            val channelPrograms = programs.programsByChannel[channel.id].orEmpty()
                             // Ensure it isn't going out of range
                             val toFocus =
                                 newFocusedItem
@@ -494,10 +480,24 @@ fun TvGuideGridContent(
                                         column =
                                             newFocusedItem.column.coerceIn(
                                                 0,
-                                                (programs.size - 1).coerceAtLeast(0),
+                                                (channelPrograms.size - 1).coerceAtLeast(0),
                                             ),
                                     )
                             focusedItem = toFocus
+                            focusedProgramIndex =
+                                toFocus.let { focus ->
+                                    (programs.range.first..<focus.row).sumOf {
+                                        val channelId = channels[it].id
+                                        channelProgramCount[channelId] ?: 0
+                                    } + focus.column
+                                }
+                            scope.launch {
+                                try {
+                                    state.animateToProgram(focusedProgramIndex, Alignment.Center)
+                                } catch (ex: Exception) {
+                                    Timber.e(ex, "Couldn't scroll to $focusedProgramIndex")
+                                }
+                            }
                             onFocus(toFocus)
                             return@onPreviewKeyEvent true
                         }
