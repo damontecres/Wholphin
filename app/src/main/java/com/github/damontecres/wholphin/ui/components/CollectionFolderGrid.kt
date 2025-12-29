@@ -518,6 +518,7 @@ fun CollectionFolderGrid(
     playEnabled: Boolean,
     defaultViewOptions: ViewOptions,
     modifier: Modifier = Modifier,
+    viewModelKey: String? = itemId.toServerString(),
     initialSortAndDirection: SortAndDirection? = null,
     showTitle: Boolean = true,
     positionCallback: ((columns: Int, position: Int) -> Unit)? = null,
@@ -531,6 +532,7 @@ fun CollectionFolderGrid(
     onClickItem,
     sortOptions,
     playEnabled,
+    viewModelKey = viewModelKey,
     defaultViewOptions = defaultViewOptions,
     modifier = modifier,
     initialSortAndDirection = initialSortAndDirection,
@@ -551,6 +553,7 @@ fun CollectionFolderGrid(
     playEnabled: Boolean,
     defaultViewOptions: ViewOptions,
     modifier: Modifier = Modifier,
+    viewModelKey: String? = itemId,
     initialSortAndDirection: SortAndDirection? = null,
     showTitle: Boolean = true,
     positionCallback: ((columns: Int, position: Int) -> Unit)? = null,
@@ -559,7 +562,7 @@ fun CollectionFolderGrid(
     playlistViewModel: AddPlaylistViewModel = hiltViewModel(),
     viewModel: CollectionFolderViewModel =
         hiltViewModel<CollectionFolderViewModel, CollectionFolderViewModel.Factory>(
-            key = itemId,
+            key = viewModelKey,
         ) {
             it.create(
                 itemId = itemId,

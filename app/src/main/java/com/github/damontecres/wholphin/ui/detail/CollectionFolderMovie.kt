@@ -115,6 +115,7 @@ fun CollectionFolderMovie(
                         preferencesViewModel.navigationManager.navigateTo(item.destination())
                     },
                     itemId = destination.itemId,
+                    viewModelKey = "${destination.itemId}_library",
                     initialFilter =
                         CollectionFolderFilter(
                             filter =
@@ -146,6 +147,7 @@ fun CollectionFolderMovie(
                         preferencesViewModel.navigationManager.navigateTo(item.destination())
                     },
                     itemId = destination.itemId,
+                    viewModelKey = "${destination.itemId}_collection",
                     initialFilter =
                         CollectionFolderFilter(
                             filter =
