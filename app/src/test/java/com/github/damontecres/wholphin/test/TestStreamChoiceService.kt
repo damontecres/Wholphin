@@ -104,6 +104,16 @@ class TestStreamChoiceServiceBasic(
                         ),
                     itemPlayback = itemPlayback(subtitleIndex = TrackIndex.UNSPECIFIED),
                 ),
+                TestInput(
+                    1,
+                    SubtitlePlaybackMode.ALWAYS,
+                    subtitles =
+                        listOf(
+                            subtitle(0, "eng", forced = true, default = true),
+                            subtitle(1, "eng", false),
+                            subtitle(2, "eng", false),
+                        ),
+                ),
             )
     }
 }

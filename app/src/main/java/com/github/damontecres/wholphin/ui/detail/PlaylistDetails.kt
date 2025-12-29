@@ -410,7 +410,7 @@ fun PlaylistItem(
         },
         trailingContent = {
             item?.data?.runTimeTicks?.ticks?.roundMinutes?.let { duration ->
-                val now = LocalClock.current.now
+                val now by LocalClock.current.now
                 val endTimeStr =
                     remember(item, now) {
                         val endTime = now.toLocalTime().plusSeconds(duration.inWholeSeconds)
