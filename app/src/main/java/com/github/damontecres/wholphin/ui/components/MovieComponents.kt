@@ -2,6 +2,7 @@ package com.github.damontecres.wholphin.ui.components
 
 import android.content.Context
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -21,7 +22,7 @@ fun MovieQuickDetails(
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
-    val now = LocalClock.current.now
+    val now by LocalClock.current.now
     val details =
         remember(dto, now) {
             buildList {

@@ -3,6 +3,7 @@ package com.github.damontecres.wholphin.ui.components
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -13,8 +14,9 @@ import com.github.damontecres.wholphin.ui.util.LocalClock
 
 @Composable
 fun BoxScope.TimeDisplay(modifier: Modifier = Modifier) {
+    val timeString by LocalClock.current.timeString
     Text(
-        text = LocalClock.current.timeString,
+        text = timeString,
         fontSize = 18.sp,
         color = MaterialTheme.colorScheme.onSurface,
         style = MaterialTheme.typography.bodyLarge,
