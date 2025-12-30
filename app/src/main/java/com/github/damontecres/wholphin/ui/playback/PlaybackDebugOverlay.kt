@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -52,15 +53,16 @@ fun PlaybackDebugOverlay(
                     buildList {
                         add("Backend:" to currentPlayback?.backend?.toString())
                         add("Play method:" to currentPlayback?.playMethod?.serialName)
-                        add("Display Mode: " to displayMode?.toString())
                         if (currentPlayback?.backend == PlayerBackend.EXO_PLAYER) {
                             add("Video Decoder:" to currentPlayback.videoDecoder)
                             add("Audio Decoder:" to currentPlayback.audioDecoder)
                         }
+                        add("Display Mode: " to displayMode?.toString())
                     },
+                    modifier = Modifier.weight(1f, fill = false),
                 )
                 currentPlayback?.transcodeInfo?.let {
-                    TranscodeInfo(it, Modifier)
+                    TranscodeInfo(it, Modifier.weight(2f))
                 }
             }
         }
@@ -105,27 +107,21 @@ fun SimpleTable(
     rows: List<Pair<String, String?>>,
     modifier: Modifier = Modifier,
 ) {
-    Row(
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
+    Column(
+        verticalArrangement = Arrangement.spacedBy(4.dp),
         modifier = modifier,
     ) {
-        Column(
-            verticalArrangement = Arrangement.spacedBy(4.dp),
-            modifier = Modifier,
-        ) {
-            rows.forEach {
+        rows.forEach {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
                 Text(
                     text = it.first,
+                    modifier = Modifier.width(100.dp),
                 )
-            }
-        }
-        Column(
-            verticalArrangement = Arrangement.spacedBy(4.dp),
-            modifier = Modifier,
-        ) {
-            rows.forEach {
                 Text(
                     text = it.second.toString(),
+                    modifier = Modifier,
                 )
             }
         }
