@@ -208,7 +208,7 @@
     <string name="auto_play_next">Spel neste automatisk</string>
     <string name="check_for_updates">Sjekk etter oppdateringar</string>
     <string name="combine_continue_next_summary">Gjeld berre TV-seriar</string>
-    <string name="combine_continue_next"><![CDATA[Slå saman 'Hald fram med å sjå' og 'Neste']]></string>
+    <string name="combine_continue_next">Slå saman \'Hald fram med å sjå\' og \'Neste\'</string>
     <string name="direct_play_ass">Direkteavspeling av ASS-undertekstar</string>
     <string name="direct_play_pgs">Direkteavspeling av PGS-undertekstar</string>
     <string name="downmix_stereo">Alltid nedmiks til stereo</string>
