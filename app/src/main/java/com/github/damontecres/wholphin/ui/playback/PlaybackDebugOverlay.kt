@@ -1,11 +1,16 @@
 package com.github.damontecres.wholphin.ui.playback
 
+import android.content.Context
+import android.hardware.display.DisplayManager
+import android.view.Display
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.ProvideTextStyle
@@ -15,12 +20,25 @@ import com.github.damontecres.wholphin.ui.byteRateSuffixes
 import com.github.damontecres.wholphin.ui.formatBytes
 import com.github.damontecres.wholphin.ui.letNotEmpty
 import org.jellyfin.sdk.model.api.TranscodingInfo
+import timber.log.Timber
 
 @Composable
 fun PlaybackDebugOverlay(
     currentPlayback: CurrentPlayback?,
     modifier: Modifier = Modifier,
 ) {
+    val context = LocalContext.current
+    val displayMode =
+        remember {
+            try {
+                val displayManager =
+                    context.getSystemService(Context.DISPLAY_SERVICE) as? DisplayManager
+                displayManager?.getDisplay(Display.DEFAULT_DISPLAY)?.mode
+            } catch (ex: Exception) {
+                Timber.e(ex)
+                null
+            }
+        }
     Column(
         verticalArrangement = Arrangement.spacedBy(8.dp),
         modifier = modifier,
@@ -34,6 +52,7 @@ fun PlaybackDebugOverlay(
                     buildList {
                         add("Backend:" to currentPlayback?.backend?.toString())
                         add("Play method:" to currentPlayback?.playMethod?.serialName)
+                        add("Display Mode: " to displayMode?.toString())
                         if (currentPlayback?.backend == PlayerBackend.EXO_PLAYER) {
                             add("Video Decoder:" to currentPlayback.videoDecoder)
                             add("Audio Decoder:" to currentPlayback.audioDecoder)

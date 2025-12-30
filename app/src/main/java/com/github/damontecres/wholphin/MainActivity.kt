@@ -114,12 +114,12 @@ class MainActivity : AppCompatActivity() {
         if (savedInstanceState == null) {
             appUpgradeHandler.copySubfont(false)
         }
-        refreshRateService.refreshRateMode.observe(this) { mode ->
+        refreshRateService.refreshRateMode.observe(this) { modeId ->
             // Listen for refresh rate changes
             val attrs = window.attributes
-            if (attrs.preferredDisplayModeId != mode.modeId) {
-                Timber.d("Switch preferredRefreshRate to %s", mode.refreshRate)
-                window.attributes = attrs.apply { preferredRefreshRate = mode.refreshRate }
+            if (attrs.preferredDisplayModeId != modeId) {
+                Timber.d("Switch preferredDisplayModeId to %s", modeId)
+                window.attributes = attrs.apply { preferredDisplayModeId = modeId }
             }
         }
         viewModel.appStart()

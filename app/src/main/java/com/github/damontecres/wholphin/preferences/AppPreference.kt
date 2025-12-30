@@ -702,6 +702,18 @@ sealed interface AppPreference<Pref, T> {
                 summaryOff = R.string.disabled,
             )
 
+        val ResolutionSwitching =
+            AppSwitchPreference<AppPreferences>(
+                title = R.string.resolution_switching,
+                defaultValue = false,
+                getter = { it.playbackPreferences.resolutionSwitching },
+                setter = { prefs, value ->
+                    prefs.updatePlaybackPreferences { resolutionSwitching = value }
+                },
+                summaryOn = R.string.automatic,
+                summaryOff = R.string.disabled,
+            )
+
         val PlayerBackendPref =
             AppChoicePreference<AppPreferences, PlayerBackend>(
                 title = R.string.player_backend,
@@ -934,6 +946,7 @@ val advancedPreferences =
                         AppPreference.GlobalContentScale,
                         AppPreference.MaxBitrate,
                         AppPreference.RefreshRateSwitching,
+                        AppPreference.ResolutionSwitching,
                         AppPreference.PlaybackDebugInfo,
                     ),
             ),

@@ -23,6 +23,7 @@ import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.analytics.AnalyticsListener
 import coil3.imageLoader
 import coil3.request.ImageRequest
+import coil3.size.Size
 import com.github.damontecres.wholphin.data.ItemPlaybackDao
 import com.github.damontecres.wholphin.data.ItemPlaybackRepository
 import com.github.damontecres.wholphin.data.ServerRepository
@@ -641,10 +642,16 @@ class PlaybackViewModel
                         mediaSourceInfo = source,
                     )
 
-                if (preferences.appPreferences.playbackPreferences.refreshRateSwitching) {
-                    source.mediaStreams?.firstOrNull { it.type == MediaStreamType.VIDEO }?.let {
-                        refreshRateService.changeRefreshRate(it)
-                    }
+                preferences.appPreferences.playbackPreferences.let { prefs ->
+                    source.mediaStreams
+                        ?.firstOrNull { it.type == MediaStreamType.VIDEO }
+                        ?.let { stream ->
+                            refreshRateService.changeRefreshRate(
+                                stream = stream,
+                                switchRefreshRate = prefs.refreshRateSwitching,
+                                switchResolution = prefs.resolutionSwitching,
+                            )
+                        }
                 }
                 withContext(Dispatchers.Main) {
                     // TODO, don't need to release & recreate when switching streams
@@ -754,7 +761,7 @@ class PlaybackViewModel
                     ImageRequest
                         .Builder(context)
                         .data(url)
-                        .size(coil3.size.Size.ORIGINAL)
+                        .size(Size.ORIGINAL)
                         .build(),
                 )
             }
