@@ -136,11 +136,12 @@ class GenreViewModel
 //                                    excludeItemIds.add(item.id)
                                     genreToUrl[genre.id] =
                                         imageUrlService.getItemImageUrl(
-                                            item.id,
-                                            item.type,
-                                            null,
-                                            false,
-                                            ImageType.BACKDROP,
+                                            itemId = item.id,
+                                            itemType = item.type,
+                                            seriesId = null,
+                                            useSeriesForPrimary = false,
+                                            imageType = ImageType.BACKDROP,
+                                            imageTags = emptyMap(),
                                             fillWidth = cardWidthPx,
                                         )
                                 }
