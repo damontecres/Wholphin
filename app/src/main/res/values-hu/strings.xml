@@ -359,4 +359,5 @@
     <string name="cast_and_crew"><![CDATA[Stábtagok]]></string>
     <string name="nav_drawer_switch_on_focus">Navigációs menü oldalainak váltása fókusznál</string>
     <string name="playback_overrides">Lejátszás felülbírálatai</string>
+    <string name="resolution_switching">Felbontásváltás</string>
 </resources>
