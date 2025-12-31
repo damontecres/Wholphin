@@ -345,7 +345,7 @@ fun HomePageContent(
                                             .animateItem(),
                                     cardContent = { index, item, cardModifier, onClick, onLongClick ->
                                         val cornerText =
-                                            remember {
+                                            remember(item) {
                                                 item?.data?.indexNumber?.let { "E$it" }
                                                     ?: item
                                                         ?.data

@@ -28,6 +28,7 @@ class ImageUrlService
             itemType: BaseItemKind,
             seriesId: UUID?,
             useSeriesForPrimary: Boolean,
+            imageTags: Map<ImageType, String?>,
             imageType: ImageType,
             fillWidth: Int? = null,
             fillHeight: Int? = null,
@@ -66,6 +67,13 @@ class ImageUrlService
                             fillWidth = fillWidth,
                             fillHeight = fillHeight,
                         )
+                    } else if (seriesId != null && itemType == BaseItemKind.SEASON && imageType !in imageTags) {
+                        getItemImageUrl(
+                            itemId = seriesId,
+                            imageType = imageType,
+                            fillWidth = fillWidth,
+                            fillHeight = fillHeight,
+                        )
                     } else {
                         getItemImageUrl(
                             itemId = itemId,
@@ -98,6 +106,7 @@ class ImageUrlService
                     itemType = item.type,
                     seriesId = item.data.seriesId,
                     useSeriesForPrimary = item.useSeriesForPrimary,
+                    imageTags = item.data.imageTags.orEmpty(),
                     imageType = imageType,
                     fillWidth = fillWidth,
                     fillHeight = fillHeight,
