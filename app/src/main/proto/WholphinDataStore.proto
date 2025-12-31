@@ -72,6 +72,7 @@ message PlaybackPreferences {
   PlayerBackend player_backend = 20;
   MpvOptions mpv_options = 21;
   bool refresh_rate_switching = 22;
+  bool resolution_switching = 23;
 }
 
 message HomePagePreferences{

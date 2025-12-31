@@ -696,7 +696,25 @@ sealed interface AppPreference<Pref, T> {
                 defaultValue = false,
                 getter = { it.playbackPreferences.refreshRateSwitching },
                 setter = { prefs, value ->
-                    prefs.updatePlaybackPreferences { refreshRateSwitching = value }
+                    prefs.updatePlaybackPreferences {
+                        if (!value) resolutionSwitching = false
+                        refreshRateSwitching = value
+                    }
+                },
+                summaryOn = R.string.automatic,
+                summaryOff = R.string.disabled,
+            )
+
+        val ResolutionSwitching =
+            AppSwitchPreference<AppPreferences>(
+                title = R.string.resolution_switching,
+                defaultValue = false,
+                getter = { it.playbackPreferences.resolutionSwitching },
+                setter = { prefs, value ->
+                    prefs.updatePlaybackPreferences {
+                        if (value) refreshRateSwitching = true
+                        resolutionSwitching = value
+                    }
                 },
                 summaryOn = R.string.automatic,
                 summaryOff = R.string.disabled,
@@ -934,6 +952,7 @@ val advancedPreferences =
                         AppPreference.GlobalContentScale,
                         AppPreference.MaxBitrate,
                         AppPreference.RefreshRateSwitching,
+                        AppPreference.ResolutionSwitching,
                         AppPreference.PlaybackDebugInfo,
                     ),
             ),

@@ -52,6 +52,7 @@ class AppPreferencesSerializer
                                 playerBackend = AppPreference.PlayerBackendPref.defaultValue
                                 refreshRateSwitching =
                                     AppPreference.RefreshRateSwitching.defaultValue
+                                resolutionSwitching = AppPreference.ResolutionSwitching.defaultValue
 
                                 overrides =
                                     PlaybackOverrides
