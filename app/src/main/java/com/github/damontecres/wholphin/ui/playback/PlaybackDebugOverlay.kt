@@ -9,6 +9,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -20,8 +22,12 @@ import com.github.damontecres.wholphin.preferences.PlayerBackend
 import com.github.damontecres.wholphin.ui.byteRateSuffixes
 import com.github.damontecres.wholphin.ui.formatBytes
 import com.github.damontecres.wholphin.ui.letNotEmpty
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import org.jellyfin.sdk.model.api.TranscodingInfo
 import timber.log.Timber
+import java.util.Locale
+import kotlin.time.Duration.Companion.seconds
 
 @Composable
 fun PlaybackDebugOverlay(
@@ -29,17 +35,27 @@ fun PlaybackDebugOverlay(
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
-    val displayMode =
-        remember {
+    val display =
+        remember(context) {
             try {
                 val displayManager =
                     context.getSystemService(Context.DISPLAY_SERVICE) as? DisplayManager
-                displayManager?.getDisplay(Display.DEFAULT_DISPLAY)?.mode
+                displayManager?.getDisplay(Display.DEFAULT_DISPLAY)
             } catch (ex: Exception) {
                 Timber.e(ex)
                 null
             }
         }
+    val displayMode by produceState<String?>(null) {
+        while (isActive) {
+            value =
+                display?.mode?.let {
+                    val rate = String.format(Locale.getDefault(), "%.3f", it.refreshRate)
+                    "${it.physicalWidth}x${it.physicalHeight}@${rate}fps, id=${it.modeId}"
+                }
+            delay(10.seconds)
+        }
+    }
     Column(
         verticalArrangement = Arrangement.spacedBy(8.dp),
         modifier = modifier,
