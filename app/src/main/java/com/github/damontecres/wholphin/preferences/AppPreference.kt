@@ -696,7 +696,10 @@ sealed interface AppPreference<Pref, T> {
                 defaultValue = false,
                 getter = { it.playbackPreferences.refreshRateSwitching },
                 setter = { prefs, value ->
-                    prefs.updatePlaybackPreferences { refreshRateSwitching = value }
+                    prefs.updatePlaybackPreferences {
+                        if (!value) resolutionSwitching = false
+                        refreshRateSwitching = value
+                    }
                 },
                 summaryOn = R.string.automatic,
                 summaryOff = R.string.disabled,
@@ -708,7 +711,10 @@ sealed interface AppPreference<Pref, T> {
                 defaultValue = false,
                 getter = { it.playbackPreferences.resolutionSwitching },
                 setter = { prefs, value ->
-                    prefs.updatePlaybackPreferences { resolutionSwitching = value }
+                    prefs.updatePlaybackPreferences {
+                        if (value) refreshRateSwitching = true
+                        resolutionSwitching = value
+                    }
                 },
                 summaryOn = R.string.automatic,
                 summaryOff = R.string.disabled,
