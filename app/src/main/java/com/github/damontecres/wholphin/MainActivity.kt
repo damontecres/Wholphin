@@ -1,6 +1,7 @@
 package com.github.damontecres.wholphin
 
 import android.content.Intent
+import android.content.res.Configuration
 import android.os.Bundle
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
@@ -316,6 +317,11 @@ class MainActivity : AppCompatActivity() {
     override fun onDestroy() {
         super.onDestroy()
         Timber.d("onDestroy")
+    }
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        Timber.d("onConfigurationChanged")
     }
 
     override fun onNewIntent(intent: Intent) {

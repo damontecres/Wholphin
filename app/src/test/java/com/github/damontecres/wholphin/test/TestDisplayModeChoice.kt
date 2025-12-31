@@ -28,7 +28,7 @@ class TestDisplayModeChoice {
                 displayModes = ALL_MODES,
                 streamWidth = streamWidth,
                 streamHeight = streamHeight,
-                streamRealFrameRate = streamRealFrameRate,
+                targetFrameRate = streamRealFrameRate,
                 refreshRateSwitch = true,
                 resolutionSwitch = false,
             )
@@ -45,7 +45,7 @@ class TestDisplayModeChoice {
                 displayModes = ALL_MODES,
                 streamWidth = streamWidth,
                 streamHeight = streamHeight,
-                streamRealFrameRate = streamRealFrameRate,
+                targetFrameRate = streamRealFrameRate,
                 refreshRateSwitch = true,
                 resolutionSwitch = true,
             )
@@ -62,11 +62,28 @@ class TestDisplayModeChoice {
                 displayModes = ALL_MODES,
                 streamWidth = streamWidth,
                 streamHeight = streamHeight,
-                streamRealFrameRate = streamRealFrameRate,
+                targetFrameRate = streamRealFrameRate,
                 refreshRateSwitch = true,
                 resolutionSwitch = false,
             )
         Assert.assertEquals(4, result?.modeId)
+    }
+
+    @Test
+    fun test4() {
+        val streamWidth = 1920
+        val streamHeight = 804
+        val streamRealFrameRate = 30f
+        val result =
+            RefreshRateService.findDisplayMode(
+                displayModes = ALL_MODES,
+                streamWidth = streamWidth,
+                streamHeight = streamHeight,
+                targetFrameRate = streamRealFrameRate,
+                refreshRateSwitch = false,
+                resolutionSwitch = true,
+            )
+        Assert.assertEquals(1, result?.modeId)
     }
 
     @Test
@@ -87,7 +104,7 @@ class TestDisplayModeChoice {
                 displayModes = displayModes,
                 streamWidth = streamWidth,
                 streamHeight = streamHeight,
-                streamRealFrameRate = 29.970f,
+                targetFrameRate = 29.970f,
                 refreshRateSwitch = true,
                 resolutionSwitch = false,
             )
@@ -98,7 +115,7 @@ class TestDisplayModeChoice {
                 displayModes = displayModes,
                 streamWidth = streamWidth,
                 streamHeight = streamHeight,
-                streamRealFrameRate = 24f,
+                targetFrameRate = 24f,
                 refreshRateSwitch = true,
                 resolutionSwitch = false,
             )

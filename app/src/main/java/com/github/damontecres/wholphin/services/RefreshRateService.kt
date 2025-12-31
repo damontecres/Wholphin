@@ -59,10 +59,12 @@ class RefreshRateService
                 Timber.v("Not switching either refresh rate nor resolution")
                 return
             }
+            val currentDisplayMode = display.mode
             require(stream.type == MediaStreamType.VIDEO) { "Stream is not video" }
             val width = stream.width
             val height = stream.height
-            val frameRate = stream.realFrameRate
+            val frameRate =
+                if (switchRefreshRate) stream.realFrameRate else currentDisplayMode.refreshRate
             if (width == null || height == null || frameRate == null) {
                 Timber.w("Video stream missing required info: width=%s, height=%s, frameRate=%s", width, height, frameRate)
                 return
@@ -73,12 +75,12 @@ class RefreshRateService
                     displayModes = displayModes,
                     streamWidth = width,
                     streamHeight = height,
-                    streamRealFrameRate = frameRate,
+                    targetFrameRate = frameRate,
                     refreshRateSwitch = switchRefreshRate,
                     resolutionSwitch = switchResolution,
                 )
-            Timber.i("Found display mode: %s, current=%s", targetMode, display.mode)
-            if (targetMode != null && targetMode.modeId != display.mode.modeId) {
+            Timber.i("Found display mode: %s, current=%s", targetMode, currentDisplayMode)
+            if (targetMode != null && targetMode.modeId != currentDisplayMode.modeId) {
                 val listener = Listener(display.displayId)
                 displayManager.registerDisplayListener(
                     listener,
@@ -148,11 +150,11 @@ class RefreshRateService
                 displayModes: List<DisplayMode>,
                 streamWidth: Int,
                 streamHeight: Int,
-                streamRealFrameRate: Float,
+                targetFrameRate: Float,
                 refreshRateSwitch: Boolean,
                 resolutionSwitch: Boolean,
             ): DisplayMode? {
-                val streamRate = streamRealFrameRate.times(1000).roundToInt()
+                val streamRate = targetFrameRate.times(1000).roundToInt()
 //                Timber.v("display modes: %s", displayModes.joinToString("\n"))
                 val candidates =
                     if (refreshRateSwitch) {
@@ -170,9 +172,19 @@ class RefreshRateService
                 return if (!resolutionSwitch) {
                     candidates.maxByOrNull { it.physicalWidth * it.physicalHeight }
                 } else {
-                    candidates.firstOrNull { it.physicalWidth == streamWidth && it.physicalHeight == streamHeight }
-                        ?: candidates.firstOrNull { it.physicalWidth == streamWidth && it.physicalHeight >= streamHeight }
-                        ?: candidates.maxByOrNull { it.physicalWidth * it.physicalHeight }
+                    candidates.firstOrNull {
+                        it.physicalWidth == streamWidth &&
+                            it.physicalHeight == streamHeight &&
+                            it.refreshRateRounded == streamRate
+                    }
+                        ?: candidates.firstOrNull {
+                            it.physicalWidth == streamWidth &&
+                                it.physicalHeight >= streamHeight &&
+                                it.refreshRateRounded == streamRate
+                        }
+                        ?: candidates
+                            .filter { it.refreshRateRounded == streamRate }
+                            .maxByOrNull { it.physicalWidth * it.physicalHeight }
                 }
             }
         }
