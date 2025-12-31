@@ -32,7 +32,8 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Wholphin"
         android:name=".WholphinApplication"
-        android:usesCleartextTraffic="true">
+        android:usesCleartextTraffic="true"
+        android:networkSecurityConfig="@xml/network_security_config">
         <activity
             android:name=".MainActivity"
             android:exported="true"
