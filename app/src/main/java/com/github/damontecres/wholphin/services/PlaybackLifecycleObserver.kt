@@ -20,6 +20,10 @@ class PlaybackLifecycleObserver
         private var wasPlaying: Boolean? = null
 
         override fun onStart(owner: LifecycleOwner) {
+            val lastDest = navigationManager.backStack.lastOrNull()
+            if (lastDest is Destination.Playback || lastDest is Destination.PlaybackList) {
+                navigationManager.goBack()
+            }
             wasPlaying = null
         }
 
@@ -40,9 +44,6 @@ class PlaybackLifecycleObserver
         }
 
         override fun onStop(owner: LifecycleOwner) {
-            if (navigationManager.backStack.lastOrNull() is Destination.Playback) {
-                navigationManager.goBack()
-            }
             themeSongPlayer.stop()
         }
     }
