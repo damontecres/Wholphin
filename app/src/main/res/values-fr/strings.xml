@@ -370,4 +370,9 @@
     <string name="ref_frames">Images de référence</string>
     <string name="sort_channels_recently_watched">Trier les chaînes par date de visionnage</string>
     <string name="color_code_programs">Classer les programmes par code couleur</string>
+    <string name="ends_at">Terminera à %1$s</string>
+    <string name="enter_server_address">Entrez l\'adresse du serveur</string>
+    <string name="no_servers_found">Aucun serveur trouvé</string>
+    <string name="subtitle_delay">Décalage des sous-titres</string>
+    <string name="backdrop_display">Style d\'arrière-plan</string>
 </resources>

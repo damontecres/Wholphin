@@ -371,4 +371,8 @@
     <string name="sort_channels_recently_watched">Ordenar canais por visualizações recentes</string>
     <string name="color_code_programs">Codificação de cores para os programas</string>
     <string name="subtitle_delay">Atraso da legenda</string>
+    <string name="enter_server_address">Insira o endereço do servidor</string>
+    <string name="no_servers_found">Nenhum servidor encontrado</string>
+    <string name="backdrop_display">Estilo de fundo</string>
+    <string name="ends_at">Termina às %1$s</string>
 </resources>

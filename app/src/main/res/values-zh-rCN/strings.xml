@@ -339,4 +339,8 @@
     <string name="sort_channels_recently_watched">按最近观看的频道排序</string>
     <string name="color_code_programs">节目颜色标记</string>
     <string name="subtitle_delay">字幕延迟</string>
+    <string name="enter_server_address">输入服务器地址</string>
+    <string name="no_servers_found">未找到服务器</string>
+    <string name="backdrop_display">背景幕样式</string>
+    <string name="ends_at">结束于 %1$s</string>
 </resources>
