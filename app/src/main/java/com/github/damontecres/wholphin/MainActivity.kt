@@ -1,6 +1,7 @@
 package com.github.damontecres.wholphin
 
 import android.content.Intent
+import android.content.res.Configuration
 import android.os.Bundle
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
@@ -122,12 +123,12 @@ class MainActivity : AppCompatActivity() {
         if (savedInstanceState == null) {
             appUpgradeHandler.copySubfont(false)
         }
-        refreshRateService.refreshRateMode.observe(this) { mode ->
+        refreshRateService.refreshRateMode.observe(this) { modeId ->
             // Listen for refresh rate changes
             val attrs = window.attributes
-            if (attrs.preferredDisplayModeId != mode.modeId) {
-                Timber.d("Switch preferredRefreshRate to %s", mode.refreshRate)
-                window.attributes = attrs.apply { preferredRefreshRate = mode.refreshRate }
+            if (attrs.preferredDisplayModeId != modeId) {
+                Timber.d("Switch preferredDisplayModeId to %s", modeId)
+                window.attributes = attrs.apply { preferredDisplayModeId = modeId }
             }
         }
         viewModel.appStart()
@@ -324,6 +325,11 @@ class MainActivity : AppCompatActivity() {
     override fun onDestroy() {
         super.onDestroy()
         Timber.d("onDestroy")
+    }
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        Timber.d("onConfigurationChanged")
     }
 
     override fun onNewIntent(intent: Intent) {

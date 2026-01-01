@@ -66,7 +66,6 @@ import com.github.damontecres.wholphin.ui.detail.MoreDialogActions
 import com.github.damontecres.wholphin.ui.detail.PlaylistDialog
 import com.github.damontecres.wholphin.ui.detail.PlaylistLoadingState
 import com.github.damontecres.wholphin.ui.detail.buildMoreDialogItemsForHome
-import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.playback.isPlayKeyUp
@@ -226,14 +225,15 @@ fun HomePageContent(
     var position by rememberSaveable(stateSaver = RowColumnSaver) {
         mutableStateOf(RowColumn(firstRow, 0))
     }
-    var focusedItem =
-        position.let {
-            (homeRows.getOrNull(it.row) as? HomeRowLoadingState.Success)?.items?.getOrNull(it.column)
+    val focusedItem =
+        remember(position) {
+            position.let {
+                (homeRows.getOrNull(it.row) as? HomeRowLoadingState.Success)?.items?.getOrNull(it.column)
+            }
         }
 
     val listState = rememberLazyListState()
-    val focusRequester = remember { FocusRequester() }
-    val positionFocusRequester = remember { FocusRequester() }
+    val rowFocusRequesters = remember(homeRows.size) { List(homeRows.size) { FocusRequester() } }
     var focused by remember { mutableStateOf(false) }
     LaunchedEffect(homeRows) {
         if (!focused) {
@@ -241,7 +241,7 @@ fun HomePageContent(
                 .indexOfFirst { it is HomeRowLoadingState.Success && it.items.isNotEmpty() }
                 .takeIf { it >= 0 }
                 ?.let {
-                    positionFocusRequester.tryRequestFocus()
+                    rowFocusRequesters[it].tryRequestFocus()
                     delay(50)
                     listState.animateScrollToItem(position.row)
                     focused = true
@@ -250,9 +250,6 @@ fun HomePageContent(
     }
     LaunchedEffect(position) {
         listState.animateScrollToItem(position.row)
-    }
-    LaunchedEffect(focusedItem) {
-        focusedItem?.let(onUpdateBackdrop)
     }
     Box(modifier = modifier) {
         Column(modifier = Modifier.fillMaxSize()) {
@@ -275,16 +272,7 @@ fun HomePageContent(
                     ),
                 modifier =
                     Modifier
-                        .focusRestorer()
-                        .onKeyEvent {
-                            val item = focusedItem
-                            if (isPlayKeyUp(it) && item?.type?.playable == true) {
-                                Timber.v("Clicked play on ${item.id}")
-                                onClickPlay.invoke(position, item)
-                                return@onKeyEvent true
-                            }
-                            return@onKeyEvent false
-                        },
+                        .focusRestorer(),
             ) {
                 itemsIndexed(homeRows) { rowIndex, row ->
                     when (val r = row) {
@@ -347,22 +335,17 @@ fun HomePageContent(
                                     onClickItem = { index, item ->
                                         onClickItem.invoke(RowColumn(rowIndex, index), item)
                                     },
-                                    cardOnFocus = { isFocused, index ->
-                                        if (isFocused) {
-                                            focusedItem = row.items.getOrNull(index)
-                                            position = RowColumn(rowIndex, index)
-                                        }
-                                    },
                                     onLongClickItem = { index, item ->
                                         onLongClickItem.invoke(RowColumn(rowIndex, index), item)
                                     },
                                     modifier =
                                         Modifier
                                             .fillMaxWidth()
+                                            .focusRequester(rowFocusRequesters[rowIndex])
                                             .animateItem(),
                                     cardContent = { index, item, cardModifier, onClick, onLongClick ->
                                         val cornerText =
-                                            remember {
+                                            remember(item) {
                                                 item?.data?.indexNumber?.let { "E$it" }
                                                     ?: item
                                                         ?.data
@@ -385,29 +368,32 @@ fun HomePageContent(
                                             onLongClick = onLongClick,
                                             modifier =
                                                 cardModifier
-                                                    .ifElse(
-                                                        focusedItem == item,
-                                                        Modifier.focusRequester(focusRequester),
-                                                    ).ifElse(
-                                                        RowColumn(rowIndex, index) == position,
-                                                        Modifier.focusRequester(
-                                                            positionFocusRequester,
-                                                        ),
-                                                    ).onFocusChanged {
+                                                    .onFocusChanged {
                                                         if (it.isFocused) {
+                                                            position = RowColumn(rowIndex, index)
+                                                            item?.let(onUpdateBackdrop)
+                                                        }
+                                                        if (it.isFocused && onFocusPosition != null) {
                                                             val nonEmptyRowBefore =
                                                                 homeRows
                                                                     .subList(0, rowIndex)
                                                                     .count {
                                                                         it is HomeRowLoadingState.Success && it.items.isEmpty()
                                                                     }
-                                                            onFocusPosition?.invoke(
+                                                            onFocusPosition.invoke(
                                                                 RowColumn(
                                                                     rowIndex - nonEmptyRowBefore,
                                                                     index,
                                                                 ),
                                                             )
                                                         }
+                                                    }.onKeyEvent {
+                                                        if (isPlayKeyUp(it) && item?.type?.playable == true) {
+                                                            Timber.v("Clicked play on ${item.id}")
+                                                            onClickPlay.invoke(position, item)
+                                                            return@onKeyEvent true
+                                                        }
+                                                        return@onKeyEvent false
                                                     },
                                             interactionSource = null,
                                             cardHeight = Cards.height2x3,

@@ -24,6 +24,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 import android.content.Context
 import android.graphics.Bitmap
 import android.view.Surface
+import java.util.concurrent.CopyOnWriteArrayList
 
 // Wrapper for native library
 
@@ -96,20 +97,16 @@ object MPVLib {
         format: Int,
     )
 
-    private val observers = mutableListOf<EventObserver>()
+    private val observers = CopyOnWriteArrayList<EventObserver>()
 
     @JvmStatic
     fun addObserver(o: EventObserver) {
-        synchronized(observers) {
-            observers.add(o)
-        }
+        observers.add(o)
     }
 
     @JvmStatic
     fun removeObserver(o: EventObserver) {
-        synchronized(observers) {
-            observers.remove(o)
-        }
+        observers.remove(o)
     }
 
     @JvmStatic
@@ -117,10 +114,8 @@ object MPVLib {
         property: String,
         value: Long,
     ) {
-        synchronized(observers) {
-            for (o in observers) {
-                o.eventProperty(property, value)
-            }
+        for (o in observers) {
+            o.eventProperty(property, value)
         }
     }
 
@@ -129,10 +124,8 @@ object MPVLib {
         property: String,
         value: Boolean,
     ) {
-        synchronized(observers) {
-            for (o in observers) {
-                o.eventProperty(property, value)
-            }
+        for (o in observers) {
+            o.eventProperty(property, value)
         }
     }
 
@@ -141,10 +134,8 @@ object MPVLib {
         property: String,
         value: Double,
     ) {
-        synchronized(observers) {
-            for (o in observers) {
-                o.eventProperty(property, value)
-            }
+        for (o in observers) {
+            o.eventProperty(property, value)
         }
     }
 
@@ -153,28 +144,22 @@ object MPVLib {
         property: String,
         value: String,
     ) {
-        synchronized(observers) {
-            for (o in observers) {
-                o.eventProperty(property, value)
-            }
+        for (o in observers) {
+            o.eventProperty(property, value)
         }
     }
 
     @JvmStatic
     fun eventProperty(property: String) {
-        synchronized(observers) {
-            for (o in observers) {
-                o.eventProperty(property)
-            }
+        for (o in observers) {
+            o.eventProperty(property)
         }
     }
 
     @JvmStatic
     fun event(eventId: Int) {
-        synchronized(observers) {
-            for (o in observers) {
-                o.event(eventId)
-            }
+        for (o in observers) {
+            o.event(eventId)
         }
     }
 
@@ -183,27 +168,21 @@ object MPVLib {
         reason: Int,
         error: Int,
     ) {
-        synchronized(observers) {
-            for (o in observers) {
-                o.eventEndFile(reason, error)
-            }
+        for (o in observers) {
+            o.eventEndFile(reason, error)
         }
     }
 
-    private val log_observers = mutableListOf<LogObserver>()
+    private val log_observers = CopyOnWriteArrayList<LogObserver>()
 
     @JvmStatic
     fun addLogObserver(o: LogObserver) {
-        synchronized(log_observers) {
-            log_observers.add(o)
-        }
+        log_observers.add(o)
     }
 
     @JvmStatic
     fun removeLogObserver(o: LogObserver) {
-        synchronized(log_observers) {
-            log_observers.remove(o)
-        }
+        log_observers.remove(o)
     }
 
     @JvmStatic
@@ -212,10 +191,8 @@ object MPVLib {
         level: Int,
         text: String,
     ) {
-        synchronized(log_observers) {
-            for (o in log_observers) {
-                o.logMessage(prefix, level, text)
-            }
+        for (o in log_observers) {
+            o.logMessage(prefix, level, text)
         }
     }
 

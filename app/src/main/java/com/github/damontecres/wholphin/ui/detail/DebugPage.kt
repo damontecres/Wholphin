@@ -254,7 +254,7 @@ fun DebugPage(
                     "Manufacturer: ${Build.MANUFACTURER}",
                     "Model: ${Build.MODEL}",
                     "Display Modes:",
-                    *viewModel.refreshRateService.displayModes,
+                    *viewModel.refreshRateService.supportedDisplayModes,
                 ).forEach {
                     Text(
                         text = it.toString(),
