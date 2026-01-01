@@ -359,4 +359,5 @@
     <string name="no_servers_found">Ühtegi serverit ei leidu</string>
     <string name="backdrop_display">Tausta dekoratsioon</string>
     <string name="ends_at">Lõppeb kell %1$s</string>
+    <string name="resolution_switching">Resolutsiooni vahetamine</string>
 </resources>
