@@ -157,6 +157,7 @@ class PlaybackViewModel
         internal lateinit var item: BaseItem
         internal var forceTranscoding: Boolean = false
         private var activityListener: TrackActivityPlaybackListener? = null
+        private val jobs = mutableListOf<Job>()
 
         val nextUp = MutableLiveData<BaseItem?>()
         private var isPlaylist = false
@@ -166,20 +167,22 @@ class PlaybackViewModel
         val subtitleSearchLanguage = MutableLiveData<String>(Locale.current.language)
 
         init {
-            viewModelScope.launch(ExceptionHandler()) { controllerViewState.observe() }
-            player.addListener(this)
-            (player as? ExoPlayer)?.addAnalyticsListener(this)
-            addCloseable { player.removeListener(this@PlaybackViewModel) }
-            addCloseable { (player as? ExoPlayer)?.removeAnalyticsListener(this@PlaybackViewModel) }
             addCloseable {
+                player.removeListener(this@PlaybackViewModel)
+                (player as? ExoPlayer)?.removeAnalyticsListener(this@PlaybackViewModel)
+
                 this@PlaybackViewModel.activityListener?.let {
                     it.release()
                     player.removeListener(it)
                 }
+                jobs.forEach { it.cancel() }
+                player.release()
             }
-            addCloseable { player.release() }
-            subscribe()
-            listenForTranscodeReason()
+            viewModelScope.launch(ExceptionHandler()) { controllerViewState.observe() }
+            player.addListener(this)
+            (player as? ExoPlayer)?.addAnalyticsListener(this)
+            jobs.add(subscribe())
+            jobs.add(listenForTranscodeReason())
         }
 
         /**
@@ -874,7 +877,7 @@ class PlaybackViewModel
                 }
         }
 
-        private fun listenForTranscodeReason() {
+        private fun listenForTranscodeReason(): Job =
             viewModelScope.launchIO {
                 currentPlayback.collectLatest {
                     if (it != null) {
@@ -905,7 +908,6 @@ class PlaybackViewModel
                     }
                 }
             }
-        }
 
         private var lastInteractionDate: Date = Date()
 
@@ -1026,11 +1028,13 @@ class PlaybackViewModel
         }
 
         fun release() {
+            Timber.v("release")
             activityListener?.release()
             player.release()
+            activityListener = null
         }
 
-        fun subscribe() {
+        fun subscribe(): Job =
             api.webSocket
                 .subscribe<PlaystateMessage>()
                 .onEach { message ->
@@ -1085,7 +1089,6 @@ class PlaybackViewModel
                         }
                     }
                 }.launchIn(viewModelScope)
-        }
 
         /**
          * Atomically update [currentMediaInfo]

@@ -234,7 +234,7 @@ fun HomePageContent(
 
     val listState = rememberLazyListState()
     val rowFocusRequesters = remember(homeRows.size) { List(homeRows.size) { FocusRequester() } }
-    var focused by remember { mutableStateOf(false) }
+    var focused by rememberSaveable { mutableStateOf(false) }
     LaunchedEffect(homeRows) {
         if (!focused) {
             homeRows
@@ -246,6 +246,8 @@ fun HomePageContent(
                     listState.animateScrollToItem(position.row)
                     focused = true
                 }
+        } else {
+            rowFocusRequesters.getOrNull(position.row)?.tryRequestFocus()
         }
     }
     LaunchedEffect(position) {

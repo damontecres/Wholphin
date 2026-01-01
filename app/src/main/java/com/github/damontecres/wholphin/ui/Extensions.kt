@@ -28,9 +28,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.media3.common.Player
 import coil3.request.ErrorResult
 import com.github.damontecres.wholphin.data.model.BaseItem
@@ -182,10 +180,10 @@ fun RequestOrRestoreFocus(
             debugKey?.let { Timber.v("RequestOrRestoreFocus: %s", it) }
             focusRequester.tryRequestFocus()
         }
-        LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
-            debugKey?.let { Timber.v("RequestOrRestoreFocus onResume: %s", it) }
-            focusRequester.tryRequestFocus()
-        }
+//        LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+//            debugKey?.let { Timber.v("RequestOrRestoreFocus onResume: %s", it) }
+//            focusRequester.tryRequestFocus()
+//        }
     }
 }
 
