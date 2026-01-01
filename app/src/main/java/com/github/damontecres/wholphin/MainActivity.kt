@@ -23,8 +23,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.unit.dp
 import androidx.datastore.core.DataStore
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.compose.LifecycleStartEffect
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
@@ -224,13 +225,12 @@ class MainActivity : AppCompatActivity() {
                                                     var showContent by remember {
                                                         mutableStateOf(true)
                                                     }
-                                                    if (!preferences.appPreferences.signInAutomatically) {
-                                                        LifecycleStartEffect(Unit) {
-                                                            onStopOrDispose {
-                                                                showContent = false
-                                                            }
+                                                    LifecycleEventEffect(Lifecycle.Event.ON_STOP) {
+                                                        if (!preferences.appPreferences.signInAutomatically) {
+                                                            showContent = false
                                                         }
                                                     }
+
                                                     if (showContent) {
                                                         ApplicationContent(
                                                             user = current.user,
