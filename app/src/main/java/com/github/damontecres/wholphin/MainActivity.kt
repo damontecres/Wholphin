@@ -23,8 +23,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.unit.dp
 import androidx.datastore.core.DataStore
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.compose.LifecycleStartEffect
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
@@ -46,6 +47,7 @@ import com.github.damontecres.wholphin.services.ImageUrlService
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.PlaybackLifecycleObserver
 import com.github.damontecres.wholphin.services.RefreshRateService
+import com.github.damontecres.wholphin.services.ServerEventListener
 import com.github.damontecres.wholphin.services.SetupDestination
 import com.github.damontecres.wholphin.services.SetupNavigationManager
 import com.github.damontecres.wholphin.services.UpdateChecker
@@ -112,6 +114,14 @@ class MainActivity : AppCompatActivity() {
 
     @Inject
     lateinit var tvProviderSchedulerService: TvProviderSchedulerService
+
+    // Note: unused but injected to ensure it is created
+    @Inject
+    lateinit var serverEventListener: ServerEventListener
+
+    // Note: unused but injected to ensure it is created
+    @Inject
+    lateinit var datePlayedInvalidationService: DatePlayedInvalidationService
 
     private var signInAuto = true
 
@@ -232,13 +242,12 @@ class MainActivity : AppCompatActivity() {
                                                     var showContent by remember {
                                                         mutableStateOf(true)
                                                     }
-                                                    if (!preferences.appPreferences.signInAutomatically) {
-                                                        LifecycleStartEffect(Unit) {
-                                                            onStopOrDispose {
-                                                                showContent = false
-                                                            }
+                                                    LifecycleEventEffect(Lifecycle.Event.ON_STOP) {
+                                                        if (!preferences.appPreferences.signInAutomatically) {
+                                                            showContent = false
                                                         }
                                                     }
+
                                                     if (showContent) {
                                                         ApplicationContent(
                                                             user = current.user,

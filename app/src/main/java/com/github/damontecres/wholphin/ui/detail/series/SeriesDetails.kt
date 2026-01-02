@@ -34,7 +34,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.lifecycle.compose.LifecycleStartEffect
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.R
@@ -62,6 +62,7 @@ import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.components.Optional
 import com.github.damontecres.wholphin.ui.components.OverviewText
 import com.github.damontecres.wholphin.ui.components.SeriesQuickDetails
+import com.github.damontecres.wholphin.ui.components.TrailerButton
 import com.github.damontecres.wholphin.ui.data.AddPlaylistViewModel
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialog
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialogInfo
@@ -70,7 +71,6 @@ import com.github.damontecres.wholphin.ui.detail.PlaylistDialog
 import com.github.damontecres.wholphin.ui.detail.PlaylistLoadingState
 import com.github.damontecres.wholphin.ui.detail.buildMoreDialogItemsForHome
 import com.github.damontecres.wholphin.ui.detail.buildMoreDialogItemsForPerson
-import com.github.damontecres.wholphin.ui.detail.movie.TrailerRow
 import com.github.damontecres.wholphin.ui.letNotEmpty
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.rememberInt
@@ -124,12 +124,12 @@ fun SeriesDetails(
 
         LoadingState.Success -> {
             item?.let { item ->
-                LifecycleStartEffect(destination.itemId) {
+                LifecycleResumeEffect(destination.itemId) {
                     viewModel.maybePlayThemeSong(
                         destination.itemId,
                         preferences.appPreferences.interfacePreferences.playThemeSongs,
                     )
-                    onStopOrDispose {
+                    onPauseOrDispose {
                         viewModel.release()
                     }
                 }
@@ -411,6 +411,18 @@ fun SeriesDetailsContent(
                                     }
                                 },
                         )
+                        TrailerButton(
+                            trailers = trailers,
+                            trailerOnClick = trailerOnClick,
+                            modifier =
+                                Modifier.onFocusChanged {
+                                    if (it.isFocused) {
+                                        scope.launch(ExceptionHandler()) {
+                                            bringIntoViewRequester.bringIntoView()
+                                        }
+                                    }
+                                },
+                        )
                     }
                 }
                 item {
@@ -469,21 +481,6 @@ fun SeriesDetailsContent(
                                 Modifier
                                     .fillMaxWidth()
                                     .focusRequester(focusRequesters[PEOPLE_ROW]),
-                        )
-                    }
-                }
-                if (trailers.isNotEmpty()) {
-                    item {
-                        TrailerRow(
-                            trailers = trailers,
-                            onClickTrailer = {
-                                position = TRAILER_ROW
-                                trailerOnClick.invoke(it)
-                            },
-                            modifier =
-                                Modifier
-                                    .fillMaxWidth()
-                                    .focusRequester(focusRequesters[TRAILER_ROW]),
                         )
                     }
                 }

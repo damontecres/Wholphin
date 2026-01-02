@@ -25,6 +25,7 @@ import com.github.damontecres.wholphin.services.TrailerService
 import com.github.damontecres.wholphin.services.UserPreferencesService
 import com.github.damontecres.wholphin.ui.SlimItemFields
 import com.github.damontecres.wholphin.ui.launchIO
+import com.github.damontecres.wholphin.ui.letNotEmpty
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.setValueOnMain
 import com.github.damontecres.wholphin.util.ExceptionHandler
@@ -116,16 +117,19 @@ class MovieViewModel
                         item,
                         userPreferencesService.getCurrent(),
                     )
+                val remoteTrailers = trailerService.getRemoteTrailers(item)
                 withContext(Dispatchers.Main) {
                     this@MovieViewModel.item.value = item
                     chosenStreams.value = result
+                    this@MovieViewModel.trailers.value = remoteTrailers
                     loading.value = LoadingState.Success
                     backdropService.submit(item)
                 }
                 viewModelScope.launchIO {
-                    val trailers = trailerService.getTrailers(item)
-                    withContext(Dispatchers.Main) {
-                        this@MovieViewModel.trailers.value = trailers
+                    trailerService.getLocalTrailers(item).letNotEmpty { localTrailers ->
+                        withContext(Dispatchers.Main) {
+                            this@MovieViewModel.trailers.value = localTrailers + remoteTrailers
+                        }
                     }
                 }
                 viewModelScope.launchIO {

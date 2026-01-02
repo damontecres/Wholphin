@@ -165,8 +165,9 @@ class SeriesViewModel
                         }
                     }
                 }
-
+                val remoteTrailers = trailerService.getRemoteTrailers(item)
                 withContext(Dispatchers.Main) {
+                    this@SeriesViewModel.trailers.value = remoteTrailers
                     this@SeriesViewModel.position.update {
                         it.copy(
                             episodeRowIndex =
@@ -179,9 +180,10 @@ class SeriesViewModel
                 }
                 if (seriesPageType == SeriesPageType.DETAILS) {
                     viewModelScope.launchIO {
-                        val trailers = trailerService.getTrailers(item)
-                        withContext(Dispatchers.Main) {
-                            this@SeriesViewModel.trailers.value = trailers
+                        trailerService.getLocalTrailers(item).letNotEmpty { localTrailers ->
+                            withContext(Dispatchers.Main) {
+                                this@SeriesViewModel.trailers.value = localTrailers + remoteTrailers
+                            }
                         }
                     }
                     viewModelScope.launchIO {
@@ -221,9 +223,6 @@ class SeriesViewModel
         ) {
             viewModelScope.launchIO {
                 themeSongPlayer.playThemeFor(seriesId, playThemeSongs)
-                addCloseable {
-                    themeSongPlayer.stop()
-                }
             }
         }
 

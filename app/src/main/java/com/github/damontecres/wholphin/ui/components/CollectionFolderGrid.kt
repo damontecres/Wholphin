@@ -169,6 +169,7 @@ class CollectionFolderViewModel
                     context.getString(R.string.error_loading_collection, itemId),
                 ) + Dispatchers.IO,
             ) {
+                super.itemId = itemId
                 itemId.toUUIDOrNull()?.let {
                     fetchItem(it)
                 }
@@ -206,7 +207,7 @@ class CollectionFolderViewModel
         ) {
             if (collectionFilter.useSavedLibraryDisplayInfo) {
                 serverRepository.currentUser.value?.let { user ->
-                    viewModelScope.launch(Dispatchers.IO) {
+                    viewModelScope.launchIO {
                         val libraryDisplayInfo =
                             LibraryDisplayInfo(
                                 userId = user.rowId,

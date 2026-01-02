@@ -49,7 +49,6 @@ import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.Person
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.AspectRatios
-import com.github.damontecres.wholphin.ui.RequestOrRestoreFocus
 import com.github.damontecres.wholphin.ui.cards.BannerCard
 import com.github.damontecres.wholphin.ui.cards.PersonRow
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
@@ -107,6 +106,7 @@ fun SeriesOverviewContent(
 
     val scrollState = rememberScrollState()
     val scrollConnection = rememberDelayedNestedScroll()
+    var requestFocusAfterSeason by remember { mutableStateOf(false) }
     Box(
         modifier =
             modifier
@@ -147,6 +147,7 @@ fun SeriesOverviewContent(
                     onClick = {
                         selectedTabIndex = it
                         onChangeSeason.invoke(it)
+                        requestFocusAfterSeason = true
                     },
                     modifier =
                         Modifier
@@ -181,8 +182,14 @@ fun SeriesOverviewContent(
                     }
 
                     is EpisodeList.Success -> {
+                        if (requestFocusAfterSeason) {
+                            // Changing seasons, so move focus once the new episodes are loaded
+                            LaunchedEffect(Unit) {
+                                firstItemFocusRequester.tryRequestFocus()
+                                requestFocusAfterSeason = false
+                            }
+                        }
                         val state = rememberLazyListState(position.episodeRowIndex)
-                        RequestOrRestoreFocus(firstItemFocusRequester)
 
                         LazyRow(
                             state = state,

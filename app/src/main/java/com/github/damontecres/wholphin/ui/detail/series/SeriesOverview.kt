@@ -16,11 +16,12 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.lifecycle.compose.LifecycleStartEffect
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.map
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.preferences.UserPreferences
+import com.github.damontecres.wholphin.ui.RequestOrRestoreFocus
 import com.github.damontecres.wholphin.ui.components.DialogParams
 import com.github.damontecres.wholphin.ui.components.DialogPopup
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
@@ -37,7 +38,6 @@ import com.github.damontecres.wholphin.ui.detail.buildMoreDialogItems
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.rememberInt
 import com.github.damontecres.wholphin.ui.seasonEpisode
-import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.LoadingState
 import kotlinx.coroutines.flow.update
 import kotlinx.serialization.Serializable
@@ -158,19 +158,21 @@ fun SeriesOverview(
         LoadingState.Success -> {
             series?.let { series ->
 
-                LaunchedEffect(Unit) {
+                RequestOrRestoreFocus(
                     when (rowFocused) {
-                        EPISODE_ROW -> episodeRowFocusRequester.tryRequestFocus()
-                        CAST_AND_CREW_ROW -> castCrewRowFocusRequester.tryRequestFocus()
-                        GUEST_STAR_ROW -> guestStarRowFocusRequester.tryRequestFocus()
-                    }
-                }
-                LifecycleStartEffect(destination.itemId) {
+                        EPISODE_ROW -> episodeRowFocusRequester
+                        CAST_AND_CREW_ROW -> castCrewRowFocusRequester
+                        GUEST_STAR_ROW -> guestStarRowFocusRequester
+                        else -> episodeRowFocusRequester
+                    },
+                    "series_overview",
+                )
+                LifecycleResumeEffect(destination.itemId) {
                     viewModel.maybePlayThemeSong(
                         destination.itemId,
                         preferences.appPreferences.interfacePreferences.playThemeSongs,
                     )
-                    onStopOrDispose {
+                    onPauseOrDispose {
                         viewModel.release()
                     }
                 }

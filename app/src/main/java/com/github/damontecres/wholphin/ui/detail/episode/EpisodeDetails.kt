@@ -25,7 +25,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.LifecycleResumeEffect
-import androidx.lifecycle.compose.LifecycleStartEffect
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.ChosenStreams
 import com.github.damontecres.wholphin.data.model.BaseItem
@@ -112,12 +111,12 @@ fun EpisodeDetails(
 
         LoadingState.Success -> {
             item?.let { ep ->
-                LifecycleStartEffect(destination.itemId) {
+                LifecycleResumeEffect(destination.itemId) {
                     viewModel.maybePlayThemeSong(
                         destination.itemId,
                         preferences.appPreferences.interfacePreferences.playThemeSongs,
                     )
-                    onStopOrDispose {
+                    onPauseOrDispose {
                         viewModel.release()
                     }
                 }
@@ -335,6 +334,8 @@ fun EpisodeDetailsContent(
                                 }
                             }
                         },
+                        trailers = null,
+                        trailerOnClick = {},
                         modifier =
                             Modifier
                                 .fillMaxWidth()
