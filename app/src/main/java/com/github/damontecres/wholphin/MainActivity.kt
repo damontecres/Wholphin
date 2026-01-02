@@ -41,6 +41,7 @@ import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.AppUpgradeHandler
 import com.github.damontecres.wholphin.services.BackdropService
+import com.github.damontecres.wholphin.services.DatePlayedInvalidationService
 import com.github.damontecres.wholphin.services.DeviceProfileService
 import com.github.damontecres.wholphin.services.ImageUrlService
 import com.github.damontecres.wholphin.services.NavigationManager
@@ -109,6 +110,9 @@ class MainActivity : AppCompatActivity() {
 
     @Inject
     lateinit var serverEventListener: ServerEventListener
+
+    @Inject
+    lateinit var datePlayedInvalidationService: DatePlayedInvalidationService
 
     private var signInAuto = true
 
