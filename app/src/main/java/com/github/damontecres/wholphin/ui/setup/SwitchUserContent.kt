@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -21,8 +22,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
@@ -34,6 +38,7 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
+import coil3.compose.AsyncImage
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.JellyfinServer
 import com.github.damontecres.wholphin.data.model.JellyfinUser
@@ -47,6 +52,7 @@ import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.LoadingState
+import timber.log.Timber
 
 @Composable
 fun SwitchUserContent(
@@ -69,6 +75,7 @@ fun SwitchUserContent(
     val quickConnectEnabled by viewModel.serverQuickConnect.observeAsState(false)
     val quickConnect by viewModel.quickConnectState.observeAsState(null)
     var showAddUser by remember { mutableStateOf(false) }
+    val loginBackground by viewModel.loginBackground.observeAsState(null)
 
     val userState by viewModel.switchUserState.observeAsState(LoadingState.Pending)
     val loginAttempts by viewModel.loginAttempts.observeAsState(0)
@@ -88,8 +95,23 @@ fun SwitchUserContent(
 
     currentServer?.let { server ->
         Box(
-            modifier = modifier.dimAndBlur(showAddUser || switchUserWithPin != null),
+            modifier = modifier.fillMaxSize(),
         ) {
+            // Background image for the entire Select User screen
+            loginBackground?.let { background ->
+                AsyncImage(
+                    model = background.backgroundUrl,
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    modifier =
+                        Modifier
+                            .fillMaxSize()
+                            .alpha(background.alpha)
+                            .blur(background.blur.dp),
+                )
+            }
+            
+            // Content layer
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(24.dp),
@@ -97,7 +119,8 @@ fun SwitchUserContent(
                     Modifier
                         .fillMaxWidth()
                         .align(Alignment.Center)
-                        .padding(16.dp),
+                        .padding(16.dp)
+                        .dimAndBlur(showAddUser || switchUserWithPin != null),
             ) {
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
@@ -149,6 +172,7 @@ fun SwitchUserContent(
                     viewModel.initiateQuickConnect(server)
                 }
             }
+            
             BasicDialog(
                 onDismissRequest = {
                     viewModel.cancelQuickConnect()
