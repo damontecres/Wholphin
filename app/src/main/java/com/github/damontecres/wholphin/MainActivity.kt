@@ -46,6 +46,7 @@ import com.github.damontecres.wholphin.services.ImageUrlService
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.PlaybackLifecycleObserver
 import com.github.damontecres.wholphin.services.RefreshRateService
+import com.github.damontecres.wholphin.services.ServerEventListener
 import com.github.damontecres.wholphin.services.SetupDestination
 import com.github.damontecres.wholphin.services.SetupNavigationManager
 import com.github.damontecres.wholphin.services.UpdateChecker
@@ -105,6 +106,9 @@ class MainActivity : AppCompatActivity() {
 
     @Inject
     lateinit var tvProviderSchedulerService: TvProviderSchedulerService
+
+    @Inject
+    lateinit var serverEventListener: ServerEventListener
 
     private var signInAuto = true
 
