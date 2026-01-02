@@ -45,6 +45,8 @@ fun FocusedEpisodeFooter(
             watchOnClick = watchOnClick,
             favoriteOnClick = favoriteOnClick,
             buttonOnFocusChanged = buttonOnFocusChanged,
+            trailers = null,
+            trailerOnClick = {},
             modifier = Modifier.fillMaxWidth(),
         )
     }

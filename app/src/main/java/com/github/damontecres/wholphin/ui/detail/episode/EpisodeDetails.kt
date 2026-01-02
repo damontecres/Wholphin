@@ -334,6 +334,8 @@ fun EpisodeDetailsContent(
                                 }
                             }
                         },
+                        trailers = null,
+                        trailerOnClick = {},
                         modifier =
                             Modifier
                                 .fillMaxWidth()

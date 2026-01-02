@@ -399,6 +399,9 @@
     <string name="subtitle_delay">Subtitle delay</string>
     <string name="backdrop_display">Backdrop style</string>
     <string name="resolution_switching">Resolution switching</string>
+    <string name="local">Local</string>
+    <string name="play_trailer">Play trailer</string>
+    <string name="no_trailers">No trailers</string>
 
     <string-array name="theme_song_volume">
         <item>Disabled</item>

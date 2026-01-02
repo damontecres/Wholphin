@@ -21,7 +21,10 @@ import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -40,6 +43,7 @@ import androidx.tv.material3.Icon
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.R
+import com.github.damontecres.wholphin.data.model.Trailer
 import com.github.damontecres.wholphin.ui.FontAwesome
 import com.github.damontecres.wholphin.ui.PreviewTvSpec
 import com.github.damontecres.wholphin.ui.data.SortAndDirection
@@ -59,10 +63,12 @@ fun ExpandablePlayButtons(
     resumePosition: Duration,
     watched: Boolean,
     favorite: Boolean,
+    trailers: List<Trailer>?,
     playOnClick: (position: Duration) -> Unit,
     watchOnClick: () -> Unit,
     favoriteOnClick: () -> Unit,
     moreOnClick: () -> Unit,
+    trailerOnClick: (Trailer) -> Unit,
     buttonOnFocusChanged: (FocusState) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -132,6 +138,16 @@ fun ExpandablePlayButtons(
                 iconColor = if (favorite) Color.Red else Color.Unspecified,
                 modifier = Modifier.onFocusChanged(buttonOnFocusChanged),
             )
+        }
+
+        if (trailers != null) {
+            item("trailers") {
+                TrailerButton(
+                    trailers = trailers,
+                    trailerOnClick = trailerOnClick,
+                    modifier = Modifier.onFocusChanged(buttonOnFocusChanged),
+                )
+            }
         }
 
         // More button
@@ -213,6 +229,7 @@ fun ExpandableFaButton(
     modifier: Modifier = Modifier,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
     iconColor: Color = Color.Unspecified,
+    enabled: Boolean = true,
 ) {
     val isFocused = interactionSource.collectIsFocusedAsState().value
     Button(
@@ -225,6 +242,7 @@ fun ExpandableFaButton(
             ),
         contentPadding = DefaultButtonPadding,
         interactionSource = interactionSource,
+        enabled = enabled,
     ) {
         Box(
             modifier =
@@ -251,6 +269,42 @@ fun ExpandableFaButton(
     }
 }
 
+@Composable
+fun TrailerButton(
+    trailers: List<Trailer>,
+    trailerOnClick: (Trailer) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    var showDialog by remember { mutableStateOf(false) }
+    ExpandableFaButton(
+        title =
+            if (trailers.isEmpty()) {
+                R.string.no_trailers
+            } else if (trailers.size == 1) {
+                R.string.play_trailer
+            } else {
+                R.string.trailers
+            },
+        iconStringRes = R.string.fa_film,
+        enabled = trailers.isNotEmpty(),
+        onClick = {
+            if (trailers.size == 1) {
+                trailerOnClick.invoke(trailers.first())
+            } else {
+                showDialog = true
+            }
+        },
+        modifier = modifier,
+    )
+    if (showDialog) {
+        TrailerDialog(
+            onDismissRequest = { showDialog = false },
+            trailers = trailers,
+            onClick = trailerOnClick,
+        )
+    }
+}
+
 @PreviewTvSpec
 @Composable
 private fun ExpandablePlayButtonsPreview() {
@@ -264,6 +318,8 @@ private fun ExpandablePlayButtonsPreview() {
             favoriteOnClick = {},
             moreOnClick = {},
             buttonOnFocusChanged = {},
+            trailers = listOf(),
+            trailerOnClick = {},
             modifier = Modifier,
         )
     }
