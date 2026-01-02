@@ -876,51 +876,37 @@ fun CollectionFolderGridContent(
                             .padding(16.dp),
                 )
             }
-            if (pager.isEmpty()) {
-                Box(
-                    contentAlignment = Alignment.Center,
-                    modifier = Modifier.fillMaxSize(),
-                ) {
-                    Text(
-                        text = stringResource(R.string.no_results),
-                        style = MaterialTheme.typography.titleLarge,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        textAlign = TextAlign.Center,
+            CardGrid(
+                pager = pager,
+                onClickItem = onClickItem,
+                onLongClickItem = onLongClickItem,
+                onClickPlay = onClickPlay,
+                letterPosition = letterPosition,
+                gridFocusRequester = gridFocusRequester,
+                showJumpButtons = false, // TODO add preference
+                showLetterButtons = sortAndDirection.sort == ItemSortBy.SORT_NAME,
+                modifier = Modifier.fillMaxSize(),
+                initialPosition = initialPosition,
+                positionCallback = { columns, newPosition ->
+                    showHeader = newPosition < columns
+                    position = newPosition
+                    positionCallback?.invoke(columns, newPosition)
+                },
+                cardContent = { item, onClick, onLongClick, mod ->
+                    GridCard(
+                        item = item,
+                        onClick = onClick,
+                        onLongClick = onLongClick,
+                        imageContentScale = viewOptions.contentScale.scale,
+                        imageAspectRatio = viewOptions.aspectRatio.ratio,
+                        imageType = viewOptions.imageType,
+                        showTitle = viewOptions.showTitles,
+                        modifier = mod,
                     )
-                }
-            } else {
-                CardGrid(
-                    pager = pager,
-                    onClickItem = onClickItem,
-                    onLongClickItem = onLongClickItem,
-                    onClickPlay = onClickPlay,
-                    letterPosition = letterPosition,
-                    gridFocusRequester = gridFocusRequester,
-                    showJumpButtons = false, // TODO add preference
-                    showLetterButtons = sortAndDirection.sort == ItemSortBy.SORT_NAME,
-                    modifier = Modifier.fillMaxSize(),
-                    initialPosition = initialPosition,
-                    positionCallback = { columns, newPosition ->
-                        showHeader = newPosition < columns
-                        position = newPosition
-                        positionCallback?.invoke(columns, newPosition)
-                    },
-                    cardContent = { item, onClick, onLongClick, mod ->
-                        GridCard(
-                            item = item,
-                            onClick = onClick,
-                            onLongClick = onLongClick,
-                            imageContentScale = viewOptions.contentScale.scale,
-                            imageAspectRatio = viewOptions.aspectRatio.ratio,
-                            imageType = viewOptions.imageType,
-                            showTitle = viewOptions.showTitles,
-                            modifier = mod,
-                        )
-                    },
-                    columns = viewOptions.columns,
-                    spacing = viewOptions.spacing.dp,
-                )
-            }
+                },
+                columns = viewOptions.columns,
+                spacing = viewOptions.spacing.dp,
+            )
             AnimatedVisibility(showViewOptions) {
                 ViewOptionsDialog(
                     viewOptions = viewOptions,
