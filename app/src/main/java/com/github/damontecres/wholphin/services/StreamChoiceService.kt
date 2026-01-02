@@ -171,6 +171,9 @@ class StreamChoiceService
         ): MediaStream? {
             if (itemPlayback?.subtitleIndex == TrackIndex.DISABLED) {
                 return null
+            } else if (itemPlayback?.subtitleIndex == TrackIndex.ONLY_FORCED) {
+                // Client-side manual override: User selected "Only Forced" in player menu
+                return findForcedTrack(candidates, audioStreamLang)
             } else if (itemPlayback?.subtitleIndexEnabled == true) {
                 return candidates.firstOrNull { it.index == itemPlayback.subtitleIndex }
             } else {
@@ -258,6 +261,45 @@ class StreamChoiceService
                     }
                 }
             }
+        }
+
+        /**
+         * Returns true if the track is forced (via metadata flag or title patterns).
+         * Title-based detection only applies when track language matches audio language.
+         */
+        private fun isForcedOrSigns(
+            track: MediaStream,
+            audioLanguage: String?,
+        ): Boolean {
+            // Primary: Use the metadata forced flag
+            if (track.isForced) return true
+
+            // Fallback: Check title for "forced", "signs", or "songs" patterns
+            // Requires matching audio language to avoid false positives
+            if (audioLanguage != null && track.language == audioLanguage) {
+                val title = track.title ?: track.displayTitle ?: return false
+                if (title.contains("forced", ignoreCase = true)) return true
+                if (title.contains("signs", ignoreCase = true)) return true
+                if (title.contains("songs", ignoreCase = true)) return true
+            }
+
+            return false
+        }
+
+        /**
+         * Finds a forced/signs track, preferring those matching the audio language.
+         */
+        private fun findForcedTrack(
+            candidates: List<MediaStream>,
+            audioLanguage: String?,
+        ): MediaStream? {
+            // Priority 1: Forced track matching audio language (via metadata or title patterns)
+            candidates
+                .firstOrNull { it.language == audioLanguage && isForcedOrSigns(it, audioLanguage) }
+                ?.let { return it }
+
+            // Priority 2: Any track with isForced metadata (regardless of language)
+            return candidates.firstOrNull { it.isForced }
         }
     }
 

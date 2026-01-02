@@ -54,4 +54,9 @@ object TrackIndex {
      * The user has explicitly disabled the tracks (eg turned off subtitles)
      */
     const val DISABLED = -2
+
+    /**
+     * The user wants only forced subtitles (for foreign language dialogue, signs, etc.)
+     */
+    const val ONLY_FORCED = -3
 }
