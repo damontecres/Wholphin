@@ -11,7 +11,7 @@
     <string name="cancel">Mégse</string>
     <string name="chapters">Fejezetek</string>
     <string name="choose_stream">%1$s kiválasztása</string>
-    <string name="clear_image_cache">Képgyorsítótár törlése</string>
+    <string name="clear_image_cache">Kép-gyorsítótár törlése</string>
     <string name="collection">Gyűjtemény</string>
     <string name="collections">Gyűjtemények</string>
     <string name="community_rating">Közösségi értékelés</string>
@@ -279,7 +279,7 @@
     <string name="skip_segment_recap">Összefoglaló átugrása</string>
     <string name="skip_segment_outro">Stáblista átugrása</string>
     <string name="skip_segment_intro">Intró átugrása</string>
-    <string name="played">Lejátszott</string>
+    <string name="played">Megnézett</string>
     <string name="filter">Szűrő</string>
     <string name="year">Év</string>
     <string name="decade">Évtized</string>
@@ -355,7 +355,7 @@
     <string name="enter_server_address">Adja meg a szerver címét</string>
     <string name="combine_continue_next"><![CDATA[Folytatás & Következő menü összevonása]]></string>
     <string name="player_backend">Lejátszás backend</string>
-    <string name="image_cache_size">Kép gyorsítótár méret (MB)</string>
+    <string name="image_cache_size">Kép-gyorsítótár mérete (MB)</string>
     <string name="cast_and_crew"><![CDATA[Stábtagok]]></string>
     <string name="nav_drawer_switch_on_focus">Navigációs menü oldalainak váltása fókusznál</string>
     <string name="playback_overrides">Lejátszás felülbírálatai</string>
