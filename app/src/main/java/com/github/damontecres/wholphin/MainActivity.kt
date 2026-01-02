@@ -108,9 +108,11 @@ class MainActivity : AppCompatActivity() {
     @Inject
     lateinit var tvProviderSchedulerService: TvProviderSchedulerService
 
+    // Note: unused but injected to ensure it is created
     @Inject
     lateinit var serverEventListener: ServerEventListener
 
+    // Note: unused but injected to ensure it is created
     @Inject
     lateinit var datePlayedInvalidationService: DatePlayedInvalidationService
 
