@@ -278,7 +278,9 @@ fun TrailerButton(
     var showDialog by remember { mutableStateOf(false) }
     ExpandableFaButton(
         title =
-            if (trailers.size == 1) {
+            if (trailers.isEmpty()) {
+                R.string.no_trailers
+            } else if (trailers.size == 1) {
                 R.string.play_trailer
             } else {
                 R.string.trailers

@@ -401,6 +401,7 @@
     <string name="resolution_switching">Resolution switching</string>
     <string name="local">Local</string>
     <string name="play_trailer">Play trailer</string>
+    <string name="no_trailers">No trailers</string>
 
     <string-array name="theme_song_volume">
         <item>Disabled</item>
