@@ -436,6 +436,11 @@ fun MovieDetailsContent(
                                 }
                             }
                         },
+                        trailers = trailers,
+                        trailerOnClick = {
+                            position = TRAILER_ROW
+                            trailerOnClick.invoke(it)
+                        },
                         modifier =
                             Modifier
                                 .fillMaxWidth()

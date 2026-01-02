@@ -33,10 +33,34 @@ class TrailerService
 //                                                ?.replace(item.name ?: "", "")
 //                                                ?.removePrefix(" - ")
                                     ?: context.getString(R.string.trailer)
-                            RemoteTrailer(name, url)
+                            val subtitle =
+                                when (url.toUri().host) {
+                                    "youtube.com", "www.youtube.com" -> "YouTube"
+                                    else -> null
+                                }
+                            RemoteTrailer(name, url, subtitle)
                         }
                     }.orEmpty()
-                    .sortedBy { it.name }
+                    .sortedWith(
+                        compareBy(
+                            {
+                                // Try to show official trailers first
+                                if (it.name.contains("Official Trailer", ignoreCase = true) ||
+                                    it.name.contains(
+                                        "Official Theatrical Trailer",
+                                        ignoreCase = true,
+                                    )
+                                ) {
+                                    0
+                                } else {
+                                    1
+                                }
+                            },
+                            {
+                                it.name
+                            },
+                        ),
+                    )
             val localTrailerCount = item.data.localTrailerCount ?: 0
             val localTrailers =
                 if (localTrailerCount > 0) {
