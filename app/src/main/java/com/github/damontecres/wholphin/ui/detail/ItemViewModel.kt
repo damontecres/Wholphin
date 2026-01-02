@@ -27,7 +27,7 @@ abstract class ItemViewModel(
 ) : ViewModel() {
     val item = MutableLiveData<BaseItem?>(null)
     lateinit var itemId: String
-    lateinit var itemUuid: UUID
+    var itemUuid: UUID? = null
 
     suspend fun fetchItem(itemId: UUID): BaseItem =
         withContext(Dispatchers.IO) {

@@ -155,8 +155,10 @@ class PersonViewModel
 
         fun setFavorite(favorite: Boolean) {
             viewModelScope.launchIO {
-                favoriteWatchManager.setFavorite(itemUuid, favorite)
-                fetchAndSetItem(itemUuid)
+                itemUuid?.let {
+                    favoriteWatchManager.setFavorite(it, favorite)
+                    fetchAndSetItem(it)
+                }
             }
         }
     }
