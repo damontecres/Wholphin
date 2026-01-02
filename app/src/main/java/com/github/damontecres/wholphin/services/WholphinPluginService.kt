@@ -2,7 +2,14 @@ package com.github.damontecres.wholphin.services
 
 import com.github.damontecres.wholphin.services.hilt.AuthOkHttpClient
 import com.github.damontecres.wholphin.services.hilt.StandardOkHttpClient
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.descriptors.PrimitiveKind
+import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.Json
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -28,6 +35,7 @@ class WholphinPluginService
             private const val PLUGIN_BASE_PATH = "/wholphin"
             private const val CAPABILITIES_ENDPOINT = "$PLUGIN_BASE_PATH/capabilities"
             private const val LOGIN_BACKGROUND_ENDPOINT = "$PLUGIN_BASE_PATH/loginbackground"
+            private const val HOME_ENDPOINT = "$PLUGIN_BASE_PATH/home"
         }
 
         private val json =
@@ -142,6 +150,57 @@ class WholphinPluginService
             }
 
         /**
+         * Get home page configuration from the Wholphin plugin
+         * 
+         * This endpoint requires authentication and returns the dynamic home screen configuration.
+         * The configuration defines which sections (rows) to display on the home page and how to fetch their data.
+         *
+         * @param serverUrl The base URL of the Jellyfin server
+         * @return HomeConfiguration object with sections, or null if not available or on error
+         */
+        suspend fun getHomeConfiguration(serverUrl: String): HomeConfiguration? =
+            try {
+                val normalizedUrl = serverUrl.trimEnd('/')
+                val endpoint = "$normalizedUrl$HOME_ENDPOINT"
+
+                val request =
+                    Request
+                        .Builder()
+                        .url(endpoint)
+                        .get()
+                        .build()
+
+                val response = authOkHttpClient.newCall(request).execute()
+
+                if (response.isSuccessful) {
+                    val body = response.body?.string()
+                    if (body != null) {
+                        try {
+                            val config = json.decodeFromString<HomeConfiguration>(body)
+                            Timber.i(
+                                "Loaded home configuration from $serverUrl: ${config.sections.size} sections"
+                            )
+                            config
+                        } catch (e: Exception) {
+                            Timber.w(e, "Failed to parse home configuration response")
+                            null
+                        }
+                    } else {
+                        Timber.w("Home configuration endpoint returned empty body")
+                        null
+                    }
+                } else {
+                    Timber.v(
+                        "Home configuration not available on $serverUrl (status: ${response.code})"
+                    )
+                    null
+                }
+            } catch (e: Exception) {
+                Timber.v(e, "Error fetching home configuration from $serverUrl")
+                null
+            }
+
+        /**
          * Make an authenticated request to a Wholphin plugin endpoint
          * 
          * This uses the authenticated HTTP client which includes the current user's access token.
@@ -191,6 +250,7 @@ data class PluginCapabilities(
     @Serializable
     data class Features(
         val loginBackground: Boolean = false,
+        val homeConfiguration: Boolean = false,
         // Add more features here as the plugin grows
         // val customThemes: Boolean = false,
         // val enhancedMetadata: Boolean = false,
@@ -203,6 +263,7 @@ data class PluginCapabilities(
     fun hasFeature(feature: PluginFeature): Boolean =
         when (feature) {
             PluginFeature.LOGIN_BACKGROUND -> features.loginBackground
+            PluginFeature.HOME_CONFIGURATION -> features.homeConfiguration
         }
 }
 
@@ -211,6 +272,7 @@ data class PluginCapabilities(
  */
 enum class PluginFeature {
     LOGIN_BACKGROUND,
+    HOME_CONFIGURATION,
     // Add more features here as needed
 }
 
@@ -230,3 +292,144 @@ sealed class LoginBackgroundResult {
 
     object NotAvailable : LoginBackgroundResult()
 }
+
+// ============================================================================
+// Home Configuration Data Classes
+// ============================================================================
+
+/**
+ * Complete home page configuration from the Wholphin plugin
+ * 
+ * The plugin version is checked via the capabilities endpoint.
+ * This configuration is version-agnostic - unknown section types are simply ignored by the client.
+ * 
+ * Example JSON from server:
+ * ```json
+ * {
+ *   "sections": [
+ *     {
+ *       "id": "continue-watching",
+ *       "title": "Continue Watching",
+ *       "type": "resume",
+ *       "limit": 20
+ *     },
+ *     {
+ *       "id": "trending",
+ *       "title": "Trending Now",
+ *       "type": "custom",
+ *       "endpoint": "/wholphin/trending",
+ *       "limit": 15
+ *     }
+ *   ]
+ * }
+ * ```
+ */
+@Serializable
+data class HomeConfiguration(
+    val sections: List<HomeSection> = emptyList(),
+)
+
+/**
+ * A single section (row) in the home page
+ * 
+ * Each section can be of different types:
+ * - RESUME: Continue watching items (GetResumeItems API)
+ * - NEXT_UP: Next episodes to watch (GetNextUp API)
+ * - LATEST: Recently added items (GetLatestMedia API)
+ * - ITEMS: Custom query using GetItems API with filters
+ * - CUSTOM: Custom endpoint defined by the plugin
+ *
+ * @param id Unique identifier for this section
+ * @param title Display title for the row (e.g., "Continue Watching", "Trending")
+ * @param type Type of section determining which API to use
+ * @param limit Maximum number of items to display (default: 20)
+ * @param query Optional query parameters for ITEMS and LATEST types
+ * @param endpoint Optional custom endpoint path for CUSTOM type (e.g., "/wholphin/trending")
+ */
+@Serializable
+data class HomeSection(
+    val id: String,
+    val title: String,
+    val type: HomeSectionType,
+    val limit: Int = 20,
+    val query: HomeSectionQuery? = null,
+    val endpoint: String? = null,
+)
+
+/**
+ * Type of home section determining which Jellyfin API to use
+ * 
+ * Note: C# server sends these as integer values (0-4), not strings.
+ * The order must match the C# enum exactly.
+ */
+@Serializable(with = HomeSectionTypeSerializer::class)
+enum class HomeSectionType {
+    /** Continue watching - uses GetResumeItems API */
+    RESUME,      // 0
+
+    /** Next episodes to watch - uses GetNextUp API */
+    NEXT_UP,     // 1
+
+    /** Recently added items - uses GetLatestMedia API */
+    LATEST,      // 2
+
+    /** Custom query - uses GetItems API with filters */
+    ITEMS,       // 3
+
+    /** Custom plugin endpoint - calls the specified endpoint */
+    CUSTOM,      // 4
+}
+
+/**
+ * Custom serializer for HomeSectionType that handles both integer and string values from C# server
+ */
+object HomeSectionTypeSerializer : KSerializer<HomeSectionType> {
+    override val descriptor: SerialDescriptor = 
+        PrimitiveSerialDescriptor("HomeSectionType", PrimitiveKind.INT)
+
+    override fun serialize(encoder: Encoder, value: HomeSectionType) {
+        encoder.encodeInt(value.ordinal)
+    }
+
+    override fun deserialize(decoder: Decoder): HomeSectionType {
+        val index = decoder.decodeInt()
+        return HomeSectionType.entries.getOrNull(index) 
+            ?: throw IllegalArgumentException("Unknown HomeSectionType ordinal: $index")
+    }
+}
+
+/**
+ * Query parameters for ITEMS and LATEST section types
+ * 
+ * These map to Jellyfin API parameters:
+ * - parentId: Limit to specific library or collection
+ * - filters: Item filters (e.g., "IsUnplayed", "IsFavorite")
+ * - includeItemTypes: Item types to include (e.g., "Movie", "Series", "Episode")
+ * - sortBy: Sort field (e.g., "DateCreated", "SortName", "CommunityRating")
+ * - sortOrder: "Ascending" or "Descending"
+ * - genres: Filter by genre names
+ * - enableRewatching: For NEXT_UP type, allow already watched episodes
+ * - enableResumable: For NEXT_UP type, include partially watched episodes
+ *
+ * Example:
+ * ```json
+ * {
+ *   "parentId": "abc123",
+ *   "filters": ["IsUnplayed"],
+ *   "includeItemTypes": ["Movie"],
+ *   "sortBy": ["DateCreated"],
+ *   "limit": 25
+ * }
+ * ```
+ */
+@Serializable
+data class HomeSectionQuery(
+    val parentId: String? = null,
+    val filters: List<String>? = null,
+    val includeItemTypes: List<String>? = null,
+    val sortBy: List<String>? = null,
+    val sortOrder: String? = null,
+    val genres: List<String>? = null,
+    val enableRewatching: Boolean? = null,
+    val enableResumable: Boolean? = null,
+)
