@@ -71,7 +71,6 @@ import com.github.damontecres.wholphin.ui.detail.PlaylistDialog
 import com.github.damontecres.wholphin.ui.detail.PlaylistLoadingState
 import com.github.damontecres.wholphin.ui.detail.buildMoreDialogItemsForHome
 import com.github.damontecres.wholphin.ui.detail.buildMoreDialogItemsForPerson
-import com.github.damontecres.wholphin.ui.detail.movie.TrailerRow
 import com.github.damontecres.wholphin.ui.letNotEmpty
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.rememberInt
@@ -482,21 +481,6 @@ fun SeriesDetailsContent(
                                 Modifier
                                     .fillMaxWidth()
                                     .focusRequester(focusRequesters[PEOPLE_ROW]),
-                        )
-                    }
-                }
-                if (trailers.isNotEmpty()) {
-                    item {
-                        TrailerRow(
-                            trailers = trailers,
-                            onClickTrailer = {
-                                position = TRAILER_ROW
-                                trailerOnClick.invoke(it)
-                            },
-                            modifier =
-                                Modifier
-                                    .fillMaxWidth()
-                                    .focusRequester(focusRequesters[TRAILER_ROW]),
                         )
                     }
                 }
