@@ -635,9 +635,9 @@ class MpvPlayer(
                         val title = it.label ?: "External Subtitles"
                         Timber.v("Adding external subtitle track '$title'")
                         if (it.language.isNotNullOrBlank()) {
-                            MPVLib.command(arrayOf("sub-add", url, "auto", title, it.language!!))
+                            MPVLib.command(arrayOf("sub-add", url, "select", title, it.language!!))
                         } else {
-                            MPVLib.command(arrayOf("sub-add", url, "auto", title))
+                            MPVLib.command(arrayOf("sub-add", url, "select", title))
                         }
                     }
                 }
@@ -837,7 +837,15 @@ class MpvPlayer(
 
     override fun handleMessage(msg: Message): Boolean {
         val cmd = MpvCommand.entries[msg.what]
-        Timber.v("handleMessage: cmd=$cmd")
+        Timber.d("handleMessage: cmd=$cmd")
+        if (isReleased && cmd != MpvCommand.DESTROY) {
+            Timber.w("Player is released, ignoring command %s", cmd)
+            return true
+        }
+        if (surface == null && cmd != MpvCommand.INITIALIZE && cmd != MpvCommand.ATTACH_SURFACE) {
+            Timber.v("MPV is not initialized/attached yet, requeue cmd %s", cmd)
+            internalHandler.sendMessageDelayed(Message.obtain(msg), 50)
+        }
         when (cmd) {
             MpvCommand.PLAY_PAUSE -> {
                 val playWhenReady = msg.obj as Boolean
@@ -894,6 +902,7 @@ class MpvPlayer(
                     MPVLib.detachSurface()
                     MPVLib.setPropertyString("vo", "null")
                     MPVLib.setPropertyString("force-window", "no")
+                    Timber.d("Detached surface")
                 }
                 if (surface != null) {
                     MPVLib.attachSurface(surface)
