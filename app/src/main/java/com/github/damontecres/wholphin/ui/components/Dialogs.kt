@@ -9,6 +9,7 @@ import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -239,47 +240,48 @@ fun DialogPopupContent(
 ) {
     val elevatedContainerColor =
         MaterialTheme.colorScheme.surfaceColorAtElevation(elevation)
-    LazyColumn(
+    Column(
+        verticalArrangement = Arrangement.spacedBy(8.dp),
         modifier =
             modifier
-//                        .widthIn(min = 520.dp, max = 300.dp)
-//                        .dialogFocusable()
                 .graphicsLayer {
                     this.clip = true
                     this.shape = RoundedCornerShape(28.0.dp)
                 }.drawBehind { drawRect(color = elevatedContainerColor) }
                 .padding(PaddingValues(24.dp)),
     ) {
-        stickyHeader {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.titleLarge,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
-        }
-        items(dialogItems) {
-            when (it) {
-                is DialogItemDivider -> {
-                    HorizontalDivider(Modifier.height(16.dp))
-                }
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleLarge,
+            color = MaterialTheme.colorScheme.onSurface,
+        )
+        LazyColumn(
+            modifier = Modifier,
+        ) {
+            items(dialogItems) {
+                when (it) {
+                    is DialogItemDivider -> {
+                        HorizontalDivider(Modifier.height(16.dp))
+                    }
 
-                is DialogItem -> {
-                    ListItem(
-                        selected = false,
-                        enabled = !waiting && it.enabled,
-                        onClick = {
-                            if (dismissOnClick) {
-                                onDismissRequest.invoke()
-                            }
-                            it.onClick.invoke()
-                        },
-                        headlineContent = it.headlineContent,
-                        overlineContent = it.overlineContent,
-                        supportingContent = it.supportingContent,
-                        leadingContent = it.leadingContent,
-                        trailingContent = it.trailingContent,
-                        modifier = Modifier,
-                    )
+                    is DialogItem -> {
+                        ListItem(
+                            selected = false,
+                            enabled = !waiting && it.enabled,
+                            onClick = {
+                                if (dismissOnClick) {
+                                    onDismissRequest.invoke()
+                                }
+                                it.onClick.invoke()
+                            },
+                            headlineContent = it.headlineContent,
+                            overlineContent = it.overlineContent,
+                            supportingContent = it.supportingContent,
+                            leadingContent = it.leadingContent,
+                            trailingContent = it.trailingContent,
+                            modifier = Modifier,
+                        )
+                    }
                 }
             }
         }
