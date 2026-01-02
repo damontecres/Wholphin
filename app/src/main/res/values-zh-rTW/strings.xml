@@ -343,4 +343,5 @@
     <string name="sample_rate">取樣率</string>
     <string name="seek_bar_steps">進度條跳轉值</string>
     <string name="playback_overrides">播放覆蓋設定</string>
+    <string name="resolution_switching">解析度切換</string>
 </resources>
