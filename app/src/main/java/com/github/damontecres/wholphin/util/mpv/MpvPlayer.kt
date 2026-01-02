@@ -843,6 +843,9 @@ class MpvPlayer(
             return true
         }
         if (surface == null && cmd != MpvCommand.INITIALIZE && cmd != MpvCommand.ATTACH_SURFACE) {
+            // If libmpv isn't ready, re-enqueue the messages
+            // Note: this means nothing will play until it is attached to a surface,
+            // so MpvPlayer can't be used for background audio/music playback
             Timber.v("MPV is not initialized/attached yet, requeue cmd %s", cmd)
             internalHandler.sendMessageDelayed(Message.obtain(msg), 50)
         }
