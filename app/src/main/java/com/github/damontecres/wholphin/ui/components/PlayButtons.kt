@@ -179,10 +179,12 @@ fun ExpandablePlayButton(
     modifier: Modifier = Modifier,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
     mirrorIcon: Boolean = false,
+    enabled: Boolean = true,
 ) {
     val isFocused = interactionSource.collectIsFocusedAsState().value
     Button(
         onClick = { onClick.invoke(resume) },
+        enabled = enabled,
         modifier =
             modifier.requiredSizeIn(
                 minWidth = MinButtonSize,
@@ -234,6 +236,7 @@ fun ExpandableFaButton(
     val isFocused = interactionSource.collectIsFocusedAsState().value
     Button(
         onClick = onClick,
+        enabled = enabled,
         modifier =
             modifier.requiredSizeIn(
                 minWidth = MinButtonSize,
@@ -242,7 +245,6 @@ fun ExpandableFaButton(
             ),
         contentPadding = DefaultButtonPadding,
         interactionSource = interactionSource,
-        enabled = enabled,
     ) {
         Box(
             modifier =

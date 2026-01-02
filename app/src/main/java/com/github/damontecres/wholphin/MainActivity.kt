@@ -51,6 +51,7 @@ import com.github.damontecres.wholphin.services.ServerEventListener
 import com.github.damontecres.wholphin.services.SetupDestination
 import com.github.damontecres.wholphin.services.SetupNavigationManager
 import com.github.damontecres.wholphin.services.UpdateChecker
+import com.github.damontecres.wholphin.services.UserSwitchListener
 import com.github.damontecres.wholphin.services.hilt.AuthOkHttpClient
 import com.github.damontecres.wholphin.services.tvprovider.TvProviderSchedulerService
 import com.github.damontecres.wholphin.ui.CoilConfig
@@ -104,6 +105,9 @@ class MainActivity : AppCompatActivity() {
 
     @Inject
     lateinit var refreshRateService: RefreshRateService
+
+    @Inject
+    lateinit var userSwitchListener: UserSwitchListener
 
     @Inject
     lateinit var tvProviderSchedulerService: TvProviderSchedulerService

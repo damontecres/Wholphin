@@ -403,6 +403,11 @@
     <string name="play_trailer">Play trailer</string>
     <string name="no_trailers">No trailers</string>
 
+    <string name="discover">Discover</string>
+    <string name="request">Request</string>
+    <string name="pending">Pending</string>
+    <string name="seerr_integration">Seerr integration</string>
+
     <string-array name="theme_song_volume">
         <item>Disabled</item>
         <item>Lowest</item>
