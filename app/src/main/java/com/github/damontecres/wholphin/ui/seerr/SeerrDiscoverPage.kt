@@ -16,6 +16,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -161,13 +162,13 @@ fun SeerrDiscoverPage(
                         onClick = onClick,
                         onLongClick = onLongClick,
                         showOverlay = false,
-                        modifier = mod,
+                        modifier =
+                            mod.onFocusChanged {
+                                if (it.isFocused) {
+                                    position = RowColumn(0, index)
+                                }
+                            },
                     )
-                },
-                cardOnFocus = { isFocused, index ->
-                    if (isFocused) {
-                        position = RowColumn(0, index)
-                    }
                 },
                 modifier = Modifier.focusRequester(focusRequester),
             )
@@ -193,13 +194,13 @@ fun SeerrDiscoverPage(
                         onClick = onClick,
                         onLongClick = onLongClick,
                         showOverlay = false,
-                        modifier = mod,
+                        modifier =
+                            mod.onFocusChanged {
+                                if (it.isFocused) {
+                                    position = RowColumn(1, index)
+                                }
+                            },
                     )
-                },
-                cardOnFocus = { isFocused, index ->
-                    if (isFocused) {
-                        position = RowColumn(1, index)
-                    }
                 },
             )
         }

@@ -245,7 +245,6 @@ fun ExpandableFaButton(
             ),
         contentPadding = DefaultButtonPadding,
         interactionSource = interactionSource,
-        enabled = enabled,
     ) {
         Box(
             modifier =

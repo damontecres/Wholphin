@@ -107,9 +107,6 @@ class MainActivity : AppCompatActivity() {
     lateinit var refreshRateService: RefreshRateService
 
     @Inject
-    lateinit var datePlayedInvalidationService: DatePlayedInvalidationService
-
-    @Inject
     lateinit var userSwitchListener: UserSwitchListener
 
     @Inject
