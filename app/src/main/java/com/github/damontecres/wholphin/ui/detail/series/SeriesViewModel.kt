@@ -221,9 +221,6 @@ class SeriesViewModel
         ) {
             viewModelScope.launchIO {
                 themeSongPlayer.playThemeFor(seriesId, playThemeSongs)
-                addCloseable {
-                    themeSongPlayer.stop()
-                }
             }
         }
 
