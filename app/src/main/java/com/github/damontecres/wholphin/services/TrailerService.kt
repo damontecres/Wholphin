@@ -44,16 +44,13 @@ class TrailerService
                     .sortedWith(
                         compareBy(
                             {
-                                // Try to show official trailers first
-                                if (it.name.contains("Official Trailer", ignoreCase = true) ||
-                                    it.name.contains(
-                                        "Official Theatrical Trailer",
-                                        ignoreCase = true,
-                                    )
-                                ) {
-                                    0
-                                } else {
-                                    1
+                                // Try to show official trailers first & teasers last
+                                when {
+                                    it.name.contains("Official Trailer", true) -> 0
+                                    it.name.contains("Official Theatrical Trailer", true) -> 0
+                                    it.name.contains("Teaser", true) -> 10
+                                    it.name.contains("Trailer", true) -> 1
+                                    else -> 5
                                 }
                             },
                             {
