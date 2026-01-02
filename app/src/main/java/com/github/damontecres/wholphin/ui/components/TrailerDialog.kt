@@ -15,8 +15,9 @@ fun TrailerDialog(
     trailers: List<Trailer>,
     onClick: (Trailer) -> Unit,
 ) {
-    val trailersStr = stringResource(R.string.trailers)
+    val trailersStr = stringResource(R.string.play_trailer)
     val localStr = stringResource(R.string.local)
+    val externalStr = stringResource(R.string.external_track)
     val params =
         remember(trailers) {
             DialogParams(
@@ -32,13 +33,11 @@ fun TrailerDialog(
                                 val subtitle =
                                     when (trailer) {
                                         is LocalTrailer -> localStr
-                                        is RemoteTrailer -> trailer.subtitle
+                                        is RemoteTrailer -> trailer.subtitle ?: externalStr
                                     }
-                                subtitle?.let {
-                                    Text(
-                                        text = it,
-                                    )
-                                }
+                                Text(
+                                    text = subtitle,
+                                )
                             },
                             onClick = { onClick.invoke(trailer) },
                         )

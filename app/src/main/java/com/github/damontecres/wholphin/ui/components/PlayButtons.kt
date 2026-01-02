@@ -142,32 +142,11 @@ fun ExpandablePlayButtons(
 
         if (trailers != null) {
             item("trailers") {
-                var showDialog by remember { mutableStateOf(false) }
-                ExpandableFaButton(
-                    title =
-                        if (trailers.size == 1) {
-                            R.string.play_trailer
-                        } else {
-                            R.string.trailers
-                        },
-                    iconStringRes = R.string.fa_film,
-                    enabled = trailers.isNotEmpty(),
-                    onClick = {
-                        if (trailers.size == 1) {
-                            trailerOnClick.invoke(trailers.first())
-                        } else {
-                            showDialog = true
-                        }
-                    },
+                TrailerButton(
+                    trailers = trailers,
+                    trailerOnClick = trailerOnClick,
                     modifier = Modifier.onFocusChanged(buttonOnFocusChanged),
                 )
-                if (showDialog) {
-                    TrailerDialog(
-                        onDismissRequest = { showDialog = false },
-                        trailers = trailers,
-                        onClick = trailerOnClick,
-                    )
-                }
             }
         }
 
@@ -287,6 +266,40 @@ fun ExpandableFaButton(
                 modifier = Modifier.padding(end = 4.dp),
             )
         }
+    }
+}
+
+@Composable
+fun TrailerButton(
+    trailers: List<Trailer>,
+    trailerOnClick: (Trailer) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    var showDialog by remember { mutableStateOf(false) }
+    ExpandableFaButton(
+        title =
+            if (trailers.size == 1) {
+                R.string.play_trailer
+            } else {
+                R.string.trailers
+            },
+        iconStringRes = R.string.fa_film,
+        enabled = trailers.isNotEmpty(),
+        onClick = {
+            if (trailers.size == 1) {
+                trailerOnClick.invoke(trailers.first())
+            } else {
+                showDialog = true
+            }
+        },
+        modifier = modifier,
+    )
+    if (showDialog) {
+        TrailerDialog(
+            onDismissRequest = { showDialog = false },
+            trailers = trailers,
+            onClick = trailerOnClick,
+        )
     }
 }
 

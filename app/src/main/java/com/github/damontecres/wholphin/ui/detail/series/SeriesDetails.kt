@@ -62,6 +62,7 @@ import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.components.Optional
 import com.github.damontecres.wholphin.ui.components.OverviewText
 import com.github.damontecres.wholphin.ui.components.SeriesQuickDetails
+import com.github.damontecres.wholphin.ui.components.TrailerButton
 import com.github.damontecres.wholphin.ui.data.AddPlaylistViewModel
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialog
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialogInfo
@@ -402,6 +403,18 @@ fun SeriesDetailsContent(
                             iconStringRes = R.string.fa_heart,
                             onClick = favoriteOnClick,
                             iconColor = if (favorite) Color.Red else Color.Unspecified,
+                            modifier =
+                                Modifier.onFocusChanged {
+                                    if (it.isFocused) {
+                                        scope.launch(ExceptionHandler()) {
+                                            bringIntoViewRequester.bringIntoView()
+                                        }
+                                    }
+                                },
+                        )
+                        TrailerButton(
+                            trailers = trailers,
+                            trailerOnClick = trailerOnClick,
                             modifier =
                                 Modifier.onFocusChanged {
                                     if (it.isFocused) {
