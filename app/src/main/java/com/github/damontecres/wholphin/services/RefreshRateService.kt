@@ -95,13 +95,13 @@ class RefreshRateService
                 } catch (ex: InterruptedException) {
                     Timber.w(ex, "Exception waiting for refresh rate switch")
                 }
-                val targetRate = (targetMode.refreshRate * 100).roundToInt()
+                val targetRate = (targetMode.refreshRate * 1000).roundToInt()
                 val isSeamless =
-                    targetRate == (display.mode.refreshRate * 100).roundToInt() ||
+                    targetRate == (currentDisplayMode.refreshRate * 1000).roundToInt() ||
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                            display.mode.alternativeRefreshRates
-                                .map { (it * 100).roundToInt() }
-                                .any { targetRate % it == 0 }
+                            currentDisplayMode.alternativeRefreshRates
+                                .map { (it * 1000).roundToInt() }
+                                .any { it % targetRate == 0 }
                         } else {
                             false
                         }

@@ -104,7 +104,9 @@ class ThemeSongPlayer
         }
 
         fun stop() {
-            Timber.v("Stopping theme song")
-            player.stop()
+            if (player.isPlaying) {
+                Timber.v("Stopping theme song")
+                player.stop()
+            }
         }
     }

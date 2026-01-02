@@ -31,7 +31,6 @@ import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.LifecycleResumeEffect
-import androidx.lifecycle.compose.LifecycleStartEffect
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.R
@@ -143,12 +142,12 @@ fun MovieDetails(
 
         LoadingState.Success -> {
             item?.let { movie ->
-                LifecycleStartEffect(destination.itemId) {
+                LifecycleResumeEffect(destination.itemId) {
                     viewModel.maybePlayThemeSong(
                         destination.itemId,
                         preferences.appPreferences.interfacePreferences.playThemeSongs,
                     )
-                    onStopOrDispose {
+                    onPauseOrDispose {
                         viewModel.release()
                     }
                 }
