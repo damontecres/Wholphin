@@ -34,7 +34,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.lifecycle.compose.LifecycleStartEffect
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.R
@@ -124,12 +124,12 @@ fun SeriesDetails(
 
         LoadingState.Success -> {
             item?.let { item ->
-                LifecycleStartEffect(destination.itemId) {
+                LifecycleResumeEffect(destination.itemId) {
                     viewModel.maybePlayThemeSong(
                         destination.itemId,
                         preferences.appPreferences.interfacePreferences.playThemeSongs,
                     )
-                    onStopOrDispose {
+                    onPauseOrDispose {
                         viewModel.release()
                     }
                 }
