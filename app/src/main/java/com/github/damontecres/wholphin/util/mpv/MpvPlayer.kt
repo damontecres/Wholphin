@@ -109,6 +109,7 @@ class MpvPlayer(
         Timber.v("config-dir=${context.filesDir.path}")
         MPVLib.addLogObserver(mpvLogger)
 
+        Timber.v("Creating MPVLib")
         MPVLib.create(context)
         MPVLib.setOptionString("config", "yes")
         MPVLib.setOptionString("config-dir", context.filesDir.path)
@@ -127,6 +128,7 @@ class MpvPlayer(
         MPVLib.setOptionString("demuxer-max-bytes", "${cacheMegs * 1024 * 1024}")
         MPVLib.setOptionString("demuxer-max-back-bytes", "${cacheMegs * 1024 * 1024}")
 
+        Timber.v("Initializing MPVLib")
         MPVLib.initialize()
 
         MPVLib.setOptionString("force-window", "no")
@@ -466,7 +468,6 @@ class MpvPlayer(
     override fun clearVideoSurfaceHolder(surfaceHolder: SurfaceHolder?): Unit = throw UnsupportedOperationException()
 
     override fun setVideoSurfaceView(surfaceView: SurfaceView?) {
-        throwIfReleased()
         if (DEBUG) Timber.v("setVideoSurfaceView")
         val surface = surfaceView?.holder?.surface
         if (surface != null && surface.isValid) {
@@ -842,7 +843,7 @@ class MpvPlayer(
             Timber.w("Player is released, ignoring command %s", cmd)
             return true
         }
-        if (surface == null && cmd != MpvCommand.INITIALIZE && cmd != MpvCommand.ATTACH_SURFACE) {
+        if (surface == null && !cmd.isLifecycle) {
             // If libmpv isn't ready, re-enqueue the messages
             // Note: this means nothing will play until it is attached to a surface,
             // so MpvPlayer can't be used for background audio/music playback
@@ -1047,14 +1048,16 @@ private data class MediaAndPosition(
     val startPositionMs: Long,
 )
 
-enum class MpvCommand {
-    PLAY_PAUSE,
-    SEEK,
-    SET_TRACK_SELECTION,
-    SET_SPEED,
-    SET_SUBTITLE_DELAY,
-    LOAD_FILE,
-    ATTACH_SURFACE,
-    INITIALIZE,
-    DESTROY,
+enum class MpvCommand(
+    val isLifecycle: Boolean,
+) {
+    PLAY_PAUSE(false),
+    SEEK(false),
+    SET_TRACK_SELECTION(false),
+    SET_SPEED(false),
+    SET_SUBTITLE_DELAY(false),
+    LOAD_FILE(false),
+    ATTACH_SURFACE(true),
+    INITIALIZE(true),
+    DESTROY(true),
 }
