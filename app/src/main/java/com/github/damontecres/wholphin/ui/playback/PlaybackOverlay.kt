@@ -162,6 +162,20 @@ fun PlaybackOverlay(
         }
 
         AnimatedVisibility(
+            visible = controllerViewState.controlsVisible,
+            enter = fadeIn(),
+            exit = fadeOut(),
+            modifier = Modifier.matchParentSize(),
+        ) {
+            Box(
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .background(scrimBrush),
+            )
+        }
+
+        AnimatedVisibility(
             state == OverlayViewState.CONTROLLER,
             enter = slideInVertically() + fadeIn(),
             exit = slideOutVertically() + fadeOut(),
