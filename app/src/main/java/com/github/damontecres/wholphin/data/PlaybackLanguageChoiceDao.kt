@@ -1,6 +1,7 @@
 package com.github.damontecres.wholphin.data
 
 import androidx.room.Dao
+import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
@@ -17,4 +18,7 @@ interface PlaybackLanguageChoiceDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun save(plc: PlaybackLanguageChoice): Long
+
+    @Delete
+    fun delete(plc: PlaybackLanguageChoice)
 }
