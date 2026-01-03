@@ -376,4 +376,7 @@
     <string name="backdrop_display">Stile backdrop</string>
     <string name="ends_at">Termina alle %1$s</string>
     <string name="resolution_switching">Cambio risoluzione</string>
+    <string name="local">Locale</string>
+    <string name="play_trailer">Riproduci trailer</string>
+    <string name="no_trailers">Nessun trailer</string>
 </resources>
