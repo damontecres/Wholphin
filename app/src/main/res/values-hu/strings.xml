@@ -360,4 +360,7 @@
     <string name="nav_drawer_switch_on_focus">Navigációs menü oldalainak váltása fókusznál</string>
     <string name="playback_overrides">Lejátszás felülbírálatai</string>
     <string name="resolution_switching">Felbontásváltás</string>
+    <string name="play_trailer">Előzetes lejátszása</string>
+    <string name="no_trailers">Nincsenek előzetesek</string>
+    <string name="local">Helyi</string>
 </resources>
