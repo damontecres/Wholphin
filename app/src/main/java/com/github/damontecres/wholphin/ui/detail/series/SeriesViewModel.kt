@@ -161,7 +161,7 @@ class SeriesViewModel
                             } ?: 0
                         Timber.v("Got initial season index: $index")
                         position.update {
-                            it.copy(seasonTabIndex = index)
+                            it.copy(seasonTabIndex = index.coerceAtLeast(0))
                         }
                     }
                 }
@@ -547,7 +547,10 @@ private suspend fun findIndexOf(
     val index =
         if (targetId != null && (targetNum == null || targetNum !in pager.indices)) {
             // No hint info, so have to check everything
-            pager.indexOfBlocking { equalsNotNull(it?.id, targetId) }
+            pager.indexOfBlocking {
+                equalsNotNull(it?.indexNumber, targetNum) ||
+                    equalsNotNull(it?.id, targetId)
+            }
         } else if (targetNum != null && targetNum in pager.indices) {
             // Start searching from the season number and choose direction from there
             val num = pager.getBlocking(targetNum)?.indexNumber
