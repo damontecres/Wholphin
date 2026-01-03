@@ -344,4 +344,7 @@
     <string name="backdrop_display">背景幕样式</string>
     <string name="ends_at">结束于 %1$s</string>
     <string name="resolution_switching">分辨率切换</string>
+    <string name="local">本地</string>
+    <string name="play_trailer">播放预告片</string>
+    <string name="no_trailers">无预告片</string>
 </resources>
