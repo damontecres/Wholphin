@@ -78,12 +78,13 @@ inline fun <T> List<T>.indexOfFirstOrNull(predicate: (T) -> Boolean): Int? {
 /**
  * Try to call [FocusRequester.requestFocus], but catch & log the exception if something is not configured properly
  */
-fun FocusRequester.tryRequestFocus(): Boolean =
+fun FocusRequester.tryRequestFocus(tag: String? = null): Boolean =
     try {
         requestFocus()
+        tag?.let { Timber.v("Request focus tag=%s", tag) }
         true
     } catch (ex: IllegalStateException) {
-        Timber.w(ex, "Failed to request focus")
+        Timber.w(ex, "Failed to request focus, tag=%s", tag)
         false
     }
 
