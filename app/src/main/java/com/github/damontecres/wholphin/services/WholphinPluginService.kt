@@ -36,6 +36,7 @@ class WholphinPluginService
             private const val CAPABILITIES_ENDPOINT = "$PLUGIN_BASE_PATH/capabilities"
             private const val LOGIN_BACKGROUND_ENDPOINT = "$PLUGIN_BASE_PATH/loginbackground"
             private const val HOME_ENDPOINT = "$PLUGIN_BASE_PATH/home"
+            private const val SETTINGS_ENDPOINT = "$PLUGIN_BASE_PATH/settings"
         }
 
         private val json =
@@ -201,6 +202,53 @@ class WholphinPluginService
             }
 
         /**
+         * Get plugin settings from the Wholphin plugin
+         * 
+         * This endpoint requires authentication and returns general plugin settings.
+         * Currently includes the Seerr URL for media requests integration.
+         *
+         * @param serverUrl The base URL of the Jellyfin server
+         * @return PluginSettings object with settings, or null if not available or on error
+         */
+        suspend fun getPluginSettings(serverUrl: String): PluginSettings? =
+            try {
+                val normalizedUrl = serverUrl.trimEnd('/')
+                val endpoint = "$normalizedUrl$SETTINGS_ENDPOINT"
+
+                val request =
+                    Request
+                        .Builder()
+                        .url(endpoint)
+                        .get()
+                        .build()
+
+                val response = authOkHttpClient.newCall(request).execute()
+
+                if (response.isSuccessful) {
+                    val body = response.body?.string()
+                    if (body != null) {
+                        try {
+                            val settings = json.decodeFromString<PluginSettings>(body)
+                            Timber.i("Loaded plugin settings from $serverUrl")
+                            settings
+                        } catch (e: Exception) {
+                            Timber.w(e, "Failed to parse plugin settings response")
+                            null
+                        }
+                    } else {
+                        Timber.w("Plugin settings endpoint returned empty body")
+                        null
+                    }
+                } else {
+                    Timber.v("Plugin settings not available on $serverUrl (status: ${response.code})")
+                    null
+                }
+            } catch (e: Exception) {
+                Timber.v(e, "Error fetching plugin settings from $serverUrl")
+                null
+            }
+
+        /**
          * Make an authenticated request to a Wholphin plugin endpoint
          * 
          * This uses the authenticated HTTP client which includes the current user's access token.
@@ -292,6 +340,21 @@ sealed class LoginBackgroundResult {
 
     object NotAvailable : LoginBackgroundResult()
 }
+
+/**
+ * General plugin settings
+ * 
+ * Example JSON from server:
+ * ```json
+ * {
+ *   "seerrUrl": "https://your-seerr-instance.com"
+ * }
+ * ```
+ */
+@Serializable
+data class PluginSettings(
+    val seerrUrl: String? = null,
+)
 
 // ============================================================================
 // Home Configuration Data Classes
