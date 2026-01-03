@@ -360,4 +360,7 @@
     <string name="backdrop_display">Tausta dekoratsioon</string>
     <string name="ends_at">Lõppeb kell %1$s</string>
     <string name="resolution_switching">Resolutsiooni vahetamine</string>
+    <string name="local">Kohalik</string>
+    <string name="play_trailer">Esita treilerit</string>
+    <string name="no_trailers">Treilerit pole</string>
 </resources>
