@@ -256,11 +256,12 @@ class HomeViewModel
             
             // Parse filters
             val filters = query.filters?.mapNotNull { filterStr ->
-                try {
-                    org.jellyfin.sdk.model.api.ItemFilter.valueOf(filterStr)
-                } catch (e: Exception) {
-                    Timber.w("Unknown filter: $filterStr")
-                    null
+                org.jellyfin.sdk.model.api.ItemFilter.entries.find { 
+                    it.serialName == filterStr 
+                }.also { filter ->
+                    if (filter == null) {
+                        Timber.w("Unknown filter: $filterStr")
+                    }
                 }
             }
             
