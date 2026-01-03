@@ -32,7 +32,7 @@ class ImageUrlService
             imageType: ImageType,
             fillWidth: Int? = null,
             fillHeight: Int? = null,
-        ): String =
+        ): String? =
             when (imageType) {
                 ImageType.BACKDROP,
                 ImageType.LOGO,
