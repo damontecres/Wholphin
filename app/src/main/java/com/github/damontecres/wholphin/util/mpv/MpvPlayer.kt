@@ -849,6 +849,7 @@ class MpvPlayer(
             // so MpvPlayer can't be used for background audio/music playback
             Timber.v("MPV is not initialized/attached yet, requeue cmd %s", cmd)
             internalHandler.sendMessageDelayed(Message.obtain(msg), 50)
+            return true
         }
         when (cmd) {
             MpvCommand.PLAY_PAUSE -> {
