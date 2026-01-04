@@ -1,7 +1,13 @@
 package com.github.damontecres.wholphin.data.model
 
+import androidx.compose.foundation.text.appendInlineContent
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.Stable
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.withStyle
 import com.github.damontecres.wholphin.ui.DateFormatter
 import com.github.damontecres.wholphin.ui.detail.CardGridItem
 import com.github.damontecres.wholphin.ui.detail.series.SeasonEpisodeIds
@@ -19,6 +25,7 @@ import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.model.api.BaseItemDto
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.extensions.ticks
+import java.util.Locale
 import kotlin.time.Duration
 
 @Serializable
@@ -94,6 +101,57 @@ data class BaseItem(
                         ?.roundMinutes
                         ?.let { add("$it left") }
                 },
+            str =
+                buildAnnotatedString {
+                    fun dot() {
+                        withStyle(SpanStyle(fontWeight = FontWeight.Bold)) {
+                            append(" \u00b7 ")
+                        }
+                    }
+
+                    val details =
+                        buildList {
+                            data.seasonEpisode?.let(::add)
+                            if (type == BaseItemKind.EPISODE) {
+                                data.premiereDate?.let { add(DateFormatter.format(it)) }
+                            } else {
+                                data.productionYear?.let { add(it.toString()) }
+                            }
+                            data.runTimeTicks
+                                ?.ticks
+                                ?.roundMinutes
+                                ?.let { add(it.toString()) }
+                            data.timeRemaining
+                                ?.roundMinutes
+                                ?.let { add("$it left") }
+                        }
+                    details.forEachIndexed { index, string ->
+                        append(string)
+                        if (index != details.lastIndex) {
+                            dot()
+                        }
+                    }
+                    // TODO time remaining
+
+                    data.officialRating?.let {
+                        dot()
+                        append(it)
+                    }
+                    data.communityRating?.let {
+                        dot()
+                        append(String.format(Locale.getDefault(), "%.1f", it))
+                        appendInlineContent(id = "star")
+                    }
+                    data.criticRating?.let {
+                        dot()
+                        append("${it.toInt()}%")
+                        if (it >= 60f) {
+                            appendInlineContent(id = "fresh")
+                        } else {
+                            appendInlineContent(id = "rotten")
+                        }
+                    }
+                },
         )
 
     private fun dateAsIndex(): Int? =
@@ -153,4 +211,5 @@ val BaseItemDto.aspectRatioFloat: Float? get() = width?.let { w -> height?.let {
 @Immutable
 data class BaseItemUi(
     val quickDetailsStart: List<String>,
+    val str: AnnotatedString,
 )

@@ -16,14 +16,19 @@
 
 package com.github.damontecres.wholphin.ui.components
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.text.InlineTextContent
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
@@ -31,10 +36,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.Placeholder
+import androidx.compose.ui.text.PlaceholderVerticalAlign
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
+import androidx.tv.material3.Icon
 import androidx.tv.material3.LocalTextStyle
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
@@ -44,7 +54,6 @@ import com.github.damontecres.wholphin.ui.PreviewTvSpec
 import com.github.damontecres.wholphin.ui.TimeFormatter
 import com.github.damontecres.wholphin.ui.theme.WholphinTheme
 import com.github.damontecres.wholphin.ui.util.LocalClock
-import timber.log.Timber
 import kotlin.time.Duration
 
 @Composable
@@ -99,39 +108,96 @@ fun DotSeparatedRow(
     modifier: Modifier = Modifier,
     textStyle: TextStyle = MaterialTheme.typography.titleSmall,
 ) {
-    CompositionLocalProvider(LocalTextStyle provides textStyle.copy(color = MaterialTheme.colorScheme.onSurface)) {
-        Row(
-            modifier = modifier,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            details.quickDetailsStart.forEachIndexed { index, text ->
-                Text(text)
-                if (index < details.quickDetailsStart.lastIndex) {
-                    Dot()
-                }
-            }
-            if (runtimePosition != null && runtime != null) {
-                Dot()
-                EndsAt(runtime, runtimePosition)
-            }
-            officialRating?.let {
-                Dot()
-                Text(it)
-            }
-            val height = with(LocalDensity.current) { textStyle.fontSize.toDp() }
-            communityRating?.let {
-                Dot()
-                SimpleStarRating(
-                    communityRating = it,
-                    modifier = Modifier.height(height),
-                )
-            }
-            criticRating?.let {
-                Dot()
-                TomatoRating(it, Modifier.height(height))
-            }
+    val inlineContentMap =
+        remember(textStyle) {
+            mapOf(
+                "star" to
+                    InlineTextContent(
+                        Placeholder(
+                            textStyle.fontSize,
+                            textStyle.fontSize,
+                            PlaceholderVerticalAlign.TextCenter,
+                        ),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Star,
+                            tint = FilledStarColor,
+                            contentDescription = null,
+                            modifier = Modifier.fillMaxSize(),
+                        )
+                    },
+                "rotten" to
+                    InlineTextContent(
+                        Placeholder(
+                            textStyle.fontSize,
+                            textStyle.fontSize,
+                            PlaceholderVerticalAlign.TextCenter,
+                        ),
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.ic_rotten_tomatoes_rotten),
+                            contentDescription = null,
+                            modifier = Modifier.fillMaxSize(),
+                            tint = Color.Unspecified,
+                        )
+                    },
+                "fresh" to
+                    InlineTextContent(
+                        Placeholder(
+                            textStyle.fontSize,
+                            textStyle.fontSize,
+                            PlaceholderVerticalAlign.TextCenter,
+                        ),
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.ic_rotten_tomatoes_fresh),
+                            contentDescription = null,
+                            modifier = Modifier.fillMaxSize(),
+                            tint = Color.Unspecified,
+                        )
+                    },
+            )
         }
-    }
+
+    Text(
+        text = details.str,
+        color = MaterialTheme.colorScheme.onSurface,
+        style = textStyle,
+        inlineContent = inlineContentMap,
+    )
+//    CompositionLocalProvider(LocalTextStyle provides textStyle.copy(color = MaterialTheme.colorScheme.onSurface)) {
+//        Row(
+//            modifier = modifier,
+//            verticalAlignment = Alignment.CenterVertically,
+//        ) {
+//            details.quickDetailsStart.forEachIndexed { index, text ->
+//                Text(text)
+//                if (index < details.quickDetailsStart.lastIndex) {
+//                    Dot()
+//                }
+//            }
+//            if (runtimePosition != null && runtime != null) {
+//                Dot()
+//                EndsAt(runtime, runtimePosition)
+//            }
+//            officialRating?.let {
+//                Dot()
+//                Text(it)
+//            }
+//            val height = with(LocalDensity.current) { textStyle.fontSize.toDp() }
+//            communityRating?.let {
+//                Dot()
+//                SimpleStarRating(
+//                    communityRating = it,
+//                    modifier = Modifier.height(height),
+//                )
+//            }
+//            criticRating?.let {
+//                Dot()
+//                TomatoRating(it, Modifier.height(height))
+//            }
+//        }
+//    }
 }
 
 @Composable
