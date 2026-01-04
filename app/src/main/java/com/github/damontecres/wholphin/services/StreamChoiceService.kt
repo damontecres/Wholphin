@@ -199,15 +199,17 @@ class StreamChoiceService
                         }
                     }
                 val candidates =
-                    candidates.sortedWith(
-                        compareBy<MediaStream>(
-                            { it.isDefault },
-                            { !it.isForced && it.language.equals(subtitleLanguage, true) },
-                            { it.isForced && it.language.equals(subtitleLanguage, true) },
-                            { it.isForced && it.language.isUnknown },
-                            { it.isForced },
-                        ),
-                    )
+                    candidates
+                        .sortedWith(
+                            compareByDescending<MediaStream> { it.isExternal }
+                                .thenByDescending { it.isDefault }
+                                .thenByDescending {
+                                    !it.isForced && it.language.equals(subtitleLanguage, true)
+                                }.thenByDescending {
+                                    it.isForced && it.language.equals(subtitleLanguage, true)
+                                }.thenByDescending { it.isForced && it.language.isUnknown }
+                                .thenByDescending { it.isForced },
+                        )
                 return when (subtitleMode) {
                     SubtitlePlaybackMode.ALWAYS -> {
                         if (subtitleLanguage.isNotNullOrBlank()) {
@@ -232,7 +234,7 @@ class StreamChoiceService
                     SubtitlePlaybackMode.SMART -> {
                         if (subtitleLanguage.isNotNullOrBlank()) {
                             val audioLanguage = userConfig?.audioLanguagePreference
-                            if (audioLanguage.isNotNullOrBlank() && audioLanguage != audioStreamLang) {
+                            if (audioLanguage.isNullOrBlank() || audioLanguage != audioStreamLang) {
                                 candidates.firstOrNull { it.language == subtitleLanguage }
                                     ?: candidates.firstOrNull { it.language.isUnknown }
                             } else {
@@ -240,7 +242,7 @@ class StreamChoiceService
                                     ?: candidates.firstOrNull { it.isForced && it.language.isUnknown }
                             }
                         } else {
-                            candidates.firstOrNull { it.isForced }
+                            candidates.firstOrNull { it.isDefault }
                         }
                     }
 

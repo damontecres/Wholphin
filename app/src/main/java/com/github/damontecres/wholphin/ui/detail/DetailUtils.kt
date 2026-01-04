@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
@@ -29,6 +30,12 @@ data class MoreDialogActions(
     var onClickAddPlaylist: (UUID) -> Unit,
 )
 
+enum class ClearChosenStreams {
+    NONE,
+    ITEM_AND_SERIES,
+    SERIES,
+}
+
 /**
  * Build the [DialogItem]s when clicking "More"
  *
@@ -53,10 +60,12 @@ fun buildMoreDialogItems(
     sourceId: UUID?,
     watched: Boolean,
     favorite: Boolean,
+    canClearChosenStreams: Boolean,
     actions: MoreDialogActions,
     onChooseVersion: () -> Unit,
     onChooseTracks: (MediaStreamType) -> Unit,
     onShowOverview: () -> Unit,
+    onClearChosenStreams: () -> Unit,
 ): List<DialogItem> =
     buildList {
         add(
@@ -169,6 +178,16 @@ fun buildMoreDialogItems(
                     Icons.Default.Info,
                 ) {
                     onShowOverview.invoke()
+                },
+            )
+        }
+        if (canClearChosenStreams) {
+            add(
+                DialogItem(
+                    context.getString(R.string.clear_track_choices),
+                    Icons.Default.Delete,
+                ) {
+                    onClearChosenStreams()
                 },
             )
         }

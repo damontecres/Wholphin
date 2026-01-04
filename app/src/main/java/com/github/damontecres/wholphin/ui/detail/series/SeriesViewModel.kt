@@ -510,6 +510,16 @@ class SeriesViewModel
                     }
             }
         }
+
+        fun clearChosenStreams(
+            item: BaseItem,
+            chosenStreams: ChosenStreams?,
+        ) {
+            viewModelScope.launchIO {
+                itemPlaybackRepository.deleteChosenStreams(chosenStreams)
+                lookUpChosenTracks(item.id, item)
+            }
+        }
     }
 
 sealed interface EpisodeList {
