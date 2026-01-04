@@ -162,6 +162,48 @@ class StreamChoiceService
             }
         }
 
+        /**
+         * Resolves ONLY_FORCED to an actual subtitle track index.
+         * Returns the original index if not ONLY_FORCED or DISABLED.
+         */
+        suspend fun resolveSubtitleIndex(
+            source: MediaSourceInfo,
+            audioStreamIndex: Int?,
+            seriesId: UUID?,
+            subtitleIndex: Int,
+            prefs: UserPreferences,
+        ): Int? =
+            when (subtitleIndex) {
+                TrackIndex.DISABLED -> {
+                    null
+                }
+
+                TrackIndex.ONLY_FORCED -> {
+                    val audioStream =
+                        source.mediaStreams?.firstOrNull {
+                            it.type == MediaStreamType.AUDIO && it.index == audioStreamIndex
+                        }
+                    val itemPlayback =
+                        ItemPlayback(
+                            userId = serverRepository.currentUser.value!!.rowId,
+                            itemId = UUID.randomUUID(), // Not used for ONLY_FORCED resolution
+                            subtitleIndex = TrackIndex.ONLY_FORCED,
+                        )
+                    chooseSubtitleStream(
+                        source = source,
+                        audioStream = audioStream,
+                        seriesId = seriesId,
+                        itemPlayback = itemPlayback,
+                        plc = null,
+                        prefs = prefs,
+                    )?.index
+                }
+
+                else -> {
+                    subtitleIndex.takeIf { it >= 0 }
+                }
+            }
+
         fun chooseSubtitleStream(
             audioStreamLang: String?,
             candidates: List<MediaStream>,
@@ -279,7 +321,7 @@ class StreamChoiceService
                 title.contains("songs", ignoreCase = true)
         }
 
-        /** Finds a forced/signs track: subtitle pref -> audio -> unknown -> any. */
+        /** Finds a forced/signs track: subtitle pref -> audio -> unknown -> null. */
         private fun findForcedTrack(
             candidates: List<MediaStream>,
             subtitleLanguage: String?,
@@ -298,11 +340,7 @@ class StreamChoiceService
                     ?.let { return it }
             }
             // 3. Unknown language forced track
-            candidates
-                .firstOrNull { it.language.isUnknown && isForcedOrSigns(it) }
-                ?.let { return it }
-            // 4. Any forced track
-            return candidates.firstOrNull { it.isForced }
+            return candidates.firstOrNull { it.language.isUnknown && isForcedOrSigns(it) }
         }
     }
 

@@ -722,6 +722,19 @@ class TestStreamChoiceServiceOnlyForcedClientOverride(
                     streamAudioLang = "eng", // no eng tracks exist
                     itemPlayback = itemPlayback(subtitleIndex = TrackIndex.ONLY_FORCED),
                 ),
+                // Test 8: No matching forced track returns null (not irrelevant language)
+                TestInput(
+                    expectedIndex = null, // no forced track matches - return null instead of wrong language
+                    userSubtitleMode = null,
+                    userSubtitleLang = "eng",
+                    subtitles =
+                        listOf(
+                            subtitle(0, "chi", forced = true), // Chinese forced - wrong language
+                            subtitle(1, "spa", forced = true), // Spanish forced - wrong language
+                        ),
+                    streamAudioLang = "eng", // audio is English, no English forced
+                    itemPlayback = itemPlayback(subtitleIndex = TrackIndex.ONLY_FORCED),
+                ),
             )
     }
 }
