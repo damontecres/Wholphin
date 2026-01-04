@@ -173,7 +173,12 @@ class StreamChoiceService
                 return null
             } else if (itemPlayback?.subtitleIndex == TrackIndex.ONLY_FORCED) {
                 // Client-side manual override: User selected "Only Forced" in player menu
-                return findForcedTrack(candidates, audioStreamLang)
+                val seriesLang =
+                    playbackLanguageChoice?.subtitleLanguage?.takeIf { it.isNotNullOrBlank() }
+                val subtitleLanguage =
+                    (seriesLang ?: userConfig?.subtitleLanguagePreference)
+                        ?.takeIf { it.isNotNullOrBlank() }
+                return findForcedTrack(candidates, subtitleLanguage, audioStreamLang)
             } else if (itemPlayback?.subtitleIndexEnabled == true) {
                 return candidates.firstOrNull { it.index == itemPlayback.subtitleIndex }
             } else {
@@ -267,7 +272,7 @@ class StreamChoiceService
 
         /**
          * Returns true if the track is forced (via metadata flag or title patterns).
-         * Title-based detection only applies when track language matches audio language.
+         * Title-based detection applies when track language matches audio or is unknown.
          */
         private fun isForcedOrSigns(
             track: MediaStream,
@@ -277,8 +282,10 @@ class StreamChoiceService
             if (track.isForced) return true
 
             // Fallback: Check title for "forced", "signs", or "songs" patterns
-            // Requires matching audio language to avoid false positives
-            if (audioLanguage != null && track.language == audioLanguage) {
+            // Match when language matches audio OR language is unknown
+            if (audioLanguage != null &&
+                (track.language == audioLanguage || track.language.isUnknown)
+            ) {
                 val title = track.title ?: track.displayTitle ?: return false
                 if (title.contains("forced", ignoreCase = true)) return true
                 if (title.contains("signs", ignoreCase = true)) return true
@@ -289,18 +296,31 @@ class StreamChoiceService
         }
 
         /**
-         * Finds a forced/signs track, preferring those matching the audio language.
+         * Finds a forced/signs track using a waterfall: user preference -> audio match -> unknown -> any.
          */
         private fun findForcedTrack(
             candidates: List<MediaStream>,
+            subtitleLanguage: String?,
             audioLanguage: String?,
         ): MediaStream? {
-            // Priority 1: Forced track matching audio language (via metadata or title patterns)
+            // 1. User's preferred subtitle language
+            if (subtitleLanguage != null) {
+                candidates
+                    .firstOrNull { it.language.equals(subtitleLanguage, true) && it.isForced }
+                    ?.let { return it }
+            }
+
+            // 2. Stream audio for sign-subtitles (fallback if no preference match)
             candidates
                 .firstOrNull { it.language == audioLanguage && isForcedOrSigns(it, audioLanguage) }
                 ?.let { return it }
 
-            // Priority 2: Any track with isForced metadata (regardless of language)
+            // 3. Unknown language forced track
+            candidates
+                .firstOrNull { it.language.isUnknown && it.isForced }
+                ?.let { return it }
+
+            // 4. Any forced track
             return candidates.firstOrNull { it.isForced }
         }
     }
