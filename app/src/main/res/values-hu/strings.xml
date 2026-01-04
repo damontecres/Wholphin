@@ -233,7 +233,7 @@
     <string name="global_content_scale">Tartalom alapértelmezett méretezése</string>
     <string name="install_update">Frissítés telepítése</string>
     <string name="installed_version">Telepített verzió</string>
-    <string name="max_homepage_items">Maximális elemek soronként a kezdőlapon</string>
+    <string name="max_homepage_items">Elemek száma soronként a kezdőlapon</string>
     <string name="nav_drawer_pins_summary">Válassza ki az alapértelmezett elemeket, amelyek megjelennek, a többi el lesz rejtve</string>
     <string name="nav_drawer_pins">Navigációs menü elemeinek testreszabása</string>
     <string name="nav_drawer_switch_on_focus_summary_off">Kattintson az oldalak közti váltáshoz</string>
