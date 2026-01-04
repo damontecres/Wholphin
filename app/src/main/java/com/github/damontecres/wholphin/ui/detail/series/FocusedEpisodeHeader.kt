@@ -33,7 +33,7 @@ fun FocusedEpisodeHeader(
     ) {
         EpisodeName(dto, modifier = Modifier)
 
-        EpisodeQuickDetails(dto)
+        EpisodeQuickDetails(ep)
 
         if (dto != null) {
             VideoStreamDetails(

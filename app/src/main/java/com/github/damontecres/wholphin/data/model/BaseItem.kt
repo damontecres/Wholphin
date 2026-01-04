@@ -1,14 +1,18 @@
 package com.github.damontecres.wholphin.data.model
 
+import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.Stable
+import com.github.damontecres.wholphin.ui.DateFormatter
 import com.github.damontecres.wholphin.ui.detail.CardGridItem
 import com.github.damontecres.wholphin.ui.detail.series.SeasonEpisodeIds
 import com.github.damontecres.wholphin.ui.formatDateTime
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.playback.playable
+import com.github.damontecres.wholphin.ui.roundMinutes
 import com.github.damontecres.wholphin.ui.seasonEpisode
 import com.github.damontecres.wholphin.ui.seasonEpisodePadded
 import com.github.damontecres.wholphin.ui.seriesProductionYears
+import com.github.damontecres.wholphin.ui.timeRemaining
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import org.jellyfin.sdk.api.client.ApiClient
@@ -71,6 +75,27 @@ data class BaseItem(
 
     val favorite get() = data.userData?.isFavorite ?: false
 
+    @Transient
+    val ui =
+        BaseItemUi(
+            quickDetailsStart =
+                buildList {
+                    data.seasonEpisode?.let(::add)
+                    if (type == BaseItemKind.EPISODE) {
+                        data.premiereDate?.let { add(DateFormatter.format(it)) }
+                    } else {
+                        data.productionYear?.let { add(it.toString()) }
+                    }
+                    data.runTimeTicks
+                        ?.ticks
+                        ?.roundMinutes
+                        ?.let { add(it.toString()) }
+                    data.timeRemaining
+                        ?.roundMinutes
+                        ?.let { add("$it left") }
+                },
+        )
+
     private fun dateAsIndex(): Int? =
         data.premiereDate
             ?.let {
@@ -124,3 +149,8 @@ data class BaseItem(
 }
 
 val BaseItemDto.aspectRatioFloat: Float? get() = width?.let { w -> height?.let { h -> w.toFloat() / h.toFloat() } }
+
+@Immutable
+data class BaseItemUi(
+    val quickDetailsStart: List<String>,
+)

@@ -1,19 +1,15 @@
 package com.github.damontecres.wholphin.ui.components
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
-import com.github.damontecres.wholphin.ui.formatDateTime
+import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.ui.roundMinutes
-import com.github.damontecres.wholphin.ui.seasonEpisode
 import com.github.damontecres.wholphin.ui.seriesProductionYears
-import com.github.damontecres.wholphin.ui.util.LocalClock
 import org.jellyfin.sdk.model.api.BaseItemDto
 import org.jellyfin.sdk.model.extensions.ticks
 
@@ -56,27 +52,23 @@ fun EpisodeName(
 
 @Composable
 fun EpisodeQuickDetails(
-    dto: BaseItemDto?,
+    item: BaseItem?,
     modifier: Modifier = Modifier,
 ) {
-    val context = LocalContext.current
-    val now by LocalClock.current.now
-    val details =
-        remember(dto, now) {
-            buildList {
-                dto?.seasonEpisode?.let(::add)
-                dto?.premiereDate?.let { add(formatDateTime(it)) }
-                addRuntimeDetails(context, now, dto)
-                dto?.officialRating?.let(::add)
-            }
-        }
-    DotSeparatedRow(
-        texts = details,
-        communityRating = dto?.communityRating,
-        criticRating = dto?.criticRating,
-        textStyle = MaterialTheme.typography.titleSmall,
-        modifier = modifier,
-    )
+    item?.let {
+        DotSeparatedRow(
+            details = item.ui,
+            runtime = item.data.runTimeTicks?.ticks,
+            runtimePosition =
+                item.data.userData
+                    ?.playbackPositionTicks
+                    ?.ticks,
+            communityRating = item.data.communityRating,
+            criticRating = item.data.criticRating,
+            textStyle = MaterialTheme.typography.titleSmall,
+            modifier = modifier,
+        )
+    }
 }
 
 @Composable

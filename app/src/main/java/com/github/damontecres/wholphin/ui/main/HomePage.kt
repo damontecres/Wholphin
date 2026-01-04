@@ -475,7 +475,7 @@ fun HomePageHeader(
                     )
                 }
                 when (item.type) {
-                    BaseItemKind.EPISODE -> EpisodeQuickDetails(dto, Modifier)
+                    BaseItemKind.EPISODE -> EpisodeQuickDetails(item, Modifier)
                     BaseItemKind.SERIES -> SeriesQuickDetails(dto, Modifier)
                     else -> MovieQuickDetails(dto, Modifier)
                 }
