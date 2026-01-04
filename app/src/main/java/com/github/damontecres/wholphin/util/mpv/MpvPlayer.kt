@@ -848,7 +848,7 @@ class MpvPlayer(
             // Note: this means nothing will play until it is attached to a surface,
             // so MpvPlayer can't be used for background audio/music playback
             Timber.v("MPV is not initialized/attached yet, requeue cmd %s", cmd)
-            internalHandler.sendMessageDelayed(Message.obtain(msg), 50)
+            internalHandler.sendMessageDelayed(Message.obtain(msg), 250)
             return true
         }
         when (cmd) {
