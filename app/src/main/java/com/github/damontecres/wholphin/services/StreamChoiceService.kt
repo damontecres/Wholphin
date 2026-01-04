@@ -270,34 +270,16 @@ class StreamChoiceService
             }
         }
 
-        /**
-         * Returns true if the track is forced (via metadata flag or title patterns).
-         * Title-based detection applies when track language matches audio or is unknown.
-         */
-        private fun isForcedOrSigns(
-            track: MediaStream,
-            audioLanguage: String?,
-        ): Boolean {
-            // Primary: Use the metadata forced flag
+        /** Returns true if the track is forced (via metadata flag or title patterns). */
+        private fun isForcedOrSigns(track: MediaStream): Boolean {
             if (track.isForced) return true
-
-            // Fallback: Check title for "forced", "signs", or "songs" patterns
-            // Match when language matches audio OR language is unknown
-            if (audioLanguage != null &&
-                (track.language == audioLanguage || track.language.isUnknown)
-            ) {
-                val title = track.title ?: track.displayTitle ?: return false
-                if (title.contains("forced", ignoreCase = true)) return true
-                if (title.contains("signs", ignoreCase = true)) return true
-                if (title.contains("songs", ignoreCase = true)) return true
-            }
-
-            return false
+            val title = track.title ?: track.displayTitle ?: return false
+            return title.contains("forced", ignoreCase = true) ||
+                title.contains("signs", ignoreCase = true) ||
+                title.contains("songs", ignoreCase = true)
         }
 
-        /**
-         * Finds a forced/signs track using a waterfall: user preference -> audio match -> unknown -> any.
-         */
+        /** Finds a forced/signs track: subtitle pref -> audio -> unknown -> any. */
         private fun findForcedTrack(
             candidates: List<MediaStream>,
             subtitleLanguage: String?,
@@ -306,20 +288,19 @@ class StreamChoiceService
             // 1. User's preferred subtitle language
             if (subtitleLanguage != null) {
                 candidates
-                    .firstOrNull { it.language.equals(subtitleLanguage, true) && it.isForced }
+                    .firstOrNull { it.language.equals(subtitleLanguage, true) && isForcedOrSigns(it) }
                     ?.let { return it }
             }
-
-            // 2. Stream audio for sign-subtitles (fallback if no preference match)
-            candidates
-                .firstOrNull { it.language == audioLanguage && isForcedOrSigns(it, audioLanguage) }
-                ?.let { return it }
-
+            // 2. Audio language (for sign-subtitles if no preference match)
+            if (audioLanguage != null) {
+                candidates
+                    .firstOrNull { it.language.equals(audioLanguage, true) && isForcedOrSigns(it) }
+                    ?.let { return it }
+            }
             // 3. Unknown language forced track
             candidates
-                .firstOrNull { it.language.isUnknown && it.isForced }
+                .firstOrNull { it.language.isUnknown && isForcedOrSigns(it) }
                 ?.let { return it }
-
             // 4. Any forced track
             return candidates.firstOrNull { it.isForced }
         }

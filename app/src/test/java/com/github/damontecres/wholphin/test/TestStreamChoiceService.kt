@@ -644,7 +644,20 @@ class TestStreamChoiceServiceOnlyForcedClientOverride(
                     streamAudioLang = "eng",
                     itemPlayback = itemPlayback(subtitleIndex = TrackIndex.ONLY_FORCED),
                 ),
-                // Test 2: Falls back to audio-matching forced when no preference match
+                // Test 2: User subtitle preference matches Signs track via title (not forced flag)
+                TestInput(
+                    expectedIndex = 0, // eng signs track via title detection
+                    userSubtitleMode = null,
+                    userSubtitleLang = "eng",
+                    subtitles =
+                        listOf(
+                            subtitle(0, "eng", forced = false, title = "Signs & Songs"),
+                            subtitle(1, "spa", forced = true),
+                        ),
+                    streamAudioLang = "jpn", // different from subtitle pref
+                    itemPlayback = itemPlayback(subtitleIndex = TrackIndex.ONLY_FORCED),
+                ),
+                // Test 3: Falls back to audio-matching forced when no preference match
                 TestInput(
                     expectedIndex = 0, // eng forced (audio match, step 2)
                     userSubtitleMode = null,
@@ -657,7 +670,7 @@ class TestStreamChoiceServiceOnlyForcedClientOverride(
                     streamAudioLang = "eng",
                     itemPlayback = itemPlayback(subtitleIndex = TrackIndex.ONLY_FORCED),
                 ),
-                // Test 3: Falls back to audio-matching signs when user pref has no match
+                // Test 4: Falls back to audio-matching signs when user pref has no match
                 TestInput(
                     expectedIndex = 0, // eng signs (audio match fallback)
                     userSubtitleMode = null,
@@ -670,7 +683,7 @@ class TestStreamChoiceServiceOnlyForcedClientOverride(
                     streamAudioLang = "eng",
                     itemPlayback = itemPlayback(subtitleIndex = TrackIndex.ONLY_FORCED),
                 ),
-                // Test 4: Use audio language for signs/songs when NO subtitle preference
+                // Test 5: Use audio language for signs/songs when NO subtitle preference
                 TestInput(
                     expectedIndex = 0, // eng signs track matching audio
                     userSubtitleMode = null,
@@ -683,7 +696,7 @@ class TestStreamChoiceServiceOnlyForcedClientOverride(
                     streamAudioLang = "eng",
                     itemPlayback = itemPlayback(subtitleIndex = TrackIndex.ONLY_FORCED),
                 ),
-                // Test 5: Unknown language forced track with no preference
+                // Test 6: Unknown language forced track with no preference
                 TestInput(
                     expectedIndex = 0, // unknown forced track
                     userSubtitleMode = null,
@@ -696,7 +709,7 @@ class TestStreamChoiceServiceOnlyForcedClientOverride(
                     streamAudioLang = "eng",
                     itemPlayback = itemPlayback(subtitleIndex = TrackIndex.ONLY_FORCED),
                 ),
-                // Test 6: Unknown language forced track when no audio match
+                // Test 7: Unknown language forced track when no audio match
                 TestInput(
                     expectedIndex = 0, // unknown forced track (step 3)
                     userSubtitleMode = null,
