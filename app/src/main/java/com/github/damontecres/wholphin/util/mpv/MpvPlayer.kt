@@ -69,7 +69,8 @@ class MpvPlayer(
 ) : BasePlayer(),
     MPVLib.EventObserver,
     TrackSelector.InvalidationListener,
-    Handler.Callback {
+    Handler.Callback,
+    SurfaceHolder.Callback {
     companion object {
         private const val DEBUG = false
     }
@@ -467,24 +468,52 @@ class MpvPlayer(
 
     override fun clearVideoSurfaceHolder(surfaceHolder: SurfaceHolder?): Unit = throw UnsupportedOperationException()
 
+    private var surfaceHolder: SurfaceHolder? = null
+
     override fun setVideoSurfaceView(surfaceView: SurfaceView?) {
         if (DEBUG) Timber.v("setVideoSurfaceView")
-        val surface = surfaceView?.holder?.surface
-        if (surface != null && surface.isValid) {
-            Timber.v("Queued attach")
-            sendCommand(MpvCommand.ATTACH_SURFACE, surface)
-        } else {
-            clearVideoSurfaceView(null)
+        if (surfaceView != null) {
+            this.surfaceHolder?.removeCallback(this)
+            this.surfaceHolder = surfaceView.holder
+            if (surfaceView.holder != null) {
+                val surface = surfaceView.holder?.surface
+                surfaceView.holder.addCallback(this)
+                if (surface != null && surface.isValid) {
+                    Timber.v("Queued attach")
+                    sendCommand(MpvCommand.ATTACH_SURFACE, surface)
+                    return
+                }
+            }
         }
+        clearVideoSurfaceView(null)
     }
 
     override fun clearVideoSurfaceView(surfaceView: SurfaceView?) {
-        if (surface == surfaceView?.holder?.surface) {
+        if (surface != null && surface == surfaceView?.holder?.surface) {
             Timber.d("clearVideoSurfaceView")
             sendCommand(MpvCommand.ATTACH_SURFACE, null)
         } else {
             Timber.w("clearVideoSurfaceView called with different surface")
         }
+    }
+
+    override fun surfaceChanged(
+        holder: SurfaceHolder,
+        format: Int,
+        width: Int,
+        height: Int,
+    ) {
+        Timber.v("surfaceChanged: format=$format, width=$width, height=$height")
+    }
+
+    override fun surfaceCreated(holder: SurfaceHolder) {
+        Timber.v("surfaceCreated")
+        sendCommand(MpvCommand.ATTACH_SURFACE, holder.surface)
+    }
+
+    override fun surfaceDestroyed(holder: SurfaceHolder) {
+        Timber.v("surfaceDestroyed")
+        sendCommand(MpvCommand.ATTACH_SURFACE, null)
     }
 
     override fun setVideoTextureView(textureView: TextureView?): Unit = throw UnsupportedOperationException()
@@ -660,6 +689,7 @@ class MpvPlayer(
             MPV_EVENT_VIDEO_RECONFIG -> {
                 Timber.d("event: MPV_EVENT_VIDEO_RECONFIG")
                 updateTracksAndNotify()
+                updateVideoSizeAndNotify()
             }
 
             MPV_EVENT_END_FILE -> {
@@ -718,6 +748,19 @@ class MpvPlayer(
             it.copy(tracks = tracks)
         }
         notifyListeners(EVENT_TRACKS_CHANGED) { onTracksChanged(tracks) }
+    }
+
+    private fun updateVideoSizeAndNotify() {
+        val width = MPVLib.getPropertyInt("width")
+        val height = MPVLib.getPropertyInt("height")
+        val videoSize =
+            if (width != null && height != null) {
+                VideoSize(width, height)
+            } else {
+                VideoSize.UNKNOWN
+            }
+        playbackState.update { it.copy(videoSize = videoSize) }
+        notifyListeners(EVENT_VIDEO_SIZE_CHANGED) { onVideoSizeChanged(videoSize) }
     }
 
     private fun loadFile(media: MediaAndPosition) {
