@@ -33,6 +33,7 @@ import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
@@ -174,6 +175,7 @@ fun SearchPage(
     modifier: Modifier = Modifier,
     viewModel: SearchViewModel = hiltViewModel(),
 ) {
+    val context = LocalContext.current
     val focusManager = LocalFocusManager.current
     val keyboardController = LocalSoftwareKeyboardController.current
     val movies by viewModel.movies.observeAsState(SearchResult.NoQuery)
@@ -212,15 +214,9 @@ fun SearchPage(
     LaunchedEffect(Unit) {
         focusRequester.tryRequestFocus()
     }
-    val onClickItem: (Int, BaseItem) -> Unit = { _, item ->
+    val onClickItem = { index: Int, item: BaseItem ->
         viewModel.navigationManager.navigateTo(item.destination())
     }
-
-    val moviesTitle = stringResource(R.string.movies)
-    val collectionsTitle = stringResource(R.string.collections)
-    val tvShowsTitle = stringResource(R.string.tv_shows)
-    val episodesTitle = stringResource(R.string.episodes)
-
     LaunchedEffect(pendingImmediateSearch, movies, collections, series, episodes) {
         if (!pendingImmediateSearch) return@LaunchedEffect
 
@@ -319,7 +315,7 @@ fun SearchPage(
             }
         }
         searchResultRow(
-            title = moviesTitle,
+            title = context.getString(R.string.movies),
             result = movies,
             rowIndex = MOVIE_ROW,
             position = position,
@@ -329,7 +325,7 @@ fun SearchPage(
             modifier = Modifier.fillMaxWidth(),
         )
         searchResultRow(
-            title = collectionsTitle,
+            title = context.getString(R.string.collections),
             result = collections,
             rowIndex = COLLECTION_ROW,
             position = position,
@@ -339,7 +335,7 @@ fun SearchPage(
             modifier = Modifier.fillMaxWidth(),
         )
         searchResultRow(
-            title = tvShowsTitle,
+            title = context.getString(R.string.tv_shows),
             result = series,
             rowIndex = SERIES_ROW,
             position = position,
@@ -349,7 +345,7 @@ fun SearchPage(
             modifier = Modifier.fillMaxWidth(),
         )
         searchResultRow(
-            title = episodesTitle,
+            title = context.getString(R.string.episodes),
             result = episodes,
             rowIndex = EPISODE_ROW,
             position = position,
