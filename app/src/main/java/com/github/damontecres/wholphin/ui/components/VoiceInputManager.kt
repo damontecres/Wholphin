@@ -77,36 +77,41 @@ class VoiceInputManager(
             ) == PackageManager.PERMISSION_GRANTED
 
     private var recognizer: SpeechRecognizer? = null
+
+    @Volatile
     private var isTransitioning = false
+
+    private val recognitionIntent by lazy {
+        Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+            putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+            putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
+            putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, MAX_RESULTS)
+        }
+    }
 
     fun startListening() {
         if (isTransitioning || state is VoiceInputState.Listening) return
         isTransitioning = true
 
-        cleanup()
-        state = VoiceInputState.Listening
+        destroyRecognizer()
         partialResult = ""
+        soundLevel = 0f
+        state = VoiceInputState.Listening
 
         val newRecognizer = SpeechRecognizer.createSpeechRecognizer(activity)
         recognizer = newRecognizer
         newRecognizer.setRecognitionListener(createRecognitionListener(newRecognizer))
 
         try {
-            newRecognizer.startListening(buildRecognitionIntent())
-            isTransitioning = false
+            newRecognizer.startListening(recognitionIntent)
         } catch (e: Exception) {
             Timber.e(e, "Failed to start speech recognition")
+            destroyRecognizer()
             state = VoiceInputState.Error(R.string.voice_error_start_failed)
+        } finally {
             isTransitioning = false
         }
     }
-
-    private fun buildRecognitionIntent() =
-        Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
-            putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-            putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
-            putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, MAX_RESULTS)
-        }
 
     fun stopListening() {
         if (isTransitioning) return
@@ -119,25 +124,29 @@ class VoiceInputManager(
         state = VoiceInputState.Idle
     }
 
-    fun onPermissionGranted() {
-        startListening()
-    }
+    fun onPermissionGranted() = startListening()
 
     fun onPermissionDenied() {
         Timber.w("RECORD_AUDIO permission denied")
         state = VoiceInputState.Error(R.string.voice_error_permissions)
     }
 
-    internal fun cleanup() {
-        recognizer?.let { rec ->
+    private fun destroyRecognizer() {
+        // Null out FIRST to invalidate callbacks before cancel() can trigger them
+        val rec = recognizer
+        recognizer = null
+        rec?.let {
             try {
-                rec.cancel()
-                rec.destroy()
+                it.cancel()
+                it.destroy()
             } catch (e: Exception) {
-                Timber.w(e, "Error cleaning up speech recognizer")
+                Timber.w(e, "Error destroying speech recognizer")
             }
         }
-        recognizer = null
+    }
+
+    internal fun cleanup() {
+        destroyRecognizer()
         soundLevel = 0f
         partialResult = ""
         state = VoiceInputState.Idle
@@ -177,7 +186,12 @@ class VoiceInputManager(
             override fun onResults(results: Bundle?) {
                 if (!isValid()) return
                 val spokenText = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)?.firstOrNull()
-                state = if (!spokenText.isNullOrBlank()) VoiceInputState.Result(spokenText) else VoiceInputState.Idle
+                state =
+                    if (!spokenText.isNullOrBlank()) {
+                        VoiceInputState.Result(spokenText)
+                    } else {
+                        VoiceInputState.Error(R.string.voice_error_no_match)
+                    }
                 soundLevel = 0f
             }
 
