@@ -226,28 +226,34 @@ fun HomePageContent(
         mutableStateOf(RowColumn(firstRow, 0))
     }
     val focusedItem =
-        remember(position) {
-            position.let {
-                (homeRows.getOrNull(it.row) as? HomeRowLoadingState.Success)?.items?.getOrNull(it.column)
-            }
+        position.let {
+            (homeRows.getOrNull(it.row) as? HomeRowLoadingState.Success)?.items?.getOrNull(it.column)
         }
 
     val listState = rememberLazyListState()
     val rowFocusRequesters = remember(homeRows.size) { List(homeRows.size) { FocusRequester() } }
-    var focused by rememberSaveable { mutableStateOf(false) }
+    var firstFocused by rememberSaveable { mutableStateOf(false) }
     LaunchedEffect(homeRows) {
-        if (!focused) {
+        if (!firstFocused) {
+            // Waiting for the first home row to load, then focus on it
             homeRows
                 .indexOfFirst { it is HomeRowLoadingState.Success && it.items.isNotEmpty() }
                 .takeIf { it >= 0 }
                 ?.let {
                     rowFocusRequesters[it].tryRequestFocus()
                     delay(50)
-                    listState.animateScrollToItem(position.row)
-                    focused = true
+                    listState.scrollToItem(it)
+                    firstFocused = true
                 }
-        } else {
-            rowFocusRequesters.getOrNull(position.row)?.tryRequestFocus()
+        }
+    }
+    LaunchedEffect(Unit) {
+        if (firstFocused) {
+            // After the first home row was loaded & focused, page recompositions should focus on the positioned row
+            val index = position.row
+            rowFocusRequesters.getOrNull(index)?.tryRequestFocus()
+            delay(50)
+            listState.scrollToItem(index)
         }
     }
     LaunchedEffect(position) {

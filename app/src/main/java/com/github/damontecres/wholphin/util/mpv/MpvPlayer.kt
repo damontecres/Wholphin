@@ -69,7 +69,8 @@ class MpvPlayer(
 ) : BasePlayer(),
     MPVLib.EventObserver,
     TrackSelector.InvalidationListener,
-    Handler.Callback {
+    Handler.Callback,
+    SurfaceHolder.Callback {
     companion object {
         private const val DEBUG = false
     }
@@ -467,24 +468,53 @@ class MpvPlayer(
 
     override fun clearVideoSurfaceHolder(surfaceHolder: SurfaceHolder?): Unit = throw UnsupportedOperationException()
 
+    private var surfaceHolder: SurfaceHolder? = null
+
     override fun setVideoSurfaceView(surfaceView: SurfaceView?) {
         if (DEBUG) Timber.v("setVideoSurfaceView")
-        val surface = surfaceView?.holder?.surface
-        if (surface != null && surface.isValid) {
-            Timber.v("Queued attach")
-            sendCommand(MpvCommand.ATTACH_SURFACE, surface)
-        } else {
-            clearVideoSurfaceView(null)
+        if (surfaceView != null) {
+            this.surfaceHolder?.removeCallback(this)
+            this.surfaceHolder = surfaceView.holder
+            if (surfaceView.holder != null) {
+                val surface = surfaceView.holder?.surface
+                surfaceView.holder.addCallback(this)
+                Timber.v("Got surface holder: isValid=${surface?.isValid}")
+                if (surface != null && surface.isValid) {
+                    Timber.v("Queued attach")
+                    sendCommand(MpvCommand.ATTACH_SURFACE, surface)
+                    return
+                }
+            }
         }
+        clearVideoSurfaceView(null)
     }
 
     override fun clearVideoSurfaceView(surfaceView: SurfaceView?) {
-        if (surface == surfaceView?.holder?.surface) {
+        if (surface != null && surface == surfaceView?.holder?.surface) {
             Timber.d("clearVideoSurfaceView")
             sendCommand(MpvCommand.ATTACH_SURFACE, null)
         } else {
-            Timber.w("clearVideoSurfaceView called with different surface")
+            Timber.w("clearVideoSurfaceView called with different surface: %s", surfaceView)
         }
+    }
+
+    override fun surfaceChanged(
+        holder: SurfaceHolder,
+        format: Int,
+        width: Int,
+        height: Int,
+    ) {
+        Timber.v("surfaceChanged: format=$format, width=$width, height=$height")
+    }
+
+    override fun surfaceCreated(holder: SurfaceHolder) {
+        Timber.v("surfaceCreated")
+        sendCommand(MpvCommand.ATTACH_SURFACE, holder.surface)
+    }
+
+    override fun surfaceDestroyed(holder: SurfaceHolder) {
+        Timber.v("surfaceDestroyed")
+        sendCommand(MpvCommand.ATTACH_SURFACE, null)
     }
 
     override fun setVideoTextureView(textureView: TextureView?): Unit = throw UnsupportedOperationException()
@@ -660,6 +690,7 @@ class MpvPlayer(
             MPV_EVENT_VIDEO_RECONFIG -> {
                 Timber.d("event: MPV_EVENT_VIDEO_RECONFIG")
                 updateTracksAndNotify()
+                updateVideoSizeAndNotify()
             }
 
             MPV_EVENT_END_FILE -> {
@@ -718,6 +749,19 @@ class MpvPlayer(
             it.copy(tracks = tracks)
         }
         notifyListeners(EVENT_TRACKS_CHANGED) { onTracksChanged(tracks) }
+    }
+
+    private fun updateVideoSizeAndNotify() {
+        val width = MPVLib.getPropertyInt("width")
+        val height = MPVLib.getPropertyInt("height")
+        val videoSize =
+            if (width != null && height != null) {
+                VideoSize(width, height)
+            } else {
+                VideoSize.UNKNOWN
+            }
+        playbackState.update { it.copy(videoSize = videoSize) }
+        notifyListeners(EVENT_VIDEO_SIZE_CHANGED) { onVideoSizeChanged(videoSize) }
     }
 
     private fun loadFile(media: MediaAndPosition) {
@@ -836,23 +880,34 @@ class MpvPlayer(
         internalHandler.obtainMessage(cmd.ordinal, obj).sendToTarget()
     }
 
+    private val queuedCommands = mutableListOf<Pair<MpvCommand, Any?>>()
+
     override fun handleMessage(msg: Message): Boolean {
         val cmd = MpvCommand.entries[msg.what]
-        Timber.d("handleMessage: cmd=$cmd")
         if (isReleased && cmd != MpvCommand.DESTROY) {
             Timber.w("Player is released, ignoring command %s", cmd)
             return true
         }
         if (surface == null && !cmd.isLifecycle) {
-            // If libmpv isn't ready, re-enqueue the messages
+            // If libmpv isn't ready, ueue the messages
             // Note: this means nothing will play until it is attached to a surface,
             // so MpvPlayer can't be used for background audio/music playback
-            Timber.v("MPV is not initialized/attached yet, requeue cmd %s", cmd)
-            internalHandler.sendMessageDelayed(Message.obtain(msg), 50)
+            Timber.v("MPV is not initialized/attached yet, queue cmd %s", cmd)
+            queuedCommands.add(Pair(cmd, msg.obj))
+        } else {
+            handleCommand(cmd, msg.obj)
         }
+        return true
+    }
+
+    private fun handleCommand(
+        cmd: MpvCommand,
+        obj: Any?,
+    ) {
+        Timber.d("handleCommand: cmd=$cmd")
         when (cmd) {
             MpvCommand.PLAY_PAUSE -> {
-                val playWhenReady = msg.obj as Boolean
+                val playWhenReady = obj as Boolean
                 MPVLib.setPropertyBoolean("pause", !playWhenReady)
                 playbackState.update {
                     it.copy(isPaused = !playWhenReady)
@@ -866,13 +921,13 @@ class MpvPlayer(
             }
 
             MpvCommand.SET_TRACK_SELECTION -> {
-                val (propertyName, trackId) = msg.obj as TrackSelection
+                val (propertyName, trackId) = obj as TrackSelection
                 MPVLib.setPropertyString(propertyName, trackId)
                 updateTracksAndNotify()
             }
 
             MpvCommand.SEEK -> {
-                val positionMs = msg.obj as Long
+                val positionMs = obj as Long
                 MPVLib.setPropertyDouble("time-pos", positionMs / 1000.0)
                 playbackState.update {
                     it.copy(positionMs = positionMs)
@@ -880,7 +935,7 @@ class MpvPlayer(
             }
 
             MpvCommand.SET_SPEED -> {
-                val value = msg.obj as Float
+                val value = obj as Float
                 MPVLib.setPropertyDouble("speed", value.toDouble())
                 playbackState.update {
                     it.copy(speed = value)
@@ -888,7 +943,7 @@ class MpvPlayer(
             }
 
             MpvCommand.SET_SUBTITLE_DELAY -> {
-                val value = msg.obj as Double
+                val value = obj as Double
                 MPVLib.setPropertyDouble("sub-delay", value)
                 playbackState.update {
                     it.copy(subtitleDelay = value)
@@ -896,11 +951,11 @@ class MpvPlayer(
             }
 
             MpvCommand.LOAD_FILE -> {
-                loadFile(msg.obj as MediaAndPosition)
+                loadFile(obj as MediaAndPosition)
             }
 
             MpvCommand.ATTACH_SURFACE -> {
-                val surface = msg.obj as Surface?
+                val surface = obj as Surface?
                 if (surface == null || (this.surface != null && this.surface != surface)) {
                     // If clearing or changing the surface
                     MPVLib.detachSurface()
@@ -913,6 +968,13 @@ class MpvPlayer(
                     this.surface = surface
                     MPVLib.setOptionString("force-window", "yes")
                     Timber.d("Attached surface")
+                    if (queuedCommands.isNotEmpty()) {
+                        Timber.d("Processing queued commands")
+                        while (queuedCommands.isNotEmpty()) {
+                            val msg = queuedCommands.removeAt(0)
+                            handleCommand(msg.first, msg.second)
+                        }
+                    }
                 }
             }
 
@@ -927,7 +989,6 @@ class MpvPlayer(
                 Timber.d("MPVLib destroyed")
             }
         }
-        return true
     }
 }
 
@@ -1023,7 +1084,7 @@ private data class PlaybackState(
         val EMPTY =
             PlaybackState(
                 timestamp = C.TIME_UNSET,
-                isLoadingFile = false,
+                isLoadingFile = true,
                 media = null,
                 positionMs = C.TIME_UNSET,
                 durationMs = C.TIME_UNSET,
