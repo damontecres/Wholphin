@@ -46,6 +46,7 @@ data class PlaybackSettings(
 @Composable
 fun PlaybackDialog(
     enableSubtitleDelay: Boolean,
+    enableVideoScale: Boolean,
     type: PlaybackDialogType,
     settings: PlaybackSettings,
     onDismissRequest: () -> Unit,
@@ -117,7 +118,9 @@ fun PlaybackDialog(
                 buildList {
                     add(stringResource(R.string.audio))
                     add(stringResource(R.string.playback_speed))
-                    add(stringResource(R.string.video_scale))
+                    if (enableVideoScale) {
+                        add(stringResource(R.string.video_scale))
+                    }
                     if (enableSubtitleDelay) {
                         add(stringResource(R.string.subtitle_delay))
                     }
