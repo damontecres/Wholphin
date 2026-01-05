@@ -33,6 +33,7 @@ import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
@@ -174,6 +175,7 @@ fun SearchPage(
     modifier: Modifier = Modifier,
     viewModel: SearchViewModel = hiltViewModel(),
 ) {
+    val context = LocalContext.current
     val focusManager = LocalFocusManager.current
     val keyboardController = LocalSoftwareKeyboardController.current
     val movies by viewModel.movies.observeAsState(SearchResult.NoQuery)
@@ -186,14 +188,14 @@ fun SearchPage(
     val focusRequester = remember { FocusRequester() }
 
     var position by rememberPosition()
-    var pendingImmediateSearch by rememberSaveable { mutableStateOf(false) }
+    var searchClicked by rememberSaveable { mutableStateOf(false) }
     var immediateSearchQuery by rememberSaveable { mutableStateOf<String?>(null) }
 
     val voiceInputManager = rememberVoiceInputManager()
 
     fun triggerImmediateSearch(searchQuery: String) {
         immediateSearchQuery = searchQuery
-        pendingImmediateSearch = true
+        searchClicked = true
         viewModel.search(searchQuery)
     }
 
@@ -212,17 +214,12 @@ fun SearchPage(
     LaunchedEffect(Unit) {
         focusRequester.tryRequestFocus()
     }
-    val onClickItem: (Int, BaseItem) -> Unit = { _, item ->
+    val onClickItem = { index: Int, item: BaseItem ->
         viewModel.navigationManager.navigateTo(item.destination())
     }
 
-    val moviesTitle = stringResource(R.string.movies)
-    val collectionsTitle = stringResource(R.string.collections)
-    val tvShowsTitle = stringResource(R.string.tv_shows)
-    val episodesTitle = stringResource(R.string.episodes)
-
-    LaunchedEffect(pendingImmediateSearch, movies, collections, series, episodes) {
-        if (!pendingImmediateSearch) return@LaunchedEffect
+    LaunchedEffect(searchClicked, movies, collections, series, episodes) {
+        if (!searchClicked) return@LaunchedEffect
 
         val results = listOf(movies, collections, series, episodes)
         val hasSuccess = results.any { it is SearchResult.Success }
@@ -231,11 +228,11 @@ fun SearchPage(
         when {
             hasSuccess -> {
                 focusManager.moveFocus(FocusDirection.Next)
-                pendingImmediateSearch = false
+                searchClicked = false
             }
 
             allFinished -> {
-                pendingImmediateSearch = false
+                searchClicked = false
             }
         }
     }
@@ -319,7 +316,7 @@ fun SearchPage(
             }
         }
         searchResultRow(
-            title = moviesTitle,
+            title = context.getString(R.string.movies),
             result = movies,
             rowIndex = MOVIE_ROW,
             position = position,
@@ -329,7 +326,7 @@ fun SearchPage(
             modifier = Modifier.fillMaxWidth(),
         )
         searchResultRow(
-            title = collectionsTitle,
+            title = context.getString(R.string.collections),
             result = collections,
             rowIndex = COLLECTION_ROW,
             position = position,
@@ -339,7 +336,7 @@ fun SearchPage(
             modifier = Modifier.fillMaxWidth(),
         )
         searchResultRow(
-            title = tvShowsTitle,
+            title = context.getString(R.string.tv_shows),
             result = series,
             rowIndex = SERIES_ROW,
             position = position,
@@ -349,7 +346,7 @@ fun SearchPage(
             modifier = Modifier.fillMaxWidth(),
         )
         searchResultRow(
-            title = episodesTitle,
+            title = context.getString(R.string.episodes),
             result = episodes,
             rowIndex = EPISODE_ROW,
             position = position,
