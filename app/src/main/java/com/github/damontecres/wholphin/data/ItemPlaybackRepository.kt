@@ -133,7 +133,7 @@ class ItemPlaybackRepository
                 Timber.v("Saving track selection %s", toSave)
                 toSave = saveItemPlayback(toSave)
                 val seriesId = item.data.seriesId
-                if (seriesId != null && trackIndex != TrackIndex.UNSPECIFIED) {
+                if (seriesId != null && (trackIndex >= 0 || trackIndex == TrackIndex.DISABLED)) {
                     if (type == MediaStreamType.AUDIO) {
                         val stream = source.mediaStreams?.first { it.index == trackIndex }
                         if (stream?.language != null) {
@@ -147,7 +147,7 @@ class ItemPlaybackRepository
                                 subtitlesDisabled = true,
                             )
                         } else {
-                            val stream = source.mediaStreams?.first { it.index == trackIndex }
+                            val stream = source.mediaStreams?.firstOrNull { it.index == trackIndex }
                             if (stream?.language != null) {
                                 streamChoiceService.updateSubtitles(
                                     item.data,
