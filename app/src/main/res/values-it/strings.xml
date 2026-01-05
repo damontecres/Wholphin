@@ -379,4 +379,5 @@
     <string name="local">Locale</string>
     <string name="play_trailer">Riproduci trailer</string>
     <string name="no_trailers">Nessun trailer</string>
+    <string name="clear_track_choices">Cancella scelte tracce</string>
 </resources>
