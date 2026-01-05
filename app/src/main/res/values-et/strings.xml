@@ -363,4 +363,5 @@
     <string name="local">Kohalik</string>
     <string name="play_trailer">Esita treilerit</string>
     <string name="no_trailers">Treilerit pole</string>
+    <string name="clear_track_choices">Eemalda rajavalikud</string>
 </resources>
