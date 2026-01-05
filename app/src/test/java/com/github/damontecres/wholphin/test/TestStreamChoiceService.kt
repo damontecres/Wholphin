@@ -104,16 +104,6 @@ class TestStreamChoiceServiceBasic(
                         ),
                     itemPlayback = itemPlayback(subtitleIndex = TrackIndex.UNSPECIFIED),
                 ),
-                TestInput(
-                    1,
-                    SubtitlePlaybackMode.ALWAYS,
-                    subtitles =
-                        listOf(
-                            subtitle(0, "eng", forced = true, default = true),
-                            subtitle(1, "eng", false),
-                            subtitle(2, "eng", false),
-                        ),
-                ),
             )
     }
 }
@@ -352,6 +342,31 @@ class TestStreamChoiceServiceSmart(
                     userSubtitleLang = "spa",
                     userAudioLang = "eng",
                 ),
+                TestInput(
+                    1,
+                    SubtitlePlaybackMode.SMART,
+                    subtitles =
+                        listOf(
+                            subtitle(0, "eng", false),
+                            subtitle(1, "spa", false),
+                        ),
+                    streamAudioLang = "eng",
+                    userSubtitleLang = "spa",
+                    userAudioLang = null,
+                ),
+                TestInput(
+                    1,
+                    SubtitlePlaybackMode.SMART,
+                    subtitles =
+                        listOf(
+                            subtitle(0, "eng", false),
+                            subtitle(1, "eng", true),
+                            subtitle(2, "spa", false),
+                        ),
+                    streamAudioLang = "eng",
+                    userSubtitleLang = "eng",
+                    userAudioLang = null,
+                ),
             )
     }
 }
@@ -443,6 +458,156 @@ class TestStreamChoiceServiceOnlyForced(
                             subtitle(1, "spa", forced = true),
                         ),
                     streamAudioLang = "eng",
+                ),
+            )
+    }
+}
+
+@RunWith(Parameterized::class)
+class TestStreamChoiceServiceMultipleChoices(
+    val input: TestInput,
+) {
+    @Test
+    fun test() {
+        runTest(input)
+    }
+
+    companion object {
+        @JvmStatic
+        @Parameterized.Parameters(name = "{index}: {0}")
+        fun data(): Collection<TestInput> =
+            listOf(
+                TestInput(
+                    0,
+                    SubtitlePlaybackMode.ALWAYS,
+                    subtitles =
+                        listOf(
+                            subtitle(0, "eng", forced = true, default = true),
+                            subtitle(1, "eng", false),
+                            subtitle(2, "eng", false),
+                        ),
+                ),
+                TestInput(
+                    2,
+                    SubtitlePlaybackMode.ALWAYS,
+                    subtitles =
+                        listOf(
+                            subtitle(0, "eng", forced = true, default = false),
+                            subtitle(1, "eng", false),
+                            subtitle(2, "eng", default = true),
+                        ),
+                ),
+                TestInput(
+                    2,
+                    SubtitlePlaybackMode.SMART,
+                    subtitles =
+                        listOf(
+                            subtitle(0, "eng", forced = true, default = false),
+                            subtitle(1, "eng", false),
+                            subtitle(2, "eng", default = true),
+                        ),
+                    userAudioLang = null,
+                ),
+                TestInput(
+                    2,
+                    SubtitlePlaybackMode.SMART,
+                    subtitles =
+                        listOf(
+                            subtitle(0, "eng", forced = true, default = false),
+                            subtitle(1, "eng", false),
+                            subtitle(2, "eng", default = true),
+                        ),
+                    userSubtitleLang = null,
+                    userAudioLang = null,
+                ),
+                TestInput(
+                    null,
+                    SubtitlePlaybackMode.SMART,
+                    subtitles =
+                        listOf(
+                            subtitle(0, "eng", forced = true, default = false),
+                            subtitle(1, "eng", false),
+                            subtitle(2, "eng", default = true),
+                        ),
+                    userSubtitleLang = "spa",
+                    userAudioLang = null,
+                ),
+                TestInput(
+                    2,
+                    SubtitlePlaybackMode.SMART,
+                    subtitles =
+                        listOf(
+                            subtitle(0, "eng", forced = true, default = true),
+                            subtitle(1, "eng", false),
+                            subtitle(2, "eng", default = true),
+                        ),
+                    userSubtitleLang = "eng",
+                    userAudioLang = null,
+                    streamAudioLang = "spa",
+                ),
+                TestInput(
+                    0,
+                    SubtitlePlaybackMode.SMART,
+                    subtitles =
+                        listOf(
+                            subtitle(0, "eng", forced = true, default = true),
+                            subtitle(1, "eng", false),
+                            subtitle(2, "eng", default = true),
+                        ),
+                    userSubtitleLang = "eng",
+                    userAudioLang = "eng",
+                    streamAudioLang = "eng",
+                ),
+                TestInput(
+                    null,
+                    SubtitlePlaybackMode.SMART,
+                    subtitles =
+                        listOf(
+                            subtitle(0, "eng", forced = true, default = false),
+                            subtitle(1, "eng", false),
+                            subtitle(2, "eng", default = true),
+                        ),
+                    userSubtitleLang = "spa",
+                    userAudioLang = "eng",
+                    streamAudioLang = "spa",
+                ),
+                TestInput(
+                    0,
+                    SubtitlePlaybackMode.SMART,
+                    subtitles =
+                        listOf(
+                            subtitle(0, "spa", forced = true, default = false),
+                            subtitle(1, "spa", false),
+                            subtitle(2, "spa", default = true),
+                        ),
+                    userSubtitleLang = "spa",
+                    userAudioLang = "eng",
+                    streamAudioLang = "eng",
+                ),
+                TestInput(
+                    2,
+                    SubtitlePlaybackMode.SMART,
+                    subtitles =
+                        listOf(
+                            subtitle(0, "spa", forced = true, default = false),
+                            subtitle(1, "spa", false),
+                            subtitle(2, "spa", default = true),
+                        ),
+                    userSubtitleLang = "spa",
+                    userAudioLang = "",
+                    streamAudioLang = "eng",
+                ),
+                TestInput(
+                    2,
+                    SubtitlePlaybackMode.DEFAULT,
+                    subtitles =
+                        listOf(
+                            subtitle(0, "eng", forced = true, default = false),
+                            subtitle(1, "eng", false),
+                            subtitle(2, "eng", default = true),
+                        ),
+                    userSubtitleLang = null,
+                    userAudioLang = null,
                 ),
             )
     }

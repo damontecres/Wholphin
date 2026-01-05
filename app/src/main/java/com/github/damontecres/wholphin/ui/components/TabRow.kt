@@ -51,7 +51,9 @@ fun TabRow(
 ) {
     val state = rememberLazyListState()
     LaunchedEffect(selectedTabIndex) {
-        state.animateScrollToItem(selectedTabIndex, -(state.layoutInfo.viewportSize.width / 3.5).toInt())
+        if (selectedTabIndex >= 0) {
+            state.animateScrollToItem(selectedTabIndex, -(state.layoutInfo.viewportSize.width / 3.5).toInt())
+        }
     }
     val focusRequesters = remember(tabs) { List(tabs.size) { FocusRequester() } }
     var rowHasFocus by remember { mutableStateOf(false) }

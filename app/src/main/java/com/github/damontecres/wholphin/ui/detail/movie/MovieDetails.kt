@@ -193,6 +193,7 @@ fun MovieDetails(
                                         favorite = movie.data.userData?.isFavorite ?: false,
                                         seriesId = null,
                                         sourceId = chosenStreams?.source?.id?.toUUIDOrNull(),
+                                        canClearChosenStreams = chosenStreams?.itemPlayback != null || chosenStreams?.plc != null,
                                         actions = moreActions,
                                         onChooseVersion = {
                                             chooseVersion =
@@ -240,6 +241,9 @@ fun MovieDetails(
                                                     genres = movie.data.genres.orEmpty(),
                                                     files = movie.data.mediaSources.orEmpty(),
                                                 )
+                                        },
+                                        onClearChosenStreams = {
+                                            viewModel.clearChosenStreams(chosenStreams)
                                         },
                                     ),
                             )

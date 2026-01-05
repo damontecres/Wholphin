@@ -19,6 +19,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.map
 import com.github.damontecres.wholphin.R
+import com.github.damontecres.wholphin.data.ChosenStreams
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.RequestOrRestoreFocus
@@ -179,6 +180,7 @@ fun SeriesOverview(
 
                 fun buildMoreForEpisode(
                     ep: BaseItem,
+                    chosenStreams: ChosenStreams?,
                     fromLongClick: Boolean,
                 ): DialogParams =
                     DialogParams(
@@ -192,6 +194,7 @@ fun SeriesOverview(
                                 favorite = ep.data.userData?.isFavorite ?: false,
                                 seriesId = series.id,
                                 sourceId = chosenStreams?.source?.id?.toUUIDOrNull(),
+                                canClearChosenStreams = chosenStreams?.itemPlayback != null || chosenStreams?.plc != null,
                                 actions =
                                     MoreDialogActions(
                                         navigateTo = viewModel::navigateTo,
@@ -259,6 +262,9 @@ fun SeriesOverview(
                                             files = ep.data.mediaSources.orEmpty(),
                                         )
                                 },
+                                onClearChosenStreams = {
+                                    viewModel.clearChosenStreams(ep, chosenStreams)
+                                },
                             ),
                     )
 
@@ -304,7 +310,7 @@ fun SeriesOverview(
                         )
                     },
                     onLongClick = { ep ->
-                        moreDialog = buildMoreForEpisode(ep, true)
+                        moreDialog = buildMoreForEpisode(ep, chosenStreams, true)
                     },
                     playOnClick = { resume ->
                         rowFocused = EPISODE_ROW
@@ -333,7 +339,7 @@ fun SeriesOverview(
                     },
                     moreOnClick = {
                         episodeList?.getOrNull(position.episodeRowIndex)?.let { ep ->
-                            moreDialog = buildMoreForEpisode(ep, false)
+                            moreDialog = buildMoreForEpisode(ep, chosenStreams, false)
                         }
                     },
                     overviewOnClick = {

@@ -417,6 +417,7 @@
     <string name="local">Local</string>
     <string name="play_trailer">Play trailer</string>
     <string name="no_trailers">No trailers</string>
+    <string name="clear_track_choices">Clear track choices</string>
 
     <string-array name="theme_song_volume">
         <item>Disabled</item>
