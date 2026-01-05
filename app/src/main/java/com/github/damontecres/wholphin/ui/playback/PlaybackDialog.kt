@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalView
@@ -75,10 +76,21 @@ fun PlaybackDialog(
 
         PlaybackDialogType.CAPTIONS -> {
             val subtitleStreams = settings.subtitleStreams
-            val options = subtitleStreams.map { it.displayName }
+            val options = remember(subtitleStreams) { subtitleStreams.map { it.displayName } }
             Timber.v("subtitleIndex=${settings.subtitleIndex}, options=$options")
             val currentChoice =
-                subtitleStreams.indexOfFirstOrNull { it.index == settings.subtitleIndex } ?: subtitleStreams.size
+                remember(settings.subtitleStreams, settings.subtitleIndex) {
+                    subtitleStreams.indexOfFirstOrNull { it.index == settings.subtitleIndex }
+                        ?: (
+                            subtitleStreams.size +
+                                when (settings.subtitleIndex) {
+                                    TrackIndex.ONLY_FORCED -> 0
+                                    TrackIndex.DISABLED -> 1
+                                    else -> 0 //
+                                }
+                        )
+                }
+
             BottomDialog(
                 choices =
                     options +
