@@ -40,6 +40,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.intl.Locale
@@ -152,7 +153,7 @@ fun PlaybackPage(
             var playbackDialog by remember { mutableStateOf<PlaybackDialogType?>(null) }
             OneTimeLaunchedEffect {
                 if (prefs.playerBackend == PlayerBackend.MPV) {
-                    scope.launch(Dispatchers.Main + ExceptionHandler()) {
+                    scope.launch(Dispatchers.IO + ExceptionHandler()) {
                         preferences.appPreferences.interfacePreferences.subtitlesPreferences.applyToMpv(
                             configuration,
                             density,
@@ -161,7 +162,15 @@ fun PlaybackPage(
                 }
             }
             AmbientPlayerListener(player)
-            var contentScale by remember { mutableStateOf(prefs.globalContentScale.scale) }
+            var contentScale by remember {
+                mutableStateOf(
+                    if (prefs.playerBackend == PlayerBackend.MPV) {
+                        ContentScale.FillBounds
+                    } else {
+                        prefs.globalContentScale.scale
+                    },
+                )
+            }
             var playbackSpeed by remember { mutableFloatStateOf(1.0f) }
             LaunchedEffect(playbackSpeed) { player.setPlaybackSpeed(playbackSpeed) }
 
@@ -572,6 +581,7 @@ fun PlaybackPage(
                     onPlaybackActionClick = onPlaybackActionClick,
                     onChangeSubtitleDelay = { viewModel.updateSubtitleDelay(it) },
                     enableSubtitleDelay = player is MpvPlayer,
+                    enableVideoScale = player !is MpvPlayer,
                 )
             }
         }
