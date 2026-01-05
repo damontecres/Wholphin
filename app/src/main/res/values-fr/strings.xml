@@ -375,4 +375,9 @@
     <string name="no_servers_found">Aucun serveur trouvé</string>
     <string name="subtitle_delay">Décalage des sous-titres</string>
     <string name="backdrop_display">Style d\'arrière-plan</string>
+    <string name="clear_track_choices">Effacer les choix de piste</string>
+    <string name="resolution_switching">Changement de résolution</string>
+    <string name="local">Local</string>
+    <string name="play_trailer">Lire la bande-annonce</string>
+    <string name="no_trailers">Pas de bandes-annonces</string>
 </resources>
