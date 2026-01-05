@@ -182,4 +182,19 @@ class EpisodeViewModel
             release()
             navigationManager.navigateTo(destination)
         }
+
+        fun clearChosenStreams(chosenStreams: ChosenStreams?) {
+            viewModelScope.launchIO {
+                itemPlaybackRepository.deleteChosenStreams(chosenStreams)
+                item.value?.let { item ->
+                    val result =
+                        itemPlaybackRepository.getSelectedTracks(
+                            itemId,
+                            item,
+                            userPreferencesService.getCurrent(),
+                        )
+                    this@EpisodeViewModel.chosenStreams.setValueOnMain(result)
+                }
+            }
+        }
     }

@@ -106,6 +106,7 @@ fun SeriesOverviewContent(
 
     val scrollState = rememberScrollState()
     val scrollConnection = rememberDelayedNestedScroll()
+    var requestFocusAfterSeason by remember { mutableStateOf(false) }
     Box(
         modifier =
             modifier
@@ -146,6 +147,7 @@ fun SeriesOverviewContent(
                     onClick = {
                         selectedTabIndex = it
                         onChangeSeason.invoke(it)
+                        requestFocusAfterSeason = true
                     },
                     modifier =
                         Modifier
@@ -180,6 +182,13 @@ fun SeriesOverviewContent(
                     }
 
                     is EpisodeList.Success -> {
+                        if (requestFocusAfterSeason) {
+                            // Changing seasons, so move focus once the new episodes are loaded
+                            LaunchedEffect(Unit) {
+                                firstItemFocusRequester.tryRequestFocus()
+                                requestFocusAfterSeason = false
+                            }
+                        }
                         val state = rememberLazyListState(position.episodeRowIndex)
 
                         LazyRow(

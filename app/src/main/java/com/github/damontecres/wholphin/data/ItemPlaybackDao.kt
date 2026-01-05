@@ -1,6 +1,7 @@
 package com.github.damontecres.wholphin.data
 
 import androidx.room.Dao
+import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
@@ -11,22 +12,25 @@ import java.util.UUID
 
 @Dao
 interface ItemPlaybackDao {
-    fun getItem(
+    suspend fun getItem(
         user: JellyfinUser,
         itemId: UUID,
     ): ItemPlayback? = getItem(user.rowId, itemId)
 
     @Query("SELECT * from ItemPlayback WHERE userId=:userId AND itemId=:itemId")
-    fun getItem(
+    suspend fun getItem(
         userId: Int,
         itemId: UUID,
     ): ItemPlayback?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    fun saveItem(item: ItemPlayback): Long
+    suspend fun saveItem(item: ItemPlayback): Long
+
+    @Delete
+    suspend fun deleteItem(item: ItemPlayback)
 
     @Query("SELECT * from ItemPlayback WHERE userId=:userId")
-    fun getItems(userId: Int): List<ItemPlayback>
+    suspend fun getItems(userId: Int): List<ItemPlayback>
 
     @Query("SELECT * FROM ItemTrackModification WHERE userId=:userId AND itemId=:itemId")
     suspend fun getTrackModifications(

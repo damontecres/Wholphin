@@ -25,6 +25,7 @@ class ItemPlaybackRepository
     constructor(
         val serverRepository: ServerRepository,
         val itemPlaybackDao: ItemPlaybackDao,
+        private val playbackLanguageChoiceDao: PlaybackLanguageChoiceDao,
         private val streamChoiceService: StreamChoiceService,
     ) {
         suspend fun getSelectedTracks(
@@ -202,6 +203,18 @@ class ItemPlaybackRepository
                         delay.inWholeMilliseconds,
                     ),
                 )
+            }
+        }
+
+        suspend fun deleteChosenStreams(chosenStreams: ChosenStreams?) {
+            Timber.d("deleteChosenStreams: %s", chosenStreams)
+            chosenStreams?.plc?.let {
+                Timber.d("Deleting %s", it)
+                playbackLanguageChoiceDao.delete(it)
+            }
+            chosenStreams?.itemPlayback?.let {
+                Timber.d("Deleting %s", it)
+                itemPlaybackDao.deleteItem(it)
             }
         }
     }

@@ -161,12 +161,13 @@ class SeriesViewModel
                             } ?: 0
                         Timber.v("Got initial season index: $index")
                         position.update {
-                            it.copy(seasonTabIndex = index)
+                            it.copy(seasonTabIndex = index.coerceAtLeast(0))
                         }
                     }
                 }
-
+                val remoteTrailers = trailerService.getRemoteTrailers(item)
                 withContext(Dispatchers.Main) {
+                    this@SeriesViewModel.trailers.value = remoteTrailers
                     this@SeriesViewModel.position.update {
                         it.copy(
                             episodeRowIndex =
@@ -179,9 +180,10 @@ class SeriesViewModel
                 }
                 if (seriesPageType == SeriesPageType.DETAILS) {
                     viewModelScope.launchIO {
-                        val trailers = trailerService.getTrailers(item)
-                        withContext(Dispatchers.Main) {
-                            this@SeriesViewModel.trailers.value = trailers
+                        trailerService.getLocalTrailers(item).letNotEmpty { localTrailers ->
+                            withContext(Dispatchers.Main) {
+                                this@SeriesViewModel.trailers.value = localTrailers + remoteTrailers
+                            }
                         }
                     }
                     viewModelScope.launchIO {
@@ -508,6 +510,16 @@ class SeriesViewModel
                     }
             }
         }
+
+        fun clearChosenStreams(
+            item: BaseItem,
+            chosenStreams: ChosenStreams?,
+        ) {
+            viewModelScope.launchIO {
+                itemPlaybackRepository.deleteChosenStreams(chosenStreams)
+                lookUpChosenTracks(item.id, item)
+            }
+        }
     }
 
 sealed interface EpisodeList {
@@ -545,7 +557,10 @@ private suspend fun findIndexOf(
     val index =
         if (targetId != null && (targetNum == null || targetNum !in pager.indices)) {
             // No hint info, so have to check everything
-            pager.indexOfBlocking { equalsNotNull(it?.id, targetId) }
+            pager.indexOfBlocking {
+                equalsNotNull(it?.indexNumber, targetNum) ||
+                    equalsNotNull(it?.id, targetId)
+            }
         } else if (targetNum != null && targetNum in pager.indices) {
             // Start searching from the season number and choose direction from there
             val num = pager.getBlocking(targetNum)?.indexNumber

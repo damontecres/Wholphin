@@ -155,6 +155,7 @@ fun EpisodeDetails(
                                         favorite = ep.data.userData?.isFavorite ?: false,
                                         seriesId = ep.data.seriesId,
                                         sourceId = chosenStreams?.source?.id?.toUUIDOrNull(),
+                                        canClearChosenStreams = chosenStreams?.itemPlayback != null || chosenStreams?.plc != null,
                                         actions = moreActions,
                                         onChooseVersion = {
                                             chooseVersion =
@@ -203,6 +204,9 @@ fun EpisodeDetails(
                                                         files = listOf(source),
                                                     )
                                             }
+                                        },
+                                        onClearChosenStreams = {
+                                            viewModel.clearChosenStreams(chosenStreams)
                                         },
                                     ),
                             )
@@ -334,6 +338,8 @@ fun EpisodeDetailsContent(
                                 }
                             }
                         },
+                        trailers = null,
+                        trailerOnClick = {},
                         modifier =
                             Modifier
                                 .fillMaxWidth()
