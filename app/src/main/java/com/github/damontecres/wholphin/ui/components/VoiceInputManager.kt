@@ -154,7 +154,7 @@ class VoiceInputManager(
 
     private fun createRecognitionListener(activeRecognizer: SpeechRecognizer) =
         object : RecognitionListener {
-            // Guard against callbacks from destroyed recognizers
+            // Guard against callbacks from zombie recognizers
             private fun isValid() = recognizer === activeRecognizer
 
             override fun onReadyForSpeech(params: Bundle?) {
@@ -185,7 +185,10 @@ class VoiceInputManager(
 
             override fun onResults(results: Bundle?) {
                 if (!isValid()) return
-                val spokenText = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)?.firstOrNull()
+                val spokenText =
+                    results
+                        ?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
+                        ?.firstOrNull()
                 state =
                     if (!spokenText.isNullOrBlank()) {
                         VoiceInputState.Result(spokenText)
@@ -224,9 +227,7 @@ fun rememberVoiceInputManager(): VoiceInputManager? {
     val manager = remember(activity) { VoiceInputManager(activity) }
 
     DisposableEffect(manager) {
-        onDispose {
-            manager.cleanup()
-        }
+        onDispose { manager.cleanup() }
     }
 
     return manager
