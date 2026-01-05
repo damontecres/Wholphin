@@ -375,4 +375,9 @@
     <string name="no_servers_found">Nenhum servidor encontrado</string>
     <string name="backdrop_display">Estilo de fundo</string>
     <string name="ends_at">Termina às %1$s</string>
+    <string name="resolution_switching">Mudança de resolução</string>
+    <string name="local">Local</string>
+    <string name="play_trailer">Reproduzir trailer</string>
+    <string name="no_trailers">Sem trailers</string>
+    <string name="clear_track_choices">Apagar seleções de faixas</string>
 </resources>
