@@ -173,35 +173,27 @@ class StreamChoiceService
             subtitleIndex: Int,
             prefs: UserPreferences,
         ): Int? =
-            when (subtitleIndex) {
-                TrackIndex.DISABLED -> {
-                    null
-                }
-
-                TrackIndex.ONLY_FORCED -> {
-                    val audioStream =
-                        source.mediaStreams?.firstOrNull {
-                            it.type == MediaStreamType.AUDIO && it.index == audioStreamIndex
-                        }
-                    val itemPlayback =
-                        ItemPlayback(
-                            userId = serverRepository.currentUser.value!!.rowId,
-                            itemId = UUID.randomUUID(), // Not used for ONLY_FORCED resolution
-                            subtitleIndex = TrackIndex.ONLY_FORCED,
-                        )
-                    chooseSubtitleStream(
-                        source = source,
-                        audioStream = audioStream,
-                        seriesId = seriesId,
-                        itemPlayback = itemPlayback,
-                        plc = null,
-                        prefs = prefs,
-                    )?.index
-                }
-
-                else -> {
-                    subtitleIndex.takeIf { it >= 0 }
-                }
+            if (subtitleIndex != TrackIndex.ONLY_FORCED) {
+                subtitleIndex
+            } else {
+                val audioStream =
+                    source.mediaStreams?.firstOrNull {
+                        it.type == MediaStreamType.AUDIO && it.index == audioStreamIndex
+                    }
+                val itemPlayback =
+                    ItemPlayback(
+                        userId = serverRepository.currentUser.value!!.rowId,
+                        itemId = UUID.randomUUID(), // Not used for ONLY_FORCED resolution
+                        subtitleIndex = TrackIndex.ONLY_FORCED,
+                    )
+                chooseSubtitleStream(
+                    source = source,
+                    audioStream = audioStream,
+                    seriesId = seriesId,
+                    itemPlayback = itemPlayback,
+                    plc = null,
+                    prefs = prefs,
+                )?.index
             }
 
         fun chooseSubtitleStream(
