@@ -186,6 +186,18 @@ fun DestinationContent(
                     )
                 }
 
+                BaseItemKind.PHOTO_ALBUM -> {
+                    LaunchedEffect(Unit) { onClearBackdrop.invoke() }
+                    CollectionFolder(
+                        preferences = preferences,
+                        destination = destination,
+                        collectionType = destination.item?.data?.collectionType,
+                        usePostersOverride = true,
+                        recursiveOverride = null,
+                        modifier = modifier,
+                    )
+                }
+
                 else -> {
                     Timber.w("Unsupported item type: ${destination.type}")
                     Text("Unsupported item type: ${destination.type}")

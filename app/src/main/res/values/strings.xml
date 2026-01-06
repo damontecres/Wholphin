@@ -443,6 +443,16 @@
     <string name="upcoming_tv">Upcoming TV Shows</string>
     <string name="request_4k">Request in 4K</string>
 
+    <string name="brightness">Brightness</string>
+    <string name="contrast">Constrast</string>
+    <string name="saturation">Saturation</string>
+    <string name="hue">Hue</string>
+    <string name="red">Red</string>
+    <string name="green">Green</string>
+    <string name="blue">Blue</string>
+    <string name="blur">Blur</string>
+    <string name="save_for_album">Save for album</string>
+
     <string-array name="theme_song_volume">
         <item>Disabled</item>
         <item>Lowest</item>

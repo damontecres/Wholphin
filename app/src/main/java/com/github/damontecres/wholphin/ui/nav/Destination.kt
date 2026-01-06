@@ -101,6 +101,14 @@ sealed class Destination(
     ) : Destination(false)
 
     @Serializable
+    data class Slideshow(
+        val parentId: UUID,
+        val index: Int,
+        val filter: CollectionFolderFilter,
+        val recursive: Boolean,
+    ) : Destination(true)
+
+    @Serializable
     data object Favorites : Destination(false)
 
     @Serializable
