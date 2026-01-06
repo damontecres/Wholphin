@@ -2,6 +2,7 @@ package com.github.damontecres.wholphin.ui.cards
 
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
@@ -24,20 +25,27 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.tv.material3.Card
 import androidx.tv.material3.CardDefaults
+import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.DiscoverItem
 import com.github.damontecres.wholphin.data.model.SeerrAvailability
 import com.github.damontecres.wholphin.data.model.SeerrItemType
+import com.github.damontecres.wholphin.ui.AppColors
 import com.github.damontecres.wholphin.ui.AspectRatios
 import com.github.damontecres.wholphin.ui.Cards
+import com.github.damontecres.wholphin.ui.FontAwesome
+import com.github.damontecres.wholphin.ui.PreviewTvSpec
 import com.github.damontecres.wholphin.ui.enableMarquee
+import com.github.damontecres.wholphin.ui.theme.WholphinTheme
 import kotlinx.coroutines.delay
 
 @Composable
@@ -106,49 +114,50 @@ fun DiscoverItemCard(
                         Modifier
                             .fillMaxSize(),
                 )
-                val availabilityColor =
-                    when (item?.availability) {
-                        SeerrAvailability.PENDING,
-                        SeerrAvailability.PROCESSING,
-                        -> Color.Yellow
-
-                        SeerrAvailability.PARTIALLY_AVAILABLE,
-                        SeerrAvailability.AVAILABLE,
-                        -> Color.Green
-
-                        else -> null
+                when (item?.availability) {
+                    SeerrAvailability.PENDING,
+                    SeerrAvailability.PROCESSING,
+                    -> {
+                        PendingIndicator(Modifier.align(Alignment.TopEnd))
                     }
-                availabilityColor?.let {
-                    Box(
-                        modifier =
-                            Modifier
-                                .padding(4.dp)
-                                .background(
-                                    color = it,
-                                    shape = CircleShape,
-                                ).size(12.dp)
-                                .align(Alignment.TopEnd),
-                    )
+
+                    SeerrAvailability.PARTIALLY_AVAILABLE -> {
+                        PartiallyAvailableIndicator(Modifier.align(Alignment.TopEnd))
+                    }
+
+                    SeerrAvailability.AVAILABLE,
+                    -> {
+                        AvailableIndicator(Modifier.align(Alignment.TopEnd))
+                    }
+
+                    else -> {}
                 }
                 if (showOverlay) {
-                    // TODO better colors
                     val color =
-                        when (item?.type) {
-                            SeerrItemType.MOVIE -> Color.Blue
-                            SeerrItemType.TV -> Color.Red
-                            SeerrItemType.PERSON -> Color.Green
-                            SeerrItemType.UNKNOWN -> Color.Black
-                            null -> Color.Black
-                        }.copy(alpha = .5f)
-                    when (item?.type) {
-                        SeerrItemType.MOVIE -> R.string.movies
-                        SeerrItemType.TV -> R.string.tv_shows
-                        SeerrItemType.PERSON -> R.string.people
-                        SeerrItemType.UNKNOWN -> null
-                        null -> null
-                    }?.let {
+                        remember(item?.type) {
+                            when (item?.type) {
+                                SeerrItemType.MOVIE -> AppColors.Discover.Blue
+                                SeerrItemType.TV -> AppColors.Discover.Purple
+                                SeerrItemType.PERSON -> AppColors.Discover.Green
+                                SeerrItemType.UNKNOWN -> Color.Black
+                                null -> Color.Black
+                            }.copy(alpha = .8f)
+                        }
+                    val text =
+                        remember(item?.type) {
+                            when (item?.type) {
+                                SeerrItemType.MOVIE -> R.plurals.movies
+                                SeerrItemType.TV -> R.plurals.tv_shows
+                                SeerrItemType.PERSON -> R.plurals.people
+                                SeerrItemType.UNKNOWN -> null
+                                null -> null
+                            }
+                        }
+                    text?.let {
                         Text(
-                            text = stringResource(it),
+                            text = pluralStringResource(it, 1),
+                            style = MaterialTheme.typography.bodySmall,
+                            fontSize = 10.sp,
                             modifier =
                                 Modifier
                                     .align(Alignment.TopStart)
@@ -189,6 +198,96 @@ fun DiscoverItemCard(
                         .padding(horizontal = 4.dp)
                         .enableMarquee(focusedAfterDelay),
             )
+        }
+    }
+}
+
+@Composable
+fun PendingIndicator(modifier: Modifier = Modifier) {
+    Box(
+        modifier =
+            modifier
+                .padding(4.dp)
+                .border(
+                    width = .5.dp,
+                    color = AppColors.Discover.Yellow,
+                    shape = CircleShape,
+                ).background(
+                    color = Color.White.copy(alpha = .85f),
+                    shape = CircleShape,
+                ).size(16.dp),
+    ) {
+        Text(
+            text = stringResource(R.string.fa_bell),
+            fontFamily = FontAwesome,
+            fontSize = 10.sp,
+            color = AppColors.Discover.Yellow,
+            modifier = Modifier.align(Alignment.Center),
+        )
+    }
+}
+
+@Composable
+fun AvailableIndicator(modifier: Modifier = Modifier) {
+    Box(
+        modifier =
+            modifier
+                .padding(4.dp)
+                .border(
+                    width = .5.dp,
+                    color = Color.White,
+                    shape = CircleShape,
+                ).background(
+                    color = AppColors.Discover.Green.copy(alpha = .85f),
+                    shape = CircleShape,
+                ).size(16.dp),
+    ) {
+        Text(
+            text = stringResource(R.string.fa_check),
+            fontFamily = FontAwesome,
+            fontSize = 10.sp,
+            color = Color.White,
+            modifier = Modifier.align(Alignment.Center),
+        )
+    }
+}
+
+@Composable
+fun PartiallyAvailableIndicator(modifier: Modifier = Modifier) {
+    Box(
+        modifier =
+            modifier
+                .padding(4.dp)
+                .border(
+                    width = .5.dp,
+                    color = Color.White,
+                    shape = CircleShape,
+                ).background(
+                    color = AppColors.Discover.Green.copy(alpha = .85f),
+                    shape = CircleShape,
+                ).size(16.dp),
+    ) {
+        Box(
+            modifier =
+                Modifier
+                    .align(Alignment.Center)
+                    .size(width = 10.dp, height = 2.dp)
+                    .background(
+                        color = Color.White,
+                        shape = CircleShape,
+                    ),
+        )
+    }
+}
+
+@PreviewTvSpec
+@Composable
+private fun Preview() {
+    WholphinTheme {
+        Column {
+            PendingIndicator()
+            AvailableIndicator()
+            PartiallyAvailableIndicator()
         }
     }
 }

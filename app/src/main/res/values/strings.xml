@@ -252,6 +252,22 @@
         <item quantity="other">%d seconds</item>
     </plurals>
 
+    <plurals name="movies">
+        <item quantity="zero">Movies</item>
+        <item quantity="one">Movie</item>
+        <item quantity="other">Movies</item>
+    </plurals>
+    <plurals name="tv_shows">
+        <item quantity="zero">TV Shows</item>
+        <item quantity="one">TV Show</item>
+        <item quantity="other">TV Shows</item>
+    </plurals>
+    <plurals name="people">
+        <item quantity="zero">People</item>
+        <item quantity="one">Person</item>
+        <item quantity="other">People</item>
+    </plurals>
+
     <!-- Preferences/Setting specific strings -->
     <string name="pref_key_update_last_check_threshold" translatable="false">preference.update.threshold</string>
     <string name="pref_key_update_last_check" translatable="false">preference.update.lastTimestamp</string>
