@@ -344,4 +344,7 @@
     <string name="seek_bar_steps">進度條跳轉值</string>
     <string name="playback_overrides">播放覆蓋設定</string>
     <string name="resolution_switching">解析度切換</string>
+    <string name="play_trailer">播放預告片</string>
+    <string name="local">本地</string>
+    <string name="no_trailers">無預告片</string>
 </resources>
