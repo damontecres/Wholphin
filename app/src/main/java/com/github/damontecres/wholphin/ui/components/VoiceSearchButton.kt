@@ -219,8 +219,8 @@ private fun getStatusText(
     val dots = ".".repeat(dotCount)
     return when {
         errorMessage != null -> errorMessage to errorMessage
-        partialResult.isNotBlank() -> partialResult to partialResult
         isProcessing -> (processingText + dots) to processingText
+        partialResult.isNotBlank() -> partialResult to partialResult
         else -> (listeningText + dots) to listeningText
     }
 }
