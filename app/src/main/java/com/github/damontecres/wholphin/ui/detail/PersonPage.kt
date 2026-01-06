@@ -16,6 +16,7 @@ import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
@@ -40,13 +41,17 @@ import androidx.tv.material3.surfaceColorAtElevation
 import coil3.compose.AsyncImage
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.BaseItem
+import com.github.damontecres.wholphin.data.model.DiscoverItem
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.FavoriteWatchManager
 import com.github.damontecres.wholphin.services.NavigationManager
+import com.github.damontecres.wholphin.services.SeerrService
+import com.github.damontecres.wholphin.ui.Cards
 import com.github.damontecres.wholphin.ui.LocalImageUrlService
 import com.github.damontecres.wholphin.ui.OneTimeLaunchedEffect
 import com.github.damontecres.wholphin.ui.PreviewTvSpec
 import com.github.damontecres.wholphin.ui.SlimItemFields
+import com.github.damontecres.wholphin.ui.cards.SeasonCard
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.ExpandableFaButton
 import com.github.damontecres.wholphin.ui.components.LoadingPage
@@ -54,7 +59,11 @@ import com.github.damontecres.wholphin.ui.components.LoadingRow
 import com.github.damontecres.wholphin.ui.components.OverviewText
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialog
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialogInfo
+import com.github.damontecres.wholphin.ui.data.RowColumn
+import com.github.damontecres.wholphin.ui.discover.DiscoverRow
+import com.github.damontecres.wholphin.ui.discover.DiscoverRowData
 import com.github.damontecres.wholphin.ui.formatDate
+import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.nav.Destination
@@ -63,11 +72,14 @@ import com.github.damontecres.wholphin.ui.setValueOnMain
 import com.github.damontecres.wholphin.ui.theme.WholphinTheme
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.ApiRequestPager
+import com.github.damontecres.wholphin.util.DataLoadingState
 import com.github.damontecres.wholphin.util.GetItemsRequestHandler
 import com.github.damontecres.wholphin.util.LoadingExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
 import com.github.damontecres.wholphin.util.RowLoadingState
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.update
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.ImageType
@@ -86,10 +98,12 @@ class PersonViewModel
         api: ApiClient,
         val navigationManager: NavigationManager,
         private val favoriteWatchManager: FavoriteWatchManager,
+        private val seerrService: SeerrService,
     ) : LoadingItemViewModel(api) {
         val movies = MutableLiveData<RowLoadingState>(RowLoadingState.Pending)
         val series = MutableLiveData<RowLoadingState>(RowLoadingState.Pending)
         val episodes = MutableLiveData<RowLoadingState>(RowLoadingState.Pending)
+        val discovered = MutableStateFlow<List<DiscoverItem>>(listOf())
 
         fun init(itemId: UUID) {
             viewModelScope.launchIO(
@@ -114,6 +128,10 @@ class PersonViewModel
                         fetchRow(person.id, BaseItemKind.EPISODE, episodes)
                     } else {
                         episodes.setValueOnMain(RowLoadingState.Success(listOf()))
+                    }
+                    viewModelScope.launchIO {
+                        val results = seerrService.similar(person)
+                        discovered.update { results }
                     }
                 }
             }
@@ -177,6 +195,7 @@ fun PersonPage(
     val movies by viewModel.movies.observeAsState(RowLoadingState.Pending)
     val series by viewModel.series.observeAsState(RowLoadingState.Pending)
     val episodes by viewModel.episodes.observeAsState(RowLoadingState.Pending)
+    val discovered by viewModel.discovered.collectAsState()
 
     val loading by viewModel.loading.observeAsState(LoadingState.Loading)
     when (val state = loading) {
@@ -215,6 +234,10 @@ fun PersonPage(
                     favoriteOnClick = {
                         viewModel.setFavorite(!person.favorite)
                     },
+                    discovered = discovered,
+                    onClickDiscover = { index, item ->
+                        viewModel.navigationManager.navigateTo(item.destination)
+                    },
                     modifier = modifier,
                 )
                 AnimatedVisibility(showOverviewDialog) {
@@ -239,6 +262,7 @@ private const val HEADER_ROW = 0
 private const val MOVIE_ROW = 1
 private const val SERIES_ROW = 2
 private const val EPISODE_ROW = 3
+private const val DISCOVER_ROW = EPISODE_ROW + 1
 
 @Composable
 fun PersonPageContent(
@@ -253,9 +277,11 @@ fun PersonPageContent(
     movies: RowLoadingState,
     series: RowLoadingState,
     episodes: RowLoadingState,
+    discovered: List<DiscoverItem>,
     onClickItem: (Int, BaseItem) -> Unit,
     overviewOnClick: () -> Unit,
     favoriteOnClick: () -> Unit,
+    onClickDiscover: (Int, DiscoverItem) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val focusRequester = remember { FocusRequester() }
@@ -336,7 +362,42 @@ fun PersonPageContent(
                 showIfEmpty = false,
                 horizontalPadding = 32.dp,
                 modifier = Modifier.fillMaxWidth(),
+                cardContent = { index, item, mod, onClick, onLongClick ->
+                    SeasonCard(
+                        item = item,
+                        onClick = {
+                            position = RowColumn(EPISODE_ROW, index)
+                            onClick.invoke()
+                        },
+                        onLongClick = onLongClick,
+                        imageHeight = Cards.heightEpisode,
+                        modifier =
+                            mod
+                                .ifElse(
+                                    position.row == EPISODE_ROW && position.column == index,
+                                    Modifier.focusRequester(focusRequester),
+                                ),
+                    )
+                },
             )
+        }
+        if (discovered.isNotEmpty()) {
+            item {
+                DiscoverRow(
+                    row =
+                        DiscoverRowData(
+                            stringResource(R.string.discover),
+                            DataLoadingState.Success(discovered),
+                        ),
+                    onClickItem = { index: Int, item: DiscoverItem ->
+                        position = RowColumn(DISCOVER_ROW, index)
+                        onClickDiscover.invoke(index, item)
+                    },
+                    onLongClickItem = { _, _ -> },
+                    onCardFocus = {},
+                    focusRequester = focusRequester,
+                )
+            }
         }
     }
 }

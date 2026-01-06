@@ -64,6 +64,24 @@ class SeerrService
                                     ?.map(::DiscoverItem)
                             }
 
+                            BaseItemKind.PERSON -> {
+                                api.personApi
+                                    .personPersonIdCombinedCreditsGet(personId = it)
+                                    .let { credits ->
+                                        val cast =
+                                            credits.cast
+                                                ?.take(25)
+                                                ?.map(::DiscoverItem)
+                                                .orEmpty()
+                                        val crew =
+                                            credits.crew
+                                                ?.take(25)
+                                                ?.map(::DiscoverItem)
+                                                .orEmpty()
+                                        cast + crew
+                                    }
+                            }
+
                             else -> {
                                 null
                             }

@@ -2,6 +2,8 @@
 
 package com.github.damontecres.wholphin.data.model
 
+import com.github.damontecres.wholphin.api.seerr.model.CreditCast
+import com.github.damontecres.wholphin.api.seerr.model.CreditCrew
 import com.github.damontecres.wholphin.api.seerr.model.MovieDetails
 import com.github.damontecres.wholphin.api.seerr.model.MovieMovieIdRatingsGet200Response
 import com.github.damontecres.wholphin.api.seerr.model.MovieResult
@@ -163,6 +165,36 @@ data class DiscoverItem(
         posterPath = search.posterPath,
         backdropPath = search.backdropPath,
         jellyfinItemId = search.mediaInfo?.jellyfinMediaId?.toUUIDOrNull(),
+    )
+
+    constructor(credit: CreditCast) : this(
+        id = credit.id!!,
+        type = SeerrItemType.TV,
+        title = credit.name,
+        subtitle = null,
+        overview = credit.overview,
+        availability =
+            SeerrAvailability.from(credit.mediaInfo?.status)
+                ?: SeerrAvailability.UNKNOWN,
+        releaseDate = credit.firstAirDate,
+        posterPath = credit.posterPath,
+        backdropPath = credit.backdropPath,
+        jellyfinItemId = credit.mediaInfo?.jellyfinMediaId?.toUUIDOrNull(),
+    )
+
+    constructor(credit: CreditCrew) : this(
+        id = credit.id!!,
+        type = SeerrItemType.TV,
+        title = credit.name,
+        subtitle = null,
+        overview = credit.overview,
+        availability =
+            SeerrAvailability.from(credit.mediaInfo?.status)
+                ?: SeerrAvailability.UNKNOWN,
+        releaseDate = credit.firstAirDate,
+        posterPath = credit.posterPath,
+        backdropPath = credit.backdropPath,
+        jellyfinItemId = credit.mediaInfo?.jellyfinMediaId?.toUUIDOrNull(),
     )
 }
 

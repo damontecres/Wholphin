@@ -72,6 +72,7 @@ val SlimItemFields =
 
 object Cards {
     val height2x3 = 172.dp
+    val heightEpisode = height2x3 * .75f
     val playedPercentHeight = 6.dp
     val serverUserCircle = height2x3 * .75f
 }
