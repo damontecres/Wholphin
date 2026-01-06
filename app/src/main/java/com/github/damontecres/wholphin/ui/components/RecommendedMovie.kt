@@ -181,14 +181,16 @@ class RecommendedMovieViewModel
                             .orEmpty()
 
                     // Deduplicate by seriesId (for episodes) or id (for movies)
-                    val seedItems = historyItems
-                        .distinctBy { it.seriesId ?: it.id }
-                        .take(3)
+                    val seedItems =
+                        historyItems
+                            .distinctBy { it.seriesId ?: it.id }
+                            .take(3)
 
                     // Collect all genre IDs from seed items
-                    val allGenreIds = seedItems
-                        .flatMap { it.genreItems?.mapNotNull { g -> g.id } ?: emptyList() }
-                        .distinct()
+                    val allGenreIds =
+                        seedItems
+                            .flatMap { it.genreItems?.mapNotNull { g -> g.id } ?: emptyList() }
+                            .distinct()
 
                     // Exclude all seed items from recommendations
                     val excludeIds = seedItems.map { it.id }
@@ -205,6 +207,7 @@ class RecommendedMovieViewModel
                                     includeItemTypes = listOf(BaseItemKind.MOVIE),
                                     genreIds = allGenreIds,
                                     recursive = true,
+                                    isPlayed = false,
                                     excludeItemIds = excludeIds,
                                     sortBy = listOf(ItemSortBy.RANDOM),
                                     limit = contextualLimit,
@@ -245,6 +248,7 @@ class RecommendedMovieViewModel
                                     fields = SlimItemFields,
                                     includeItemTypes = listOf(BaseItemKind.MOVIE),
                                     recursive = true,
+                                    isPlayed = false,
                                     sortBy = listOf(ItemSortBy.DATE_CREATED),
                                     sortOrder = listOf(SortOrder.DESCENDING),
                                     limit = freshLimit,

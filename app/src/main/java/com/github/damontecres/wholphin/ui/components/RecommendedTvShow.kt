@@ -237,14 +237,16 @@ class RecommendedTvShowViewModel
                             .orEmpty()
 
                     // Deduplicate by seriesId (for episodes) or id (for movies/series)
-                    val seedItems = historyItems
-                        .distinctBy { it.seriesId ?: it.id }
-                        .take(3)
+                    val seedItems =
+                        historyItems
+                            .distinctBy { it.seriesId ?: it.id }
+                            .take(3)
 
                     // Collect all genre IDs from seed items
-                    val allGenreIds = seedItems
-                        .flatMap { it.genreItems?.mapNotNull { g -> g.id } ?: emptyList() }
-                        .distinct()
+                    val allGenreIds =
+                        seedItems
+                            .flatMap { it.genreItems?.mapNotNull { g -> g.id } ?: emptyList() }
+                            .distinct()
 
                     // Exclude all seed items from recommendations
                     val excludeIds = seedItems.map { it.id }
@@ -261,6 +263,7 @@ class RecommendedTvShowViewModel
                                     includeItemTypes = listOf(BaseItemKind.SERIES),
                                     genreIds = allGenreIds,
                                     recursive = true,
+                                    isPlayed = false,
                                     excludeItemIds = excludeIds,
                                     sortBy = listOf(ItemSortBy.RANDOM),
                                     limit = contextualLimit,
@@ -301,6 +304,7 @@ class RecommendedTvShowViewModel
                                     fields = SlimItemFields,
                                     includeItemTypes = listOf(BaseItemKind.SERIES),
                                     recursive = true,
+                                    isPlayed = false,
                                     sortBy = listOf(ItemSortBy.DATE_CREATED),
                                     sortOrder = listOf(SortOrder.DESCENDING),
                                     limit = freshLimit,
