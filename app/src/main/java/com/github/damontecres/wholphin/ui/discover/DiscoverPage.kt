@@ -59,7 +59,7 @@ fun DiscoverPage(
 
     var showHeader by rememberSaveable { mutableStateOf(true) }
 
-    LaunchedEffect(Unit) { focusRequester.tryRequestFocus() }
+    LaunchedEffect(Unit) { focusRequester.tryRequestFocus("page") }
     Column(
         modifier = modifier,
     ) {
@@ -83,14 +83,20 @@ fun DiscoverPage(
             0 -> {
                 SeerrDiscoverPage(
                     preferences = preferences,
-                    modifier = Modifier.fillMaxSize(),
+                    modifier =
+                        Modifier
+                            .fillMaxSize()
+                            .focusRequester(focusRequester),
                 )
             }
 
             // Requests
             1 -> {
                 SeerrRequestsPage(
-                    modifier = Modifier.fillMaxSize(),
+                    modifier =
+                        Modifier
+                            .fillMaxSize()
+                            .focusRequester(focusRequester),
                 )
             }
 
