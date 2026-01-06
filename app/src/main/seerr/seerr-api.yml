@@ -1260,6 +1260,8 @@ components:
           type: integer
         rootFolder:
           type: string
+        type:
+          type: string
       required:
         - id
         - status
@@ -1269,10 +1271,10 @@ components:
         id:
           type: integer
           readOnly: true
-        tmdbid:
+        tmdbId:
           type: integer
           readOnly: true
-        tvdbid:
+        tvdbId:
           type: integer
           readOnly: true
           nullable: true

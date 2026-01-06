@@ -173,11 +173,12 @@ class GenreViewModel
     }
 
 data class Genre(
-    override val id: UUID,
+    val id: UUID,
     val name: String,
     val imageUrl: String?,
     val color: Color,
 ) : CardGridItem {
+    override val gridId: String get() = id.toString()
     override val playable: Boolean = false
     override val sortName: String get() = name
 }

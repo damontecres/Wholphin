@@ -1,4 +1,4 @@
-package com.github.damontecres.wholphin.ui.seerr
+package com.github.damontecres.wholphin.ui.discover
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column

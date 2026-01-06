@@ -479,6 +479,11 @@ fun PreferencesContent(
             } else {
                 val currentUser by seerrVm.currentUser.observeAsState()
                 val status by seerrVm.serverConnectionStatus.collectAsState(LoadingState.Pending)
+                LaunchedEffect(status) {
+                    if (status == LoadingState.Success) {
+                        showSeerrServerDialog = false
+                    }
+                }
                 AddSeerServerDialog(
                     currentUsername = currentUser?.name,
                     status = status,

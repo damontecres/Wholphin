@@ -23,7 +23,9 @@ data class BaseItem(
     val data: BaseItemDto,
     val useSeriesForPrimary: Boolean,
 ) : CardGridItem {
-    override val id get() = data.id
+    val id get() = data.id
+
+    override val gridId get() = id.toString()
 
     override val playable: Boolean
         get() = type.playable

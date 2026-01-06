@@ -28,11 +28,11 @@ import com.github.damontecres.wholphin.ui.detail.episode.EpisodeDetails
 import com.github.damontecres.wholphin.ui.detail.movie.MovieDetails
 import com.github.damontecres.wholphin.ui.detail.series.SeriesDetails
 import com.github.damontecres.wholphin.ui.detail.series.SeriesOverview
+import com.github.damontecres.wholphin.ui.discover.DiscoverPage
 import com.github.damontecres.wholphin.ui.main.HomePage
 import com.github.damontecres.wholphin.ui.main.SearchPage
 import com.github.damontecres.wholphin.ui.playback.PlaybackPage
 import com.github.damontecres.wholphin.ui.preferences.PreferencesPage
-import com.github.damontecres.wholphin.ui.seerr.SeerrDiscoverPage
 import com.github.damontecres.wholphin.ui.setup.InstallUpdatePage
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.CollectionType
@@ -253,7 +253,7 @@ fun DestinationContent(
         }
 
         Destination.Discover -> {
-            SeerrDiscoverPage(
+            DiscoverPage(
                 preferences = preferences,
                 modifier = modifier,
             )

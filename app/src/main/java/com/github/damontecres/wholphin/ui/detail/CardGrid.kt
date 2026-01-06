@@ -73,12 +73,11 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import timber.log.Timber
-import java.util.UUID
 
 private const val DEBUG = false
 
 interface CardGridItem {
-    val id: UUID
+    val gridId: String
     val playable: Boolean
     val sortName: String
 }
@@ -244,7 +243,7 @@ fun <T : CardGridItem> CardGrid(
                         } else if (isPlayKeyUp(it)) {
                             val item = pager.getOrNull(focusedIndex)
                             if (item?.playable == true) {
-                                Timber.v("Clicked play on ${item.id}")
+                                Timber.v("Clicked play on ${item.gridId}")
                                 onClickPlay.invoke(focusedIndex, item)
                             }
                             return@onKeyEvent true
