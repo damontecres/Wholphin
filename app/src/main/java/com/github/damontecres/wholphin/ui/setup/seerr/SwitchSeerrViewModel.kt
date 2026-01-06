@@ -81,4 +81,10 @@ class SwitchSeerrViewModel
                 serverConnectionStatus.update { result }
             }
         }
+
+        fun removeServer() {
+            viewModelScope.launchIO {
+                seerrServerRepository.removeServer()
+            }
+        }
     }

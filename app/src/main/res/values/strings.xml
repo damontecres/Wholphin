@@ -408,6 +408,7 @@
     <string name="request">Request</string>
     <string name="pending">Pending</string>
     <string name="seerr_integration">Seerr integration</string>
+    <string name="remove_seerr_server">Remove Seerr Server</string>
 
     <string-array name="theme_song_volume">
         <item>Disabled</item>

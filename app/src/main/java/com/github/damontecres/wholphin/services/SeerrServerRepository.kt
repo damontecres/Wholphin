@@ -139,6 +139,12 @@ class SeerrServerRepository
                 return LoadingState.Error(ex)
             }
         }
+
+        suspend fun removeServer() {
+            val current = _current.value ?: return
+            seerrServerDao.deleteUser(current.server.id, current.user.jellyfinUserRowId)
+            clear()
+        }
     }
 
 typealias SeerrUserConfig = User
