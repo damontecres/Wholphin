@@ -9,6 +9,7 @@ import com.github.damontecres.wholphin.api.seerr.model.TvDetails
 import com.github.damontecres.wholphin.api.seerr.model.TvResult
 import com.github.damontecres.wholphin.api.seerr.model.TvTvIdRatingsGet200Response
 import com.github.damontecres.wholphin.services.SeerrSearchResult
+import com.github.damontecres.wholphin.ui.nav.Destination
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.UseSerializers
@@ -77,6 +78,25 @@ data class DiscoverItem(
 ) {
     val backDropUrl: String? get() = backdropPath?.let { "https://image.tmdb.org/t/p/w1920_and_h800_multi_faces$it" }
     val posterUrl: String? get() = posterPath?.let { "https://image.tmdb.org/t/p/w500$it" }
+
+    val destination: Destination
+        get() {
+            val jfType =
+                when (type) {
+                    SeerrItemType.MOVIE -> BaseItemKind.MOVIE
+                    SeerrItemType.TV -> BaseItemKind.SERIES
+                    SeerrItemType.PERSON -> BaseItemKind.PERSON
+                    SeerrItemType.UNKNOWN -> null
+                }
+            return if (jellyfinItemId != null && jfType != null) {
+                Destination.MediaItem(
+                    itemId = jellyfinItemId,
+                    type = jfType,
+                )
+            } else {
+                Destination.DiscoveredItem(this)
+            }
+        }
 
     constructor(movie: MovieResult) : this(
         id = movie.id,

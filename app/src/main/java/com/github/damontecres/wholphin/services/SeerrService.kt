@@ -2,7 +2,9 @@ package com.github.damontecres.wholphin.services
 
 import com.github.damontecres.wholphin.api.seerr.SeerrApiClient
 import com.github.damontecres.wholphin.api.seerr.model.SearchGet200ResponseResultsInner
+import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.DiscoverItem
+import org.jellyfin.sdk.model.api.BaseItemKind
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -40,4 +42,34 @@ class SeerrService
                 .results
                 ?.map(::DiscoverItem)
                 .orEmpty()
+
+        suspend fun similar(item: BaseItem): List<DiscoverItem> =
+            if (active) {
+                item.data.providerIds
+                    ?.get("Tmdb")
+                    ?.toIntOrNull()
+                    ?.let {
+                        when (item.type) {
+                            BaseItemKind.MOVIE -> {
+                                api.moviesApi
+                                    .movieMovieIdSimilarGet(movieId = it)
+                                    .results
+                                    ?.map(::DiscoverItem)
+                            }
+
+                            BaseItemKind.SERIES, BaseItemKind.SEASON, BaseItemKind.EPISODE -> {
+                                api.tvApi
+                                    .tvTvIdSimilarGet(tvId = it)
+                                    .results
+                                    ?.map(::DiscoverItem)
+                            }
+
+                            else -> {
+                                null
+                            }
+                        }
+                    }.orEmpty()
+            } else {
+                emptyList()
+            }
     }

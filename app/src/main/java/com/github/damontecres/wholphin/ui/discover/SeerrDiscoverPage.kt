@@ -42,7 +42,6 @@ import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.data.RowColumn
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.main.HomePageHeader
-import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.rememberPosition
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.DataLoadingState
@@ -51,7 +50,6 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 import org.jellyfin.sdk.api.client.ApiClient
-import org.jellyfin.sdk.model.api.BaseItemKind
 import javax.inject.Inject
 
 @HiltViewModel
@@ -178,16 +176,7 @@ fun SeerrDiscoverPage(
                     row = row,
                     onClickItem = { index, item ->
                         position = RowColumn(rowIndex, index)
-                        if (item.jellyfinItemId != null) {
-                            viewModel.navigationManager.navigateTo(
-                                Destination.MediaItem(
-                                    itemId = item.jellyfinItemId,
-                                    type = BaseItemKind.MOVIE,
-                                ),
-                            )
-                        } else {
-                            viewModel.navigationManager.navigateTo(Destination.DiscoveredItem(item))
-                        }
+                        viewModel.navigationManager.navigateTo(item.destination)
                     },
                     onLongClickItem = { index, item -> },
                     onCardFocus = { index -> position = RowColumn(rowIndex, index) },
