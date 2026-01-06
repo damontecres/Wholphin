@@ -12,12 +12,15 @@ import com.github.damontecres.wholphin.api.seerr.model.TvResult
 import com.github.damontecres.wholphin.api.seerr.model.TvTvIdRatingsGet200Response
 import com.github.damontecres.wholphin.services.SeerrSearchResult
 import com.github.damontecres.wholphin.ui.nav.Destination
+import com.github.damontecres.wholphin.ui.toLocalDate
+import com.github.damontecres.wholphin.util.LocalDateSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.UseSerializers
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.serializer.UUIDSerializer
 import org.jellyfin.sdk.model.serializer.toUUIDOrNull
+import java.time.LocalDate
 import java.util.UUID
 
 @Serializable
@@ -73,7 +76,7 @@ data class DiscoverItem(
     val subtitle: String?,
     val overview: String?,
     val availability: SeerrAvailability,
-    val releaseDate: String?,
+    @Serializable(LocalDateSerializer::class) val releaseDate: LocalDate?,
     val posterPath: String?,
     val backdropPath: String?,
     val jellyfinItemId: UUID?,
@@ -107,7 +110,7 @@ data class DiscoverItem(
         subtitle = null,
         overview = movie.overview,
         availability = SeerrAvailability.from(movie.mediaInfo?.status) ?: SeerrAvailability.UNKNOWN,
-        releaseDate = movie.releaseDate,
+        releaseDate = toLocalDate(movie.releaseDate),
         posterPath = movie.posterPath,
         backdropPath = movie.backdropPath,
         jellyfinItemId = movie.mediaInfo?.jellyfinMediaId?.toUUIDOrNull(),
@@ -120,7 +123,7 @@ data class DiscoverItem(
         subtitle = null,
         overview = movie.overview,
         availability = SeerrAvailability.from(movie.mediaInfo?.status) ?: SeerrAvailability.UNKNOWN,
-        releaseDate = movie.releaseDate,
+        releaseDate = toLocalDate(movie.releaseDate),
         posterPath = movie.posterPath,
         backdropPath = movie.backdropPath,
         jellyfinItemId = movie.mediaInfo?.jellyfinMediaId?.toUUIDOrNull(),
@@ -133,7 +136,7 @@ data class DiscoverItem(
         subtitle = null,
         overview = tv.overview,
         availability = SeerrAvailability.from(tv.mediaInfo?.status) ?: SeerrAvailability.UNKNOWN,
-        releaseDate = tv.firstAirDate,
+        releaseDate = toLocalDate(tv.firstAirDate),
         posterPath = tv.posterPath,
         backdropPath = tv.backdropPath,
         jellyfinItemId = tv.mediaInfo?.jellyfinMediaId?.toUUIDOrNull(),
@@ -146,7 +149,7 @@ data class DiscoverItem(
         subtitle = null,
         overview = tv.overview,
         availability = SeerrAvailability.from(tv.mediaInfo?.status) ?: SeerrAvailability.UNKNOWN,
-        releaseDate = tv.firstAirDate,
+        releaseDate = toLocalDate(tv.firstAirDate),
         posterPath = tv.posterPath,
         backdropPath = tv.backdropPath,
         jellyfinItemId = tv.mediaInfo?.jellyfinMediaId?.toUUIDOrNull(),
@@ -161,7 +164,7 @@ data class DiscoverItem(
         availability =
             SeerrAvailability.from(search.mediaInfo?.status)
                 ?: SeerrAvailability.UNKNOWN,
-        releaseDate = search.releaseDate ?: search.firstAirDate,
+        releaseDate = toLocalDate(search.releaseDate ?: search.firstAirDate),
         posterPath = search.posterPath,
         backdropPath = search.backdropPath,
         jellyfinItemId = search.mediaInfo?.jellyfinMediaId?.toUUIDOrNull(),
@@ -176,7 +179,7 @@ data class DiscoverItem(
         availability =
             SeerrAvailability.from(credit.mediaInfo?.status)
                 ?: SeerrAvailability.UNKNOWN,
-        releaseDate = credit.firstAirDate,
+        releaseDate = toLocalDate(credit.firstAirDate),
         posterPath = credit.posterPath,
         backdropPath = credit.backdropPath,
         jellyfinItemId = credit.mediaInfo?.jellyfinMediaId?.toUUIDOrNull(),
@@ -191,7 +194,7 @@ data class DiscoverItem(
         availability =
             SeerrAvailability.from(credit.mediaInfo?.status)
                 ?: SeerrAvailability.UNKNOWN,
-        releaseDate = credit.firstAirDate,
+        releaseDate = toLocalDate(credit.firstAirDate),
         posterPath = credit.posterPath,
         backdropPath = credit.backdropPath,
         jellyfinItemId = credit.mediaInfo?.jellyfinMediaId?.toUUIDOrNull(),

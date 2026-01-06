@@ -189,7 +189,7 @@ fun DiscoverItemCard(
                         .enableMarquee(focusedAfterDelay),
             )
             Text(
-                text = item?.releaseDate ?: "",
+                text = item?.releaseDate?.year?.toString() ?: "",
                 maxLines = 1,
                 textAlign = TextAlign.Center,
                 modifier =
