@@ -10,6 +10,7 @@ import com.github.damontecres.wholphin.ui.nav.NavDrawerItem
 import com.github.damontecres.wholphin.ui.nav.ServerNavDrawerItem
 import com.github.damontecres.wholphin.util.supportedCollectionTypes
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.flow.first
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.liveTvApi
 import org.jellyfin.sdk.api.client.extensions.userViewsApi
@@ -49,7 +50,7 @@ class NavDrawerItemRepository
                 }
 
             val builtins =
-                if (seerrServerRepository.active()) {
+                if (seerrServerRepository.active.first()) {
                     listOf(NavDrawerItem.Favorites, NavDrawerItem.Discover)
                 } else {
                     listOf(NavDrawerItem.Favorites)
