@@ -167,7 +167,6 @@ fun MovieDetails(
                             Destination.Playback(
                                 movie.id,
                                 it.inWholeMilliseconds,
-                                movie,
                             ),
                         )
                     },

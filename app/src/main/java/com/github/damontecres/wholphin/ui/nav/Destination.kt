@@ -10,13 +10,12 @@ import com.github.damontecres.wholphin.data.model.DiscoverItem
 import com.github.damontecres.wholphin.data.model.GetItemsFilter
 import com.github.damontecres.wholphin.data.model.ItemPlayback
 import com.github.damontecres.wholphin.ui.data.SortAndDirection
-import com.github.damontecres.wholphin.ui.detail.series.SeasonEpisode
 import com.github.damontecres.wholphin.ui.detail.series.SeasonEpisodeIds
 import com.github.damontecres.wholphin.ui.preferences.PreferenceScreenOption
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.Transient
 import kotlinx.serialization.UseSerializers
 import org.jellyfin.sdk.model.api.BaseItemKind
+import org.jellyfin.sdk.model.api.CollectionType
 import org.jellyfin.sdk.model.serializer.UUIDSerializer
 import java.util.UUID
 
@@ -46,7 +45,6 @@ sealed class Destination(
     data class SeriesOverview(
         val itemId: UUID,
         val type: BaseItemKind,
-        @Transient val item: BaseItem? = null,
         val seasonEpisode: SeasonEpisodeIds? = null,
     ) : Destination() {
         override fun toString(): String = "SeriesOverview(itemId=$itemId, type=$type, seasonEpisode=$seasonEpisode)"
@@ -56,11 +54,9 @@ sealed class Destination(
     data class MediaItem(
         val itemId: UUID,
         val type: BaseItemKind,
-        @Transient val item: BaseItem? = null,
-        val seasonEpisode: SeasonEpisode? = null,
+        val collectionType: CollectionType? = null,
     ) : Destination() {
-        override fun toString(): String =
-            "MediaItem(itemId=$itemId, type=$type, seasonEpisode=$seasonEpisode, collectionType=${item?.data?.collectionType})"
+        constructor(item: BaseItem) : this(item.id, item.type, item.data.collectionType)
     }
 
     @Serializable
@@ -72,13 +68,10 @@ sealed class Destination(
     data class Playback(
         val itemId: UUID,
         val positionMs: Long,
-        @Transient val item: BaseItem? = null,
         val itemPlayback: ItemPlayback? = null,
         val forceTranscoding: Boolean = false,
     ) : Destination(true) {
-        override fun toString(): String = "Playback(itemId=$itemId, positionMs=$positionMs)"
-
-        constructor(item: BaseItem) : this(item.id, item.resumeMs, item)
+        constructor(item: BaseItem) : this(item.id, item.resumeMs)
     }
 
     @Serializable

@@ -129,7 +129,6 @@ fun EpisodeDetails(
                             Destination.Playback(
                                 ep.id,
                                 it.inWholeMilliseconds,
-                                ep,
                             ),
                         )
                     },

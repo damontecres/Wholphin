@@ -21,7 +21,6 @@ import dagger.hilt.android.scopes.ActivityScoped
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import okhttp3.OkHttpClient
@@ -46,7 +45,7 @@ class SeerrServerRepository
         /**
          * Whether Seerr integration is currently active of not
          */
-        suspend fun active(): Boolean = current.firstOrNull() != null && seerrApi.active
+        val active: Flow<Boolean> = current.map { it != null && seerrApi.active }
 
         fun clear() {
             _current.update { null }

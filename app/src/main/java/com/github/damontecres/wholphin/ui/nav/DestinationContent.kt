@@ -126,7 +126,6 @@ fun DestinationContent(
                     CollectionFolderBoxSet(
                         preferences = preferences,
                         itemId = destination.itemId,
-                        item = destination.item,
                         recursive = false,
                         playEnabled = true,
                         modifier = modifier,
@@ -146,7 +145,7 @@ fun DestinationContent(
                     CollectionFolder(
                         preferences = preferences,
                         destination = destination,
-                        collectionType = destination.item?.data?.collectionType,
+                        collectionType = destination.collectionType,
                         usePostersOverride = null,
                         recursiveOverride = null,
                         modifier = modifier,
@@ -158,7 +157,7 @@ fun DestinationContent(
                     CollectionFolder(
                         preferences = preferences,
                         destination = destination,
-                        collectionType = destination.item?.data?.collectionType,
+                        collectionType = destination.collectionType,
                         usePostersOverride = true,
                         recursiveOverride = null,
                         modifier = modifier,
@@ -170,7 +169,7 @@ fun DestinationContent(
                     CollectionFolder(
                         preferences = preferences,
                         destination = destination,
-                        collectionType = destination.item?.data?.collectionType,
+                        collectionType = destination.collectionType,
                         usePostersOverride = null,
                         recursiveOverride = true,
                         modifier = modifier,
@@ -336,7 +335,6 @@ fun CollectionFolder(
             CollectionFolderPlaylist(
                 preferences,
                 destination.itemId,
-                destination.item,
                 true,
                 modifier,
             )
