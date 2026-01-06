@@ -347,4 +347,5 @@
     <string name="local">本地</string>
     <string name="play_trailer">播放预告片</string>
     <string name="no_trailers">无预告片</string>
+    <string name="clear_track_choices">清除轨道选择</string>
 </resources>
