@@ -21,6 +21,7 @@ import androidx.media3.exoplayer.DecoderCounters
 import androidx.media3.exoplayer.DecoderReuseEvaluation
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.analytics.AnalyticsListener
+import androidx.media3.session.MediaSession
 import coil3.imageLoader
 import coil3.request.ImageRequest
 import coil3.size.Size
@@ -134,6 +135,7 @@ class PlaybackViewModel
         val player by lazy {
             playerFactory.createVideoPlayer()
         }
+        private val mediaSession: MediaSession
         internal val mutex = Mutex()
 
         val controllerViewState =
@@ -177,10 +179,15 @@ class PlaybackViewModel
                 }
                 jobs.forEach { it.cancel() }
                 player.release()
+                mediaSession.release()
             }
             viewModelScope.launch(ExceptionHandler()) { controllerViewState.observe() }
             player.addListener(this)
             (player as? ExoPlayer)?.addAnalyticsListener(this)
+            mediaSession =
+                MediaSession
+                    .Builder(context, player)
+                    .build()
             jobs.add(subscribe())
             jobs.add(listenForTranscodeReason())
         }
@@ -1031,6 +1038,7 @@ class PlaybackViewModel
             Timber.v("release")
             activityListener?.release()
             player.release()
+            mediaSession.release()
             activityListener = null
         }
 
