@@ -185,8 +185,7 @@ fun DiscoverSeriesDetails(
 private const val HEADER_ROW = 0
 private const val SEASONS_ROW = HEADER_ROW + 1
 private const val PEOPLE_ROW = SEASONS_ROW + 1
-private const val TRAILER_ROW = PEOPLE_ROW + 1
-private const val EXTRAS_ROW = TRAILER_ROW + 1
+private const val EXTRAS_ROW = PEOPLE_ROW + 1
 private const val SIMILAR_ROW = EXTRAS_ROW + 1
 private const val RECOMMENDED_ROW = SIMILAR_ROW + 1
 
@@ -283,6 +282,8 @@ fun DiscoverSeriesDetailsContent(
                             },
                             canRequest = userConfig.hasPermission(SeerrPermission.REQUEST),
                             canCancel = canCancel,
+                            trailers = trailers,
+                            trailerOnClick = trailerOnClick,
                             modifier =
                                 Modifier
                                     .fillMaxWidth()
@@ -337,21 +338,6 @@ fun DiscoverSeriesDetailsContent(
                             },
                             onCardFocus = {},
                             focusRequester = focusRequesters[PEOPLE_ROW],
-                        )
-                    }
-                }
-                if (trailers.isNotEmpty()) {
-                    item {
-                        TrailerRow(
-                            trailers = trailers,
-                            onClickTrailer = {
-                                position = TRAILER_ROW
-                                trailerOnClick.invoke(it)
-                            },
-                            modifier =
-                                Modifier
-                                    .fillMaxWidth()
-                                    .focusRequester(focusRequesters[TRAILER_ROW]),
                         )
                     }
                 }

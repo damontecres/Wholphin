@@ -18,8 +18,10 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.unit.dp
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.SeerrAvailability
+import com.github.damontecres.wholphin.data.model.Trailer
 import com.github.damontecres.wholphin.ui.components.ExpandableFaButton
 import com.github.damontecres.wholphin.ui.components.ExpandablePlayButton
+import com.github.damontecres.wholphin.ui.components.TrailerButton
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import kotlin.time.Duration
 
@@ -28,10 +30,12 @@ fun ExpandableDiscoverButtons(
     canRequest: Boolean,
     canCancel: Boolean,
     availability: SeerrAvailability,
+    trailers: List<Trailer>?,
     requestOnClick: () -> Unit,
     cancelOnClick: () -> Unit,
     goToOnClick: () -> Unit,
     moreOnClick: () -> Unit,
+    trailerOnClick: (Trailer) -> Unit,
     buttonOnFocusChanged: (FocusState) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -121,6 +125,16 @@ fun ExpandableDiscoverButtons(
                     modifier =
                         Modifier
                             .onFocusChanged(buttonOnFocusChanged),
+                )
+            }
+        }
+
+        if (trailers != null) {
+            item("trailers") {
+                TrailerButton(
+                    trailers = trailers,
+                    trailerOnClick = trailerOnClick,
+                    modifier = Modifier.onFocusChanged(buttonOnFocusChanged),
                 )
             }
         }
