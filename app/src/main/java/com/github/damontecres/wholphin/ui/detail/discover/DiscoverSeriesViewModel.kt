@@ -10,7 +10,6 @@ import com.github.damontecres.wholphin.api.seerr.model.TvDetails
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.DiscoverItem
 import com.github.damontecres.wholphin.data.model.DiscoverRating
-import com.github.damontecres.wholphin.data.model.Person
 import com.github.damontecres.wholphin.data.model.Trailer
 import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.NavigationManager
@@ -34,8 +33,6 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
-import org.jellyfin.sdk.model.UUID
-import org.jellyfin.sdk.model.api.PersonKind
 
 @HiltViewModel(assistedFactory = DiscoverSeriesViewModel.Factory::class)
 class DiscoverSeriesViewModel
@@ -61,7 +58,7 @@ class DiscoverSeriesViewModel
 
         val seasons = MutableLiveData<List<Season>>(listOf())
         val trailers = MutableLiveData<List<Trailer>>(listOf())
-        val people = MutableLiveData<List<Person>>(listOf())
+        val people = MutableLiveData<List<DiscoverItem>>(listOf())
         val similar = MutableLiveData<List<DiscoverItem>>(listOf())
         val recommended = MutableLiveData<List<DiscoverItem>>(listOf())
 
@@ -126,28 +123,12 @@ class DiscoverSeriesViewModel
                 val people =
                     tv.credits
                         ?.cast
-                        ?.map {
-                            Person(
-                                id = UUID.randomUUID(),
-                                name = it.name,
-                                role = it.character,
-                                type = PersonKind.UNKNOWN,
-                                imageUrl = "https://image.tmdb.org/t/p/w600_and_h900_bestv2${it.profilePath}",
-                                favorite = false,
-                            )
-                        }.orEmpty() +
+                        ?.map(::DiscoverItem)
+                        .orEmpty() +
                         tv.credits
                             ?.crew
-                            ?.map {
-                                Person(
-                                    id = UUID.randomUUID(),
-                                    name = it.name,
-                                    role = it.job,
-                                    type = PersonKind.UNKNOWN,
-                                    imageUrl = "https://image.tmdb.org/t/p/w600_and_h900_bestv2${it.profilePath}",
-                                    favorite = false,
-                                )
-                            }.orEmpty()
+                            ?.map(::DiscoverItem)
+                            .orEmpty()
                 this@DiscoverSeriesViewModel.people.setValueOnMain(people)
             }
 

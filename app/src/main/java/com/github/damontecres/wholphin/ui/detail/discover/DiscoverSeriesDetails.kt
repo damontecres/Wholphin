@@ -40,7 +40,6 @@ import com.github.damontecres.wholphin.api.seerr.model.TvDetails
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.DiscoverItem
 import com.github.damontecres.wholphin.data.model.DiscoverRating
-import com.github.damontecres.wholphin.data.model.Person
 import com.github.damontecres.wholphin.data.model.SeerrAvailability
 import com.github.damontecres.wholphin.data.model.SeerrPermission
 import com.github.damontecres.wholphin.data.model.Trailer
@@ -50,7 +49,6 @@ import com.github.damontecres.wholphin.services.SeerrUserConfig
 import com.github.damontecres.wholphin.services.TrailerService
 import com.github.damontecres.wholphin.ui.cards.DiscoverItemCard
 import com.github.damontecres.wholphin.ui.cards.ItemRow
-import com.github.damontecres.wholphin.ui.cards.PersonRow
 import com.github.damontecres.wholphin.ui.components.DialogItem
 import com.github.damontecres.wholphin.ui.components.DialogParams
 import com.github.damontecres.wholphin.ui.components.DialogPopup
@@ -61,11 +59,14 @@ import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.components.OverviewText
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialog
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialogInfo
+import com.github.damontecres.wholphin.ui.discover.DiscoverRow
+import com.github.damontecres.wholphin.ui.discover.DiscoverRowData
 import com.github.damontecres.wholphin.ui.letNotEmpty
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.rememberInt
 import com.github.damontecres.wholphin.ui.roundMinutes
 import com.github.damontecres.wholphin.ui.tryRequestFocus
+import com.github.damontecres.wholphin.util.DataLoadingState
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
 import kotlinx.coroutines.launch
@@ -124,12 +125,7 @@ fun DiscoverSeriesDetails(
                         viewModel.navigateTo(Destination.DiscoveredItem(item))
                     },
                     onClickPerson = {
-                        viewModel.navigateTo(
-                            Destination.MediaItem(
-                                it.id,
-                                BaseItemKind.PERSON,
-                            ),
-                        )
+                        viewModel.navigateTo(Destination.DiscoveredItem(it))
                     },
                     goToOnClick = {
                         item.mediaInfo?.jellyfinMediaId?.toUUIDOrNull()?.let {
@@ -204,7 +200,7 @@ fun DiscoverSeriesDetailsContent(
     similar: List<DiscoverItem>,
     recommended: List<DiscoverItem>,
     trailers: List<Trailer>,
-    people: List<Person>,
+    people: List<DiscoverItem>,
     requestOnClick: () -> Unit,
     cancelOnClick: () -> Unit,
     trailerOnClick: (Trailer) -> Unit,
@@ -212,8 +208,8 @@ fun DiscoverSeriesDetailsContent(
     goToOnClick: () -> Unit,
     moreOnClick: () -> Unit,
     onClickItem: (Int, DiscoverItem) -> Unit,
-    onClickPerson: (Person) -> Unit,
-    onLongClickPerson: (Int, Person) -> Unit,
+    onClickPerson: (DiscoverItem) -> Unit,
+    onLongClickPerson: (Int, DiscoverItem) -> Unit,
     onLongClickSimilar: (Int, DiscoverItem) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -244,49 +240,56 @@ fun DiscoverSeriesDetailsContent(
                 modifier = Modifier,
             ) {
                 item {
-                    DiscoverSeriesDetailsHeader(
-                        series = series,
-                        rating = rating,
-                        overviewOnClick = overviewOnClick,
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(0.dp),
                         modifier =
                             Modifier
                                 .fillMaxWidth()
-                                .bringIntoViewRequester(bringIntoViewRequester)
-                                .padding(top = 32.dp, bottom = 16.dp),
-                    )
-                    val canCancel =
-                        remember(series, userConfig) {
-                            (
-                                // User requested this
-                                userConfig.hasPermission(SeerrPermission.REQUEST) &&
-                                    series.mediaInfo?.requests?.any { it.requestedBy?.id == userConfig?.id } == true
-                            ) ||
-                                userConfig.hasPermission(SeerrPermission.MANAGE_REQUESTS)
-                        }
-                    ExpandableDiscoverButtons(
-                        availability =
-                            SeerrAvailability.from(series.mediaInfo?.status)
-                                ?: SeerrAvailability.UNKNOWN,
-                        requestOnClick = requestOnClick,
-                        cancelOnClick = cancelOnClick,
-                        moreOnClick = moreOnClick,
-                        goToOnClick = goToOnClick,
-                        buttonOnFocusChanged = {
-                            if (it.isFocused) {
-                                position = HEADER_ROW
-                                scope.launch(ExceptionHandler()) {
-                                    bringIntoViewRequester.bringIntoView()
-                                }
+                                .bringIntoViewRequester(bringIntoViewRequester),
+                    ) {
+                        DiscoverSeriesDetailsHeader(
+                            series = series,
+                            rating = rating,
+                            overviewOnClick = overviewOnClick,
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 32.dp, bottom = 16.dp),
+                        )
+                        val canCancel =
+                            remember(series, userConfig) {
+                                (
+                                    // User requested this
+                                    userConfig.hasPermission(SeerrPermission.REQUEST) &&
+                                        series.mediaInfo?.requests?.any { it.requestedBy?.id == userConfig?.id } == true
+                                ) ||
+                                    userConfig.hasPermission(SeerrPermission.MANAGE_REQUESTS)
                             }
-                        },
-                        canRequest = userConfig.hasPermission(SeerrPermission.REQUEST),
-                        canCancel = canCancel,
-                        modifier =
-                            Modifier
-                                .fillMaxWidth()
-                                .padding(bottom = 16.dp)
-                                .focusRequester(focusRequesters[HEADER_ROW]),
-                    )
+                        ExpandableDiscoverButtons(
+                            availability =
+                                SeerrAvailability.from(series.mediaInfo?.status)
+                                    ?: SeerrAvailability.UNKNOWN,
+                            requestOnClick = requestOnClick,
+                            cancelOnClick = cancelOnClick,
+                            moreOnClick = moreOnClick,
+                            goToOnClick = goToOnClick,
+                            buttonOnFocusChanged = {
+                                if (it.isFocused) {
+                                    position = HEADER_ROW
+                                    scope.launch(ExceptionHandler()) {
+                                        bringIntoViewRequester.bringIntoView()
+                                    }
+                                }
+                            },
+                            canRequest = userConfig.hasPermission(SeerrPermission.REQUEST),
+                            canCancel = canCancel,
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .padding(bottom = 16.dp)
+                                    .focusRequester(focusRequesters[HEADER_ROW]),
+                        )
+                    }
                 }
 //                item {
 //                    ItemRow(
@@ -318,18 +321,22 @@ fun DiscoverSeriesDetailsContent(
 //                }
                 if (people.isNotEmpty()) {
                     item {
-                        PersonRow(
-                            people = people,
-                            onClick = {
+                        DiscoverRow(
+                            row =
+                                DiscoverRowData(
+                                    stringResource(R.string.people),
+                                    DataLoadingState.Success(people),
+                                ),
+                            onClickItem = { index: Int, item: DiscoverItem ->
                                 position = PEOPLE_ROW
-                                onClickPerson.invoke(it)
+                                onClickPerson.invoke(item)
                             },
-                            onLongClick = { index, person ->
+                            onLongClickItem = { index, person ->
+                                position = PEOPLE_ROW
+                                onLongClickPerson.invoke(index, person)
                             },
-                            modifier =
-                                Modifier
-                                    .fillMaxWidth()
-                                    .focusRequester(focusRequesters[PEOPLE_ROW]),
+                            onCardFocus = {},
+                            focusRequester = focusRequesters[PEOPLE_ROW],
                         )
                     }
                 }

@@ -1009,11 +1009,11 @@ components:
             cast:
               type: array
               items:
-                $ref: '#/components/schemas/Cast'
+                $ref: '#/components/schemas/CreditCast'
             crew:
               type: array
               items:
-                $ref: '#/components/schemas/Crew'
+                $ref: '#/components/schemas/CreditCrew'
         collection:
           type: object
           properties:
@@ -1205,11 +1205,11 @@ components:
             cast:
               type: array
               items:
-                $ref: '#/components/schemas/Cast'
+                $ref: '#/components/schemas/CreditCast'
             crew:
               type: array
               items:
-                $ref: '#/components/schemas/Crew'
+                $ref: '#/components/schemas/CreditCrew'
         externalIds:
           $ref: '#/components/schemas/ExternalIds'
         keywords:
@@ -1691,6 +1691,9 @@ components:
             type: integer
         posterPath:
           type: string
+        profilePath:
+          type: string
+          nullable: true
         originalTitle:
           type: string
         video:
@@ -1745,6 +1748,9 @@ components:
             type: integer
         posterPath:
           type: string
+        profilePath:
+          type: string
+          nullable: true
         originalTitle:
           type: string
         video:

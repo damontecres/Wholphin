@@ -374,7 +374,7 @@ fun <T : CardGridItem> CardGrid(
                     pager
                         .getOrNull(focusedIndex)
                         ?.sortName
-                        ?.first()
+                        ?.firstOrNull()
                         ?.uppercaseChar()
                         ?.let {
                             if (it >= '0' && it <= '9') {

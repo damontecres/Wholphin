@@ -40,7 +40,6 @@ import com.github.damontecres.wholphin.api.seerr.model.MovieDetails
 import com.github.damontecres.wholphin.data.model.DiscoverItem
 import com.github.damontecres.wholphin.data.model.DiscoverRating
 import com.github.damontecres.wholphin.data.model.LocalTrailer
-import com.github.damontecres.wholphin.data.model.Person
 import com.github.damontecres.wholphin.data.model.RemoteTrailer
 import com.github.damontecres.wholphin.data.model.SeerrAvailability
 import com.github.damontecres.wholphin.data.model.SeerrPermission
@@ -52,7 +51,6 @@ import com.github.damontecres.wholphin.services.TrailerService
 import com.github.damontecres.wholphin.ui.Cards
 import com.github.damontecres.wholphin.ui.cards.DiscoverItemCard
 import com.github.damontecres.wholphin.ui.cards.ItemRow
-import com.github.damontecres.wholphin.ui.cards.PersonRow
 import com.github.damontecres.wholphin.ui.cards.SeasonCard
 import com.github.damontecres.wholphin.ui.components.DialogParams
 import com.github.damontecres.wholphin.ui.components.DialogPopup
@@ -61,10 +59,12 @@ import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialog
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialogInfo
 import com.github.damontecres.wholphin.ui.detail.MoreDialogActions
-import com.github.damontecres.wholphin.ui.detail.buildMoreDialogItemsForPerson
+import com.github.damontecres.wholphin.ui.discover.DiscoverRow
+import com.github.damontecres.wholphin.ui.discover.DiscoverRowData
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.rememberInt
 import com.github.damontecres.wholphin.ui.tryRequestFocus
+import com.github.damontecres.wholphin.util.DataLoadingState
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
 import kotlinx.coroutines.launch
@@ -137,7 +137,8 @@ fun DiscoverMovieDetails(
                     onClickItem = { index, item ->
                         viewModel.navigateTo(Destination.DiscoveredItem(item))
                     },
-                    onClickPerson = {
+                    onClickPerson = { item ->
+                        viewModel.navigateTo(Destination.DiscoveredItem(item))
                     },
                     overviewOnClick = {
                         overviewDialog =
@@ -166,20 +167,7 @@ fun DiscoverMovieDetails(
                                 items = listOf(),
                             )
                     },
-                    onLongClickPerson = { index, person ->
-                        val items =
-                            buildMoreDialogItemsForPerson(
-                                context = context,
-                                person = person,
-                                actions = moreActions,
-                            )
-                        moreDialog =
-                            DialogParams(
-                                fromLongClick = true,
-                                title = person.name ?: "",
-                                items = items,
-                            )
-                    },
+                    onLongClickPerson = { index, person -> },
                     onLongClickSimilar = { index, similar ->
                     },
                     trailerOnClick = {
@@ -223,7 +211,7 @@ fun DiscoverMovieDetailsContent(
     userConfig: SeerrUserConfig?,
     movie: MovieDetails,
     rating: DiscoverRating?,
-    people: List<Person>,
+    people: List<DiscoverItem>,
     trailers: List<Trailer>,
     similar: List<DiscoverItem>,
     recommended: List<DiscoverItem>,
@@ -234,8 +222,8 @@ fun DiscoverMovieDetailsContent(
     goToOnClick: () -> Unit,
     moreOnClick: () -> Unit,
     onClickItem: (Int, DiscoverItem) -> Unit,
-    onClickPerson: (Person) -> Unit,
-    onLongClickPerson: (Int, Person) -> Unit,
+    onClickPerson: (DiscoverItem) -> Unit,
+    onLongClickPerson: (Int, DiscoverItem) -> Unit,
     onLongClickSimilar: (Int, DiscoverItem) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -310,20 +298,22 @@ fun DiscoverMovieDetailsContent(
             }
             if (people.isNotEmpty()) {
                 item {
-                    PersonRow(
-                        people = people,
-                        onClick = {
+                    DiscoverRow(
+                        row =
+                            DiscoverRowData(
+                                stringResource(R.string.people),
+                                DataLoadingState.Success(people),
+                            ),
+                        onClickItem = { index: Int, item: DiscoverItem ->
                             position = PEOPLE_ROW
-                            onClickPerson.invoke(it)
+                            onClickPerson.invoke(item)
                         },
-                        onLongClick = { index, person ->
+                        onLongClickItem = { index, person ->
                             position = PEOPLE_ROW
                             onLongClickPerson.invoke(index, person)
                         },
-                        modifier =
-                            Modifier
-                                .fillMaxWidth()
-                                .focusRequester(focusRequesters[PEOPLE_ROW]),
+                        onCardFocus = {},
+                        focusRequester = focusRequesters[PEOPLE_ROW],
                     )
                 }
             }

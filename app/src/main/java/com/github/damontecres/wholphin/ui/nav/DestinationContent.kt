@@ -23,6 +23,7 @@ import com.github.damontecres.wholphin.ui.detail.FavoritesPage
 import com.github.damontecres.wholphin.ui.detail.PersonPage
 import com.github.damontecres.wholphin.ui.detail.PlaylistDetails
 import com.github.damontecres.wholphin.ui.detail.discover.DiscoverMovieDetails
+import com.github.damontecres.wholphin.ui.detail.discover.DiscoverPersonPage
 import com.github.damontecres.wholphin.ui.detail.discover.DiscoverSeriesDetails
 import com.github.damontecres.wholphin.ui.detail.episode.EpisodeDetails
 import com.github.damontecres.wholphin.ui.detail.movie.MovieDetails
@@ -265,6 +266,7 @@ fun DestinationContent(
                     DiscoverMovieDetails(
                         preferences = preferences,
                         destination = destination,
+                        modifier = modifier,
                     )
                 }
 
@@ -272,13 +274,14 @@ fun DestinationContent(
                     DiscoverSeriesDetails(
                         preferences = preferences,
                         destination = destination,
+                        modifier = modifier,
                     )
                 }
 
                 SeerrItemType.PERSON -> {
-                    Text(
-                        text = "Person not supported yet",
-                        color = MaterialTheme.colorScheme.onSurface,
+                    DiscoverPersonPage(
+                        person = destination.item,
+                        modifier = modifier,
                     )
                 }
 

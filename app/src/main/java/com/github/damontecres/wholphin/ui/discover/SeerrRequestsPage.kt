@@ -196,7 +196,7 @@ fun SeerrRequestsPage(
                         gridFocusRequester = focusRequester,
                         showJumpButtons = false,
                         showLetterButtons = false,
-                        spacing = 24.dp,
+                        spacing = 16.dp,
                         cardContent = @Composable { item, onClick, onLongClick, mod ->
                             DiscoverItemCard(
                                 item = item?.item,

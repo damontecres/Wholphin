@@ -10,7 +10,6 @@ import com.github.damontecres.wholphin.api.seerr.model.RequestPostRequest
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.DiscoverItem
 import com.github.damontecres.wholphin.data.model.DiscoverRating
-import com.github.damontecres.wholphin.data.model.Person
 import com.github.damontecres.wholphin.data.model.RemoteTrailer
 import com.github.damontecres.wholphin.data.model.Trailer
 import com.github.damontecres.wholphin.services.BackdropService
@@ -36,8 +35,6 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
-import org.jellyfin.sdk.model.UUID
-import org.jellyfin.sdk.model.api.PersonKind
 
 @HiltViewModel(assistedFactory = DiscoverMovieViewModel.Factory::class)
 class DiscoverMovieViewModel
@@ -62,7 +59,7 @@ class DiscoverMovieViewModel
         val rating = MutableLiveData<DiscoverRating?>(null)
 
         val trailers = MutableLiveData<List<Trailer>>(listOf())
-        val people = MutableLiveData<List<Person>>(listOf())
+        val people = MutableLiveData<List<DiscoverItem>>(listOf())
         val similar = MutableLiveData<List<DiscoverItem>>(listOf())
         val recommended = MutableLiveData<List<DiscoverItem>>(listOf())
 
@@ -127,28 +124,12 @@ class DiscoverMovieViewModel
                 val people =
                     movie.credits
                         ?.cast
-                        ?.map {
-                            Person(
-                                id = UUID.randomUUID(),
-                                name = it.name,
-                                role = it.character,
-                                type = PersonKind.UNKNOWN,
-                                imageUrl = "https://image.tmdb.org/t/p/w600_and_h900_bestv2${it.profilePath}",
-                                favorite = false,
-                            )
-                        }.orEmpty() +
+                        ?.map(::DiscoverItem)
+                        .orEmpty() +
                         movie.credits
                             ?.crew
-                            ?.map {
-                                Person(
-                                    id = UUID.randomUUID(),
-                                    name = it.name,
-                                    role = it.job,
-                                    type = PersonKind.UNKNOWN,
-                                    imageUrl = "https://image.tmdb.org/t/p/w600_and_h900_bestv2${it.profilePath}",
-                                    favorite = false,
-                                )
-                            }.orEmpty()
+                            ?.map(::DiscoverItem)
+                            .orEmpty()
                 this@DiscoverMovieViewModel.people.setValueOnMain(people)
                 val trailers =
                     movie.relatedVideos

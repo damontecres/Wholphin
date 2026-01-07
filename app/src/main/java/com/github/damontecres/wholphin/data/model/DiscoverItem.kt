@@ -11,6 +11,7 @@ import com.github.damontecres.wholphin.api.seerr.model.TvDetails
 import com.github.damontecres.wholphin.api.seerr.model.TvResult
 import com.github.damontecres.wholphin.api.seerr.model.TvTvIdRatingsGet200Response
 import com.github.damontecres.wholphin.services.SeerrSearchResult
+import com.github.damontecres.wholphin.ui.detail.CardGridItem
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.toLocalDate
 import com.github.damontecres.wholphin.util.LocalDateSerializer
@@ -41,13 +42,15 @@ enum class SeerrItemType(
     ;
 
     companion object {
-        fun fromString(str: String?) =
-            when (str) {
-                "movie" -> MOVIE
-                "tv" -> TV
-                "person" -> PERSON
-                else -> UNKNOWN
-            }
+        fun fromString(
+            str: String?,
+            fallback: SeerrItemType = UNKNOWN,
+        ) = when (str) {
+            "movie" -> MOVIE
+            "tv" -> TV
+            "person" -> PERSON
+            else -> fallback
+        }
     }
 }
 
@@ -80,7 +83,11 @@ data class DiscoverItem(
     val posterPath: String?,
     val backdropPath: String?,
     val jellyfinItemId: UUID?,
-) {
+) : CardGridItem {
+    override val gridId: String get() = id.toString()
+    override val playable: Boolean = false
+    override val sortName: String get() = title ?: ""
+
     val backDropUrl: String? get() = backdropPath?.let { "https://image.tmdb.org/t/p/w1920_and_h800_multi_faces$it" }
     val posterUrl: String? get() = posterPath?.let { "https://image.tmdb.org/t/p/w500$it" }
 
@@ -172,30 +179,30 @@ data class DiscoverItem(
 
     constructor(credit: CreditCast) : this(
         id = credit.id!!,
-        type = SeerrItemType.TV,
-        title = credit.name,
+        type = SeerrItemType.fromString(credit.mediaType, SeerrItemType.PERSON),
+        title = credit.name ?: credit.title,
         subtitle = null,
         overview = credit.overview,
         availability =
             SeerrAvailability.from(credit.mediaInfo?.status)
                 ?: SeerrAvailability.UNKNOWN,
         releaseDate = toLocalDate(credit.firstAirDate),
-        posterPath = credit.posterPath,
+        posterPath = credit.posterPath ?: credit.profilePath,
         backdropPath = credit.backdropPath,
         jellyfinItemId = credit.mediaInfo?.jellyfinMediaId?.toUUIDOrNull(),
     )
 
     constructor(credit: CreditCrew) : this(
         id = credit.id!!,
-        type = SeerrItemType.TV,
-        title = credit.name,
+        type = SeerrItemType.fromString(credit.mediaType, SeerrItemType.PERSON),
+        title = credit.name ?: credit.title,
         subtitle = null,
         overview = credit.overview,
         availability =
             SeerrAvailability.from(credit.mediaInfo?.status)
                 ?: SeerrAvailability.UNKNOWN,
         releaseDate = toLocalDate(credit.firstAirDate),
-        posterPath = credit.posterPath,
+        posterPath = credit.posterPath ?: credit.profilePath,
         backdropPath = credit.backdropPath,
         jellyfinItemId = credit.mediaInfo?.jellyfinMediaId?.toUUIDOrNull(),
     )
