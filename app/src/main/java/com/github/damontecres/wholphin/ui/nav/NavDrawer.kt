@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -70,6 +71,7 @@ import androidx.tv.material3.ProvideTextStyle
 import androidx.tv.material3.Text
 import androidx.tv.material3.rememberDrawerState
 import androidx.tv.material3.surfaceColorAtElevation
+import coil3.compose.AsyncImage
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.NavDrawerItemRepository
 import com.github.damontecres.wholphin.data.model.JellyfinServer
@@ -81,6 +83,7 @@ import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.SetupDestination
 import com.github.damontecres.wholphin.services.SetupNavigationManager
 import com.github.damontecres.wholphin.ui.FontAwesome
+import com.github.damontecres.wholphin.ui.LocalImageUrlService
 import com.github.damontecres.wholphin.ui.components.TimeDisplay
 import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.launchIO
@@ -97,6 +100,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.model.api.CollectionType
+import org.jellyfin.sdk.model.api.ImageType
 import timber.log.Timber
 import java.util.UUID
 import javax.inject.Inject
@@ -120,19 +124,20 @@ class NavDrawerViewModel
             viewModelScope.launchIO {
                 val all = all ?: navDrawerItemRepository.getNavDrawerItems()
                 this@NavDrawerViewModel.all = all
-                val libraries = navDrawerItemRepository.getFilteredNavDrawerItems(all)
-                val moreLibraries = all.toMutableList().apply { removeAll(libraries) }
+                val hiddenItems = navDrawerItemRepository.getHiddenNavDrawerItems()
 
                 withContext(Dispatchers.Main) {
-                    this@NavDrawerViewModel.moreLibraries.value = moreLibraries
-                    this@NavDrawerViewModel.libraries.value = libraries
+                    this@NavDrawerViewModel.moreLibraries.value = hiddenItems
+                    this@NavDrawerViewModel.libraries.value = all
                 }
                 val asDestinations =
-                    (libraries + listOf(NavDrawerItem.More) + moreLibraries).map {
+                    (all + hiddenItems).map {
                         if (it is ServerNavDrawerItem) {
                             it.destination
                         } else if (it is NavDrawerItem.Favorites) {
                             Destination.Favorites
+                        } else if (it is CustomNavDrawerItem) {
+                            it.destination
                         } else {
                             null
                         }
@@ -206,6 +211,38 @@ data class ServerNavDrawerItem(
 }
 
 /**
+ * Custom navigation drawer item for collections and playlists with optional custom icons
+ * 
+ * Used when the server plugin provides custom shortcuts to collections or playlists.
+ * Supports loading custom icons from image URLs.
+ *
+ * @param itemId UUID of the collection or playlist
+ * @param itemName Display name for the item
+ * @param destination Navigation destination
+ * @param itemType Type of the custom item (collection or playlist)
+ * @param imageUrl Optional URL for custom icon (e.g., primary image from collection)
+ */
+data class CustomNavDrawerItem(
+    val itemId: UUID,
+    val itemName: String,
+    val destination: Destination,
+    val itemType: CustomNavDrawerItemType,
+    val imageUrl: String? = null,
+) : NavDrawerItem {
+    override val id: String = "c_" + itemId.toServerString()
+
+    override fun name(context: Context): String = itemName
+}
+
+/**
+ * Type of custom navigation drawer item
+ */
+enum class CustomNavDrawerItemType {
+    COLLECTION,
+    PLAYLIST,
+}
+
+/**
  * Display the left side navigation drawer with [DestinationContent] on the right
  */
 @Composable
@@ -268,6 +305,11 @@ fun NavDrawer(
             }
 
             is ServerNavDrawerItem -> {
+                viewModel.setIndex(index)
+                viewModel.navigationManager.navigateToFromDrawer(item.destination)
+            }
+
+            is CustomNavDrawerItem -> {
                 viewModel.setIndex(index)
                 viewModel.navigationManager.navigateToFromDrawer(item.destination)
             }
@@ -618,6 +660,13 @@ fun NavigationDrawerScope.NavItem(
                     else -> R.string.fa_film
                 }
             }
+
+            is CustomNavDrawerItem -> {
+                when (library.itemType) {
+                    CustomNavDrawerItemType.COLLECTION -> R.string.fa_open_folder
+                    CustomNavDrawerItemType.PLAYLIST -> R.string.fa_list_ul
+                }
+            }
         }
     val focused by interactionSource.collectIsFocusedAsState()
     NavigationDrawerItem(
@@ -630,8 +679,34 @@ fun NavigationDrawerScope.NavItem(
             ),
         leadingContent = {
             val color = navItemColor(selected, focused, drawerOpen)
+            val imageUrlService = LocalImageUrlService.current
+            
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                if (useFont) {
+                // Handle CustomNavDrawerItem with potential image
+                if (library is CustomNavDrawerItem) {
+                    val imageUrl = library.imageUrl ?: imageUrlService.getItemImageUrl(
+                        itemId = library.itemId,
+                        imageType = ImageType.PRIMARY,
+                    )
+                    
+                    if (imageUrl != null) {
+                        AsyncImage(
+                            model = imageUrl,
+                            contentDescription = library.name(context),
+                            modifier = Modifier.size(24.dp),
+                        )
+                    } else {
+                        // Fallback to FontAwesome icon if no image available
+                        Text(
+                            text = stringResource(icon),
+                            textAlign = TextAlign.Center,
+                            fontSize = 16.sp,
+                            fontFamily = FontAwesome,
+                            color = color,
+                            modifier = Modifier,
+                        )
+                    }
+                } else if (useFont) {
                     Text(
                         text = stringResource(icon),
                         textAlign = TextAlign.Center,
