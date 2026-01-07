@@ -220,7 +220,7 @@ class RecommendedTvShowViewModel
                             .collect { newItems ->
                                 val currentRow = rows.value.getOrNull(SUGGESTIONS_INDEX)
                                 val currentItems = (currentRow as? HomeRowLoadingState.Success)?.items.orEmpty()
-                                val currentIds = currentItems.map { it.id }.toSet()
+                                val currentIds = currentItems.mapNotNull { it?.id }.toSet()
                                 val newIds = newItems.map { it.id }.toSet()
 
                                 val shouldUpdate =

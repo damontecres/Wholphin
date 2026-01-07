@@ -10,6 +10,7 @@ import kotlinx.serialization.json.Json
 import org.jellyfin.sdk.model.api.BaseItemKind
 import timber.log.Timber
 import java.io.File
+import java.util.Collections
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -17,7 +18,6 @@ import javax.inject.Singleton
 @Serializable
 data class CachedSuggestions(
     val items: List<BaseItem>,
-    val timestamp: Long,
 )
 
 @Singleton
@@ -28,14 +28,16 @@ class SuggestionsCache
     ) {
         private val json = Json { ignoreUnknownKeys = true }
 
-        private val memoryCache =
-            object : LinkedHashMap<String, CachedSuggestions>(
-                MAX_MEMORY_CACHE_SIZE,
-                0.75f,
-                true,
-            ) {
-                override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, CachedSuggestions>?) = size > MAX_MEMORY_CACHE_SIZE
-            }
+        private val memoryCache: MutableMap<String, CachedSuggestions> =
+            Collections.synchronizedMap(
+                object : LinkedHashMap<String, CachedSuggestions>(
+                    MAX_MEMORY_CACHE_SIZE,
+                    0.75f,
+                    true,
+                ) {
+                    override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, CachedSuggestions>?) = size > MAX_MEMORY_CACHE_SIZE
+                },
+            )
 
         private fun cacheKey(
             libraryId: UUID,
@@ -74,7 +76,7 @@ class SuggestionsCache
             items: List<BaseItem>,
         ) {
             val key = cacheKey(libraryId, itemKind)
-            val cached = CachedSuggestions(items, System.currentTimeMillis())
+            val cached = CachedSuggestions(items)
             memoryCache[key] = cached
 
             withContext(Dispatchers.IO) {

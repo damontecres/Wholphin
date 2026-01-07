@@ -45,15 +45,6 @@ class SuggestionService
                 emit(fresh)
             }
 
-        suspend fun getSuggestions(
-            parentId: UUID,
-            itemKind: BaseItemKind,
-            itemsPerRow: Int,
-        ): List<BaseItem> =
-            cache.get(parentId, itemKind)?.items
-                ?: fetchSuggestions(parentId, itemKind, itemsPerRow)
-                    .also { cache.put(parentId, itemKind, it) }
-
         private suspend fun fetchSuggestions(
             parentId: UUID,
             itemKind: BaseItemKind,
@@ -63,6 +54,7 @@ class SuggestionService
                 val userId = serverRepository.currentUser.value?.id
                 val isSeries = itemKind == BaseItemKind.SERIES
                 val historyItemType = if (isSeries) BaseItemKind.EPISODE else itemKind
+                // Use previous request's genre affinity to enable parallel fetching
                 val cachedGenreIds = genreAffinityIds
 
                 val historyDeferred =
@@ -73,7 +65,7 @@ class SuggestionService
                             itemKind = historyItemType,
                             sortBy = ItemSortBy.DATE_PLAYED,
                             isPlayed = true,
-                            limit = 20,
+                            limit = 10,
                             extraFields = listOf(ItemFields.GENRES),
                         ).distinctBy { it.seriesId ?: it.id }.take(3)
                     }
