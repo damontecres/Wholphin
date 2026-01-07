@@ -20,6 +20,7 @@ import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.SeerrAvailability
 import com.github.damontecres.wholphin.ui.components.ExpandableFaButton
 import com.github.damontecres.wholphin.ui.components.ExpandablePlayButton
+import com.github.damontecres.wholphin.ui.tryRequestFocus
 import kotlin.time.Duration
 
 @Composable
@@ -106,13 +107,15 @@ fun ExpandableDiscoverButtons(
             )
         }
 
-        if (availability == SeerrAvailability.PENDING || availability == SeerrAvailability.PROCESSING) {
-            // TODO should only show if user can cancel
+        if (canCancel) {
             item("cancel") {
                 ExpandablePlayButton(
                     title = R.string.cancel,
                     icon = Icons.Default.Delete,
-                    onClick = { cancelOnClick.invoke() },
+                    onClick = {
+                        firstFocus.tryRequestFocus()
+                        cancelOnClick.invoke()
+                    },
                     resume = Duration.ZERO,
                     enabled = canCancel,
                     modifier =

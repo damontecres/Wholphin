@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -19,6 +20,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
@@ -27,9 +29,11 @@ import androidx.compose.ui.unit.dp
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.R
+import com.github.damontecres.wholphin.ui.PreviewTvSpec
 import com.github.damontecres.wholphin.ui.components.EditTextBox
 import com.github.damontecres.wholphin.ui.components.TextButton
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
+import com.github.damontecres.wholphin.ui.theme.WholphinTheme
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.LoadingState
 
@@ -162,19 +166,24 @@ fun AddSeerrServerUsername(
         val passwordFocusRequester = remember { FocusRequester() }
         LaunchedEffect(Unit) { focusRequester.tryRequestFocus() }
         Text(
-            text = "Enter URL, username, & password",
+            text = stringResource(R.string.username_or_password),
             style = MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.onSurface,
             textAlign = TextAlign.Center,
             modifier = Modifier.fillMaxWidth(),
         )
+        val labelWidth = 90.dp
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.align(Alignment.CenterHorizontally),
         ) {
             Text(
-                text = "URL",
-                modifier = Modifier.padding(end = 8.dp),
+                text = stringResource(R.string.url),
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier =
+                    Modifier
+                        .width(labelWidth)
+                        .padding(end = 8.dp),
             )
             EditTextBox(
                 value = url,
@@ -204,8 +213,12 @@ fun AddSeerrServerUsername(
             modifier = Modifier.align(Alignment.CenterHorizontally),
         ) {
             Text(
-                text = "Username",
-                modifier = Modifier.padding(end = 8.dp),
+                text = stringResource(R.string.username),
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier =
+                    Modifier
+                        .width(labelWidth)
+                        .padding(end = 8.dp),
             )
             EditTextBox(
                 value = username,
@@ -235,8 +248,12 @@ fun AddSeerrServerUsername(
             modifier = Modifier.align(Alignment.CenterHorizontally),
         ) {
             Text(
-                text = "Password",
-                modifier = Modifier.padding(end = 8.dp),
+                text = stringResource(R.string.password),
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier =
+                    Modifier
+                        .width(labelWidth)
+                        .padding(end = 8.dp),
             )
             EditTextBox(
                 value = password,
@@ -271,6 +288,19 @@ fun AddSeerrServerUsername(
             onClick = { onSubmit.invoke(url, username, password) },
             enabled = error.isNullOrBlank() && url.isNotNullOrBlank() && username.isNotNullOrBlank() && password.isNotNullOrBlank(),
             modifier = Modifier.align(Alignment.CenterHorizontally),
+        )
+    }
+}
+
+@PreviewTvSpec
+@Composable
+private fun AddSeerrServerUsernamePreview() {
+    WholphinTheme {
+        AddSeerrServerUsername(
+            onSubmit = { string: String, string1: String, string2: String -> },
+            username = "test",
+            status = LoadingState.Pending,
+            modifier = Modifier,
         )
     }
 }
