@@ -65,6 +65,7 @@ import com.github.damontecres.wholphin.util.GetItemsRequestHandler
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
@@ -144,8 +145,8 @@ class SearchViewModel
         }
 
         private fun searchSeerr(query: String) {
-            if (seerrService.active) {
-                viewModelScope.launchIO {
+            viewModelScope.launchIO {
+                if (seerrService.active.first()) {
                     seerrResults.setValueOnMain(SearchResult.Searching)
                     val results =
                         seerrService

@@ -40,6 +40,7 @@ preferenceKtx = "1.2.1"
 tvprovider = "1.1.0"
 workRuntimeKtx = "2.11.0"
 paletteKtx = "1.0.0"
+openapi-generator = "7.17.0"
 
 [libraries]
 aboutlibraries-core = { module = "com.mikepenz:aboutlibraries-core", version.ref = "aboutLibraries" }
@@ -130,3 +131,4 @@ protobuf = { id = "com.google.protobuf", version.ref = "protobuf" }
 hilt = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
 room = { id = "androidx.room", version.ref = "room" }
 aboutLibraries = { id = "com.mikepenz.aboutlibraries.plugin.android", version.ref = "aboutLibraries" }
+openapi-generator = { id = "org.openapi.generator", version.ref = "openapi-generator" }

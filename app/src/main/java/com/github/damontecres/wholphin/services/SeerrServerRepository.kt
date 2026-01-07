@@ -28,6 +28,9 @@ import timber.log.Timber
 import javax.inject.Inject
 import javax.inject.Singleton
 
+/**
+ * Manages saves/loading Seerr servers from the local DB. Also will update the current [SeerrApi] as needed.
+ */
 @Singleton
 class SeerrServerRepository
     @Inject
@@ -147,6 +150,9 @@ class SeerrServerRepository
         }
     }
 
+/**
+ * A [SeerrUser] config
+ */
 typealias SeerrUserConfig = User
 
 data class CurrentSeerr(
@@ -185,6 +191,9 @@ private suspend fun login(
         }
     }
 
+/**
+ * Listens for JF user switching in the app to also switch the Seerr user/server
+ */
 @ActivityScoped
 class UserSwitchListener
     @Inject
@@ -196,11 +205,10 @@ class UserSwitchListener
         private val seerrApi: SeerrApi,
     ) {
         init {
-            Timber.v("Launching")
             context as AppCompatActivity
             context.lifecycleScope.launchIO {
                 serverRepository.currentUser.asFlow().collect { user ->
-                    Timber.v("New user")
+                    Timber.d("New user")
                     seerrServerRepository.clear()
                     if (user != null) {
                         seerrServerDao

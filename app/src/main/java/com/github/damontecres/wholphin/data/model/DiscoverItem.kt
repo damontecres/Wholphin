@@ -71,6 +71,9 @@ enum class SeerrAvailability(
     }
 }
 
+/**
+ * An item provided by a discovery service (ie Seerr). It may exist on the JF server as well.
+ */
 @Serializable
 data class DiscoverItem(
     val id: Int,

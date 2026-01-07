@@ -4,21 +4,28 @@ import com.github.damontecres.wholphin.api.seerr.SeerrApiClient
 import com.github.damontecres.wholphin.api.seerr.model.SearchGet200ResponseResultsInner
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.DiscoverItem
+import kotlinx.coroutines.flow.first
 import org.jellyfin.sdk.model.api.BaseItemKind
 import javax.inject.Inject
 import javax.inject.Singleton
 
 typealias SeerrSearchResult = SearchGet200ResponseResultsInner
 
+/**
+ * Main access for the current Seerr server (if any)
+ *
+ * Exposes a [SeerrApiClient] for queries
+ */
 @Singleton
 class SeerrService
     @Inject
     constructor(
         private val seerApi: SeerrApi,
+        private val seerrServerRepository: SeerrServerRepository,
     ) {
         val api: SeerrApiClient get() = seerApi.api
 
-        val active: Boolean get() = seerApi.active
+        val active get() = seerrServerRepository.active
 
         suspend fun search(
             query: String,
@@ -43,8 +50,15 @@ class SeerrService
                 ?.map(::DiscoverItem)
                 .orEmpty()
 
-        suspend fun similar(item: BaseItem): List<DiscoverItem> =
-            if (active) {
+        /**
+         * Get [DiscoverItem]s similar to the JF items such as movies, series, or people
+         *
+         * If Seerr integration is not active, this short circuits to return null
+         *
+         * @return the discovered items or null if no Seerr server configured
+         */
+        suspend fun similar(item: BaseItem): List<DiscoverItem>? =
+            if (active.first()) {
                 item.data.providerIds
                     ?.get("Tmdb")
                     ?.toIntOrNull()
@@ -88,6 +102,6 @@ class SeerrService
                         }
                     }.orEmpty()
             } else {
-                emptyList()
+                null
             }
     }

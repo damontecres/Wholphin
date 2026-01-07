@@ -179,7 +179,6 @@ object AppModule {
     @Provides
     @Singleton
     fun seerrApi(
-        @ApplicationContext context: Context,
         @StandardOkHttpClient okHttpClient: OkHttpClient,
-    ) = SeerrApi(context, okHttpClient)
+    ) = SeerrApi(okHttpClient)
 }

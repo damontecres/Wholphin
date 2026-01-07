@@ -15,7 +15,7 @@ plugins {
     alias(libs.plugins.protobuf)
     alias(libs.plugins.kotlin.plugin.serialization)
     alias(libs.plugins.aboutLibraries)
-    id("org.openapi.generator") version "7.17.0"
+    alias(libs.plugins.openapi.generator)
 }
 
 val isCI = if (System.getenv("CI") != null) System.getenv("CI").toBoolean() else false
@@ -72,14 +72,6 @@ android {
             jvmTarget = JvmTarget.JVM_11
             javaParameters = true
         }
-//        sourceSets {
-//            main {
-//                java.srcDirs +=
-//                    kotlin {
-//                        srcDirs += files("$buildDir/generated/seerr_api/src/main/kotlin")
-//                    }
-//            }
-//        }
     }
     buildFeatures {
         buildConfig = true

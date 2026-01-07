@@ -130,7 +130,7 @@ class PersonViewModel
                         episodes.setValueOnMain(RowLoadingState.Success(listOf()))
                     }
                     viewModelScope.launchIO {
-                        val results = seerrService.similar(person)
+                        val results = seerrService.similar(person).orEmpty()
                         discovered.update { results }
                     }
                 }

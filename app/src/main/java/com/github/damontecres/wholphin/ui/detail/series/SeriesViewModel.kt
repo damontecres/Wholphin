@@ -215,7 +215,7 @@ class SeriesViewModel
                         }
                     }
                     viewModelScope.launchIO {
-                        val results = seerrService.similar(item)
+                        val results = seerrService.similar(item).orEmpty()
                         discovered.update { results }
                     }
                 }

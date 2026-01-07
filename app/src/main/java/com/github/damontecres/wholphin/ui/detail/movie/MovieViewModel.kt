@@ -147,7 +147,7 @@ class MovieViewModel
                     this@MovieViewModel.extras.setValueOnMain(extras)
                 }
                 viewModelScope.launchIO {
-                    val results = seerrService.similar(item)
+                    val results = seerrService.similar(item).orEmpty()
                     discovered.update { results }
                 }
 
