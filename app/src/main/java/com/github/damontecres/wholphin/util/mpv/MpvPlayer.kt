@@ -246,7 +246,8 @@ class MpvPlayer(
     override fun getPlaybackSuppressionReason(): Int = PLAYBACK_SUPPRESSION_REASON_NONE
 
     override fun getPlayerError(): PlaybackException? {
-        TODO("Not yet implemented")
+        // TODO
+        return null
     }
 
     override fun setPlayWhenReady(playWhenReady: Boolean) {
