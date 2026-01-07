@@ -6,7 +6,10 @@ This scripts are adapted from https://github.com/mpv-android/mpv-android/tree/ae
 
 ```bash
 cd scripts/mpv
-./get_dependencies
+./get_dependencies.sh
+
+# Install build dependencies
+pip install meson jsonschema
 
 export NDK_PATH=... # Such as ~/Library/Android/sdk/ndk/29.0.14206865
 # Build arm64

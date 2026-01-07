@@ -22,17 +22,17 @@ function clone(){
   fi
 }
 
-clone "https://github.com/videolan/dav1d" "1.5.2" dav1d
+clone "https://github.com/videolan/dav1d" "1.5.3" dav1d
 
 clone "https://github.com/FFmpeg/FFmpeg" "n8.0" ffmpeg
 
 clone "https://gitlab.freedesktop.org/freetype/freetype.git" "VER-2-14-1" freetype2 --recurse-submodules
 
-clone "https://github.com/libass/libass" "master" libass
+clone "https://github.com/libass/libass" "0.17.4" libass
 
-clone "https://github.com/haasn/libplacebo" "master" libplacebo --recurse-submodules
+clone "https://github.com/haasn/libplacebo" "v7.351.0" libplacebo --recurse-submodules
 
-clone "https://github.com/mpv-player/mpv" "master" mpv
+clone "https://github.com/mpv-player/mpv" "v0.41.0" mpv
 
 if [[ ! -d mbedtls ]]; then
 	mkdir mbedtls
