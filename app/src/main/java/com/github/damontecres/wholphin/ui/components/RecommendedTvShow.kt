@@ -217,14 +217,35 @@ class RecommendedTvShowViewModel
                     try {
                         suggestionService
                             .getSuggestionsFlow(parentId, BaseItemKind.SERIES, itemsPerRow)
-                            .collect { items ->
-                                update(
-                                    R.string.suggestions,
-                                    HomeRowLoadingState.Success(
-                                        context.getString(R.string.suggestions),
-                                        items,
-                                    ),
-                                )
+                            .collect { newItems ->
+                                val currentRow = rows.value.getOrNull(SUGGESTIONS_INDEX)
+                                val currentItems = (currentRow as? HomeRowLoadingState.Success)?.items.orEmpty()
+                                val currentIds = currentItems.map { it.id }.toSet()
+                                val newIds = newItems.map { it.id }.toSet()
+
+                                val shouldUpdate =
+                                    if (currentIds == newIds) {
+                                        // Enrichment: IDs are the same, always update (allows descriptions to populate)
+                                        true
+                                    } else {
+                                        // Replacement: IDs are different, only update if row is not focused
+                                        if (focusedRowIndex == SUGGESTIONS_INDEX) {
+                                            Timber.d("Skipping suggestions update: row is focused")
+                                            false
+                                        } else {
+                                            true
+                                        }
+                                    }
+
+                                if (shouldUpdate) {
+                                    update(
+                                        R.string.suggestions,
+                                        HomeRowLoadingState.Success(
+                                            context.getString(R.string.suggestions),
+                                            newItems,
+                                        ),
+                                    )
+                                }
                             }
                     } catch (ex: Exception) {
                         Timber.e(ex, "Failed to fetch suggestions")
@@ -253,7 +274,14 @@ class RecommendedTvShowViewModel
             }
         }
 
+        private var focusedRowIndex: Int = -1
+
+        fun onFocusChange(rowIndex: Int) {
+            focusedRowIndex = rowIndex
+        }
+
         companion object {
+            private const val SUGGESTIONS_INDEX = 4
             private val rowTitles =
                 listOf(
                     R.string.continue_watching,
@@ -283,7 +311,10 @@ fun RecommendedTvShow(
     RecommendedContent(
         preferences = preferences,
         viewModel = viewModel,
-        onFocusPosition = onFocusPosition,
+        onFocusPosition = { rowColumn ->
+            viewModel.onFocusChange(rowColumn.row)
+            onFocusPosition(rowColumn)
+        },
         modifier = modifier,
     )
 }

@@ -8,7 +8,6 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.model.api.BaseItemDto
 import org.jellyfin.sdk.model.api.BaseItemKind
@@ -16,9 +15,7 @@ import org.jellyfin.sdk.model.api.ItemFields
 import org.jellyfin.sdk.model.api.ItemSortBy
 import org.jellyfin.sdk.model.api.SortOrder
 import org.jellyfin.sdk.model.api.request.GetItemsRequest
-import timber.log.Timber
 import java.util.UUID
-import java.util.concurrent.atomic.AtomicReference
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -30,7 +27,8 @@ class SuggestionService
         private val serverRepository: ServerRepository,
         private val cache: SuggestionsCache,
     ) {
-        private val genreAffinityCache = AtomicReference<List<UUID>>(emptyList())
+        @Volatile
+        private var genreAffinityIds: List<UUID> = emptyList()
 
         fun getSuggestionsFlow(
             parentId: UUID,
@@ -38,29 +36,13 @@ class SuggestionService
             itemsPerRow: Int,
         ): Flow<List<BaseItem>> =
             flow {
-                // Stage 1: Emit cached data immediately (may include overviews from previous session)
-                val cached = cache.get(parentId, itemKind)
-                val cachedIds = cached?.items?.map { it.id }?.toSet()
-                cached?.let { emit(it.items) }
+                // Emit cached data immediately if available
+                cache.get(parentId, itemKind)?.items?.let { emit(it) }
 
-                try {
-                    // Stage 2: Emit fresh "lite" data (no overviews, fast response)
-                    val freshLite = fetchSuggestions(parentId, itemKind, itemsPerRow)
-                    val freshIds = freshLite.map { it.id }.toSet()
-                    if (freshIds != cachedIds) {
-                        emit(freshLite)
-                    }
-
-                    // Stage 3: Enrich with overviews and emit final data
-                    val freshEnriched = enrichItems(freshLite)
-                    cache.put(parentId, itemKind, freshEnriched)
-                    if (freshEnriched.any { it.data.overview != null }) {
-                        emit(freshEnriched)
-                    }
-                } catch (ex: Exception) {
-                    Timber.e(ex, "Failed to fetch suggestions")
-                    if (cached == null) throw ex
-                }
+                // Fetch fresh data (includes overviews), cache it, and emit
+                val fresh = fetchSuggestions(parentId, itemKind, itemsPerRow)
+                cache.put(parentId, itemKind, fresh)
+                emit(fresh)
             }
 
         suspend fun getSuggestions(
@@ -70,7 +52,6 @@ class SuggestionService
         ): List<BaseItem> =
             cache.get(parentId, itemKind)?.items
                 ?: fetchSuggestions(parentId, itemKind, itemsPerRow)
-                    .let { enrichItems(it) }
                     .also { cache.put(parentId, itemKind, it) }
 
         private suspend fun fetchSuggestions(
@@ -82,7 +63,7 @@ class SuggestionService
                 val userId = serverRepository.currentUser.value?.id
                 val isSeries = itemKind == BaseItemKind.SERIES
                 val historyItemType = if (isSeries) BaseItemKind.EPISODE else itemKind
-                val cachedGenreIds = genreAffinityCache.get()
+                val cachedGenreIds = genreAffinityIds
 
                 val historyDeferred =
                     async(Dispatchers.IO) {
@@ -146,7 +127,8 @@ class SuggestionService
 
                 val excludeIds = seedItems.mapNotNullTo(HashSet()) { it.seriesId ?: it.id }
 
-                genreAffinityCache.set(
+                // Update genre affinity for next request
+                genreAffinityIds =
                     seedItems
                         .flatMap { it.genreItems?.mapNotNull { g -> g.id }.orEmpty() }
                         .groupingBy { it }
@@ -154,8 +136,7 @@ class SuggestionService
                         .entries
                         .sortedByDescending { it.value }
                         .take(3)
-                        .map { it.key },
-                )
+                        .map { it.key }
 
                 (contextual + fresh + random)
                     .distinctBy { it.id }
@@ -180,7 +161,7 @@ class SuggestionService
                 GetItemsRequest(
                     parentId = parentId,
                     userId = userId,
-                    fields = listOf(ItemFields.PRIMARY_IMAGE_ASPECT_RATIO) + extraFields,
+                    fields = listOf(ItemFields.PRIMARY_IMAGE_ASPECT_RATIO, ItemFields.OVERVIEW) + extraFields,
                     includeItemTypes = listOf(itemKind),
                     genreIds = genreIds,
                     recursive = true,
@@ -196,33 +177,6 @@ class SuggestionService
                 .content.items
                 .orEmpty()
         }
-
-        private suspend fun enrichItems(items: List<BaseItem>): List<BaseItem> =
-            withContext(Dispatchers.IO) {
-                if (items.isEmpty()) return@withContext items
-
-                val ids = items.map { it.id }
-                val request =
-                    GetItemsRequest(
-                        ids = ids,
-                        userId = serverRepository.currentUser.value?.id,
-                        fields = listOf(ItemFields.PRIMARY_IMAGE_ASPECT_RATIO, ItemFields.OVERVIEW),
-                        enableTotalRecordCount = false,
-                    )
-                val enrichedDtos =
-                    GetItemsRequestHandler
-                        .execute(api, request)
-                        .content.items
-                        .orEmpty()
-                val enrichedById = enrichedDtos.associateBy { it.id }
-
-                // Preserve original order, replace with enriched BaseItem if available
-                items.map { original ->
-                    enrichedById[original.id]?.let { dto ->
-                        BaseItem(dto, original.useSeriesForPrimary)
-                    } ?: original
-                }
-            }
 
         companion object {
             private const val FRESH_CONTENT_RATIO = 0.4
