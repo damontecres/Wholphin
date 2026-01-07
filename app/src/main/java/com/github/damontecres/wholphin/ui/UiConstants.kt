@@ -51,6 +51,7 @@ val DefaultItemFields =
         ItemFields.SORT_NAME,
         ItemFields.CHAPTERS,
         ItemFields.MEDIA_SOURCES,
+        ItemFields.MEDIA_SOURCE_COUNT,
     )
 
 /**
@@ -63,6 +64,7 @@ val SlimItemFields =
         ItemFields.CHILD_COUNT,
         ItemFields.OVERVIEW,
         ItemFields.SORT_NAME,
+        ItemFields.MEDIA_SOURCE_COUNT,
     )
 
 object Cards {

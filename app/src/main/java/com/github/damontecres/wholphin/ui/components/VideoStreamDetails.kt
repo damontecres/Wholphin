@@ -47,12 +47,14 @@ import org.jellyfin.sdk.model.api.VideoRangeType
 @NonRestartableComposable
 fun VideoStreamDetails(
     chosenStreams: ChosenStreams?,
+    numberOfVersions: Int = 0,
     modifier: Modifier = Modifier,
 ) = VideoStreamDetails(
     chosenStreams?.source,
     chosenStreams?.videoStream,
     chosenStreams?.audioStream,
     chosenStreams?.subtitleStream,
+    numberOfVersions,
     modifier,
 )
 
@@ -62,6 +64,7 @@ fun VideoStreamDetails(
     videoStream: MediaStream?,
     audioStream: MediaStream?,
     subtitleStream: MediaStream?,
+    numberOfVersions: Int = 0,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -86,13 +89,16 @@ fun VideoStreamDetails(
                                 null
                             }
                         val range = formatVideoRange(context, it.videoRange, it.videoRangeType, it.videoDoViTitle)
-                        listOfNotNull(
-                            resName.concatWithSpace(range),
-                            it.codec?.uppercase(),
-                        )
-                    }.orEmpty()
+                        resName.concatWithSpace(range)
+                    }
             }
-        video.forEach {
+        video?.let {
+            StreamLabel(
+                text = it,
+                count = numberOfVersions,
+            )
+        }
+        videoStream?.codec?.uppercase()?.let {
             StreamLabel(it)
         }
 
