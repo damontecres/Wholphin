@@ -16,6 +16,7 @@ import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.FavoriteWatchManager
 import com.github.damontecres.wholphin.services.LatestNextUpService
 import com.github.damontecres.wholphin.services.NavigationManager
+import com.github.damontecres.wholphin.services.SuggestionService
 import com.github.damontecres.wholphin.ui.SlimItemFields
 import com.github.damontecres.wholphin.ui.data.RowColumn
 import com.github.damontecres.wholphin.ui.setValueOnMain
@@ -58,6 +59,7 @@ class RecommendedTvShowViewModel
         private val serverRepository: ServerRepository,
         private val preferencesDataStore: DataStore<AppPreferences>,
         private val lastestNextUpService: LatestNextUpService,
+        private val suggestionService: SuggestionService,
         @Assisted val parentId: UUID,
         navigationManager: NavigationManager,
         favoriteWatchManager: FavoriteWatchManager,
@@ -211,122 +213,11 @@ class RecommendedTvShowViewModel
                 }
 
                 update(R.string.suggestions) {
-                    val contextualLimit = (itemsPerRow * 0.4).toInt().coerceAtLeast(1)
-                    val randomLimit = (itemsPerRow * 0.3).toInt().coerceAtLeast(1)
-                    val freshLimit = (itemsPerRow * 0.3).toInt().coerceAtLeast(1)
-
-                    // Source 1: Contextual - fetch recent history and deduplicate
-                    val historyRequest =
-                        GetItemsRequest(
-                            parentId = parentId,
-                            userId = userId,
-                            fields = SlimItemFields + listOf(ItemFields.GENRES),
-                            includeItemTypes = listOf(BaseItemKind.SERIES),
-                            recursive = true,
-                            isPlayed = true,
-                            sortBy = listOf(ItemSortBy.DATE_PLAYED),
-                            sortOrder = listOf(SortOrder.DESCENDING),
-                            limit = 20,
-                            enableTotalRecordCount = false,
-                        )
-                    val historyItems =
-                        GetItemsRequestHandler
-                            .execute(api, historyRequest)
-                            .content
-                            .items
-                            .orEmpty()
-
-                    // Deduplicate by seriesId (for episodes) or id (for movies/series)
-                    val seedItems =
-                        historyItems
-                            .distinctBy { it.seriesId ?: it.id }
-                            .take(3)
-
-                    // Collect all genre IDs from seed items
-                    val allGenreIds =
-                        seedItems
-                            .flatMap { it.genreItems?.mapNotNull { g -> g.id } ?: emptyList() }
-                            .distinct()
-
-                    // Exclude all seed items from recommendations
-                    val excludeIds = seedItems.map { it.id }
-
-                    // Run all queries in parallel using async
-                    val contextualDeferred =
-                        viewModelScope.async(Dispatchers.IO) {
-                            if (allGenreIds.isEmpty()) return@async emptyList()
-
-                            val contextualRequest =
-                                GetItemsRequest(
-                                    parentId = parentId,
-                                    fields = SlimItemFields,
-                                    includeItemTypes = listOf(BaseItemKind.SERIES),
-                                    genreIds = allGenreIds,
-                                    recursive = true,
-                                    isPlayed = false,
-                                    excludeItemIds = excludeIds,
-                                    sortBy = listOf(ItemSortBy.RANDOM),
-                                    limit = contextualLimit,
-                                    enableTotalRecordCount = false,
-                                )
-                            GetItemsRequestHandler
-                                .execute(api, contextualRequest)
-                                .content
-                                .items
-                                .orEmpty()
-                        }
-
-                    val randomDeferred =
-                        viewModelScope.async(Dispatchers.IO) {
-                            val randomRequest =
-                                GetItemsRequest(
-                                    parentId = parentId,
-                                    fields = SlimItemFields,
-                                    includeItemTypes = listOf(BaseItemKind.SERIES),
-                                    recursive = true,
-                                    isPlayed = false,
-                                    sortBy = listOf(ItemSortBy.RANDOM),
-                                    limit = randomLimit,
-                                    enableTotalRecordCount = false,
-                                )
-                            GetItemsRequestHandler
-                                .execute(api, randomRequest)
-                                .content
-                                .items
-                                .orEmpty()
-                        }
-
-                    val freshDeferred =
-                        viewModelScope.async(Dispatchers.IO) {
-                            val freshRequest =
-                                GetItemsRequest(
-                                    parentId = parentId,
-                                    fields = SlimItemFields,
-                                    includeItemTypes = listOf(BaseItemKind.SERIES),
-                                    recursive = true,
-                                    isPlayed = false,
-                                    sortBy = listOf(ItemSortBy.DATE_CREATED),
-                                    sortOrder = listOf(SortOrder.DESCENDING),
-                                    limit = freshLimit,
-                                    enableTotalRecordCount = false,
-                                )
-                            GetItemsRequestHandler
-                                .execute(api, freshRequest)
-                                .content
-                                .items
-                                .orEmpty()
-                        }
-
-                    // Await all and combine
-                    val contextual = contextualDeferred.await()
-                    val random = randomDeferred.await()
-                    val fresh = freshDeferred.await()
-
-                    (contextual + random + fresh)
-                        .distinctBy { it.id }
-                        .shuffled()
-                        .take(itemsPerRow)
-                        .map { BaseItem.from(it, api, true) }
+                    suggestionService.getSuggestions(
+                        parentId = parentId,
+                        itemKind = BaseItemKind.SERIES,
+                        itemsPerRow = itemsPerRow,
+                    )
                 }
 
                 update(R.string.top_unwatched) {
