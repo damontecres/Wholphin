@@ -36,31 +36,32 @@ class SuggestionService
             parentId: UUID,
             itemKind: BaseItemKind,
             itemsPerRow: Int,
-        ): Flow<List<BaseItem>> = flow {
-            // Stage 1: Emit cached data immediately (may include overviews from previous session)
-            val cached = cache.get(parentId, itemKind)
-            val cachedIds = cached?.items?.map { it.id }?.toSet()
-            cached?.let { emit(it.items) }
+        ): Flow<List<BaseItem>> =
+            flow {
+                // Stage 1: Emit cached data immediately (may include overviews from previous session)
+                val cached = cache.get(parentId, itemKind)
+                val cachedIds = cached?.items?.map { it.id }?.toSet()
+                cached?.let { emit(it.items) }
 
-            try {
-                // Stage 2: Emit fresh "lite" data (no overviews, fast response)
-                val freshLite = fetchSuggestions(parentId, itemKind, itemsPerRow)
-                val freshIds = freshLite.map { it.id }.toSet()
-                if (freshIds != cachedIds) {
-                    emit(freshLite)
-                }
+                try {
+                    // Stage 2: Emit fresh "lite" data (no overviews, fast response)
+                    val freshLite = fetchSuggestions(parentId, itemKind, itemsPerRow)
+                    val freshIds = freshLite.map { it.id }.toSet()
+                    if (freshIds != cachedIds) {
+                        emit(freshLite)
+                    }
 
-                // Stage 3: Enrich with overviews and emit final data
-                val freshEnriched = enrichItems(freshLite)
-                cache.put(parentId, itemKind, freshEnriched)
-                if (freshEnriched.any { it.data.overview != null }) {
-                    emit(freshEnriched)
+                    // Stage 3: Enrich with overviews and emit final data
+                    val freshEnriched = enrichItems(freshLite)
+                    cache.put(parentId, itemKind, freshEnriched)
+                    if (freshEnriched.any { it.data.overview != null }) {
+                        emit(freshEnriched)
+                    }
+                } catch (ex: Exception) {
+                    Timber.e(ex, "Failed to fetch suggestions")
+                    if (cached == null) throw ex
                 }
-            } catch (ex: Exception) {
-                Timber.e(ex, "Failed to fetch suggestions")
-                if (cached == null) throw ex
             }
-        }
 
         suspend fun getSuggestions(
             parentId: UUID,
@@ -76,88 +77,93 @@ class SuggestionService
             parentId: UUID,
             itemKind: BaseItemKind,
             itemsPerRow: Int,
-        ): List<BaseItem> = coroutineScope {
-            val userId = serverRepository.currentUser.value?.id
-            val isSeries = itemKind == BaseItemKind.SERIES
-            val historyItemType = if (isSeries) BaseItemKind.EPISODE else itemKind
-            val cachedGenreIds = genreAffinityCache.get()
+        ): List<BaseItem> =
+            coroutineScope {
+                val userId = serverRepository.currentUser.value?.id
+                val isSeries = itemKind == BaseItemKind.SERIES
+                val historyItemType = if (isSeries) BaseItemKind.EPISODE else itemKind
+                val cachedGenreIds = genreAffinityCache.get()
 
-            val historyDeferred = async(Dispatchers.IO) {
-                fetchItems(
-                    parentId = parentId,
-                    userId = userId,
-                    itemKind = historyItemType,
-                    sortBy = ItemSortBy.DATE_PLAYED,
-                    isPlayed = true,
-                    limit = 20,
-                    extraFields = listOf(ItemFields.GENRES),
-                ).distinctBy { it.seriesId ?: it.id }.take(3)
-            }
+                val historyDeferred =
+                    async(Dispatchers.IO) {
+                        fetchItems(
+                            parentId = parentId,
+                            userId = userId,
+                            itemKind = historyItemType,
+                            sortBy = ItemSortBy.DATE_PLAYED,
+                            isPlayed = true,
+                            limit = 20,
+                            extraFields = listOf(ItemFields.GENRES),
+                        ).distinctBy { it.seriesId ?: it.id }.take(3)
+                    }
 
-            val randomDeferred = async(Dispatchers.IO) {
-                fetchItems(
-                    parentId = parentId,
-                    userId = userId,
-                    itemKind = itemKind,
-                    sortBy = ItemSortBy.RANDOM,
-                    isPlayed = false,
-                    limit = itemsPerRow,
+                val randomDeferred =
+                    async(Dispatchers.IO) {
+                        fetchItems(
+                            parentId = parentId,
+                            userId = userId,
+                            itemKind = itemKind,
+                            sortBy = ItemSortBy.RANDOM,
+                            isPlayed = false,
+                            limit = itemsPerRow,
+                        )
+                    }
+
+                val freshDeferred =
+                    async(Dispatchers.IO) {
+                        fetchItems(
+                            parentId = parentId,
+                            userId = userId,
+                            itemKind = itemKind,
+                            sortBy = ItemSortBy.DATE_CREATED,
+                            sortOrder = SortOrder.DESCENDING,
+                            isPlayed = false,
+                            limit = (itemsPerRow * FRESH_CONTENT_RATIO).toInt().coerceAtLeast(1),
+                        )
+                    }
+
+                val contextualDeferred =
+                    async(Dispatchers.IO) {
+                        if (cachedGenreIds.isEmpty()) {
+                            emptyList()
+                        } else {
+                            fetchItems(
+                                parentId = parentId,
+                                userId = userId,
+                                itemKind = itemKind,
+                                sortBy = ItemSortBy.RANDOM,
+                                isPlayed = false,
+                                limit = (itemsPerRow * CONTEXTUAL_CONTENT_RATIO).toInt().coerceAtLeast(1),
+                                genreIds = cachedGenreIds,
+                            )
+                        }
+                    }
+
+                val seedItems = historyDeferred.await()
+                val random = randomDeferred.await()
+                val fresh = freshDeferred.await()
+                val contextual = contextualDeferred.await()
+
+                val excludeIds = seedItems.mapNotNullTo(HashSet()) { it.seriesId ?: it.id }
+
+                genreAffinityCache.set(
+                    seedItems
+                        .flatMap { it.genreItems?.mapNotNull { g -> g.id }.orEmpty() }
+                        .groupingBy { it }
+                        .eachCount()
+                        .entries
+                        .sortedByDescending { it.value }
+                        .take(3)
+                        .map { it.key },
                 )
+
+                (contextual + fresh + random)
+                    .distinctBy { it.id }
+                    .filterNot { excludeIds.contains(it.seriesId ?: it.id) }
+                    .shuffled()
+                    .take(itemsPerRow)
+                    .map { BaseItem.from(it, api, isSeries) }
             }
-
-            val freshDeferred = async(Dispatchers.IO) {
-                fetchItems(
-                    parentId = parentId,
-                    userId = userId,
-                    itemKind = itemKind,
-                    sortBy = ItemSortBy.DATE_CREATED,
-                    sortOrder = SortOrder.DESCENDING,
-                    isPlayed = false,
-                    limit = (itemsPerRow * FRESH_CONTENT_RATIO).toInt().coerceAtLeast(1),
-                )
-            }
-
-            val contextualDeferred = async(Dispatchers.IO) {
-                if (cachedGenreIds.isEmpty()) {
-                    emptyList()
-                } else {
-                    fetchItems(
-                        parentId = parentId,
-                        userId = userId,
-                        itemKind = itemKind,
-                        sortBy = ItemSortBy.RANDOM,
-                        isPlayed = false,
-                        limit = (itemsPerRow * CONTEXTUAL_CONTENT_RATIO).toInt().coerceAtLeast(1),
-                        genreIds = cachedGenreIds,
-                    )
-                }
-            }
-
-            val seedItems = historyDeferred.await()
-            val random = randomDeferred.await()
-            val fresh = freshDeferred.await()
-            val contextual = contextualDeferred.await()
-
-            val excludeIds = seedItems.mapNotNullTo(HashSet()) { it.seriesId ?: it.id }
-
-            genreAffinityCache.set(
-                seedItems
-                    .flatMap { it.genreItems?.mapNotNull { g -> g.id }.orEmpty() }
-                    .groupingBy { it }
-                    .eachCount()
-                    .entries
-                    .sortedByDescending { it.value }
-                    .take(3)
-                    .map { it.key },
-            )
-
-            (contextual + fresh + random)
-                .distinctBy { it.id }
-                .filterNot { excludeIds.contains(it.seriesId ?: it.id) }
-                .shuffled()
-                .take(itemsPerRow)
-                .map { BaseItem.from(it, api, isSeries) }
-        }
 
         private suspend fun fetchItems(
             parentId: UUID,
@@ -170,21 +176,25 @@ class SuggestionService
             genreIds: List<UUID>? = null,
             extraFields: List<ItemFields> = emptyList(),
         ): List<BaseItemDto> {
-            val request = GetItemsRequest(
-                parentId = parentId,
-                userId = userId,
-                fields = listOf(ItemFields.PRIMARY_IMAGE_ASPECT_RATIO) + extraFields,
-                includeItemTypes = listOf(itemKind),
-                genreIds = genreIds,
-                recursive = true,
-                isPlayed = isPlayed,
-                sortBy = listOf(sortBy),
-                sortOrder = sortOrder?.let { listOf(it) },
-                limit = limit,
-                enableTotalRecordCount = false,
-                imageTypeLimit = 1,
-            )
-            return GetItemsRequestHandler.execute(api, request).content.items.orEmpty()
+            val request =
+                GetItemsRequest(
+                    parentId = parentId,
+                    userId = userId,
+                    fields = listOf(ItemFields.PRIMARY_IMAGE_ASPECT_RATIO) + extraFields,
+                    includeItemTypes = listOf(itemKind),
+                    genreIds = genreIds,
+                    recursive = true,
+                    isPlayed = isPlayed,
+                    sortBy = listOf(sortBy),
+                    sortOrder = sortOrder?.let { listOf(it) },
+                    limit = limit,
+                    enableTotalRecordCount = false,
+                    imageTypeLimit = 1,
+                )
+            return GetItemsRequestHandler
+                .execute(api, request)
+                .content.items
+                .orEmpty()
         }
 
         private suspend fun enrichItems(items: List<BaseItem>): List<BaseItem> =
@@ -192,13 +202,18 @@ class SuggestionService
                 if (items.isEmpty()) return@withContext items
 
                 val ids = items.map { it.id }
-                val request = GetItemsRequest(
-                    ids = ids,
-                    userId = serverRepository.currentUser.value?.id,
-                    fields = listOf(ItemFields.PRIMARY_IMAGE_ASPECT_RATIO, ItemFields.OVERVIEW),
-                    enableTotalRecordCount = false,
-                )
-                val enrichedDtos = GetItemsRequestHandler.execute(api, request).content.items.orEmpty()
+                val request =
+                    GetItemsRequest(
+                        ids = ids,
+                        userId = serverRepository.currentUser.value?.id,
+                        fields = listOf(ItemFields.PRIMARY_IMAGE_ASPECT_RATIO, ItemFields.OVERVIEW),
+                        enableTotalRecordCount = false,
+                    )
+                val enrichedDtos =
+                    GetItemsRequestHandler
+                        .execute(api, request)
+                        .content.items
+                        .orEmpty()
                 val enrichedById = enrichedDtos.associateBy { it.id }
 
                 // Preserve original order, replace with enriched BaseItem if available
