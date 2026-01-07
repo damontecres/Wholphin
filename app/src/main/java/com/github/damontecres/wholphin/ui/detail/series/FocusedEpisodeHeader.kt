@@ -38,6 +38,7 @@ fun FocusedEpisodeHeader(
         if (dto != null) {
             VideoStreamDetails(
                 chosenStreams = chosenStreams,
+                numberOfVersions = dto.mediaSourceCount ?: 0,
                 modifier = Modifier,
             )
         }

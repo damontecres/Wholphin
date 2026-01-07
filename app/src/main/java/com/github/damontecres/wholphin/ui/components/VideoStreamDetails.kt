@@ -47,7 +47,7 @@ import org.jellyfin.sdk.model.api.VideoRangeType
 @NonRestartableComposable
 fun VideoStreamDetails(
     chosenStreams: ChosenStreams?,
-    numberOfVersions: Int = 0,
+    numberOfVersions: Int,
     modifier: Modifier = Modifier,
 ) = VideoStreamDetails(
     chosenStreams?.source,
