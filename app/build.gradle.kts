@@ -200,7 +200,9 @@ openApiGenerate {
         put("useCoroutines", true)
         put("enumPropertyNaming", "UPPERCASE")
         put("modelMutable", false)
-        put("supportAndroidApiLevel25AndBelow", true)
+
+        // Note: this is only for downloading files, so it's not necessary to enable
+        put("supportAndroidApiLevel25AndBelow", false)
     }
 }
 
