@@ -35,7 +35,8 @@ class SuggestionsCache
                     0.75f,
                     true,
                 ) {
-                    override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, CachedSuggestions>?) = size > MAX_MEMORY_CACHE_SIZE
+                    override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, CachedSuggestions>?) =
+                        size > MAX_MEMORY_CACHE_SIZE
                 },
             )
 
