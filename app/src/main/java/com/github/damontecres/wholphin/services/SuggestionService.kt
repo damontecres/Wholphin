@@ -163,7 +163,7 @@ class SuggestionService
             val request = GetItemsRequest(
                 parentId = parentId,
                 userId = userId,
-                fields = listOf(ItemFields.PRIMARY_IMAGE_ASPECT_RATIO) + extraFields,
+                fields = listOf(ItemFields.PRIMARY_IMAGE_ASPECT_RATIO, ItemFields.OVERVIEW) + extraFields,
                 includeItemTypes = listOf(itemKind),
                 genreIds = genreIds,
                 recursive = true,
