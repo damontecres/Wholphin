@@ -123,6 +123,10 @@
     <string name="subtitle">Subtitle</string>
     <string name="subtitles">Subtitles</string>
     <string name="suggestions">Suggestions</string>
+    <string name="content">Content</string>
+    <string name="latest_movies">Latest Movies</string>
+    <string name="latest_series">Latest Series</string>
+    <string name="series">Series</string>
     <string name="switch_servers">Switch servers</string>
     <string name="switch_user">Switch</string>
     <string name="top_unwatched">Top Rated Unwatched</string>

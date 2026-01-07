@@ -10,6 +10,7 @@ import com.github.damontecres.wholphin.ui.components.ItemGrid
 import com.github.damontecres.wholphin.ui.components.LicenseInfo
 import com.github.damontecres.wholphin.ui.data.MovieSortOptions
 import com.github.damontecres.wholphin.ui.detail.CollectionFolderBoxSet
+import com.github.damontecres.wholphin.ui.detail.CollectionFolderCollection
 import com.github.damontecres.wholphin.ui.detail.CollectionFolderGeneric
 import com.github.damontecres.wholphin.ui.detail.CollectionFolderLiveTv
 import com.github.damontecres.wholphin.ui.detail.CollectionFolderMovie
@@ -118,14 +119,30 @@ fun DestinationContent(
 
                 BaseItemKind.BOX_SET -> {
                     LaunchedEffect(Unit) { onClearBackdrop.invoke() }
-                    CollectionFolderBoxSet(
-                        preferences = preferences,
-                        itemId = destination.itemId,
-                        item = destination.item,
-                        recursive = false,
-                        playEnabled = true,
-                        modifier = modifier,
-                    )
+                    
+                    // Use CollectionFolderCollection for collections with mixed content
+                    // (like Netflix, Disney+, etc. that contain both movies and series)
+                    val item = destination.item
+                    val isMixedCollection = item?.data?.collectionType == null
+                    
+                    if (isMixedCollection) {
+                        CollectionFolderCollection(
+                            collectionItem = destination.item!!.data,
+                            isFavorite = destination.item!!.data.userData?.isFavorite ?: false,
+                            onToggleFavorite = { /* TODO: implement favorite toggle */ },
+                            preferences = preferences,
+                            modifier = modifier,
+                        )
+                    } else {
+                        CollectionFolderBoxSet(
+                            preferences = preferences,
+                            itemId = destination.itemId,
+                            item = destination.item,
+                            recursive = false,
+                            playEnabled = true,
+                            modifier = modifier,
+                        )
+                    }
                 }
 
                 BaseItemKind.PLAYLIST -> {
