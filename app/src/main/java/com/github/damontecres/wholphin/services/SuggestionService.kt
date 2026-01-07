@@ -31,68 +31,31 @@ class SuggestionService
         ): List<BaseItem> =
             coroutineScope {
                 val userId = serverRepository.currentUser.value?.id
-                val contextualLimit = (itemsPerRow * 0.4).toInt().coerceAtLeast(1)
-                val randomLimit = (itemsPerRow * 0.3).toInt().coerceAtLeast(1)
-                val freshLimit = (itemsPerRow * 0.3).toInt().coerceAtLeast(1)
+                val isSeries = itemKind == BaseItemKind.SERIES
+                val historyItemType = if (isSeries) BaseItemKind.EPISODE else itemKind
 
-                val historyItemType =
-                    if (itemKind == BaseItemKind.SERIES) BaseItemKind.EPISODE else itemKind
-
-                val historyRequest =
-                    GetItemsRequest(
-                        parentId = parentId,
-                        userId = userId,
-                        fields = SlimItemFields + listOf(ItemFields.GENRES),
-                        includeItemTypes = listOf(historyItemType),
-                        recursive = true,
-                        isPlayed = true,
-                        sortBy = listOf(ItemSortBy.DATE_PLAYED),
-                        sortOrder = listOf(SortOrder.DESCENDING),
-                        limit = 20,
-                        enableTotalRecordCount = false,
-                    )
-                val historyItems =
-                    GetItemsRequestHandler
-                        .execute(api, historyRequest)
-                        .content
-                        .items
-                        .orEmpty()
-
-                val seedItems =
-                    historyItems
-                        .distinctBy { it.seriesId ?: it.id }
-                        .take(3)
-
-                val allGenreIds =
-                    seedItems
-                        .flatMap { it.genreItems?.mapNotNull { g -> g.id } ?: emptyList() }
-                        .distinct()
-
-                val excludeIds = seedItems.mapNotNull { it.seriesId ?: it.id }
-
-                val contextualDeferred =
+                val historyDeferred =
                     async(Dispatchers.IO) {
-                        if (allGenreIds.isEmpty()) return@async emptyList()
-
-                        val contextualRequest =
+                        val historyRequest =
                             GetItemsRequest(
                                 parentId = parentId,
                                 userId = userId,
-                                fields = SlimItemFields,
-                                includeItemTypes = listOf(itemKind),
-                                genreIds = allGenreIds,
+                                fields = SlimItemFields + listOf(ItemFields.GENRES),
+                                includeItemTypes = listOf(historyItemType),
                                 recursive = true,
-                                isPlayed = false,
-                                excludeItemIds = excludeIds,
-                                sortBy = listOf(ItemSortBy.RANDOM),
-                                limit = contextualLimit,
+                                isPlayed = true,
+                                sortBy = listOf(ItemSortBy.DATE_PLAYED),
+                                sortOrder = listOf(SortOrder.DESCENDING),
+                                limit = 20,
                                 enableTotalRecordCount = false,
                             )
                         GetItemsRequestHandler
-                            .execute(api, contextualRequest)
+                            .execute(api, historyRequest)
                             .content
                             .items
                             .orEmpty()
+                            .distinctBy { it.seriesId ?: it.id }
+                            .take(3)
                     }
 
                 val randomDeferred =
@@ -106,7 +69,7 @@ class SuggestionService
                                 recursive = true,
                                 isPlayed = false,
                                 sortBy = listOf(ItemSortBy.RANDOM),
-                                limit = randomLimit,
+                                limit = itemsPerRow,
                                 enableTotalRecordCount = false,
                             )
                         GetItemsRequestHandler
@@ -128,7 +91,7 @@ class SuggestionService
                                 isPlayed = false,
                                 sortBy = listOf(ItemSortBy.DATE_CREATED),
                                 sortOrder = listOf(SortOrder.DESCENDING),
-                                limit = freshLimit,
+                                limit = (itemsPerRow * 0.4).toInt().coerceAtLeast(1),
                                 enableTotalRecordCount = false,
                             )
                         GetItemsRequestHandler
@@ -138,14 +101,44 @@ class SuggestionService
                             .orEmpty()
                     }
 
-                val contextual = contextualDeferred.await()
+                val seedItems = historyDeferred.await()
                 val random = randomDeferred.await()
                 val fresh = freshDeferred.await()
 
-                val isSeries = itemKind == BaseItemKind.SERIES
+                val excludeIds = seedItems.mapNotNull { it.seriesId ?: it.id }.toSet()
+                val allGenreIds =
+                    seedItems
+                        .flatMap { it.genreItems?.mapNotNull { g -> g.id } ?: emptyList() }
+                        .distinct()
 
-                (contextual + random + fresh)
+                val contextual =
+                    if (allGenreIds.isEmpty()) {
+                        emptyList()
+                    } else {
+                        val contextualRequest =
+                            GetItemsRequest(
+                                parentId = parentId,
+                                userId = userId,
+                                fields = SlimItemFields,
+                                includeItemTypes = listOf(itemKind),
+                                genreIds = allGenreIds,
+                                recursive = true,
+                                isPlayed = false,
+                                excludeItemIds = excludeIds.toList(),
+                                sortBy = listOf(ItemSortBy.RANDOM),
+                                limit = (itemsPerRow * 0.5).toInt().coerceAtLeast(1),
+                                enableTotalRecordCount = false,
+                            )
+                        GetItemsRequestHandler
+                            .execute(api, contextualRequest)
+                            .content
+                            .items
+                            .orEmpty()
+                    }
+
+                (contextual + fresh + random)
                     .distinctBy { it.id }
+                    .filterNot { excludeIds.contains(it.seriesId ?: it.id) }
                     .shuffled()
                     .take(itemsPerRow)
                     .map { BaseItem.from(it, api, isSeries) }
