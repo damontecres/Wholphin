@@ -640,8 +640,7 @@ fun NavigationDrawerScope.NavItem(
             }
 
             NavDrawerItem.Discover -> {
-                // TODO seerr
-                R.string.fa_list_ul
+                R.string.fa_magnifying_glass_plus
             }
 
             is ServerNavDrawerItem -> {

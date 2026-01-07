@@ -32,6 +32,8 @@ import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.DiscoverItem
+import com.github.damontecres.wholphin.data.model.DiscoverRating
+import com.github.damontecres.wholphin.data.model.SeerrItemType
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.NavigationManager
@@ -40,11 +42,13 @@ import com.github.damontecres.wholphin.ui.cards.DiscoverItemCard
 import com.github.damontecres.wholphin.ui.cards.ItemRow
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.data.RowColumn
+import com.github.damontecres.wholphin.ui.detail.discover.DiscoverQuickDetails
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.main.HomePageHeader
 import com.github.damontecres.wholphin.ui.rememberPosition
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.DataLoadingState
+import com.google.common.cache.CacheBuilder
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -63,6 +67,7 @@ class SeerrDiscoverViewModel
         private val backdropService: BackdropService,
     ) : ViewModel() {
         val state = MutableStateFlow<DiscoverState>(DiscoverState())
+        val rating = MutableStateFlow<Map<Int, DiscoverRating>>(mapOf())
 
         init {
             viewModelScope.launchIO {
@@ -73,6 +78,21 @@ class SeerrDiscoverViewModel
             }
             fetchAndUpdateState(seerrService::discoverTv) {
                 this.copy(tv = DiscoverRowData(context.getString(R.string.tv_shows), it))
+            }
+            fetchAndUpdateState(seerrService::trending) {
+                this.copy(trending = DiscoverRowData(context.getString(R.string.trending), it))
+            }
+            fetchAndUpdateState(seerrService::upcomingMovies) {
+                this.copy(
+                    upcomingMovies =
+                        DiscoverRowData(context.getString(R.string.upcoming_movies), it),
+                )
+            }
+            fetchAndUpdateState(seerrService::upcomingTv) {
+                this.copy(
+                    upcomingTv =
+                        DiscoverRowData(context.getString(R.string.upcoming_tv), it),
+                )
             }
         }
 
@@ -101,6 +121,49 @@ class SeerrDiscoverViewModel
             viewModelScope.launchIO {
                 if (item != null) {
                     backdropService.submit("discover_${item.id}", item.backDropUrl)
+                    fetchRating(item)
+                }
+            }
+        }
+
+        private val ratingCache =
+            CacheBuilder
+                .newBuilder()
+                .maximumSize(100)
+                .build<Int, DiscoverRating>()
+
+        // TODO this is not very efficient
+        fun fetchRating(item: DiscoverItem) {
+            viewModelScope.launchIO {
+                val cachedResult = ratingCache.getIfPresent(item.id)
+                if (cachedResult != null) {
+                    return@launchIO
+                }
+                val result =
+                    when (item.type) {
+                        SeerrItemType.MOVIE -> {
+                            DiscoverRating(
+                                seerrService.api.moviesApi.movieMovieIdRatingsGet(
+                                    movieId = item.id,
+                                ),
+                            )
+                        }
+
+                        SeerrItemType.TV -> {
+                            DiscoverRating(seerrService.api.tvApi.tvTvIdRatingsGet(tvId = item.id))
+                        }
+
+                        SeerrItemType.PERSON -> {
+                            DiscoverRating(null, null)
+                        }
+
+                        SeerrItemType.UNKNOWN -> {
+                            DiscoverRating(null, null)
+                        }
+                    }
+                ratingCache.put(item.id, result)
+                rating.update {
+                    ratingCache.asMap().toMap()
                 }
             }
         }
@@ -118,6 +181,9 @@ data class DiscoverRowData(
 data class DiscoverState(
     val movies: DiscoverRowData = DiscoverRowData.EMPTY,
     val tv: DiscoverRowData = DiscoverRowData.EMPTY,
+    val trending: DiscoverRowData = DiscoverRowData.EMPTY,
+    val upcomingMovies: DiscoverRowData = DiscoverRowData.EMPTY,
+    val upcomingTv: DiscoverRowData = DiscoverRowData.EMPTY,
 )
 
 @Composable
@@ -127,7 +193,9 @@ fun SeerrDiscoverPage(
     viewModel: SeerrDiscoverViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
-    val rows = listOf(state.movies, state.tv)
+    val rows =
+        listOf(state.trending, state.movies, state.tv, state.upcomingMovies, state.upcomingTv)
+    val ratingMap by viewModel.rating.collectAsState()
 
     val focusRequesters = remember(2) { List(rows.size) { FocusRequester() } }
     var position by rememberPosition(0, -1)
@@ -141,8 +209,8 @@ fun SeerrDiscoverPage(
         viewModel.updateBackdrop(focusedItem)
     }
     var firstFocused by rememberSaveable { mutableStateOf(false) }
-    LaunchedEffect(state.movies) {
-        if (!firstFocused && state.movies.items is DataLoadingState.Success<*>) {
+    LaunchedEffect(state.trending) {
+        if (!firstFocused && state.trending.items is DataLoadingState.Success<*>) {
             firstFocused = focusRequesters.getOrNull(0)?.tryRequestFocus("discover") == true
         }
     }
@@ -156,12 +224,15 @@ fun SeerrDiscoverPage(
             overview = focusedItem?.overview,
             overviewTwoLines = true,
             quickDetails = {
-                // TODO
+                DiscoverQuickDetails(
+                    item = focusedItem,
+                    rating = focusedItem?.id?.let { ratingMap[it] },
+                )
             },
             modifier =
                 Modifier
-                    .fillMaxHeight(.33f)
-                    .padding(top = 48.dp, bottom = 32.dp, start = 32.dp),
+                    .padding(top = 24.dp, bottom = 16.dp, start = 32.dp)
+                    .fillMaxHeight(.25f),
         )
         LazyColumn(
             verticalArrangement = Arrangement.spacedBy(8.dp),

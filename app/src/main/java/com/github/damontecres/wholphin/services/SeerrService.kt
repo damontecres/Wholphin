@@ -50,6 +50,27 @@ class SeerrService
                 ?.map(::DiscoverItem)
                 .orEmpty()
 
+        suspend fun trending(page: Int = 1): List<DiscoverItem> =
+            api.searchApi
+                .discoverTrendingGet(page = page)
+                .results
+                ?.map(::DiscoverItem)
+                .orEmpty()
+
+        suspend fun upcomingMovies(page: Int = 1): List<DiscoverItem> =
+            api.searchApi
+                .discoverMoviesUpcomingGet(page = page)
+                .results
+                ?.map(::DiscoverItem)
+                .orEmpty()
+
+        suspend fun upcomingTv(page: Int = 1): List<DiscoverItem> =
+            api.searchApi
+                .discoverTvUpcomingGet(page = page)
+                .results
+                ?.map(::DiscoverItem)
+                .orEmpty()
+
         /**
          * Get [DiscoverItem]s similar to the JF items such as movies, series, or people
          *

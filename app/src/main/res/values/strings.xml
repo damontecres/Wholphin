@@ -428,6 +428,9 @@
     <string name="password">Password</string>
     <string name="username">Username</string>
     <string name="url">URL</string>
+    <string name="trending">Trending</string>
+    <string name="upcoming_movies">Upcoming Movies</string>
+    <string name="upcoming_tv">Upcoming TV Shows</string>
 
     <string-array name="theme_song_volume">
         <item>Disabled</item>
