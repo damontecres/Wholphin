@@ -122,7 +122,7 @@ class SuggestionService
                             GetItemsRequest(
                                 parentId = parentId,
                                 userId = userId,
-                                fields = listOf(ItemFields.PRIMARY_IMAGE_ASPECT_RATIO),
+                                fields = listOf(ItemFields.PRIMARY_IMAGE_ASPECT_RATIO, ItemFields.OVERVIEW),
                                 includeItemTypes = listOf(itemKind),
                                 recursive = true,
                                 isPlayed = false,
@@ -144,7 +144,7 @@ class SuggestionService
                             GetItemsRequest(
                                 parentId = parentId,
                                 userId = userId,
-                                fields = listOf(ItemFields.PRIMARY_IMAGE_ASPECT_RATIO),
+                                fields = listOf(ItemFields.PRIMARY_IMAGE_ASPECT_RATIO, ItemFields.OVERVIEW),
                                 includeItemTypes = listOf(itemKind),
                                 recursive = true,
                                 isPlayed = false,
@@ -170,7 +170,7 @@ class SuggestionService
                                 GetItemsRequest(
                                     parentId = parentId,
                                     userId = userId,
-                                    fields = listOf(ItemFields.PRIMARY_IMAGE_ASPECT_RATIO),
+                                    fields = listOf(ItemFields.PRIMARY_IMAGE_ASPECT_RATIO, ItemFields.OVERVIEW),
                                     includeItemTypes = listOf(itemKind),
                                     genreIds = cachedGenreIds,
                                     recursive = true,
