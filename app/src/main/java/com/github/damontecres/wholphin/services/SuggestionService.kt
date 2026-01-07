@@ -8,6 +8,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.model.api.BaseItemDto
 import org.jellyfin.sdk.model.api.BaseItemKind
@@ -36,15 +37,24 @@ class SuggestionService
             itemKind: BaseItemKind,
             itemsPerRow: Int,
         ): Flow<List<BaseItem>> = flow {
+            // Stage 1: Emit cached data immediately (may include overviews from previous session)
             val cached = cache.get(parentId, itemKind)
             val cachedIds = cached?.items?.map { it.id }?.toSet()
             cached?.let { emit(it.items) }
 
             try {
-                val fresh = fetchSuggestions(parentId, itemKind, itemsPerRow)
-                cache.put(parentId, itemKind, fresh)
-                if (fresh.map { it.id }.toSet() != cachedIds) {
-                    emit(fresh)
+                // Stage 2: Emit fresh "lite" data (no overviews, fast response)
+                val freshLite = fetchSuggestions(parentId, itemKind, itemsPerRow)
+                val freshIds = freshLite.map { it.id }.toSet()
+                if (freshIds != cachedIds) {
+                    emit(freshLite)
+                }
+
+                // Stage 3: Enrich with overviews and emit final data
+                val freshEnriched = enrichItems(freshLite)
+                cache.put(parentId, itemKind, freshEnriched)
+                if (freshEnriched.any { it.data.overview != null }) {
+                    emit(freshEnriched)
                 }
             } catch (ex: Exception) {
                 Timber.e(ex, "Failed to fetch suggestions")
@@ -58,9 +68,9 @@ class SuggestionService
             itemsPerRow: Int,
         ): List<BaseItem> =
             cache.get(parentId, itemKind)?.items
-                ?: fetchSuggestions(parentId, itemKind, itemsPerRow).also {
-                    cache.put(parentId, itemKind, it)
-                }
+                ?: fetchSuggestions(parentId, itemKind, itemsPerRow)
+                    .let { enrichItems(it) }
+                    .also { cache.put(parentId, itemKind, it) }
 
         private suspend fun fetchSuggestions(
             parentId: UUID,
@@ -163,7 +173,7 @@ class SuggestionService
             val request = GetItemsRequest(
                 parentId = parentId,
                 userId = userId,
-                fields = listOf(ItemFields.PRIMARY_IMAGE_ASPECT_RATIO, ItemFields.OVERVIEW) + extraFields,
+                fields = listOf(ItemFields.PRIMARY_IMAGE_ASPECT_RATIO) + extraFields,
                 includeItemTypes = listOf(itemKind),
                 genreIds = genreIds,
                 recursive = true,
@@ -176,6 +186,28 @@ class SuggestionService
             )
             return GetItemsRequestHandler.execute(api, request).content.items.orEmpty()
         }
+
+        private suspend fun enrichItems(items: List<BaseItem>): List<BaseItem> =
+            withContext(Dispatchers.IO) {
+                if (items.isEmpty()) return@withContext items
+
+                val ids = items.map { it.id }
+                val request = GetItemsRequest(
+                    ids = ids,
+                    userId = serverRepository.currentUser.value?.id,
+                    fields = listOf(ItemFields.PRIMARY_IMAGE_ASPECT_RATIO, ItemFields.OVERVIEW),
+                    enableTotalRecordCount = false,
+                )
+                val enrichedDtos = GetItemsRequestHandler.execute(api, request).content.items.orEmpty()
+                val enrichedById = enrichedDtos.associateBy { it.id }
+
+                // Preserve original order, replace with enriched BaseItem if available
+                items.map { original ->
+                    enrichedById[original.id]?.let { dto ->
+                        BaseItem(dto, original.useSeriesForPrimary)
+                    } ?: original
+                }
+            }
 
         companion object {
             private const val FRESH_CONTENT_RATIO = 0.4

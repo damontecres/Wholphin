@@ -84,8 +84,6 @@ class RecommendedTvShowViewModel
                 val combineNextUp = preferences.homePagePreferences.combineContinueNext
                 val itemsPerRow = preferences.homePagePreferences.maxItemsPerRow
                 val userId = serverRepository.currentUser.value?.id
-
-                // Resume + NextUp need coordination for combine logic
                 try {
                     val resumeItemsDeferred =
                         async(Dispatchers.IO) {
@@ -163,7 +161,6 @@ class RecommendedTvShowViewModel
                     }
                 }
 
-                // These rows use the base class helper which already launches parallel coroutines
                 update(R.string.recently_released) {
                     val request =
                         GetItemsRequest(
@@ -216,7 +213,6 @@ class RecommendedTvShowViewModel
                     GetItemsRequestHandler.execute(api, request).toBaseItems(api, true)
                 }
 
-                // Suggestions use the new caching service with Flow
                 viewModelScope.launch(Dispatchers.IO) {
                     try {
                         suggestionService

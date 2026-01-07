@@ -81,8 +81,6 @@ class RecommendedMovieViewModel
                         ?.homePagePreferences
                         ?.maxItemsPerRow
                         ?: AppPreference.HomePageItems.defaultValue.toInt()
-
-                // Continue watching needs special handling for early loading state
                 try {
                     val resumeItemsRequest =
                         GetResumeItemsRequest(
@@ -116,7 +114,6 @@ class RecommendedMovieViewModel
                     }
                 }
 
-                // These rows use the base class helper which already launches parallel coroutines
                 update(R.string.recently_released) {
                     val request =
                         GetItemsRequest(
@@ -169,7 +166,6 @@ class RecommendedMovieViewModel
                     GetItemsRequestHandler.execute(api, request).toBaseItems(api, false)
                 }
 
-                // Suggestions use the new caching service with Flow
                 viewModelScope.launch(Dispatchers.IO) {
                     try {
                         suggestionService
