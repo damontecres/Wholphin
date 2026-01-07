@@ -37,6 +37,7 @@ class WholphinPluginService
             private const val LOGIN_BACKGROUND_ENDPOINT = "$PLUGIN_BASE_PATH/loginbackground"
             private const val HOME_ENDPOINT = "$PLUGIN_BASE_PATH/home"
             private const val SETTINGS_ENDPOINT = "$PLUGIN_BASE_PATH/settings"
+            private const val NAV_DRAWER_ENDPOINT = "$PLUGIN_BASE_PATH/navdrawer"
         }
 
         private val json =
@@ -249,6 +250,58 @@ class WholphinPluginService
             }
 
         /**
+         * Get navigation drawer configuration from the Wholphin plugin
+         * 
+         * This endpoint requires authentication and returns the configuration for items
+         * displayed in the navigation drawer between Favorites and Settings.
+         * Allows server administrators to control visibility, ordering, and add custom shortcuts.
+         *
+         * @param serverUrl The base URL of the Jellyfin server
+         * @return NavDrawerConfiguration object with items, or null if not available or on error
+         */
+        suspend fun getNavDrawerConfiguration(serverUrl: String): NavDrawerConfiguration? =
+            try {
+                val normalizedUrl = serverUrl.trimEnd('/')
+                val endpoint = "$normalizedUrl$NAV_DRAWER_ENDPOINT"
+
+                val request =
+                    Request
+                        .Builder()
+                        .url(endpoint)
+                        .get()
+                        .build()
+
+                val response = authOkHttpClient.newCall(request).execute()
+
+                if (response.isSuccessful) {
+                    val body = response.body?.string()
+                    if (body != null) {
+                        try {
+                            val config = json.decodeFromString<NavDrawerConfiguration>(body)
+                            Timber.i(
+                                "Loaded nav drawer configuration from $serverUrl: ${config.items.size} items"
+                            )
+                            config
+                        } catch (e: Exception) {
+                            Timber.w(e, "Failed to parse nav drawer configuration response")
+                            null
+                        }
+                    } else {
+                        Timber.w("Nav drawer configuration endpoint returned empty body")
+                        null
+                    }
+                } else {
+                    Timber.v(
+                        "Nav drawer configuration not available on $serverUrl (status: ${response.code})"
+                    )
+                    null
+                }
+            } catch (e: Exception) {
+                Timber.v(e, "Error fetching nav drawer configuration from $serverUrl")
+                null
+            }
+
+        /**
          * Make an authenticated request to a Wholphin plugin endpoint
          * 
          * This uses the authenticated HTTP client which includes the current user's access token.
@@ -443,6 +496,92 @@ enum class HomeSectionType {
     CUSTOM,      // 4
 }
 
+
+
+// ============================================================================
+// Navigation Drawer Configuration Data Classes
+// ============================================================================
+
+/**
+ * Navigation drawer configuration from the Wholphin plugin
+ * 
+ * Controls the items displayed in the navigation drawer between Favorites and Settings.
+ * Allows server administrators to customize visibility, ordering, and add custom shortcuts
+ * to collections or playlists.
+ * 
+ * Example JSON from server:
+ * ```json
+ * {
+ *   "items": [
+ *     {
+ *       "id": "abc-123-library-id",
+ *       "type": "library",
+ *       "name": "Movies",
+ *       "order": 0,
+ *       "visible": true
+ *     },
+ *     {
+ *       "id": "xyz-789-collection-id",
+ *       "type": "collection",
+ *       "name": "Netflix",
+ *       "order": 1,
+ *       "visible": true,
+ *       "imageUrl": "/Items/xyz-789/Images/Primary"
+ *     },
+ *     {
+ *       "id": "def-456-library-id",
+ *       "type": "library",
+ *       "order": 2,
+ *       "visible": false
+ *     }
+ *   ]
+ * }
+ * ```
+ */
+@Serializable
+data class NavDrawerConfiguration(
+    val items: List<NavDrawerItemConfig> = emptyList(),
+)
+
+/**
+ * Configuration for a single navigation drawer item
+ * 
+ * @param id UUID of the Jellyfin library, collection, or playlist
+ * @param type Type of item (LIBRARY, COLLECTION, or PLAYLIST)
+ * @param name Optional display name override (if null, uses Jellyfin item name)
+ * @param order Sort order in the drawer (lower numbers appear first)
+ * @param visible If true, shown in main list; if false, hidden behind "More" button
+ * @param imageUrl Optional custom image URL for collection/playlist shortcuts (e.g., "/Items/{id}/Images/Primary")
+ */
+@Serializable
+data class NavDrawerItemConfig(
+    val id: String,
+    val type: NavDrawerItemType,
+    val name: String? = null,
+    val order: Int,
+    val visible: Boolean = true,
+    val imageUrl: String? = null,
+)
+
+/**
+ * Type of navigation drawer item
+ * 
+ * Serialized as lowercase strings: "library", "collection", "playlist"
+ */
+@Serializable
+enum class NavDrawerItemType {
+    /** Jellyfin library (Movies, TV Shows, Music, etc.) */
+    @SerialName("library")
+    LIBRARY,
+
+    /** Collection shortcut with optional custom icon */
+    @SerialName("collection")
+    COLLECTION,
+
+    /** Playlist shortcut with optional custom icon */
+    @SerialName("playlist")
+    PLAYLIST,
+}
 /**
  * Custom serializer for HomeSectionType that handles both integer and string values from C# server
  */
