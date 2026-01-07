@@ -834,7 +834,7 @@ class PlaybackViewModel
                                         it.type != MediaSegmentType.UNKNOWN && currentTicks >= it.startTicks && currentTicks < it.endTicks
                                     }
                             if (currentSegment != null &&
-                                currentSegment.itemId == itemId &&
+                                currentSegment.itemId == this@PlaybackViewModel.itemId &&
                                 autoSkippedSegments.add(currentSegment.id)
                             ) {
                                 Timber.d(
