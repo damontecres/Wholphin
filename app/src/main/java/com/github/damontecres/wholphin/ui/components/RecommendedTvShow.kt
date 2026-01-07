@@ -33,7 +33,6 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.update
@@ -86,237 +85,162 @@ class RecommendedTvShowViewModel
                 val itemsPerRow = preferences.homePagePreferences.maxItemsPerRow
                 val userId = serverRepository.currentUser.value?.id
 
-                // Launch all row fetches in parallel
-                val resumeNextUpDeferred =
-                    async(Dispatchers.IO) {
-                        try {
-                            val resumeItemsDeferred =
-                                async(Dispatchers.IO) {
-                                    val resumeItemsRequest =
-                                        GetResumeItemsRequest(
-                                            userId = userId,
-                                            parentId = parentId,
-                                            fields = SlimItemFields,
-                                            includeItemTypes = listOf(BaseItemKind.EPISODE),
-                                            enableUserData = true,
-                                            startIndex = 0,
-                                            limit = itemsPerRow,
-                                            enableTotalRecordCount = false,
-                                        )
-                                    GetResumeItemsRequestHandler
-                                        .execute(api, resumeItemsRequest)
-                                        .toBaseItems(api, true)
-                                }
-
-                            val nextUpItemsDeferred =
-                                async(Dispatchers.IO) {
-                                    val nextUpRequest =
-                                        GetNextUpRequest(
-                                            userId = userId,
-                                            fields = SlimItemFields,
-                                            imageTypeLimit = 1,
-                                            parentId = parentId,
-                                            limit = itemsPerRow,
-                                            enableResumable = false,
-                                            enableUserData = true,
-                                            enableRewatching = preferences.homePagePreferences.enableRewatchingNextUp,
-                                        )
-
-                                    GetNextUpRequestHandler
-                                        .execute(api, nextUpRequest)
-                                        .toBaseItems(api, true)
-                                }
-
-                            val resumeItems = resumeItemsDeferred.await()
-                            val nextUpItems = nextUpItemsDeferred.await()
-
-                            if (combineNextUp) {
-                                val combined =
-                                    lastestNextUpService.buildCombined(
-                                        resumeItems,
-                                        nextUpItems,
-                                    )
-                                update(
-                                    R.string.continue_watching,
-                                    HomeRowLoadingState.Success(
-                                        context.getString(R.string.continue_watching),
-                                        combined,
-                                    ),
-                                )
-                                update(
-                                    R.string.next_up,
-                                    HomeRowLoadingState.Success(
-                                        context.getString(R.string.next_up),
-                                        listOf(),
-                                    ),
-                                )
-                            } else {
-                                update(
-                                    R.string.continue_watching,
-                                    HomeRowLoadingState.Success(
-                                        context.getString(R.string.continue_watching),
-                                        resumeItems,
-                                    ),
-                                )
-                                update(
-                                    R.string.next_up,
-                                    HomeRowLoadingState.Success(
-                                        context.getString(R.string.next_up),
-                                        nextUpItems,
-                                    ),
-                                )
-                            }
-
-                            if (resumeItems.isNotEmpty() || nextUpItems.isNotEmpty()) {
-                                loading.setValueOnMain(LoadingState.Success)
-                            }
-                        } catch (ex: Exception) {
-                            Timber.e(ex, "Exception fetching tv recommendations")
-                            withContext(Dispatchers.Main) {
-                                loading.value = LoadingState.Error(ex)
-                            }
-                        }
-                    }
-
-                val recentlyReleasedDeferred =
-                    async(Dispatchers.IO) {
-                        try {
-                            val recentlyReleasedRequest =
-                                GetItemsRequest(
+                // Resume + NextUp need coordination for combine logic
+                try {
+                    val resumeItemsDeferred =
+                        async(Dispatchers.IO) {
+                            val resumeItemsRequest =
+                                GetResumeItemsRequest(
+                                    userId = userId,
                                     parentId = parentId,
                                     fields = SlimItemFields,
                                     includeItemTypes = listOf(BaseItemKind.EPISODE),
-                                    recursive = true,
                                     enableUserData = true,
-                                    sortBy = listOf(ItemSortBy.PREMIERE_DATE),
-                                    sortOrder = listOf(SortOrder.DESCENDING),
                                     startIndex = 0,
                                     limit = itemsPerRow,
                                     enableTotalRecordCount = false,
                                 )
-                            val items =
-                                GetItemsRequestHandler
-                                    .execute(api, recentlyReleasedRequest)
-                                    .toBaseItems(api, true)
-                            update(
-                                R.string.recently_released,
-                                HomeRowLoadingState.Success(
-                                    context.getString(R.string.recently_released),
-                                    items,
-                                ),
-                            )
-                        } catch (ex: Exception) {
-                            Timber.e(ex, "Exception fetching recently released")
-                            update(
-                                R.string.recently_released,
-                                HomeRowLoadingState.Error(
-                                    title = context.getString(R.string.recently_released),
-                                    exception = ex,
-                                ),
-                            )
+                            GetResumeItemsRequestHandler
+                                .execute(api, resumeItemsRequest)
+                                .toBaseItems(api, true)
                         }
-                    }
 
-                val recentlyAddedDeferred =
-                    async(Dispatchers.IO) {
-                        try {
-                            val recentlyAddedRequest =
-                                GetItemsRequest(
-                                    parentId = parentId,
+                    val nextUpItemsDeferred =
+                        async(Dispatchers.IO) {
+                            val nextUpRequest =
+                                GetNextUpRequest(
+                                    userId = userId,
                                     fields = SlimItemFields,
-                                    includeItemTypes = listOf(BaseItemKind.EPISODE),
-                                    recursive = true,
-                                    enableUserData = true,
-                                    sortBy = listOf(ItemSortBy.DATE_CREATED),
-                                    sortOrder = listOf(SortOrder.DESCENDING),
-                                    startIndex = 0,
-                                    limit = itemsPerRow,
-                                    enableTotalRecordCount = false,
-                                )
-                            val items =
-                                GetItemsRequestHandler
-                                    .execute(api, recentlyAddedRequest)
-                                    .toBaseItems(api, true)
-                            update(
-                                R.string.recently_added,
-                                HomeRowLoadingState.Success(
-                                    context.getString(R.string.recently_added),
-                                    items,
-                                ),
-                            )
-                        } catch (ex: Exception) {
-                            Timber.e(ex, "Exception fetching recently added")
-                            update(
-                                R.string.recently_added,
-                                HomeRowLoadingState.Error(
-                                    title = context.getString(R.string.recently_added),
-                                    exception = ex,
-                                ),
-                            )
-                        }
-                    }
-
-                val topUnwatchedDeferred =
-                    async(Dispatchers.IO) {
-                        try {
-                            val unwatchedTopRatedRequest =
-                                GetItemsRequest(
+                                    imageTypeLimit = 1,
                                     parentId = parentId,
-                                    fields = SlimItemFields,
-                                    includeItemTypes = listOf(BaseItemKind.SERIES),
-                                    recursive = true,
-                                    enableUserData = true,
-                                    isPlayed = false,
-                                    sortBy = listOf(ItemSortBy.COMMUNITY_RATING),
-                                    sortOrder = listOf(SortOrder.DESCENDING),
-                                    startIndex = 0,
                                     limit = itemsPerRow,
-                                    enableTotalRecordCount = false,
+                                    enableResumable = false,
+                                    enableUserData = true,
+                                    enableRewatching = preferences.homePagePreferences.enableRewatchingNextUp,
                                 )
-                            val items =
-                                GetItemsRequestHandler
-                                    .execute(api, unwatchedTopRatedRequest)
-                                    .toBaseItems(api, true)
-                            update(
-                                R.string.top_unwatched,
-                                HomeRowLoadingState.Success(
-                                    context.getString(R.string.top_unwatched),
-                                    items,
-                                ),
-                            )
-                        } catch (ex: Exception) {
-                            Timber.e(ex, "Exception fetching top unwatched")
-                            update(
-                                R.string.top_unwatched,
-                                HomeRowLoadingState.Error(
-                                    title = context.getString(R.string.top_unwatched),
-                                    exception = ex,
-                                ),
-                            )
+                            GetNextUpRequestHandler
+                                .execute(api, nextUpRequest)
+                                .toBaseItems(api, true)
                         }
+
+                    val resumeItems = resumeItemsDeferred.await()
+                    val nextUpItems = nextUpItemsDeferred.await()
+
+                    if (combineNextUp) {
+                        val combined = lastestNextUpService.buildCombined(resumeItems, nextUpItems)
+                        update(
+                            R.string.continue_watching,
+                            HomeRowLoadingState.Success(
+                                context.getString(R.string.continue_watching),
+                                combined,
+                            ),
+                        )
+                        update(
+                            R.string.next_up,
+                            HomeRowLoadingState.Success(context.getString(R.string.next_up), listOf()),
+                        )
+                    } else {
+                        update(
+                            R.string.continue_watching,
+                            HomeRowLoadingState.Success(
+                                context.getString(R.string.continue_watching),
+                                resumeItems,
+                            ),
+                        )
+                        update(
+                            R.string.next_up,
+                            HomeRowLoadingState.Success(context.getString(R.string.next_up), nextUpItems),
+                        )
                     }
 
-                viewModelScope.launch(Dispatchers.IO) {
-                    suggestionService
-                        .getSuggestionsFlow(parentId, BaseItemKind.SERIES, itemsPerRow)
-                        .collect { items ->
-                            update(
-                                R.string.suggestions,
-                                HomeRowLoadingState.Success(
-                                    context.getString(R.string.suggestions),
-                                    items,
-                                ),
-                            )
-                        }
+                    if (resumeItems.isNotEmpty() || nextUpItems.isNotEmpty()) {
+                        loading.setValueOnMain(LoadingState.Success)
+                    }
+                } catch (ex: Exception) {
+                    Timber.e(ex, "Exception fetching tv recommendations")
+                    withContext(Dispatchers.Main) {
+                        loading.value = LoadingState.Error(ex)
+                    }
                 }
 
-                // Wait for all row fetches to complete
-                awaitAll(
-                    resumeNextUpDeferred,
-                    recentlyReleasedDeferred,
-                    recentlyAddedDeferred,
-                    topUnwatchedDeferred,
-                )
+                // These rows use the base class helper which already launches parallel coroutines
+                update(R.string.recently_released) {
+                    val request =
+                        GetItemsRequest(
+                            parentId = parentId,
+                            fields = SlimItemFields,
+                            includeItemTypes = listOf(BaseItemKind.EPISODE),
+                            recursive = true,
+                            enableUserData = true,
+                            sortBy = listOf(ItemSortBy.PREMIERE_DATE),
+                            sortOrder = listOf(SortOrder.DESCENDING),
+                            startIndex = 0,
+                            limit = itemsPerRow,
+                            enableTotalRecordCount = false,
+                        )
+                    GetItemsRequestHandler.execute(api, request).toBaseItems(api, true)
+                }
+
+                update(R.string.recently_added) {
+                    val request =
+                        GetItemsRequest(
+                            parentId = parentId,
+                            fields = SlimItemFields,
+                            includeItemTypes = listOf(BaseItemKind.EPISODE),
+                            recursive = true,
+                            enableUserData = true,
+                            sortBy = listOf(ItemSortBy.DATE_CREATED),
+                            sortOrder = listOf(SortOrder.DESCENDING),
+                            startIndex = 0,
+                            limit = itemsPerRow,
+                            enableTotalRecordCount = false,
+                        )
+                    GetItemsRequestHandler.execute(api, request).toBaseItems(api, true)
+                }
+
+                update(R.string.top_unwatched) {
+                    val request =
+                        GetItemsRequest(
+                            parentId = parentId,
+                            fields = SlimItemFields,
+                            includeItemTypes = listOf(BaseItemKind.SERIES),
+                            recursive = true,
+                            enableUserData = true,
+                            isPlayed = false,
+                            sortBy = listOf(ItemSortBy.COMMUNITY_RATING),
+                            sortOrder = listOf(SortOrder.DESCENDING),
+                            startIndex = 0,
+                            limit = itemsPerRow,
+                            enableTotalRecordCount = false,
+                        )
+                    GetItemsRequestHandler.execute(api, request).toBaseItems(api, true)
+                }
+
+                // Suggestions use the new caching service with Flow
+                viewModelScope.launch(Dispatchers.IO) {
+                    try {
+                        suggestionService
+                            .getSuggestionsFlow(parentId, BaseItemKind.SERIES, itemsPerRow)
+                            .collect { items ->
+                                update(
+                                    R.string.suggestions,
+                                    HomeRowLoadingState.Success(
+                                        context.getString(R.string.suggestions),
+                                        items,
+                                    ),
+                                )
+                            }
+                    } catch (ex: Exception) {
+                        Timber.e(ex, "Failed to fetch suggestions")
+                        update(
+                            R.string.suggestions,
+                            HomeRowLoadingState.Error(
+                                title = context.getString(R.string.suggestions),
+                                exception = ex,
+                            ),
+                        )
+                    }
+                }
 
                 if (loading.value == LoadingState.Loading || loading.value == LoadingState.Pending) {
                     loading.setValueOnMain(LoadingState.Success)
