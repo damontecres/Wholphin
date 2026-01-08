@@ -38,12 +38,24 @@ jobs:
           KEY_STORE_PASSWORD: "${{ secrets.KEY_STORE_PASSWORD }}"
           SIGNING_KEY: "${{ secrets.SIGNING_KEY }}"
         run: |
-          ./gradlew clean assembleRelease --no-daemon
+          # Compila senza firma se i secrets non sono disponibili (solo debug)
+          if [ -z "${{ secrets.KEY_ALIAS }}" ]; then
+            echo "Secrets non disponibili, compilazione solo in modalità debug (senza firma)..."
+            ./gradlew clean assembleDebug --no-daemon
+          else
+            ./gradlew clean assembleRelease --no-daemon
+          fi
       - name: Verify signatures
+        if: ${{ secrets.KEY_ALIAS != '' }}
         run: |
           echo "Verify APK signatures"
           find app/build/outputs/apk -name '*.apk'
           find app/build/outputs/apk -name '*.apk' -print0 | xargs -0 -n1 ${{env.ANDROID_SDK_ROOT}}/build-tools/${{ env.BUILD_TOOLS_VERSION }}/apksigner verify --verbose --print-certs
+      - name: List APKs (no signature verification)
+        if: ${{ secrets.KEY_ALIAS == '' }}
+        run: |
+          echo "APKs compilati (senza firma):"
+          find app/build/outputs/apk -name '*.apk'
       - name: Copy APK to shorter names
         id: apks
         run: |
