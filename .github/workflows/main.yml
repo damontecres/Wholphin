@@ -64,7 +64,7 @@ jobs:
             ./gradlew clean assembleRelease assembleDebug --no-daemon
           fi
       - name: Verify signatures
-        if: ${{ secrets.KEY_ALIAS != '' }}
+        if: env.KEY_ALIAS != ''
         run: |
           echo "Verify APK signatures"
           find app/build/outputs/apk -name '*.apk'
