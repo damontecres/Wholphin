@@ -132,7 +132,7 @@ class ApiRequestPager<T>(
                 return totalCount
             }
             // Calcola un valore approssimativo basato sulle pagine già caricate
-            val loadedPages = cachedPages.size()
+            val loadedPages = cachedPages.size().toInt()
             if (loadedPages > 0) {
                 // Usa il numero di pagine caricate + 1 per permettere il caricamento di più pagine
                 return (loadedPages + 1) * pageSize
