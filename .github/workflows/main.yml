@@ -56,8 +56,15 @@ jobs:
           KEY_STORE_PASSWORD: "${{ secrets.KEY_STORE_PASSWORD }}"
           SIGNING_KEY: "${{ secrets.SIGNING_KEY }}"
         run: |
-          ./gradlew clean assembleRelease assembleDebug --no-daemon
+          # Compila senza firma se i secrets non sono disponibili
+          if [ -z "${{ secrets.KEY_ALIAS }}" ]; then
+            echo "Secrets non disponibili, compilazione solo in modalità debug (senza firma)..."
+            ./gradlew clean assembleDebug --no-daemon
+          else
+            ./gradlew clean assembleRelease assembleDebug --no-daemon
+          fi
       - name: Verify signatures
+        if: env.KEY_ALIAS != ''
         run: |
           echo "Verify APK signatures"
           find app/build/outputs/apk -name '*.apk'

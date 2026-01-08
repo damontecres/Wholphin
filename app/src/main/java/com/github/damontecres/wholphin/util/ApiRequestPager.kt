@@ -64,40 +64,56 @@ class ApiRequestPager<T>(
             .maximumSize(cacheSize)
             .build<Int, MutableList<BaseItem>>()
 
-    suspend fun init(initialPosition: Int = 0): ApiRequestPager<T> {
+    suspend fun init(initialPosition: Int = 0, fetchTotalCount: Boolean = false): ApiRequestPager<T> {
         if (totalCount < 0) {
-            fetchPageBlocking(initialPosition, true)
+            fetchPageBlocking(initialPosition, fetchTotalCount)
         }
         return this
     }
+    
+    /**
+     * Calcola il totalCount in modo lazy quando necessario.
+     * Questo evita di sovraccaricare il server quando si aprono cartelle con molti items.
+     */
+    suspend fun ensureTotalCount(): Int {
+        if (totalCount < 0) {
+            // Carica la prima pagina con il conteggio totale solo quando necessario
+            fetchPageBlocking(0, true)
+        }
+        return totalCount
+    }
 
     override operator fun get(index: Int): BaseItem? {
-        if (index in 0..<totalCount) {
-            val item = items[index]
-            if (item == null) {
-                fetchPage(index)
-            }
-            return item
-        } else {
+        // Se totalCount non è ancora stato calcolato, permette l'accesso agli items
+        // Il totalCount verrà calcolato quando necessario
+        if (totalCount >= 0 && index >= totalCount) {
             throw IndexOutOfBoundsException("$index of $totalCount")
         }
+        val item = items[index]
+        if (item == null) {
+            fetchPage(index)
+        }
+        return item
     }
 
     override suspend fun getBlocking(index: Int): BaseItem? {
-        if (index in 0..<totalCount) {
-            val item = items[index]
-            if (item == null) {
-                fetchPageBlocking(index, false)
-                return items[index]
-            }
-            return item
-        } else {
+        // Se totalCount non è ancora stato calcolato, permette l'accesso agli items
+        // Il totalCount verrà calcolato quando necessario
+        if (totalCount >= 0 && index >= totalCount) {
             throw IndexOutOfBoundsException("$index of $totalCount")
         }
+        val item = items[index]
+        if (item == null) {
+            fetchPageBlocking(index, false)
+            return items[index]
+        }
+        return item
     }
 
     override suspend fun indexOfBlocking(predicate: Predicate<BaseItem?>): Int {
         init()
+        // Assicura che il totalCount sia calcolato prima di iterare
+        ensureTotalCount()
         for (i in 0 until totalCount) {
             val currentItem = getBlocking(i)
             if (currentItem != null && predicate.test(currentItem)) {
@@ -108,7 +124,22 @@ class ApiRequestPager<T>(
     }
 
     override val size: Int
-        get() = totalCount
+        get() {
+            // Se totalCount non è ancora stato calcolato, usa un valore approssimativo
+            // basato sul numero di pagine caricate, moltiplicato per pageSize
+            // Questo permette al LazyVerticalGrid di funzionare senza bloccare
+            if (totalCount >= 0) {
+                return totalCount
+            }
+            // Calcola un valore approssimativo basato sulle pagine già caricate
+            val loadedPages = cachedPages.size().toInt()
+            if (loadedPages > 0) {
+                // Usa il numero di pagine caricate + 1 per permettere il caricamento di più pagine
+                return (loadedPages + 1) * pageSize
+            }
+            // Se non ci sono pagine caricate, usa un valore minimo per permettere il caricamento iniziale
+            return pageSize
+        }
 
     private fun fetchPage(position: Int): Job =
         scope.launch(ExceptionHandler() + Dispatchers.IO) {
@@ -121,17 +152,20 @@ class ApiRequestPager<T>(
     ) {
         mutex.withLock {
             val pageNumber = position / pageSize
-            if (cachedPages.getIfPresent(pageNumber) == null || setTotalCount) {
-                if (DEBUG) Timber.v("fetchPage: $pageNumber")
+            // Calcola il totalCount se necessario (quando richiesto esplicitamente o quando si arriva vicino alla fine)
+            val shouldFetchTotalCount = setTotalCount || 
+                (totalCount < 0 && pageNumber >= 5) // Calcola il totalCount dopo aver caricato 5 pagine
+            if (cachedPages.getIfPresent(pageNumber) == null || shouldFetchTotalCount) {
+                if (DEBUG) Timber.v("fetchPage: $pageNumber, setTotalCount=$shouldFetchTotalCount")
                 val newRequest =
                     requestHandler.prepare(
                         request,
                         pageNumber * pageSize,
                         pageSize,
-                        setTotalCount,
+                        shouldFetchTotalCount,
                     )
                 val result = requestHandler.execute(api, newRequest).content
-                if (setTotalCount) {
+                if (shouldFetchTotalCount) {
                     totalCount = result.totalRecordCount.coerceAtLeast(0)
                 }
                 val data = mutableListOf<BaseItem>()
