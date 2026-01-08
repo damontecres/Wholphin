@@ -321,4 +321,8 @@
     <string name="no">Nein</string>
     <string name="show_titles">Titel anzeigen</string>
     <string name="live_tv_repeat">Wiederholen</string>
+    <string name="general">Generell</string>
+    <string name="no_trailers">Keine Trailer</string>
+    <string name="play_trailer">Trailer abspielen</string>
+    <string name="local">Lokal</string>
 </resources>
