@@ -500,7 +500,12 @@ class PlaybackViewModel
                             currentItemPlayback.copy(
                                 sourceId = source.id?.toUUIDOrNull(),
                                 audioIndex = audioIndex ?: TrackIndex.UNSPECIFIED,
-                                subtitleIndex = subtitleIndex ?: TrackIndex.DISABLED,
+                                // Preserve special constants (ONLY_FORCED, DISABLED) instead of resolved index
+                                subtitleIndex = if (currentItemPlayback.subtitleIndex < 0) {
+                                    currentItemPlayback.subtitleIndex
+                                } else {
+                                    subtitleIndex ?: TrackIndex.DISABLED
+                                },
                             )
                         if (userInitiated) {
                             viewModelScope.launchIO {
