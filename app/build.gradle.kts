@@ -18,7 +18,7 @@ plugins {
 }
 
 val isCI = if (System.getenv("CI") != null) System.getenv("CI").toBoolean() else false
-val shouldSign = isCI && System.getenv("KEY_ALIAS") != null
+val shouldSign = isCI && System.getenv("KEY_ALIAS") != null && System.getenv("KEY_ALIAS").isNotEmpty()
 val ffmpegModuleExists = project.file("libs/lib-decoder-ffmpeg-release.aar").exists()
 
 val gitTags =
