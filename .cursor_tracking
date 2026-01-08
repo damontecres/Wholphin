@@ -1,0 +1,41 @@
+# Wholphin - Tracking delle Modifiche
+
+## 2025-01-XX - Fix: Crash del server con cartelle contenenti oltre 1000 items
+
+### Problema Identificato
+Quando si apre una cartella contenente oltre 1000 oggetti, il server Jellyfin crasha. Il problema era causato dal fatto che l'app richiedeva sempre il calcolo del `totalRecordCount` durante l'inizializzazione della cartella, anche per cartelle molto grandi. Questo calcolo è molto costoso per il server e può causare crash o timeout.
+
+### Modifiche Implementate
+
+#### File: `app/src/main/java/com/github/damontecres/wholphin/util/ApiRequestPager.kt`
+
+1. **Metodo `init()` modificato**:
+   - Aggiunto parametro opzionale `fetchTotalCount: Boolean = false`
+   - Per default, non richiede più il calcolo del `totalRecordCount` durante l'inizializzazione
+   - Retrocompatibile con il codice esistente
+
+2. **Nuovo metodo `ensureTotalCount()`**:
+   - Calcola il `totalCount` in modo lazy quando necessario
+   - Può essere chiamato esplicitamente quando il conteggio totale è richiesto
+
+3. **Metodi `get()` e `getBlocking()` modificati**:
+   - Permettono l'accesso agli items anche se `totalCount` non è ancora stato calcolato
+   - Il controllo dei bounds viene fatto solo se `totalCount` è già stato calcolato
+
+4. **Metodo `size` modificato**:
+   - Restituisce un valore approssimativo basato sul numero di pagine caricate se `totalCount` non è ancora disponibile
+   - Questo permette al `LazyVerticalGrid` di funzionare correttamente senza bloccare
+
+5. **Metodo `fetchPageBlocking()` migliorato**:
+   - Calcola automaticamente il `totalCount` dopo aver caricato 5 pagine
+   - Questo garantisce che il conteggio totale venga calcolato quando necessario, senza sovraccaricare il server all'inizio
+
+### Benefici
+- Il server non viene più sovraccaricato quando si aprono cartelle con molti items
+- Il caricamento iniziale è più veloce
+- Il `totalCount` viene calcolato automaticamente quando necessario (dopo 5 pagine o quando richiesto esplicitamente)
+- Retrocompatibile con il codice esistente
+
+### Note
+- Il valore di `size` può essere approssimativo inizialmente, ma viene aggiornato automaticamente quando il `totalCount` viene calcolato
+- Il `LazyVerticalGrid` gestisce correttamente i valori `null` quando gli items non sono ancora caricati
