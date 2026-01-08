@@ -46,13 +46,13 @@ jobs:
             ./gradlew clean assembleRelease --no-daemon
           fi
       - name: Verify signatures
-        if: ${{ secrets.KEY_ALIAS != '' }}
+        if: env.KEY_ALIAS != ''
         run: |
           echo "Verify APK signatures"
           find app/build/outputs/apk -name '*.apk'
           find app/build/outputs/apk -name '*.apk' -print0 | xargs -0 -n1 ${{env.ANDROID_SDK_ROOT}}/build-tools/${{ env.BUILD_TOOLS_VERSION }}/apksigner verify --verbose --print-certs
       - name: List APKs (no signature verification)
-        if: ${{ secrets.KEY_ALIAS == '' }}
+        if: env.KEY_ALIAS == ''
         run: |
           echo "APKs compilati (senza firma):"
           find app/build/outputs/apk -name '*.apk'
