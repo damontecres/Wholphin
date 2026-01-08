@@ -494,8 +494,9 @@ class PlaybackViewModel
                 if (externalSubtitle == null) {
                     val result =
                         withContext(Dispatchers.Main) {
-                            TrackSelectionUtils.applyTrackSelections(
-                                player,
+                            TrackSelectionUtils.createTrackSelections(
+                                onMain { player.trackSelectionParameters },
+                                onMain { player.currentTracks },
                                 playerBackend,
                                 true,
                                 audioIndex,
@@ -504,6 +505,7 @@ class PlaybackViewModel
                             )
                         }
                     if (result.bothSelected) {
+                        onMain { player.trackSelectionParameters = result.trackSelectionParameters }
                         // TODO lots of duplicate code in this block
                         Timber.d("Changes tracks audio=$audioIndex, subtitle=$subtitleIndex")
                         val itemPlayback =
@@ -696,8 +698,9 @@ class PlaybackViewModel
                                     Timber.v("onTracksChanged: $tracks")
                                     if (tracks.groups.isNotEmpty()) {
                                         val result =
-                                            TrackSelectionUtils.applyTrackSelections(
-                                                player,
+                                            TrackSelectionUtils.createTrackSelections(
+                                                player.trackSelectionParameters,
+                                                player.currentTracks,
                                                 playerBackend,
                                                 source.supportsDirectPlay,
                                                 audioIndex.takeIf { transcodeType == PlayMethod.DIRECT_PLAY },
@@ -705,6 +708,8 @@ class PlaybackViewModel
                                                 source,
                                             )
                                         if (result.bothSelected) {
+                                            player.trackSelectionParameters =
+                                                result.trackSelectionParameters
                                             player.removeListener(this)
                                         }
                                         viewModelScope.launchIO { loadSubtitleDelay() }
