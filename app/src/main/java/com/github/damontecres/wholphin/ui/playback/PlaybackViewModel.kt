@@ -21,6 +21,7 @@ import androidx.media3.exoplayer.DecoderCounters
 import androidx.media3.exoplayer.DecoderReuseEvaluation
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.analytics.AnalyticsListener
+import androidx.media3.session.MediaSession
 import coil3.imageLoader
 import coil3.request.ImageRequest
 import coil3.size.Size
@@ -134,6 +135,7 @@ class PlaybackViewModel
         val player by lazy {
             playerFactory.createVideoPlayer()
         }
+        private val mediaSession: MediaSession
         internal val mutex = Mutex()
 
         val controllerViewState =
@@ -177,10 +179,15 @@ class PlaybackViewModel
                 }
                 jobs.forEach { it.cancel() }
                 player.release()
+                mediaSession.release()
             }
             viewModelScope.launch(ExceptionHandler()) { controllerViewState.observe() }
             player.addListener(this)
             (player as? ExoPlayer)?.addAnalyticsListener(this)
+            mediaSession =
+                MediaSession
+                    .Builder(context, player)
+                    .build()
             jobs.add(subscribe())
             jobs.add(listenForTranscodeReason())
         }
@@ -318,11 +325,14 @@ class PlaybackViewModel
             withContext(Dispatchers.IO) {
                 Timber.i("Playing ${item.id}")
 
-                // Starting playback, so want to invalidate the last played timestamp for this item
-                datePlayedService.invalidate(item)
                 // New item, so we can clear the media segment tracker & subtitle cues
-                autoSkippedSegments.clear()
+                resetSegmentState()
                 this@PlaybackViewModel.subtitleCues.setValueOnMain(listOf())
+
+                viewModelScope.launchIO {
+                    // Starting playback, so want to invalidate the last played timestamp for this item
+                    datePlayedService.invalidate(item)
+                }
 
                 if (item.type !in supportItemKinds) {
                     showToast(
@@ -450,7 +460,7 @@ class PlaybackViewModel
                     player.prepare()
                     player.play()
                 }
-                listenForSegments()
+                listenForSegments(item.id)
                 return@withContext true
             }
 
@@ -484,8 +494,9 @@ class PlaybackViewModel
                 if (externalSubtitle == null) {
                     val result =
                         withContext(Dispatchers.Main) {
-                            TrackSelectionUtils.applyTrackSelections(
-                                player,
+                            TrackSelectionUtils.createTrackSelections(
+                                onMain { player.trackSelectionParameters },
+                                onMain { player.currentTracks },
                                 playerBackend,
                                 true,
                                 audioIndex,
@@ -494,6 +505,7 @@ class PlaybackViewModel
                             )
                         }
                     if (result.bothSelected) {
+                        onMain { player.trackSelectionParameters = result.trackSelectionParameters }
                         // TODO lots of duplicate code in this block
                         Timber.d("Changes tracks audio=$audioIndex, subtitle=$subtitleIndex")
                         val itemPlayback =
@@ -691,8 +703,9 @@ class PlaybackViewModel
                                     Timber.v("onTracksChanged: $tracks")
                                     if (tracks.groups.isNotEmpty()) {
                                         val result =
-                                            TrackSelectionUtils.applyTrackSelections(
-                                                player,
+                                            TrackSelectionUtils.createTrackSelections(
+                                                player.trackSelectionParameters,
+                                                player.currentTracks,
                                                 playerBackend,
                                                 source.supportsDirectPlay,
                                                 audioIndex.takeIf { transcodeType == PlayMethod.DIRECT_PLAY },
@@ -700,6 +713,8 @@ class PlaybackViewModel
                                                 source,
                                             )
                                         if (result.bothSelected) {
+                                            player.trackSelectionParameters =
+                                                result.trackSelectionParameters
                                             player.removeListener(this)
                                         }
                                         viewModelScope.launchIO { loadSubtitleDelay() }
@@ -840,9 +855,18 @@ class PlaybackViewModel
         private var segmentJob: Job? = null
 
         /**
+         * Cancels listening for segments and clears current segment state
+         */
+        private suspend fun resetSegmentState() {
+            segmentJob?.cancel()
+            autoSkippedSegments.clear()
+            currentSegment.setValueOnMain(null)
+        }
+
+        /**
          * This sets up a coroutine to periodically check whether the current playback progress is within a media segment (intro, outro, etc)
          */
-        private fun listenForSegments() {
+        private fun listenForSegments(itemId: UUID) {
             segmentJob?.cancel()
             segmentJob =
                 viewModelScope.launchIO {
@@ -858,7 +882,10 @@ class PlaybackViewModel
                                     .firstOrNull {
                                         it.type != MediaSegmentType.UNKNOWN && currentTicks >= it.startTicks && currentTicks < it.endTicks
                                     }
-                            if (currentSegment != null && autoSkippedSegments.add(currentSegment.id)) {
+                            if (currentSegment != null &&
+                                currentSegment.itemId == this@PlaybackViewModel.itemId &&
+                                autoSkippedSegments.add(currentSegment.id)
+                            ) {
                                 Timber.d(
                                     "Found media segment for %s: %s, %s",
                                     currentSegment.itemId,
@@ -1068,6 +1095,7 @@ class PlaybackViewModel
             Timber.v("release")
             activityListener?.release()
             player.release()
+            mediaSession.release()
             activityListener = null
         }
 
