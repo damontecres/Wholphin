@@ -30,10 +30,8 @@ import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.preferences.AppPreference
 import com.github.damontecres.wholphin.preferences.AppThemeColors
 import com.github.damontecres.wholphin.ui.AspectRatios
-import com.github.damontecres.wholphin.ui.cards.BannerCard
 import com.github.damontecres.wholphin.ui.cards.SeasonCard
 import com.github.damontecres.wholphin.ui.cards.WatchedIcon
-import com.github.damontecres.wholphin.ui.components.ExpandableFaButton
 import com.github.damontecres.wholphin.ui.nav.NavDrawerItem
 import com.github.damontecres.wholphin.ui.nav.NavItem
 import com.github.damontecres.wholphin.ui.playback.PlaybackButton
@@ -109,6 +107,7 @@ private fun ThemeExample(theme: AppThemeColors) {
                             isPlayed = true,
                             unplayedItemCount = 2,
                             playedPercentage = 50.0,
+                            numberOfVersions = 2,
                             onClick = { },
                             onLongClick = {},
                             imageHeight = 120.dp,
@@ -125,6 +124,7 @@ private fun ThemeExample(theme: AppThemeColors) {
                             isPlayed = true,
                             unplayedItemCount = 2,
                             playedPercentage = 0.0,
+                            numberOfVersions = 0,
                             onClick = { },
                             onLongClick = {},
                             imageHeight = 120.dp,
