@@ -10,7 +10,8 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.junit.After
-import org.junit.Assert.*
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.File
 import java.util.Collections
@@ -43,6 +44,7 @@ class SuggestionsCacheConcurrencyTest {
     fun concurrentPutGet_noCrashes_and_consistentState() =
         runBlocking {
             val cache = testCacheWithTempDir()
+            val userId = UUID.randomUUID()
 
             // small set of library IDs to operate on
             val libIds = List(20) { UUID.randomUUID() }
@@ -60,12 +62,12 @@ class SuggestionsCacheConcurrencyTest {
                                 val id = libIds.random()
                                 if (Math.random() < 0.5) {
                                     // perform put with an empty list (cheap)
-                                    cache.put(id, BaseItemKind.MOVIE, emptyList())
+                                    cache.put(userId, id, BaseItemKind.MOVIE, emptyList())
                                     putIds.add(id)
                                 } else {
                                     // perform get
                                     try {
-                                        cache.get(id, BaseItemKind.MOVIE)
+                                        cache.get(userId, id, BaseItemKind.MOVIE)
                                     } catch (ex: Exception) {
                                         // Fail early on unexpected exceptions
                                         throw ex
@@ -86,7 +88,7 @@ class SuggestionsCacheConcurrencyTest {
 
             // 2) for each id we successfully put at least once, we should be able to read from disk/non-null
             for (id in putIds) {
-                val loaded = cache.get(id, BaseItemKind.MOVIE)
+                val loaded = cache.get(userId, id, BaseItemKind.MOVIE)
                 assertNotNull("Expected cached file/read for $id", loaded)
             }
         }

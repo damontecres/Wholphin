@@ -38,12 +38,18 @@ class SuggestionService
             itemsPerRow: Int,
         ): Flow<List<BaseItem>> =
             flow {
-                // Emit cached data immediately if available
-                cache.get(parentId, itemKind)?.items?.let { emit(it) }
+                val userId = serverRepository.currentUser.value?.id ?: return@flow
 
-                // Fetch fresh data (includes overviews), cache it, and emit
+                // Emit from cache by fetching fresh metadata for cached IDs
+                cache.get(userId, parentId, itemKind)?.ids?.let { cachedIds ->
+                    if (cachedIds.isNotEmpty()) {
+                        emit(fetchItemsByIds(cachedIds, itemKind))
+                    }
+                }
+
+                // Fetch fresh data, cache IDs, and emit
                 val fresh = fetchSuggestions(parentId, itemKind, itemsPerRow)
-                cache.put(parentId, itemKind, fresh)
+                cache.put(userId, parentId, itemKind, fresh.map { it.id.toString() })
                 emit(fresh)
             }
 
@@ -133,6 +139,24 @@ class SuggestionService
                     .take(itemsPerRow)
                     .map { BaseItem.from(it, api, isSeries) }
             }
+
+        private suspend fun fetchItemsByIds(
+            ids: List<String>,
+            itemKind: BaseItemKind,
+        ): List<BaseItem> {
+            val isSeries = itemKind == BaseItemKind.SERIES
+            val uuids = ids.mapNotNull { runCatching { UUID.fromString(it) }.getOrNull() }
+            val request =
+                GetItemsRequest(
+                    ids = uuids,
+                    fields = listOf(ItemFields.PRIMARY_IMAGE_ASPECT_RATIO, ItemFields.OVERVIEW),
+                )
+            return GetItemsRequestHandler
+                .execute(api, request)
+                .content.items
+                .orEmpty()
+                .map { BaseItem.from(it, api, isSeries) }
+        }
 
         private suspend fun fetchItems(
             parentId: UUID,

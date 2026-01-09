@@ -1,7 +1,6 @@
 package com.github.damontecres.wholphin.services
 
 import android.content.Context
-import com.github.damontecres.wholphin.data.model.BaseItem
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -17,7 +16,7 @@ import javax.inject.Singleton
 
 @Serializable
 data class CachedSuggestions(
-    val items: List<BaseItem>,
+    val ids: List<String>,
 )
 
 @Singleton
@@ -41,11 +40,13 @@ class SuggestionsCache
             )
 
         private fun cacheKey(
+            userId: UUID,
             libraryId: UUID,
             itemKind: BaseItemKind,
-        ) = "${libraryId}_${itemKind.serialName}"
+        ) = "${userId}_${libraryId}_${itemKind.serialName}"
 
         private fun cacheFile(
+            userId: UUID,
             libraryId: UUID,
             itemKind: BaseItemKind,
         ) = File(context.cacheDir, "suggestions")
@@ -53,19 +54,19 @@ class SuggestionsCache
                 if (!mkdirs() && !exists()) {
                     Timber.w("Failed to create suggestions cache directory")
                 }
-            }
-            .resolve("${cacheKey(libraryId, itemKind)}.json")
+            }.resolve("${cacheKey(userId, libraryId, itemKind)}.json")
 
         suspend fun get(
+            userId: UUID,
             libraryId: UUID,
             itemKind: BaseItemKind,
         ): CachedSuggestions? {
-            val key = cacheKey(libraryId, itemKind)
+            val key = cacheKey(userId, libraryId, itemKind)
             memoryCache[key]?.let { return it }
 
             return withContext(Dispatchers.IO) {
                 runCatching {
-                    cacheFile(libraryId, itemKind)
+                    cacheFile(userId, libraryId, itemKind)
                         .takeIf { it.exists() }
                         ?.readText()
                         ?.let { json.decodeFromString<CachedSuggestions>(it) }
@@ -76,16 +77,17 @@ class SuggestionsCache
         }
 
         suspend fun put(
+            userId: UUID,
             libraryId: UUID,
             itemKind: BaseItemKind,
-            items: List<BaseItem>,
+            ids: List<String>,
         ) {
-            val key = cacheKey(libraryId, itemKind)
-            val cached = CachedSuggestions(items)
+            val key = cacheKey(userId, libraryId, itemKind)
+            val cached = CachedSuggestions(ids)
             memoryCache[key] = cached
 
             withContext(Dispatchers.IO) {
-                runCatching { cacheFile(libraryId, itemKind).writeText(json.encodeToString(cached)) }
+                runCatching { cacheFile(userId, libraryId, itemKind).writeText(json.encodeToString(cached)) }
                     .onFailure { Timber.w(it, "Failed to write suggestions cache") }
             }
         }
