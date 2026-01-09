@@ -19,6 +19,8 @@ import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 
+private val BaseItemDto.relevantId: UUID get() = seriesId ?: id
+
 @Singleton
 class SuggestionService
     @Inject
@@ -67,7 +69,7 @@ class SuggestionService
                             isPlayed = true,
                             limit = 10,
                             extraFields = listOf(ItemFields.GENRES),
-                        ).distinctBy { it.seriesId ?: it.id }.take(3)
+                        ).distinctBy { it.relevantId }.take(3)
                     }
 
                 val randomDeferred =
@@ -117,22 +119,16 @@ class SuggestionService
                 val fresh = freshDeferred.await()
                 val contextual = contextualDeferred.await()
 
-                val excludeIds = seedItems.mapNotNullTo(HashSet()) { it.seriesId ?: it.id }
+                val excludeIds = seedItems.mapTo(HashSet()) { it.relevantId }
 
                 // Update genre affinity for next request
-                genreAffinityIds =
-                    seedItems
-                        .flatMap { it.genreItems?.mapNotNull { g -> g.id }.orEmpty() }
-                        .groupingBy { it }
-                        .eachCount()
-                        .entries
-                        .sortedByDescending { it.value }
-                        .take(3)
-                        .map { it.key }
+                genreAffinityIds = calculateGenreAffinity(seedItems)
 
                 (contextual + fresh + random)
+                    .asSequence()
                     .distinctBy { it.id }
-                    .filterNot { excludeIds.contains(it.seriesId ?: it.id) }
+                    .filterNot { excludeIds.contains(it.relevantId) }
+                    .toList()
                     .shuffled()
                     .take(itemsPerRow)
                     .map { BaseItem.from(it, api, isSeries) }
@@ -169,6 +165,16 @@ class SuggestionService
                 .content.items
                 .orEmpty()
         }
+
+        private fun calculateGenreAffinity(items: List<BaseItemDto>): List<UUID> =
+            items
+                .flatMap { it.genreItems.orEmpty().mapNotNull { g -> g.id } }
+                .groupingBy { it }
+                .eachCount()
+                .entries
+                .sortedByDescending { it.value }
+                .take(3)
+                .map { it.key }
 
         companion object {
             private const val FRESH_CONTENT_RATIO = 0.4

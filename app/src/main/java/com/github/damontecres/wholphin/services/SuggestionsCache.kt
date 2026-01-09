@@ -49,7 +49,11 @@ class SuggestionsCache
             libraryId: UUID,
             itemKind: BaseItemKind,
         ) = File(context.cacheDir, "suggestions")
-            .apply { mkdirs() }
+            .apply {
+                if (!mkdirs() && !exists()) {
+                    Timber.w("Failed to create suggestions cache directory")
+                }
+            }
             .resolve("${cacheKey(libraryId, itemKind)}.json")
 
         suspend fun get(
@@ -89,7 +93,11 @@ class SuggestionsCache
         suspend fun clear() {
             memoryCache.clear()
             withContext(Dispatchers.IO) {
-                File(context.cacheDir, "suggestions").deleteRecursively()
+                runCatching {
+                    File(context.cacheDir, "suggestions").deleteRecursively()
+                }.onFailure {
+                    Timber.w(it, "Failed to clear suggestions cache")
+                }
             }
         }
 
