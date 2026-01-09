@@ -86,7 +86,7 @@
     <string name="community_rating">Community Bewertung</string>
     <string name="compose_error_message_title">Es ist ein Fehler aufgetreten! Drücke den Knopf um Logs zu deinem Server zu senden.</string>
     <string name="directed_by">Regie von %1$s</string>
-    <string name="disabled">Deaktivert</string>
+    <string name="disabled">Deaktiviert</string>
     <string name="discovered_servers">Gefundene Server</string>
     <string name="downloading">Herunterladen…</string>
     <string name="enabled">Aktiviert</string>
@@ -325,4 +325,21 @@
     <string name="no_trailers">Keine Trailer</string>
     <string name="play_trailer">Trailer abspielen</string>
     <string name="local">Lokal</string>
+    <string name="verbose_logging">detaillierte Protokollierung</string>
+    <string name="use_server_credentials">Login via Server</string>
+    <string name="press_enter_to_confirm">Drücke die mittlere Taste zur Bestätigung</string>
+    <string name="image_cache_size">Größe des Festplatten-Caches für Bilder (MB)</string>
+    <string name="cast_and_crew">Besetzung &amp; Mitwirkende</string>
+    <string name="container">Container</string>
+    <string name="codec">Codec</string>
+    <string name="level">Level</string>
+    <string name="bit_depth">Bittiefe</string>
+    <string name="avc">AVC</string>
+    <string name="sdr">SDR</string>
+    <string name="hdr">HDR</string>
+    <string name="hdr10">HDR10</string>
+    <string name="hdr10_plus">HDR10+</string>
+    <string name="hlg">HLG</string>
+    <string name="bit_unit">bit</string>
+    <string name="sample_rate_unit">Hz</string>
 </resources>
