@@ -62,7 +62,6 @@ private const val RIPPLE_CANVAS_SCALE = 1.8f
 private const val MAX_RIPPLE_EXPANSION = 0.35f
 private val RIPPLE_STROKE_WIDTH = 2.dp
 private const val RIPPLE_MAX_ALPHA = 0.4f
-private const val BUTTON_PULSE_MAX_ALPHA = 0.6f
 
 private fun VoiceInputState.shouldShowOverlay() =
     this is VoiceInputState.Listening ||
@@ -78,7 +77,6 @@ fun VoiceSearchButton(
     if (voiceInputManager == null || !voiceInputManager.isAvailable) return
 
     val state = voiceInputManager.state
-    val isListening = state is VoiceInputState.Listening
 
     LaunchedEffect(state) {
         when (state) {
@@ -118,12 +116,6 @@ fun VoiceSearchButton(
         )
     }
 
-    val animatedSoundLevel by animateFloatAsState(
-        targetValue = if (isListening) voiceInputManager.soundLevel else 0f,
-        animationSpec = tween(durationMillis = SOUND_LEVEL_ANIM_MS),
-        label = "buttonSoundLevel",
-    )
-
     Button(
         onClick = {
             when (state) {
@@ -161,17 +153,6 @@ fun VoiceSearchButton(
                 textAlign = TextAlign.Center,
                 modifier = Modifier.semantics { contentDescription = voiceSearchDesc },
             )
-
-            // Audio-reactive white pulse overlay
-            if (isListening) {
-                Box(
-                    modifier =
-                        Modifier
-                            .fillMaxSize()
-                            .clip(CircleShape)
-                            .background(Color.White.copy(alpha = animatedSoundLevel * BUTTON_PULSE_MAX_ALPHA)),
-                )
-            }
         }
     }
 }
