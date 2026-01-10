@@ -93,16 +93,22 @@ object StreamFormatting {
             }
 
             profile?.contains("DTS:X", true) == true -> {
-                "DTS:X"
+                context.getString(R.string.dts_x)
             }
 
             profile?.contains("DTS:HD", true) == true -> {
-                "DTS:HD"
+                context.getString(R.string.dts_hd)
             }
 
             else -> {
                 when (codec?.lowercase()) {
-                    Codec.Audio.TRUEHD -> "TrueHD"
+                    Codec.Audio.TRUEHD -> context.getString(R.string.truehd)
+
+                    Codec.Audio.AC3 -> context.getString(R.string.dolby_digital)
+
+                    Codec.Audio.EAC3 -> context.getString(R.string.dolby_digital_plus)
+
+                    Codec.Audio.DCA -> context.getString(R.string.dts)
 
                     Codec.Audio.OGG,
                     Codec.Audio.OPUS,

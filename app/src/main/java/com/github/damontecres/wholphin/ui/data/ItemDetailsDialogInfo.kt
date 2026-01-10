@@ -391,7 +391,7 @@ private fun buildAudioStreamInfo(
         val bitrateLabel = context.getString(R.string.bitrate)
         val sampleRateLabel = context.getString(R.string.sample_rate)
         val defaultLabel = context.getString(R.string.default_track)
-        val externalLabel = context.getString(R.string.external_track)
+        val profileLabel = context.getString(R.string.profile)
         val yesStr = context.getString(R.string.yes)
         val noStr = context.getString(R.string.no)
         val sampleRateUnit = context.getString(R.string.sample_rate_unit)
@@ -399,11 +399,12 @@ private fun buildAudioStreamInfo(
         stream.title?.let { add(titleLabel to it) }
         stream.language?.let { add(languageLabel to languageName(it)) }
         stream.codec?.let {
-            val formattedCodec = formatAudioCodec(context, it, stream.profile) ?: it.uppercase()
+            val formattedCodec = formatAudioCodec(context, it, stream.profile) + " ($it)"
             add(codecLabel to formattedCodec)
         }
         stream.channelLayout?.let { add(layoutLabel to it) }
         stream.channels?.let { add(channelsLabel to it.toString()) }
+        stream.profile?.let { add(profileLabel to it) }
         stream.bitRate?.let { add(bitrateLabel to formatBytes(it, byteRateSuffixes)) }
         stream.sampleRate?.let { add(sampleRateLabel to "$it $sampleRateUnit") }
         stream.isDefault?.let { add(defaultLabel to if (it) yesStr else noStr) }
@@ -428,7 +429,7 @@ private fun buildSubtitleStreamInfo(
         stream.title?.let { add(titleLabel to it) }
         stream.language?.let { add(languageLabel to languageName(it)) }
         stream.codec?.let {
-            val formattedCodec = formatSubtitleCodec(it) ?: it.uppercase()
+            val formattedCodec = formatSubtitleCodec(it) + " ($it)"
             add(codecLabel to formattedCodec)
         }
         stream.isDefault?.let { add(defaultLabel to if (it) yesStr else noStr) }
