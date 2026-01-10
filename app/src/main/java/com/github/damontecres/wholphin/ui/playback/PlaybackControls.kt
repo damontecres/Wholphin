@@ -41,7 +41,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
@@ -57,6 +56,7 @@ import androidx.tv.material3.ListItem
 import androidx.tv.material3.LocalContentColor
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
+import androidx.tv.material3.surfaceColorAtElevation
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.preferences.AppThemeColors
 import com.github.damontecres.wholphin.ui.AppColors
@@ -485,7 +485,10 @@ fun BottomDialog(
                 Modifier
                     .wrapContentSize()
                     .padding(8.dp)
-                    .background(Color.DarkGray, shape = RoundedCornerShape(16.dp)),
+                    .background(
+                        MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp),
+                        shape = RoundedCornerShape(8.dp),
+                    ),
         ) {
             LazyColumn(
                 modifier =
@@ -529,85 +532,6 @@ fun BottomDialog(
                                 text = choice,
                                 color = color,
                             )
-                        },
-                        interactionSource = interactionSource,
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun StreamChoiceBottomDialog(
-    choices: List<SimpleMediaStream>,
-    onDismissRequest: () -> Unit,
-    onSelectChoice: (Int, SimpleMediaStream) -> Unit,
-    gravity: Int,
-    currentChoice: Int? = null,
-) {
-    // TODO enforcing a width ends up ignore the gravity
-    Dialog(
-        onDismissRequest = onDismissRequest,
-        properties = DialogProperties(usePlatformDefaultWidth = true),
-    ) {
-        val dialogWindowProvider = LocalView.current.parent as? DialogWindowProvider
-        dialogWindowProvider?.window?.let { window ->
-            window.setGravity(Gravity.BOTTOM or gravity) // Move down, by default dialogs are in the centre
-            window.setDimAmount(0f) // Remove dimmed background of ongoing playback
-        }
-
-        Box(
-            modifier =
-                Modifier
-                    .wrapContentSize()
-                    .padding(8.dp)
-                    .background(Color.DarkGray, shape = RoundedCornerShape(16.dp)),
-        ) {
-            LazyColumn(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-//                        .widthIn(max = 240.dp)
-                        .wrapContentWidth(),
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                itemsIndexed(choices) { index, choice ->
-                    val interactionSource = remember { MutableInteractionSource() }
-                    val focused = interactionSource.collectIsFocusedAsState().value
-                    val color =
-                        if (focused) {
-                            MaterialTheme.colorScheme.inverseOnSurface
-                        } else {
-                            MaterialTheme.colorScheme.onSurface
-                        }
-                    ListItem(
-                        selected = choice.index == currentChoice,
-                        onClick = {
-                            onDismissRequest()
-                            onSelectChoice(index, choice)
-                        },
-                        leadingContent = {
-                            if (choice.index == currentChoice) {
-                                Box(
-                                    modifier =
-                                        Modifier
-                                            .padding(horizontal = 4.dp)
-                                            .clip(CircleShape)
-                                            .align(Alignment.Center)
-                                            .background(LocalContentColor.current)
-                                            .size(8.dp),
-                                )
-                            }
-                        },
-                        headlineContent = {
-                            Text(
-                                text = choice.title ?: choice.displayTitle,
-                            )
-                        },
-                        supportingContent = {
-                            if (choice.title == null) Text(choice.displayTitle)
                         },
                         interactionSource = interactionSource,
                     )

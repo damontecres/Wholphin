@@ -2,12 +2,20 @@ package com.github.damontecres.wholphin.ui.playback
 
 import android.view.Gravity
 import androidx.compose.foundation.background
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalView
@@ -16,9 +24,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.window.DialogWindowProvider
+import androidx.tv.material3.ListItem
+import androidx.tv.material3.MaterialTheme
+import androidx.tv.material3.Text
+import androidx.tv.material3.surfaceColorAtElevation
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.TrackIndex
 import com.github.damontecres.wholphin.ui.AppColors
+import com.github.damontecres.wholphin.ui.components.SelectedLeadingContent
 import kotlin.time.Duration
 
 enum class PlaybackDialogType {
@@ -74,39 +87,24 @@ fun PlaybackDialog(
         }
 
         PlaybackDialogType.CAPTIONS -> {
-            val subtitleStreams = settings.subtitleStreams
-            val noneStr = stringResource(R.string.none)
-            val searchStr = stringResource(R.string.search_and_download)
-            val options =
-                remember(subtitleStreams, noneStr, searchStr) {
-                    subtitleStreams +
-                        listOf(
-                            SimpleMediaStream(TrackIndex.DISABLED, null, noneStr),
-                            SimpleMediaStream(-9876, null, searchStr),
-                        )
-                }
-//            val currentChoice =
-//                subtitleStreams.indexOfFirstOrNull { it.index == settings.subtitleIndex } ?: subtitleStreams.size
-            StreamChoiceBottomDialog(
-                choices = options,
+            SubtitleChoiceBottomDialog(
+                choices = settings.subtitleStreams,
                 currentChoice = settings.subtitleIndex,
                 onDismissRequest = {
                     onControllerInteraction.invoke()
                     onDismissRequest.invoke()
-//                    scope.launch {
-//                        // TODO this is hacky, but playback changes force refocus and this is a workaround
-//                        delay(250L)
-//                        captionFocusRequester.tryRequestFocus()
-//                    }
                 },
-                onSelectChoice = { _, choice ->
-                    if (choice.index >= 0) {
-                        onPlaybackActionClick.invoke(PlaybackAction.ToggleCaptions(choice.index))
-                    } else if (choice.index == TrackIndex.DISABLED) {
+                onSelectChoice = { subtitleIndex ->
+                    onDismissRequest.invoke()
+                    if (subtitleIndex >= 0) {
+                        onPlaybackActionClick.invoke(PlaybackAction.ToggleCaptions(subtitleIndex))
+                    } else if (subtitleIndex == TrackIndex.DISABLED) {
                         onPlaybackActionClick.invoke(PlaybackAction.ToggleCaptions(TrackIndex.DISABLED))
-                    } else {
-                        onPlaybackActionClick.invoke(PlaybackAction.SearchCaptions)
                     }
+                },
+                onSelectSearch = {
+                    onDismissRequest.invoke()
+                    onPlaybackActionClick.invoke(PlaybackAction.SearchCaptions)
                 },
                 gravity = Gravity.END,
             )
@@ -218,6 +216,167 @@ fun PlaybackDialog(
                         delay = settings.subtitleDelay,
                         onChangeDelay = onChangeSubtitleDelay,
                         modifier = Modifier.padding(8.dp),
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun SubtitleChoiceBottomDialog(
+    choices: List<SimpleMediaStream>,
+    onDismissRequest: () -> Unit,
+    onSelectChoice: (Int) -> Unit,
+    onSelectSearch: () -> Unit,
+    gravity: Int,
+    currentChoice: Int? = null,
+) {
+    // TODO enforcing a width ends up ignore the gravity
+    Dialog(
+        onDismissRequest = onDismissRequest,
+        properties = DialogProperties(usePlatformDefaultWidth = true),
+    ) {
+        val dialogWindowProvider = LocalView.current.parent as? DialogWindowProvider
+        dialogWindowProvider?.window?.let { window ->
+            window.setGravity(Gravity.BOTTOM or gravity) // Move down, by default dialogs are in the centre
+            window.setDimAmount(0f) // Remove dimmed background of ongoing playback
+        }
+
+        Box(
+            modifier =
+                Modifier
+                    .wrapContentSize()
+                    .padding(8.dp)
+                    .background(
+                        MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp),
+                        shape = RoundedCornerShape(8.dp),
+                    ),
+        ) {
+            LazyColumn(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+//                        .widthIn(max = 240.dp)
+                        .wrapContentWidth(),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                item {
+                    ListItem(
+                        selected = currentChoice == TrackIndex.DISABLED,
+                        onClick = {
+                            onSelectChoice(TrackIndex.DISABLED)
+                        },
+                        leadingContent = {
+                            SelectedLeadingContent(currentChoice == TrackIndex.DISABLED)
+                        },
+                        headlineContent = {
+                            Text(
+                                text = stringResource(R.string.none),
+                            )
+                        },
+                        supportingContent = {},
+                    )
+                }
+                itemsIndexed(choices) { index, choice ->
+                    val interactionSource = remember { MutableInteractionSource() }
+                    ListItem(
+                        selected = choice.index == currentChoice,
+                        onClick = {
+                            onSelectChoice(choice.index)
+                        },
+                        leadingContent = {
+                            SelectedLeadingContent(choice.index == currentChoice)
+                        },
+                        headlineContent = {
+                            Text(
+                                text = choice.streamTitle ?: choice.displayTitle,
+                            )
+                        },
+                        supportingContent = {
+                            if (choice.streamTitle != null) Text(choice.displayTitle)
+                        },
+                        interactionSource = interactionSource,
+                    )
+                }
+                item {
+                    HorizontalDivider()
+                    ListItem(
+                        selected = false,
+                        onClick = onSelectSearch,
+                        leadingContent = {},
+                        headlineContent = {
+                            Text(
+                                text = stringResource(R.string.search_and_download),
+                            )
+                        },
+                        supportingContent = {},
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun StreamChoiceBottomDialog(
+    choices: List<SimpleMediaStream>,
+    onDismissRequest: () -> Unit,
+    onSelectChoice: (Int, SimpleMediaStream) -> Unit,
+    gravity: Int,
+    currentChoice: Int? = null,
+) {
+    // TODO enforcing a width ends up ignore the gravity
+    Dialog(
+        onDismissRequest = onDismissRequest,
+        properties = DialogProperties(usePlatformDefaultWidth = true),
+    ) {
+        val dialogWindowProvider = LocalView.current.parent as? DialogWindowProvider
+        dialogWindowProvider?.window?.let { window ->
+            window.setGravity(Gravity.BOTTOM or gravity) // Move down, by default dialogs are in the centre
+            window.setDimAmount(0f) // Remove dimmed background of ongoing playback
+        }
+
+        Box(
+            modifier =
+                Modifier
+                    .wrapContentSize()
+                    .padding(8.dp)
+                    .background(
+                        MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp),
+                        shape = RoundedCornerShape(8.dp),
+                    ),
+        ) {
+            LazyColumn(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+//                        .widthIn(max = 240.dp)
+                        .wrapContentWidth(),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                itemsIndexed(choices) { index, choice ->
+                    val interactionSource = remember { MutableInteractionSource() }
+                    ListItem(
+                        selected = choice.index == currentChoice,
+                        onClick = {
+                            onDismissRequest()
+                            onSelectChoice(index, choice)
+                        },
+                        leadingContent = {
+                            SelectedLeadingContent(choice.index == currentChoice)
+                        },
+                        headlineContent = {
+                            Text(
+                                text = choice.streamTitle ?: choice.displayTitle,
+                            )
+                        },
+                        supportingContent = {
+                            if (choice.streamTitle != null) Text(choice.displayTitle)
+                        },
+                        interactionSource = interactionSource,
                     )
                 }
             }

@@ -147,7 +147,7 @@ val MediaSegmentType.skipStringRes: Int
             MediaSegmentType.INTRO -> R.string.skip_segment_intro
         }
 
-fun formatMediaStream(
+fun mediaStreamDisplayTitle(
     context: Context,
     stream: MediaStream,
     includeFlags: Boolean,

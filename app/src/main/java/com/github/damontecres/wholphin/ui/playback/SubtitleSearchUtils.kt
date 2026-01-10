@@ -6,7 +6,6 @@ import androidx.lifecycle.viewModelScope
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.TrackIndex
-import com.github.damontecres.wholphin.ui.formatMediaStream
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.onMain
 import com.github.damontecres.wholphin.ui.setValueOnMain
@@ -148,11 +147,7 @@ fun PlaybackViewModel.downloadAndSwitchSubtitles(
                                 it.copy(
                                     subtitleStreams =
                                         subtitlesStreams.map {
-                                            SimpleMediaStream(
-                                                it.index,
-                                                it.title,
-                                                formatMediaStream(context, it, true),
-                                            )
+                                            SimpleMediaStream.from(context, it, true)
                                         },
                                 )
                             }
