@@ -538,6 +538,85 @@ fun BottomDialog(
     }
 }
 
+@Composable
+fun StreamChoiceBottomDialog(
+    choices: List<SimpleMediaStream>,
+    onDismissRequest: () -> Unit,
+    onSelectChoice: (Int, SimpleMediaStream) -> Unit,
+    gravity: Int,
+    currentChoice: Int? = null,
+) {
+    // TODO enforcing a width ends up ignore the gravity
+    Dialog(
+        onDismissRequest = onDismissRequest,
+        properties = DialogProperties(usePlatformDefaultWidth = true),
+    ) {
+        val dialogWindowProvider = LocalView.current.parent as? DialogWindowProvider
+        dialogWindowProvider?.window?.let { window ->
+            window.setGravity(Gravity.BOTTOM or gravity) // Move down, by default dialogs are in the centre
+            window.setDimAmount(0f) // Remove dimmed background of ongoing playback
+        }
+
+        Box(
+            modifier =
+                Modifier
+                    .wrapContentSize()
+                    .padding(8.dp)
+                    .background(Color.DarkGray, shape = RoundedCornerShape(16.dp)),
+        ) {
+            LazyColumn(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+//                        .widthIn(max = 240.dp)
+                        .wrapContentWidth(),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                itemsIndexed(choices) { index, choice ->
+                    val interactionSource = remember { MutableInteractionSource() }
+                    val focused = interactionSource.collectIsFocusedAsState().value
+                    val color =
+                        if (focused) {
+                            MaterialTheme.colorScheme.inverseOnSurface
+                        } else {
+                            MaterialTheme.colorScheme.onSurface
+                        }
+                    ListItem(
+                        selected = choice.index == currentChoice,
+                        onClick = {
+                            onDismissRequest()
+                            onSelectChoice(index, choice)
+                        },
+                        leadingContent = {
+                            if (choice.index == currentChoice) {
+                                Box(
+                                    modifier =
+                                        Modifier
+                                            .padding(horizontal = 4.dp)
+                                            .clip(CircleShape)
+                                            .align(Alignment.Center)
+                                            .background(LocalContentColor.current)
+                                            .size(8.dp),
+                                )
+                            }
+                        },
+                        headlineContent = {
+                            Text(
+                                text = choice.title ?: choice.displayTitle,
+                            )
+                        },
+                        supportingContent = {
+                            if (choice.title == null) Text(choice.displayTitle)
+                        },
+                        interactionSource = interactionSource,
+                    )
+                }
+            }
+        }
+    }
+}
+
 data class MoreButtonOptions(
     val options: Map<String, PlaybackAction>,
 )

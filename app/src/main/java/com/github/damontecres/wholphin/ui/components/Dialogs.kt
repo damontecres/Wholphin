@@ -55,6 +55,7 @@ import androidx.tv.material3.surfaceColorAtElevation
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.TrackIndex
 import com.github.damontecres.wholphin.ui.FontAwesome
+import com.github.damontecres.wholphin.ui.formatMediaStream
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import kotlinx.coroutines.delay
@@ -524,12 +525,14 @@ fun chooseStream(
                 }
                 addAll(
                     streams.filter { it.type == type }.mapIndexed { index, stream ->
-                        val title = stream.displayTitle ?: stream.title ?: ""
+                        val title = stream.title?.takeIf { it.isNotNullOrBlank() }
+                        val formatted = formatMediaStream(context, stream, true)
                         DialogItem(
                             headlineContent = {
-                                Text(text = title)
+                                Text(text = title ?: formatted)
                             },
                             supportingContent = {
+                                if (title != null) Text(text = formatted)
                             },
                             onClick = { onClick.invoke(stream.index) },
                         )

@@ -46,6 +46,7 @@ import com.github.damontecres.wholphin.services.PlaylistCreationResult
 import com.github.damontecres.wholphin.services.PlaylistCreator
 import com.github.damontecres.wholphin.services.RefreshRateService
 import com.github.damontecres.wholphin.services.StreamChoiceService
+import com.github.damontecres.wholphin.ui.formatMediaStream
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.onMain
@@ -384,15 +385,26 @@ class PlaybackViewModel
                 val subtitleStreams =
                     mediaSource.mediaStreams
                         ?.filter { it.type == MediaStreamType.SUBTITLE }
-                        ?.map(SubtitleStream::from)
-                        .orEmpty()
+                        ?.map {
+                            SimpleMediaStream(
+                                index = it.index,
+                                title = it.title,
+                                displayTitle = formatMediaStream(context, it, true),
+                            )
+                        }.orEmpty()
+
                 val audioStreams =
                     mediaSource.mediaStreams
                         ?.filter { it.type == MediaStreamType.AUDIO }
-                        ?.map(AudioStream::from)
-                        ?.sortedWith(compareBy<AudioStream> { it.language }.thenByDescending { it.channels })
+                        ?.map {
+                            SimpleMediaStream(
+                                index = it.index,
+                                title = it.title,
+                                displayTitle = formatMediaStream(context, it, true),
+                            )
+                        }
+//                        ?.sortedWith(compareBy<AudioStream> { it.language }.thenByDescending { it.channels })
                         .orEmpty()
-
                 val audioStream =
                     streamChoiceService
                         .chooseAudioStream(

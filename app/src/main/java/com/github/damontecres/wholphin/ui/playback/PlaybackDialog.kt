@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalView
@@ -18,8 +19,6 @@ import androidx.compose.ui.window.DialogWindowProvider
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.TrackIndex
 import com.github.damontecres.wholphin.ui.AppColors
-import com.github.damontecres.wholphin.ui.indexOfFirstOrNull
-import timber.log.Timber
 import kotlin.time.Duration
 
 enum class PlaybackDialogType {
@@ -35,9 +34,9 @@ enum class PlaybackDialogType {
 data class PlaybackSettings(
     val showDebugInfo: Boolean,
     val audioIndex: Int?,
-    val audioStreams: List<AudioStream>,
+    val audioStreams: List<SimpleMediaStream>,
     val subtitleIndex: Int?,
-    val subtitleStreams: List<SubtitleStream>,
+    val subtitleStreams: List<SimpleMediaStream>,
     val playbackSpeed: Float,
     val contentScale: ContentScale,
     val subtitleDelay: Duration,
@@ -76,18 +75,21 @@ fun PlaybackDialog(
 
         PlaybackDialogType.CAPTIONS -> {
             val subtitleStreams = settings.subtitleStreams
-            val options = subtitleStreams.map { it.displayName }
-            Timber.v("subtitleIndex=${settings.subtitleIndex}, options=$options")
-            val currentChoice =
-                subtitleStreams.indexOfFirstOrNull { it.index == settings.subtitleIndex } ?: subtitleStreams.size
-            BottomDialog(
-                choices =
-                    options +
+            val noneStr = stringResource(R.string.none)
+            val searchStr = stringResource(R.string.search_and_download)
+            val options =
+                remember(subtitleStreams, noneStr, searchStr) {
+                    subtitleStreams +
                         listOf(
-                            stringResource(R.string.none),
-                            stringResource(R.string.search_and_download),
-                        ),
-                currentChoice = currentChoice,
+                            SimpleMediaStream(TrackIndex.DISABLED, null, noneStr),
+                            SimpleMediaStream(-9876, null, searchStr),
+                        )
+                }
+//            val currentChoice =
+//                subtitleStreams.indexOfFirstOrNull { it.index == settings.subtitleIndex } ?: subtitleStreams.size
+            StreamChoiceBottomDialog(
+                choices = options,
+                currentChoice = settings.subtitleIndex,
                 onDismissRequest = {
                     onControllerInteraction.invoke()
                     onDismissRequest.invoke()
@@ -97,16 +99,13 @@ fun PlaybackDialog(
 //                        captionFocusRequester.tryRequestFocus()
 //                    }
                 },
-                onSelectChoice = { index, _ ->
-                    if (index in subtitleStreams.indices) {
-                        onPlaybackActionClick.invoke(PlaybackAction.ToggleCaptions(subtitleStreams[index].index))
+                onSelectChoice = { _, choice ->
+                    if (choice.index >= 0) {
+                        onPlaybackActionClick.invoke(PlaybackAction.ToggleCaptions(choice.index))
+                    } else if (choice.index == TrackIndex.DISABLED) {
+                        onPlaybackActionClick.invoke(PlaybackAction.ToggleCaptions(TrackIndex.DISABLED))
                     } else {
-                        val idx = index - subtitleStreams.size
-                        if (idx == 0) {
-                            onPlaybackActionClick.invoke(PlaybackAction.ToggleCaptions(TrackIndex.DISABLED))
-                        } else {
-                            onPlaybackActionClick.invoke(PlaybackAction.SearchCaptions)
-                        }
+                        onPlaybackActionClick.invoke(PlaybackAction.SearchCaptions)
                     }
                 },
                 gravity = Gravity.END,
@@ -142,9 +141,9 @@ fun PlaybackDialog(
         }
 
         PlaybackDialogType.AUDIO -> {
-            BottomDialog(
-                choices = settings.audioStreams.map { it.displayName },
-                currentChoice = settings.audioStreams.indexOfFirstOrNull { it.index == settings.audioIndex },
+            StreamChoiceBottomDialog(
+                choices = settings.audioStreams,
+                currentChoice = settings.audioIndex,
                 onDismissRequest = {
                     onControllerInteraction.invoke()
                     onDismissRequest.invoke()
@@ -153,8 +152,8 @@ fun PlaybackDialog(
 //                        settingsFocusRequester.tryRequestFocus()
 //                    }
                 },
-                onSelectChoice = { index, _ ->
-                    onPlaybackActionClick.invoke(PlaybackAction.ToggleAudio(settings.audioStreams[index].index))
+                onSelectChoice = { _, choice ->
+                    onPlaybackActionClick.invoke(PlaybackAction.ToggleCaptions(choice.index))
                 },
                 gravity = Gravity.END,
             )

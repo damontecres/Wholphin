@@ -438,7 +438,7 @@ private fun buildSubtitleStreamInfo(
             add((stream.localizedHearingImpaired ?: "SDH") to if (it) yesStr else noStr)
         }
         if (showPath) {
-            stream.path?.let { pathLabel to it }
+            stream.path?.let { add(pathLabel to it) }
         }
     }
 
