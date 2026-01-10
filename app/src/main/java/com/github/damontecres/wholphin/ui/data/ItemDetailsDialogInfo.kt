@@ -21,11 +21,11 @@ import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.ui.byteRateSuffixes
 import com.github.damontecres.wholphin.ui.components.ScrollableDialog
-import com.github.damontecres.wholphin.ui.components.formatAudioCodec
-import com.github.damontecres.wholphin.ui.components.formatSubtitleCodec
 import com.github.damontecres.wholphin.ui.formatBytes
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.letNotEmpty
+import com.github.damontecres.wholphin.ui.util.StreamFormatting.formatAudioCodec
+import com.github.damontecres.wholphin.ui.util.StreamFormatting.formatSubtitleCodec
 import com.github.damontecres.wholphin.util.languageName
 import org.jellyfin.sdk.model.api.MediaSourceInfo
 import org.jellyfin.sdk.model.api.MediaStream

@@ -2,7 +2,7 @@ package com.github.damontecres.wholphin.ui.playback
 
 import android.content.Context
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
-import com.github.damontecres.wholphin.ui.mediaStreamDisplayTitle
+import com.github.damontecres.wholphin.ui.util.StreamFormatting.mediaStreamDisplayTitle
 import org.jellyfin.sdk.model.api.MediaStream
 
 data class SimpleMediaStream(

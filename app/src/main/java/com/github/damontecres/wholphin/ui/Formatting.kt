@@ -1,15 +1,9 @@
 package com.github.damontecres.wholphin.ui
 
-import android.content.Context
 import androidx.annotation.StringRes
 import com.github.damontecres.wholphin.R
-import com.github.damontecres.wholphin.ui.components.formatAudioCodec
-import com.github.damontecres.wholphin.ui.components.formatSubtitleCodec
-import com.github.damontecres.wholphin.util.languageName
 import org.jellyfin.sdk.model.api.BaseItemDto
 import org.jellyfin.sdk.model.api.MediaSegmentType
-import org.jellyfin.sdk.model.api.MediaStream
-import org.jellyfin.sdk.model.api.MediaStreamType
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -146,33 +140,3 @@ val MediaSegmentType.skipStringRes: Int
             MediaSegmentType.OUTRO -> R.string.skip_segment_outro
             MediaSegmentType.INTRO -> R.string.skip_segment_intro
         }
-
-fun mediaStreamDisplayTitle(
-    context: Context,
-    stream: MediaStream,
-    includeFlags: Boolean,
-): String {
-    val name =
-        buildList {
-            add(languageName(stream.language))
-            if (stream.type == MediaStreamType.AUDIO) {
-                add(formatAudioCodec(context, stream.codec, stream.profile))
-                add(stream.channelLayout)
-            } else if (stream.type == MediaStreamType.SUBTITLE) {
-                "SDH".takeIf { stream.isHearingImpaired }?.let(::add)
-                add(formatSubtitleCodec(stream.codec))
-            }
-        }.joinToString(" ")
-    if (includeFlags) {
-        val flags =
-            buildList {
-                if (stream.isDefault) add(stream.localizedDefault)
-                if (stream.isForced) add(stream.localizedForced)
-                if (stream.isExternal) add(stream.localizedExternal)
-            }.joinToString(", ")
-        if (flags.isNotEmpty()) {
-            return "$name ($flags)"
-        }
-    }
-    return name
-}
