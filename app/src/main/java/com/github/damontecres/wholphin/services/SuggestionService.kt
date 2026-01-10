@@ -40,17 +40,21 @@ class SuggestionService
             flow {
                 val userId = serverRepository.currentUser.value?.id ?: return@flow
 
-                // Emit from cache by fetching fresh metadata for cached IDs
-                cache.get(userId, parentId, itemKind)?.ids?.let { cachedIds ->
-                    if (cachedIds.isNotEmpty()) {
-                        emit(fetchItemsByIds(cachedIds, itemKind))
-                    }
+                val cachedIds = cache.get(userId, parentId, itemKind)?.ids.orEmpty()
+                val cacheHit = cachedIds.isNotEmpty()
+
+                if (cacheHit) {
+                    emit(fetchItemsByIds(cachedIds, itemKind))
                 }
 
-                // Fetch fresh data, cache IDs, and emit
+                // Fetch fresh data and update cache for next session
                 val fresh = fetchSuggestions(parentId, itemKind, itemsPerRow)
                 cache.put(userId, parentId, itemKind, fresh.map { it.id.toString() })
-                emit(fresh)
+
+                // Only emit if cache was empty/missing
+                if (!cacheHit) {
+                    emit(fresh)
+                }
             }
 
         private suspend fun fetchSuggestions(
