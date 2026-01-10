@@ -57,6 +57,7 @@ class SuggestionsCacheTest {
             val libId = UUID.randomUUID()
 
             cache1.put(userId, libId, BaseItemKind.MOVIE, emptyList())
+            cache1.save()
 
             // Create a fresh instance which won't have the memory entry
             val cache2 = testCacheWithTempDir()
@@ -191,6 +192,7 @@ class SuggestionsCacheTest {
             val cache1 = testCacheWithTempDir()
             cache1.put(userId, lib1, BaseItemKind.MOVIE, ids1)
             cache1.put(userId, lib2, BaseItemKind.SERIES, ids2)
+            cache1.save()
 
             // Read with fresh cache instance (empty memory cache, reads from disk)
             val cache2 = testCacheWithTempDir()

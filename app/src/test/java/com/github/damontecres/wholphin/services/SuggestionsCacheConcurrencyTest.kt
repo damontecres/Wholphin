@@ -81,6 +81,9 @@ class SuggestionsCacheConcurrencyTest {
                 coroutines.joinAll()
             }
 
+            // Flush dirty entries to disk before validating persistence
+            cache.save()
+
             // After concurrent operations, validate no obvious corruption:
             // 1) memory cache size must be bounded by the configured max
             val mem = memoryCacheOf(cache)

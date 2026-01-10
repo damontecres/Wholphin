@@ -34,10 +34,29 @@ class SuggestionsCache
                     0.75f,
                     true,
                 ) {
-                    override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, CachedSuggestions>?) =
-                        size > MAX_MEMORY_CACHE_SIZE
+                    override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, CachedSuggestions>?): Boolean {
+                        if (size <= MAX_MEMORY_CACHE_SIZE || eldest == null) return false
+                        if (dirtyKeys.remove(eldest.key)) {
+                            writeEntryToDisk(eldest.key, eldest.value)
+                        }
+                        return true
+                    }
                 },
             )
+
+        @Volatile
+        private var diskCacheLoaded = false
+        private val dirtyKeys: MutableSet<String> = Collections.synchronizedSet(mutableSetOf())
+
+        private fun writeEntryToDisk(
+            key: String,
+            cached: CachedSuggestions,
+        ) {
+            runCatching {
+                val suggestionsDir = cacheDir.apply { mkdirs() }
+                File(suggestionsDir, "$key.json").writeText(json.encodeToString(cached))
+            }.onFailure { Timber.w(it, "Failed to write evicted cache: $key") }
+        }
 
         private fun cacheKey(
             userId: UUID,
@@ -45,38 +64,52 @@ class SuggestionsCache
             itemKind: BaseItemKind,
         ) = "${userId}_${libraryId}_${itemKind.serialName}"
 
-        private fun cacheFile(
-            userId: UUID,
-            libraryId: UUID,
-            itemKind: BaseItemKind,
-        ) = File(context.cacheDir, "suggestions")
-            .apply {
-                if (!mkdirs() && !exists()) {
-                    Timber.w("Failed to create suggestions cache directory")
+        private val cacheDir: File
+            get() = File(context.cacheDir, "suggestions")
+
+        private suspend fun loadFromDisk() {
+            if (diskCacheLoaded) return
+            withContext(Dispatchers.IO) {
+                synchronized(this@SuggestionsCache) {
+                    if (diskCacheLoaded) return@withContext
+                    val suggestionsDir = cacheDir
+                    if (!suggestionsDir.exists()) {
+                        diskCacheLoaded = true
+                        return@withContext
+                    }
+                    suggestionsDir.listFiles()?.forEach { file ->
+                        runCatching {
+                            val key = file.nameWithoutExtension
+                            val cached = json.decodeFromString<CachedSuggestions>(file.readText())
+                            memoryCache[key] = cached
+                        }.onFailure { Timber.w(it, "Failed to read cache file: ${file.name}") }
+                    }
+                    diskCacheLoaded = true
                 }
-            }.resolve("${cacheKey(userId, libraryId, itemKind)}.json")
+            }
+        }
 
         suspend fun get(
             userId: UUID,
             libraryId: UUID,
             itemKind: BaseItemKind,
         ): CachedSuggestions? {
+            loadFromDisk()
             val key = cacheKey(userId, libraryId, itemKind)
             memoryCache[key]?.let { return it }
-
             return withContext(Dispatchers.IO) {
                 runCatching {
-                    cacheFile(userId, libraryId, itemKind)
+                    File(cacheDir, "$key.json")
                         .takeIf { it.exists() }
                         ?.readText()
                         ?.let { json.decodeFromString<CachedSuggestions>(it) }
                         ?.also { memoryCache[key] = it }
-                }.onFailure { Timber.w(it, "Failed to read suggestions cache") }
+                }.onFailure { Timber.w(it, "Failed to read cache: $key") }
                     .getOrNull()
             }
         }
 
-        suspend fun put(
+        fun put(
             userId: UUID,
             libraryId: UUID,
             itemKind: BaseItemKind,
@@ -85,21 +118,34 @@ class SuggestionsCache
             val key = cacheKey(userId, libraryId, itemKind)
             val cached = CachedSuggestions(ids)
             memoryCache[key] = cached
+            dirtyKeys.add(key)
+        }
 
+        suspend fun save() {
+            if (dirtyKeys.isEmpty()) return
+            val toSave = synchronized(dirtyKeys) { dirtyKeys.toList().also { dirtyKeys.clear() } }
             withContext(Dispatchers.IO) {
-                runCatching { cacheFile(userId, libraryId, itemKind).writeText(json.encodeToString(cached)) }
-                    .onFailure { Timber.w(it, "Failed to write suggestions cache") }
+                val suggestionsDir =
+                    cacheDir.apply {
+                        if (!mkdirs() && !exists()) Timber.w("Failed to create suggestions cache directory")
+                    }
+                toSave.forEach { key ->
+                    memoryCache[key]?.let { cached ->
+                        runCatching {
+                            File(suggestionsDir, "$key.json").writeText(json.encodeToString(cached))
+                        }.onFailure { Timber.w(it, "Failed to write cache: $key") }
+                    }
+                }
             }
         }
 
         suspend fun clear() {
             memoryCache.clear()
+            dirtyKeys.clear()
+            diskCacheLoaded = false
             withContext(Dispatchers.IO) {
-                runCatching {
-                    File(context.cacheDir, "suggestions").deleteRecursively()
-                }.onFailure {
-                    Timber.w(it, "Failed to clear suggestions cache")
-                }
+                runCatching { cacheDir.deleteRecursively() }
+                    .onFailure { Timber.w(it, "Failed to clear suggestions cache") }
             }
         }
 
