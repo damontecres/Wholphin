@@ -135,7 +135,7 @@ class PlaybackViewModel
         val player by lazy {
             playerFactory.createVideoPlayer()
         }
-        private val mediaSession: MediaSession
+        private var mediaSession: MediaSession? = null
         internal val mutex = Mutex()
 
         val controllerViewState =
@@ -179,15 +179,11 @@ class PlaybackViewModel
                 }
                 jobs.forEach { it.cancel() }
                 player.release()
-                mediaSession.release()
+                mediaSession?.release()
             }
             viewModelScope.launch(ExceptionHandler()) { controllerViewState.observe() }
             player.addListener(this)
             (player as? ExoPlayer)?.addAnalyticsListener(this)
-            mediaSession =
-                MediaSession
-                    .Builder(context, player)
-                    .build()
             jobs.add(subscribe())
             jobs.add(listenForTranscodeReason())
         }
@@ -284,6 +280,18 @@ class PlaybackViewModel
                     } else {
                         throw IllegalArgumentException("Item is not playable and not PlaybackList: ${queriedItem.type}")
                     }
+
+                val sessionPlayer =
+                    MediaSessionPlayer(
+                        player,
+                        controllerViewState,
+                        preferences.appPreferences.playbackPreferences,
+                    )
+                mediaSession =
+                    MediaSession
+                        .Builder(context, sessionPlayer)
+                        .build()
+
                 val item = BaseItem.from(base, api)
 
                 val played =
@@ -376,15 +384,18 @@ class PlaybackViewModel
                 val subtitleStreams =
                     mediaSource.mediaStreams
                         ?.filter { it.type == MediaStreamType.SUBTITLE }
-                        ?.map(SubtitleStream::from)
-                        .orEmpty()
+                        ?.map {
+                            SimpleMediaStream.from(context, it, true)
+                        }.orEmpty()
+
                 val audioStreams =
                     mediaSource.mediaStreams
                         ?.filter { it.type == MediaStreamType.AUDIO }
-                        ?.map(AudioStream::from)
-                        ?.sortedWith(compareBy<AudioStream> { it.language }.thenByDescending { it.channels })
+                        ?.map {
+                            SimpleMediaStream.from(context, it, true)
+                        }
+//                        ?.sortedWith(compareBy<AudioStream> { it.language }.thenByDescending { it.channels })
                         .orEmpty()
-
                 val audioStream =
                     streamChoiceService
                         .chooseAudioStream(
@@ -1096,7 +1107,7 @@ class PlaybackViewModel
             Timber.v("release")
             activityListener?.release()
             player.release()
-            mediaSession.release()
+            mediaSession?.release()
             activityListener = null
         }
 

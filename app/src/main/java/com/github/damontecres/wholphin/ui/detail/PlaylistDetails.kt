@@ -444,6 +444,7 @@ fun PlaylistItem(
                     watched = item?.data?.userData?.played ?: false,
                     unwatchedCount = item?.data?.userData?.unplayedItemCount ?: -1,
                     watchedPercent = 0.0,
+                    numberOfVersions = item?.data?.mediaSourceCount ?: 0,
                     modifier = Modifier.width(160.dp),
                     useFallbackText = false,
                 )

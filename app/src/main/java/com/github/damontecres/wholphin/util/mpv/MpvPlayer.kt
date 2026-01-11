@@ -53,6 +53,7 @@ import kotlin.concurrent.atomics.AtomicReference
 import kotlin.concurrent.atomics.ExperimentalAtomicApi
 import kotlin.concurrent.atomics.update
 import kotlin.time.Duration
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
 /**
@@ -231,11 +232,6 @@ class MpvPlayer(
 
     override fun prepare() {
         if (DEBUG) Timber.v("prepare")
-        playbackState.update {
-            it.copy(
-                state = Player.STATE_READY,
-            )
-        }
     }
 
     override fun getPlaybackState(): Int {
@@ -395,8 +391,7 @@ class MpvPlayer(
 
     override fun getCurrentTimeline(): Timeline {
         if (DEBUG) Timber.v("getCurrentTimeline")
-        // TODO
-        return Timeline.EMPTY
+        return playbackState.load().timeline
     }
 
     override fun getCurrentPeriodIndex(): Int {
@@ -528,7 +523,7 @@ class MpvPlayer(
         return playbackState.load().videoSize
     }
 
-    override fun getSurfaceSize(): Size = throw UnsupportedOperationException()
+    override fun getSurfaceSize(): Size = surfaceHolder?.surfaceFrame?.let { Size(it.width(), it.height()) } ?: Size.UNKNOWN
 
     override fun getCurrentCues(): CueGroup = CueGroup.EMPTY_TIME_ZERO
 
@@ -655,12 +650,15 @@ class MpvPlayer(
             }
 
             MPV_EVENT_FILE_LOADED -> {
-                playbackState.update {
-                    it.copy(isLoadingFile = false)
-                }
-                notifyListeners(EVENT_IS_LOADING_CHANGED) { onIsLoadingChanged(false) }
                 Timber.d("event: MPV_EVENT_FILE_LOADED")
-                internalHandler.post(updatePlaybackState)
+                playbackState.update {
+                    it.copy(
+                        isLoadingFile = false,
+                    )
+                }
+                updatePlaybackState.run()
+                notifyListeners(EVENT_IS_LOADING_CHANGED) { onIsLoadingChanged(false) }
+
                 playbackState.load().media?.mediaItem?.let { media ->
                     media.localConfiguration?.subtitleConfigurations?.forEach {
                         val url = it.uri.toString()
@@ -767,10 +765,63 @@ class MpvPlayer(
 
     private fun loadFile(media: MediaAndPosition) {
         Timber.v("loadFile: media=$media")
+        val timeline =
+            object : Timeline() {
+                override fun getWindowCount(): Int = 1
+
+                override fun getWindow(
+                    windowIndex: Int,
+                    window: Window,
+                    defaultPositionProjectionUs: Long,
+                ): Window =
+                    window.set(
+                        media.mediaItem.mediaId,
+                        media.mediaItem,
+                        null,
+                        C.TIME_UNSET,
+                        C.TIME_UNSET,
+                        C.TIME_UNSET,
+                        true,
+                        true,
+                        media.mediaItem.liveConfiguration,
+                        0L,
+                        C.TIME_UNSET,
+                        0,
+                        0,
+                        0,
+                    )
+
+                override fun getPeriodCount(): Int = 1
+
+                override fun getPeriod(
+                    periodIndex: Int,
+                    period: Period,
+                    setIds: Boolean,
+                ): Period =
+                    period.set(
+                        media.mediaItem.mediaId,
+                        media.mediaItem.mediaId,
+                        0,
+                        C.TIME_UNSET,
+                        0,
+                    )
+
+                override fun getIndexOfPeriod(uid: Any): Int = 0
+
+                override fun getUidOfPeriod(periodIndex: Int) = media.mediaItem.mediaId
+            }
         playbackState.update {
             it.copy(
                 isLoadingFile = true,
+                state = STATE_READY,
                 media = media,
+                timeline = timeline,
+            )
+        }
+        notifyListeners(EVENT_TIMELINE_CHANGED) {
+            onTimelineChanged(
+                timeline,
+                TIMELINE_CHANGE_REASON_PLAYLIST_CHANGED,
             )
         }
         notifyListeners(EVENT_IS_LOADING_CHANGED) { onIsLoadingChanged(true) }
@@ -838,7 +889,8 @@ class MpvPlayer(
 
     private val updatePlaybackState: Runnable =
         Runnable {
-            if (playbackState.load().media == null) {
+            val state = playbackState.load()
+            if (state.media == null) {
                 return@Runnable
             }
             val positionMs =
@@ -861,6 +913,53 @@ class MpvPlayer(
                     VideoSize.UNKNOWN
                 }
 
+            val mediaItem = state.media.mediaItem
+            val timeline =
+                object : Timeline() {
+                    override fun getWindowCount(): Int = 1
+
+                    override fun getWindow(
+                        windowIndex: Int,
+                        window: Window,
+                        defaultPositionProjectionUs: Long,
+                    ): Window =
+                        window.set(
+                            mediaItem.mediaId,
+                            mediaItem,
+                            null,
+                            C.TIME_UNSET,
+                            C.TIME_UNSET,
+                            C.TIME_UNSET,
+                            true,
+                            false,
+                            mediaItem.liveConfiguration,
+                            0L,
+                            if (durationMs != C.TIME_UNSET) durationMs.milliseconds.inWholeMicroseconds else C.TIME_UNSET,
+                            0,
+                            0,
+                            0,
+                        )
+
+                    override fun getPeriodCount(): Int = 1
+
+                    override fun getPeriod(
+                        periodIndex: Int,
+                        period: Period,
+                        setIds: Boolean,
+                    ): Period =
+                        period.set(
+                            mediaItem.mediaId,
+                            mediaItem.mediaId,
+                            0,
+                            state.durationMs.milliseconds.inWholeMicroseconds,
+                            0,
+                        )
+
+                    override fun getIndexOfPeriod(uid: Any): Int = 0
+
+                    override fun getUidOfPeriod(periodIndex: Int) = mediaItem.mediaId
+                }
+
             playbackState.update {
                 it.copy(
                     timestamp = System.currentTimeMillis(),
@@ -870,6 +969,13 @@ class MpvPlayer(
                     speed = speed,
                     isPaused = paused,
                     videoSize = videoSize,
+                    timeline = timeline,
+                )
+            }
+            notifyListeners(EVENT_TIMELINE_CHANGED) {
+                onTimelineChanged(
+                    timeline,
+                    TIMELINE_CHANGE_REASON_SOURCE_UPDATE,
                 )
             }
         }
@@ -1080,12 +1186,13 @@ private data class PlaybackState(
     val videoSize: VideoSize,
     @param:Player.State val state: Int,
     val tracks: Tracks,
+    val timeline: Timeline,
 ) {
     companion object {
         val EMPTY =
             PlaybackState(
                 timestamp = C.TIME_UNSET,
-                isLoadingFile = true,
+                isLoadingFile = false,
                 media = null,
                 positionMs = C.TIME_UNSET,
                 durationMs = C.TIME_UNSET,
@@ -1096,6 +1203,7 @@ private data class PlaybackState(
                 videoSize = VideoSize.UNKNOWN,
                 state = Player.STATE_IDLE,
                 subtitleDelay = 0.0,
+                timeline = Timeline.EMPTY,
             )
     }
 }
