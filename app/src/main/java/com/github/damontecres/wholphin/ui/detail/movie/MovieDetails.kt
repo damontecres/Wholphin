@@ -506,6 +506,14 @@ fun MovieDetailsContent(
             }
             if (similar.isNotEmpty()) {
                 item {
+                    val imageHeight =
+                        remember(movie.type) {
+                            if (movie.type == BaseItemKind.MOVIE) {
+                                Cards.height2x3
+                            } else {
+                                Cards.heightEpisode
+                            }
+                        }
                     ItemRow(
                         title = stringResource(R.string.more_like_this),
                         items = similar,
@@ -524,7 +532,7 @@ fun MovieDetailsContent(
                                 onLongClick = onLongClick,
                                 modifier = mod,
                                 showImageOverlay = true,
-                                imageHeight = Cards.height2x3,
+                                imageHeight = imageHeight,
                                 imageWidth = Dp.Unspecified,
                             )
                         },
