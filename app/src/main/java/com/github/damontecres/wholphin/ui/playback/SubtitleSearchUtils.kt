@@ -15,6 +15,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.extensions.subtitleApi
 import org.jellyfin.sdk.api.client.extensions.userLibraryApi
+import org.jellyfin.sdk.model.api.MediaSourceInfo
 import org.jellyfin.sdk.model.api.MediaStreamType
 import org.jellyfin.sdk.model.api.RemoteSubtitleInfo
 import timber.log.Timber
@@ -81,16 +82,20 @@ fun PlaybackViewModel.downloadAndSwitchSubtitles(
                         itemId = it.sourceId ?: it.itemId,
                         subtitleId = subtitleId,
                     )
+                    val currentSource =
+                        this@downloadAndSwitchSubtitles.currentPlayback.value?.mediaSourceInfo
                     val currentSubtitleStreams =
-                        this@downloadAndSwitchSubtitles
-                            .currentMediaInfo.value
-                            ?.subtitleStreams
+                        currentSource
+                            ?.mediaStreams
+                            ?.filter { it.type == MediaStreamType.SUBTITLE }
                             .orEmpty()
+                    val externalPaths = currentSubtitleStreams.map { it.path }
+
                     val subtitleCount = currentSubtitleStreams.size
                     var newCount = subtitleCount
                     var maxAttempts = 4
-                    var newStreams: List<SubtitleStream> = listOf()
 
+                    var mediaSource: MediaSourceInfo? = null
                     // The server triggers a refresh in the background, so query periodically for the item until its updated
                     while (maxAttempts > 0 && subtitleCount == newCount) {
                         maxAttempts--
@@ -100,7 +105,7 @@ fun PlaybackViewModel.downloadAndSwitchSubtitles(
                                 api.userLibraryApi.getItem(itemId = it.itemId).content,
                                 api,
                             )
-                        val mediaSource = streamChoiceService.chooseSource(item.data, it)
+                        mediaSource = streamChoiceService.chooseSource(item.data, it)
                         if (mediaSource == null) {
                             // This shouldn't happen, but just in case
                             showToast(
@@ -116,26 +121,6 @@ fun PlaybackViewModel.downloadAndSwitchSubtitles(
                                 ?.filter { it.type == MediaStreamType.SUBTITLE }
                                 .orEmpty()
                         newCount = subtitleStreams.size
-
-                        if (subtitleCount != newCount) {
-                            newStreams =
-                                subtitleStreams.map {
-                                    SubtitleStream(
-                                        it.index,
-                                        it.language,
-                                        it.title,
-                                        it.codec,
-                                        it.codecTag,
-                                        it.isExternal,
-                                        it.isForced,
-                                        it.isDefault,
-                                        it.displayTitle,
-                                    )
-                                }
-                            updateCurrentMedia {
-                                it.copy(subtitleStreams = newStreams)
-                            }
-                        }
                     }
                     if (maxAttempts == 0) {
                         showToast(
@@ -144,12 +129,12 @@ fun PlaybackViewModel.downloadAndSwitchSubtitles(
                         )
                     } else {
                         // Find the new subtitle stream
+                        val subtitlesStreams =
+                            mediaSource?.mediaStreams?.filter { it.type == MediaStreamType.SUBTITLE }
                         val newStream =
-                            newStreams
-                                .toMutableList()
-                                .apply {
-                                    removeAll(currentSubtitleStreams)
-                                }.firstOrNull { it.external }
+                            subtitlesStreams?.firstOrNull { stream ->
+                                stream.isExternal && stream.path !in externalPaths
+                            }
                         if (newStream != null) {
                             var audioIndex = currentItemPlayback.value?.audioIndex
                             if (audioIndex != null && audioIndex != TrackIndex.UNSPECIFIED) {
@@ -157,6 +142,14 @@ fun PlaybackViewModel.downloadAndSwitchSubtitles(
                                 // Since, now adding a new external subtitle track, need to adjust the audio index as well
                                 Timber.v("New external subtitle, audioIndex=$audioIndex, adding 1")
                                 audioIndex += 1
+                            }
+                            updateCurrentMedia {
+                                it.copy(
+                                    subtitleStreams =
+                                        subtitlesStreams.map {
+                                            SimpleMediaStream.from(context, it, true)
+                                        },
+                                )
                             }
                             this@downloadAndSwitchSubtitles.changeStreams(
                                 item,

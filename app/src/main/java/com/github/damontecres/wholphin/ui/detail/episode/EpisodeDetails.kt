@@ -50,6 +50,7 @@ import com.github.damontecres.wholphin.ui.rememberInt
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
 import kotlinx.coroutines.launch
+import org.jellyfin.sdk.model.api.MediaStreamType
 import org.jellyfin.sdk.model.api.MediaType
 import org.jellyfin.sdk.model.extensions.ticks
 import org.jellyfin.sdk.model.serializer.toUUID
@@ -180,6 +181,12 @@ fun EpisodeDetails(
                                                         chooseStream(
                                                             context = context,
                                                             streams = source.mediaStreams.orEmpty(),
+                                                            currentIndex =
+                                                                if (type == MediaStreamType.AUDIO) {
+                                                                    chosenStreams?.audioStream?.index
+                                                                } else {
+                                                                    chosenStreams?.subtitleStream?.index
+                                                                },
                                                             type = type,
                                                             onClick = { trackIndex ->
                                                                 viewModel.saveTrackSelection(

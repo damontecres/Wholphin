@@ -68,6 +68,7 @@ fun ExtrasRow(
                 isPlayed = false,
                 unplayedItemCount = -1,
                 playedPercentage = -1.0,
+                numberOfVersions = -1,
                 aspectRatio = AspectRatios.FOUR_THREE, // TODO
             )
         },

@@ -54,6 +54,7 @@ import com.github.damontecres.wholphin.ui.cards.ItemRow
 import com.github.damontecres.wholphin.ui.components.CircularProgress
 import com.github.damontecres.wholphin.ui.components.DialogParams
 import com.github.damontecres.wholphin.ui.components.DialogPopup
+import com.github.damontecres.wholphin.ui.components.EpisodeName
 import com.github.damontecres.wholphin.ui.components.EpisodeQuickDetails
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.LoadingPage
@@ -259,6 +260,9 @@ fun HomePageContent(
     LaunchedEffect(position) {
         listState.animateScrollToItem(position.row)
     }
+    LaunchedEffect(onUpdateBackdrop, focusedItem) {
+        focusedItem?.let { onUpdateBackdrop.invoke(it) }
+    }
     Box(modifier = modifier) {
         Column(modifier = Modifier.fillMaxSize()) {
             HomePageHeader(
@@ -379,7 +383,7 @@ fun HomePageContent(
                                                     .onFocusChanged {
                                                         if (it.isFocused) {
                                                             position = RowColumn(rowIndex, index)
-                                                            item?.let(onUpdateBackdrop)
+//                                                            item?.let(onUpdateBackdrop)
                                                         }
                                                         if (it.isFocused && onFocusPosition != null) {
                                                             val nonEmptyRowBefore =
@@ -442,7 +446,6 @@ fun HomePageHeader(
     item?.let {
         val isEpisode = item.type == BaseItemKind.EPISODE
         val dto = item.data
-
         HomePageHeader(
             title = item.title,
             subtitle = if (isEpisode) dto.name else null,
@@ -490,17 +493,8 @@ fun HomePageHeader(
                     .fillMaxWidth(.6f)
                     .fillMaxHeight(),
         ) {
-//                val isEpisode = item.type == BaseItemKind.EPISODE
-//                val subtitle = if (isEpisode) dto.name else null
-//                val overview = dto.overview
             subtitle?.let {
-                Text(
-                    text = subtitle,
-                    style = MaterialTheme.typography.headlineSmall,
-                    color = MaterialTheme.colorScheme.onBackground,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
+                EpisodeName(it)
             }
             quickDetails?.invoke()
             val overviewModifier =

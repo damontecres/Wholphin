@@ -442,6 +442,7 @@ fun TrailerRow(
                             isPlayed = false,
                             unplayedItemCount = 0,
                             playedPercentage = 0.0,
+                            numberOfVersions = -1,
                             onClick = { onClickTrailer.invoke(item) },
                             onLongClick = {},
                             modifier = cardModifier,

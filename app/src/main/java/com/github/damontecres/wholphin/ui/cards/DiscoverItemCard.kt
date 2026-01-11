@@ -108,6 +108,7 @@ fun DiscoverItemCard(
                     watched = false,
                     unwatchedCount = 0,
                     watchedPercent = null,
+                    numberOfVersions = -1,
                     useFallbackText = false,
                     contentScale = ContentScale.FillBounds,
                     modifier =

@@ -44,6 +44,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.UseSerializers
 import org.jellyfin.sdk.model.api.BaseItemKind
+import org.jellyfin.sdk.model.api.MediaStreamType
 import org.jellyfin.sdk.model.api.MediaType
 import org.jellyfin.sdk.model.api.PersonKind
 import org.jellyfin.sdk.model.extensions.ticks
@@ -242,6 +243,12 @@ fun SeriesOverview(
                                                     context = context,
                                                     streams = source.mediaStreams.orEmpty(),
                                                     type = type,
+                                                    currentIndex =
+                                                        if (type == MediaStreamType.AUDIO) {
+                                                            chosenStreams?.audioStream?.index
+                                                        } else {
+                                                            chosenStreams?.subtitleStream?.index
+                                                        },
                                                     onClick = { trackIndex ->
                                                         viewModel.saveTrackSelection(
                                                             ep,
