@@ -53,6 +53,7 @@ data class PlaybackSettings(
     val playbackSpeed: Float,
     val contentScale: ContentScale,
     val subtitleDelay: Duration,
+    val hasSubtitleDownloadPermission: Boolean,
 )
 
 @Composable
@@ -96,6 +97,7 @@ fun PlaybackDialog(
             SubtitleChoiceBottomDialog(
                 choices = settings.subtitleStreams,
                 currentChoice = settings.subtitleIndex,
+                hasDownloadPermission = settings.hasSubtitleDownloadPermission,
                 onDismissRequest = {
                     onControllerInteraction.invoke()
                     onDismissRequest.invoke()
@@ -273,6 +275,7 @@ fun SubtitleChoiceBottomDialog(
     onSelectChoice: (Int) -> Unit,
     onSelectSearch: () -> Unit,
     gravity: Int,
+    hasDownloadPermission: Boolean,
     currentChoice: Int? = null,
 ) {
     // TODO enforcing a width ends up ignore the gravity
@@ -347,6 +350,7 @@ fun SubtitleChoiceBottomDialog(
                     HorizontalDivider()
                     ListItem(
                         selected = false,
+                        enabled = hasDownloadPermission,
                         onClick = onSelectSearch,
                         leadingContent = {},
                         headlineContent = {

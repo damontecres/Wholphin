@@ -168,6 +168,8 @@ class PlaybackViewModel
         val subtitleSearch = MutableLiveData<SubtitleSearch?>(null)
         val subtitleSearchLanguage = MutableLiveData<String>(Locale.current.language)
 
+        val currentUserDto = serverRepository.currentUserDto
+
         init {
             addCloseable {
                 player.removeListener(this@PlaybackViewModel)
