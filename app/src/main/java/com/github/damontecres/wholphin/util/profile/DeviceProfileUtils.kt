@@ -66,6 +66,7 @@ fun createDeviceProfile(
     downMixAudio: Boolean,
     assDirectPlay: Boolean,
     pgsDirectPlay: Boolean,
+    dolbyVisionELDirectPlay: Boolean,
     jellyfinTenEleven: Boolean,
 ) = buildDeviceProfile {
     val allowedAudioCodecs =
@@ -427,9 +428,11 @@ fun createDeviceProfile(
             if (jellyfinTenEleven) add("DOVIInvalid")
 
             if (!supportsHevcDolbyVisionEL) {
-                if (jellyfinTenEleven) {
-                    add("DOVIWithEL")
-                    if (!supportsHevcHDR10Plus && !KnownDefects.hevcDoviHdr10PlusBug) add("DOVIWithELHDR10Plus")
+                if (!dolbyVisionELDirectPlay) {
+                    if (jellyfinTenEleven) {
+                        add("DOVIWithEL")
+                        if (!supportsHevcHDR10Plus && !KnownDefects.hevcDoviHdr10PlusBug) add("DOVIWithELHDR10Plus")
+                    }
                 }
 
                 if (!supportsHevcDolbyVision) {

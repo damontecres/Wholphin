@@ -403,6 +403,8 @@
     <string name="play_trailer">Play trailer</string>
     <string name="no_trailers">No trailers</string>
     <string name="clear_track_choices">Clear track choices</string>
+    <string name="force_dovi_profile_7">Direct play Dolby Vision Profile 7</string>
+    <string name="force_dovi_profile_7_summary">Ignores device compatibility checks</string>
 
     <string-array name="theme_song_volume">
         <item>Disabled</item>
