@@ -1,6 +1,7 @@
 package com.github.damontecres.wholphin.ui
 
 import androidx.annotation.StringRes
+import androidx.compose.ui.text.AnnotatedString
 import com.github.damontecres.wholphin.R
 import org.jellyfin.sdk.model.api.BaseItemDto
 import org.jellyfin.sdk.model.api.MediaSegmentType
@@ -140,3 +141,5 @@ val MediaSegmentType.skipStringRes: Int
             MediaSegmentType.OUTRO -> R.string.skip_segment_outro
             MediaSegmentType.INTRO -> R.string.skip_segment_intro
         }
+
+fun AnnotatedString.Builder.dot() = append("  \u2022  ")

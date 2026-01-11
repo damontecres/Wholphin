@@ -54,11 +54,9 @@ import com.github.damontecres.wholphin.ui.cards.ItemRow
 import com.github.damontecres.wholphin.ui.components.CircularProgress
 import com.github.damontecres.wholphin.ui.components.DialogParams
 import com.github.damontecres.wholphin.ui.components.DialogPopup
-import com.github.damontecres.wholphin.ui.components.EpisodeQuickDetails
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.LoadingPage
-import com.github.damontecres.wholphin.ui.components.MovieQuickDetails
-import com.github.damontecres.wholphin.ui.components.SeriesQuickDetails
+import com.github.damontecres.wholphin.ui.components.QuickDetails
 import com.github.damontecres.wholphin.ui.data.AddPlaylistViewModel
 import com.github.damontecres.wholphin.ui.data.RowColumn
 import com.github.damontecres.wholphin.ui.data.RowColumnSaver
@@ -474,11 +472,7 @@ fun HomePageHeader(
                         overflow = TextOverflow.Ellipsis,
                     )
                 }
-                when (item.type) {
-                    BaseItemKind.EPISODE -> EpisodeQuickDetails(item, Modifier)
-                    BaseItemKind.SERIES -> SeriesQuickDetails(dto, Modifier)
-                    else -> MovieQuickDetails(dto, Modifier)
-                }
+                QuickDetails(item.ui.quickDetails)
                 val overviewModifier =
                     Modifier
                         .padding(0.dp)

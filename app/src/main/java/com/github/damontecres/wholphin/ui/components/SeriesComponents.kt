@@ -1,17 +1,12 @@
 package com.github.damontecres.wholphin.ui.components
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
-import com.github.damontecres.wholphin.data.model.BaseItem
-import com.github.damontecres.wholphin.ui.roundMinutes
-import com.github.damontecres.wholphin.ui.seriesProductionYears
 import org.jellyfin.sdk.model.api.BaseItemDto
-import org.jellyfin.sdk.model.extensions.ticks
 
 @Composable
 fun SeriesName(
@@ -49,48 +44,3 @@ fun EpisodeName(
     episode: BaseItemDto?,
     modifier: Modifier = Modifier,
 ) = EpisodeName(episode?.episodeTitle ?: episode?.name, modifier)
-
-@Composable
-fun EpisodeQuickDetails(
-    item: BaseItem?,
-    modifier: Modifier = Modifier,
-) {
-    item?.let {
-        DotSeparatedRow(
-            details = item.ui,
-            runtime = item.data.runTimeTicks?.ticks,
-            runtimePosition =
-                item.data.userData
-                    ?.playbackPositionTicks
-                    ?.ticks,
-            communityRating = item.data.communityRating,
-            criticRating = item.data.criticRating,
-            textStyle = MaterialTheme.typography.titleSmall,
-            modifier = modifier,
-        )
-    }
-}
-
-@Composable
-fun SeriesQuickDetails(
-    dto: BaseItemDto?,
-    modifier: Modifier = Modifier,
-) {
-    val details =
-        remember(dto) {
-            buildList {
-                dto?.seriesProductionYears?.let(::add)
-                dto?.runTimeTicks?.ticks?.roundMinutes?.let {
-                    add(it.toString())
-                }
-                dto?.officialRating?.let(::add)
-            }
-        }
-    DotSeparatedRow(
-        texts = details,
-        communityRating = dto?.communityRating,
-        criticRating = dto?.criticRating,
-        textStyle = MaterialTheme.typography.titleSmall,
-        modifier = modifier,
-    )
-}

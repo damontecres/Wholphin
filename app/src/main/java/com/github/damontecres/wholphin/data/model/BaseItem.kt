@@ -4,13 +4,11 @@ import androidx.compose.foundation.text.appendInlineContent
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.Stable
 import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.withStyle
 import com.github.damontecres.wholphin.ui.DateFormatter
 import com.github.damontecres.wholphin.ui.detail.CardGridItem
 import com.github.damontecres.wholphin.ui.detail.series.SeasonEpisodeIds
+import com.github.damontecres.wholphin.ui.dot
 import com.github.damontecres.wholphin.ui.formatDateTime
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.playback.playable
@@ -85,35 +83,15 @@ data class BaseItem(
     @Transient
     val ui =
         BaseItemUi(
-            quickDetailsStart =
-                buildList {
-                    data.seasonEpisode?.let(::add)
-                    if (type == BaseItemKind.EPISODE) {
-                        data.premiereDate?.let { add(DateFormatter.format(it)) }
-                    } else {
-                        data.productionYear?.let { add(it.toString()) }
-                    }
-                    data.runTimeTicks
-                        ?.ticks
-                        ?.roundMinutes
-                        ?.let { add(it.toString()) }
-                    data.timeRemaining
-                        ?.roundMinutes
-                        ?.let { add("$it left") }
-                },
-            str =
+            quickDetails =
                 buildAnnotatedString {
-                    fun dot() {
-                        withStyle(SpanStyle(fontWeight = FontWeight.Bold)) {
-                            append(" \u00b7 ")
-                        }
-                    }
-
                     val details =
                         buildList {
-                            data.seasonEpisode?.let(::add)
                             if (type == BaseItemKind.EPISODE) {
+                                data.seasonEpisode?.let(::add)
                                 data.premiereDate?.let { add(DateFormatter.format(it)) }
+                            } else if (type == BaseItemKind.SERIES) {
+                                data.seriesProductionYears?.let(::add)
                             } else {
                                 data.productionYear?.let { add(it.toString()) }
                             }
@@ -210,6 +188,5 @@ val BaseItemDto.aspectRatioFloat: Float? get() = width?.let { w -> height?.let {
 
 @Immutable
 data class BaseItemUi(
-    val quickDetailsStart: List<String>,
-    val str: AnnotatedString,
+    val quickDetails: AnnotatedString,
 )
