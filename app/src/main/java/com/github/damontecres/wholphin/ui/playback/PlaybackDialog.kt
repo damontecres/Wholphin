@@ -71,7 +71,13 @@ fun PlaybackDialog(
         PlaybackDialogType.MORE -> {
             val options =
                 buildList {
-                    add(stringResource(if (settings.showDebugInfo) R.string.hide_debug_info else R.string.show_debug_info))
+                    add(
+                        BottomDialogItem(
+                            data = 0,
+                            headline = stringResource(if (settings.showDebugInfo) R.string.hide_debug_info else R.string.show_debug_info),
+                            supporting = null,
+                        ),
+                    )
                 }
             BottomDialog(
                 choices = options,
@@ -111,28 +117,49 @@ fun PlaybackDialog(
         }
 
         PlaybackDialogType.SETTINGS -> {
+            val currentAudio =
+                remember(settings) { settings.audioStreams.firstOrNull { it.index == settings.audioIndex } }
             val options =
                 buildList {
-                    add(stringResource(R.string.audio))
-                    add(stringResource(R.string.playback_speed))
+                    add(
+                        BottomDialogItem(
+                            data = PlaybackDialogType.AUDIO,
+                            headline = stringResource(R.string.audio),
+                            supporting = currentAudio?.displayTitle,
+                        ),
+                    )
+                    add(
+                        BottomDialogItem(
+                            data = PlaybackDialogType.PLAYBACK_SPEED,
+                            headline = stringResource(R.string.playback_speed),
+                            supporting = settings.playbackSpeed.toString(),
+                        ),
+                    )
                     if (enableVideoScale) {
-                        add(stringResource(R.string.video_scale))
+                        add(
+                            BottomDialogItem(
+                                data = PlaybackDialogType.VIDEO_SCALE,
+                                headline = stringResource(R.string.video_scale),
+                                supporting = playbackScaleOptions[settings.contentScale],
+                            ),
+                        )
                     }
                     if (enableSubtitleDelay) {
-                        add(stringResource(R.string.subtitle_delay))
+                        add(
+                            BottomDialogItem(
+                                data = PlaybackDialogType.SUBTITLE_DELAY,
+                                headline = stringResource(R.string.subtitle_delay),
+                                supporting = settings.subtitleDelay.toString(),
+                            ),
+                        )
                     }
                 }
             BottomDialog(
                 choices = options,
                 currentChoice = null,
                 onDismissRequest = onDismissRequest,
-                onSelectChoice = { index, _ ->
-                    when (index) {
-                        0 -> onClickPlaybackDialogType(PlaybackDialogType.AUDIO)
-                        1 -> onClickPlaybackDialogType(PlaybackDialogType.PLAYBACK_SPEED)
-                        2 -> onClickPlaybackDialogType(PlaybackDialogType.VIDEO_SCALE)
-                        3 -> onClickPlaybackDialogType(PlaybackDialogType.SUBTITLE_DELAY)
-                    }
+                onSelectChoice = { _, choice ->
+                    onClickPlaybackDialogType(choice.data)
                 },
                 gravity = Gravity.END,
             )
@@ -158,9 +185,17 @@ fun PlaybackDialog(
         }
 
         PlaybackDialogType.PLAYBACK_SPEED -> {
+            val choices =
+                playbackSpeedOptions.map {
+                    BottomDialogItem(
+                        data = it.toFloat(),
+                        headline = it,
+                        supporting = null,
+                    )
+                }
             BottomDialog(
-                choices = playbackSpeedOptions,
-                currentChoice = playbackSpeedOptions.indexOf(settings.playbackSpeed.toString()),
+                choices = choices,
+                currentChoice = choices.firstOrNull { it.data == settings.playbackSpeed },
                 onDismissRequest = {
                     onControllerInteraction.invoke()
                     onDismissRequest.invoke()
@@ -170,16 +205,24 @@ fun PlaybackDialog(
 //                }
                 },
                 onSelectChoice = { _, value ->
-                    onPlaybackActionClick.invoke(PlaybackAction.PlaybackSpeed(value.toFloat()))
+                    onPlaybackActionClick.invoke(PlaybackAction.PlaybackSpeed(value.data))
                 },
                 gravity = Gravity.END,
             )
         }
 
         PlaybackDialogType.VIDEO_SCALE -> {
+            val choices =
+                playbackScaleOptions.map { (scale, name) ->
+                    BottomDialogItem(
+                        data = scale,
+                        headline = name,
+                        supporting = null,
+                    )
+                }
             BottomDialog(
-                choices = playbackScaleOptions.values.toList(),
-                currentChoice = playbackScaleOptions.keys.toList().indexOf(settings.contentScale),
+                choices = choices,
+                currentChoice = choices.firstOrNull { it.data == settings.contentScale },
                 onDismissRequest = {
                     onControllerInteraction.invoke()
                     onDismissRequest.invoke()
@@ -188,8 +231,8 @@ fun PlaybackDialog(
 //                    settingsFocusRequester.tryRequestFocus()
 //                }
                 },
-                onSelectChoice = { index, _ ->
-                    onPlaybackActionClick.invoke(PlaybackAction.Scale(playbackScaleOptions.keys.toList()[index]))
+                onSelectChoice = { _, choice ->
+                    onPlaybackActionClick.invoke(PlaybackAction.Scale(choice.data))
                 },
                 gravity = Gravity.END,
             )

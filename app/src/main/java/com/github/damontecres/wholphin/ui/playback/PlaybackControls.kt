@@ -62,6 +62,7 @@ import com.github.damontecres.wholphin.preferences.AppThemeColors
 import com.github.damontecres.wholphin.ui.AppColors
 import com.github.damontecres.wholphin.ui.PreviewTvSpec
 import com.github.damontecres.wholphin.ui.components.Button
+import com.github.damontecres.wholphin.ui.components.SelectedLeadingContent
 import com.github.damontecres.wholphin.ui.components.TextButton
 import com.github.damontecres.wholphin.ui.seekBack
 import com.github.damontecres.wholphin.ui.seekForward
@@ -462,12 +463,12 @@ fun PlaybackButton(
 }
 
 @Composable
-fun BottomDialog(
-    choices: List<String>,
+fun <T> BottomDialog(
+    choices: List<BottomDialogItem<T>>,
     onDismissRequest: () -> Unit,
-    onSelectChoice: (Int, String) -> Unit,
+    onSelectChoice: (Int, BottomDialogItem<T>) -> Unit,
     gravity: Int,
-    currentChoice: Int? = null,
+    currentChoice: BottomDialogItem<T>? = null,
 ) {
     // TODO enforcing a width ends up ignore the gravity
     Dialog(
@@ -501,37 +502,26 @@ fun BottomDialog(
             ) {
                 itemsIndexed(choices) { index, choice ->
                     val interactionSource = remember { MutableInteractionSource() }
-                    val focused = interactionSource.collectIsFocusedAsState().value
-                    val color =
-                        if (focused) {
-                            MaterialTheme.colorScheme.inverseOnSurface
-                        } else {
-                            MaterialTheme.colorScheme.onSurface
-                        }
                     ListItem(
-                        selected = index == currentChoice,
+                        selected = choice == currentChoice,
                         onClick = {
                             onDismissRequest()
                             onSelectChoice(index, choice)
                         },
                         leadingContent = {
-                            if (index == currentChoice) {
-                                Box(
-                                    modifier =
-                                        Modifier
-                                            .padding(horizontal = 4.dp)
-                                            .clip(CircleShape)
-                                            .align(Alignment.Center)
-                                            .background(color)
-                                            .size(8.dp),
-                                )
-                            }
+                            SelectedLeadingContent(choice == currentChoice)
                         },
                         headlineContent = {
                             Text(
-                                text = choice,
-                                color = color,
+                                text = choice.headline,
                             )
+                        },
+                        supportingContent = {
+                            choice.supporting?.let {
+                                Text(
+                                    text = it,
+                                )
+                            }
                         },
                         interactionSource = interactionSource,
                     )
@@ -543,6 +533,12 @@ fun BottomDialog(
 
 data class MoreButtonOptions(
     val options: Map<String, PlaybackAction>,
+)
+
+data class BottomDialogItem<T>(
+    val data: T,
+    val headline: String,
+    val supporting: String?,
 )
 
 @PreviewTvSpec
