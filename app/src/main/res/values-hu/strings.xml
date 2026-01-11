@@ -369,4 +369,6 @@
     <string name="dolby_digital">DD</string>
     <string name="dolby_digital_plus">DD+</string>
     <string name="dts">DTS</string>
+    <string name="only_forced_subtitles">Csak kiegészítő felirat</string>
+    <string name="clear_track_choices">Sávválasztás törlése</string>
 </resources>
