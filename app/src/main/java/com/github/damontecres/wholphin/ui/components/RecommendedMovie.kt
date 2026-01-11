@@ -16,6 +16,7 @@ import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.FavoriteWatchManager
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.SuggestionService
+import com.github.damontecres.wholphin.services.SuggestionsResource
 import com.github.damontecres.wholphin.ui.SlimItemFields
 import com.github.damontecres.wholphin.ui.data.RowColumn
 import com.github.damontecres.wholphin.ui.setValueOnMain
@@ -169,15 +170,31 @@ class RecommendedMovieViewModel
                 viewModelScope.launch(Dispatchers.IO) {
                     try {
                         suggestionService
-                            .getSuggestionsFlow(parentId, BaseItemKind.MOVIE, itemsPerRow)
-                            .collect { items ->
-                                update(
-                                    R.string.suggestions,
-                                    HomeRowLoadingState.Success(
-                                        context.getString(R.string.suggestions),
-                                        items,
-                                    ),
-                                )
+                            .getSuggestionsFlow(parentId, BaseItemKind.MOVIE)
+                            .collect { resource ->
+                                val state =
+                                    when (resource) {
+                                        is SuggestionsResource.Loading -> {
+                                            HomeRowLoadingState.Loading(
+                                                context.getString(R.string.suggestions),
+                                            )
+                                        }
+
+                                        is SuggestionsResource.Success -> {
+                                            HomeRowLoadingState.Success(
+                                                context.getString(R.string.suggestions),
+                                                resource.items,
+                                            )
+                                        }
+
+                                        is SuggestionsResource.Empty -> {
+                                            HomeRowLoadingState.Success(
+                                                context.getString(R.string.suggestions),
+                                                emptyList(),
+                                            )
+                                        }
+                                    }
+                                update(R.string.suggestions, state)
                             }
                     } catch (ex: Exception) {
                         Timber.e(ex, "Failed to fetch suggestions")

@@ -188,6 +188,7 @@ dependencies {
     implementation(libs.androidx.tv.foundation)
     implementation(libs.androidx.tv.material)
     implementation(libs.androidx.lifecycle.runtime.ktx)
+    implementation(libs.androidx.lifecycle.livedata.ktx)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.datastore)
     implementation(libs.protobuf.kotlin.lite)
@@ -257,4 +258,6 @@ dependencies {
 
     testImplementation(libs.mockk.android)
     testImplementation(libs.mockk.agent)
+    testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.androidx.core.testing)
 }

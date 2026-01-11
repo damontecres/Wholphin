@@ -50,6 +50,7 @@ import com.github.damontecres.wholphin.services.RefreshRateService
 import com.github.damontecres.wholphin.services.ServerEventListener
 import com.github.damontecres.wholphin.services.SetupDestination
 import com.github.damontecres.wholphin.services.SetupNavigationManager
+import com.github.damontecres.wholphin.services.SuggestionsSchedulerService
 import com.github.damontecres.wholphin.services.UpdateChecker
 import com.github.damontecres.wholphin.services.hilt.AuthOkHttpClient
 import com.github.damontecres.wholphin.services.tvprovider.TvProviderSchedulerService
@@ -107,6 +108,9 @@ class MainActivity : AppCompatActivity() {
 
     @Inject
     lateinit var tvProviderSchedulerService: TvProviderSchedulerService
+
+    @Inject
+    lateinit var suggestionsSchedulerService: SuggestionsSchedulerService
 
     // Note: unused but injected to ensure it is created
     @Inject
