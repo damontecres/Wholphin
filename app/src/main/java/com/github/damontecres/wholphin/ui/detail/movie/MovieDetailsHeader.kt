@@ -65,7 +65,11 @@ fun MovieDetailsHeader(
             modifier = Modifier.fillMaxWidth(.60f),
         ) {
             val padding = 4.dp
-            QuickDetails(movie.ui.quickDetails, Modifier.padding(bottom = padding))
+            QuickDetails(
+                movie.ui.quickDetails,
+                movie.timeRemainingOrRuntime,
+                Modifier.padding(bottom = padding),
+            )
 
             dto.genres?.letNotEmpty {
                 GenreText(it, Modifier.padding(bottom = padding))

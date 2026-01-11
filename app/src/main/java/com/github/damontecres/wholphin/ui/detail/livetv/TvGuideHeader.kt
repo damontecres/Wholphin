@@ -53,7 +53,7 @@ fun TvGuideHeader(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                program?.quickDetails?.let { QuickDetails(it) }
+                program?.quickDetails?.let { QuickDetails(it, null) }
                 if (program?.isRepeat == true) {
                     StreamLabel(stringResource(R.string.live_tv_repeat))
                 }

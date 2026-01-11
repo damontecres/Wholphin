@@ -81,6 +81,9 @@ data class BaseItem(
     val favorite get() = data.userData?.isFavorite ?: false
 
     @Transient
+    val timeRemainingOrRuntime: Duration? = data.timeRemaining ?: data.runTimeTicks?.ticks
+
+    @Transient
     val ui =
         BaseItemUi(
             quickDetails =

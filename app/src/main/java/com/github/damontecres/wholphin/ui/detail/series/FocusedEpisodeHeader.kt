@@ -34,7 +34,7 @@ fun FocusedEpisodeHeader(
         EpisodeName(dto, modifier = Modifier)
 
         ep?.ui?.quickDetails?.let {
-            QuickDetails(it)
+            QuickDetails(it, ep.timeRemainingOrRuntime)
         }
 
         if (dto != null) {

@@ -472,7 +472,7 @@ fun HomePageHeader(
                         overflow = TextOverflow.Ellipsis,
                     )
                 }
-                QuickDetails(item.ui.quickDetails)
+                QuickDetails(item.ui.quickDetails, item.timeRemainingOrRuntime)
                 val overviewModifier =
                     Modifier
                         .padding(0.dp)

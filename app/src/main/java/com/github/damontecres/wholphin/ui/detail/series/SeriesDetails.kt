@@ -584,7 +584,7 @@ fun SeriesDetailsHeader(
             verticalArrangement = Arrangement.spacedBy(4.dp),
             modifier = Modifier.fillMaxWidth(.60f),
         ) {
-            QuickDetails(series.ui.quickDetails)
+            QuickDetails(series.ui.quickDetails, null)
             dto.genres?.letNotEmpty {
                 GenreText(it)
             }
