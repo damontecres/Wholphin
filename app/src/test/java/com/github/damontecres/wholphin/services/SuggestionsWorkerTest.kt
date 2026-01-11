@@ -70,7 +70,7 @@ class SuggestionsWorkerTest {
         every { mockApi.baseUrl } returns "http://localhost"
         every { mockApi.accessToken } returns "test-token"
 
-        every { mockCache.put(any(), any(), any(), any()) } just Runs
+        coEvery { mockCache.put(any(), any(), any(), any()) } just Runs
         coEvery { mockCache.save() } just Runs
     }
 
