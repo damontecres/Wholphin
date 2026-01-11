@@ -67,6 +67,7 @@ import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
 import kotlinx.coroutines.launch
 import org.jellyfin.sdk.model.api.BaseItemKind
+import org.jellyfin.sdk.model.api.MediaStreamType
 import org.jellyfin.sdk.model.api.MediaType
 import org.jellyfin.sdk.model.extensions.ticks
 import org.jellyfin.sdk.model.serializer.toUUID
@@ -210,6 +211,7 @@ fun MovieDetails(
                                             moreDialog = null
                                         },
                                         onChooseTracks = { type ->
+
                                             viewModel.streamChoiceService
                                                 .chooseSource(
                                                     movie.data,
@@ -220,6 +222,12 @@ fun MovieDetails(
                                                             context = context,
                                                             streams = source.mediaStreams.orEmpty(),
                                                             type = type,
+                                                            currentIndex =
+                                                                if (type == MediaStreamType.AUDIO) {
+                                                                    chosenStreams?.audioStream?.index
+                                                                } else {
+                                                                    chosenStreams?.subtitleStream?.index
+                                                                },
                                                             onClick = { trackIndex ->
                                                                 viewModel.saveTrackSelection(
                                                                     movie,
