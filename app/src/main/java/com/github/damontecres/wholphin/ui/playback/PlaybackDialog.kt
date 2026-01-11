@@ -106,6 +106,8 @@ fun PlaybackDialog(
                         onPlaybackActionClick.invoke(PlaybackAction.ToggleCaptions(subtitleIndex))
                     } else if (subtitleIndex == TrackIndex.DISABLED) {
                         onPlaybackActionClick.invoke(PlaybackAction.ToggleCaptions(TrackIndex.DISABLED))
+                    } else if (subtitleIndex == TrackIndex.ONLY_FORCED) {
+                        onPlaybackActionClick.invoke(PlaybackAction.ToggleCaptions(TrackIndex.ONLY_FORCED))
                     }
                 },
                 onSelectSearch = {
@@ -317,6 +319,23 @@ fun SubtitleChoiceBottomDialog(
                         headlineContent = {
                             Text(
                                 text = stringResource(R.string.none),
+                            )
+                        },
+                        supportingContent = {},
+                    )
+                }
+                item {
+                    ListItem(
+                        selected = currentChoice == TrackIndex.ONLY_FORCED,
+                        onClick = {
+                            onSelectChoice(TrackIndex.ONLY_FORCED)
+                        },
+                        leadingContent = {
+                            SelectedLeadingContent(currentChoice == TrackIndex.ONLY_FORCED)
+                        },
+                        headlineContent = {
+                            Text(
+                                text = stringResource(R.string.only_forced_subtitles),
                             )
                         },
                         supportingContent = {},
