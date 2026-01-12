@@ -9,7 +9,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.CollectionFolderFilter
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.components.CollectionFolderGrid
@@ -22,7 +21,6 @@ import java.util.UUID
 fun CollectionFolderPlaylist(
     preferences: UserPreferences,
     itemId: UUID,
-    item: BaseItem?,
     recursive: Boolean,
     modifier: Modifier = Modifier,
     filter: CollectionFolderFilter = CollectionFolderFilter(),

@@ -23,7 +23,9 @@ data class BaseItem(
     val data: BaseItemDto,
     val useSeriesForPrimary: Boolean,
 ) : CardGridItem {
-    override val id get() = data.id
+    val id get() = data.id
+
+    override val gridId get() = id.toString()
 
     override val playable: Boolean
         get() = type.playable
@@ -88,23 +90,21 @@ data class BaseItem(
                         Destination.SeriesOverview(
                             data.seriesId!!,
                             BaseItemKind.SERIES,
-                            this,
                             SeasonEpisodeIds(seasonId, data.parentIndexNumber, id, indexNumber),
                         )
-                    } ?: Destination.MediaItem(id, type, this)
+                    } ?: Destination.MediaItem(this)
                 }
 
                 BaseItemKind.SEASON -> {
                     Destination.SeriesOverview(
                         data.seriesId!!,
                         BaseItemKind.SERIES,
-                        this,
                         SeasonEpisodeIds(id, indexNumber, null, null),
                     )
                 }
 
                 else -> {
-                    Destination.MediaItem(id, type, this)
+                    Destination.MediaItem(this)
                 }
             }
         return result

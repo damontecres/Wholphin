@@ -15,6 +15,7 @@ plugins {
     alias(libs.plugins.protobuf)
     alias(libs.plugins.kotlin.plugin.serialization)
     alias(libs.plugins.aboutLibraries)
+    alias(libs.plugins.openapi.generator)
 }
 
 val isCI = if (System.getenv("CI") != null) System.getenv("CI").toBoolean() else false
@@ -145,6 +146,12 @@ android {
             isUniversalApk = true
         }
     }
+
+    sourceSets {
+        getByName("main") {
+            kotlin.srcDirs("$buildDir/generated/seerr_api/src/main/kotlin")
+        }
+    }
 }
 
 protobuf {
@@ -174,6 +181,33 @@ aboutLibraries {
         duplicationMode = DuplicateMode.MERGE
         duplicationRule = DuplicateRule.SIMPLE
     }
+}
+
+openApiGenerate {
+    generatorName.set("kotlin")
+    inputSpec.set("$projectDir/src/main/seerr/seerr-api.yml")
+    templateDir.set("$projectDir/src/main/seerr/templates")
+    outputDir.set("$buildDir/generated/seerr_api")
+    apiPackage.set("com.github.damontecres.wholphin.api.seerr")
+    modelPackage.set("com.github.damontecres.wholphin.api.seerr.model")
+    groupId.set("com.github.damontecres.wholphin.api.seerr")
+    id.set("seerr-api")
+    packageName.set("com.github.damontecres.wholphin.api.seerr")
+    additionalProperties.apply {
+        put("serializationLibrary", "kotlinx_serialization")
+        put("sortModelPropertiesByRequiredFlag", true)
+        put("sortParamsByRequiredFlag", true)
+        put("useCoroutines", true)
+        put("enumPropertyNaming", "UPPERCASE")
+        put("modelMutable", false)
+
+        // Note: this is only for downloading files, so it's not necessary to enable
+        put("supportAndroidApiLevel25AndBelow", false)
+    }
+}
+
+tasks.named("preBuild") {
+    dependsOn.add(tasks.named("openApiGenerate"))
 }
 
 dependencies {
@@ -246,6 +280,8 @@ dependencies {
     implementation(libs.acra.limiter)
     compileOnly(libs.auto.service.annotations)
     ksp(libs.auto.service.ksp)
+    implementation(platform(libs.okhttp.bom))
+    implementation(libs.okhttp)
 
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)

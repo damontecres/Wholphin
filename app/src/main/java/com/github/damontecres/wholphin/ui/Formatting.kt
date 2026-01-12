@@ -4,9 +4,11 @@ import androidx.annotation.StringRes
 import com.github.damontecres.wholphin.R
 import org.jellyfin.sdk.model.api.BaseItemDto
 import org.jellyfin.sdk.model.api.MediaSegmentType
+import timber.log.Timber
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import java.time.format.DateTimeParseException
 import java.time.format.FormatStyle
 import java.util.Locale
 
@@ -22,6 +24,16 @@ val DateFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("MMM d, yyyy"
 fun formatDateTime(dateTime: LocalDateTime): String = DateFormatter.format(dateTime)
 
 fun formatDate(dateTime: LocalDate): String = DateFormatter.format(dateTime)
+
+fun toLocalDate(date: String?): LocalDate? =
+    date?.let {
+        try {
+            LocalDate.parse(it)
+        } catch (_: DateTimeParseException) {
+            Timber.w("Could not parse date: %s", date)
+            null
+        }
+    }
 
 /**
  * If the item has season & episode info, format as `S# E#`

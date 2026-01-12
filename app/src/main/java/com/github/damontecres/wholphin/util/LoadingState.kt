@@ -4,6 +4,8 @@ import com.github.damontecres.wholphin.data.model.BaseItem
 
 /**
  * Generic state for loading something from the API
+ *
+ * @see DataLoadingState
  */
 sealed interface LoadingState {
     data object Pending : LoadingState
@@ -64,6 +66,31 @@ sealed interface HomeRowLoadingState {
         val message: String? = null,
         val exception: Throwable? = null,
     ) : HomeRowLoadingState {
+        val localizedMessage: String =
+            listOfNotNull(message, exception?.localizedMessage).joinToString(" - ")
+    }
+}
+
+/**
+ * Generic state for loading something from the API
+ *
+ * @see LoadingState
+ */
+sealed interface DataLoadingState<out T> {
+    data object Pending : DataLoadingState<Nothing>
+
+    data object Loading : DataLoadingState<Nothing>
+
+    data class Success<T>(
+        val data: T,
+    ) : DataLoadingState<T>
+
+    data class Error(
+        val message: String? = null,
+        val exception: Throwable? = null,
+    ) : DataLoadingState<Nothing> {
+        constructor(exception: Throwable) : this(null, exception)
+
         val localizedMessage: String =
             listOfNotNull(message, exception?.localizedMessage).joinToString(" - ")
     }

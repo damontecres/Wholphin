@@ -62,7 +62,7 @@ fun CollectionFolderMovie(
     val tabFocusRequesters = remember { List(tabs.size) { FocusRequester() } }
 
     val firstTabFocusRequester = remember { FocusRequester() }
-    LaunchedEffect(Unit) { firstTabFocusRequester.tryRequestFocus() }
+//    LaunchedEffect(Unit) { firstTabFocusRequester.tryRequestFocus() }
 
     LaunchedEffect(selectedTabIndex) {
         logTab("movie", selectedTabIndex)

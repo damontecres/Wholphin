@@ -4,11 +4,13 @@ import android.content.Context
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.NavDrawerPinnedItem
 import com.github.damontecres.wholphin.data.model.NavPinType
+import com.github.damontecres.wholphin.services.SeerrServerRepository
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.nav.NavDrawerItem
 import com.github.damontecres.wholphin.ui.nav.ServerNavDrawerItem
 import com.github.damontecres.wholphin.util.supportedCollectionTypes
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.flow.first
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.liveTvApi
 import org.jellyfin.sdk.api.client.extensions.userViewsApi
@@ -24,6 +26,7 @@ class NavDrawerItemRepository
         private val api: ApiClient,
         private val serverRepository: ServerRepository,
         private val serverPreferencesDao: ServerPreferencesDao,
+        private val seerrServerRepository: SeerrServerRepository,
     ) {
         suspend fun getNavDrawerItems(): List<NavDrawerItem> {
             val user = serverRepository.currentUser.value
@@ -46,7 +49,13 @@ class NavDrawerItemRepository
                     setOf()
                 }
 
-            val builtins = listOf(NavDrawerItem.Favorites)
+            val builtins =
+                if (seerrServerRepository.active.first()) {
+                    listOf(NavDrawerItem.Favorites, NavDrawerItem.Discover)
+                } else {
+                    listOf(NavDrawerItem.Favorites)
+                }
+
             val libraries =
                 userViews
                     .filter { it.collectionType in supportedCollectionTypes || it.id in recordingFolders }

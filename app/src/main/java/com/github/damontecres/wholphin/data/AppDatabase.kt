@@ -15,6 +15,8 @@ import com.github.damontecres.wholphin.data.model.JellyfinUser
 import com.github.damontecres.wholphin.data.model.LibraryDisplayInfo
 import com.github.damontecres.wholphin.data.model.NavDrawerPinnedItem
 import com.github.damontecres.wholphin.data.model.PlaybackLanguageChoice
+import com.github.damontecres.wholphin.data.model.SeerrServer
+import com.github.damontecres.wholphin.data.model.SeerrUser
 import com.github.damontecres.wholphin.ui.components.ViewOptions
 import kotlinx.serialization.json.Json
 import org.jellyfin.sdk.model.api.ItemSortBy
@@ -32,8 +34,10 @@ import java.util.UUID
         LibraryDisplayInfo::class,
         PlaybackLanguageChoice::class,
         ItemTrackModification::class,
+        SeerrServer::class,
+        SeerrUser::class,
     ],
-    version = 12,
+    version = 20,
     exportSchema = true,
     autoMigrations = [
         AutoMigration(3, 4),
@@ -45,6 +49,7 @@ import java.util.UUID
         AutoMigration(9, 10),
         AutoMigration(10, 11),
         AutoMigration(11, 12),
+        AutoMigration(12, 20),
     ],
 )
 @TypeConverters(Converters::class)
@@ -58,6 +63,8 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun libraryDisplayInfoDao(): LibraryDisplayInfoDao
 
     abstract fun playbackLanguageChoiceDao(): PlaybackLanguageChoiceDao
+
+    abstract fun seerrServerDao(): SeerrServerDao
 }
 
 class Converters {
