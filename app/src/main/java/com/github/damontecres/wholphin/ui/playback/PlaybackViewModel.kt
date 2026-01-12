@@ -168,6 +168,8 @@ class PlaybackViewModel
         val subtitleSearch = MutableLiveData<SubtitleSearch?>(null)
         val subtitleSearchLanguage = MutableLiveData<String>(Locale.current.language)
 
+        val currentUserDto = serverRepository.currentUserDto
+
         init {
             addCloseable {
                 player.removeListener(this@PlaybackViewModel)
@@ -384,15 +386,18 @@ class PlaybackViewModel
                 val subtitleStreams =
                     mediaSource.mediaStreams
                         ?.filter { it.type == MediaStreamType.SUBTITLE }
-                        ?.map(SubtitleStream::from)
-                        .orEmpty()
+                        ?.map {
+                            SimpleMediaStream.from(context, it, true)
+                        }.orEmpty()
+
                 val audioStreams =
                     mediaSource.mediaStreams
                         ?.filter { it.type == MediaStreamType.AUDIO }
-                        ?.map(AudioStream::from)
-                        ?.sortedWith(compareBy<AudioStream> { it.language }.thenByDescending { it.channels })
+                        ?.map {
+                            SimpleMediaStream.from(context, it, true)
+                        }
+//                        ?.sortedWith(compareBy<AudioStream> { it.language }.thenByDescending { it.channels })
                         .orEmpty()
-
                 val audioStream =
                     streamChoiceService
                         .chooseAudioStream(
@@ -520,7 +525,13 @@ class PlaybackViewModel
                             currentItemPlayback.copy(
                                 sourceId = source.id?.toUUIDOrNull(),
                                 audioIndex = audioIndex ?: TrackIndex.UNSPECIFIED,
-                                subtitleIndex = subtitleIndex ?: TrackIndex.DISABLED,
+                                // Preserve special constants (ONLY_FORCED, DISABLED) instead of resolved index
+                                subtitleIndex =
+                                    if (currentItemPlayback.subtitleIndex < 0) {
+                                        currentItemPlayback.subtitleIndex
+                                    } else {
+                                        subtitleIndex ?: TrackIndex.DISABLED
+                                    },
                             )
                         if (userInitiated) {
                             viewModelScope.launchIO {
@@ -741,11 +752,27 @@ class PlaybackViewModel
                         type = MediaStreamType.AUDIO,
                     )
                 this@PlaybackViewModel.currentItemPlayback.setValueOnMain(itemPlayback)
+
+                // Resolve ONLY_FORCED to actual track based on new audio language
+                val source = currentPlayback.value?.mediaSourceInfo
+                val resolvedSubtitleIndex =
+                    if (source != null) {
+                        streamChoiceService.resolveSubtitleIndex(
+                            source = source,
+                            audioStreamIndex = index,
+                            seriesId = item.data.seriesId,
+                            subtitleIndex = itemPlayback.subtitleIndex,
+                            prefs = preferences,
+                        )
+                    } else {
+                        itemPlayback.subtitleIndex.takeIf { it >= 0 }
+                    }
+
                 changeStreams(
                     item,
                     itemPlayback,
                     index,
-                    itemPlayback.subtitleIndex,
+                    resolvedSubtitleIndex,
                     onMain { player.currentPosition },
                     true,
                 )
@@ -763,11 +790,27 @@ class PlaybackViewModel
                         type = MediaStreamType.SUBTITLE,
                     )
                 this@PlaybackViewModel.currentItemPlayback.setValueOnMain(itemPlayback)
+
+                // Resolve ONLY_FORCED to actual track index for playback
+                val source = currentPlayback.value?.mediaSourceInfo
+                val resolvedIndex =
+                    if (source != null) {
+                        streamChoiceService.resolveSubtitleIndex(
+                            source = source,
+                            audioStreamIndex = itemPlayback.audioIndex,
+                            seriesId = item.data.seriesId,
+                            subtitleIndex = index,
+                            prefs = preferences,
+                        )
+                    } else {
+                        index.takeIf { it >= 0 }
+                    }
+
                 changeStreams(
                     item,
                     itemPlayback,
                     itemPlayback.audioIndex,
-                    index,
+                    resolvedIndex,
                     onMain { player.currentPosition },
                     true,
                 )

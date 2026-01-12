@@ -130,6 +130,7 @@ fun PlaybackPage(
 
             val player = viewModel.player
             val mediaInfo by viewModel.currentMediaInfo.observeAsState()
+            val userDto by viewModel.currentUserDto.observeAsState()
 
             val currentPlayback by viewModel.currentPlayback.collectAsState()
             val currentItemPlayback by viewModel.currentItemPlayback.observeAsState(
@@ -561,6 +562,8 @@ fun PlaybackPage(
                             playbackSpeed = playbackSpeed,
                             contentScale = contentScale,
                             subtitleDelay = subtitleDelay,
+                            hasSubtitleDownloadPermission =
+                                remember(userDto) { userDto?.policy?.let { it.isAdministrator || it.enableSubtitleManagement } == true },
                         ),
                     onDismissRequest = {
                         playbackDialog = null
