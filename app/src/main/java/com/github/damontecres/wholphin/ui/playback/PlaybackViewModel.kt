@@ -11,6 +11,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.media3.common.C
 import androidx.media3.common.Format
 import androidx.media3.common.MediaItem
+import androidx.media3.common.MimeTypes
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.common.Tracks
@@ -46,6 +47,7 @@ import com.github.damontecres.wholphin.services.PlaylistCreationResult
 import com.github.damontecres.wholphin.services.PlaylistCreator
 import com.github.damontecres.wholphin.services.RefreshRateService
 import com.github.damontecres.wholphin.services.StreamChoiceService
+import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.onMain
@@ -61,6 +63,7 @@ import com.github.damontecres.wholphin.util.LoadingState
 import com.github.damontecres.wholphin.util.TrackActivityPlaybackListener
 import com.github.damontecres.wholphin.util.checkForSupport
 import com.github.damontecres.wholphin.util.mpv.mpvDeviceProfile
+import com.github.damontecres.wholphin.util.profile.Codec
 import com.github.damontecres.wholphin.util.subtitleMimeTypes
 import com.github.damontecres.wholphin.util.supportItemKinds
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -598,13 +601,18 @@ class PlaybackViewModel
             source?.let { source ->
                 val mediaUrl =
                     if (source.supportsDirectPlay) {
-                        api.videosApi.getVideoStreamUrl(
-                            itemId = itemId,
-                            mediaSourceId = source.id,
-                            static = true,
-                            tag = source.eTag,
-                            playSessionId = response.playSessionId,
-                        )
+                        if (source.isRemote && source.path.isNotNullOrBlank()) {
+                            Timber.i("Playback is remote for source: %s", source.id)
+                            source.path
+                        } else {
+                            api.videosApi.getVideoStreamUrl(
+                                itemId = itemId,
+                                mediaSourceId = source.id,
+                                static = true,
+                                tag = source.eTag,
+                                playSessionId = response.playSessionId,
+                            )
+                        }
                     } else if (source.supportsDirectStream) {
                         source.transcodingUrl?.let(api::createUrl)
                     } else {
@@ -657,7 +665,12 @@ class PlaybackViewModel
                         .setMediaId(itemId.toString())
                         .setUri(mediaUrl.toUri())
                         .setSubtitleConfigurations(listOfNotNull(externalSubtitle))
-                        .build()
+                        .apply {
+                            when (source.container) {
+                                Codec.Container.HLS -> setMimeType(MimeTypes.APPLICATION_M3U8)
+                                Codec.Container.DASH -> setMimeType(MimeTypes.APPLICATION_MPD)
+                            }
+                        }.build()
 
                 val playback =
                     CurrentPlayback(
