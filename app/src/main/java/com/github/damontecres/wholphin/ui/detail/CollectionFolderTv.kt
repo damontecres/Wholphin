@@ -58,6 +58,7 @@ fun CollectionFolderTv(
         )
     var selectedTabIndex by rememberSaveable { mutableIntStateOf(rememberedTabIndex) }
     val focusRequester = remember { FocusRequester() }
+    val tabFocusRequesters = remember { List(tabs.size) { FocusRequester() } }
 
     val firstTabFocusRequester = remember { FocusRequester() }
     LaunchedEffect(Unit) { firstTabFocusRequester.tryRequestFocus() }
@@ -91,6 +92,7 @@ fun CollectionFolderTv(
                         .focusRequester(firstTabFocusRequester),
                 tabs = tabs,
                 onClick = { selectedTabIndex = it },
+                focusRequesters = tabFocusRequesters,
             )
         }
         when (selectedTabIndex) {
@@ -138,6 +140,7 @@ fun CollectionFolderTv(
                         preferencesViewModel.navigationManager.navigateTo(item.destination())
                     },
                     playEnabled = false,
+                    focusRequesterOnEmpty = tabFocusRequesters.getOrNull(selectedTabIndex),
                 )
             }
 
