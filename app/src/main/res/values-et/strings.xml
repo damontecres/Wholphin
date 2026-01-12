@@ -373,4 +373,15 @@
     <string name="force_dovi_profile_7">Dolby Vision Profile 7 otseesitusega</string>
     <string name="force_dovi_profile_7_summary">Eirab seadme ühilduvuskontrolle</string>
     <string name="dts">DTS</string>
+    <string name="discover">Otsi ja leia</string>
+    <string name="request">Päring</string>
+    <string name="pending">Ootel</string>
+    <string name="seerr_integration">Seerri lõiming</string>
+    <string name="remove_seerr_server">Eemalda Seerri server</string>
+    <string name="password">Salasõna</string>
+    <string name="username">Kasutajanimi</string>
+    <string name="url">Võrguaadress</string>
+    <string name="trending">Populaarsust koguv</string>
+    <string name="upcoming_movies">Lähiajal avaldatavad filmid</string>
+    <string name="upcoming_tv">Lähiajal avaldatavad telesarjad ja -saated</string>
 </resources>
