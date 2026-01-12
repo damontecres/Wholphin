@@ -184,7 +184,7 @@ fun DialogPopup(
     dismissOnClick: Boolean = true,
     waitToLoad: Boolean = true,
     properties: DialogProperties = DialogProperties(),
-    elevation: Dp = 3.dp,
+    elevation: Dp = 8.dp,
 ) {
     var waiting by remember { mutableStateOf(waitToLoad) }
     if (showDialog) {
@@ -239,7 +239,7 @@ fun DialogPopupContent(
     onDismissRequest: () -> Unit,
     modifier: Modifier = Modifier,
     dismissOnClick: Boolean = true,
-    elevation: Dp = 3.dp,
+    elevation: Dp = 8.dp,
 ) {
     val elevatedContainerColor =
         MaterialTheme.colorScheme.surfaceColorAtElevation(elevation)
@@ -298,7 +298,7 @@ fun DialogPopup(
     onDismissRequest: () -> Unit,
     dismissOnClick: Boolean = true,
     properties: DialogProperties = DialogProperties(),
-    elevation: Dp = 3.dp,
+    elevation: Dp = 8.dp,
 ) = DialogPopup(
     showDialog = true,
     waitToLoad = params.fromLongClick,
@@ -376,7 +376,7 @@ fun ScrollableDialog(
 fun BasicDialog(
     onDismissRequest: () -> Unit,
     properties: DialogProperties = DialogProperties(),
-    elevation: Dp = 3.dp,
+    elevation: Dp = 8.dp,
     content: @Composable () -> Unit,
 ) {
     Dialog(
@@ -407,7 +407,7 @@ fun ConfirmDialog(
     onCancel: () -> Unit,
     onConfirm: () -> Unit,
     properties: DialogProperties = DialogProperties(),
-    elevation: Dp = 3.dp,
+    elevation: Dp = 8.dp,
 ) = BasicDialog(
     onDismissRequest = onCancel,
     properties = properties,
