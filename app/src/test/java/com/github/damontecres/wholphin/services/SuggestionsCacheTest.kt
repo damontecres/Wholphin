@@ -3,7 +3,7 @@ package com.github.damontecres.wholphin.services
 import android.content.Context
 import io.mockk.every
 import io.mockk.mockk
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -37,7 +37,7 @@ class SuggestionsCacheTest {
 
     @Test
     fun putThenGet_returnsCachedSuggestions() =
-        runBlocking {
+        runTest {
             val cache = testCacheWithTempDir()
             val userId = UUID.randomUUID()
             val libId = UUID.randomUUID()
@@ -51,7 +51,7 @@ class SuggestionsCacheTest {
 
     @Test
     fun get_readsFromDisk_whenMemoryAbsent() =
-        runBlocking {
+        runTest {
             val cache1 = testCacheWithTempDir()
             val userId = UUID.randomUUID()
             val libId = UUID.randomUUID()
@@ -74,7 +74,7 @@ class SuggestionsCacheTest {
     // LRU behavior is not enforced in production; keep tests focused on public behavior.
     @Test
     fun memoryCache_respectsLruLimit() =
-        runBlocking {
+        runTest {
             val cache = testCacheWithTempDir()
             val userId = UUID.randomUUID()
 
@@ -99,7 +99,7 @@ class SuggestionsCacheTest {
 
     @Test
     fun differentParentIds_returnIsolatedCacheEntries() =
-        runBlocking {
+        runTest {
             val cache = testCacheWithTempDir()
             val userId = UUID.randomUUID()
             val movieLibraryId = UUID.randomUUID()
@@ -124,7 +124,7 @@ class SuggestionsCacheTest {
 
     @Test
     fun differentItemKinds_returnIsolatedCacheEntries() =
-        runBlocking {
+        runTest {
             val cache = testCacheWithTempDir()
             val userId = UUID.randomUUID()
             val libraryId = UUID.randomUUID()
@@ -148,7 +148,7 @@ class SuggestionsCacheTest {
 
     @Test
     fun rapidLibrarySwitching_maintainsIsolation() =
-        runBlocking {
+        runTest {
             val cache = testCacheWithTempDir()
             val userId = UUID.randomUUID()
             val lib1 = UUID.randomUUID()
@@ -180,7 +180,7 @@ class SuggestionsCacheTest {
 
     @Test
     fun libraryIsolation_persistsToDisk() =
-        runBlocking {
+        runTest {
             val userId = UUID.randomUUID()
             val lib1 = UUID.randomUUID()
             val lib2 = UUID.randomUUID()
@@ -209,7 +209,7 @@ class SuggestionsCacheTest {
 
     @Test
     fun differentUsers_returnIsolatedCacheEntries() =
-        runBlocking {
+        runTest {
             val cache = testCacheWithTempDir()
             val user1 = UUID.randomUUID()
             val user2 = UUID.randomUUID()
