@@ -116,45 +116,29 @@ class SuggestionsWorkerTest {
         }
 
     @Test
-    fun caches_movie_suggestions() =
+    fun caches_suggestions_for_supported_types() =
         runTest {
-            val viewId = UUID.randomUUID()
-            val view =
-                mockk<BaseItemDto>(relaxed = true) {
-                    every { id } returns viewId
-                    every { collectionType } returns CollectionType.MOVIES
-                }
-            every { mockPreferences.data } returns flowOf(mockPrefs())
-            coEvery { mockUserViewsApi.getUserViews(userId = testUserId) } returns mockQueryResult(listOf(view))
-            mockkObject(GetItemsRequestHandler)
-            coEvery { GetItemsRequestHandler.execute(mockApi, any()) } returns mockQueryResult(listOf(mockk(relaxed = true)))
+            listOf(
+                CollectionType.MOVIES to BaseItemKind.MOVIE,
+                CollectionType.TVSHOWS to BaseItemKind.SERIES,
+            ).forEach { (collectionType, itemKind) ->
+                val viewId = UUID.randomUUID()
+                val view =
+                    mockk<BaseItemDto>(relaxed = true) {
+                        every { id } returns viewId
+                        every { this@mockk.collectionType } returns collectionType
+                    }
+                every { mockPreferences.data } returns flowOf(mockPrefs())
+                coEvery { mockUserViewsApi.getUserViews(userId = testUserId) } returns mockQueryResult(listOf(view))
+                mockkObject(GetItemsRequestHandler)
+                coEvery { GetItemsRequestHandler.execute(mockApi, any()) } returns mockQueryResult(listOf(mockk(relaxed = true)))
 
-            val result = createWorker().doWork()
+                val result = createWorker().doWork()
 
-            assertEquals(ListenableWorker.Result.success(), result)
-            coVerify { mockCache.put(testUserId, viewId, BaseItemKind.MOVIE, any()) }
-            coVerify { mockCache.save() }
-        }
-
-    @Test
-    fun caches_tv_suggestions() =
-        runTest {
-            val viewId = UUID.randomUUID()
-            val view =
-                mockk<BaseItemDto>(relaxed = true) {
-                    every { id } returns viewId
-                    every { collectionType } returns CollectionType.TVSHOWS
-                }
-            every { mockPreferences.data } returns flowOf(mockPrefs())
-            coEvery { mockUserViewsApi.getUserViews(userId = testUserId) } returns mockQueryResult(listOf(view))
-            mockkObject(GetItemsRequestHandler)
-            coEvery { GetItemsRequestHandler.execute(mockApi, any()) } returns mockQueryResult(listOf(mockk(relaxed = true)))
-
-            val result = createWorker().doWork()
-
-            assertEquals(ListenableWorker.Result.success(), result)
-            coVerify { mockCache.put(testUserId, viewId, BaseItemKind.SERIES, any()) }
-            coVerify { mockCache.save() }
+                assertEquals(ListenableWorker.Result.success(), result)
+                coVerify { mockCache.put(testUserId, viewId, itemKind, any()) }
+                coVerify { mockCache.save() }
+            }
         }
 
     @Test
