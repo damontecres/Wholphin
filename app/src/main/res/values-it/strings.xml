@@ -387,4 +387,6 @@
     <string name="dolby_digital">DD</string>
     <string name="dolby_digital_plus">DD+</string>
     <string name="dts">DTS</string>
+    <string name="force_dovi_profile_7">Riproduzione diretta Dolby Vision Profilo 7</string>
+    <string name="force_dovi_profile_7_summary">Ignora le verifiche di compatibilità del dispositivo</string>
 </resources>
