@@ -182,7 +182,7 @@ fun PlaybackDialog(
 //                    }
                 },
                 onSelectChoice = { _, choice ->
-                    onPlaybackActionClick.invoke(PlaybackAction.ToggleCaptions(choice.index))
+                    onPlaybackActionClick.invoke(PlaybackAction.ToggleAudio(choice.index))
                 },
                 gravity = Gravity.END,
             )
