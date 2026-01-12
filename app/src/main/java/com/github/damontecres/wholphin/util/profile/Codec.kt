@@ -7,6 +7,7 @@ object Codec {
         const val `3GP` = "3gp"
         const val ASF = "asf"
         const val AVI = "avi"
+        const val DASH = "dash"
         const val DVR_MS = "dvr-ms"
         const val HLS = "hls"
         const val M2V = "m2v"

@@ -75,6 +75,7 @@
     <string name="no_scheduled_recordings">No scheduled recordings</string>
     <string name="no_update_available">No update available</string>
     <string name="none">None</string>
+    <string name="only_forced_subtitles">Only Forced Subtitles</string>
     <string name="outro">Outro</string>
     <string name="path">Path</string>
     <string name="people">People</string>
@@ -252,6 +253,22 @@
         <item quantity="other">%d seconds</item>
     </plurals>
 
+    <plurals name="movies">
+        <item quantity="zero">Movies</item>
+        <item quantity="one">Movie</item>
+        <item quantity="other">Movies</item>
+    </plurals>
+    <plurals name="tv_shows">
+        <item quantity="zero">TV Shows</item>
+        <item quantity="one">TV Show</item>
+        <item quantity="other">TV Shows</item>
+    </plurals>
+    <plurals name="people">
+        <item quantity="zero">People</item>
+        <item quantity="one">Person</item>
+        <item quantity="other">People</item>
+    </plurals>
+
     <!-- Preferences/Setting specific strings -->
     <string name="pref_key_update_last_check_threshold" translatable="false">preference.update.threshold</string>
     <string name="pref_key_update_last_check" translatable="false">preference.update.lastTimestamp</string>
@@ -403,6 +420,26 @@
     <string name="play_trailer">Play trailer</string>
     <string name="no_trailers">No trailers</string>
     <string name="clear_track_choices">Clear track choices</string>
+    <string name="dts_x">DTS:X</string>
+    <string name="dts_hd">DTS:HD</string>
+    <string name="truehd">TrueHD</string>
+    <string name="dolby_digital">DD</string>
+    <string name="dolby_digital_plus">DD+</string>
+    <string name="dts">DTS</string>
+    <string name="force_dovi_profile_7">Direct play Dolby Vision Profile 7</string>
+    <string name="force_dovi_profile_7_summary">Ignores device compatibility checks</string>
+
+    <string name="discover">Discover</string>
+    <string name="request">Request</string>
+    <string name="pending">Pending</string>
+    <string name="seerr_integration">Seerr integration</string>
+    <string name="remove_seerr_server">Remove Seerr Server</string>
+    <string name="password">Password</string>
+    <string name="username">Username</string>
+    <string name="url">URL</string>
+    <string name="trending">Trending</string>
+    <string name="upcoming_movies">Upcoming Movies</string>
+    <string name="upcoming_tv">Upcoming TV Shows</string>
 
     <string-array name="theme_song_volume">
         <item>Disabled</item>

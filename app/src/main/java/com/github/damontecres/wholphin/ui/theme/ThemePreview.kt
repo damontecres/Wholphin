@@ -21,6 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.tv.material3.ListItem
 import androidx.tv.material3.LocalContentColor
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.NavigationDrawerScope
@@ -30,10 +31,8 @@ import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.preferences.AppPreference
 import com.github.damontecres.wholphin.preferences.AppThemeColors
 import com.github.damontecres.wholphin.ui.AspectRatios
-import com.github.damontecres.wholphin.ui.cards.BannerCard
 import com.github.damontecres.wholphin.ui.cards.SeasonCard
 import com.github.damontecres.wholphin.ui.cards.WatchedIcon
-import com.github.damontecres.wholphin.ui.components.ExpandableFaButton
 import com.github.damontecres.wholphin.ui.nav.NavDrawerItem
 import com.github.damontecres.wholphin.ui.nav.NavItem
 import com.github.damontecres.wholphin.ui.playback.PlaybackButton
@@ -43,7 +42,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 
 @Preview(
-    device = "spec:width=1200dp,height=2000dp",
+    device = "spec:width=1200dp,height=2500dp",
     backgroundColor = 0xFF383535,
     uiMode = UI_MODE_TYPE_TELEVISION,
 )
@@ -109,6 +108,7 @@ private fun ThemeExample(theme: AppThemeColors) {
                             isPlayed = true,
                             unplayedItemCount = 2,
                             playedPercentage = 50.0,
+                            numberOfVersions = 2,
                             onClick = { },
                             onLongClick = {},
                             imageHeight = 120.dp,
@@ -125,6 +125,7 @@ private fun ThemeExample(theme: AppThemeColors) {
                             isPlayed = true,
                             unplayedItemCount = 2,
                             playedPercentage = 0.0,
+                            numberOfVersions = 0,
                             onClick = { },
                             onLongClick = {},
                             imageHeight = 120.dp,
@@ -268,6 +269,24 @@ private fun ThemeExample(theme: AppThemeColors) {
                             onClick = {},
                             onControllerInteraction = {},
                             interactionSource = source,
+                        )
+                    }
+                    Column(
+                        modifier = Modifier.background(MaterialTheme.colorScheme.surface),
+                    ) {
+                        ListItem(
+                            selected = false,
+                            enabled = true,
+                            headlineContent = { Text("Headline content") },
+                            supportingContent = { Text("Support content") },
+                            onClick = {},
+                        )
+                        ListItem(
+                            selected = true,
+                            enabled = true,
+                            headlineContent = { Text("Headline content") },
+                            supportingContent = { Text("Support content") },
+                            onClick = {},
                         )
                     }
                 }

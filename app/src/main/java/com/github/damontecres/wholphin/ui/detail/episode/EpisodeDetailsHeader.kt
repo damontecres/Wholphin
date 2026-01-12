@@ -59,6 +59,7 @@ fun EpisodeDetailsHeader(
 
             VideoStreamDetails(
                 chosenStreams = chosenStreams,
+                numberOfVersions = dto.mediaSourceCount ?: 0,
                 modifier = Modifier.padding(bottom = padding),
             )
             dto.taglines?.firstOrNull()?.let { tagline ->

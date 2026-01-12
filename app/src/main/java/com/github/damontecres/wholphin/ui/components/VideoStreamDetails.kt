@@ -1,6 +1,5 @@
 package com.github.damontecres.wholphin.ui.components
 
-import android.content.Context
 import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -31,28 +30,31 @@ import com.github.damontecres.wholphin.data.ChosenStreams
 import com.github.damontecres.wholphin.preferences.AppThemeColors
 import com.github.damontecres.wholphin.ui.FontAwesome
 import com.github.damontecres.wholphin.ui.PreviewTvSpec
-import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.playback.audioStreamCount
 import com.github.damontecres.wholphin.ui.playback.embeddedSubtitleCount
 import com.github.damontecres.wholphin.ui.playback.externalSubtitlesCount
 import com.github.damontecres.wholphin.ui.theme.WholphinTheme
+import com.github.damontecres.wholphin.ui.util.StreamFormatting.concatWithSpace
+import com.github.damontecres.wholphin.ui.util.StreamFormatting.formatAudioCodec
+import com.github.damontecres.wholphin.ui.util.StreamFormatting.formatSubtitleCodec
+import com.github.damontecres.wholphin.ui.util.StreamFormatting.formatVideoRange
+import com.github.damontecres.wholphin.ui.util.StreamFormatting.resolutionString
 import com.github.damontecres.wholphin.util.languageName
-import com.github.damontecres.wholphin.util.profile.Codec
 import org.jellyfin.sdk.model.api.MediaSourceInfo
 import org.jellyfin.sdk.model.api.MediaStream
-import org.jellyfin.sdk.model.api.VideoRange
-import org.jellyfin.sdk.model.api.VideoRangeType
 
 @Composable
 @NonRestartableComposable
 fun VideoStreamDetails(
     chosenStreams: ChosenStreams?,
+    numberOfVersions: Int,
     modifier: Modifier = Modifier,
 ) = VideoStreamDetails(
     chosenStreams?.source,
     chosenStreams?.videoStream,
     chosenStreams?.audioStream,
     chosenStreams?.subtitleStream,
+    numberOfVersions,
     modifier,
 )
 
@@ -62,6 +64,7 @@ fun VideoStreamDetails(
     videoStream: MediaStream?,
     audioStream: MediaStream?,
     subtitleStream: MediaStream?,
+    numberOfVersions: Int = 0,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -86,13 +89,16 @@ fun VideoStreamDetails(
                                 null
                             }
                         val range = formatVideoRange(context, it.videoRange, it.videoRangeType, it.videoDoViTitle)
-                        listOfNotNull(
-                            resName.concatWithSpace(range),
-                            it.codec?.uppercase(),
-                        )
-                    }.orEmpty()
+                        resName.concatWithSpace(range)
+                    }
             }
-        video.forEach {
+        video?.let {
+            StreamLabel(
+                text = it,
+                count = numberOfVersions,
+            )
+        }
+        videoStream?.codec?.uppercase()?.let {
             StreamLabel(it)
         }
 
@@ -148,35 +154,6 @@ fun VideoStreamDetails(
         }
     }
 }
-
-fun interlaced(interlaced: Boolean) = if (interlaced) "i" else "p"
-
-// Adapted from https://github.com/jellyfin/jellyfin/blob/aa4ddd139a7c01889a99561fc314121ba198dd70/MediaBrowser.Model/Entities/MediaStream.cs#L714
-fun resolutionString(
-    width: Int,
-    height: Int,
-    interlaced: Boolean,
-): String =
-    if (height > width) {
-        // Vertical video
-        resolutionString(height, width, interlaced)
-    } else {
-        when {
-            width <= 256 && height <= 144 -> "144" + interlaced(interlaced)
-            width <= 426 && height <= 240 -> "240" + interlaced(interlaced)
-            width <= 640 && height <= 360 -> "360" + interlaced(interlaced)
-            width <= 682 && height <= 384 -> "384" + interlaced(interlaced)
-            width <= 720 && height <= 404 -> "404" + interlaced(interlaced)
-            width <= 854 && height <= 480 -> "480" + interlaced(interlaced)
-            width <= 960 && height <= 544 -> "540" + interlaced(interlaced)
-            width <= 1024 && height <= 576 -> "576" + interlaced(interlaced)
-            width <= 1280 && height <= 962 -> "720" + interlaced(interlaced)
-            width <= 2560 && height <= 1440 -> "1080" + interlaced(interlaced)
-            width <= 4096 && height <= 3072 -> "4K"
-            width <= 8192 && height <= 6144 -> "8K"
-            else -> height.toString() + interlaced(interlaced)
-        }
-    }
 
 @Composable
 fun StreamLabel(
@@ -251,93 +228,3 @@ private fun StreamLabelPreview() {
         }
     }
 }
-
-fun formatVideoRange(
-    context: Context,
-    videoRange: VideoRange?,
-    type: VideoRangeType?,
-    doviTitle: String?,
-): String? =
-    when (videoRange) {
-        VideoRange.UNKNOWN,
-        VideoRange.SDR, null,
-        -> {
-            null
-        }
-
-        VideoRange.HDR -> {
-            if (doviTitle.isNotNullOrBlank()) {
-                context.getString(R.string.dolby_vision)
-            } else {
-                when (type) {
-                    VideoRangeType.UNKNOWN,
-                    VideoRangeType.SDR,
-                    null,
-                    -> null
-
-                    VideoRangeType.HDR10 -> "HDR10"
-
-                    VideoRangeType.HDR10_PLUS -> "HDR10+"
-
-                    VideoRangeType.HLG -> "HLG"
-
-                    VideoRangeType.DOVI,
-                    VideoRangeType.DOVI_WITH_HDR10,
-                    VideoRangeType.DOVI_WITH_HLG,
-                    VideoRangeType.DOVI_WITH_SDR,
-                    -> context.getString(R.string.dolby_vision)
-                }
-            }
-        }
-    }
-
-fun formatAudioCodec(
-    context: Context,
-    codec: String?,
-    profile: String?,
-): String? =
-    when {
-        profile?.contains("Dolby Atmos", true) == true -> {
-            context.getString(R.string.dolby_atmos)
-        }
-
-        profile?.contains("DTS:X", true) == true -> {
-            "DTS:X"
-        }
-
-        profile?.contains("DTS:HD", true) == true -> {
-            "DTS:HD"
-        }
-
-        else -> {
-            when (codec?.lowercase()) {
-                Codec.Audio.TRUEHD -> "TrueHD"
-
-                Codec.Audio.OGG,
-                Codec.Audio.OPUS,
-                Codec.Audio.VORBIS,
-                -> codec.replaceFirstChar { it.uppercase() }
-
-                null -> null
-
-                else -> codec.uppercase()
-            }
-        }
-    }
-
-fun formatSubtitleCodec(codec: String?): String? =
-    when (codec?.lowercase()) {
-        Codec.Subtitle.DVBSUB -> "DVB"
-        Codec.Subtitle.DVDSUB -> "DVD"
-        Codec.Subtitle.PGSSUB -> "PGS"
-        Codec.Subtitle.SUBRIP -> "SRT"
-        null -> null
-        else -> codec.uppercase()
-    }
-
-fun String?.concatWithSpace(str: String?): String? =
-    when {
-        this != null && str != null -> "$this $str"
-        this == null -> str
-        else -> this
-    }

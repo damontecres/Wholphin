@@ -114,6 +114,7 @@ class DvrScheduleViewModel
 @Composable
 fun DvrSchedule(
     requestFocusAfterLoading: Boolean,
+    focusRequesterOnEmpty: FocusRequester,
     modifier: Modifier = Modifier,
     viewModel: DvrScheduleViewModel = hiltViewModel(),
 ) {
@@ -138,7 +139,13 @@ fun DvrSchedule(
             var showDialog by remember { mutableStateOf<BaseItem?>(null) }
             val focusRequester = remember { FocusRequester() }
             if (requestFocusAfterLoading) {
-                LaunchedEffect(Unit) { focusRequester.tryRequestFocus() }
+                LaunchedEffect(Unit) {
+                    if (active.isNotEmpty() || recordings.isNotEmpty()) {
+                        focusRequester.tryRequestFocus()
+                    } else {
+                        focusRequesterOnEmpty.tryRequestFocus()
+                    }
+                }
             }
             DvrScheduleContent(
                 activeRecordings = active,
