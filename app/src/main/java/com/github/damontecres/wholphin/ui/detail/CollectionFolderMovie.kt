@@ -59,6 +59,7 @@ fun CollectionFolderMovie(
         )
     var selectedTabIndex by rememberSaveable { mutableIntStateOf(rememberedTabIndex) }
     val focusRequester = remember { FocusRequester() }
+    val tabFocusRequesters = remember { List(tabs.size) { FocusRequester() } }
 
     val firstTabFocusRequester = remember { FocusRequester() }
     LaunchedEffect(Unit) { firstTabFocusRequester.tryRequestFocus() }
@@ -88,6 +89,7 @@ fun CollectionFolderMovie(
                         .focusRequester(firstTabFocusRequester),
                 tabs = tabs,
                 onClick = { selectedTabIndex = it },
+                focusRequesters = tabFocusRequesters,
             )
         }
         when (selectedTabIndex) {
@@ -136,6 +138,7 @@ fun CollectionFolderMovie(
                         showHeader = position < columns
                     },
                     playEnabled = true,
+                    focusRequesterOnEmpty = tabFocusRequesters.getOrNull(selectedTabIndex),
                 )
             }
 
@@ -168,6 +171,7 @@ fun CollectionFolderMovie(
                         showHeader = position < columns
                     },
                     playEnabled = false,
+                    focusRequesterOnEmpty = tabFocusRequesters.getOrNull(selectedTabIndex),
                 )
             }
 

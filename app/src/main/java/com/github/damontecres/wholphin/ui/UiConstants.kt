@@ -51,6 +51,7 @@ val DefaultItemFields =
         ItemFields.SORT_NAME,
         ItemFields.CHAPTERS,
         ItemFields.MEDIA_SOURCES,
+        ItemFields.MEDIA_SOURCE_COUNT,
     )
 
 /**
@@ -63,10 +64,12 @@ val SlimItemFields =
         ItemFields.CHILD_COUNT,
         ItemFields.OVERVIEW,
         ItemFields.SORT_NAME,
+        ItemFields.MEDIA_SOURCE_COUNT,
     )
 
 object Cards {
     val height2x3 = 172.dp
+    val heightEpisode = height2x3 * .75f
     val playedPercentHeight = 6.dp
     val serverUserCircle = height2x3 * .75f
 }

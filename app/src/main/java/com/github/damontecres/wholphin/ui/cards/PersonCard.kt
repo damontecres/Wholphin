@@ -77,6 +77,7 @@ fun PersonCard(
                 favorite = item.favorite,
                 watched = false,
                 unwatchedCount = -1,
+                numberOfVersions = -1,
                 watchedPercent = null,
                 useFallbackText = false,
                 modifier =

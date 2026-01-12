@@ -49,6 +49,10 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlin.time.Duration.Companion.milliseconds
 
+// Top scrim configuration for text readability (clock, season tabs)
+private const val TOP_SCRIM_ALPHA = 0.55f
+private const val TOP_SCRIM_END_FRACTION = 0.25f // Fraction of backdrop image height
+
 @HiltViewModel
 class ApplicationContentViewModel
     @Inject
@@ -73,6 +77,7 @@ fun ApplicationContent(
     navigationManager: NavigationManager,
     preferences: UserPreferences,
     modifier: Modifier = Modifier,
+    enableTopScrim: Boolean = true,
     viewModel: ApplicationContentViewModel = hiltViewModel(),
 ) {
     val backStack: MutableList<NavKey> =
@@ -179,6 +184,20 @@ fun ApplicationContent(
                             .alpha(.95f)
                             .drawWithContent {
                                 drawContent()
+                                // Subtle top scrim for system UI readability (clock, tabs)
+                                if (enableTopScrim) {
+                                    drawRect(
+                                        brush =
+                                            Brush.verticalGradient(
+                                                colorStops =
+                                                    arrayOf(
+                                                        0f to Color.Black.copy(alpha = TOP_SCRIM_ALPHA),
+                                                        TOP_SCRIM_END_FRACTION to Color.Transparent,
+                                                    ),
+                                            ),
+                                        blendMode = BlendMode.Multiply,
+                                    )
+                                }
                                 drawRect(
                                     brush =
                                         Brush.horizontalGradient(

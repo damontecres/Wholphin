@@ -73,6 +73,7 @@ fun FavoritesPage(
             stringResource(R.string.playlists),
             stringResource(R.string.people),
         )
+    val tabFocusRequesters = remember { List(tabs.size) { FocusRequester() } }
     var selectedTabIndex by rememberSaveable { mutableIntStateOf(rememberedTabIndex) }
     val focusRequester = remember { FocusRequester() }
 
@@ -107,6 +108,7 @@ fun FavoritesPage(
                         .padding(start = 32.dp, top = 16.dp, bottom = 16.dp),
                 tabs = tabs,
                 onClick = { selectedTabIndex = it },
+                focusRequesters = tabFocusRequesters,
             )
         }
         // TODO playEnabled = true for movies & episodes
@@ -139,6 +141,7 @@ fun FavoritesPage(
                     },
                     playEnabled = false,
                     filterOptions = DefaultForFavoritesFilterOptions,
+                    focusRequesterOnEmpty = tabFocusRequesters.getOrNull(selectedTabIndex),
                 )
             }
 
@@ -170,6 +173,7 @@ fun FavoritesPage(
                     },
                     playEnabled = false,
                     filterOptions = DefaultForFavoritesFilterOptions,
+                    focusRequesterOnEmpty = tabFocusRequesters.getOrNull(selectedTabIndex),
                 )
             }
 
@@ -202,6 +206,7 @@ fun FavoritesPage(
                     },
                     playEnabled = false,
                     filterOptions = DefaultForFavoritesFilterOptions,
+                    focusRequesterOnEmpty = tabFocusRequesters.getOrNull(selectedTabIndex),
                 )
             }
 
@@ -233,6 +238,7 @@ fun FavoritesPage(
                     },
                     playEnabled = false,
                     filterOptions = DefaultForFavoritesFilterOptions,
+                    focusRequesterOnEmpty = tabFocusRequesters.getOrNull(selectedTabIndex),
                 )
             }
 
@@ -264,6 +270,7 @@ fun FavoritesPage(
                     },
                     playEnabled = false,
                     filterOptions = DefaultForFavoritesFilterOptions,
+                    focusRequesterOnEmpty = tabFocusRequesters.getOrNull(selectedTabIndex),
                 )
             }
 
@@ -300,6 +307,7 @@ fun FavoritesPage(
                     },
                     playEnabled = false,
                     filterOptions = listOf(),
+                    focusRequesterOnEmpty = tabFocusRequesters.getOrNull(selectedTabIndex),
                 )
             }
 
