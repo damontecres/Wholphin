@@ -109,11 +109,12 @@ fun SeriesOverviewContent(
     var requestFocusAfterSeason by remember { mutableStateOf(false) }
 
     val seasonStr = stringResource(R.string.tv_season)
-    val tabs = seasons.map { season ->
-        season?.name
-            ?: season?.data?.indexNumber?.let { "$seasonStr $it" }
-            ?: ""
-    }
+    val tabs =
+        seasons.map { season ->
+            season?.name
+                ?: season?.data?.indexNumber?.let { "$seasonStr $it" }
+                ?: ""
+        }
     val focusRequesters = remember(seasons) { List(seasons.size) { FocusRequester() } }
 
     Box(
