@@ -21,6 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.tv.material3.ListItem
 import androidx.tv.material3.LocalContentColor
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.NavigationDrawerScope
@@ -41,7 +42,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 
 @Preview(
-    device = "spec:width=1200dp,height=2000dp",
+    device = "spec:width=1200dp,height=2500dp",
     backgroundColor = 0xFF383535,
     uiMode = UI_MODE_TYPE_TELEVISION,
 )
@@ -268,6 +269,24 @@ private fun ThemeExample(theme: AppThemeColors) {
                             onClick = {},
                             onControllerInteraction = {},
                             interactionSource = source,
+                        )
+                    }
+                    Column(
+                        modifier = Modifier.background(MaterialTheme.colorScheme.surface),
+                    ) {
+                        ListItem(
+                            selected = false,
+                            enabled = true,
+                            headlineContent = { Text("Headline content") },
+                            supportingContent = { Text("Support content") },
+                            onClick = {},
+                        )
+                        ListItem(
+                            selected = true,
+                            enabled = true,
+                            headlineContent = { Text("Headline content") },
+                            supportingContent = { Text("Support content") },
+                            onClick = {},
                         )
                     }
                 }

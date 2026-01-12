@@ -11,6 +11,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.media3.common.C
 import androidx.media3.common.Format
 import androidx.media3.common.MediaItem
+import androidx.media3.common.MimeTypes
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.common.Tracks
@@ -46,6 +47,7 @@ import com.github.damontecres.wholphin.services.PlaylistCreationResult
 import com.github.damontecres.wholphin.services.PlaylistCreator
 import com.github.damontecres.wholphin.services.RefreshRateService
 import com.github.damontecres.wholphin.services.StreamChoiceService
+import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.onMain
@@ -61,6 +63,7 @@ import com.github.damontecres.wholphin.util.LoadingState
 import com.github.damontecres.wholphin.util.TrackActivityPlaybackListener
 import com.github.damontecres.wholphin.util.checkForSupport
 import com.github.damontecres.wholphin.util.mpv.mpvDeviceProfile
+import com.github.damontecres.wholphin.util.profile.Codec
 import com.github.damontecres.wholphin.util.subtitleMimeTypes
 import com.github.damontecres.wholphin.util.supportItemKinds
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -135,7 +138,7 @@ class PlaybackViewModel
         val player by lazy {
             playerFactory.createVideoPlayer()
         }
-        private val mediaSession: MediaSession
+        private var mediaSession: MediaSession? = null
         internal val mutex = Mutex()
 
         val controllerViewState =
@@ -168,6 +171,8 @@ class PlaybackViewModel
         val subtitleSearch = MutableLiveData<SubtitleSearch?>(null)
         val subtitleSearchLanguage = MutableLiveData<String>(Locale.current.language)
 
+        val currentUserDto = serverRepository.currentUserDto
+
         init {
             addCloseable {
                 player.removeListener(this@PlaybackViewModel)
@@ -179,15 +184,11 @@ class PlaybackViewModel
                 }
                 jobs.forEach { it.cancel() }
                 player.release()
-                mediaSession.release()
+                mediaSession?.release()
             }
             viewModelScope.launch(ExceptionHandler()) { controllerViewState.observe() }
             player.addListener(this)
             (player as? ExoPlayer)?.addAnalyticsListener(this)
-            mediaSession =
-                MediaSession
-                    .Builder(context, player)
-                    .build()
             jobs.add(subscribe())
             jobs.add(listenForTranscodeReason())
         }
@@ -284,6 +285,18 @@ class PlaybackViewModel
                     } else {
                         throw IllegalArgumentException("Item is not playable and not PlaybackList: ${queriedItem.type}")
                     }
+
+                val sessionPlayer =
+                    MediaSessionPlayer(
+                        player,
+                        controllerViewState,
+                        preferences.appPreferences.playbackPreferences,
+                    )
+                mediaSession =
+                    MediaSession
+                        .Builder(context, sessionPlayer)
+                        .build()
+
                 val item = BaseItem.from(base, api)
 
                 val played =
@@ -376,15 +389,18 @@ class PlaybackViewModel
                 val subtitleStreams =
                     mediaSource.mediaStreams
                         ?.filter { it.type == MediaStreamType.SUBTITLE }
-                        ?.map(SubtitleStream::from)
-                        .orEmpty()
+                        ?.map {
+                            SimpleMediaStream.from(context, it, true)
+                        }.orEmpty()
+
                 val audioStreams =
                     mediaSource.mediaStreams
                         ?.filter { it.type == MediaStreamType.AUDIO }
-                        ?.map(AudioStream::from)
-                        ?.sortedWith(compareBy<AudioStream> { it.language }.thenByDescending { it.channels })
+                        ?.map {
+                            SimpleMediaStream.from(context, it, true)
+                        }
+//                        ?.sortedWith(compareBy<AudioStream> { it.language }.thenByDescending { it.channels })
                         .orEmpty()
-
                 val audioStream =
                     streamChoiceService
                         .chooseAudioStream(
@@ -512,7 +528,13 @@ class PlaybackViewModel
                             currentItemPlayback.copy(
                                 sourceId = source.id?.toUUIDOrNull(),
                                 audioIndex = audioIndex ?: TrackIndex.UNSPECIFIED,
-                                subtitleIndex = subtitleIndex ?: TrackIndex.DISABLED,
+                                // Preserve special constants (ONLY_FORCED, DISABLED) instead of resolved index
+                                subtitleIndex =
+                                    if (currentItemPlayback.subtitleIndex < 0) {
+                                        currentItemPlayback.subtitleIndex
+                                    } else {
+                                        subtitleIndex ?: TrackIndex.DISABLED
+                                    },
                             )
                         if (userInitiated) {
                             viewModelScope.launchIO {
@@ -585,13 +607,18 @@ class PlaybackViewModel
             source?.let { source ->
                 val mediaUrl =
                     if (source.supportsDirectPlay) {
-                        api.videosApi.getVideoStreamUrl(
-                            itemId = itemId,
-                            mediaSourceId = source.id,
-                            static = true,
-                            tag = source.eTag,
-                            playSessionId = response.playSessionId,
-                        )
+                        if (source.isRemote && source.path.isNotNullOrBlank()) {
+                            Timber.i("Playback is remote for source: %s", source.id)
+                            source.path
+                        } else {
+                            api.videosApi.getVideoStreamUrl(
+                                itemId = itemId,
+                                mediaSourceId = source.id,
+                                static = true,
+                                tag = source.eTag,
+                                playSessionId = response.playSessionId,
+                            )
+                        }
                     } else if (source.supportsDirectStream) {
                         source.transcodingUrl?.let(api::createUrl)
                     } else {
@@ -644,7 +671,12 @@ class PlaybackViewModel
                         .setMediaId(itemId.toString())
                         .setUri(mediaUrl.toUri())
                         .setSubtitleConfigurations(listOfNotNull(externalSubtitle))
-                        .build()
+                        .apply {
+                            when (source.container) {
+                                Codec.Container.HLS -> setMimeType(MimeTypes.APPLICATION_M3U8)
+                                Codec.Container.DASH -> setMimeType(MimeTypes.APPLICATION_MPD)
+                            }
+                        }.build()
 
                 val playback =
                     CurrentPlayback(
@@ -733,11 +765,27 @@ class PlaybackViewModel
                         type = MediaStreamType.AUDIO,
                     )
                 this@PlaybackViewModel.currentItemPlayback.setValueOnMain(itemPlayback)
+
+                // Resolve ONLY_FORCED to actual track based on new audio language
+                val source = currentPlayback.value?.mediaSourceInfo
+                val resolvedSubtitleIndex =
+                    if (source != null) {
+                        streamChoiceService.resolveSubtitleIndex(
+                            source = source,
+                            audioStreamIndex = index,
+                            seriesId = item.data.seriesId,
+                            subtitleIndex = itemPlayback.subtitleIndex,
+                            prefs = preferences,
+                        )
+                    } else {
+                        itemPlayback.subtitleIndex.takeIf { it >= 0 }
+                    }
+
                 changeStreams(
                     item,
                     itemPlayback,
                     index,
-                    itemPlayback.subtitleIndex,
+                    resolvedSubtitleIndex,
                     onMain { player.currentPosition },
                     true,
                 )
@@ -755,11 +803,27 @@ class PlaybackViewModel
                         type = MediaStreamType.SUBTITLE,
                     )
                 this@PlaybackViewModel.currentItemPlayback.setValueOnMain(itemPlayback)
+
+                // Resolve ONLY_FORCED to actual track index for playback
+                val source = currentPlayback.value?.mediaSourceInfo
+                val resolvedIndex =
+                    if (source != null) {
+                        streamChoiceService.resolveSubtitleIndex(
+                            source = source,
+                            audioStreamIndex = itemPlayback.audioIndex,
+                            seriesId = item.data.seriesId,
+                            subtitleIndex = index,
+                            prefs = preferences,
+                        )
+                    } else {
+                        index.takeIf { it >= 0 }
+                    }
+
                 changeStreams(
                     item,
                     itemPlayback,
                     itemPlayback.audioIndex,
-                    index,
+                    resolvedIndex,
                     onMain { player.currentPosition },
                     true,
                 )
@@ -1058,7 +1122,7 @@ class PlaybackViewModel
             Timber.v("release")
             activityListener?.release()
             player.release()
-            mediaSession.release()
+            mediaSession?.release()
             activityListener = null
         }
 

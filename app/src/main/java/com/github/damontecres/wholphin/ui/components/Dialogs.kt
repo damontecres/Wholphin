@@ -57,6 +57,7 @@ import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.TrackIndex
 import com.github.damontecres.wholphin.ui.FontAwesome
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
+import com.github.damontecres.wholphin.ui.playback.SimpleMediaStream
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -85,6 +86,7 @@ data class DialogItem(
     val leadingContent: @Composable (BoxScope.() -> Unit)? = null,
     val trailingContent: @Composable (() -> Unit)? = null,
     val enabled: Boolean = true,
+    val selected: Boolean = false,
 ) : DialogItemEntry {
     constructor(
         @StringRes text: Int,
@@ -268,7 +270,7 @@ fun DialogPopupContent(
 
                     is DialogItem -> {
                         ListItem(
-                            selected = false,
+                            selected = it.selected,
                             enabled = !waiting && it.enabled,
                             onClick = {
                                 if (dismissOnClick) {
@@ -506,6 +508,7 @@ fun resourceFor(type: MediaStreamType): Int =
 fun chooseStream(
     context: Context,
     streams: List<MediaStream>,
+    currentIndex: Int?,
     type: MediaStreamType,
     onClick: (Int) -> Unit,
 ): DialogParams =
@@ -517,6 +520,10 @@ fun chooseStream(
                 if (type == MediaStreamType.SUBTITLE) {
                     add(
                         DialogItem(
+                            selected = currentIndex == null,
+                            leadingContent = {
+                                SelectedLeadingContent(currentIndex == null)
+                            },
                             headlineContent = {
                                 Text(text = stringResource(R.string.none))
                             },
@@ -525,15 +532,30 @@ fun chooseStream(
                             onClick = { onClick.invoke(TrackIndex.DISABLED) },
                         ),
                     )
+                    add(
+                        DialogItem(
+                            headlineContent = {
+                                Text(text = stringResource(R.string.only_forced_subtitles))
+                            },
+                            supportingContent = {
+                            },
+                            onClick = { onClick.invoke(TrackIndex.ONLY_FORCED) },
+                        ),
+                    )
                 }
                 addAll(
                     streams.filter { it.type == type }.mapIndexed { index, stream ->
-                        val title = stream.displayTitle ?: stream.title ?: ""
+                        val simpleStream = SimpleMediaStream.from(context, stream, true)
                         DialogItem(
+                            selected = currentIndex == stream.index,
+                            leadingContent = {
+                                SelectedLeadingContent(currentIndex == stream.index)
+                            },
                             headlineContent = {
-                                Text(text = title)
+                                Text(text = simpleStream.streamTitle ?: simpleStream.displayTitle)
                             },
                             supportingContent = {
+                                if (simpleStream.streamTitle != null) Text(text = simpleStream.displayTitle)
                             },
                             onClick = { onClick.invoke(stream.index) },
                         )

@@ -43,10 +43,12 @@ import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.FavoriteWatchManager
 import com.github.damontecres.wholphin.services.NavigationManager
+import com.github.damontecres.wholphin.ui.Cards
 import com.github.damontecres.wholphin.ui.LocalImageUrlService
 import com.github.damontecres.wholphin.ui.OneTimeLaunchedEffect
 import com.github.damontecres.wholphin.ui.PreviewTvSpec
 import com.github.damontecres.wholphin.ui.SlimItemFields
+import com.github.damontecres.wholphin.ui.cards.SeasonCard
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.ExpandableFaButton
 import com.github.damontecres.wholphin.ui.components.LoadingPage
@@ -54,7 +56,9 @@ import com.github.damontecres.wholphin.ui.components.LoadingRow
 import com.github.damontecres.wholphin.ui.components.OverviewText
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialog
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialogInfo
+import com.github.damontecres.wholphin.ui.data.RowColumn
 import com.github.damontecres.wholphin.ui.formatDate
+import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.nav.Destination
@@ -334,8 +338,25 @@ fun PersonPageContent(
                 onClickItem = onClickItem,
                 onClickPosition = { position = it },
                 showIfEmpty = false,
-                horizontalPadding = 32.dp,
+                horizontalPadding = 24.dp,
                 modifier = Modifier.fillMaxWidth(),
+                cardContent = { index, item, mod, onClick, onLongClick ->
+                    SeasonCard(
+                        item = item,
+                        onClick = {
+                            position = RowColumn(EPISODE_ROW, index)
+                            onClick.invoke()
+                        },
+                        onLongClick = onLongClick,
+                        imageHeight = Cards.heightEpisode,
+                        modifier =
+                            mod
+                                .ifElse(
+                                    position.row == EPISODE_ROW && position.column == index,
+                                    Modifier.focusRequester(focusRequester),
+                                ),
+                    )
+                },
             )
         }
     }

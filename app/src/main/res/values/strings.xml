@@ -75,6 +75,7 @@
     <string name="no_scheduled_recordings">No scheduled recordings</string>
     <string name="no_update_available">No update available</string>
     <string name="none">None</string>
+    <string name="only_forced_subtitles">Only Forced Subtitles</string>
     <string name="outro">Outro</string>
     <string name="path">Path</string>
     <string name="people">People</string>
@@ -403,6 +404,14 @@
     <string name="play_trailer">Play trailer</string>
     <string name="no_trailers">No trailers</string>
     <string name="clear_track_choices">Clear track choices</string>
+    <string name="dts_x">DTS:X</string>
+    <string name="dts_hd">DTS:HD</string>
+    <string name="truehd">TrueHD</string>
+    <string name="dolby_digital">DD</string>
+    <string name="dolby_digital_plus">DD+</string>
+    <string name="dts">DTS</string>
+    <string name="force_dovi_profile_7">Direct play Dolby Vision Profile 7</string>
+    <string name="force_dovi_profile_7_summary">Ignores device compatibility checks</string>
 
     <string-array name="theme_song_volume">
         <item>Disabled</item>
