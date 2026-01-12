@@ -107,6 +107,18 @@ fun SeriesOverviewContent(
     val scrollState = rememberScrollState()
     val scrollConnection = rememberDelayedNestedScroll()
     var requestFocusAfterSeason by remember { mutableStateOf(false) }
+
+    val seasonStr = stringResource(R.string.tv_season)
+    val tabs =
+        remember(seasons) {
+            seasons.mapNotNull {
+                it?.name
+                    ?: it?.data?.indexNumber?.let { "$seasonStr $it" }
+                    ?: ""
+            }
+        }
+    val focusRequesters = remember(seasons) { List(seasons.size) { FocusRequester() } }
+
     Box(
         modifier =
             modifier
@@ -138,17 +150,13 @@ fun SeriesOverviewContent(
                     }
                 TabRow(
                     selectedTabIndex = selectedTabIndex,
-                    tabs =
-                        seasons.mapNotNull {
-                            it?.name
-                                ?: it?.data?.indexNumber?.let { stringResource(R.string.tv_season) + " $it" }
-                                ?: ""
-                        },
+                    tabs = tabs,
                     onClick = {
                         selectedTabIndex = it
                         onChangeSeason.invoke(it)
                         requestFocusAfterSeason = true
                     },
+                    focusRequesters = focusRequesters,
                     modifier =
                         Modifier
                             .focusRequester(tabRowFocusRequester)
