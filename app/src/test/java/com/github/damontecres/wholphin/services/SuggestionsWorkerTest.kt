@@ -1,6 +1,5 @@
 package com.github.damontecres.wholphin.services
 
-import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.lifecycle.MutableLiveData
 import androidx.work.Data
@@ -8,27 +7,19 @@ import androidx.work.ListenableWorker
 import androidx.work.WorkerParameters
 import com.github.damontecres.wholphin.data.CurrentUser
 import com.github.damontecres.wholphin.data.ServerRepository
-import com.github.damontecres.wholphin.data.model.JellyfinServer
-import com.github.damontecres.wholphin.data.model.JellyfinUser
 import com.github.damontecres.wholphin.preferences.AppPreferences
-import com.github.damontecres.wholphin.preferences.HomePagePreferences
 import com.github.damontecres.wholphin.util.GetItemsRequestHandler
-import io.mockk.Runs
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
-import io.mockk.just
 import io.mockk.mockk
-import io.mockk.slot
+import io.mockk.mockkObject
+import io.mockk.unmockkObject
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.jellyfin.sdk.api.client.ApiClient
-import org.jellyfin.sdk.api.client.Response
 import org.jellyfin.sdk.api.client.exception.ApiClientException
-import org.jellyfin.sdk.api.client.extensions.itemsApi
 import org.jellyfin.sdk.api.client.extensions.userViewsApi
-import org.jellyfin.sdk.api.operations.ItemsApi
-import org.jellyfin.sdk.api.operations.UserLibraryApi
 import org.jellyfin.sdk.api.operations.UserViewsApi
 import org.jellyfin.sdk.model.api.BaseItemDto
 import org.jellyfin.sdk.model.api.BaseItemDtoQueryResult
