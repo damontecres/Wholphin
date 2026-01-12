@@ -156,6 +156,7 @@ fun createDeviceProfile(
 
         container(
             Codec.Container.ASF,
+            Codec.Container.DASH,
             Codec.Container.HLS,
             Codec.Container.M4V,
             Codec.Container.MKV,
