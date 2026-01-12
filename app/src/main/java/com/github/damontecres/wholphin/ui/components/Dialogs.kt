@@ -32,6 +32,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -244,6 +245,7 @@ fun DialogPopupContent(
         verticalArrangement = Arrangement.spacedBy(8.dp),
         modifier =
             modifier
+                .shadow(elevation = elevation, shape = RoundedCornerShape(28.0.dp))
                 .graphicsLayer {
                     this.clip = true
                     this.shape = RoundedCornerShape(28.0.dp)
@@ -343,6 +345,7 @@ fun ScrollableDialog(
                     .width(width)
                     .heightIn(max = maxHeight)
                     .focusable()
+                    .shadow(elevation = 8.dp, shape = RoundedCornerShape(8.dp))
                     .background(
                         MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp),
                         shape = RoundedCornerShape(8.dp),
@@ -381,6 +384,7 @@ fun BasicDialog(
         Box(
             modifier =
                 Modifier
+                    .shadow(elevation = elevation, shape = RoundedCornerShape(8.dp))
                     .background(
                         MaterialTheme.colorScheme.surfaceColorAtElevation(elevation),
                         shape = RoundedCornerShape(8.dp),
