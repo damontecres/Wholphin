@@ -143,6 +143,7 @@ data class RequestGridItem(
 
 @Composable
 fun SeerrRequestsPage(
+    focusRequesterOnEmpty: FocusRequester?,
     modifier: Modifier = Modifier,
     viewModel: SeerrRequestsViewModel = hiltViewModel(),
 ) {
@@ -164,6 +165,8 @@ fun SeerrRequestsPage(
             LaunchedEffect(Unit) {
                 if (state.data.isNotEmpty()) {
                     focusRequester.tryRequestFocus()
+                } else {
+                    focusRequesterOnEmpty?.tryRequestFocus()
                 }
             }
             Column(modifier = modifier) {

@@ -47,6 +47,7 @@ fun DiscoverPage(
         )
     var selectedTabIndex by rememberSaveable { mutableIntStateOf(rememberedTabIndex) }
     val focusRequester = remember { FocusRequester() }
+    val tabFocusRequesters = remember(tabs) { List(tabs.size) { FocusRequester() } }
 
     val firstTabFocusRequester = remember { FocusRequester() }
     LaunchedEffect(Unit) { firstTabFocusRequester.tryRequestFocus() }
@@ -76,6 +77,7 @@ fun DiscoverPage(
                         .focusRequester(firstTabFocusRequester),
                 tabs = tabs,
                 onClick = { selectedTabIndex = it },
+                focusRequesters = tabFocusRequesters,
             )
         }
         when (selectedTabIndex) {
@@ -93,6 +95,7 @@ fun DiscoverPage(
             // Requests
             1 -> {
                 SeerrRequestsPage(
+                    focusRequesterOnEmpty = tabFocusRequesters.getOrNull(selectedTabIndex),
                     modifier =
                         Modifier
                             .fillMaxSize()
