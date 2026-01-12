@@ -355,4 +355,6 @@
     <string name="dolby_digital">DD</string>
     <string name="dolby_digital_plus">DD+</string>
     <string name="dts">DTS</string>
+    <string name="force_dovi_profile_7">直通播放杜比视界配置文件 7</string>
+    <string name="force_dovi_profile_7_summary">忽略设备兼容性检查</string>
 </resources>
