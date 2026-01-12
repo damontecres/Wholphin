@@ -364,4 +364,13 @@
     <string name="play_trailer">Esita treilerit</string>
     <string name="no_trailers">Treilerit pole</string>
     <string name="clear_track_choices">Eemalda rajavalikud</string>
+    <string name="only_forced_subtitles">Vaid sundkorras kuvatud subtiitrid</string>
+    <string name="dts_x">DTS:X</string>
+    <string name="dts_hd">DTS:HD</string>
+    <string name="truehd">TrueHD</string>
+    <string name="dolby_digital">DD</string>
+    <string name="dolby_digital_plus">DD+</string>
+    <string name="force_dovi_profile_7">Dolby Vision Profile 7 otseesitusega</string>
+    <string name="force_dovi_profile_7_summary">Eirab seadme ühilduvuskontrolle</string>
+    <string name="dts">DTS</string>
 </resources>
