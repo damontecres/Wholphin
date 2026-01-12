@@ -37,6 +37,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -54,6 +55,7 @@ import com.github.damontecres.wholphin.ui.cards.ItemRow
 import com.github.damontecres.wholphin.ui.components.CircularProgress
 import com.github.damontecres.wholphin.ui.components.DialogParams
 import com.github.damontecres.wholphin.ui.components.DialogPopup
+import com.github.damontecres.wholphin.ui.components.EpisodeName
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.components.QuickDetails
@@ -76,6 +78,7 @@ import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.MediaType
 import timber.log.Timber
 import java.util.UUID
+import kotlin.time.Duration
 
 @Composable
 fun HomePage(
@@ -257,6 +260,9 @@ fun HomePageContent(
     LaunchedEffect(position) {
         listState.animateScrollToItem(position.row)
     }
+    LaunchedEffect(onUpdateBackdrop, focusedItem) {
+        focusedItem?.let { onUpdateBackdrop.invoke(it) }
+    }
     Box(modifier = modifier) {
         Column(modifier = Modifier.fillMaxSize()) {
             HomePageHeader(
@@ -377,7 +383,7 @@ fun HomePageContent(
                                                     .onFocusChanged {
                                                         if (it.isFocused) {
                                                             position = RowColumn(rowIndex, index)
-                                                            item?.let(onUpdateBackdrop)
+//                                                            item?.let(onUpdateBackdrop)
                                                         }
                                                         if (it.isFocused && onFocusPosition != null) {
                                                             val nonEmptyRowBefore =
@@ -438,58 +444,71 @@ fun HomePageHeader(
     modifier: Modifier = Modifier,
 ) {
     item?.let {
+        val isEpisode = item.type == BaseItemKind.EPISODE
         val dto = item.data
-        Column(
-            verticalArrangement = Arrangement.spacedBy(4.dp),
+        HomePageHeader(
+            title = item.title,
+            subtitle = if (isEpisode) dto.name else null,
+            overview = dto.overview,
+            overviewTwoLines = isEpisode,
+            quickDetails = item.ui.quickDetails,
+            timeRemaining = item.timeRemainingOrRuntime,
             modifier = modifier,
+        )
+    }
+}
+
+@Composable
+fun HomePageHeader(
+    title: String?,
+    subtitle: String?,
+    overview: String?,
+    overviewTwoLines: Boolean,
+    quickDetails: AnnotatedString,
+    timeRemaining: Duration?,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+        modifier = modifier,
+    ) {
+        title?.let {
+            Text(
+                text = it,
+                style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.SemiBold),
+                color = MaterialTheme.colorScheme.onBackground,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.fillMaxWidth(.75f),
+            )
+        }
+        Column(
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth(.6f)
+                    .fillMaxHeight(),
         ) {
-            item.title?.let {
-                Text(
-                    text = it,
-                    style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.SemiBold),
-                    color = MaterialTheme.colorScheme.onBackground,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.fillMaxWidth(.75f),
-                )
+            subtitle?.let {
+                EpisodeName(it)
             }
-            Column(
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                modifier =
-                    Modifier
-                        .fillMaxWidth(.6f)
-                        .fillMaxHeight(),
-            ) {
-                val isEpisode = item.type == BaseItemKind.EPISODE
-                val subtitle = if (isEpisode) dto.name else null
-                val overview = dto.overview
-                subtitle?.let {
-                    Text(
-                        text = subtitle,
-                        style = MaterialTheme.typography.headlineSmall,
-                        color = MaterialTheme.colorScheme.onBackground,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                }
-                QuickDetails(item.ui.quickDetails, item.timeRemainingOrRuntime)
-                val overviewModifier =
-                    Modifier
-                        .padding(0.dp)
-                        .height(48.dp + if (!isEpisode) 12.dp else 0.dp)
-                        .width(400.dp)
-                if (overview.isNotNullOrBlank()) {
-                    Text(
-                        text = overview,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        maxLines = if (isEpisode) 2 else 3,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = overviewModifier,
-                    )
-                } else {
-                    Spacer(overviewModifier)
-                }
+            QuickDetails(quickDetails, timeRemaining)
+            val overviewModifier =
+                Modifier
+                    .padding(0.dp)
+                    .height(48.dp + if (!overviewTwoLines) 12.dp else 0.dp)
+                    .width(400.dp)
+            if (overview.isNotNullOrBlank()) {
+                Text(
+                    text = overview,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = if (overviewTwoLines) 2 else 3,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = overviewModifier,
+                )
+            } else {
+                Spacer(overviewModifier)
             }
         }
     }

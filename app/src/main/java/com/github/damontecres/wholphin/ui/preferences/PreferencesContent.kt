@@ -19,6 +19,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableIntStateOf
@@ -42,6 +43,7 @@ import androidx.tv.material3.surfaceColorAtElevation
 import coil3.SingletonImageLoader
 import coil3.imageLoader
 import com.github.damontecres.wholphin.R
+import com.github.damontecres.wholphin.data.model.SeerrAuthMethod
 import com.github.damontecres.wholphin.preferences.AppPreference
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.PlayerBackend
@@ -50,6 +52,7 @@ import com.github.damontecres.wholphin.preferences.basicPreferences
 import com.github.damontecres.wholphin.preferences.uiPreferences
 import com.github.damontecres.wholphin.preferences.updatePlaybackPreferences
 import com.github.damontecres.wholphin.services.UpdateChecker
+import com.github.damontecres.wholphin.ui.components.ConfirmDialog
 import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.nav.Destination
@@ -58,9 +61,12 @@ import com.github.damontecres.wholphin.ui.playSoundOnFocus
 import com.github.damontecres.wholphin.ui.preferences.subtitle.SubtitleSettings
 import com.github.damontecres.wholphin.ui.preferences.subtitle.SubtitleStylePage
 import com.github.damontecres.wholphin.ui.setup.UpdateViewModel
+import com.github.damontecres.wholphin.ui.setup.seerr.AddSeerServerDialog
+import com.github.damontecres.wholphin.ui.setup.seerr.SwitchSeerrViewModel
 import com.github.damontecres.wholphin.ui.showToast
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.ExceptionHandler
+import com.github.damontecres.wholphin.util.LoadingState
 import kotlinx.coroutines.launch
 import timber.log.Timber
 
@@ -71,6 +77,7 @@ fun PreferencesContent(
     modifier: Modifier = Modifier,
     viewModel: PreferencesViewModel = hiltViewModel(),
     updateVM: UpdateViewModel = hiltViewModel(),
+    seerrVm: SwitchSeerrViewModel = hiltViewModel(),
     onFocus: (Int, Int) -> Unit = { _, _ -> },
 ) {
     val context = LocalContext.current
@@ -84,6 +91,8 @@ fun PreferencesContent(
 
     val navDrawerPins by viewModel.navDrawerPins.observeAsState(mapOf())
     var cacheUsage by remember { mutableStateOf(CacheUsage(0, 0, 0)) }
+    val seerrIntegrationEnabled by viewModel.seerrEnabled.collectAsState(false)
+    var showSeerrServerDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         viewModel.preferenceDataStore.data.collect {
@@ -381,6 +390,22 @@ fun PreferencesContent(
                                 )
                             }
 
+                            AppPreference.SeerrIntegration -> {
+                                ClickPreference(
+                                    title = stringResource(pref.title),
+                                    onClick = { showSeerrServerDialog = true },
+                                    modifier = Modifier,
+                                    summary =
+                                        if (seerrIntegrationEnabled) {
+                                            stringResource(R.string.enabled)
+                                        } else {
+                                            null
+                                        },
+                                    onLongClick = {},
+                                    interactionSource = interactionSource,
+                                )
+                            }
+
                             else -> {
                                 val value = pref.getter.invoke(preferences)
                                 ComposablePreference(
@@ -437,6 +462,39 @@ fun PreferencesContent(
                         showPinFlow = false
                     },
                     onDismissRequest = { showPinFlow = false },
+                )
+            }
+        }
+        if (showSeerrServerDialog) {
+            if (seerrIntegrationEnabled) {
+                ConfirmDialog(
+                    title = stringResource(R.string.remove_seerr_server),
+                    body = "",
+                    onCancel = { showSeerrServerDialog = false },
+                    onConfirm = {
+                        seerrVm.removeServer()
+                        showSeerrServerDialog = false
+                    },
+                )
+            } else {
+                val currentUser by seerrVm.currentUser.observeAsState()
+                val status by seerrVm.serverConnectionStatus.collectAsState(LoadingState.Pending)
+                LaunchedEffect(status) {
+                    if (status == LoadingState.Success) {
+                        showSeerrServerDialog = false
+                    }
+                }
+                AddSeerServerDialog(
+                    currentUsername = currentUser?.name,
+                    status = status,
+                    onSubmit = { url: String, username: String?, passwordOrApiKey: String, method: SeerrAuthMethod ->
+                        if (method == SeerrAuthMethod.API_KEY) {
+                            seerrVm.submitServer(url, passwordOrApiKey)
+                        } else {
+                            seerrVm.submitServer(url, username ?: "", passwordOrApiKey, method)
+                        }
+                    },
+                    onDismissRequest = { showSeerrServerDialog = false },
                 )
             }
         }

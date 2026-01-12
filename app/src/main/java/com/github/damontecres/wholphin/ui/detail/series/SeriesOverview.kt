@@ -312,7 +312,6 @@ fun SeriesOverview(
                             Destination.Playback(
                                 it.id,
                                 resumePosition.inWholeMilliseconds,
-                                it,
                             ),
                         )
                     },
@@ -327,7 +326,6 @@ fun SeriesOverview(
                                 Destination.Playback(
                                     it.id,
                                     resume.inWholeMilliseconds,
-                                    it,
                                 ),
                             )
                         }

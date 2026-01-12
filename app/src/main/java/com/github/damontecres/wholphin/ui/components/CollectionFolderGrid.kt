@@ -86,6 +86,7 @@ import com.github.damontecres.wholphin.ui.playback.scale
 import com.github.damontecres.wholphin.ui.rememberInt
 import com.github.damontecres.wholphin.ui.setValueOnMain
 import com.github.damontecres.wholphin.ui.toServerString
+import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.ApiRequestPager
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.GetItemsRequestHandler
@@ -525,6 +526,7 @@ fun CollectionFolderGrid(
     positionCallback: ((columns: Int, position: Int) -> Unit)? = null,
     useSeriesForPrimary: Boolean = true,
     filterOptions: List<ItemFilterBy<*>> = DefaultFilterOptions,
+    focusRequesterOnEmpty: FocusRequester? = null,
 ) = CollectionFolderGrid(
     preferences,
     itemId.toServerString(),
@@ -541,6 +543,7 @@ fun CollectionFolderGrid(
     positionCallback = positionCallback,
     useSeriesForPrimary = useSeriesForPrimary,
     filterOptions = filterOptions,
+    focusRequesterOnEmpty = focusRequesterOnEmpty,
 )
 
 @Composable
@@ -560,6 +563,7 @@ fun CollectionFolderGrid(
     positionCallback: ((columns: Int, position: Int) -> Unit)? = null,
     useSeriesForPrimary: Boolean = true,
     filterOptions: List<ItemFilterBy<*>> = DefaultFilterOptions,
+    focusRequesterOnEmpty: FocusRequester? = null,
     playlistViewModel: AddPlaylistViewModel = hiltViewModel(),
     viewModel: CollectionFolderViewModel =
         hiltViewModel<CollectionFolderViewModel, CollectionFolderViewModel.Factory>(
@@ -615,6 +619,7 @@ fun CollectionFolderGrid(
                         pager = pager,
                         sortAndDirection = sortAndDirection!!,
                         modifier = Modifier.fillMaxSize(),
+                        focusRequesterOnEmpty = focusRequesterOnEmpty,
                         onClickItem = onClickItem,
                         onLongClickItem = { position, item ->
                             moreDialog.makePresent(PositionItem(position, item))
@@ -759,6 +764,7 @@ fun CollectionFolderGridContent(
     currentFilter: GetItemsFilter = GetItemsFilter(),
     filterOptions: List<ItemFilterBy<*>> = listOf(),
     onFilterChange: (GetItemsFilter) -> Unit = {},
+    focusRequesterOnEmpty: FocusRequester? = null,
 ) {
     val context = LocalContext.current
 
@@ -767,7 +773,11 @@ fun CollectionFolderGridContent(
     var viewOptions by remember { mutableStateOf(viewOptions) }
 
     val gridFocusRequester = remember { FocusRequester() }
-    RequestOrRestoreFocus(gridFocusRequester)
+    if (pager.isNotEmpty()) {
+        RequestOrRestoreFocus(gridFocusRequester)
+    } else {
+        focusRequesterOnEmpty?.tryRequestFocus()
+    }
     var backdropImageUrl by remember { mutableStateOf<String?>(null) }
 
     var position by rememberInt(initialPosition)
