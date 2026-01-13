@@ -48,6 +48,7 @@ import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.SeerrUserConfig
 import com.github.damontecres.wholphin.services.TrailerService
 import com.github.damontecres.wholphin.ui.cards.DiscoverItemCard
+import com.github.damontecres.wholphin.ui.cards.DiscoverPersonRow
 import com.github.damontecres.wholphin.ui.cards.ItemRow
 import com.github.damontecres.wholphin.ui.components.DialogItem
 import com.github.damontecres.wholphin.ui.components.DialogParams
@@ -59,14 +60,11 @@ import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.components.OverviewText
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialog
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialogInfo
-import com.github.damontecres.wholphin.ui.discover.DiscoverRow
-import com.github.damontecres.wholphin.ui.discover.DiscoverRowData
 import com.github.damontecres.wholphin.ui.letNotEmpty
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.rememberInt
 import com.github.damontecres.wholphin.ui.roundMinutes
 import com.github.damontecres.wholphin.ui.tryRequestFocus
-import com.github.damontecres.wholphin.util.DataLoadingState
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
 import kotlinx.coroutines.launch
@@ -358,22 +356,17 @@ fun DiscoverSeriesDetailsContent(
 //                }
                 if (people.isNotEmpty()) {
                     item {
-                        DiscoverRow(
-                            row =
-                                DiscoverRowData(
-                                    stringResource(R.string.people),
-                                    DataLoadingState.Success(people),
-                                ),
-                            onClickItem = { index: Int, item: DiscoverItem ->
+                        DiscoverPersonRow(
+                            people = people,
+                            onClick = {
                                 position = PEOPLE_ROW
-                                onClickPerson.invoke(item)
+                                onClickPerson.invoke(it)
                             },
-                            onLongClickItem = { index, person ->
+                            onLongClick = { index, person ->
                                 position = PEOPLE_ROW
                                 onLongClickPerson.invoke(index, person)
                             },
-                            onCardFocus = {},
-                            focusRequester = focusRequesters[PEOPLE_ROW],
+                            modifier = Modifier.focusRequester(focusRequesters[PEOPLE_ROW]),
                         )
                     }
                 }
