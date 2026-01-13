@@ -347,4 +347,15 @@
     <string name="play_trailer">播放預告片</string>
     <string name="local">本地</string>
     <string name="no_trailers">無預告片</string>
+    <string name="dts_x">DTS:X</string>
+    <string name="dts_hd">DTS:HD</string>
+    <string name="truehd">TrueHD</string>
+    <string name="dolby_digital">DD</string>
+    <string name="dolby_digital_plus">DD+</string>
+    <string name="dts">DTS</string>
+    <string name="force_dovi_profile_7">直接播放杜比視界 Profile 7</string>
+    <string name="force_dovi_profile_7_summary">忽略設備相容性檢查</string>
+    <string name="discover">發現</string>
+    <string name="request">請求</string>
+    <string name="pending">待處理</string>
 </resources>
