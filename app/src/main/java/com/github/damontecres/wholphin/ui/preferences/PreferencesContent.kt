@@ -491,7 +491,7 @@ fun PreferencesContent(
                 val serverAddedMessage = stringResource(R.string.seerr_server_added)
                 LaunchedEffect(status) {
                     if (status == LoadingState.Success) {
-                        showToast(context, serverAddedMessage)
+                        Toast.makeText(context, serverAddedMessage, Toast.LENGTH_SHORT).show()
                         seerrDialogMode = SeerrDialogMode.None
                     }
                 }
