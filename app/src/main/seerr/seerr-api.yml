@@ -707,6 +707,10 @@ components:
         initialized:
           type: boolean
           example: false
+        movie4kEnabled:
+          type: boolean
+        series4kEnabled:
+          type: boolean
     MovieResult:
       type: object
       required:

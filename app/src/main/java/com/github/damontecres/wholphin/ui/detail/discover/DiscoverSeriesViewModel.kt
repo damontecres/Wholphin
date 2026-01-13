@@ -63,6 +63,7 @@ class DiscoverSeriesViewModel
         val recommended = MutableLiveData<List<DiscoverItem>>(listOf())
 
         val userConfig = seerrServerRepository.current.map { it?.config }
+        val request4kEnabled = seerrServerRepository.current.map { it?.request4kMovieEnabled ?: false }
 
         init {
             init()
@@ -136,12 +137,15 @@ class DiscoverSeriesViewModel
             navigationManager.navigateTo(destination)
         }
 
-        fun request(id: Int) {
+        fun request(
+            id: Int,
+            is4k: Boolean,
+        ) {
             viewModelScope.launchIO {
                 val request =
                     seerrService.api.requestApi.requestPost(
                         RequestPostRequest(
-                            is4k = false,
+                            is4k = is4k,
                             mediaId = id,
                             mediaType = RequestPostRequest.MediaType.TV,
                             seasons = RequestPostRequest.Seasons.ALL, // TODO handle picking seasons
