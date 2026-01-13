@@ -394,12 +394,12 @@ fun PreferencesContent(
                                 ClickPreference(
                                     title = stringResource(pref.title),
                                     onClick = {
-                                        seerrDialogMode =
-                                            if (seerrIntegrationEnabled) {
-                                                SeerrDialogMode.Remove
-                                            } else {
-                                                SeerrDialogMode.Add
-                                            }
+                                        if (seerrIntegrationEnabled) {
+                                            seerrDialogMode = SeerrDialogMode.Remove
+                                        } else {
+                                            seerrVm.resetStatus()
+                                            seerrDialogMode = SeerrDialogMode.Add
+                                        }
                                     },
                                     modifier = Modifier,
                                     summary =

@@ -87,4 +87,8 @@ class SwitchSeerrViewModel
                 seerrServerRepository.removeServer()
             }
         }
+
+        fun resetStatus() {
+            serverConnectionStatus.update { LoadingState.Pending }
+        }
     }
