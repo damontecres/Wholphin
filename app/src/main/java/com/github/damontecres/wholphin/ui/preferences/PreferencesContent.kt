@@ -92,7 +92,7 @@ fun PreferencesContent(
     val navDrawerPins by viewModel.navDrawerPins.observeAsState(mapOf())
     var cacheUsage by remember { mutableStateOf(CacheUsage(0, 0, 0)) }
     val seerrIntegrationEnabled by viewModel.seerrEnabled.collectAsState(false)
-    var showSeerrServerDialog by remember { mutableStateOf(false) }
+    var seerrDialogMode by remember { mutableStateOf<SeerrDialogMode>(SeerrDialogMode.None) }
 
     LaunchedEffect(Unit) {
         viewModel.preferenceDataStore.data.collect {
@@ -393,7 +393,14 @@ fun PreferencesContent(
                             AppPreference.SeerrIntegration -> {
                                 ClickPreference(
                                     title = stringResource(pref.title),
-                                    onClick = { showSeerrServerDialog = true },
+                                    onClick = {
+                                        seerrDialogMode =
+                                            if (seerrIntegrationEnabled) {
+                                                SeerrDialogMode.Remove
+                                            } else {
+                                                SeerrDialogMode.Add
+                                            }
+                                    },
                                     modifier = Modifier,
                                     summary =
                                         if (seerrIntegrationEnabled) {
@@ -465,23 +472,27 @@ fun PreferencesContent(
                 )
             }
         }
-        if (showSeerrServerDialog) {
-            if (seerrIntegrationEnabled) {
+        when (seerrDialogMode) {
+            SeerrDialogMode.Remove -> {
                 ConfirmDialog(
                     title = stringResource(R.string.remove_seerr_server),
                     body = "",
-                    onCancel = { showSeerrServerDialog = false },
+                    onCancel = { seerrDialogMode = SeerrDialogMode.None },
                     onConfirm = {
                         seerrVm.removeServer()
-                        showSeerrServerDialog = false
+                        seerrDialogMode = SeerrDialogMode.None
                     },
                 )
-            } else {
+            }
+
+            SeerrDialogMode.Add -> {
                 val currentUser by seerrVm.currentUser.observeAsState()
                 val status by seerrVm.serverConnectionStatus.collectAsState(LoadingState.Pending)
+                val serverAddedMessage = stringResource(R.string.seerr_server_added)
                 LaunchedEffect(status) {
                     if (status == LoadingState.Success) {
-                        showSeerrServerDialog = false
+                        showToast(context, serverAddedMessage)
+                        seerrDialogMode = SeerrDialogMode.None
                     }
                 }
                 AddSeerServerDialog(
@@ -494,9 +505,11 @@ fun PreferencesContent(
                             seerrVm.submitServer(url, username ?: "", passwordOrApiKey, method)
                         }
                     },
-                    onDismissRequest = { showSeerrServerDialog = false },
+                    onDismissRequest = { seerrDialogMode = SeerrDialogMode.None },
                 )
             }
+
+            SeerrDialogMode.None -> {}
         }
     }
 }
@@ -539,3 +552,11 @@ data class CacheUsage(
     val imageMemoryMax: Long,
     val imageDiskUsed: Long,
 )
+
+private sealed class SeerrDialogMode {
+    data object None : SeerrDialogMode()
+
+    data object Add : SeerrDialogMode()
+
+    data object Remove : SeerrDialogMode()
+}
