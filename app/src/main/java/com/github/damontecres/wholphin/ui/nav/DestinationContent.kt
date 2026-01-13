@@ -3,8 +3,10 @@ package com.github.damontecres.wholphin.ui.nav
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
+import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.data.filter.DefaultForGenresFilterOptions
+import com.github.damontecres.wholphin.data.model.SeerrItemType
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.components.ItemGrid
 import com.github.damontecres.wholphin.ui.components.LicenseInfo
@@ -20,10 +22,14 @@ import com.github.damontecres.wholphin.ui.detail.DebugPage
 import com.github.damontecres.wholphin.ui.detail.FavoritesPage
 import com.github.damontecres.wholphin.ui.detail.PersonPage
 import com.github.damontecres.wholphin.ui.detail.PlaylistDetails
+import com.github.damontecres.wholphin.ui.detail.discover.DiscoverMovieDetails
+import com.github.damontecres.wholphin.ui.detail.discover.DiscoverPersonPage
+import com.github.damontecres.wholphin.ui.detail.discover.DiscoverSeriesDetails
 import com.github.damontecres.wholphin.ui.detail.episode.EpisodeDetails
 import com.github.damontecres.wholphin.ui.detail.movie.MovieDetails
 import com.github.damontecres.wholphin.ui.detail.series.SeriesDetails
 import com.github.damontecres.wholphin.ui.detail.series.SeriesOverview
+import com.github.damontecres.wholphin.ui.discover.DiscoverPage
 import com.github.damontecres.wholphin.ui.main.HomePage
 import com.github.damontecres.wholphin.ui.main.SearchPage
 import com.github.damontecres.wholphin.ui.playback.PlaybackPage
@@ -121,7 +127,6 @@ fun DestinationContent(
                     CollectionFolderBoxSet(
                         preferences = preferences,
                         itemId = destination.itemId,
-                        item = destination.item,
                         recursive = false,
                         playEnabled = true,
                         modifier = modifier,
@@ -141,7 +146,7 @@ fun DestinationContent(
                     CollectionFolder(
                         preferences = preferences,
                         destination = destination,
-                        collectionType = destination.item?.data?.collectionType,
+                        collectionType = destination.collectionType,
                         usePostersOverride = null,
                         recursiveOverride = null,
                         modifier = modifier,
@@ -153,7 +158,7 @@ fun DestinationContent(
                     CollectionFolder(
                         preferences = preferences,
                         destination = destination,
-                        collectionType = destination.item?.data?.collectionType,
+                        collectionType = destination.collectionType,
                         usePostersOverride = true,
                         recursiveOverride = null,
                         modifier = modifier,
@@ -165,7 +170,7 @@ fun DestinationContent(
                     CollectionFolder(
                         preferences = preferences,
                         destination = destination,
-                        collectionType = destination.item?.data?.collectionType,
+                        collectionType = destination.collectionType,
                         usePostersOverride = null,
                         recursiveOverride = true,
                         modifier = modifier,
@@ -247,6 +252,47 @@ fun DestinationContent(
         Destination.Debug -> {
             DebugPage(preferences, modifier)
         }
+
+        Destination.Discover -> {
+            DiscoverPage(
+                preferences = preferences,
+                modifier = modifier,
+            )
+        }
+
+        is Destination.DiscoveredItem -> {
+            when (destination.item.type) {
+                SeerrItemType.MOVIE -> {
+                    DiscoverMovieDetails(
+                        preferences = preferences,
+                        destination = destination,
+                        modifier = modifier,
+                    )
+                }
+
+                SeerrItemType.TV -> {
+                    DiscoverSeriesDetails(
+                        preferences = preferences,
+                        destination = destination,
+                        modifier = modifier,
+                    )
+                }
+
+                SeerrItemType.PERSON -> {
+                    DiscoverPersonPage(
+                        person = destination.item,
+                        modifier = modifier,
+                    )
+                }
+
+                SeerrItemType.UNKNOWN -> {
+                    Text(
+                        text = "Unknown discover type",
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
+                }
+            }
+        }
     }
 }
 
@@ -292,7 +338,6 @@ fun CollectionFolder(
             CollectionFolderPlaylist(
                 preferences,
                 destination.itemId,
-                destination.item,
                 true,
                 modifier,
             )

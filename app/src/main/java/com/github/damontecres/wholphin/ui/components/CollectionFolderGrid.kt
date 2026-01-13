@@ -304,50 +304,14 @@ class CollectionFolderViewModel
             recursive: Boolean,
             filter: GetItemsFilter,
             useSeriesForPrimary: Boolean,
-        ): ApiRequestPager<out Any> {
-            val item = item.value
-            return when (filter.override) {
+        ): ApiRequestPager<out Any> =
+            when (filter.override) {
                 GetItemsFilterOverride.NONE -> {
-                    val includeItemTypes =
-                        item
-                            ?.data
-                            ?.collectionType
-                            ?.baseItemKinds
-                            .orEmpty()
                     val request =
-                        filter.applyTo(
-                            GetItemsRequest(
-                                parentId = item?.id,
-                                enableImageTypes = listOf(ImageType.PRIMARY, ImageType.THUMB),
-                                includeItemTypes = includeItemTypes,
-                                recursive = recursive,
-                                excludeItemIds = item?.let { listOf(item.id) },
-                                sortBy =
-                                    buildList {
-                                        if (sortAndDirection.sort != ItemSortBy.DEFAULT) {
-                                            add(sortAndDirection.sort)
-                                            if (sortAndDirection.sort != ItemSortBy.SORT_NAME) {
-                                                add(ItemSortBy.SORT_NAME)
-                                            }
-                                            if (item?.data?.collectionType == CollectionType.MOVIES) {
-                                                add(ItemSortBy.PRODUCTION_YEAR)
-                                            }
-                                        }
-                                    },
-                                sortOrder =
-                                    buildList {
-                                        if (sortAndDirection.sort != ItemSortBy.DEFAULT) {
-                                            add(sortAndDirection.direction)
-                                            if (sortAndDirection.sort != ItemSortBy.SORT_NAME) {
-                                                add(SortOrder.ASCENDING)
-                                            }
-                                            if (item?.data?.collectionType == CollectionType.MOVIES) {
-                                                add(SortOrder.ASCENDING)
-                                            }
-                                        }
-                                    },
-                                fields = SlimItemFields,
-                            ),
+                        createGetItemsRequest(
+                            sortAndDirection = sortAndDirection,
+                            recursive = recursive,
+                            filter = filter,
                         )
                     val newPager =
                         ApiRequestPager(
@@ -378,6 +342,55 @@ class CollectionFolderViewModel
                     newPager
                 }
             }
+
+        private fun createGetItemsRequest(
+            sortAndDirection: SortAndDirection,
+            recursive: Boolean,
+            filter: GetItemsFilter,
+        ): GetItemsRequest {
+            val item = item.value
+            val includeItemTypes =
+                item
+                    ?.data
+                    ?.collectionType
+                    ?.baseItemKinds
+                    .orEmpty()
+            val request =
+                filter.applyTo(
+                    GetItemsRequest(
+                        parentId = item?.id,
+                        enableImageTypes = listOf(ImageType.PRIMARY, ImageType.THUMB),
+                        includeItemTypes = includeItemTypes,
+                        recursive = recursive,
+                        excludeItemIds = item?.let { listOf(item.id) },
+                        sortBy =
+                            buildList {
+                                if (sortAndDirection.sort != ItemSortBy.DEFAULT) {
+                                    add(sortAndDirection.sort)
+                                    if (sortAndDirection.sort != ItemSortBy.SORT_NAME) {
+                                        add(ItemSortBy.SORT_NAME)
+                                    }
+                                    if (item?.data?.collectionType == CollectionType.MOVIES) {
+                                        add(ItemSortBy.PRODUCTION_YEAR)
+                                    }
+                                }
+                            },
+                        sortOrder =
+                            buildList {
+                                if (sortAndDirection.sort != ItemSortBy.DEFAULT) {
+                                    add(sortAndDirection.direction)
+                                    if (sortAndDirection.sort != ItemSortBy.SORT_NAME) {
+                                        add(SortOrder.ASCENDING)
+                                    }
+                                    if (item?.data?.collectionType == CollectionType.MOVIES) {
+                                        add(SortOrder.ASCENDING)
+                                    }
+                                }
+                            },
+                        fields = SlimItemFields,
+                    ),
+                )
+            return request
         }
 
         suspend fun getFilterOptionValues(filterOption: ItemFilterBy<*>): List<FilterValueOption> =
@@ -457,26 +470,25 @@ class CollectionFolderViewModel
 
         suspend fun positionOfLetter(letter: Char): Int? =
             withContext(Dispatchers.IO) {
-                item.value?.let { item ->
-                    val includeItemTypes =
-                        when (item.data.collectionType) {
-                            CollectionType.MOVIES -> listOf(BaseItemKind.MOVIE)
-                            CollectionType.TVSHOWS -> listOf(BaseItemKind.SERIES)
-                            CollectionType.HOMEVIDEOS -> listOf(BaseItemKind.VIDEO)
-                            else -> listOf()
-                        }
-                    val request =
-                        GetItemsRequest(
-                            parentId = item.id,
-                            includeItemTypes = includeItemTypes,
-                            nameLessThan = letter.toString(),
-                            limit = 0,
-                            enableTotalRecordCount = true,
-                            recursive = true,
-                        )
-                    val result by GetItemsRequestHandler.execute(api, request)
-                    result.totalRecordCount
+                val sort = sortAndDirection.value
+                val filter = filter.value
+                if (sort == null || filter == null) {
+                    return@withContext null
                 }
+                val request =
+                    createGetItemsRequest(
+                        sortAndDirection = sort,
+                        recursive = recursive,
+                        filter = filter,
+                    ).copy(
+                        enableImageTypes = null,
+                        fields = null,
+                        nameLessThan = letter.toString(),
+                        limit = 0,
+                        enableTotalRecordCount = true,
+                    )
+                val result by GetItemsRequestHandler.execute(api, request)
+                result.totalRecordCount
             }
 
         fun setWatched(

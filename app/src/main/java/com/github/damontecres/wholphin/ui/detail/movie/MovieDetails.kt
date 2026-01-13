@@ -11,6 +11,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
@@ -31,6 +32,7 @@ import com.github.damontecres.wholphin.data.ChosenStreams
 import com.github.damontecres.wholphin.data.ExtrasItem
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.Chapter
+import com.github.damontecres.wholphin.data.model.DiscoverItem
 import com.github.damontecres.wholphin.data.model.Person
 import com.github.damontecres.wholphin.data.model.Trailer
 import com.github.damontecres.wholphin.data.model.aspectRatioFloat
@@ -61,8 +63,11 @@ import com.github.damontecres.wholphin.ui.detail.PlaylistLoadingState
 import com.github.damontecres.wholphin.ui.detail.buildMoreDialogItems
 import com.github.damontecres.wholphin.ui.detail.buildMoreDialogItemsForHome
 import com.github.damontecres.wholphin.ui.detail.buildMoreDialogItemsForPerson
+import com.github.damontecres.wholphin.ui.discover.DiscoverRow
+import com.github.damontecres.wholphin.ui.discover.DiscoverRowData
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.rememberInt
+import com.github.damontecres.wholphin.util.DataLoadingState
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
 import kotlinx.coroutines.launch
@@ -99,6 +104,7 @@ fun MovieDetails(
     val similar by viewModel.similar.observeAsState(listOf())
     val loading by viewModel.loading.observeAsState(LoadingState.Loading)
     val chosenStreams by viewModel.chosenStreams.observeAsState(null)
+    val discovered by viewModel.discovered.collectAsState()
 
     var overviewDialog by remember { mutableStateOf<ItemDetailsDialogInfo?>(null) }
     var moreDialog by remember { mutableStateOf<DialogParams?>(null) }
@@ -168,7 +174,6 @@ fun MovieDetails(
                             Destination.Playback(
                                 movie.id,
                                 it.inWholeMilliseconds,
-                                movie,
                             ),
                         )
                     },
@@ -300,6 +305,10 @@ fun MovieDetails(
                     onClickExtra = { index, extra ->
                         viewModel.navigateTo(extra.destination)
                     },
+                    discovered = discovered,
+                    onClickDiscover = { index, item ->
+                        viewModel.navigateTo(item.destination)
+                    },
                     modifier = modifier,
                 )
             }
@@ -360,6 +369,7 @@ private const val TRAILER_ROW = PEOPLE_ROW + 1
 private const val CHAPTER_ROW = TRAILER_ROW + 1
 private const val EXTRAS_ROW = CHAPTER_ROW + 1
 private const val SIMILAR_ROW = EXTRAS_ROW + 1
+private const val DISCOVER_ROW = SIMILAR_ROW + 1
 
 @Composable
 fun MovieDetailsContent(
@@ -371,6 +381,7 @@ fun MovieDetailsContent(
     trailers: List<Trailer>,
     extras: List<ExtrasItem>,
     similar: List<BaseItem>,
+    discovered: List<DiscoverItem>,
     playOnClick: (Duration) -> Unit,
     trailerOnClick: (Trailer) -> Unit,
     overviewOnClick: () -> Unit,
@@ -382,12 +393,13 @@ fun MovieDetailsContent(
     onLongClickPerson: (Int, Person) -> Unit,
     onLongClickSimilar: (Int, BaseItem) -> Unit,
     onClickExtra: (Int, ExtrasItem) -> Unit,
+    onClickDiscover: (Int, DiscoverItem) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var position by rememberInt(0)
-    val focusRequesters = remember { List(SIMILAR_ROW + 1) { FocusRequester() } }
+    val focusRequesters = remember { List(DISCOVER_ROW + 1) { FocusRequester() } }
     val dto = movie.data
     val resumePosition = dto.userData?.playbackPositionTicks?.ticks ?: Duration.ZERO
 
@@ -540,6 +552,24 @@ fun MovieDetailsContent(
                             Modifier
                                 .fillMaxWidth()
                                 .focusRequester(focusRequesters[SIMILAR_ROW]),
+                    )
+                }
+            }
+            if (discovered.isNotEmpty()) {
+                item {
+                    DiscoverRow(
+                        row =
+                            DiscoverRowData(
+                                stringResource(R.string.discover),
+                                DataLoadingState.Success(discovered),
+                            ),
+                        onClickItem = { index: Int, item: DiscoverItem ->
+                            position = DISCOVER_ROW
+                            onClickDiscover.invoke(index, item)
+                        },
+                        onLongClickItem = { _, _ -> },
+                        onCardFocus = {},
+                        focusRequester = focusRequesters[DISCOVER_ROW],
                     )
                 }
             }

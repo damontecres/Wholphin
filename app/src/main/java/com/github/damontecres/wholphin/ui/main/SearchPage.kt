@@ -46,10 +46,14 @@ import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.BaseItem
+import com.github.damontecres.wholphin.data.model.DiscoverItem
+import com.github.damontecres.wholphin.data.model.SeerrItemType
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.NavigationManager
+import com.github.damontecres.wholphin.services.SeerrService
 import com.github.damontecres.wholphin.ui.Cards
 import com.github.damontecres.wholphin.ui.SlimItemFields
+import com.github.damontecres.wholphin.ui.cards.DiscoverItemCard
 import com.github.damontecres.wholphin.ui.cards.EpisodeCard
 import com.github.damontecres.wholphin.ui.cards.ItemRow
 import com.github.damontecres.wholphin.ui.cards.SeasonCard
@@ -59,7 +63,10 @@ import com.github.damontecres.wholphin.ui.components.rememberVoiceInputManager
 import com.github.damontecres.wholphin.ui.data.RowColumn
 import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
+import com.github.damontecres.wholphin.ui.launchIO
+import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.rememberPosition
+import com.github.damontecres.wholphin.ui.setValueOnMain
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.ApiRequestPager
 import com.github.damontecres.wholphin.util.ExceptionHandler
@@ -67,6 +74,7 @@ import com.github.damontecres.wholphin.util.GetItemsRequestHandler
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
@@ -81,11 +89,13 @@ class SearchViewModel
     constructor(
         val api: ApiClient,
         val navigationManager: NavigationManager,
+        private val seerrService: SeerrService,
     ) : ViewModel() {
         val movies = MutableLiveData<SearchResult>(SearchResult.NoQuery)
         val series = MutableLiveData<SearchResult>(SearchResult.NoQuery)
         val episodes = MutableLiveData<SearchResult>(SearchResult.NoQuery)
         val collections = MutableLiveData<SearchResult>(SearchResult.NoQuery)
+        val seerrResults = MutableLiveData<SearchResult>(SearchResult.NoQuery)
 
         private var currentQuery: String? = null
 
@@ -103,11 +113,13 @@ class SearchViewModel
                 searchInternal(query, BaseItemKind.SERIES, series)
                 searchInternal(query, BaseItemKind.EPISODE, episodes)
                 searchInternal(query, BaseItemKind.BOX_SET, collections)
+                searchSeerr(query)
             } else {
                 movies.value = SearchResult.NoQuery
                 series.value = SearchResult.NoQuery
                 episodes.value = SearchResult.NoQuery
                 collections.value = SearchResult.NoQuery
+                seerrResults.value = SearchResult.NoQuery
             }
         }
 
@@ -141,6 +153,20 @@ class SearchViewModel
             }
         }
 
+        private fun searchSeerr(query: String) {
+            viewModelScope.launchIO {
+                if (seerrService.active.first()) {
+                    seerrResults.setValueOnMain(SearchResult.Searching)
+                    val results =
+                        seerrService
+                            .search(query)
+                            .map { DiscoverItem(it) }
+                            .filter { it.type == SeerrItemType.MOVIE || it.type == SeerrItemType.TV }
+                    seerrResults.setValueOnMain(SearchResult.SuccessSeerr(results))
+                }
+            }
+        }
+
         fun getHints(query: String) {
             // TODO
 //        api.searchApi.getSearchHints()
@@ -159,12 +185,17 @@ sealed interface SearchResult {
     data class Success(
         val items: List<BaseItem?>,
     ) : SearchResult
+
+    data class SuccessSeerr(
+        val items: List<DiscoverItem>,
+    ) : SearchResult
 }
 
 private const val MOVIE_ROW = 0
 private const val COLLECTION_ROW = MOVIE_ROW + 1
 private const val SERIES_ROW = COLLECTION_ROW + 1
 private const val EPISODE_ROW = SERIES_ROW + 1
+private const val SEERR_ROW = EPISODE_ROW + 1
 
 /** Delay for focus to settle after voice search dialog dismisses. */
 private const val VOICE_RESULT_FOCUS_DELAY_MS = 100L
@@ -182,6 +213,7 @@ fun SearchPage(
     val collections by viewModel.collections.observeAsState(SearchResult.NoQuery)
     val series by viewModel.series.observeAsState(SearchResult.NoQuery)
     val episodes by viewModel.episodes.observeAsState(SearchResult.NoQuery)
+    val seerrResults by viewModel.seerrResults.observeAsState(SearchResult.NoQuery)
 
 //    val query = rememberTextFieldState()
     var query by rememberSaveable { mutableStateOf("") }
@@ -373,6 +405,30 @@ fun SearchPage(
                 )
             },
         )
+        searchResultRow(
+            title = context.getString(R.string.discover),
+            result = seerrResults,
+            rowIndex = SEERR_ROW,
+            position = position,
+            focusRequester = focusRequester,
+            onClickItem = { _, _ ->
+                // no-op
+            },
+            onClickDiscover = { _, item ->
+                val dest =
+                    if (item.jellyfinItemId != null && item.type.baseItemKind != null) {
+                        Destination.MediaItem(
+                            itemId = item.jellyfinItemId,
+                            type = item.type.baseItemKind,
+                        )
+                    } else {
+                        Destination.DiscoveredItem(item)
+                    }
+                viewModel.navigationManager.navigateTo(dest)
+            },
+            onClickPosition = { position = it },
+            modifier = Modifier.fillMaxWidth(),
+        )
     }
 }
 
@@ -385,6 +441,7 @@ fun LazyListScope.searchResultRow(
     onClickItem: (Int, BaseItem) -> Unit,
     onClickPosition: (RowColumn) -> Unit,
     modifier: Modifier = Modifier,
+    onClickDiscover: ((Int, DiscoverItem) -> Unit)? = null,
     cardContent: @Composable (
         index: Int,
         item: BaseItem?,
@@ -447,6 +504,36 @@ fun LazyListScope.searchResultRow(
                         onLongClickItem = { _, _ -> },
                         modifier = modifier,
                         cardContent = cardContent,
+                    )
+                }
+            }
+
+            is SearchResult.SuccessSeerr -> {
+                if (r.items.isEmpty()) {
+                    SearchResultPlaceholder(
+                        title = title,
+                        message = stringResource(R.string.no_results),
+                        modifier = modifier,
+                    )
+                } else {
+                    ItemRow(
+                        title = title,
+                        items = r.items,
+                        onClickItem = { index, item ->
+                            onClickPosition.invoke(RowColumn(rowIndex, index))
+                            onClickDiscover?.invoke(index, item)
+                        },
+                        onLongClickItem = { _, _ -> },
+                        modifier = modifier,
+                        cardContent = { index: Int, item: DiscoverItem?, mod: Modifier, onClick: () -> Unit, onLongClick: () -> Unit ->
+                            DiscoverItemCard(
+                                item = item,
+                                onClick = onClick,
+                                onLongClick = onLongClick,
+                                showOverlay = true,
+                                modifier = mod,
+                            )
+                        },
                     )
                 }
             }

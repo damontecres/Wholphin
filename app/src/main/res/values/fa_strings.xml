@@ -46,4 +46,8 @@
     <string name="fa_filter" translatable="false">&#xf0b0;</string>
     <string name="fa_sliders" translatable="false">&#xf1de;</string>
     <string name="fa_microphone" translatable="false">&#xf130;</string>
+    <string name="fa_download" translatable="false">&#xf019;</string>
+    <string name="fa_clock" translatable="false">&#xf017;</string>
+    <string name="fa_bell" translatable="false">&#xf0f3;</string>
+    <string name="fa_check" translatable="false">&#xf00c;</string>
 </resources>

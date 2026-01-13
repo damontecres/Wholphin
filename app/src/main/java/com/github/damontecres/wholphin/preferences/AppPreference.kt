@@ -871,6 +871,13 @@ sealed interface AppPreference<Pref, T> {
                 summaryOn = R.string.enabled,
                 summaryOff = R.string.disabled,
             )
+
+        val SeerrIntegration =
+            AppClickablePreference<AppPreferences>(
+                title = R.string.seerr_integration,
+                getter = { },
+                setter = { prefs, _ -> prefs },
+            )
     }
 }
 
@@ -932,6 +939,7 @@ val basicPreferences =
             title = R.string.more,
             preferences =
                 listOf(
+                    AppPreference.SeerrIntegration,
                     AppPreference.AdvancedSettings,
                 ),
         ),
