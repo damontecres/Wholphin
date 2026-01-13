@@ -1,37 +1,77 @@
 package com.github.damontecres.wholphin.ui.cards
 
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.tv.material3.Border
 import androidx.tv.material3.Card
 import androidx.tv.material3.CardDefaults
+import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
+import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.Person
 import com.github.damontecres.wholphin.ui.AspectRatios
+import com.github.damontecres.wholphin.ui.FontAwesome
+import com.github.damontecres.wholphin.ui.PreviewTvSpec
 import com.github.damontecres.wholphin.ui.enableMarquee
+import com.github.damontecres.wholphin.ui.theme.WholphinTheme
 import kotlinx.coroutines.delay
+import org.jellyfin.sdk.model.UUID
+import org.jellyfin.sdk.model.api.PersonKind
 
 /**
  * A Card for a [Person] such as an actor or director
  */
 @Composable
 fun PersonCard(
-    item: Person,
+    person: Person,
+    onClick: () -> Unit,
+    onLongClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
+) = PersonCard(
+    name = person.name,
+    role = person.role,
+    imageUrl = person.imageUrl,
+    favorite = person.favorite,
+    onClick = onClick,
+    onLongClick = onLongClick,
+    modifier = modifier,
+    interactionSource = interactionSource,
+)
+
+@Composable
+fun PersonCard(
+    name: String?,
+    role: String?,
+    imageUrl: String?,
+    favorite: Boolean,
     onClick: () -> Unit,
     onLongClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -65,25 +105,62 @@ fun PersonCard(
             onClick = onClick,
             onLongClick = onLongClick,
             interactionSource = interactionSource,
+            shape = CardDefaults.shape(CircleShape),
+            border =
+                CardDefaults.border(
+                    focusedBorder =
+                        Border(
+                            border =
+                                BorderStroke(
+                                    width = 3.dp,
+                                    color = MaterialTheme.colorScheme.border,
+                                ),
+                            shape = CircleShape,
+                        ),
+                ),
             colors =
                 CardDefaults.colors(
                     containerColor = Color.Transparent,
                 ),
         ) {
             ItemCardImage(
-                imageUrl = item.imageUrl,
-                name = item.name,
-                showOverlay = true,
-                favorite = item.favorite,
+                imageUrl = imageUrl,
+                name = name,
+                showOverlay = false,
+                favorite = favorite,
                 watched = false,
                 unwatchedCount = -1,
                 numberOfVersions = -1,
                 watchedPercent = null,
-                useFallbackText = false,
+                useFallbackText = true,
+                contentScale = ContentScale.Crop,
+                fallback = {
+                    Box(
+                        modifier =
+                            modifier
+                                .background(MaterialTheme.colorScheme.surfaceVariant)
+                                .fillMaxSize()
+                                .align(Alignment.Center),
+                    ) {
+                        Text(
+                            text = stringResource(R.string.fa_user),
+                            fontFamily = FontAwesome,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontSize = 80.sp,
+                            textAlign = TextAlign.Center,
+                            modifier =
+                                Modifier
+                                    .padding(8.dp)
+                                    .fillMaxWidth()
+                                    .align(Alignment.Center),
+                        )
+                    }
+                },
                 modifier =
                     Modifier
                         .fillMaxWidth()
-                        .aspectRatio(AspectRatios.TALL), // TODO,
+                        .aspectRatio(AspectRatios.SQUARE)
+                        .clip(CircleShape),
             )
         }
         Column(
@@ -94,7 +171,7 @@ fun PersonCard(
                     .fillMaxWidth(),
         ) {
             Text(
-                text = item.name ?: "",
+                text = name ?: "",
                 maxLines = 1,
                 textAlign = TextAlign.Center,
                 modifier =
@@ -103,9 +180,9 @@ fun PersonCard(
                         .padding(horizontal = 4.dp)
                         .enableMarquee(focusedAfterDelay),
             )
-            item.role?.let {
+            role?.let {
                 Text(
-                    text = item.role,
+                    text = role,
                     maxLines = 1,
                     textAlign = TextAlign.Center,
                     modifier =
@@ -116,5 +193,26 @@ fun PersonCard(
                 )
             }
         }
+    }
+}
+
+@PreviewTvSpec
+@Composable
+private fun PersonCardPreview() {
+    WholphinTheme {
+        PersonCard(
+            person =
+                Person(
+                    id = UUID.randomUUID(),
+                    name = "John Smith",
+                    role = "Actor",
+                    type = PersonKind.ACTOR,
+                    imageUrl = null,
+                    favorite = false,
+                ),
+            onClick = {},
+            onLongClick = {},
+            modifier = Modifier.width(120.dp),
+        )
     }
 }

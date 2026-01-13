@@ -184,7 +184,7 @@ data class DiscoverItem(
         id = credit.id!!,
         type = SeerrItemType.fromString(credit.mediaType, SeerrItemType.PERSON),
         title = credit.name ?: credit.title,
-        subtitle = null,
+        subtitle = credit.character,
         overview = credit.overview,
         availability =
             SeerrAvailability.from(credit.mediaInfo?.status)
@@ -199,7 +199,7 @@ data class DiscoverItem(
         id = credit.id!!,
         type = SeerrItemType.fromString(credit.mediaType, SeerrItemType.PERSON),
         title = credit.name ?: credit.title,
-        subtitle = null,
+        subtitle = credit.job,
         overview = credit.overview,
         availability =
             SeerrAvailability.from(credit.mediaInfo?.status)

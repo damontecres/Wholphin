@@ -113,6 +113,13 @@ fun ItemCardImage(
     modifier: Modifier = Modifier,
     useFallbackText: Boolean = true,
     contentScale: ContentScale = ContentScale.Fit,
+    fallback: @Composable BoxScope.() -> Unit = {
+        ItemCardImageFallback(
+            name = name,
+            useFallbackText = useFallbackText,
+            modifier = Modifier,
+        )
+    },
 ) {
     var imageError by remember(imageUrl) { mutableStateOf(false) }
     Box(
@@ -134,11 +141,7 @@ fun ItemCardImage(
                         .align(Alignment.TopCenter),
             )
         } else {
-            ItemCardImageFallback(
-                name = name,
-                useFallbackText = useFallbackText,
-                modifier = Modifier,
-            )
+            fallback.invoke(this)
         }
         if (showOverlay) {
             ItemCardImageOverlay(

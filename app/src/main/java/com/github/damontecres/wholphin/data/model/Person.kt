@@ -1,5 +1,6 @@
 package com.github.damontecres.wholphin.data.model
 
+import androidx.compose.runtime.Stable
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.imageApi
 import org.jellyfin.sdk.model.UUID
@@ -7,6 +8,7 @@ import org.jellyfin.sdk.model.api.BaseItemPerson
 import org.jellyfin.sdk.model.api.ImageType
 import org.jellyfin.sdk.model.api.PersonKind
 
+@Stable
 data class Person(
     val id: UUID,
     val name: String?,
