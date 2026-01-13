@@ -425,6 +425,18 @@ sealed interface AppPreference<Pref, T> {
                 summary = R.string.force_dovi_profile_7_summary,
             )
 
+        val PreferFmp4Container =
+            AppSwitchPreference<AppPreferences>(
+                title = R.string.prefer_fmp4_container,
+                defaultValue = false,
+                getter = { it.playbackPreferences.overrides.preferFmp4Container },
+                setter = { prefs, value ->
+                    prefs.updatePlaybackOverrides { preferFmp4Container = value }
+                },
+                summaryOn = R.string.enabled,
+                summaryOff = R.string.disabled,
+            )
+
         val RememberSelectedTab =
             AppSwitchPreference<AppPreferences>(
                 title = R.string.remember_selected_tab,
@@ -1004,6 +1016,7 @@ val advancedPreferences =
                                 AppPreference.DirectPlayAss,
                                 AppPreference.DirectPlayPgs,
                                 AppPreference.DirectPlayDoviProfile7,
+                                AppPreference.PreferFmp4Container,
                             ),
                         ),
                         ConditionalPreferences(
