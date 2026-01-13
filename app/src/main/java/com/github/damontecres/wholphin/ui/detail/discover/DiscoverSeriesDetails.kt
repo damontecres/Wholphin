@@ -93,9 +93,14 @@ fun DiscoverSeriesDetails(
     val similar by viewModel.similar.observeAsState(listOf())
     val recommended by viewModel.recommended.observeAsState(listOf())
     val userConfig by viewModel.userConfig.collectAsState(null)
+    val request4kEnabled by viewModel.request4kEnabled.collectAsState(false)
 
     var overviewDialog by remember { mutableStateOf<ItemDetailsDialogInfo?>(null) }
     var seasonDialog by remember { mutableStateOf<DialogParams?>(null) }
+    var moreDialog by remember { mutableStateOf<DialogParams?>(null) }
+
+    val requestStr = stringResource(R.string.request)
+    val request4kStr = stringResource(R.string.request_4k)
 
     when (val state = loading) {
         is LoadingState.Error -> {
@@ -151,7 +156,28 @@ fun DiscoverSeriesDetails(
                     },
                     trailers = listOf(),
                     requestOnClick = {
-                        item.id?.let { viewModel.request(it) }
+                        item.id?.let { id ->
+                            if (request4kEnabled) {
+                                moreDialog =
+                                    DialogParams(
+                                        fromLongClick = false,
+                                        title = item.name ?: "",
+                                        items =
+                                            listOf(
+                                                DialogItem(
+                                                    text = requestStr,
+                                                    onClick = { viewModel.request(id, false) },
+                                                ),
+                                                DialogItem(
+                                                    text = request4kStr,
+                                                    onClick = { viewModel.request(id, true) },
+                                                ),
+                                            ),
+                                    )
+                            } else {
+                                viewModel.request(id, false)
+                            }
+                        }
                     },
                     cancelOnClick = {
                         item.id?.let { viewModel.cancelRequest(it) }
@@ -178,6 +204,16 @@ fun DiscoverSeriesDetails(
             dialogItems = params.items,
             waitToLoad = params.fromLongClick,
             onDismissRequest = { seasonDialog = null },
+        )
+    }
+    moreDialog?.let { params ->
+        DialogPopup(
+            showDialog = true,
+            title = params.title,
+            dialogItems = params.items,
+            onDismissRequest = { moreDialog = null },
+            dismissOnClick = true,
+            waitToLoad = params.fromLongClick,
         )
     }
 }

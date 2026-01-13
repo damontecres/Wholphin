@@ -7,12 +7,15 @@ import androidx.lifecycle.lifecycleScope
 import com.github.damontecres.wholphin.api.seerr.SeerrApiClient
 import com.github.damontecres.wholphin.api.seerr.model.AuthJellyfinPostRequest
 import com.github.damontecres.wholphin.api.seerr.model.AuthLocalPostRequest
+import com.github.damontecres.wholphin.api.seerr.model.PublicSettings
 import com.github.damontecres.wholphin.api.seerr.model.User
 import com.github.damontecres.wholphin.data.SeerrServerDao
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.SeerrAuthMethod
+import com.github.damontecres.wholphin.data.model.SeerrPermission
 import com.github.damontecres.wholphin.data.model.SeerrServer
 import com.github.damontecres.wholphin.data.model.SeerrUser
+import com.github.damontecres.wholphin.data.model.hasPermission
 import com.github.damontecres.wholphin.services.hilt.StandardOkHttpClient
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.util.LoadingState
@@ -60,8 +63,9 @@ class SeerrServerRepository
             user: SeerrUser,
             userConfig: SeerrUserConfig,
         ) {
+            val publicSettings = seerrApi.api.settingsApi.settingsPublicGet()
             _current.update {
-                CurrentSeerr(server, user, userConfig)
+                CurrentSeerr(server, user, userConfig, publicSettings)
             }
         }
 
@@ -134,13 +138,8 @@ class SeerrServerRepository
             passwordOrApiKey: String,
         ): LoadingState {
             val api = SeerrApiClient(url, passwordOrApiKey, okHttpClient)
-            try {
-                login(api, authMethod, username, passwordOrApiKey)
-                return LoadingState.Success
-            } catch (ex: Exception) {
-                Timber.w(ex, "Error testing seerr connection")
-                return LoadingState.Error(ex)
-            }
+            login(api, authMethod, username, passwordOrApiKey)
+            return LoadingState.Success
         }
 
         suspend fun removeServer() {
@@ -159,7 +158,18 @@ data class CurrentSeerr(
     val server: SeerrServer,
     val user: SeerrUser,
     val config: SeerrUserConfig,
-)
+    val serverConfig: PublicSettings,
+) {
+    val request4kMovieEnabled: Boolean
+        get() =
+            (serverConfig.movie4kEnabled ?: false) &&
+                config.hasPermission(SeerrPermission.REQUEST_4K_MOVIE)
+
+    val request4kTvEnabled: Boolean
+        get() =
+            (serverConfig.series4kEnabled ?: false) &&
+                config.hasPermission(SeerrPermission.REQUEST_4K_TV)
+}
 
 private suspend fun login(
     client: SeerrApiClient,

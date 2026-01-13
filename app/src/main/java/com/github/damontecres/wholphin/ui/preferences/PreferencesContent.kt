@@ -466,6 +466,12 @@ fun PreferencesContent(
             }
         }
         if (showSeerrServerDialog) {
+            val status by seerrVm.serverConnectionStatus.collectAsState(LoadingState.Pending)
+            LaunchedEffect(status) {
+                if (status == LoadingState.Success) {
+                    showSeerrServerDialog = false
+                }
+            }
             if (seerrIntegrationEnabled) {
                 ConfirmDialog(
                     title = stringResource(R.string.remove_seerr_server),
@@ -478,12 +484,6 @@ fun PreferencesContent(
                 )
             } else {
                 val currentUser by seerrVm.currentUser.observeAsState()
-                val status by seerrVm.serverConnectionStatus.collectAsState(LoadingState.Pending)
-                LaunchedEffect(status) {
-                    if (status == LoadingState.Success) {
-                        showSeerrServerDialog = false
-                    }
-                }
                 AddSeerServerDialog(
                     currentUsername = currentUser?.name,
                     status = status,
