@@ -384,4 +384,5 @@
     <string name="trending">Populaarsust koguv</string>
     <string name="upcoming_movies">Lähiajal avaldatavad filmid</string>
     <string name="upcoming_tv">Lähiajal avaldatavad telesarjad ja -saated</string>
+    <string name="request_4k">Küsi 4K versiooni</string>
 </resources>
