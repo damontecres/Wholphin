@@ -35,6 +35,7 @@ import com.github.damontecres.wholphin.ui.main.SearchPage
 import com.github.damontecres.wholphin.ui.playback.PlaybackPage
 import com.github.damontecres.wholphin.ui.preferences.PreferencesPage
 import com.github.damontecres.wholphin.ui.setup.InstallUpdatePage
+import com.github.damontecres.wholphin.ui.slideshow.SlideshowPage
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.CollectionType
 import timber.log.Timber
@@ -191,7 +192,7 @@ fun DestinationContent(
                     CollectionFolder(
                         preferences = preferences,
                         destination = destination,
-                        collectionType = destination.item?.data?.collectionType,
+                        collectionType = destination.collectionType,
                         usePostersOverride = true,
                         recursiveOverride = null,
                         modifier = modifier,
@@ -234,6 +235,13 @@ fun DestinationContent(
             ItemGrid(
                 destination,
                 modifier,
+            )
+        }
+
+        is Destination.Slideshow -> {
+            SlideshowPage(
+                slideshow = destination,
+                startSlideshow = false,
             )
         }
 

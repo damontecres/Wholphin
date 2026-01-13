@@ -1,23 +1,35 @@
 package com.github.damontecres.wholphin.ui.slideshow
 
-import android.util.Log
+import android.content.Context
 import android.widget.Toast
+import androidx.compose.runtime.Stable
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.asFlow
 import androidx.lifecycle.asLiveData
+import androidx.lifecycle.map
 import androidx.lifecycle.viewModelScope
+import com.github.damontecres.wholphin.data.PlaybackEffectDao
+import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.BaseItem
+import com.github.damontecres.wholphin.data.model.PlaybackEffect
 import com.github.damontecres.wholphin.data.model.VideoFilter
+import com.github.damontecres.wholphin.services.ImageUrlService
 import com.github.damontecres.wholphin.services.PlayerFactory
+import com.github.damontecres.wholphin.ui.DefaultItemFields
 import com.github.damontecres.wholphin.ui.launchIO
+import com.github.damontecres.wholphin.ui.setValueOnMain
+import com.github.damontecres.wholphin.ui.showToast
 import com.github.damontecres.wholphin.ui.util.ThrottledLiveData
+import com.github.damontecres.wholphin.util.ApiRequestPager
 import com.github.damontecres.wholphin.util.ExceptionHandler
+import com.github.damontecres.wholphin.util.GetItemsRequestHandler
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -25,7 +37,13 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
+import org.jellyfin.sdk.api.client.extensions.libraryApi
 import org.jellyfin.sdk.api.client.extensions.userLibraryApi
+import org.jellyfin.sdk.model.api.BaseItemKind
+import org.jellyfin.sdk.model.api.ImageType
+import org.jellyfin.sdk.model.api.MediaType
+import org.jellyfin.sdk.model.api.request.GetItemsRequest
+import timber.log.Timber
 import java.util.UUID
 import kotlin.properties.Delegates
 
@@ -33,8 +51,12 @@ import kotlin.properties.Delegates
 class ImageDetailsViewModel
     @AssistedInject
     constructor(
+        @param:ApplicationContext private val context: Context,
         private val api: ApiClient,
         private val playerFactory: PlayerFactory,
+        private val playbackEffectDao: PlaybackEffectDao,
+        private val serverRepository: ServerRepository,
+        private val imageUrlService: ImageUrlService,
         @Assisted val parentId: UUID,
         @Assisted val startIndex: Int,
     ) : ViewModel() {
@@ -73,11 +95,13 @@ class ImageDetailsViewModel
 
         var slideshowDelay by Delegates.notNull<Long>()
 
-        val pager = MutableLiveData<List<BaseItem?>>()
+        private val album = MutableLiveData<BaseItem>()
+        private val _pager = MutableLiveData<ApiRequestPager<GetItemsRequest>>()
+        val pager: LiveData<List<BaseItem?>> = _pager.map { it }
         val position = MutableLiveData(0)
 
-        private val _image = MutableLiveData<BaseItem>()
-        val image: LiveData<BaseItem> = _image
+        private val _image = MutableLiveData<ImageState>()
+        val image: LiveData<ImageState> = _image
 
         val loadingState = MutableLiveData<ImageLoadingState>(ImageLoadingState.Loading)
         private val _imageFilter = MutableLiveData(VideoFilter())
@@ -87,10 +111,28 @@ class ImageDetailsViewModel
 
         init {
             viewModelScope.launchIO {
+                // TODO settings
+                slideshowDelay = 5_000
                 val album =
-                    api.userLibraryApi.getItem(
-                        itemId = parentId,
+                    api.userLibraryApi
+                        .getItem(
+                            itemId = parentId,
+                        ).content
+                        .let { BaseItem(it, false) }
+                this@ImageDetailsViewModel.album.setValueOnMain(album)
+                val request =
+                    GetItemsRequest(
+                        parentId = parentId,
+                        includeItemTypes = listOf(BaseItemKind.PHOTO),
+                        fields = DefaultItemFields,
+                        recursive = true,
                     )
+                val pager =
+                    ApiRequestPager(api, request, GetItemsRequestHandler, viewModelScope).init(
+                        startIndex,
+                    )
+                this@ImageDetailsViewModel._pager.setValueOnMain(pager)
+                updatePosition(startIndex)
             }
         }
 
@@ -116,46 +158,61 @@ class ImageDetailsViewModel
         }
 
         fun updatePosition(position: Int) {
-            pager.value?.let { pager ->
+            _pager.value?.let { pager ->
                 viewModelScope.launchIO {
                     try {
                         val image = pager.getBlocking(position)
-                        Log.v(TAG, "Got image for $position: ${image != null}")
+                        Timber.v("Got image for $position: ${image != null}")
                         if (image != null) {
-                            this@ImageDetailsViewModel.position.value = position
+                            this@ImageDetailsViewModel.position.setValueOnMain(position)
+                            val imageState =
+                                ImageState(
+                                    image,
+                                    api.libraryApi.getDownloadUrl(image.id),
+                                    imageUrlService.getItemImageUrl(image, ImageType.THUMB),
+                                )
                             // reset image filter
                             updateImageFilter(galleryImageFilter)
                             if (saveFilters) {
                                 viewModelScope.launchIO {
-                                    val vf =
-                                        playbackEffectsDao
-                                            .getPlaybackEffect(server!!.url, image.id, DataType.IMAGE)
-                                    if (vf != null && vf.videoFilter.hasImageFilter()) {
-                                        Log.d(
-                                            TAG,
-                                            "Loaded VideoFilter for image ${image.id}",
-                                        )
-                                        withContext(Dispatchers.Main) {
-                                            // Pause throttling so that the image loads with the filter applied immediately
-                                            imageFilter.stopThrottling(true)
-                                            updateImageFilter(vf.videoFilter)
-                                            imageFilter.startThrottling()
+                                    serverRepository.currentUser.value?.let { user ->
+                                        val vf =
+                                            playbackEffectDao
+                                                .getPlaybackEffect(
+                                                    user.rowId,
+                                                    image.id,
+                                                    BaseItemKind.PHOTO,
+                                                )
+                                        if (vf != null && vf.videoFilter.hasImageFilter()) {
+                                            Timber.d(
+                                                "Loaded VideoFilter for image ${image.id}",
+                                            )
+                                            withContext(Dispatchers.Main) {
+                                                // Pause throttling so that the image loads with the filter applied immediately
+                                                imageFilter.stopThrottling(true)
+                                                updateImageFilter(vf.videoFilter)
+                                                imageFilter.startThrottling()
+                                            }
                                         }
-                                    }
-                                    withContext(Dispatchers.Main) {
-                                        _image.value = image
-                                        loadingState.value = ImageLoadingState.Success(image)
+                                        withContext(Dispatchers.Main) {
+                                            _image.value = imageState
+                                            loadingState.value =
+                                                ImageLoadingState.Success(imageState)
+                                        }
                                     }
                                 }
                             } else {
-                                _image.value = image
-                                loadingState.value = ImageLoadingState.Success(image)
+                                withContext(Dispatchers.Main) {
+                                    _image.value = imageState
+                                    loadingState.value = ImageLoadingState.Success(imageState)
+                                }
                             }
                         } else {
-                            loadingState.value = ImageLoadingState.Error
+                            loadingState.setValueOnMain(ImageLoadingState.Error)
                         }
                     } catch (ex: Exception) {
-                        loadingState.value = ImageLoadingState.Error
+                        Timber.e(ex)
+                        loadingState.setValueOnMain(ImageLoadingState.Error)
                     }
                 }
             }
@@ -166,7 +223,11 @@ class ImageDetailsViewModel
         fun startSlideshow() {
             _slideshow.value = true
             _slideshowPaused.value = false
-            if (_image.value?.isImageClip == false) {
+            if (_image.value
+                    ?.image
+                    ?.data
+                    ?.mediaType == MediaType.VIDEO
+            ) {
                 pulseSlideshow()
             }
         }
@@ -178,7 +239,7 @@ class ImageDetailsViewModel
 
         fun pauseSlideshow() {
             if (_slideshow.value == true) {
-                Log.v(TAG, "pauseSlideshow")
+                Timber.v("pauseSlideshow")
                 _slideshowPaused.value = true
                 slideshowJob?.cancel()
             }
@@ -186,7 +247,7 @@ class ImageDetailsViewModel
 
         fun unpauseSlideshow() {
             if (_slideshow.value == true) {
-                Log.v(TAG, "unpauseSlideshow")
+                Timber.v("unpauseSlideshow")
                 _slideshowPaused.value = false
             }
         }
@@ -194,14 +255,14 @@ class ImageDetailsViewModel
         fun pulseSlideshow() = pulseSlideshow(slideshowDelay)
 
         fun pulseSlideshow(milliseconds: Long) {
-            Log.v(TAG, "pulseSlideshow $milliseconds")
+            Timber.v("pulseSlideshow $milliseconds")
             slideshowJob?.cancel()
             if (slideshow.value!!) {
                 slideshowJob =
                     viewModelScope
                         .launchIO {
                             delay(milliseconds)
-                            Log.v(TAG, "pulseSlideshow after delay")
+                            Timber.v("pulseSlideshow after delay")
                             if (slideshowActive.value == true) {
                                 nextImage()
                             }
@@ -212,7 +273,9 @@ class ImageDetailsViewModel
         }
 
         fun updateImageFilter(newFilter: VideoFilter) {
-            _imageFilter.value = newFilter
+            viewModelScope.launchIO {
+                _imageFilter.setValueOnMain(newFilter)
+            }
         }
 
         fun saveImageFilter() {
@@ -220,16 +283,24 @@ class ImageDetailsViewModel
                 viewModelScope.launchIO {
                     val vf = _imageFilter.value
                     if (vf != null) {
-                        playbackEffectsDao
-                            .insert(PlaybackEffect(server!!.url, it.id, DataType.IMAGE, vf))
-                        Log.d(TAG, "Saved VideoFilter for image ${it.id}")
-                        withContext(Dispatchers.Main) {
-                            Toast
-                                .makeText(
+                        serverRepository.currentUser.value?.let { user ->
+                            playbackEffectDao
+                                .insert(
+                                    PlaybackEffect(
+                                        user.rowId,
+                                        it.image.id,
+                                        BaseItemKind.PHOTO,
+                                        vf,
+                                    ),
+                                )
+                            Timber.d("Saved VideoFilter for image %s", it.image.id)
+                            withContext(Dispatchers.Main) {
+                                showToast(
                                     context,
                                     "Saved",
                                     Toast.LENGTH_SHORT,
-                                ).show()
+                                )
+                            }
                         }
                     }
                 }
@@ -237,21 +308,29 @@ class ImageDetailsViewModel
         }
 
         fun saveGalleryFilter() {
-            galleryId.value?.let { galleryId ->
+            album.value?.let { album ->
                 viewModelScope.launchIO(ExceptionHandler(autoToast = true)) {
                     val vf = _imageFilter.value
                     if (vf != null) {
                         galleryImageFilter = vf
-                        playbackEffectsDao
-                            .insert(PlaybackEffect(server!!.url, galleryId, DataType.GALLERY, vf))
-                        Log.d(TAG, "Saved VideoFilter for gallery $galleryId")
-                        withContext(Dispatchers.Main) {
-                            Toast
-                                .makeText(
+                        serverRepository.currentUser.value?.let { user ->
+                            playbackEffectDao
+                                .insert(
+                                    PlaybackEffect(
+                                        user.rowId,
+                                        album.id,
+                                        BaseItemKind.PHOTO_ALBUM,
+                                        vf,
+                                    ),
+                                )
+                            Timber.d("Saved VideoFilter for album %s", album.id)
+                            withContext(Dispatchers.Main) {
+                                showToast(
                                     context,
                                     "Saved",
                                     Toast.LENGTH_SHORT,
-                                ).show()
+                                )
+                            }
                         }
                     }
                 }
@@ -275,6 +354,15 @@ sealed class ImageLoadingState {
     data object Error : ImageLoadingState()
 
     data class Success(
-        val image: BaseItem,
+        val image: ImageState,
     ) : ImageLoadingState()
+}
+
+@Stable
+data class ImageState(
+    val image: BaseItem,
+    val url: String,
+    val thumbnailUrl: String?,
+) {
+    val id: UUID get() = image.id
 }

@@ -46,13 +46,8 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.lifecycle.compose.LifecycleStartEffect
-import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
-import androidx.media3.ui.compose.PlayerSurface
-import androidx.media3.ui.compose.SURFACE_TYPE_SURFACE_VIEW
-import androidx.media3.ui.compose.modifiers.resizeWithContentScale
 import androidx.media3.ui.compose.state.rememberPresentationState
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
@@ -71,6 +66,7 @@ import com.github.damontecres.wholphin.ui.playback.isDirectionalDpad
 import com.github.damontecres.wholphin.ui.playback.isDpad
 import com.github.damontecres.wholphin.ui.playback.isEnterKey
 import com.github.damontecres.wholphin.ui.tryRequestFocus
+import org.jellyfin.sdk.model.api.MediaType
 import kotlin.math.abs
 
 private const val TAG = "ImagePage"
@@ -346,148 +342,146 @@ fun SlideshowPage(
                     result
                 },
     ) {
-        imageState?.let { image ->
-            if (image.paths.image.isNotNullOrBlank()) {
-                if (image.isImageClip) {
-                    LaunchedEffect(image.id) {
-                        val mediaItem =
-                            MediaItem
-                                .Builder()
-                                .setUri(image.paths.image)
-                                .build()
-                        player.setMediaItem(mediaItem)
-                        player.repeatMode =
-                            if (slideshowEnabled) {
-                                Player.REPEAT_MODE_OFF
-                            } else {
-                                Player.REPEAT_MODE_ONE
-                            }
-                        player.prepare()
-                        player.play()
-                        viewModel.pulseSlideshow(Long.MAX_VALUE)
-                    }
-                    LifecycleStartEffect(Unit) {
-                        onStopOrDispose {
-                            player.stop()
-                        }
-                    }
-                    val contentScale = ContentScale.Fit
-                    val scaledModifier =
-                        contentModifier.resizeWithContentScale(
-                            contentScale,
-                            presentationState.videoSizeDp,
-                        )
-                    PlayerSurface(
-                        player = player,
-                        surfaceType = SURFACE_TYPE_SURFACE_VIEW,
-                        modifier =
-                            scaledModifier
-                                .fillMaxSize()
-                                .graphicsLayer {
-                                    scaleX = zoomAnimation
-                                    scaleY = zoomAnimation
-                                    translationX = panXAnimation
-                                    translationY = panYAnimation
-                                }.rotate(rotateAnimation),
-                    )
-                    if (presentationState.coverSurface) {
-                        Box(
-                            Modifier
-                                .matchParentSize()
-                                .background(Color.Black),
-                        )
-                    }
-                } else {
-                    val colorFilter =
-                        remember(image.id, imageFilter) {
-                            if (imageFilter.hasImageFilter()) {
-                                ColorMatrixColorFilter(imageFilter.createComposeColorMatrix())
-                            } else {
-                                null
-                            }
-                        }
-                    // If the image loading is large, show the thumbnail while waiting
-                    val showLoadingThumbnail =
-                        image.paths.thumbnail.isNotNullOrBlank() && image.maxFileSize > 1024 * 1024
-                    SubcomposeAsyncImage(
-                        modifier =
-                            contentModifier
-                                .fillMaxSize()
-                                .graphicsLayer {
-                                    scaleX = zoomAnimation
-                                    scaleY = zoomAnimation
-                                    translationX = panXAnimation
-                                    translationY = panYAnimation
-
-                                    val xTransform =
-                                        (screenWidth - panXAnimation) / (screenWidth * 2)
-                                    val yTransform =
-                                        (screenHeight - panYAnimation) / (screenHeight * 2)
-                                    if (DEBUG) {
-                                        Log.d(
-                                            TAG,
-                                            "graphicsLayer: xTransform=$xTransform, yTransform=$yTransform",
-                                        )
-                                    }
-
-                                    transformOrigin = TransformOrigin(xTransform, yTransform)
-                                }.rotate(rotateAnimation),
-                        model =
-                            ImageRequest
-                                .Builder(LocalContext.current)
-                                .data(image.paths.image)
-                                .size(Size.ORIGINAL)
-                                .crossfade(!showLoadingThumbnail)
-                                .build(),
-                        contentDescription = null,
-                        contentScale = ContentScale.Fit,
-                        colorFilter = colorFilter,
-                        error = {
-                            Text(
-                                modifier =
-                                    Modifier
-                                        .align(Alignment.Center),
-                                text = "Error loading image",
-                                color = MaterialTheme.colorScheme.onBackground,
-                            )
-                        },
-                        loading = {
-                            ImageLoadingPlaceholder(
-                                thumbnailUrl = image.paths.thumbnail,
-                                showThumbnail = showLoadingThumbnail,
-                                colorFilter = colorFilter,
-                                modifier = Modifier.fillMaxSize(),
-                            )
-                        },
-                        // Ensure that if an image takes a long time to load, it won't be skipped
-                        onLoading = {
-                            viewModel.pulseSlideshow(Long.MAX_VALUE)
-                        },
-                        onSuccess = {
-                            viewModel.pulseSlideshow()
-                        },
-                        onError = {
-                            Log.e(TAG, "Error loading image ${image.id}", it.result.throwable)
-                            Toast
-                                .makeText(
-                                    context,
-                                    "Error loading image: ${it.result.throwable.localizedMessage}",
-                                    Toast.LENGTH_LONG,
-                                ).show()
-                            viewModel.pulseSlideshow()
-                        },
-                    )
-                }
+        imageState?.let { imageState ->
+            if (imageState.image.data.mediaType == MediaType.VIDEO) {
+                TODO()
+//                    LaunchedEffect(image.id) {
+//                        val mediaItem =
+//                            MediaItem
+//                                .Builder()
+//                                .setUri(image.paths.image)
+//                                .build()
+//                        player.setMediaItem(mediaItem)
+//                        player.repeatMode =
+//                            if (slideshowEnabled) {
+//                                Player.REPEAT_MODE_OFF
+//                            } else {
+//                                Player.REPEAT_MODE_ONE
+//                            }
+//                        player.prepare()
+//                        player.play()
+//                        viewModel.pulseSlideshow(Long.MAX_VALUE)
+//                    }
+//                    LifecycleStartEffect(Unit) {
+//                        onStopOrDispose {
+//                            player.stop()
+//                        }
+//                    }
+//                    val contentScale = ContentScale.Fit
+//                    val scaledModifier =
+//                        contentModifier.resizeWithContentScale(
+//                            contentScale,
+//                            presentationState.videoSizeDp,
+//                        )
+//                    PlayerSurface(
+//                        player = player,
+//                        surfaceType = SURFACE_TYPE_SURFACE_VIEW,
+//                        modifier =
+//                            scaledModifier
+//                                .fillMaxSize()
+//                                .graphicsLayer {
+//                                    scaleX = zoomAnimation
+//                                    scaleY = zoomAnimation
+//                                    translationX = panXAnimation
+//                                    translationY = panYAnimation
+//                                }.rotate(rotateAnimation),
+//                    )
+//                    if (presentationState.coverSurface) {
+//                        Box(
+//                            Modifier
+//                                .matchParentSize()
+//                                .background(Color.Black),
+//                        )
+//                    }
             } else {
+                val colorFilter =
+                    remember(imageState.id, imageFilter) {
+                        if (imageFilter.hasImageFilter()) {
+                            ColorMatrixColorFilter(imageFilter.createComposeColorMatrix())
+                        } else {
+                            null
+                        }
+                    }
+                // If the image loading is large, show the thumbnail while waiting
                 // TODO
-                Text("No image URL")
+                val showLoadingThumbnail = true
+                SubcomposeAsyncImage(
+                    modifier =
+                        contentModifier
+                            .fillMaxSize()
+                            .graphicsLayer {
+                                scaleX = zoomAnimation
+                                scaleY = zoomAnimation
+                                translationX = panXAnimation
+                                translationY = panYAnimation
+
+                                val xTransform =
+                                    (screenWidth - panXAnimation) / (screenWidth * 2)
+                                val yTransform =
+                                    (screenHeight - panYAnimation) / (screenHeight * 2)
+                                if (DEBUG) {
+                                    Log.d(
+                                        TAG,
+                                        "graphicsLayer: xTransform=$xTransform, yTransform=$yTransform",
+                                    )
+                                }
+
+                                transformOrigin = TransformOrigin(xTransform, yTransform)
+                            }.rotate(rotateAnimation),
+                    model =
+                        ImageRequest
+                            .Builder(LocalContext.current)
+                            .data(imageState.url)
+                            .size(Size.ORIGINAL)
+                            .crossfade(!showLoadingThumbnail)
+                            .build(),
+                    contentDescription = null,
+                    contentScale = ContentScale.Fit,
+                    colorFilter = colorFilter,
+                    error = {
+                        Text(
+                            modifier =
+                                Modifier
+                                    .align(Alignment.Center),
+                            text = "Error loading image",
+                            color = MaterialTheme.colorScheme.onBackground,
+                        )
+                    },
+                    loading = {
+                        ImageLoadingPlaceholder(
+                            thumbnailUrl = imageState.thumbnailUrl,
+                            showThumbnail = showLoadingThumbnail,
+                            colorFilter = colorFilter,
+                            modifier = Modifier.fillMaxSize(),
+                        )
+                    },
+                    // Ensure that if an image takes a long time to load, it won't be skipped
+                    onLoading = {
+                        viewModel.pulseSlideshow(Long.MAX_VALUE)
+                    },
+                    onSuccess = {
+                        viewModel.pulseSlideshow()
+                    },
+                    onError = {
+                        Log.e(TAG, "Error loading image ${imageState.id}", it.result.throwable)
+                        Toast
+                            .makeText(
+                                context,
+                                "Error loading image: ${it.result.throwable.localizedMessage}",
+                                Toast.LENGTH_LONG,
+                            ).show()
+                        viewModel.pulseSlideshow()
+                    },
+                )
             }
-            val focusManager = LocalFocusManager.current
-            AnimatedVisibility(
-                showOverlay,
-                enter = slideInVertically { it },
-                exit = slideOutVertically { it },
-            ) {
+        }
+        val focusManager = LocalFocusManager.current
+        AnimatedVisibility(
+            showOverlay,
+            enter = slideInVertically { it },
+            exit = slideOutVertically { it },
+        ) {
+            imageState?.let { imageState ->
                 ImageOverlay(
                     modifier =
                         contentModifier
@@ -496,11 +490,11 @@ fun SlideshowPage(
                     player = player,
                     slideshowControls = slideshowControls,
                     slideshowEnabled = slideshowEnabled,
-                    image = image,
+                    image = imageState,
                     position = position,
                     count = pager?.size ?: -1,
-                    itemOnClick = itemOnClick,
-                    longClicker = longClicker,
+                    onClickItem = {},
+                    onLongClickItem = {},
                     onZoom = ::zoom,
                     onRotate = { rotation += it },
                     onReset = { reset(true) },
@@ -511,21 +505,21 @@ fun SlideshowPage(
                     },
                 )
             }
-            AnimatedVisibility(showFilterDialog) {
-                ImageFilterDialog(
-                    filter = imageFilter,
-                    showVideoOptions = false,
-                    showSaveGalleryButton = true,
-                    onChange = viewModel::updateImageFilter,
-                    onClickSave = viewModel::saveImageFilter,
-                    onClickSaveGallery = viewModel::saveGalleryFilter,
-                    onDismissRequest = {
-                        showFilterDialog = false
-                        viewModel.unpauseSlideshow()
-                        viewModel.pulseSlideshow()
-                    },
-                )
-            }
+        }
+        AnimatedVisibility(showFilterDialog) {
+            ImageFilterDialog(
+                filter = imageFilter,
+                showVideoOptions = false,
+                showSaveGalleryButton = true,
+                onChange = viewModel::updateImageFilter,
+                onClickSave = viewModel::saveImageFilter,
+                onClickSaveGallery = viewModel::saveGalleryFilter,
+                onDismissRequest = {
+                    showFilterDialog = false
+                    viewModel.unpauseSlideshow()
+                    viewModel.pulseSlideshow()
+                },
+            )
         }
     }
 }

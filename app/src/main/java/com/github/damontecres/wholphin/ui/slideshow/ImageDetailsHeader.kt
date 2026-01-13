@@ -19,12 +19,12 @@ import androidx.media3.common.Player
 import androidx.media3.ui.compose.state.rememberPlayPauseButtonState
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
-import com.github.damontecres.wholphin.data.model.BaseItem
+import org.jellyfin.sdk.model.api.MediaType
 
 @Composable
 fun ImageDetailsHeader(
     player: Player,
-    image: BaseItem,
+    image: ImageState,
     position: Int,
     count: Int,
     moreOnClick: () -> Unit,
@@ -47,7 +47,7 @@ fun ImageDetailsHeader(
     ) {
         // Title
         Text(
-            text = image.title ?: "",
+            text = image.image.title ?: "",
 //                        color = MaterialTheme.colorScheme.onBackground,
             color = Color.LightGray,
             style =
@@ -62,7 +62,7 @@ fun ImageDetailsHeader(
         )
         val playPauseState = rememberPlayPauseButtonState(player)
         ImageControlsOverlay(
-            isImageClip = image.isImageClip,
+            isImageClip = image.image.data.mediaType == MediaType.VIDEO,
             bringIntoViewRequester = bringIntoViewRequester,
             onZoom = onZoom,
             onRotate = onRotate,

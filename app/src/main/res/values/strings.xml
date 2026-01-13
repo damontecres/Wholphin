@@ -452,6 +452,10 @@
     <string name="blue">Blue</string>
     <string name="blur">Blur</string>
     <string name="save_for_album">Save for album</string>
+    <string name="play_slideshow">Play slideshow</string>
+    <string name="stop_slideshow">Stop slideshow</string>
+    <string name="slideshow_at_beginning">At beginning</string>
+    <string name="no_more_images">No more photos</string>
 
     <string-array name="theme_song_volume">
         <item>Disabled</item>

@@ -103,6 +103,17 @@ data class BaseItem(
                     )
                 }
 
+                BaseItemKind.PHOTO -> {
+                    data.parentId?.let {
+                        Destination.Slideshow(
+                            parentId = it,
+                            index = 0,
+                            filter = CollectionFolderFilter(),
+                            recursive = false,
+                        )
+                    } ?: Destination.MediaItem(this)
+                }
+
                 else -> {
                     Destination.MediaItem(this)
                 }
