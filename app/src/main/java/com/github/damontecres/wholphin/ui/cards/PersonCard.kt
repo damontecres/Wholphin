@@ -146,7 +146,7 @@ fun PersonCard(
                             text = stringResource(R.string.fa_user),
                             fontFamily = FontAwesome,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            fontSize = 80.sp,
+                            fontSize = 64.sp,
                             textAlign = TextAlign.Center,
                             modifier =
                                 Modifier
@@ -212,7 +212,7 @@ private fun PersonCardPreview() {
                 ),
             onClick = {},
             onLongClick = {},
-            modifier = Modifier.width(120.dp),
+            modifier = Modifier.width(personRowCardWidth),
         )
     }
 }

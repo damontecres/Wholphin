@@ -60,7 +60,7 @@ fun PersonRow(
                     onLongClick = { onLongClick?.invoke(index, person) },
                     modifier =
                         Modifier
-                            .width(120.dp)
+                            .width(personRowCardWidth)
                             .ifElse(index == 0, Modifier.focusRequester(firstFocus))
                             .animateItem(),
                 )
@@ -107,7 +107,7 @@ fun DiscoverPersonRow(
                     onLongClick = { onLongClick?.invoke(index, person) },
                     modifier =
                         Modifier
-                            .width(120.dp)
+                            .width(personRowCardWidth)
                             .ifElse(index == 0, Modifier.focusRequester(firstFocus))
                             .animateItem(),
                 )
@@ -115,3 +115,5 @@ fun DiscoverPersonRow(
         }
     }
 }
+
+val personRowCardWidth = 108.dp
