@@ -52,6 +52,7 @@ import com.github.damontecres.wholphin.ui.Cards
 import com.github.damontecres.wholphin.ui.cards.DiscoverItemCard
 import com.github.damontecres.wholphin.ui.cards.ItemRow
 import com.github.damontecres.wholphin.ui.cards.SeasonCard
+import com.github.damontecres.wholphin.ui.components.DialogItem
 import com.github.damontecres.wholphin.ui.components.DialogParams
 import com.github.damontecres.wholphin.ui.components.DialogPopup
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
@@ -94,9 +95,13 @@ fun DiscoverMovieDetails(
     val recommended by viewModel.similar.observeAsState(listOf())
     val loading by viewModel.loading.observeAsState(LoadingState.Loading)
     val userConfig by viewModel.userConfig.collectAsState(null)
+    val request4kEnabled by viewModel.request4kEnabled.collectAsState(false)
 
     var overviewDialog by remember { mutableStateOf<ItemDetailsDialogInfo?>(null) }
     var moreDialog by remember { mutableStateOf<DialogParams?>(null) }
+
+    val requestStr = stringResource(R.string.request)
+    val request4kStr = stringResource(R.string.request_4k)
 
     val moreActions =
         MoreDialogActions(
@@ -129,7 +134,28 @@ fun DiscoverMovieDetails(
                     similar = similar,
                     recommended = recommended,
                     requestOnClick = {
-                        movie.id?.let { viewModel.request(it) }
+                        movie.id?.let { id ->
+                            if (request4kEnabled) {
+                                moreDialog =
+                                    DialogParams(
+                                        fromLongClick = false,
+                                        title = movie.title + " (${movie.releaseDate ?: ""})",
+                                        items =
+                                            listOf(
+                                                DialogItem(
+                                                    text = requestStr,
+                                                    onClick = { viewModel.request(id, false) },
+                                                ),
+                                                DialogItem(
+                                                    text = request4kStr,
+                                                    onClick = { viewModel.request(id, true) },
+                                                ),
+                                            ),
+                                    )
+                            } else {
+                                viewModel.request(id, false)
+                            }
+                        }
                     },
                     cancelOnClick = {
                         movie.id?.let { viewModel.cancelRequest(it) }
