@@ -45,7 +45,9 @@ fun CollectionFolderGeneric(
         }
     CollectionFolderGrid(
         preferences = preferences,
-        onClickItem = { _, item -> preferencesViewModel.navigationManager.navigateTo(item.destination()) },
+        onClickItem = { index, item ->
+            preferencesViewModel.navigationManager.navigateTo(item.destination(index))
+        },
         itemId = itemId,
         initialFilter = filter,
         showTitle = showHeader,

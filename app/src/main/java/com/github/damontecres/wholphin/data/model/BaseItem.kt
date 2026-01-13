@@ -81,7 +81,7 @@ data class BaseItem(
                     it.dayOfMonth.toString().padStart(2, '0')
             }?.toIntOrNull()
 
-    fun destination(): Destination {
+    fun destination(index: Int? = null): Destination {
         val result =
             // Redirect episodes & seasons to their series if possible
             when (type) {
@@ -107,7 +107,7 @@ data class BaseItem(
                     data.parentId?.let {
                         Destination.Slideshow(
                             parentId = it,
-                            index = 0,
+                            index = index ?: 0,
                             filter = CollectionFolderFilter(),
                             recursive = false,
                         )

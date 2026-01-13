@@ -45,26 +45,51 @@ fun ImageOverlay(
     val context = LocalContext.current
     var showDialog by remember { mutableStateOf<DialogParams?>(null) }
 
-    val startStopSlideshow =
-        DialogItem(
-            headlineContent = {
-                Text(
-                    text =
-                        if (slideshowEnabled) {
-                            stringResource(R.string.stop_slideshow)
-                        } else {
-                            stringResource(R.string.play_slideshow)
-                        },
-                )
-            },
-            leadingContent = {
-                Icon(
-                    painter = painterResource(if (slideshowEnabled) R.drawable.baseline_pause_24 else R.drawable.baseline_play_arrow_24),
-                    contentDescription = null,
-                )
-            },
-            onClick = { if (slideshowEnabled) slideshowControls.stopSlideshow() else slideshowControls.startSlideshow() },
-        )
+    val moreDialogParams =
+        remember {
+            DialogParams(
+                fromLongClick = false,
+                title = "TODO",
+                items =
+                    listOf(
+                        DialogItem(
+                            headlineContent = {
+                                Text(
+                                    text =
+                                        if (slideshowEnabled) {
+                                            stringResource(R.string.stop_slideshow)
+                                        } else {
+                                            stringResource(R.string.play_slideshow)
+                                        },
+                                )
+                            },
+                            leadingContent = {
+                                val icon =
+                                    if (slideshowEnabled) {
+                                        R.drawable.baseline_pause_24
+                                    } else {
+                                        R.drawable.baseline_play_arrow_24
+                                    }
+                                Icon(
+                                    painter = painterResource(icon),
+                                    contentDescription = null,
+                                )
+                            },
+                            onClick = {
+                                if (slideshowEnabled) {
+                                    slideshowControls.stopSlideshow()
+                                } else {
+                                    slideshowControls.startSlideshow()
+                                }
+                            },
+                        ),
+                        DialogItem(
+                            text = "Filters",
+                            onClick = onShowFilterDialogClick,
+                        ),
+                    ),
+            )
+        }
 
     val horizontalPadding = 16.dp
     LazyColumn(
@@ -84,7 +109,9 @@ fun ImageOverlay(
                 image = image,
                 position = position,
                 count = count,
-                moreOnClick = {},
+                moreOnClick = {
+                    showDialog = moreDialogParams
+                },
                 onZoom = onZoom,
                 onRotate = onRotate,
                 onReset = onReset,

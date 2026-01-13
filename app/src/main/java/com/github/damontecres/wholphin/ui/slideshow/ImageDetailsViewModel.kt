@@ -245,7 +245,7 @@ class ImageDetailsViewModel
             if (_image.value
                     ?.image
                     ?.data
-                    ?.mediaType == MediaType.VIDEO
+                    ?.mediaType != MediaType.VIDEO
             ) {
                 pulseSlideshow()
             }
