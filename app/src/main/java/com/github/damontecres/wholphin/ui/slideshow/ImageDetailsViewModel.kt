@@ -10,6 +10,7 @@ import androidx.lifecycle.asFlow
 import androidx.lifecycle.asLiveData
 import androidx.lifecycle.map
 import androidx.lifecycle.viewModelScope
+import androidx.media3.common.Player
 import com.github.damontecres.wholphin.data.PlaybackEffectDao
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.BaseItem
@@ -39,6 +40,7 @@ import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.libraryApi
 import org.jellyfin.sdk.api.client.extensions.userLibraryApi
+import org.jellyfin.sdk.api.client.extensions.videosApi
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.ImageType
 import org.jellyfin.sdk.model.api.MediaType
@@ -59,7 +61,8 @@ class ImageDetailsViewModel
         private val imageUrlService: ImageUrlService,
         @Assisted val parentId: UUID,
         @Assisted val startIndex: Int,
-    ) : ViewModel() {
+    ) : ViewModel(),
+        Player.Listener {
         @AssistedFactory
         interface Factory {
             fun create(
@@ -107,9 +110,14 @@ class ImageDetailsViewModel
         private val _imageFilter = MutableLiveData(VideoFilter())
         val imageFilter = ThrottledLiveData(_imageFilter, 500L)
 
-        private var galleryImageFilter = VideoFilter()
+        private var albumImageFilter = VideoFilter()
 
         init {
+            addCloseable {
+                player.removeListener(this@ImageDetailsViewModel)
+                player.release()
+            }
+            player.addListener(this@ImageDetailsViewModel)
             viewModelScope.launchIO {
                 // TODO settings
                 slideshowDelay = 5_000
@@ -123,7 +131,7 @@ class ImageDetailsViewModel
                 val request =
                     GetItemsRequest(
                         parentId = parentId,
-                        includeItemTypes = listOf(BaseItemKind.PHOTO),
+                        includeItemTypes = listOf(BaseItemKind.PHOTO, BaseItemKind.VIDEO),
                         fields = DefaultItemFields,
                         recursive = true,
                     )
@@ -165,14 +173,25 @@ class ImageDetailsViewModel
                         Timber.v("Got image for $position: ${image != null}")
                         if (image != null) {
                             this@ImageDetailsViewModel.position.setValueOnMain(position)
+
+                            val url =
+                                if (image.data.mediaType == MediaType.VIDEO) {
+                                    // TODO this assumes direct play
+                                    api.videosApi.getVideoStreamUrl(
+                                        itemId = image.id,
+                                    )
+                                } else {
+                                    api.libraryApi.getDownloadUrl(image.id)
+                                }
+
                             val imageState =
                                 ImageState(
                                     image,
-                                    api.libraryApi.getDownloadUrl(image.id),
+                                    url,
                                     imageUrlService.getItemImageUrl(image, ImageType.THUMB),
                                 )
                             // reset image filter
-                            updateImageFilter(galleryImageFilter)
+                            updateImageFilter(albumImageFilter)
                             if (saveFilters) {
                                 viewModelScope.launchIO {
                                     serverRepository.currentUser.value?.let { user ->
@@ -312,7 +331,7 @@ class ImageDetailsViewModel
                 viewModelScope.launchIO(ExceptionHandler(autoToast = true)) {
                     val vf = _imageFilter.value
                     if (vf != null) {
-                        galleryImageFilter = vf
+                        albumImageFilter = vf
                         serverRepository.currentUser.value?.let { user ->
                             playbackEffectDao
                                 .insert(
@@ -337,8 +356,10 @@ class ImageDetailsViewModel
             }
         }
 
-        companion object {
-            private const val TAG = "ImageDetailsViewModel"
+        override fun onPlaybackStateChanged(playbackState: Int) {
+            if (playbackState == Player.STATE_ENDED) {
+                pulseSlideshow(5_000)
+            }
         }
     }
 

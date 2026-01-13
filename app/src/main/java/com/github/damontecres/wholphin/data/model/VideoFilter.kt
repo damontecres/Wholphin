@@ -11,6 +11,7 @@ import androidx.media3.effect.GlEffect
 import androidx.media3.effect.HslAdjustment
 import androidx.media3.effect.RgbAdjustment
 import androidx.media3.effect.ScaleAndRotateTransformation
+import androidx.room.Ignore
 
 /**
  * Modifications to a video playback
@@ -26,6 +27,9 @@ data class VideoFilter(
     @param:IntRange(0, 200) val blue: Int = COLOR_DEFAULT,
     @param:IntRange(0, 250) val blur: Int = 0,
 ) {
+    @Ignore
+    val colorMatrix: androidx.compose.ui.graphics.ColorMatrix = createComposeColorMatrix()
+
     companion object {
         const val COLOR_DEFAULT = 100
         const val HUE_DEFAULT = 0

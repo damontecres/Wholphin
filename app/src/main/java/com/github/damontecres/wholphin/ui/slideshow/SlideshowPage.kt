@@ -46,8 +46,13 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.LifecycleStartEffect
+import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
+import androidx.media3.ui.compose.PlayerSurface
+import androidx.media3.ui.compose.SURFACE_TYPE_SURFACE_VIEW
+import androidx.media3.ui.compose.modifiers.resizeWithContentScale
 import androidx.media3.ui.compose.state.rememberPresentationState
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
@@ -208,21 +213,9 @@ fun SlideshowPage(
         reset(true)
     }
     val player = viewModel.player
-
+//
     val playSlideshowDelay = 5_000 // TODO
     val presentationState = rememberPresentationState(player)
-    LaunchedEffect(player) {
-        // TODO
-        player.addListener(
-            object : Player.Listener {
-                override fun onPlaybackStateChanged(playbackState: Int) {
-                    if (playbackState == Player.STATE_ENDED) {
-                        viewModel.pulseSlideshow(5_000)
-                    }
-                }
-            },
-        )
-    }
     LaunchedEffect(slideshowActive) {
         player.repeatMode = if (slideshowEnabled) Player.REPEAT_MODE_OFF else Player.REPEAT_MODE_ONE
         context.findActivity()?.keepScreenOn(slideshowActive)
@@ -234,8 +227,6 @@ fun SlideshowPage(
     }
 
     var longPressing by remember { mutableStateOf(false) }
-
-    var dragXAmount by remember { mutableFloatStateOf(0f) }
 
     // TODO move content into a function
     val contentModifier =
@@ -344,60 +335,59 @@ fun SlideshowPage(
     ) {
         imageState?.let { imageState ->
             if (imageState.image.data.mediaType == MediaType.VIDEO) {
-                TODO()
-//                    LaunchedEffect(image.id) {
-//                        val mediaItem =
-//                            MediaItem
-//                                .Builder()
-//                                .setUri(image.paths.image)
-//                                .build()
-//                        player.setMediaItem(mediaItem)
-//                        player.repeatMode =
-//                            if (slideshowEnabled) {
-//                                Player.REPEAT_MODE_OFF
-//                            } else {
-//                                Player.REPEAT_MODE_ONE
-//                            }
-//                        player.prepare()
-//                        player.play()
-//                        viewModel.pulseSlideshow(Long.MAX_VALUE)
-//                    }
-//                    LifecycleStartEffect(Unit) {
-//                        onStopOrDispose {
-//                            player.stop()
-//                        }
-//                    }
-//                    val contentScale = ContentScale.Fit
-//                    val scaledModifier =
-//                        contentModifier.resizeWithContentScale(
-//                            contentScale,
-//                            presentationState.videoSizeDp,
-//                        )
-//                    PlayerSurface(
-//                        player = player,
-//                        surfaceType = SURFACE_TYPE_SURFACE_VIEW,
-//                        modifier =
-//                            scaledModifier
-//                                .fillMaxSize()
-//                                .graphicsLayer {
-//                                    scaleX = zoomAnimation
-//                                    scaleY = zoomAnimation
-//                                    translationX = panXAnimation
-//                                    translationY = panYAnimation
-//                                }.rotate(rotateAnimation),
-//                    )
-//                    if (presentationState.coverSurface) {
-//                        Box(
-//                            Modifier
-//                                .matchParentSize()
-//                                .background(Color.Black),
-//                        )
-//                    }
+                LaunchedEffect(imageState.id) {
+                    val mediaItem =
+                        MediaItem
+                            .Builder()
+                            .setUri(imageState.url)
+                            .build()
+                    player.setMediaItem(mediaItem)
+                    player.repeatMode =
+                        if (slideshowEnabled) {
+                            Player.REPEAT_MODE_OFF
+                        } else {
+                            Player.REPEAT_MODE_ONE
+                        }
+                    player.prepare()
+                    player.play()
+                    viewModel.pulseSlideshow(Long.MAX_VALUE)
+                }
+                LifecycleStartEffect(Unit) {
+                    onStopOrDispose {
+                        player.stop()
+                    }
+                }
+                val contentScale = ContentScale.Fit
+                val scaledModifier =
+                    contentModifier.resizeWithContentScale(
+                        contentScale,
+                        presentationState.videoSizeDp,
+                    )
+                PlayerSurface(
+                    player = player,
+                    surfaceType = SURFACE_TYPE_SURFACE_VIEW,
+                    modifier =
+                        scaledModifier
+                            .fillMaxSize()
+                            .graphicsLayer {
+                                scaleX = zoomAnimation
+                                scaleY = zoomAnimation
+                                translationX = panXAnimation
+                                translationY = panYAnimation
+                            }.rotate(rotateAnimation),
+                )
+                if (presentationState.coverSurface) {
+                    Box(
+                        Modifier
+                            .matchParentSize()
+                            .background(Color.Black),
+                    )
+                }
             } else {
                 val colorFilter =
                     remember(imageState.id, imageFilter) {
                         if (imageFilter.hasImageFilter()) {
-                            ColorMatrixColorFilter(imageFilter.createComposeColorMatrix())
+                            ColorMatrixColorFilter(imageFilter.colorMatrix)
                         } else {
                             null
                         }
