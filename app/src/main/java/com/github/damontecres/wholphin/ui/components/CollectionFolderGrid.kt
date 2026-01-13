@@ -30,6 +30,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -783,12 +784,15 @@ fun CollectionFolderGridContent(
     var showHeader by rememberSaveable { mutableStateOf(true) }
     var showViewOptions by rememberSaveable { mutableStateOf(false) }
     var viewOptions by remember { mutableStateOf(viewOptions) }
+    val headerRowFocusRequester = remember { FocusRequester() }
 
     val gridFocusRequester = remember { FocusRequester() }
     if (pager.isNotEmpty()) {
         RequestOrRestoreFocus(gridFocusRequester)
     } else {
-        focusRequesterOnEmpty?.tryRequestFocus()
+        LaunchedEffect(Unit) {
+            (focusRequesterOnEmpty ?: headerRowFocusRequester).tryRequestFocus()
+        }
     }
     var backdropImageUrl by remember { mutableStateOf<String?>(null) }
 
@@ -833,7 +837,8 @@ fun CollectionFolderGridContent(
                         modifier =
                             Modifier
                                 .padding(start = 16.dp, end = endPadding)
-                                .fillMaxWidth(),
+                                .fillMaxWidth()
+                                .focusRequester(headerRowFocusRequester),
                     ) {
                         if (sortOptions.isNotEmpty() || filterOptions.isNotEmpty()) {
                             Row(
