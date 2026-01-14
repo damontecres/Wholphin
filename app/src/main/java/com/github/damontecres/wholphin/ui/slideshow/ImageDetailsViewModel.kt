@@ -6,8 +6,6 @@ import androidx.compose.runtime.Stable
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.asFlow
-import androidx.lifecycle.asLiveData
 import androidx.lifecycle.map
 import androidx.lifecycle.viewModelScope
 import androidx.media3.common.Player
@@ -37,7 +35,11 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.libraryApi
@@ -82,24 +84,16 @@ class ImageDetailsViewModel
 
         private var saveFilters = true
 
-        private val _slideshow = MutableLiveData(false)
-
         /**
          * Whether slideshow mode is on or off
          */
-        val slideshow: LiveData<Boolean> = _slideshow
-        private val _slideshowPaused = MutableLiveData(false)
-        val slideshowPaused: LiveData<Boolean> = _slideshowPaused
+        private val _slideshow = MutableStateFlow<SlideshowState>(SlideshowState(false, false))
+        val slideshow: StateFlow<SlideshowState> = _slideshow
 
         /**
          * Whether the slideshow is actively running meaning slideshow mode is ON and is currently NOT paused
          */
-        val slideshowActive =
-            slideshow
-                .asFlow()
-                .combine(slideshowPaused.asFlow()) { slideshow, paused ->
-                    slideshow && !paused
-                }.asLiveData()
+        val slideshowActive = slideshow.map { it.enabled && !it.paused }
 
         var slideshowDelay by Delegates.notNull<Long>()
 
@@ -259,8 +253,9 @@ class ImageDetailsViewModel
         private var slideshowJob: Job? = null
 
         fun startSlideshow() {
-            _slideshow.value = true
-            _slideshowPaused.value = false
+            _slideshow.update {
+                SlideshowState(enabled = true, paused = false)
+            }
             if (_image.value
                     ?.image
                     ?.data
@@ -272,21 +267,31 @@ class ImageDetailsViewModel
 
         fun stopSlideshow() {
             slideshowJob?.cancel()
-            _slideshow.value = false
+            _slideshow.update {
+                SlideshowState(enabled = false, paused = false)
+            }
         }
 
         fun pauseSlideshow() {
-            if (_slideshow.value == true) {
-                Timber.v("pauseSlideshow")
-                _slideshowPaused.value = true
-                slideshowJob?.cancel()
+            Timber.v("pauseSlideshow")
+            _slideshow.update {
+                if (it.enabled) {
+                    slideshowJob?.cancel()
+                    it.copy(paused = true)
+                } else {
+                    it
+                }
             }
         }
 
         fun unpauseSlideshow() {
-            if (_slideshow.value == true) {
-                Timber.v("unpauseSlideshow")
-                _slideshowPaused.value = false
+            Timber.v("unpauseSlideshow")
+            _slideshow.update {
+                if (it.enabled) {
+                    it.copy(paused = false)
+                } else {
+                    it
+                }
             }
         }
 
@@ -295,19 +300,17 @@ class ImageDetailsViewModel
         fun pulseSlideshow(milliseconds: Long) {
             Timber.v("pulseSlideshow $milliseconds")
             slideshowJob?.cancel()
-            if (slideshow.value!!) {
-                slideshowJob =
-                    viewModelScope
-                        .launchIO {
-                            delay(milliseconds)
-                            Timber.v("pulseSlideshow after delay")
-                            if (slideshowActive.value == true) {
-                                nextImage()
-                            }
-                        }.apply {
-                            invokeOnCompletion { if (it !is CancellationException) pulseSlideshow() }
+            slideshowJob =
+                viewModelScope
+                    .launchIO {
+                        delay(milliseconds)
+                        Timber.v("pulseSlideshow after delay")
+                        if (slideshowActive.first()) {
+                            nextImage()
                         }
-            }
+                    }.apply {
+                        invokeOnCompletion { if (it !is CancellationException) pulseSlideshow() }
+                    }
         }
 
         fun updateImageFilter(newFilter: VideoFilter) {
@@ -406,3 +409,8 @@ data class ImageState(
 ) {
     val id: UUID get() = image.id
 }
+
+data class SlideshowState(
+    val enabled: Boolean,
+    val paused: Boolean,
+)

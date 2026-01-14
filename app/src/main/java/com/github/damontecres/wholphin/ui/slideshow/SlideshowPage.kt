@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableFloatStateOf
@@ -143,8 +144,8 @@ fun SlideshowPage(
             panY += offsetChange.y
         }
 
-    val slideshowEnabled by viewModel.slideshow.observeAsState(false)
-    val slideshowActive by viewModel.slideshowActive.observeAsState(false)
+    val slideshowState by viewModel.slideshow.collectAsState()
+    val slideshowActive by viewModel.slideshowActive.collectAsState(false)
 
     val focusRequester = remember { FocusRequester() }
 
@@ -215,7 +216,8 @@ fun SlideshowPage(
     val player = viewModel.player
     val presentationState = rememberPresentationState(player)
     LaunchedEffect(slideshowActive) {
-        player.repeatMode = if (slideshowEnabled) Player.REPEAT_MODE_OFF else Player.REPEAT_MODE_ONE
+        player.repeatMode =
+            if (slideshowState.enabled) Player.REPEAT_MODE_OFF else Player.REPEAT_MODE_ONE
         context.findActivity()?.keepScreenOn(slideshowActive)
     }
     DisposableEffect(Unit) {
@@ -341,7 +343,7 @@ fun SlideshowPage(
                             .build()
                     player.setMediaItem(mediaItem)
                     player.repeatMode =
-                        if (slideshowEnabled) {
+                        if (slideshowState.enabled) {
                             Player.REPEAT_MODE_OFF
                         } else {
                             Player.REPEAT_MODE_ONE
@@ -477,7 +479,7 @@ fun SlideshowPage(
                             .background(AppColors.TransparentBlack50),
                     player = player,
                     slideshowControls = slideshowControls,
-                    slideshowEnabled = slideshowEnabled,
+                    slideshowEnabled = slideshowState.enabled,
                     image = imageState,
                     position = position,
                     count = pager?.size ?: -1,
