@@ -49,6 +49,7 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.tv.material3.ButtonDefaults
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.OutlinedButton
+import androidx.tv.material3.OutlinedButtonDefaults
 import androidx.tv.material3.Text
 import androidx.tv.material3.surfaceColorAtElevation
 import com.github.damontecres.wholphin.R
@@ -371,7 +372,7 @@ private fun VoiceSearchOverlay(
                             onClick = onRetry,
                             modifier = Modifier.padding(top = 16.dp),
                             shape = ButtonDefaults.shape(RoundedCornerShape(50)),
-                            colors = ButtonDefaults.outlinedButtonColors(
+                            colors = OutlinedButtonDefaults.colors(
                                 contentColor = MaterialTheme.colorScheme.onSurface,
                             ),
                         ) {
