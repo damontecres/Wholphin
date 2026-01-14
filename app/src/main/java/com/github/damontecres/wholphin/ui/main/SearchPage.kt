@@ -60,6 +60,7 @@ import com.github.damontecres.wholphin.ui.cards.EpisodeCard
 import com.github.damontecres.wholphin.ui.cards.ItemRow
 import com.github.damontecres.wholphin.ui.cards.SeasonCard
 import com.github.damontecres.wholphin.ui.components.SearchEditTextBox
+import com.github.damontecres.wholphin.ui.components.VoiceInputManager
 import com.github.damontecres.wholphin.ui.components.VoiceSearchButton
 import com.github.damontecres.wholphin.ui.data.RowColumn
 import com.github.damontecres.wholphin.ui.ifElse
