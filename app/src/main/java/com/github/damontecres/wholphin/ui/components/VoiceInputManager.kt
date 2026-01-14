@@ -100,6 +100,7 @@ class VoiceInputManager
                 ) == PackageManager.PERMISSION_GRANTED
 
         private var recognizer: SpeechRecognizer? = null
+        private var busyRetryCount = 0
 
         private val timeoutHandler = Handler(Looper.getMainLooper())
         private val timeoutRunnable =
@@ -107,15 +108,20 @@ class VoiceInputManager
                 scope.launch {
                     mutex.withLock {
                         if (_state.value is VoiceInputState.Listening) {
+                            val partial = _partialResult.value
                             destroyRecognizer()
                             handler.post {
                                 _soundLevel.value = 0f
-                                _partialResult.value = ""
-                                _state.value =
-                                    VoiceInputState.Error(
-                                        messageResId = R.string.voice_error_timeout,
-                                        isRetryable = true,
-                                    )
+                                if (partial.isNotBlank()) {
+                                    _state.value = VoiceInputState.Result(partial)
+                                } else {
+                                    _partialResult.value = ""
+                                    _state.value =
+                                        VoiceInputState.Error(
+                                            messageResId = R.string.voice_error_timeout,
+                                            isRetryable = true,
+                                        )
+                                }
                             }
                         }
                     }
@@ -135,6 +141,7 @@ class VoiceInputManager
                 mutex.withLock {
                     if (_state.value is VoiceInputState.Listening) return@withLock
 
+                    busyRetryCount = 0
                     destroyRecognizer()
                     cancelTimeout()
                     handler.post {
@@ -247,7 +254,13 @@ class VoiceInputManager
 
                 override fun onError(error: Int) {
                     if (!isValid()) return
+                    Timber.e("Voice recognition error code: $error")
                     cancelTimeout()
+                    if (error == SpeechRecognizer.ERROR_RECOGNIZER_BUSY && busyRetryCount < 1) {
+                        busyRetryCount++
+                        handler.postDelayed({ startListening() }, 300)
+                        return
+                    }
                     handler.post {
                         _state.value =
                             VoiceInputState.Error(
