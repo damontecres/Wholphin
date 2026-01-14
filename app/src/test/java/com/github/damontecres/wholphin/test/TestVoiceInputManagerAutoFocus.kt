@@ -38,9 +38,13 @@ class TestVoiceInputManagerAutoFocus {
     private lateinit var manager: VoiceInputManager
     private lateinit var audioManager: AudioManager
     private lateinit var connectivityManager: ConnectivityManager
+    private lateinit var listenerSlot: CapturingSlot<RecognitionListener>
 
     // We need to capture the OnAudioFocusChangeListener passed to AudioFocusRequest
     private val focusRequestSlot = slot<AudioFocusRequest>()
+
+    private val capturedListener: RecognitionListener
+        get() = listenerSlot.captured
 
     private fun idleMainLooper() = shadowOf(Looper.getMainLooper()).idle()
 
@@ -63,6 +67,9 @@ class TestVoiceInputManagerAutoFocus {
         every { activity.getSystemService(Context.CONNECTIVITY_SERVICE) } returns connectivityManager
 
         speechRecognizer = mockk(relaxed = true)
+        listenerSlot = slot()
+        every { speechRecognizer.setRecognitionListener(capture(listenerSlot)) } just Runs
+
         mockkStatic(SpeechRecognizer::class)
         every { SpeechRecognizer.createSpeechRecognizer(activity) } returns speechRecognizer
         every { SpeechRecognizer.isRecognitionAvailable(activity) } returns true
@@ -79,6 +86,8 @@ class TestVoiceInputManagerAutoFocus {
     fun `transient audio focus loss is ignored`() {
         // Start listening
         manager.startListening()
+        idleMainLooper()
+        capturedListener.onReadyForSpeech(null)
         idleMainLooper()
         assertEquals(VoiceInputState.Listening, manager.state.value)
 
@@ -103,6 +112,8 @@ class TestVoiceInputManagerAutoFocus {
     fun `permanent audio focus loss stops listening`() {
         // Start listening
         manager.startListening()
+        idleMainLooper()
+        capturedListener.onReadyForSpeech(null)
         idleMainLooper()
 
         // Get listener via reflection since AudioFocusRequest doesn't expose it

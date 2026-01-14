@@ -117,8 +117,18 @@ class TestVoiceInputManager {
     // ========== Test Case 2: Start Listening ==========
 
     @Test
-    fun `startListening transitions state to Listening`() {
+    fun `startListening transitions state to Starting`() {
         manager.startListening()
+        idleMainLooper()
+
+        assertEquals(VoiceInputState.Starting, manager.state.value)
+    }
+
+    @Test
+    fun `onReadyForSpeech transitions state to Listening`() {
+        manager.startListening()
+        idleMainLooper()
+        capturedListener.onReadyForSpeech(null)
         idleMainLooper()
 
         assertEquals(VoiceInputState.Listening, manager.state.value)
@@ -153,6 +163,8 @@ class TestVoiceInputManager {
     fun `startListening resets partialResult`() {
         manager.startListening()
         idleMainLooper()
+        capturedListener.onReadyForSpeech(null)
+        idleMainLooper()
         capturedListener.onPartialResults(createResultsBundle("partial"))
         idleMainLooper()
         manager.stopListening()
@@ -168,6 +180,21 @@ class TestVoiceInputManager {
     fun `startListening is ignored when already listening`() {
         manager.startListening()
         idleMainLooper()
+        capturedListener.onReadyForSpeech(null)
+        idleMainLooper()
+        manager.startListening() // Should be ignored
+        idleMainLooper()
+
+        // Only one recognizer should be created
+        verify(exactly = 1) { SpeechRecognizer.createSpeechRecognizer(activity) }
+    }
+
+    @Test
+    fun `startListening is ignored when in Starting state`() {
+        manager.startListening()
+        idleMainLooper()
+        assertEquals(VoiceInputState.Starting, manager.state.value)
+
         manager.startListening() // Should be ignored
         idleMainLooper()
 
@@ -333,6 +360,17 @@ class TestVoiceInputManager {
         idleMainLooper()
 
         assertEquals(R.string.voice_error_speech_timeout, (manager.state.value as VoiceInputState.Error).messageResId)
+    }
+
+    @Test
+    fun `onError ERROR_SPEECH_TIMEOUT is retryable`() {
+        manager.startListening()
+        idleMainLooper()
+
+        capturedListener.onError(SpeechRecognizer.ERROR_SPEECH_TIMEOUT)
+        idleMainLooper()
+
+        assertTrue((manager.state.value as VoiceInputState.Error).isRetryable)
     }
 
     @Test
@@ -570,7 +608,7 @@ class TestVoiceInputManager {
         manager.onPermissionGranted()
         idleMainLooper()
 
-        assertEquals(VoiceInputState.Listening, manager.state.value)
+        assertEquals(VoiceInputState.Starting, manager.state.value)
         verify { SpeechRecognizer.createSpeechRecognizer(activity) }
     }
 
@@ -601,8 +639,8 @@ class TestVoiceInputManager {
         firstListener.onResults(createResultsBundle("zombie result"))
         idleMainLooper()
 
-        // State should remain Listening (from the second startListening), not Result
-        assertEquals(VoiceInputState.Listening, manager.state.value)
+        // State should remain Starting (from the second startListening), not Result
+        assertEquals(VoiceInputState.Starting, manager.state.value)
     }
 
     @Test

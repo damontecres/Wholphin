@@ -21,6 +21,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.android.asCoroutineDispatcher
 import kotlinx.coroutines.delay
@@ -61,12 +62,16 @@ private val RETRYABLE_ERRORS =
         SpeechRecognizer.ERROR_NETWORK_TIMEOUT,
         SpeechRecognizer.ERROR_SERVER,
         SpeechRecognizer.ERROR_NO_MATCH,
+        SpeechRecognizer.ERROR_SPEECH_TIMEOUT,
     )
 
 private fun normalizeRmsDb(rmsdB: Float) = ((rmsdB - RMS_DB_MIN) / (RMS_DB_MAX - RMS_DB_MIN)).coerceIn(0f, 1f)
 
 sealed interface VoiceInputState {
     data object Idle : VoiceInputState
+
+    /** Recognizer is being initialized, not yet ready for speech. */
+    data object Starting : VoiceInputState
 
     data object Listening : VoiceInputState
 
@@ -166,36 +171,7 @@ class VoiceInputManager
                 ) == PackageManager.PERMISSION_GRANTED
 
         private var recognizer: SpeechRecognizer? = null
-
-        private val timeoutHandler = Handler(Looper.getMainLooper())
-        private val timeoutRunnable =
-            Runnable {
-                scope.launch {
-                    mutex.withLock {
-                        if (_state.value is VoiceInputState.Listening) {
-                            val partial = _partialResult.value
-                            // Double check if a result actually arrived but we just haven't processed it yet
-                            // blocking the timeout if we are about to switch state
-                            if (recognizer == null) return@withLock
-
-                            destroyRecognizer()
-                            handler.post {
-                                _soundLevel.value = 0f
-                                if (partial.isNotBlank()) {
-                                    _state.value = VoiceInputState.Result(partial)
-                                } else {
-                                    _partialResult.value = ""
-                                    _state.value =
-                                        VoiceInputState.Error(
-                                            messageResId = R.string.voice_error_timeout,
-                                            isRetryable = true,
-                                        )
-                                }
-                            }
-                        }
-                    }
-                }
-            }
+        private var timeoutJob: Job? = null
 
         private fun provideMainDispatcher(): CoroutineDispatcher =
             try {
@@ -222,7 +198,10 @@ class VoiceInputManager
         fun startListening() {
             scope.launch {
                 mutex.withLock {
-                    if (_state.value is VoiceInputState.Listening) return@withLock
+                    val currentState = _state.value
+                    if (currentState is VoiceInputState.Starting || currentState is VoiceInputState.Listening) {
+                        return@withLock
+                    }
 
                     val hadRecognizer = recognizer != null
                     if (hadRecognizer) {
@@ -256,16 +235,12 @@ class VoiceInputManager
                     handler.post {
                         _partialResult.value = ""
                         _soundLevel.value = 0f
-                        _state.value = VoiceInputState.Listening
+                        _state.value = VoiceInputState.Starting
                     }
 
                     // Give the OS time to release the mic before recreating when replacing an old recognizer
                     if (hadRecognizer) {
                         delay(RECOGNIZER_RECREATE_DELAY_MS)
-                    }
-
-                    if (recognizer != null) {
-                        destroyRecognizer()
                     }
 
                     val newRecognizer = SpeechRecognizer.createSpeechRecognizer(context)
@@ -274,7 +249,6 @@ class VoiceInputManager
 
                     try {
                         newRecognizer.startListening(recognitionIntent)
-                        timeoutHandler.postDelayed(timeoutRunnable, LISTENING_TIMEOUT_MS)
                     } catch (e: Exception) {
                         Timber.e(e, "Failed to start speech recognition")
                         destroyRecognizer()
@@ -301,7 +275,35 @@ class VoiceInputManager
         }
 
         private fun cancelTimeout() {
-            timeoutHandler.removeCallbacks(timeoutRunnable)
+            timeoutJob?.cancel()
+            timeoutJob = null
+        }
+
+        private fun startTimeout() {
+            cancelTimeout()
+            timeoutJob =
+                scope.launch {
+                    delay(LISTENING_TIMEOUT_MS)
+                    mutex.withLock {
+                        if (_state.value is VoiceInputState.Listening && recognizer != null) {
+                            val partial = _partialResult.value
+                            destroyRecognizer()
+                            handler.post {
+                                _soundLevel.value = 0f
+                                _partialResult.value = ""
+                                _state.value =
+                                    if (partial.isNotBlank()) {
+                                        VoiceInputState.Result(partial)
+                                    } else {
+                                        VoiceInputState.Error(
+                                            messageResId = R.string.voice_error_timeout,
+                                            isRetryable = true,
+                                        )
+                                    }
+                            }
+                        }
+                    }
+                }
         }
 
         fun acknowledge() {
@@ -352,6 +354,8 @@ class VoiceInputManager
 
                 override fun onReadyForSpeech(params: Bundle?) {
                     if (!isValid()) return
+                    handler.post { _state.value = VoiceInputState.Listening }
+                    startTimeout()
                 }
 
                 override fun onBeginningOfSpeech() {

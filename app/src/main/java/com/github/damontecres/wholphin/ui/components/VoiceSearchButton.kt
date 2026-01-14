@@ -75,7 +75,8 @@ private val RIPPLE_STROKE_WIDTH = 2.dp
 private const val RIPPLE_MAX_ALPHA = 0.4f
 
 private fun VoiceInputState.shouldShowOverlay() =
-    this is VoiceInputState.Listening ||
+    this is VoiceInputState.Starting ||
+        this is VoiceInputState.Listening ||
         this is VoiceInputState.Processing ||
         this is VoiceInputState.Error
 
@@ -129,6 +130,7 @@ fun VoiceSearchButton(
         VoiceSearchOverlay(
             soundLevel = soundLevel,
             partialResult = partialResult,
+            isStarting = state is VoiceInputState.Starting,
             isProcessing = state is VoiceInputState.Processing,
             errorMessage = errorMessage,
             isRetryable = errorState?.isRetryable == true,
@@ -140,7 +142,9 @@ fun VoiceSearchButton(
     Button(
         onClick = {
             when (state) {
-                is VoiceInputState.Listening -> {
+                is VoiceInputState.Starting,
+                is VoiceInputState.Listening,
+                -> {
                     voiceInputManager.stopListening()
                 }
 
@@ -213,7 +217,9 @@ private fun VoiceRippleRings(
 private fun getStatusText(
     errorMessage: String?,
     partialResult: String,
+    isStarting: Boolean,
     isProcessing: Boolean,
+    startingText: String,
     processingText: String,
     listeningText: String,
     dotCount: Int,
@@ -222,6 +228,7 @@ private fun getStatusText(
     return when {
         errorMessage != null -> errorMessage to errorMessage
         isProcessing -> (processingText + dots) to processingText
+        isStarting -> (startingText + dots) to startingText
         partialResult.isNotBlank() -> partialResult to partialResult
         else -> (listeningText + dots) to listeningText
     }
@@ -231,6 +238,7 @@ private fun getStatusText(
 private fun VoiceSearchOverlay(
     soundLevel: Float,
     partialResult: String,
+    isStarting: Boolean,
     isProcessing: Boolean,
     errorMessage: String?,
     isRetryable: Boolean,
@@ -259,7 +267,8 @@ private fun VoiceSearchOverlay(
         label = "basePulse",
     )
 
-    val shouldAnimateRipples = !isProcessing && errorMessage == null
+    // Only animate ripples when actively listening (not starting, processing, or in error)
+    val shouldAnimateRipples = !isStarting && !isProcessing && errorMessage == null
     val rippleProgress by infiniteTransition.animateFloat(
         initialValue = 0f,
         targetValue = if (shouldAnimateRipples) 1f else 0f,
@@ -346,13 +355,16 @@ private fun VoiceSearchOverlay(
                     }
                 }
 
+                val startingText = stringResource(R.string.voice_starting)
                 val processingText = stringResource(R.string.processing)
                 val listeningText = stringResource(R.string.voice_search_prompt)
                 val (statusText, accessibilityDescription) =
                     getStatusText(
                         errorMessage = errorMessage,
                         partialResult = partialResult,
+                        isStarting = isStarting,
                         isProcessing = isProcessing,
+                        startingText = startingText,
                         processingText = processingText,
                         listeningText = listeningText,
                         dotCount = dotAnimation.toInt(),

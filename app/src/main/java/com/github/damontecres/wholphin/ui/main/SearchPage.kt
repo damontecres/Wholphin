@@ -234,10 +234,6 @@ fun SearchPage(
     var searchClicked by rememberSaveable { mutableStateOf(false) }
     var immediateSearchQuery by rememberSaveable { mutableStateOf<String?>(null) }
 
-    val voiceState by viewModel.voiceState.collectAsState()
-    val soundLevel by viewModel.soundLevel.collectAsState()
-    val partialResult by viewModel.partialResult.collectAsState()
-
     LifecycleResumeEffect(Unit) {
         onPauseOrDispose {
             viewModel.voiceInputManager.stopListening()
