@@ -122,6 +122,13 @@ class AppPreferencesSerializer
                                 imageDiskCacheSizeBytes =
                                     AppPreference.ImageDiskCacheSize.defaultValue * AppPreference.MEGA_BIT
                             }.build()
+
+                    photoPreferences =
+                        PhotoPreferences
+                            .newBuilder()
+                            .apply {
+                                slideshowDuration = AppPreference.SlideshowDuration.defaultValue
+                            }.build()
                 }.build()
 
         override suspend fun readFrom(input: InputStream): AppPreferences {
@@ -178,6 +185,11 @@ inline fun AppPreferences.updateLiveTvPreferences(block: LiveTvPreferences.Build
 inline fun AppPreferences.updateAdvancedPreferences(block: AdvancedPreferences.Builder.() -> Unit): AppPreferences =
     update {
         advancedPreferences = advancedPreferences.toBuilder().apply(block).build()
+    }
+
+inline fun AppPreferences.updatePhotoPreferences(block: PhotoPreferences.Builder.() -> Unit): AppPreferences =
+    update {
+        photoPreferences = photoPreferences.toBuilder().apply(block).build()
     }
 
 fun SubtitlePreferences.Builder.resetSubtitles() {

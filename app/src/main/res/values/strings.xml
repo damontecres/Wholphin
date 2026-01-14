@@ -25,7 +25,7 @@
     <string name="confirm">Confirm</string>
     <string name="continue_watching">Continue watching</string>
     <string name="critic_rating">Critic Rating</string>
-    <string name="decimal_seconds">%.1f seconds</string>
+    <string name="decimal_seconds">%.2f seconds</string>
     <string name="default_track">Default</string>
     <string name="delete">Delete</string>
     <string name="died">Died</string>
@@ -460,6 +460,7 @@
     <string name="rotate_right">Rotate right</string>
     <string name="zoom_in">Zoom in</string>
     <string name="zoom_out">Zoom out</string>
+    <string name="slideshow_duration">Slideshow duration</string>
 
     <string-array name="theme_song_volume">
         <item>Disabled</item>

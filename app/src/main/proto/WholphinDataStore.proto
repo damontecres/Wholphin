@@ -156,6 +156,10 @@ message AdvancedPreferences {
   int64 image_disk_cache_size_bytes = 1;
 }
 
+message PhotoPreferences{
+  int64 slideshow_duration = 1;
+}
+
 message AppPreferences {
   // The currently signed in server and user IDs, mostly for restoring a session
   string current_server_id = 1;
@@ -171,4 +175,5 @@ message AppPreferences {
   bool debug_logging = 9;
   AdvancedPreferences advanced_preferences = 10;
   bool sign_in_automatically = 11;
+  PhotoPreferences photo_preferences = 12;
 }

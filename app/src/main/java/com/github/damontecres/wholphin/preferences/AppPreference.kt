@@ -878,6 +878,34 @@ sealed interface AppPreference<Pref, T> {
                 getter = { },
                 setter = { prefs, _ -> prefs },
             )
+
+        val SlideshowDuration =
+            AppSliderPreference<AppPreferences>(
+                title = R.string.slideshow_duration,
+                defaultValue = 5_000,
+                min = 1_000,
+                max = 30.seconds.inWholeMilliseconds,
+                interval = 250,
+                getter = {
+                    it.photoPreferences.slideshowDuration
+                },
+                setter = { prefs, value ->
+                    prefs.updatePhotoPreferences {
+                        slideshowDuration = value
+                    }
+                },
+                summarizer = { value ->
+                    if (value != null) {
+                        val seconds = value / 1000.0
+                        WholphinApplication.instance.resources.getString(
+                            R.string.decimal_seconds,
+                            seconds,
+                        )
+                    } else {
+                        null
+                    }
+                },
+            )
     }
 }
 
@@ -959,6 +987,7 @@ val advancedPreferences =
 //                    AppPreference.NavDrawerSwitchOnFocus,
                         AppPreference.ControllerTimeout,
                         AppPreference.BackdropStylePref,
+                        AppPreference.SlideshowDuration,
                     ),
             ),
         )

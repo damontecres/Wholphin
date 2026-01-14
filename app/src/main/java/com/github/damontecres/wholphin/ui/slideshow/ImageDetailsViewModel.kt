@@ -18,6 +18,7 @@ import com.github.damontecres.wholphin.data.model.PlaybackEffect
 import com.github.damontecres.wholphin.data.model.VideoFilter
 import com.github.damontecres.wholphin.services.ImageUrlService
 import com.github.damontecres.wholphin.services.PlayerFactory
+import com.github.damontecres.wholphin.services.UserPreferencesService
 import com.github.damontecres.wholphin.ui.DefaultItemFields
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.setValueOnMain
@@ -59,6 +60,7 @@ class ImageDetailsViewModel
         private val playbackEffectDao: PlaybackEffectDao,
         private val serverRepository: ServerRepository,
         private val imageUrlService: ImageUrlService,
+        private val userPreferencesService: UserPreferencesService,
         @Assisted val parentId: UUID,
         @Assisted val startIndex: Int,
     ) : ViewModel(),
@@ -119,8 +121,10 @@ class ImageDetailsViewModel
             }
             player.addListener(this@ImageDetailsViewModel)
             viewModelScope.launchIO {
-                // TODO settings
-                slideshowDelay = 5_000
+                slideshowDelay =
+                    userPreferencesService
+                        .getCurrent()
+                        .appPreferences.photoPreferences.slideshowDuration
                 val album =
                     api.userLibraryApi
                         .getItem(
@@ -370,7 +374,7 @@ class ImageDetailsViewModel
 
         override fun onPlaybackStateChanged(playbackState: Int) {
             if (playbackState == Player.STATE_ENDED) {
-                pulseSlideshow(5_000)
+                pulseSlideshow(slideshowDelay)
             }
         }
     }

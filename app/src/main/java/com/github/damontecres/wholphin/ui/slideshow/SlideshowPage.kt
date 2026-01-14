@@ -213,8 +213,6 @@ fun SlideshowPage(
         reset(true)
     }
     val player = viewModel.player
-//
-    val playSlideshowDelay = 5_000 // TODO
     val presentationState = rememberPresentationState(player)
     LaunchedEffect(slideshowActive) {
         player.repeatMode = if (slideshowEnabled) Player.REPEAT_MODE_OFF else Player.REPEAT_MODE_ONE

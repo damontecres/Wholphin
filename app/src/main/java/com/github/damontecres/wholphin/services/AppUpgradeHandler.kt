@@ -13,6 +13,7 @@ import com.github.damontecres.wholphin.preferences.updateAdvancedPreferences
 import com.github.damontecres.wholphin.preferences.updateInterfacePreferences
 import com.github.damontecres.wholphin.preferences.updateLiveTvPreferences
 import com.github.damontecres.wholphin.preferences.updateMpvOptions
+import com.github.damontecres.wholphin.preferences.updatePhotoPreferences
 import com.github.damontecres.wholphin.preferences.updatePlaybackOverrides
 import com.github.damontecres.wholphin.preferences.updateSubtitlePreferences
 import com.github.damontecres.wholphin.ui.preferences.PreferencesViewModel
@@ -194,6 +195,14 @@ suspend fun upgradeApp(
                 it.updateMpvOptions {
                     useGpuNext = false
                 }
+            }
+        }
+    }
+
+    if (previous.isEqualOrBefore(Version.fromString("0.4.0-0-g0"))) {
+        appPreferences.updateData {
+            it.updatePhotoPreferences {
+                slideshowDuration = AppPreference.SlideshowDuration.defaultValue
             }
         }
     }
