@@ -4,6 +4,9 @@ import android.app.Activity
 import android.content.Context
 import android.media.AudioFocusRequest
 import android.media.AudioManager
+import android.net.ConnectivityManager
+import android.net.Network
+import android.net.NetworkCapabilities
 import android.os.Looper
 import android.speech.RecognitionListener
 import android.speech.SpeechRecognizer
@@ -34,6 +37,7 @@ class TestVoiceInputManagerAutoFocus {
     private lateinit var speechRecognizer: SpeechRecognizer
     private lateinit var manager: VoiceInputManager
     private lateinit var audioManager: AudioManager
+    private lateinit var connectivityManager: ConnectivityManager
 
     // We need to capture the OnAudioFocusChangeListener passed to AudioFocusRequest
     private val focusRequestSlot = slot<AudioFocusRequest>()
@@ -44,11 +48,19 @@ class TestVoiceInputManagerAutoFocus {
     fun setup() {
         activity = mockk(relaxed = true)
         audioManager = mockk(relaxed = true)
+        connectivityManager = mockk(relaxed = true)
+
+        // Mock network availability
+        val mockNetwork = mockk<Network>()
+        val mockCapabilities = mockk<NetworkCapabilities>()
+        every { connectivityManager.activeNetwork } returns mockNetwork
+        every { connectivityManager.getNetworkCapabilities(mockNetwork) } returns mockCapabilities
+        every { mockCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) } returns true
 
         // Capture the AudioFocusRequest built by the specific line in VoiceInputManager
         every { audioManager.requestAudioFocus(capture(focusRequestSlot)) } returns AudioManager.AUDIOFOCUS_REQUEST_GRANTED
         every { activity.getSystemService(Context.AUDIO_SERVICE) } returns audioManager
-        every { activity.getSystemService(Context.CONNECTIVITY_SERVICE) } returns mockk(relaxed = true)
+        every { activity.getSystemService(Context.CONNECTIVITY_SERVICE) } returns connectivityManager
 
         speechRecognizer = mockk(relaxed = true)
         mockkStatic(SpeechRecognizer::class)
@@ -70,13 +82,17 @@ class TestVoiceInputManagerAutoFocus {
         idleMainLooper()
         assertEquals(VoiceInputState.Listening, manager.state.value)
 
-        // Verify requestAudioFocus was called and we captured the request
+        // Verify requestAudioFocus was called
         assertTrue(focusRequestSlot.isCaptured)
-        val request = focusRequestSlot.captured
-        val listener = request.onAudioFocusChangeListener
 
-        // Simulate Transient Loss (System Speech Recognizer starting up)
+        // Get listener via reflection since AudioFocusRequest doesn't expose it
+        val field = VoiceInputManager::class.java.getDeclaredField("audioFocusListener")
+        field.isAccessible = true
+        val listener = field.get(manager) as AudioManager.OnAudioFocusChangeListener
+
+        // Invoke onAudioFocusChange directly on the listener
         listener.onAudioFocusChange(AudioManager.AUDIOFOCUS_LOSS_TRANSIENT)
+
         idleMainLooper()
 
         // Assert state is STILL Listening (Logic correctly ignores it)
@@ -89,11 +105,14 @@ class TestVoiceInputManagerAutoFocus {
         manager.startListening()
         idleMainLooper()
 
-        val request = focusRequestSlot.captured
-        val listener = request.onAudioFocusChangeListener
+        // Get listener via reflection since AudioFocusRequest doesn't expose it
+        val field = VoiceInputManager::class.java.getDeclaredField("audioFocusListener")
+        field.isAccessible = true
+        val listener = field.get(manager) as AudioManager.OnAudioFocusChangeListener
 
-        // Simulate Permanent Loss (Another app playing music)
+        // Invoke onAudioFocusChange directly on the listener
         listener.onAudioFocusChange(AudioManager.AUDIOFOCUS_LOSS)
+
         idleMainLooper()
 
         // Assert state is NOW Idle (Logic correctly stops)
