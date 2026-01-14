@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -45,7 +46,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import androidx.tv.material3.ButtonDefaults
 import androidx.tv.material3.MaterialTheme
+import androidx.tv.material3.OutlinedButton
 import androidx.tv.material3.Text
 import androidx.tv.material3.surfaceColorAtElevation
 import com.github.damontecres.wholphin.R
@@ -364,11 +367,17 @@ private fun VoiceSearchOverlay(
                     )
 
                     if (errorMessage != null && isRetryable) {
-                        Button(
+                        OutlinedButton(
                             onClick = onRetry,
+                            modifier = Modifier.padding(top = 16.dp),
+                            shape = ButtonDefaults.shape(RoundedCornerShape(50)),
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                contentColor = MaterialTheme.colorScheme.onSurface,
+                            ),
                         ) {
                             Text(
                                 text = stringResource(R.string.retry),
+                                style = MaterialTheme.typography.labelLarge,
                             )
                         }
                     }
