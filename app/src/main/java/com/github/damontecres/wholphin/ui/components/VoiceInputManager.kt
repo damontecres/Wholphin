@@ -100,9 +100,16 @@ class VoiceInputManager
         private val audioFocusListener =
             AudioManager.OnAudioFocusChangeListener { focusChange ->
                 when (focusChange) {
-                    AudioManager.AUDIOFOCUS_LOSS,
-                    AudioManager.AUDIOFOCUS_LOSS_TRANSIENT,
-                    -> stopListening()
+                    AudioManager.AUDIOFOCUS_LOSS -> {
+                        Timber.d("Permanent audio focus loss. Stopping listening.")
+                        stopListening()
+                    }
+                    AudioManager.AUDIOFOCUS_LOSS_TRANSIENT -> {
+                        Timber.d("Transient audio focus loss. Ignoring to allow SpeechRecognizer to work.")
+                    }
+                    else -> {
+                        Timber.d("Audio focus change: $focusChange")
+                    }
                 }
             }
 
