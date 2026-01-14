@@ -189,12 +189,12 @@ fun DestinationContent(
 
                 BaseItemKind.PHOTO_ALBUM -> {
                     LaunchedEffect(Unit) { onClearBackdrop.invoke() }
-                    CollectionFolder(
-                        preferences = preferences,
-                        destination = destination,
-                        collectionType = destination.collectionType,
-                        usePostersOverride = false,
-                        recursiveOverride = null,
+                    CollectionFolderGeneric(
+                        preferences,
+                        destination.itemId,
+                        usePosters = false,
+                        recursive = true,
+                        playEnabled = true,
                         modifier = modifier,
                     )
                 }

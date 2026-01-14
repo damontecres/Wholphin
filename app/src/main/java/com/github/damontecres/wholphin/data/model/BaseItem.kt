@@ -110,6 +110,7 @@ data class BaseItem(
                             index = index ?: 0,
                             filter = CollectionFolderFilter(),
                             recursive = false,
+                            startSlideshow = false,
                         )
                     } ?: Destination.MediaItem(this)
                 }

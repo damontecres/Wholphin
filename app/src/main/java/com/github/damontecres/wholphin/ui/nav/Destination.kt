@@ -106,6 +106,7 @@ sealed class Destination(
         val index: Int,
         val filter: CollectionFolderFilter,
         val recursive: Boolean,
+        val startSlideshow: Boolean,
     ) : Destination(true)
 
     @Serializable

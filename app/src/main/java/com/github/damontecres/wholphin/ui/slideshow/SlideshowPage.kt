@@ -87,7 +87,7 @@ fun SlideshowPage(
     viewModel: ImageDetailsViewModel =
         hiltViewModel<ImageDetailsViewModel, ImageDetailsViewModel.Factory>(
             creationCallback = {
-                it.create(slideshow.parentId, slideshow.index)
+                it.create(slideshow.parentId, slideshow.index, slideshow.startSlideshow)
             },
         ),
 ) {

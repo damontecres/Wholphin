@@ -660,20 +660,42 @@ fun CollectionFolderGrid(
                         onChangeBackdrop = viewModel::updateBackdrop,
                         playEnabled = playEnabled,
                         onClickPlay = { _, item ->
-                            viewModel.navigationManager.navigateTo(Destination.Playback(item))
+                            val destination =
+                                if (item.type == BaseItemKind.PHOTO_ALBUM) {
+                                    Destination.Slideshow(
+                                        parentId = item.id,
+                                        index = 0,
+                                        filter = CollectionFolderFilter(filter = filter),
+                                        recursive = true,
+                                        startSlideshow = true,
+                                    )
+                                } else {
+                                    Destination.Playback(item)
+                                }
+                            viewModel.navigationManager.navigateTo(destination)
                         },
                         onClickPlayAll = { shuffle ->
                             itemId.toUUIDOrNull()?.let {
-                                viewModel.navigationManager.navigateTo(
-                                    Destination.PlaybackList(
-                                        itemId = it,
-                                        startIndex = 0,
-                                        shuffle = shuffle,
-                                        recursive = recursive,
-                                        sortAndDirection = sortAndDirection,
-                                        filter = filter,
-                                    ),
-                                )
+                                val destination =
+                                    if (item?.type == BaseItemKind.PHOTO_ALBUM) {
+                                        Destination.Slideshow(
+                                            parentId = it,
+                                            index = 0,
+                                            filter = CollectionFolderFilter(filter = filter),
+                                            recursive = true,
+                                            startSlideshow = true,
+                                        )
+                                    } else {
+                                        Destination.PlaybackList(
+                                            itemId = it,
+                                            startIndex = 0,
+                                            shuffle = shuffle,
+                                            recursive = recursive,
+                                            sortAndDirection = sortAndDirection,
+                                            filter = filter,
+                                        )
+                                    }
+                                viewModel.navigationManager.navigateTo(destination)
                             }
                         },
                     )

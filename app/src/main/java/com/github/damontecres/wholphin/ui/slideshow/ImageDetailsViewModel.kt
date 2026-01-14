@@ -21,6 +21,7 @@ import com.github.damontecres.wholphin.services.PlayerFactory
 import com.github.damontecres.wholphin.services.UserPreferencesService
 import com.github.damontecres.wholphin.ui.DefaultItemFields
 import com.github.damontecres.wholphin.ui.launchIO
+import com.github.damontecres.wholphin.ui.onMain
 import com.github.damontecres.wholphin.ui.setValueOnMain
 import com.github.damontecres.wholphin.ui.showToast
 import com.github.damontecres.wholphin.ui.util.ThrottledLiveData
@@ -63,6 +64,7 @@ class ImageDetailsViewModel
         private val userPreferencesService: UserPreferencesService,
         @Assisted val parentId: UUID,
         @Assisted val startIndex: Int,
+        @Assisted val startSlideshow: Boolean,
     ) : ViewModel(),
         Player.Listener {
         @AssistedFactory
@@ -70,6 +72,7 @@ class ImageDetailsViewModel
             fun create(
                 parentId: UUID,
                 startIndex: Int,
+                startSlideshow: Boolean,
             ): ImageDetailsViewModel
         }
 
@@ -156,7 +159,8 @@ class ImageDetailsViewModel
                     ApiRequestPager(api, request, GetItemsRequestHandler, viewModelScope)
                         .init(startIndex)
                 this@ImageDetailsViewModel._pager.setValueOnMain(pager)
-                updatePosition(startIndex)
+                updatePosition(startIndex)?.join()
+                if (startSlideshow) onMain { startSlideshow() }
             }
         }
 
@@ -181,7 +185,7 @@ class ImageDetailsViewModel
             }
         }
 
-        fun updatePosition(position: Int) {
+        fun updatePosition(position: Int): Job? =
             _pager.value?.let { pager ->
                 viewModelScope.launchIO {
                     try {
@@ -251,7 +255,6 @@ class ImageDetailsViewModel
                     }
                 }
             }
-        }
 
         private var slideshowJob: Job? = null
 
