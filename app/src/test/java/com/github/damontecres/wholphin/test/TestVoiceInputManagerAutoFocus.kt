@@ -34,7 +34,7 @@ class TestVoiceInputManagerAutoFocus {
     private lateinit var speechRecognizer: SpeechRecognizer
     private lateinit var manager: VoiceInputManager
     private lateinit var audioManager: AudioManager
-    
+
     // We need to capture the OnAudioFocusChangeListener passed to AudioFocusRequest
     private val focusRequestSlot = slot<AudioFocusRequest>()
 
@@ -44,7 +44,7 @@ class TestVoiceInputManagerAutoFocus {
     fun setup() {
         activity = mockk(relaxed = true)
         audioManager = mockk(relaxed = true)
-        
+
         // Capture the AudioFocusRequest built by the specific line in VoiceInputManager
         every { audioManager.requestAudioFocus(capture(focusRequestSlot)) } returns AudioManager.AUDIOFOCUS_REQUEST_GRANTED
         every { activity.getSystemService(Context.AUDIO_SERVICE) } returns audioManager
@@ -69,16 +69,16 @@ class TestVoiceInputManagerAutoFocus {
         manager.startListening()
         idleMainLooper()
         assertEquals(VoiceInputState.Listening, manager.state.value)
-        
+
         // Verify requestAudioFocus was called and we captured the request
         assertTrue(focusRequestSlot.isCaptured)
         val request = focusRequestSlot.captured
         val listener = request.onAudioFocusChangeListener
-        
+
         // Simulate Transient Loss (System Speech Recognizer starting up)
         listener.onAudioFocusChange(AudioManager.AUDIOFOCUS_LOSS_TRANSIENT)
         idleMainLooper()
-        
+
         // Assert state is STILL Listening (Logic correctly ignores it)
         assertEquals(VoiceInputState.Listening, manager.state.value)
     }
@@ -88,14 +88,14 @@ class TestVoiceInputManagerAutoFocus {
         // Start listening
         manager.startListening()
         idleMainLooper()
-        
+
         val request = focusRequestSlot.captured
         val listener = request.onAudioFocusChangeListener
-        
+
         // Simulate Permanent Loss (Another app playing music)
         listener.onAudioFocusChange(AudioManager.AUDIOFOCUS_LOSS)
         idleMainLooper()
-        
+
         // Assert state is NOW Idle (Logic correctly stops)
         assertEquals(VoiceInputState.Idle, manager.state.value)
     }

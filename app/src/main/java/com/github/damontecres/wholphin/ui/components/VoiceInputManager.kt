@@ -104,9 +104,11 @@ class VoiceInputManager
                         Timber.d("Permanent audio focus loss. Stopping listening.")
                         stopListening()
                     }
+
                     AudioManager.AUDIOFOCUS_LOSS_TRANSIENT -> {
                         Timber.d("Transient audio focus loss. Ignoring to allow SpeechRecognizer to work.")
                     }
+
                     else -> {
                         Timber.d("Audio focus change: $focusChange")
                     }
