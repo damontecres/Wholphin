@@ -13,9 +13,15 @@ import android.speech.SpeechRecognizer
 import androidx.core.content.ContextCompat
 import com.github.damontecres.wholphin.R
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import timber.log.Timber
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -23,6 +29,7 @@ import javax.inject.Singleton
 private const val RMS_DB_MIN = -2.0f
 private const val RMS_DB_MAX = 10.0f
 private const val MAX_RESULTS = 1
+private const val LISTENING_TIMEOUT_MS = 5000L
 
 private val ERROR_TO_RESOURCE_MAP =
     mapOf(
@@ -71,6 +78,8 @@ class VoiceInputManager
         @ApplicationContext private val context: Context,
     ) {
         private val handler = Handler(Looper.getMainLooper())
+        private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
+        private val mutex = Mutex()
 
         private val _state = MutableStateFlow<VoiceInputState>(VoiceInputState.Idle)
         val state: StateFlow<VoiceInputState> = _state.asStateFlow()
@@ -91,8 +100,26 @@ class VoiceInputManager
 
         private var recognizer: SpeechRecognizer? = null
 
-        @Volatile
-        private var isTransitioning = false
+        private val timeoutHandler = Handler(Looper.getMainLooper())
+        private val timeoutRunnable =
+            Runnable {
+                scope.launch {
+                    mutex.withLock {
+                        if (_state.value is VoiceInputState.Listening) {
+                            destroyRecognizer()
+                            handler.post {
+                                _soundLevel.value = 0f
+                                _partialResult.value = ""
+                                _state.value =
+                                    VoiceInputState.Error(
+                                        messageResId = R.string.voice_error_timeout,
+                                        isRetryable = true,
+                                    )
+                            }
+                        }
+                    }
+                }
+            }
 
         private val recognitionIntent by lazy {
             Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
@@ -103,36 +130,52 @@ class VoiceInputManager
         }
 
         fun startListening() {
-            if (isTransitioning || _state.value is VoiceInputState.Listening) return
-            isTransitioning = true
+            scope.launch {
+                mutex.withLock {
+                    if (_state.value is VoiceInputState.Listening) return@withLock
 
-            destroyRecognizer()
-            handler.post {
-                _partialResult.value = ""
-                _soundLevel.value = 0f
-                _state.value = VoiceInputState.Listening
-            }
+                    destroyRecognizer()
+                    cancelTimeout()
+                    handler.post {
+                        _partialResult.value = ""
+                        _soundLevel.value = 0f
+                        _state.value = VoiceInputState.Listening
+                    }
 
-            val newRecognizer = SpeechRecognizer.createSpeechRecognizer(context)
-            recognizer = newRecognizer
-            newRecognizer.setRecognitionListener(createRecognitionListener(newRecognizer))
+                    val newRecognizer = SpeechRecognizer.createSpeechRecognizer(context)
+                    recognizer = newRecognizer
+                    newRecognizer.setRecognitionListener(createRecognitionListener(newRecognizer))
 
-            try {
-                newRecognizer.startListening(recognitionIntent)
-            } catch (e: Exception) {
-                Timber.e(e, "Failed to start speech recognition")
-                destroyRecognizer()
-                handler.post { _state.value = VoiceInputState.Error(R.string.voice_error_start_failed) }
-            } finally {
-                isTransitioning = false
+                    try {
+                        newRecognizer.startListening(recognitionIntent)
+                        timeoutHandler.postDelayed(timeoutRunnable, LISTENING_TIMEOUT_MS)
+                    } catch (e: Exception) {
+                        Timber.e(e, "Failed to start speech recognition")
+                        destroyRecognizer()
+                        cancelTimeout()
+                        handler.post {
+                            _state.value =
+                                VoiceInputState.Error(
+                                    messageResId = R.string.voice_error_start_failed,
+                                    isRetryable = true,
+                                )
+                        }
+                    }
+                }
             }
         }
 
         fun stopListening() {
-            if (isTransitioning) return
-            isTransitioning = true
-            cleanup()
-            isTransitioning = false
+            scope.launch {
+                mutex.withLock {
+                    cancelTimeout()
+                    cleanup()
+                }
+            }
+        }
+
+        private fun cancelTimeout() {
+            timeoutHandler.removeCallbacks(timeoutRunnable)
         }
 
         fun acknowledge() {
@@ -143,7 +186,13 @@ class VoiceInputManager
 
         fun onPermissionDenied() {
             Timber.w("RECORD_AUDIO permission denied")
-            handler.post { _state.value = VoiceInputState.Error(R.string.voice_error_permissions) }
+            handler.post {
+                _state.value =
+                    VoiceInputState.Error(
+                        messageResId = R.string.voice_error_permissions,
+                        isRetryable = false,
+                    )
+            }
         }
 
         private fun destroyRecognizer() {
@@ -191,22 +240,26 @@ class VoiceInputManager
 
                 override fun onEndOfSpeech() {
                     if (!isValid()) return
+                    cancelTimeout()
                     handler.post { _state.value = VoiceInputState.Processing }
                 }
 
                 override fun onError(error: Int) {
                     if (!isValid()) return
+                    cancelTimeout()
                     handler.post {
-                        _state.value = VoiceInputState.Error(
-                            messageResId = ERROR_TO_RESOURCE_MAP[error] ?: R.string.voice_error_unknown,
-                            isRetryable = error in RETRYABLE_ERRORS,
-                        )
+                        _state.value =
+                            VoiceInputState.Error(
+                                messageResId = ERROR_TO_RESOURCE_MAP[error] ?: R.string.voice_error_unknown,
+                                isRetryable = error in RETRYABLE_ERRORS,
+                            )
                         _soundLevel.value = 0f
                     }
                 }
 
                 override fun onResults(results: Bundle?) {
                     if (!isValid()) return
+                    cancelTimeout()
                     val spokenText =
                         results
                             ?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
@@ -216,7 +269,10 @@ class VoiceInputManager
                             if (!spokenText.isNullOrBlank()) {
                                 VoiceInputState.Result(spokenText)
                             } else {
-                                VoiceInputState.Error(R.string.voice_error_no_match)
+                                VoiceInputState.Error(
+                                    messageResId = R.string.voice_error_no_match,
+                                    isRetryable = true,
+                                )
                             }
                         _soundLevel.value = 0f
                     }
