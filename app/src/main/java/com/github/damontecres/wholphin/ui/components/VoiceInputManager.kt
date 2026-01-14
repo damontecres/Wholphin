@@ -172,6 +172,10 @@ class VoiceInputManager
                     mutex.withLock {
                         if (_state.value is VoiceInputState.Listening) {
                             val partial = _partialResult.value
+                            // Double check if a result actually arrived but we just haven't processed it yet
+                            // blocking the timeout if we are about to switch state
+                            if (recognizer == null) return@withLock
+
                             destroyRecognizer()
                             handler.post {
                                 _soundLevel.value = 0f

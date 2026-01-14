@@ -278,7 +278,9 @@ fun SearchPage(
 
         when {
             hasSuccess -> {
-                focusManager.moveFocus(FocusDirection.Next)
+                // Instead of 'Next', reset position to top and clear focus to let the List grab it
+                position = RowColumn(0, 0)
+                focusManager.clearFocus(force = true)
                 searchClicked = false
             }
 
