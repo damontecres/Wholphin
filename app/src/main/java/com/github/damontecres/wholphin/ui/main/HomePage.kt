@@ -37,6 +37,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -55,11 +56,9 @@ import com.github.damontecres.wholphin.ui.components.CircularProgress
 import com.github.damontecres.wholphin.ui.components.DialogParams
 import com.github.damontecres.wholphin.ui.components.DialogPopup
 import com.github.damontecres.wholphin.ui.components.EpisodeName
-import com.github.damontecres.wholphin.ui.components.EpisodeQuickDetails
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.LoadingPage
-import com.github.damontecres.wholphin.ui.components.MovieQuickDetails
-import com.github.damontecres.wholphin.ui.components.SeriesQuickDetails
+import com.github.damontecres.wholphin.ui.components.QuickDetails
 import com.github.damontecres.wholphin.ui.data.AddPlaylistViewModel
 import com.github.damontecres.wholphin.ui.data.RowColumn
 import com.github.damontecres.wholphin.ui.data.RowColumnSaver
@@ -79,6 +78,7 @@ import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.MediaType
 import timber.log.Timber
 import java.util.UUID
+import kotlin.time.Duration
 
 @Composable
 fun HomePage(
@@ -451,13 +451,8 @@ fun HomePageHeader(
             subtitle = if (isEpisode) dto.name else null,
             overview = dto.overview,
             overviewTwoLines = isEpisode,
-            quickDetails = {
-                when (item.type) {
-                    BaseItemKind.EPISODE -> EpisodeQuickDetails(dto, Modifier)
-                    BaseItemKind.SERIES -> SeriesQuickDetails(dto, Modifier)
-                    else -> MovieQuickDetails(dto, Modifier)
-                }
-            },
+            quickDetails = item.ui.quickDetails,
+            timeRemaining = item.timeRemainingOrRuntime,
             modifier = modifier,
         )
     }
@@ -469,7 +464,8 @@ fun HomePageHeader(
     subtitle: String?,
     overview: String?,
     overviewTwoLines: Boolean,
-    quickDetails: (@Composable () -> Unit)?,
+    quickDetails: AnnotatedString,
+    timeRemaining: Duration?,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -496,7 +492,7 @@ fun HomePageHeader(
             subtitle?.let {
                 EpisodeName(it)
             }
-            quickDetails?.invoke()
+            QuickDetails(quickDetails, timeRemaining)
             val overviewModifier =
                 Modifier
                     .padding(0.dp)
