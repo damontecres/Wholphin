@@ -15,7 +15,9 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSizeIn
 import androidx.compose.foundation.layout.size
@@ -40,6 +42,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.tv.material3.MaterialTheme
+import androidx.tv.material3.surfaceColorAtElevation
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.ui.FontAwesome
@@ -273,8 +276,9 @@ private fun VoiceSearchOverlay(
         Box(
             modifier =
                 Modifier
-                    .fillMaxSize()
-                    .background(Color.Black.copy(alpha = 0.9f)),
+                    .fillMaxHeight()
+                    .fillMaxWidth(0.6f)
+                    .background(MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp)),
             contentAlignment = Alignment.Center,
         ) {
             Row(
@@ -340,7 +344,7 @@ private fun VoiceSearchOverlay(
             Text(
                 text = stringResource(R.string.press_back_to_cancel),
                 style = MaterialTheme.typography.bodySmall,
-                color = Color.White.copy(alpha = HINT_TEXT_ALPHA),
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = HINT_TEXT_ALPHA),
                 modifier =
                     Modifier
                         .align(Alignment.BottomCenter)
