@@ -13,12 +13,10 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -63,10 +61,10 @@ import com.github.damontecres.wholphin.ui.components.SearchEditTextBox
 import com.github.damontecres.wholphin.ui.components.VoiceInputManager
 import com.github.damontecres.wholphin.ui.components.VoiceSearchButton
 import com.github.damontecres.wholphin.ui.data.RowColumn
-import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.nav.Destination
+import com.github.damontecres.wholphin.ui.onMain
 import com.github.damontecres.wholphin.ui.rememberPosition
 import com.github.damontecres.wholphin.ui.setValueOnMain
 import com.github.damontecres.wholphin.ui.tryRequestFocus
@@ -202,7 +200,8 @@ sealed interface SearchResult {
     ) : SearchResult
 }
 
-private const val MOVIE_ROW = 0
+private const val SEARCH_ROW = 0
+private const val MOVIE_ROW = SEARCH_ROW + 1
 private const val COLLECTION_ROW = MOVIE_ROW + 1
 private const val SERIES_ROW = COLLECTION_ROW + 1
 private const val EPISODE_ROW = SERIES_ROW + 1
@@ -228,9 +227,9 @@ fun SearchPage(
 
 //    val query = rememberTextFieldState()
     var query by rememberSaveable { mutableStateOf("") }
-    val focusRequester = remember { FocusRequester() }
+    val focusRequesters = remember { List(SEERR_ROW + 1) { FocusRequester() } }
 
-    var position by rememberPosition()
+    var position by rememberPosition(0, 0)
     var searchClicked by rememberSaveable { mutableStateOf(false) }
     var immediateSearchQuery by rememberSaveable { mutableStateOf<String?>(null) }
 
@@ -259,34 +258,31 @@ fun SearchPage(
         }
     }
     LaunchedEffect(Unit) {
-        focusRequester.tryRequestFocus()
+        focusRequesters.getOrNull(position.row)?.tryRequestFocus()
     }
     val onClickItem = { index: Int, item: BaseItem ->
         viewModel.navigationManager.navigateTo(item.destination())
     }
 
-    LaunchedEffect(searchClicked, movies, collections, series, episodes) {
+    LaunchedEffect(searchClicked, movies, collections, series, episodes, seerrResults) {
         if (!searchClicked) return@LaunchedEffect
 
-        val results = listOf(movies, collections, series, episodes)
-        val hasSuccess = results.any { it is SearchResult.Success }
-        val allFinished = results.none { it is SearchResult.Searching }
-
-        when {
-            hasSuccess -> {
-                // Instead of 'Next', reset position to top and clear focus to let the List grab it
-                position = RowColumn(0, 0)
-                focusManager.clearFocus(force = true)
-                searchClicked = false
-            }
-
-            allFinished -> {
-                searchClicked = false
+        withContext(Dispatchers.IO) {
+            // Want to focus on the first successful row after all of the ones before it are finished searching
+            val results = listOf(movies, collections, series, episodes, seerrResults)
+            val firstSuccess =
+                results.indexOfFirst { it is SearchResult.Success || it is SearchResult.SuccessSeerr }
+            if (firstSuccess >= 0) {
+                val anyBeforeSearching =
+                    results.subList(0, firstSuccess).any { it is SearchResult.Searching }
+                if (!anyBeforeSearching) {
+                    // 0-th row is the search bar
+                    position = RowColumn(firstSuccess + 1, 0)
+                    onMain { focusRequesters[firstSuccess + 1].tryRequestFocus() }
+                }
             }
         }
     }
-
-    val scope = rememberCoroutineScope()
 
     LazyColumn(
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 44.dp),
@@ -322,19 +318,12 @@ fun SearchPage(
                         Modifier
                             .focusGroup()
                             .focusRestorer(textFieldFocusRequester)
-                            .ifElse(position.row < MOVIE_ROW, Modifier.focusRequester(focusRequester)),
+                            .focusRequester(focusRequesters[SEARCH_ROW]),
                 ) {
                     VoiceSearchButton(
                         onSpeechResult = { spokenText ->
                             query = spokenText
                             triggerImmediateSearch(spokenText)
-                            // Request focus immediately to prevent it escaping to nav drawer,
-                            // then again after delay to ensure it sticks after dialog fully dismisses
-                            textFieldFocusRequester.requestFocus()
-                            scope.launch {
-                                delay(VOICE_RESULT_FOCUS_DELAY_MS)
-                                textFieldFocusRequester.requestFocus()
-                            }
                         },
                         voiceInputManager = viewModel.voiceInputManager,
                     )
@@ -354,7 +343,8 @@ fun SearchPage(
                                     isTextFieldFocused = state.isFocused
                                     if (!state.isFocused) isSearchActive = false
                                 }.onPreviewKeyEvent { event ->
-                                    val isActivationKey = event.key in listOf(Key.DirectionCenter, Key.Enter)
+                                    val isActivationKey =
+                                        event.key in listOf(Key.DirectionCenter, Key.Enter)
                                     if (event.type == KeyEventType.KeyUp && isActivationKey && !isSearchActive) {
                                         isSearchActive = true
                                         keyboardController?.show()
@@ -372,7 +362,7 @@ fun SearchPage(
             result = movies,
             rowIndex = MOVIE_ROW,
             position = position,
-            focusRequester = focusRequester,
+            focusRequester = focusRequesters[MOVIE_ROW],
             onClickItem = onClickItem,
             onClickPosition = { position = it },
             modifier = Modifier.fillMaxWidth(),
@@ -382,7 +372,7 @@ fun SearchPage(
             result = collections,
             rowIndex = COLLECTION_ROW,
             position = position,
-            focusRequester = focusRequester,
+            focusRequester = focusRequesters[COLLECTION_ROW],
             onClickItem = onClickItem,
             onClickPosition = { position = it },
             modifier = Modifier.fillMaxWidth(),
@@ -392,7 +382,7 @@ fun SearchPage(
             result = series,
             rowIndex = SERIES_ROW,
             position = position,
-            focusRequester = focusRequester,
+            focusRequester = focusRequesters[SERIES_ROW],
             onClickItem = onClickItem,
             onClickPosition = { position = it },
             modifier = Modifier.fillMaxWidth(),
@@ -402,7 +392,7 @@ fun SearchPage(
             result = episodes,
             rowIndex = EPISODE_ROW,
             position = position,
-            focusRequester = focusRequester,
+            focusRequester = focusRequesters[EPISODE_ROW],
             onClickItem = onClickItem,
             onClickPosition = { position = it },
             modifier = Modifier.fillMaxWidth(),
@@ -415,13 +405,7 @@ fun SearchPage(
                     },
                     onLongClick = onLongClick,
                     imageHeight = 140.dp,
-                    modifier =
-                        mod
-                            .padding(horizontal = 8.dp)
-                            .ifElse(
-                                position.row == EPISODE_ROW && position.column == index,
-                                Modifier.focusRequester(focusRequester),
-                            ),
+                    modifier = mod.padding(horizontal = 8.dp),
                 )
             },
         )
@@ -430,7 +414,7 @@ fun SearchPage(
             result = seerrResults,
             rowIndex = SEERR_ROW,
             position = position,
-            focusRequester = focusRequester,
+            focusRequester = focusRequesters[SEERR_ROW],
             onClickItem = { _, _ ->
                 // no-op
             },
@@ -477,12 +461,7 @@ fun LazyListScope.searchResultRow(
             },
             onLongClick = onLongClick,
             imageHeight = Cards.height2x3,
-            modifier =
-                mod
-                    .ifElse(
-                        position.row == rowIndex && position.column == index,
-                        Modifier.focusRequester(focusRequester),
-                    ),
+            modifier = mod,
         )
     },
 ) {
@@ -522,7 +501,7 @@ fun LazyListScope.searchResultRow(
                         items = r.items,
                         onClickItem = onClickItem,
                         onLongClickItem = { _, _ -> },
-                        modifier = modifier,
+                        modifier = modifier.focusRequester(focusRequester),
                         cardContent = cardContent,
                     )
                 }
@@ -544,7 +523,7 @@ fun LazyListScope.searchResultRow(
                             onClickDiscover?.invoke(index, item)
                         },
                         onLongClickItem = { _, _ -> },
-                        modifier = modifier,
+                        modifier = modifier.focusRequester(focusRequester),
                         cardContent = { index: Int, item: DiscoverItem?, mod: Modifier, onClick: () -> Unit, onLongClick: () -> Unit ->
                             DiscoverItemCard(
                                 item = item,
