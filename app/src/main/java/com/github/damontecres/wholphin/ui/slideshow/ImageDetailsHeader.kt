@@ -10,15 +10,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.media3.common.Player
 import androidx.media3.ui.compose.state.rememberPlayPauseButtonState
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
+import com.github.damontecres.wholphin.ui.components.OverviewText
 import org.jellyfin.sdk.model.api.MediaType
 
 @Composable
@@ -49,16 +47,14 @@ fun ImageDetailsHeader(
         Text(
             text = image.image.title ?: "",
 //                        color = MaterialTheme.colorScheme.onBackground,
-            color = Color.LightGray,
-            style =
-                MaterialTheme.typography.displayMedium.copy(
-                    shadow =
-                        Shadow(
-                            color = Color.DarkGray,
-                            offset = Offset(5f, 2f),
-                            blurRadius = 2f,
-                        ),
-                ),
+            color = MaterialTheme.colorScheme.onSurface,
+            style = MaterialTheme.typography.displayMedium,
+        )
+        OverviewText(
+            overview = image.image.data.overview ?: "",
+            maxLines = 5,
+            onClick = {},
+            modifier = Modifier.fillMaxWidth(.75f),
         )
         val playPauseState = rememberPlayPauseButtonState(player)
         ImageControlsOverlay(

@@ -9,6 +9,7 @@
     <string name="fa_images" translatable="false">&#xf302;</string>
     <string name="fa_rotate_right" translatable="false">&#xf2f9;</string>
     <string name="fa_rotate_left" translatable="false">&#xf2ea;</string>
+    <string name="fa_arrows_rotate" translatable="false">&#xf021;</string>
     <string name="fa_arrow_right_arrow_left" translatable="false">&#xf0ec;</string>
     <string name="fa_magnifying_glass_plus" translatable="false">&#xf00e;</string>
     <string name="fa_magnifying_glass_minus" translatable="false">&#xf010;</string>

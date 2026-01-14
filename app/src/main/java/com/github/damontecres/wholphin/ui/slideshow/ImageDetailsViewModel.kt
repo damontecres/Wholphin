@@ -135,10 +135,22 @@ class ImageDetailsViewModel
                         fields = DefaultItemFields,
                         recursive = true,
                     )
+                serverRepository.currentUser.value?.let { user ->
+                    val filter =
+                        playbackEffectDao
+                            .getPlaybackEffect(
+                                user.rowId,
+                                album.id,
+                                BaseItemKind.PHOTO_ALBUM,
+                            )?.videoFilter
+                    if (filter != null) {
+                        Timber.v("Got filter for album %s", album.id)
+                        albumImageFilter = filter
+                    }
+                }
                 val pager =
-                    ApiRequestPager(api, request, GetItemsRequestHandler, viewModelScope).init(
-                        startIndex,
-                    )
+                    ApiRequestPager(api, request, GetItemsRequestHandler, viewModelScope)
+                        .init(startIndex)
                 this@ImageDetailsViewModel._pager.setValueOnMain(pager)
                 updatePosition(startIndex)
             }

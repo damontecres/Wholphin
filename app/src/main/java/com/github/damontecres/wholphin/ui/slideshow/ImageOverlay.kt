@@ -21,6 +21,7 @@ import androidx.tv.material3.Icon
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.BaseItem
+import com.github.damontecres.wholphin.ui.FontAwesome
 import com.github.damontecres.wholphin.ui.components.DialogItem
 import com.github.damontecres.wholphin.ui.components.DialogParams
 import com.github.damontecres.wholphin.ui.components.DialogPopup
@@ -84,7 +85,17 @@ fun ImageOverlay(
                             },
                         ),
                         DialogItem(
-                            text = "Filters",
+                            headlineContent = {
+                                Text(
+                                    text = stringResource(R.string.filter),
+                                )
+                            },
+                            leadingContent = {
+                                Text(
+                                    text = stringResource(R.string.fa_sliders),
+                                    fontFamily = FontAwesome,
+                                )
+                            },
                             onClick = onShowFilterDialogClick,
                         ),
                     ),

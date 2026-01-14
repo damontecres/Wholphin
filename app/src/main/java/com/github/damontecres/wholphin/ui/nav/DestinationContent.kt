@@ -193,7 +193,7 @@ fun DestinationContent(
                         preferences = preferences,
                         destination = destination,
                         collectionType = destination.collectionType,
-                        usePostersOverride = true,
+                        usePostersOverride = false,
                         recursiveOverride = null,
                         modifier = modifier,
                     )

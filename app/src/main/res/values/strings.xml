@@ -456,6 +456,10 @@
     <string name="stop_slideshow">Stop slideshow</string>
     <string name="slideshow_at_beginning">At beginning</string>
     <string name="no_more_images">No more photos</string>
+    <string name="rotate_left">Rotate left</string>
+    <string name="rotate_right">Rotate right</string>
+    <string name="zoom_in">Zoom in</string>
+    <string name="zoom_out">Zoom out</string>
 
     <string-array name="theme_song_volume">
         <item>Disabled</item>

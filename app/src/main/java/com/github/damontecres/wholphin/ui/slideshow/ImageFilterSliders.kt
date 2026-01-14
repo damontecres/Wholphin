@@ -6,6 +6,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -30,6 +31,7 @@ import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.VideoFilter
 import com.github.damontecres.wholphin.ui.components.SliderBar
+import com.github.damontecres.wholphin.ui.components.SliderColors
 import com.github.damontecres.wholphin.ui.theme.WholphinTheme
 
 const val DRAG_THROTTLE_DELAY = 50L
@@ -46,6 +48,7 @@ fun ImageFilterSliders(
     modifier: Modifier = Modifier,
 ) {
     LazyColumn(
+        contentPadding = PaddingValues(8.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
         modifier = modifier,
     ) {
@@ -99,7 +102,13 @@ fun ImageFilterSliders(
                 max = 200,
                 onChange = { onChange.invoke(filter.copy(red = it)) },
                 valueFormater = { "$it%" },
-                color = Color.Red.copy(alpha = .8f),
+                colors =
+                    SliderColors(
+                        activeFocused = Color.Red.copy(alpha = .75f),
+                        activeUnfocused = Color.Red.copy(alpha = .75f),
+                        inactiveFocused = Color.Red.copy(alpha = .33f),
+                        inactiveUnfocused = Color.Red.copy(alpha = .33f),
+                    ),
             )
         }
         item {
@@ -110,7 +119,13 @@ fun ImageFilterSliders(
                 max = 200,
                 onChange = { onChange.invoke(filter.copy(green = it)) },
                 valueFormater = { "$it%" },
-                color = Color.Green.copy(alpha = .8f),
+                colors =
+                    SliderColors(
+                        activeFocused = Color.Green.copy(alpha = .75f),
+                        activeUnfocused = Color.Green.copy(alpha = .75f),
+                        inactiveFocused = Color.Green.copy(alpha = .33f),
+                        inactiveUnfocused = Color.Green.copy(alpha = .33f),
+                    ),
             )
         }
         item {
@@ -121,7 +136,13 @@ fun ImageFilterSliders(
                 max = 200,
                 onChange = { onChange.invoke(filter.copy(blue = it)) },
                 valueFormater = { "$it%" },
-                color = Color.Blue.copy(alpha = .8f),
+                colors =
+                    SliderColors(
+                        activeFocused = Color.Blue.copy(alpha = .75f),
+                        activeUnfocused = Color.Blue.copy(alpha = .75f),
+                        inactiveFocused = Color.Blue.copy(alpha = .33f),
+                        inactiveUnfocused = Color.Blue.copy(alpha = .33f),
+                    ),
             )
         }
         if (showVideoOptions) {
@@ -181,7 +202,7 @@ fun SliderBarRow(
     modifier: Modifier = Modifier,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
     interval: Int = 1,
-    color: Color = MaterialTheme.colorScheme.border,
+    colors: SliderColors = SliderColors.default(),
 ) {
     Row(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -201,7 +222,7 @@ fun SliderBarRow(
             onChange = {
                 onChange.invoke(it.toInt())
             },
-            color = color,
+            colors = colors,
             interactionSource = interactionSource,
             enableWrapAround = true,
             modifier = Modifier.weight(1f),
