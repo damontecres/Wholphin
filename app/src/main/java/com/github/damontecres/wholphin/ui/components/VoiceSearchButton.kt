@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -80,17 +81,20 @@ fun VoiceSearchButton(
 ) {
     if (voiceInputManager == null || !voiceInputManager.isAvailable) return
 
-    val state = voiceInputManager.state
+    val state by voiceInputManager.state.collectAsState()
+    val soundLevel by voiceInputManager.soundLevel.collectAsState()
+    val partialResult by voiceInputManager.partialResult.collectAsState()
 
     LaunchedEffect(state) {
-        when (state) {
+        val currentState = state
+        when (currentState) {
             is VoiceInputState.Result -> {
-                onSpeechResult(state.text)
+                onSpeechResult(currentState.text)
                 voiceInputManager.acknowledge()
             }
 
             is VoiceInputState.Error -> {
-                if (!state.isRetryable) {
+                if (!currentState.isRetryable) {
                     delay(ERROR_AUTO_DISMISS_DELAY_MS)
                     voiceInputManager.acknowledge()
                 }
@@ -115,8 +119,8 @@ fun VoiceSearchButton(
         val errorState = state as? VoiceInputState.Error
         val errorMessage = errorState?.messageResId?.let { stringResource(it) }
         VoiceSearchOverlay(
-            soundLevel = voiceInputManager.soundLevel,
-            partialResult = voiceInputManager.partialResult,
+            soundLevel = soundLevel,
+            partialResult = partialResult,
             isProcessing = state is VoiceInputState.Processing,
             errorMessage = errorMessage,
             isRetryable = errorState?.isRetryable == true,
