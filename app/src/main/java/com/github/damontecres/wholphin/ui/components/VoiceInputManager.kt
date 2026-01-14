@@ -38,7 +38,7 @@ import javax.inject.Singleton
 private const val RMS_DB_MIN = -2.0f
 private const val RMS_DB_MAX = 10.0f
 private const val MAX_RESULTS = 1
-private const val LISTENING_TIMEOUT_MS = 5000L
+private const val LISTENING_TIMEOUT_MS = 8000L
 private const val RECOGNIZER_RECREATE_DELAY_MS = 150L
 
 private val ERROR_TO_RESOURCE_MAP =
