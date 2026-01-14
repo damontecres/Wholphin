@@ -307,6 +307,18 @@ fun SearchPage(
                             .focusRestorer(textFieldFocusRequester)
                             .ifElse(position.row < MOVIE_ROW, Modifier.focusRequester(focusRequester)),
                 ) {
+                    VoiceSearchButton(
+                        onSpeechResult = { spokenText ->
+                            query = spokenText
+                            triggerImmediateSearch(spokenText)
+                            scope.launch {
+                                delay(VOICE_RESULT_FOCUS_DELAY_MS)
+                                textFieldFocusRequester.requestFocus()
+                            }
+                        },
+                        voiceInputManager = voiceInputManager,
+                    )
+
                     SearchEditTextBox(
                         value = query,
                         onValueChange = {
@@ -331,18 +343,6 @@ fun SearchPage(
                                         false
                                     }
                                 },
-                    )
-
-                    VoiceSearchButton(
-                        onSpeechResult = { spokenText ->
-                            query = spokenText
-                            triggerImmediateSearch(spokenText)
-                            scope.launch {
-                                delay(VOICE_RESULT_FOCUS_DELAY_MS)
-                                textFieldFocusRequester.requestFocus()
-                            }
-                        },
-                        voiceInputManager = voiceInputManager,
                     )
                 }
             }
