@@ -287,7 +287,8 @@ private fun VoiceSearchOverlay(
                 modifier = Modifier.padding(horizontal = HORIZONTAL_PADDING),
             ) {
                 Box(contentAlignment = Alignment.Center) {
-                    if (shouldAnimateRipples) {
+                    val rippleAlpha = if (shouldAnimateRipples) 1f else 0f
+                    Box(modifier = Modifier.graphicsLayer { alpha = rippleAlpha }) {
                         VoiceRippleRings(
                             rippleProgress = rippleProgress,
                             bubbleSize = BUBBLE_SIZE,
