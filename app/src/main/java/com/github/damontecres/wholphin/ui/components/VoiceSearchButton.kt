@@ -16,12 +16,12 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSizeIn
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -295,8 +295,10 @@ private fun VoiceSearchOverlay(
         Box(
             modifier =
                 Modifier
-                    .fillMaxHeight()
-                    .fillMaxWidth(0.6f)
+                    .fillMaxWidth(0.85f)
+                    .wrapContentHeight()
+                    .padding(vertical = 48.dp)
+                    .clip(MaterialTheme.shapes.large)
                     .background(MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp)),
             contentAlignment = Alignment.Center,
         ) {
