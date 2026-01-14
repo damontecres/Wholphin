@@ -1,7 +1,13 @@
 package com.github.damontecres.wholphin.test
 
 import android.app.Activity
+import android.content.Context
 import android.content.Intent
+import android.media.AudioFocusRequest
+import android.media.AudioManager
+import android.net.ConnectivityManager
+import android.net.Network
+import android.net.NetworkCapabilities
 import android.os.Bundle
 import android.os.Looper
 import android.speech.RecognitionListener
@@ -35,12 +41,16 @@ import org.robolectric.annotation.Config
  * without requiring a real microphone or emulator.
  */
 @RunWith(RobolectricTestRunner::class)
-@Config(manifest = Config.NONE)
+@Config(manifest = Config.NONE, sdk = [28])
 class TestVoiceInputManager {
     private lateinit var activity: Activity
     private lateinit var speechRecognizer: SpeechRecognizer
     private lateinit var listenerSlot: CapturingSlot<RecognitionListener>
     private lateinit var manager: VoiceInputManager
+    private lateinit var audioManager: AudioManager
+    private lateinit var connectivityManager: ConnectivityManager
+    private lateinit var network: Network
+    private lateinit var networkCapabilities: NetworkCapabilities
 
     private val capturedListener: RecognitionListener
         get() = listenerSlot.captured
@@ -51,6 +61,20 @@ class TestVoiceInputManager {
     fun setup() {
         // Mock Activity
         activity = mockk(relaxed = true)
+
+        // Mock AudioManager
+        audioManager = mockk(relaxed = true)
+        every { audioManager.requestAudioFocus(any<AudioFocusRequest>()) } returns AudioManager.AUDIOFOCUS_REQUEST_GRANTED
+        every { activity.getSystemService(Context.AUDIO_SERVICE) } returns audioManager
+
+        // Mock ConnectivityManager with network available by default
+        connectivityManager = mockk(relaxed = true)
+        network = mockk()
+        networkCapabilities = mockk()
+        every { connectivityManager.activeNetwork } returns network
+        every { connectivityManager.getNetworkCapabilities(network) } returns networkCapabilities
+        every { networkCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) } returns true
+        every { activity.getSystemService(Context.CONNECTIVITY_SERVICE) } returns connectivityManager
 
         // Mock SpeechRecognizer instance
         speechRecognizer = mockk(relaxed = true)
@@ -584,6 +608,112 @@ class TestVoiceInputManager {
     @Test
     fun `isAvailable returns mocked value`() {
         assertTrue(manager.isAvailable)
+    }
+
+    // ========== Test Case: Network Fast-Fail ==========
+
+    @Test
+    fun `startListening fails immediately when no network`() {
+        every { connectivityManager.activeNetwork } returns null
+
+        manager.startListening()
+        idleMainLooper()
+
+        assertTrue(manager.state.value is VoiceInputState.Error)
+        assertEquals(R.string.voice_error_network, (manager.state.value as VoiceInputState.Error).messageResId)
+    }
+
+    @Test
+    fun `startListening fails immediately when no network capabilities`() {
+        every { connectivityManager.getNetworkCapabilities(network) } returns null
+
+        manager.startListening()
+        idleMainLooper()
+
+        assertTrue(manager.state.value is VoiceInputState.Error)
+        assertEquals(R.string.voice_error_network, (manager.state.value as VoiceInputState.Error).messageResId)
+    }
+
+    @Test
+    fun `startListening fails immediately when no internet capability`() {
+        every { networkCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) } returns false
+
+        manager.startListening()
+        idleMainLooper()
+
+        assertTrue(manager.state.value is VoiceInputState.Error)
+        assertEquals(R.string.voice_error_network, (manager.state.value as VoiceInputState.Error).messageResId)
+    }
+
+    @Test
+    fun `network error from fast-fail is retryable`() {
+        every { connectivityManager.activeNetwork } returns null
+
+        manager.startListening()
+        idleMainLooper()
+
+        assertTrue((manager.state.value as VoiceInputState.Error).isRetryable)
+    }
+
+    @Test
+    fun `startListening does not create recognizer when no network`() {
+        every { connectivityManager.activeNetwork } returns null
+
+        manager.startListening()
+        idleMainLooper()
+
+        verify(exactly = 0) { SpeechRecognizer.createSpeechRecognizer(any()) }
+    }
+
+    // ========== Test Case: Audio Focus ==========
+
+    @Test
+    fun `startListening fails when audio focus not granted`() {
+        every { audioManager.requestAudioFocus(any<AudioFocusRequest>()) } returns AudioManager.AUDIOFOCUS_REQUEST_FAILED
+
+        manager.startListening()
+        idleMainLooper()
+
+        assertTrue(manager.state.value is VoiceInputState.Error)
+        assertEquals(R.string.voice_error_audio, (manager.state.value as VoiceInputState.Error).messageResId)
+    }
+
+    @Test
+    fun `audio focus error is retryable`() {
+        every { audioManager.requestAudioFocus(any<AudioFocusRequest>()) } returns AudioManager.AUDIOFOCUS_REQUEST_FAILED
+
+        manager.startListening()
+        idleMainLooper()
+
+        assertTrue((manager.state.value as VoiceInputState.Error).isRetryable)
+    }
+
+    @Test
+    fun `startListening does not create recognizer when audio focus denied`() {
+        every { audioManager.requestAudioFocus(any<AudioFocusRequest>()) } returns AudioManager.AUDIOFOCUS_REQUEST_FAILED
+
+        manager.startListening()
+        idleMainLooper()
+
+        verify(exactly = 0) { SpeechRecognizer.createSpeechRecognizer(any()) }
+    }
+
+    @Test
+    fun `audio focus is abandoned when recognizer is destroyed`() {
+        manager.startListening()
+        idleMainLooper()
+
+        manager.close()
+
+        verify { audioManager.abandonAudioFocusRequest(any()) }
+    }
+
+    @Test
+    fun `startListening requests audio focus`() {
+        manager.startListening()
+        idleMainLooper()
+
+        verify { audioManager.requestAudioFocus(any<AudioFocusRequest>()) }
     }
 
     // ========== Helper Functions ==========

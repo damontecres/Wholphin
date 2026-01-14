@@ -4,6 +4,11 @@ import android.Manifest
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.media.AudioFocusRequest
+import android.media.AudioManager
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -82,6 +87,52 @@ class VoiceInputManager
         private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
         private val mutex = Mutex()
 
+        private val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+        private val connectivityManager =
+            context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+
+        private val audioFocusListener =
+            AudioManager.OnAudioFocusChangeListener { focusChange ->
+                when (focusChange) {
+                    AudioManager.AUDIOFOCUS_LOSS,
+                    AudioManager.AUDIOFOCUS_LOSS_TRANSIENT,
+                    -> stopListening()
+                }
+            }
+
+        private val audioFocusRequest: AudioFocusRequest? by lazy {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                AudioFocusRequest
+                    .Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_EXCLUSIVE)
+                    .setOnAudioFocusChangeListener(audioFocusListener, handler)
+                    .build()
+            } else {
+                null
+            }
+        }
+
+        @Suppress("DEPRECATION")
+        private fun requestAudioFocusCompat(): Int =
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                audioFocusRequest?.let { audioManager.requestAudioFocus(it) }
+                    ?: AudioManager.AUDIOFOCUS_REQUEST_GRANTED
+            } else {
+                audioManager.requestAudioFocus(
+                    audioFocusListener,
+                    AudioManager.STREAM_MUSIC,
+                    AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_EXCLUSIVE,
+                )
+            }
+
+        @Suppress("DEPRECATION")
+        private fun abandonAudioFocusCompat() {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                audioFocusRequest?.let { audioManager.abandonAudioFocusRequest(it) }
+            } else {
+                audioManager.abandonAudioFocus(audioFocusListener)
+            }
+        }
+
         private val _state = MutableStateFlow<VoiceInputState>(VoiceInputState.Idle)
         val state: StateFlow<VoiceInputState> = _state.asStateFlow()
 
@@ -136,10 +187,39 @@ class VoiceInputManager
             }
         }
 
+        private fun isNetworkAvailable(): Boolean {
+            val network = connectivityManager.activeNetwork ?: return false
+            val capabilities = connectivityManager.getNetworkCapabilities(network) ?: return false
+            return capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+        }
+
         fun startListening() {
             scope.launch {
                 mutex.withLock {
                     if (_state.value is VoiceInputState.Listening) return@withLock
+
+                    if (!isNetworkAvailable()) {
+                        handler.post {
+                            _state.value =
+                                VoiceInputState.Error(
+                                    messageResId = R.string.voice_error_network,
+                                    isRetryable = true,
+                                )
+                        }
+                        return@withLock
+                    }
+
+                    val focusResult = requestAudioFocusCompat()
+                    if (focusResult != AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
+                        handler.post {
+                            _state.value =
+                                VoiceInputState.Error(
+                                    messageResId = R.string.voice_error_audio,
+                                    isRetryable = true,
+                                )
+                        }
+                        return@withLock
+                    }
 
                     busyRetryCount = 0
                     destroyRecognizer()
@@ -204,6 +284,7 @@ class VoiceInputManager
         }
 
         private fun destroyRecognizer() {
+            abandonAudioFocusCompat()
             // Null out FIRST to invalidate callbacks before cancel() can trigger them
             val rec = recognizer
             recognizer = null
