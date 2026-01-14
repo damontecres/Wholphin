@@ -380,4 +380,26 @@
     <string name="play_trailer">Reproduzir trailer</string>
     <string name="no_trailers">Sem trailers</string>
     <string name="clear_track_choices">Apagar seleções de faixas</string>
+    <string name="dts_x">DTS:X</string>
+    <string name="dts_hd">DTS:HD</string>
+    <string name="truehd">TrueHD</string>
+    <string name="dolby_digital">DD</string>
+    <string name="dolby_digital_plus">DD+</string>
+    <string name="dts">DTS</string>
+    <string name="only_forced_subtitles">Apenas Legendas Forçadas</string>
+    <string name="force_dovi_profile_7">Reprodução direta Dolby Vision Profile 7</string>
+    <string name="force_dovi_profile_7_summary">Ignora as verificações de compatibilidade do dispositivo</string>
+    <string name="discover">Descobrir</string>
+    <string name="request">Pedir</string>
+    <string name="pending">Pendente</string>
+    <string name="seerr_integration">Integração com Seerr</string>
+    <string name="remove_seerr_server">Remover Servidor Seerr</string>
+    <string name="seerr_server_added">Servidor Seerr adicionado</string>
+    <string name="url">URL</string>
+    <string name="trending">Popular</string>
+    <string name="upcoming_movies">Filmes em Breve</string>
+    <string name="upcoming_tv">Séries em Breve</string>
+    <string name="request_4k">Pedir em 4K</string>
+    <string name="password">Palavra-passe</string>
+    <string name="username">Utilizador</string>
 </resources>
