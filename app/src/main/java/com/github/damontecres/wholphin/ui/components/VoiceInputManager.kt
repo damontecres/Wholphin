@@ -18,10 +18,12 @@ import android.speech.SpeechRecognizer
 import androidx.core.content.ContextCompat
 import com.github.damontecres.wholphin.R
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.android.asCoroutineDispatcher
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -87,7 +89,8 @@ class VoiceInputManager
         @ApplicationContext private val context: Context,
     ) : Closeable {
         private val handler = Handler(Looper.getMainLooper())
-        private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
+        private val mainDispatcher = provideMainDispatcher()
+        private val scope = CoroutineScope(mainDispatcher + SupervisorJob())
         private val mutex = Mutex()
 
         private val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
@@ -181,6 +184,14 @@ class VoiceInputManager
                 }
             }
 
+        private fun provideMainDispatcher(): CoroutineDispatcher =
+            try {
+                Dispatchers.Main.immediate
+            } catch (_: IllegalStateException) {
+                // Fallback for unit tests where Main dispatcher is not installed
+                handler.asCoroutineDispatcher()
+            }
+
         private val recognitionIntent by lazy {
             Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
                 putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
@@ -200,7 +211,8 @@ class VoiceInputManager
                 mutex.withLock {
                     if (_state.value is VoiceInputState.Listening) return@withLock
 
-                    if (recognizer != null) {
+                    val hadRecognizer = recognizer != null
+                    if (hadRecognizer) {
                         destroyRecognizer()
                     }
 
@@ -234,8 +246,10 @@ class VoiceInputManager
                         _state.value = VoiceInputState.Listening
                     }
 
-                    // Give the OS time to release the mic before recreating
-                    delay(RECOGNIZER_RECREATE_DELAY_MS)
+                    // Give the OS time to release the mic before recreating when replacing an old recognizer
+                    if (hadRecognizer) {
+                        delay(RECOGNIZER_RECREATE_DELAY_MS)
+                    }
 
                     if (recognizer != null) {
                         destroyRecognizer()
