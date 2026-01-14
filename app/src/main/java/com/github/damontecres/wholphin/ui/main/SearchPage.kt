@@ -58,6 +58,7 @@ import com.github.damontecres.wholphin.ui.cards.EpisodeCard
 import com.github.damontecres.wholphin.ui.cards.ItemRow
 import com.github.damontecres.wholphin.ui.cards.SeasonCard
 import com.github.damontecres.wholphin.ui.components.SearchEditTextBox
+import com.github.damontecres.wholphin.ui.components.VoiceInputManager
 import com.github.damontecres.wholphin.ui.components.VoiceSearchButton
 import com.github.damontecres.wholphin.ui.components.rememberVoiceInputManager
 import com.github.damontecres.wholphin.ui.data.RowColumn
@@ -90,7 +91,12 @@ class SearchViewModel
         val api: ApiClient,
         val navigationManager: NavigationManager,
         private val seerrService: SeerrService,
+        val voiceInputManager: VoiceInputManager,
     ) : ViewModel() {
+        val voiceState = voiceInputManager.state
+        val soundLevel = voiceInputManager.soundLevel
+        val partialResult = voiceInputManager.partialResult
+
         val movies = MutableLiveData<SearchResult>(SearchResult.NoQuery)
         val series = MutableLiveData<SearchResult>(SearchResult.NoQuery)
         val episodes = MutableLiveData<SearchResult>(SearchResult.NoQuery)
@@ -170,6 +176,11 @@ class SearchViewModel
         fun getHints(query: String) {
             // TODO
 //        api.searchApi.getSearchHints()
+        }
+
+        override fun onCleared() {
+            super.onCleared()
+            voiceInputManager.cleanup()
         }
     }
 
