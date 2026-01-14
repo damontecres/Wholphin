@@ -179,6 +179,7 @@ fun CollectionFolderMovie(
             3 -> {
                 GenreCardGrid(
                     itemId = destination.itemId,
+                    includeItemTypes = listOf(BaseItemKind.MOVIE),
                     modifier =
                         Modifier
                             .padding(start = 16.dp)

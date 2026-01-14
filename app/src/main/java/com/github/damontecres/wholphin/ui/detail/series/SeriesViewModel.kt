@@ -291,6 +291,7 @@ class SeriesViewModel
                     fields =
                         listOf(
                             ItemFields.MEDIA_SOURCES,
+                            ItemFields.MEDIA_SOURCE_COUNT,
                             ItemFields.MEDIA_STREAMS,
                             ItemFields.OVERVIEW,
                             ItemFields.CUSTOM_RATING,

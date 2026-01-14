@@ -1,20 +1,29 @@
 package com.github.damontecres.wholphin.data.model
 
+import androidx.compose.foundation.text.appendInlineContent
+import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.Stable
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.buildAnnotatedString
+import com.github.damontecres.wholphin.ui.DateFormatter
 import com.github.damontecres.wholphin.ui.detail.CardGridItem
 import com.github.damontecres.wholphin.ui.detail.series.SeasonEpisodeIds
+import com.github.damontecres.wholphin.ui.dot
 import com.github.damontecres.wholphin.ui.formatDateTime
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.playback.playable
+import com.github.damontecres.wholphin.ui.roundMinutes
 import com.github.damontecres.wholphin.ui.seasonEpisode
 import com.github.damontecres.wholphin.ui.seasonEpisodePadded
 import com.github.damontecres.wholphin.ui.seriesProductionYears
+import com.github.damontecres.wholphin.ui.timeRemaining
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.model.api.BaseItemDto
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.extensions.ticks
+import java.util.Locale
 import kotlin.time.Duration
 
 @Serializable
@@ -72,6 +81,61 @@ data class BaseItem(
     val played get() = data.userData?.played ?: false
 
     val favorite get() = data.userData?.isFavorite ?: false
+
+    @Transient
+    val timeRemainingOrRuntime: Duration? = data.timeRemaining ?: data.runTimeTicks?.ticks
+
+    @Transient
+    val ui =
+        BaseItemUi(
+            quickDetails =
+                buildAnnotatedString {
+                    val details =
+                        buildList {
+                            if (type == BaseItemKind.EPISODE) {
+                                data.seasonEpisode?.let(::add)
+                                data.premiereDate?.let { add(DateFormatter.format(it)) }
+                            } else if (type == BaseItemKind.SERIES) {
+                                data.seriesProductionYears?.let(::add)
+                            } else {
+                                data.productionYear?.let { add(it.toString()) }
+                            }
+                            data.runTimeTicks
+                                ?.ticks
+                                ?.roundMinutes
+                                ?.let { add(it.toString()) }
+                            data.timeRemaining
+                                ?.roundMinutes
+                                ?.let { add("$it left") }
+                        }
+                    details.forEachIndexed { index, string ->
+                        append(string)
+                        if (index != details.lastIndex) {
+                            dot()
+                        }
+                    }
+                    // TODO time remaining
+
+                    data.officialRating?.let {
+                        dot()
+                        append(it)
+                    }
+                    data.communityRating?.let {
+                        dot()
+                        append(String.format(Locale.getDefault(), "%.1f", it))
+                        appendInlineContent(id = "star")
+                    }
+                    data.criticRating?.let {
+                        dot()
+                        append("${it.toInt()}%")
+                        if (it >= 60f) {
+                            appendInlineContent(id = "fresh")
+                        } else {
+                            appendInlineContent(id = "rotten")
+                        }
+                    }
+                },
+        )
 
     private fun dateAsIndex(): Int? =
         data.premiereDate
@@ -136,3 +200,8 @@ data class BaseItem(
 }
 
 val BaseItemDto.aspectRatioFloat: Float? get() = width?.let { w -> height?.let { h -> w.toFloat() / h.toFloat() } }
+
+@Immutable
+data class BaseItemUi(
+    val quickDetails: AnnotatedString,
+)

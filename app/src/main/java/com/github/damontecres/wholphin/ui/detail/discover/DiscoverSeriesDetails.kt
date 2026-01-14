@@ -53,14 +53,15 @@ import com.github.damontecres.wholphin.ui.cards.ItemRow
 import com.github.damontecres.wholphin.ui.components.DialogItem
 import com.github.damontecres.wholphin.ui.components.DialogParams
 import com.github.damontecres.wholphin.ui.components.DialogPopup
-import com.github.damontecres.wholphin.ui.components.DotSeparatedRow
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.GenreText
 import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.components.OverviewText
+import com.github.damontecres.wholphin.ui.components.QuickDetails
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialog
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialogInfo
 import com.github.damontecres.wholphin.ui.letNotEmpty
+import com.github.damontecres.wholphin.ui.listToDotString
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.rememberInt
 import com.github.damontecres.wholphin.ui.roundMinutes
@@ -478,16 +479,16 @@ fun DiscoverSeriesDetailsHeader(
                             ?.toString()
                             ?.let(::add)
                         // TODO
+                    }.let {
+                        listToDotString(
+                            it,
+                            rating?.audienceRating,
+                            rating?.criticRating?.toFloat(),
+                        )
                     }
                 }
 
-            DotSeparatedRow(
-                texts = details,
-                communityRating = rating?.audienceRating,
-                criticRating = rating?.criticRating?.toFloat(),
-                textStyle = MaterialTheme.typography.titleSmall,
-                modifier = Modifier,
-            )
+            QuickDetails(details, null)
             series.genres?.mapNotNull { it.name }?.letNotEmpty {
                 GenreText(it, Modifier.padding(bottom = padding))
             }
