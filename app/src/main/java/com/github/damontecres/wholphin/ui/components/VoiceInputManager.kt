@@ -20,6 +20,7 @@ import com.github.damontecres.wholphin.R
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -36,6 +37,7 @@ private const val RMS_DB_MIN = -2.0f
 private const val RMS_DB_MAX = 10.0f
 private const val MAX_RESULTS = 1
 private const val LISTENING_TIMEOUT_MS = 5000L
+private const val RECOGNIZER_RECREATE_DELAY_MS = 150L
 
 private val ERROR_TO_RESOURCE_MAP =
     mapOf(
@@ -48,6 +50,7 @@ private val ERROR_TO_RESOURCE_MAP =
         SpeechRecognizer.ERROR_RECOGNIZER_BUSY to R.string.voice_error_busy,
         SpeechRecognizer.ERROR_SERVER to R.string.voice_error_server,
         SpeechRecognizer.ERROR_SPEECH_TIMEOUT to R.string.voice_error_speech_timeout,
+        SpeechRecognizer.ERROR_TOO_MANY_REQUESTS to R.string.voice_error_busy,
     )
 
 private val RETRYABLE_ERRORS =
@@ -151,7 +154,6 @@ class VoiceInputManager
                 ) == PackageManager.PERMISSION_GRANTED
 
         private var recognizer: SpeechRecognizer? = null
-        private var busyRetryCount = 0
 
         private val timeoutHandler = Handler(Looper.getMainLooper())
         private val timeoutRunnable =
@@ -198,6 +200,10 @@ class VoiceInputManager
                 mutex.withLock {
                     if (_state.value is VoiceInputState.Listening) return@withLock
 
+                    if (recognizer != null) {
+                        destroyRecognizer()
+                    }
+
                     if (!isNetworkAvailable()) {
                         handler.post {
                             _state.value =
@@ -221,13 +227,18 @@ class VoiceInputManager
                         return@withLock
                     }
 
-                    busyRetryCount = 0
-                    destroyRecognizer()
                     cancelTimeout()
                     handler.post {
                         _partialResult.value = ""
                         _soundLevel.value = 0f
                         _state.value = VoiceInputState.Listening
+                    }
+
+                    // Give the OS time to release the mic before recreating
+                    delay(RECOGNIZER_RECREATE_DELAY_MS)
+
+                    if (recognizer != null) {
+                        destroyRecognizer()
                     }
 
                     val newRecognizer = SpeechRecognizer.createSpeechRecognizer(context)
@@ -337,9 +348,18 @@ class VoiceInputManager
                     if (!isValid()) return
                     Timber.e("Voice recognition error code: $error")
                     cancelTimeout()
-                    if (error == SpeechRecognizer.ERROR_RECOGNIZER_BUSY && busyRetryCount < 1) {
-                        busyRetryCount++
-                        handler.postDelayed({ startListening() }, 300)
+                    destroyRecognizer()
+
+                    if (error == SpeechRecognizer.ERROR_TOO_MANY_REQUESTS) {
+                        handler.post {
+                            _state.value =
+                                VoiceInputState.Error(
+                                    messageResId = ERROR_TO_RESOURCE_MAP[error] ?: R.string.voice_error_unknown,
+                                    isRetryable = false,
+                                )
+                            _soundLevel.value = 0f
+                            _partialResult.value = ""
+                        }
                         return
                     }
                     handler.post {
@@ -349,6 +369,7 @@ class VoiceInputManager
                                 isRetryable = error in RETRYABLE_ERRORS,
                             )
                         _soundLevel.value = 0f
+                        _partialResult.value = ""
                     }
                 }
 
