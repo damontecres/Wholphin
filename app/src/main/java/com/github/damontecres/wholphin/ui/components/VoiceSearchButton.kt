@@ -13,6 +13,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -89,8 +90,10 @@ fun VoiceSearchButton(
             }
 
             is VoiceInputState.Error -> {
-                delay(ERROR_AUTO_DISMISS_DELAY_MS)
-                voiceInputManager.acknowledge()
+                if (!state.isRetryable) {
+                    delay(ERROR_AUTO_DISMISS_DELAY_MS)
+                    voiceInputManager.acknowledge()
+                }
             }
 
             else -> {}
@@ -109,12 +112,15 @@ fun VoiceSearchButton(
         }
 
     if (state.shouldShowOverlay()) {
-        val errorMessage = (state as? VoiceInputState.Error)?.messageResId?.let { stringResource(it) }
+        val errorState = state as? VoiceInputState.Error
+        val errorMessage = errorState?.messageResId?.let { stringResource(it) }
         VoiceSearchOverlay(
             soundLevel = voiceInputManager.soundLevel,
             partialResult = voiceInputManager.partialResult,
             isProcessing = state is VoiceInputState.Processing,
             errorMessage = errorMessage,
+            isRetryable = errorState?.isRetryable == true,
+            onRetry = { voiceInputManager.startListening() },
             onDismiss = { voiceInputManager.stopListening() },
         )
     }
@@ -215,6 +221,8 @@ private fun VoiceSearchOverlay(
     partialResult: String,
     isProcessing: Boolean,
     errorMessage: String?,
+    isRetryable: Boolean,
+    onRetry: () -> Unit,
     onDismiss: () -> Unit,
 ) {
     val primaryColor = MaterialTheme.colorScheme.primary
@@ -331,15 +339,27 @@ private fun VoiceSearchOverlay(
                         dotCount = dotAnimation.toInt(),
                     )
 
-                Text(
-                    text = statusText,
-                    style = MaterialTheme.typography.headlineMedium,
-                    color = if (errorMessage != null) errorColor else Color.White,
-                    modifier =
-                        Modifier
-                            .weight(1f)
-                            .semantics { contentDescription = accessibilityDescription },
-                )
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                ) {
+                    Text(
+                        text = statusText,
+                        style = MaterialTheme.typography.headlineMedium,
+                        color = if (errorMessage != null) errorColor else Color.White,
+                        modifier = Modifier.semantics { contentDescription = accessibilityDescription },
+                    )
+
+                    if (errorMessage != null && isRetryable) {
+                        Button(
+                            onClick = onRetry,
+                        ) {
+                            Text(
+                                text = stringResource(R.string.retry),
+                            )
+                        }
+                    }
+                }
             }
 
             Text(

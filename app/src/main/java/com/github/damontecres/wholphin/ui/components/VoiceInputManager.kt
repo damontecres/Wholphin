@@ -37,6 +37,14 @@ private val ERROR_TO_RESOURCE_MAP =
         SpeechRecognizer.ERROR_SPEECH_TIMEOUT to R.string.voice_error_speech_timeout,
     )
 
+private val RETRYABLE_ERRORS =
+    setOf(
+        SpeechRecognizer.ERROR_NETWORK,
+        SpeechRecognizer.ERROR_NETWORK_TIMEOUT,
+        SpeechRecognizer.ERROR_SERVER,
+        SpeechRecognizer.ERROR_NO_MATCH,
+    )
+
 private fun normalizeRmsDb(rmsdB: Float) = ((rmsdB - RMS_DB_MIN) / (RMS_DB_MAX - RMS_DB_MIN)).coerceIn(0f, 1f)
 
 sealed interface VoiceInputState {
@@ -52,6 +60,7 @@ sealed interface VoiceInputState {
 
     data class Error(
         val messageResId: Int,
+        val isRetryable: Boolean,
     ) : VoiceInputState
 }
 
@@ -188,7 +197,10 @@ class VoiceInputManager
                 override fun onError(error: Int) {
                     if (!isValid()) return
                     handler.post {
-                        _state.value = VoiceInputState.Error(ERROR_TO_RESOURCE_MAP[error] ?: R.string.voice_error_unknown)
+                        _state.value = VoiceInputState.Error(
+                            messageResId = ERROR_TO_RESOURCE_MAP[error] ?: R.string.voice_error_unknown,
+                            isRetryable = error in RETRYABLE_ERRORS,
+                        )
                         _soundLevel.value = 0f
                     }
                 }
