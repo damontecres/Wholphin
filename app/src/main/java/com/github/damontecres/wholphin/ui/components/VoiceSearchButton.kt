@@ -96,6 +96,8 @@ fun VoiceSearchButton(
         when (currentState) {
             is VoiceInputState.Result -> {
                 onSpeechResult(currentState.text)
+                // Small delay to allow focus to be restored before dialog dismisses
+                delay(50)
                 voiceInputManager.acknowledge()
             }
 

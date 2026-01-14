@@ -332,6 +332,9 @@ fun SearchPage(
                         onSpeechResult = { spokenText ->
                             query = spokenText
                             triggerImmediateSearch(spokenText)
+                            // Request focus immediately to prevent it escaping to nav drawer,
+                            // then again after delay to ensure it sticks after dialog fully dismisses
+                            textFieldFocusRequester.requestFocus()
                             scope.launch {
                                 delay(VOICE_RESULT_FOCUS_DELAY_MS)
                                 textFieldFocusRequester.requestFocus()
