@@ -174,14 +174,13 @@ class SearchViewModel
             }
         }
 
+        init {
+            addCloseable(voiceInputManager)
+        }
+
         fun getHints(query: String) {
             // TODO
 //        api.searchApi.getSearchHints()
-        }
-
-        override fun onCleared() {
-            super.onCleared()
-            voiceInputManager.cleanup()
         }
     }
 
@@ -210,7 +209,7 @@ private const val EPISODE_ROW = SERIES_ROW + 1
 private const val SEERR_ROW = EPISODE_ROW + 1
 
 /** Delay for focus to settle after voice search dialog dismisses. */
-private const val VOICE_RESULT_FOCUS_DELAY_MS = 100L
+private const val VOICE_RESULT_FOCUS_DELAY_MS = 350L
 
 @Composable
 fun SearchPage(

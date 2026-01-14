@@ -31,6 +31,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
@@ -276,6 +278,11 @@ private fun VoiceSearchOverlay(
 
     val bubbleScale = basePulse + (animatedSoundLevel * SOUND_LEVEL_SCALE_FACTOR)
 
+    val statusFocusRequester = remember { FocusRequester() }
+    LaunchedEffect(Unit) {
+        statusFocusRequester.requestFocus()
+    }
+
     Dialog(
         onDismissRequest = onDismiss,
         properties =
@@ -344,7 +351,7 @@ private fun VoiceSearchOverlay(
                     )
 
                 Column(
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier.weight(1f).focusRequester(statusFocusRequester),
                     verticalArrangement = Arrangement.spacedBy(16.dp),
                 ) {
                     Text(

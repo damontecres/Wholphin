@@ -23,6 +23,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import timber.log.Timber
+import java.io.Closeable
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -76,7 +77,7 @@ class VoiceInputManager
     @Inject
     constructor(
         @ApplicationContext private val context: Context,
-    ) {
+    ) : Closeable {
         private val handler = Handler(Looper.getMainLooper())
         private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
         private val mutex = Mutex()
@@ -169,7 +170,7 @@ class VoiceInputManager
             scope.launch {
                 mutex.withLock {
                     cancelTimeout()
-                    cleanup()
+                    close()
                 }
             }
         }
@@ -209,7 +210,7 @@ class VoiceInputManager
             }
         }
 
-        internal fun cleanup() {
+        override fun close() {
             destroyRecognizer()
             handler.post {
                 _soundLevel.value = 0f
