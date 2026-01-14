@@ -13,6 +13,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
@@ -41,6 +42,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.viewModelScope
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
@@ -58,9 +60,7 @@ import com.github.damontecres.wholphin.ui.cards.EpisodeCard
 import com.github.damontecres.wholphin.ui.cards.ItemRow
 import com.github.damontecres.wholphin.ui.cards.SeasonCard
 import com.github.damontecres.wholphin.ui.components.SearchEditTextBox
-import com.github.damontecres.wholphin.ui.components.VoiceInputManager
 import com.github.damontecres.wholphin.ui.components.VoiceSearchButton
-import com.github.damontecres.wholphin.ui.components.rememberVoiceInputManager
 import com.github.damontecres.wholphin.ui.data.RowColumn
 import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
@@ -234,7 +234,15 @@ fun SearchPage(
     var searchClicked by rememberSaveable { mutableStateOf(false) }
     var immediateSearchQuery by rememberSaveable { mutableStateOf<String?>(null) }
 
-    val voiceInputManager = rememberVoiceInputManager()
+    val voiceState by viewModel.voiceState.collectAsState()
+    val soundLevel by viewModel.soundLevel.collectAsState()
+    val partialResult by viewModel.partialResult.collectAsState()
+
+    LifecycleResumeEffect(Unit) {
+        onPauseOrDispose {
+            viewModel.voiceInputManager.stopListening()
+        }
+    }
 
     fun triggerImmediateSearch(searchQuery: String) {
         immediateSearchQuery = searchQuery
@@ -327,7 +335,7 @@ fun SearchPage(
                                 textFieldFocusRequester.requestFocus()
                             }
                         },
-                        voiceInputManager = voiceInputManager,
+                        voiceInputManager = viewModel.voiceInputManager,
                     )
 
                     SearchEditTextBox(
