@@ -370,4 +370,22 @@
     <string name="upcoming_tv">即将播出的电视节目</string>
     <string name="request_4k">请求 4K 版本</string>
     <string name="seerr_server_added">Seerr 服务器已添加</string>
+    <string name="voice_search">语音搜索</string>
+    <string name="voice_starting">开始</string>
+    <string name="voice_search_prompt">说话进行搜索</string>
+    <string name="processing">正在处理</string>
+    <string name="press_back_to_cancel">按返回键取消</string>
+    <string name="voice_error_audio">音频录制错误</string>
+    <string name="voice_error_client">语音识别错误</string>
+    <string name="voice_error_permissions">需要麦克风权限</string>
+    <string name="voice_error_network">网络错误</string>
+    <string name="voice_error_network_timeout">网络超时</string>
+    <string name="voice_error_no_match">未识别到语音</string>
+    <string name="voice_error_busy">语音识别繁忙</string>
+    <string name="voice_error_server">服务器错误</string>
+    <string name="voice_error_speech_timeout">未检测到语音</string>
+    <string name="voice_error_unknown">未知错误</string>
+    <string name="voice_error_start_failed">无法启动语音识别</string>
+    <string name="voice_error_timeout">语音识别超时</string>
+    <string name="retry">重试</string>
 </resources>
