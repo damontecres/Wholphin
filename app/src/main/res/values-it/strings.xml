@@ -402,4 +402,22 @@
     <string name="upcoming_tv">Serie TV in arrivo</string>
     <string name="request_4k">Richiedi in 4K</string>
     <string name="seerr_server_added">Server Seerr aggiunto</string>
+    <string name="voice_search">Ricerca vocale</string>
+    <string name="voice_starting">Avvio in corso</string>
+    <string name="voice_search_prompt">Parla per cercare</string>
+    <string name="processing">Elaborazione in corso</string>
+    <string name="press_back_to_cancel">Premi indietro per annullare</string>
+    <string name="voice_error_audio">Errore registrazione audio</string>
+    <string name="voice_error_client">Errore riconoscimento vocale</string>
+    <string name="voice_error_permissions">Autorizzazione microfono richiesta</string>
+    <string name="voice_error_network">Errore di rete</string>
+    <string name="voice_error_network_timeout">Timeout di rete</string>
+    <string name="voice_error_no_match">Nessun discorso riconosciuto</string>
+    <string name="voice_error_busy">Riconoscimento vocale occupato</string>
+    <string name="voice_error_server">Errore server</string>
+    <string name="voice_error_speech_timeout">Nessun discorso rilevato</string>
+    <string name="voice_error_unknown">Errore sconosciuto</string>
+    <string name="voice_error_start_failed">Impossibile avviare il riconoscimento vocale</string>
+    <string name="retry">Riprova</string>
+    <string name="voice_error_timeout">Riconoscimento vocale scaduto</string>
 </resources>
