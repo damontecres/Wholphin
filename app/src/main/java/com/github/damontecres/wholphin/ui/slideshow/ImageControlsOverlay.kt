@@ -4,12 +4,8 @@ import androidx.annotation.OptIn
 import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.relocation.BringIntoViewRequester
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
@@ -21,15 +17,12 @@ import androidx.compose.ui.focus.FocusState
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.media3.common.util.UnstableApi
 import androidx.tv.material3.Button
 import androidx.tv.material3.ButtonDefaults
 import androidx.tv.material3.Icon
-import androidx.tv.material3.MaterialTheme
-import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.ui.components.ExpandableFaButton
 import com.github.damontecres.wholphin.ui.components.ExpandablePlayButton
@@ -42,6 +35,9 @@ import kotlin.time.Duration
 @OptIn(UnstableApi::class)
 @Composable
 fun ImageControlsOverlay(
+    slideshowEnabled: Boolean,
+    slideshowControls: SlideshowControls,
+    onDismiss: () -> Unit,
     isImageClip: Boolean,
     onZoom: (Float) -> Unit,
     onRotate: (Int) -> Unit,
@@ -49,6 +45,7 @@ fun ImageControlsOverlay(
     moreOnClick: () -> Unit,
     isPlaying: Boolean,
     playPauseOnClick: () -> Unit,
+    onShowFilterDialogClick: () -> Unit,
     bringIntoViewRequester: BringIntoViewRequester?,
     modifier: Modifier = Modifier,
 ) {
@@ -72,13 +69,38 @@ fun ImageControlsOverlay(
         horizontalArrangement = Arrangement.spacedBy(16.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
+        item {
+            ExpandablePlayButton(
+                title = if (slideshowEnabled) R.string.stop_slideshow else R.string.play_slideshow,
+                icon =
+                    painterResource(
+                        if (slideshowEnabled) {
+                            R.drawable.baseline_pause_24
+                        } else {
+                            R.drawable.baseline_play_arrow_24
+                        },
+                    ),
+                resume = Duration.ZERO,
+                onClick = {
+                    if (slideshowEnabled) {
+                        slideshowControls.stopSlideshow()
+                    } else {
+                        slideshowControls.startSlideshow()
+                        onDismiss.invoke()
+                    }
+                },
+                modifier =
+                    Modifier
+                        .focusRequester(focusRequester)
+                        .onFocusChanged(onFocused),
+            )
+        }
         if (isImageClip) {
             item {
                 Button(
                     onClick = playPauseOnClick,
                     modifier =
                         Modifier
-                            .focusRequester(focusRequester)
                             .onFocusChanged(onFocused),
                     contentPadding = ButtonDefaults.ButtonWithIconContentPadding,
                 ) {
@@ -93,8 +115,6 @@ fun ImageControlsOverlay(
             }
         } else {
             // Regular image
-            // TODO might be able to apply to the player surface?
-            // If enabling these, make sure the focusRequester is updated!
             item {
                 ExpandableFaButton(
                     title = R.string.rotate_left,
@@ -102,7 +122,6 @@ fun ImageControlsOverlay(
                     onClick = { onRotate(-90) },
                     modifier =
                         Modifier
-                            .focusRequester(focusRequester)
                             .onFocusChanged(onFocused),
                 )
             }
@@ -146,17 +165,27 @@ fun ImageControlsOverlay(
                             .onFocusChanged(onFocused),
                 )
             }
+            item {
+                ExpandableFaButton(
+                    title = R.string.filter,
+                    iconStringRes = R.string.fa_sliders,
+                    onClick = onShowFilterDialogClick,
+                    modifier =
+                        Modifier
+                            .onFocusChanged(onFocused),
+                )
+            }
         }
         // More button
-        item {
-            ExpandablePlayButton(
-                title = R.string.more,
-                resume = Duration.ZERO,
-                icon = Icons.Default.MoreVert,
-                onClick = { moreOnClick.invoke() },
-                modifier = Modifier.onFocusChanged(onFocused),
-            )
-        }
+//        item {
+//            ExpandablePlayButton(
+//                title = R.string.more,
+//                resume = Duration.ZERO,
+//                icon = Icons.Default.MoreVert,
+//                onClick = { moreOnClick.invoke() },
+//                modifier = Modifier.onFocusChanged(onFocused),
+//            )
+//        }
     }
 }
 
@@ -165,6 +194,15 @@ fun ImageControlsOverlay(
 private fun ImageControlsOverlayPreview() {
     WholphinTheme {
         ImageControlsOverlay(
+            slideshowEnabled = true,
+            slideshowControls =
+                object : SlideshowControls {
+                    override fun startSlideshow() {
+                    }
+
+                    override fun stopSlideshow() {
+                    }
+                },
             isImageClip = false,
             onZoom = {},
             onRotate = {},
@@ -173,6 +211,8 @@ private fun ImageControlsOverlayPreview() {
             isPlaying = false,
             playPauseOnClick = {},
             bringIntoViewRequester = null,
+            onShowFilterDialogClick = {},
+            onDismiss = {},
             modifier = Modifier,
         )
     }

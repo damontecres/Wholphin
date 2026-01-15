@@ -9,6 +9,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.map
 import androidx.lifecycle.viewModelScope
 import androidx.media3.common.Player
+import com.github.damontecres.wholphin.data.ChosenStreams
 import com.github.damontecres.wholphin.data.PlaybackEffectDao
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.BaseItem
@@ -17,7 +18,7 @@ import com.github.damontecres.wholphin.data.model.VideoFilter
 import com.github.damontecres.wholphin.services.ImageUrlService
 import com.github.damontecres.wholphin.services.PlayerFactory
 import com.github.damontecres.wholphin.services.UserPreferencesService
-import com.github.damontecres.wholphin.ui.DefaultItemFields
+import com.github.damontecres.wholphin.ui.PhotoItemFields
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.onMain
 import com.github.damontecres.wholphin.ui.setValueOnMain
@@ -47,6 +48,7 @@ import org.jellyfin.sdk.api.client.extensions.userLibraryApi
 import org.jellyfin.sdk.api.client.extensions.videosApi
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.ImageType
+import org.jellyfin.sdk.model.api.MediaStreamType
 import org.jellyfin.sdk.model.api.MediaType
 import org.jellyfin.sdk.model.api.request.GetItemsRequest
 import timber.log.Timber
@@ -133,7 +135,7 @@ class ImageDetailsViewModel
                     GetItemsRequest(
                         parentId = parentId,
                         includeItemTypes = listOf(BaseItemKind.PHOTO, BaseItemKind.VIDEO),
-                        fields = DefaultItemFields,
+                        fields = PhotoItemFields,
                         recursive = true,
                     )
                 serverRepository.currentUser.value?.let { user ->
@@ -197,12 +199,34 @@ class ImageDetailsViewModel
                                 } else {
                                     api.libraryApi.getDownloadUrl(image.id)
                                 }
+                            val chosenStreams =
+                                if (image.data.mediaType == MediaType.VIDEO) {
+                                    image.data.mediaSources?.firstOrNull()?.let { source ->
+                                        val video =
+                                            source.mediaStreams?.firstOrNull { it.type == MediaStreamType.VIDEO }
+                                        val audio =
+                                            source.mediaStreams?.firstOrNull { it.type == MediaStreamType.AUDIO }
+                                        ChosenStreams(
+                                            itemPlayback = null,
+                                            plc = null,
+                                            itemId = image.id,
+                                            source = source,
+                                            videoStream = video,
+                                            audioStream = audio,
+                                            subtitleStream = null,
+                                            subtitlesDisabled = false,
+                                        )
+                                    }
+                                } else {
+                                    null
+                                }
 
                             val imageState =
                                 ImageState(
                                     image,
                                     url,
                                     imageUrlService.getItemImageUrl(image, ImageType.THUMB),
+                                    chosenStreams,
                                 )
                             // reset image filter
                             updateImageFilter(albumImageFilter)
@@ -304,7 +328,7 @@ class ImageDetailsViewModel
                 viewModelScope
                     .launchIO {
                         delay(milliseconds)
-                        Timber.v("pulseSlideshow after delay")
+//                        Timber.v("pulseSlideshow after delay")
                         if (slideshowActive.first()) {
                             nextImage()
                         }
@@ -406,6 +430,7 @@ data class ImageState(
     val image: BaseItem,
     val url: String,
     val thumbnailUrl: String?,
+    val chosenStreams: ChosenStreams?,
 ) {
     val id: UUID get() = image.id
 }

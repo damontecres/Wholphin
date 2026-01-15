@@ -97,6 +97,12 @@ data class BaseItem(
                                 data.premiereDate?.let { add(DateFormatter.format(it)) }
                             } else if (type == BaseItemKind.SERIES) {
                                 data.seriesProductionYears?.let(::add)
+                            } else if (type == BaseItemKind.PHOTO) {
+                                if (data.productionYear != null) {
+                                    add(data.productionYear!!.toString())
+                                } else if (data.premiereDate != null) {
+                                    add(data.premiereDate!!.toLocalDate().toString())
+                                }
                             } else {
                                 data.productionYear?.let { add(it.toString()) }
                             }

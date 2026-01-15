@@ -74,6 +74,13 @@ val SlimItemFields =
         ItemFields.PARENT_ID,
     )
 
+val PhotoItemFields =
+    DefaultItemFields +
+        listOf(
+            ItemFields.WIDTH,
+            ItemFields.HEIGHT,
+        )
+
 object Cards {
     val height2x3 = 172.dp
     val heightEpisode = height2x3 * .75f

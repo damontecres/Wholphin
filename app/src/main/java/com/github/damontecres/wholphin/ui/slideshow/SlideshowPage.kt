@@ -477,6 +477,7 @@ fun SlideshowPage(
                         contentModifier
                             .fillMaxSize()
                             .background(AppColors.TransparentBlack50),
+                    onDismiss = { showOverlay = false },
                     player = player,
                     slideshowControls = slideshowControls,
                     slideshowEnabled = slideshowState.enabled,

@@ -29,6 +29,7 @@ import com.github.damontecres.wholphin.ui.components.DialogPopup
 @androidx.annotation.OptIn(UnstableApi::class)
 @Composable
 fun ImageOverlay(
+    onDismiss: () -> Unit,
     player: Player,
     slideshowControls: SlideshowControls,
     slideshowEnabled: Boolean,
@@ -116,6 +117,9 @@ fun ImageOverlay(
     ) {
         item {
             ImageDetailsHeader(
+                onDismiss = onDismiss,
+                slideshowEnabled = slideshowEnabled,
+                slideshowControls = slideshowControls,
                 player = player,
                 image = image,
                 position = position,
@@ -126,6 +130,7 @@ fun ImageOverlay(
                 onZoom = onZoom,
                 onRotate = onRotate,
                 onReset = onReset,
+                onShowFilterDialogClick = onShowFilterDialogClick,
                 modifier = Modifier,
             )
         }
