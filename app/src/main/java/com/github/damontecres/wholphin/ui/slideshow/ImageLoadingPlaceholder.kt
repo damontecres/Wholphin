@@ -47,7 +47,7 @@ fun ImageLoadingPlaceholder(
         }
         CircularProgress(
             Modifier
-                .size(160.dp)
+                .size(80.dp)
                 .align(Alignment.Center),
         )
     }
