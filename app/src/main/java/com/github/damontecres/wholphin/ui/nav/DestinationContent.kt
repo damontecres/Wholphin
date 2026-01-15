@@ -15,6 +15,7 @@ import com.github.damontecres.wholphin.ui.detail.CollectionFolderBoxSet
 import com.github.damontecres.wholphin.ui.detail.CollectionFolderGeneric
 import com.github.damontecres.wholphin.ui.detail.CollectionFolderLiveTv
 import com.github.damontecres.wholphin.ui.detail.CollectionFolderMovie
+import com.github.damontecres.wholphin.ui.detail.CollectionFolderPhotoAlbum
 import com.github.damontecres.wholphin.ui.detail.CollectionFolderPlaylist
 import com.github.damontecres.wholphin.ui.detail.CollectionFolderRecordings
 import com.github.damontecres.wholphin.ui.detail.CollectionFolderTv
@@ -189,12 +190,10 @@ fun DestinationContent(
 
                 BaseItemKind.PHOTO_ALBUM -> {
                     LaunchedEffect(Unit) { onClearBackdrop.invoke() }
-                    CollectionFolderGeneric(
-                        preferences,
-                        destination.itemId,
-                        usePosters = false,
+                    CollectionFolderPhotoAlbum(
+                        preferences = preferences,
+                        itemId = destination.itemId,
                         recursive = true,
-                        playEnabled = true,
                         modifier = modifier,
                     )
                 }
@@ -241,7 +240,6 @@ fun DestinationContent(
         is Destination.Slideshow -> {
             SlideshowPage(
                 slideshow = destination,
-                startSlideshow = false,
             )
         }
 

@@ -20,6 +20,7 @@ import com.github.damontecres.wholphin.services.PlayerFactory
 import com.github.damontecres.wholphin.services.UserPreferencesService
 import com.github.damontecres.wholphin.ui.PhotoItemFields
 import com.github.damontecres.wholphin.ui.launchIO
+import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.onMain
 import com.github.damontecres.wholphin.ui.setValueOnMain
 import com.github.damontecres.wholphin.ui.showToast
@@ -66,18 +67,12 @@ class ImageDetailsViewModel
         private val serverRepository: ServerRepository,
         private val imageUrlService: ImageUrlService,
         private val userPreferencesService: UserPreferencesService,
-        @Assisted val parentId: UUID,
-        @Assisted val startIndex: Int,
-        @Assisted val startSlideshow: Boolean,
+        @Assisted val slideshowSettings: Destination.Slideshow,
     ) : ViewModel(),
         Player.Listener {
         @AssistedFactory
         interface Factory {
-            fun create(
-                parentId: UUID,
-                startIndex: Int,
-                startSlideshow: Boolean,
-            ): ImageDetailsViewModel
+            fun create(slideshow: Destination.Slideshow): ImageDetailsViewModel
         }
 
         val player by lazy {
@@ -125,7 +120,7 @@ class ImageDetailsViewModel
                 val album =
                     api.userLibraryApi
                         .getItem(
-                            itemId = parentId,
+                            itemId = slideshowSettings.parentId,
                         ).content
                         .let { BaseItem(it, false) }
                 this@ImageDetailsViewModel.album.setValueOnMain(album)
@@ -136,11 +131,15 @@ class ImageDetailsViewModel
                         listOf(BaseItemKind.PHOTO)
                     }
                 val request =
-                    GetItemsRequest(
-                        parentId = parentId,
-                        includeItemTypes = includeItemTypes,
-                        fields = PhotoItemFields,
-                        recursive = true,
+                    slideshowSettings.filter.filter.applyTo(
+                        GetItemsRequest(
+                            parentId = slideshowSettings.parentId,
+                            includeItemTypes = includeItemTypes,
+                            fields = PhotoItemFields,
+                            recursive = true,
+                            sortBy = listOf(slideshowSettings.sortAndDirection.sort),
+                            sortOrder = listOf(slideshowSettings.sortAndDirection.direction),
+                        ),
                     )
                 serverRepository.currentUser.value?.let { user ->
                     val filter =
@@ -157,10 +156,10 @@ class ImageDetailsViewModel
                 }
                 val pager =
                     ApiRequestPager(api, request, GetItemsRequestHandler, viewModelScope)
-                        .init(startIndex)
+                        .init(slideshowSettings.index)
                 this@ImageDetailsViewModel._pager.setValueOnMain(pager)
-                updatePosition(startIndex)?.join()
-                if (startSlideshow) onMain { startSlideshow() }
+                updatePosition(slideshowSettings.index)?.join()
+                if (slideshowSettings.startSlideshow) onMain { startSlideshow() }
             }
         }
 

@@ -105,6 +105,7 @@ sealed class Destination(
         val parentId: UUID,
         val index: Int,
         val filter: CollectionFolderFilter,
+        val sortAndDirection: SortAndDirection,
         val recursive: Boolean,
         val startSlideshow: Boolean,
     ) : Destination(true)

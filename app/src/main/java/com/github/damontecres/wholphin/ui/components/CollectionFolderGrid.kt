@@ -660,13 +660,14 @@ fun CollectionFolderGrid(
                         onSaveViewOptions = { viewModel.saveViewOptions(it) },
                         onChangeBackdrop = viewModel::updateBackdrop,
                         playEnabled = playEnabled,
-                        onClickPlay = { _, item ->
+                        onClickPlay = { index, item ->
                             val destination =
                                 if (item.type == BaseItemKind.PHOTO_ALBUM) {
                                     Destination.Slideshow(
                                         parentId = item.id,
-                                        index = 0,
+                                        index = index,
                                         filter = CollectionFolderFilter(filter = filter),
+                                        sortAndDirection = sortAndDirection,
                                         recursive = true,
                                         startSlideshow = true,
                                     )
@@ -683,6 +684,7 @@ fun CollectionFolderGrid(
                                             parentId = it,
                                             index = 0,
                                             filter = CollectionFolderFilter(filter = filter),
+                                            sortAndDirection = sortAndDirection,
                                             recursive = true,
                                             startSlideshow = true,
                                         )

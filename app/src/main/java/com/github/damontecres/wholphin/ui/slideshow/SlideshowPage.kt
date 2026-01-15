@@ -83,12 +83,11 @@ private const val DEBUG = false
 @Composable
 fun SlideshowPage(
     slideshow: Destination.Slideshow,
-    startSlideshow: Boolean,
     modifier: Modifier = Modifier,
     viewModel: ImageDetailsViewModel =
         hiltViewModel<ImageDetailsViewModel, ImageDetailsViewModel.Factory>(
             creationCallback = {
-                it.create(slideshow.parentId, slideshow.index, slideshow.startSlideshow)
+                it.create(slideshow)
             },
         ),
 ) {
