@@ -93,14 +93,19 @@ fun CollectionFolderLiveTv(
         remember { viewModel.getRememberedTab(preferences, destination.itemId, 0) }
     val folders by viewModel.recordingFolders.observeAsState(listOf())
 
+    val tvGuideStr = stringResource(R.string.tv_guide)
+    val tvDvrStr = stringResource(R.string.tv_dvr_schedule)
     val tabs =
-        listOf(
-            TabId(stringResource(R.string.tv_guide), UUID.randomUUID()),
-            TabId(stringResource(R.string.tv_dvr_schedule), UUID.randomUUID()),
-        ) + folders
+        remember(folders) {
+            listOf(
+                TabId(tvGuideStr, UUID.randomUUID()),
+                TabId(tvDvrStr, UUID.randomUUID()),
+            ) + folders
+        }
 
     var selectedTabIndex by rememberSaveable { mutableIntStateOf(rememberedTabIndex) }
     val focusRequester = remember { FocusRequester() }
+    val tabFocusRequesters = remember(tabs.size) { List(tabs.size) { FocusRequester() } }
 
     val firstTabFocusRequester = remember { FocusRequester() }
     LaunchedEffect(Unit) { firstTabFocusRequester.tryRequestFocus() }
@@ -133,6 +138,7 @@ fun CollectionFolderLiveTv(
                         .focusRequester(firstTabFocusRequester),
                 tabs = tabs.map { it.title },
                 onClick = { selectedTabIndex = it },
+                focusRequesters = tabFocusRequesters,
             )
         }
         when (selectedTabIndex) {
@@ -150,10 +156,12 @@ fun CollectionFolderLiveTv(
 
             1 -> {
                 DvrSchedule(
-                    true,
-                    Modifier
-                        .fillMaxSize()
-                        .focusRequester(focusRequester),
+                    requestFocusAfterLoading = true,
+                    focusRequesterOnEmpty = tabFocusRequesters[1],
+                    modifier =
+                        Modifier
+                            .fillMaxSize()
+                            .focusRequester(focusRequester),
                 )
             }
 
@@ -176,6 +184,7 @@ fun CollectionFolderLiveTv(
                         },
                         playEnabled = false,
                         defaultViewOptions = ViewOptions(),
+                        focusRequesterOnEmpty = tabFocusRequesters.getOrNull(selectedTabIndex),
                     )
                 } else {
                     ErrorMessage("Invalid tab index $selectedTabIndex", null)

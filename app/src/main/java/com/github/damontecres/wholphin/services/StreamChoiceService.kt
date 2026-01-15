@@ -162,6 +162,40 @@ class StreamChoiceService
             }
         }
 
+        /**
+         * Resolves ONLY_FORCED to an actual subtitle track index.
+         * Returns the original index if not ONLY_FORCED or DISABLED.
+         */
+        suspend fun resolveSubtitleIndex(
+            source: MediaSourceInfo,
+            audioStreamIndex: Int?,
+            seriesId: UUID?,
+            subtitleIndex: Int,
+            prefs: UserPreferences,
+        ): Int? =
+            if (subtitleIndex != TrackIndex.ONLY_FORCED) {
+                subtitleIndex
+            } else {
+                val audioStream =
+                    source.mediaStreams?.firstOrNull {
+                        it.type == MediaStreamType.AUDIO && it.index == audioStreamIndex
+                    }
+                val itemPlayback =
+                    ItemPlayback(
+                        userId = serverRepository.currentUser.value!!.rowId,
+                        itemId = UUID.randomUUID(), // Not used for ONLY_FORCED resolution
+                        subtitleIndex = TrackIndex.ONLY_FORCED,
+                    )
+                chooseSubtitleStream(
+                    source = source,
+                    audioStream = audioStream,
+                    seriesId = seriesId,
+                    itemPlayback = itemPlayback,
+                    plc = null,
+                    prefs = prefs,
+                )?.index
+            }
+
         fun chooseSubtitleStream(
             audioStreamLang: String?,
             candidates: List<MediaStream>,
@@ -171,6 +205,14 @@ class StreamChoiceService
         ): MediaStream? {
             if (itemPlayback?.subtitleIndex == TrackIndex.DISABLED) {
                 return null
+            } else if (itemPlayback?.subtitleIndex == TrackIndex.ONLY_FORCED) {
+                // Client-side manual override: User selected "Only Forced" in player menu
+                val seriesLang =
+                    playbackLanguageChoice?.subtitleLanguage?.takeIf { it.isNotNullOrBlank() }
+                val subtitleLanguage =
+                    (seriesLang ?: userConfig?.subtitleLanguagePreference)
+                        ?.takeIf { it.isNotNullOrBlank() }
+                return findForcedTrack(candidates, subtitleLanguage, audioStreamLang)
             } else if (itemPlayback?.subtitleIndexEnabled == true) {
                 return candidates.firstOrNull { it.index == itemPlayback.subtitleIndex }
             } else {
@@ -260,6 +302,37 @@ class StreamChoiceService
                     }
                 }
             }
+        }
+
+        /** Returns true if the track is forced (via metadata flag or title patterns). */
+        private fun isForcedOrSigns(track: MediaStream): Boolean {
+            if (track.isForced) return true
+            val title = track.title ?: track.displayTitle ?: return false
+            return title.contains("forced", ignoreCase = true) ||
+                title.contains("signs", ignoreCase = true) ||
+                title.contains("songs", ignoreCase = true)
+        }
+
+        /** Finds a forced/signs track: subtitle pref -> audio -> unknown -> null. */
+        private fun findForcedTrack(
+            candidates: List<MediaStream>,
+            subtitleLanguage: String?,
+            audioLanguage: String?,
+        ): MediaStream? {
+            // 1. User's preferred subtitle language
+            if (subtitleLanguage != null) {
+                candidates
+                    .firstOrNull { it.language.equals(subtitleLanguage, true) && isForcedOrSigns(it) }
+                    ?.let { return it }
+            }
+            // 2. Audio language (for sign-subtitles if no preference match)
+            if (audioLanguage != null) {
+                candidates
+                    .firstOrNull { it.language.equals(audioLanguage, true) && isForcedOrSigns(it) }
+                    ?.let { return it }
+            }
+            // 3. Unknown language forced track
+            return candidates.firstOrNull { it.language.isUnknown && isForcedOrSigns(it) }
         }
     }
 

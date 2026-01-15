@@ -12,8 +12,8 @@ import com.github.damontecres.wholphin.data.ChosenStreams
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.components.EpisodeName
-import com.github.damontecres.wholphin.ui.components.EpisodeQuickDetails
 import com.github.damontecres.wholphin.ui.components.OverviewText
+import com.github.damontecres.wholphin.ui.components.QuickDetails
 import com.github.damontecres.wholphin.ui.components.VideoStreamDetails
 
 @Composable
@@ -33,11 +33,14 @@ fun FocusedEpisodeHeader(
     ) {
         EpisodeName(dto, modifier = Modifier)
 
-        EpisodeQuickDetails(dto)
+        ep?.ui?.quickDetails?.let {
+            QuickDetails(it, ep.timeRemainingOrRuntime)
+        }
 
         if (dto != null) {
             VideoStreamDetails(
                 chosenStreams = chosenStreams,
+                numberOfVersions = dto.mediaSourceCount ?: 0,
                 modifier = Modifier,
             )
         }

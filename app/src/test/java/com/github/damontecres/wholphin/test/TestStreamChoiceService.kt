@@ -613,6 +613,132 @@ class TestStreamChoiceServiceMultipleChoices(
     }
 }
 
+/**
+ * Tests for client-side "Only Forced" override (TrackIndex.ONLY_FORCED).
+ * This tests the findForcedTrack function with user subtitle language preference.
+ */
+@RunWith(Parameterized::class)
+class TestStreamChoiceServiceOnlyForcedClientOverride(
+    val input: TestInput,
+) {
+    @Test
+    fun test() {
+        runTest(input)
+    }
+
+    companion object {
+        @JvmStatic
+        @Parameterized.Parameters(name = "{index}: {0}")
+        fun data(): Collection<TestInput> =
+            listOf(
+                // Test 1: Prefer user's subtitle language preference for forced tracks
+                TestInput(
+                    expectedIndex = 1, // spa forced track (matches user pref)
+                    userSubtitleMode = null,
+                    userSubtitleLang = "spa",
+                    subtitles =
+                        listOf(
+                            subtitle(0, "eng", forced = true),
+                            subtitle(1, "spa", forced = true),
+                        ),
+                    streamAudioLang = "eng",
+                    itemPlayback = itemPlayback(subtitleIndex = TrackIndex.ONLY_FORCED),
+                ),
+                // Test 2: User subtitle preference matches Signs track via title (not forced flag)
+                TestInput(
+                    expectedIndex = 0, // eng signs track via title detection
+                    userSubtitleMode = null,
+                    userSubtitleLang = "eng",
+                    subtitles =
+                        listOf(
+                            subtitle(0, "eng", forced = false, title = "Signs & Songs"),
+                            subtitle(1, "spa", forced = true),
+                        ),
+                    streamAudioLang = "jpn", // different from subtitle pref
+                    itemPlayback = itemPlayback(subtitleIndex = TrackIndex.ONLY_FORCED),
+                ),
+                // Test 3: Falls back to audio-matching forced when no preference match
+                TestInput(
+                    expectedIndex = 0, // eng forced (audio match, step 2)
+                    userSubtitleMode = null,
+                    userSubtitleLang = "spa", // no spa forced exists
+                    subtitles =
+                        listOf(
+                            subtitle(0, "eng", forced = true), // matches audio
+                            subtitle(1, "und", forced = true),
+                        ),
+                    streamAudioLang = "eng",
+                    itemPlayback = itemPlayback(subtitleIndex = TrackIndex.ONLY_FORCED),
+                ),
+                // Test 4: Falls back to audio-matching signs when user pref has no match
+                TestInput(
+                    expectedIndex = 0, // eng signs (audio match fallback)
+                    userSubtitleMode = null,
+                    userSubtitleLang = "fre", // user prefers French, no French forced exists
+                    subtitles =
+                        listOf(
+                            subtitle(0, "eng", forced = false, title = "Signs & Songs"), // matches audio
+                            subtitle(1, "spa", forced = true),
+                        ),
+                    streamAudioLang = "eng",
+                    itemPlayback = itemPlayback(subtitleIndex = TrackIndex.ONLY_FORCED),
+                ),
+                // Test 5: Use audio language for signs/songs when NO subtitle preference
+                TestInput(
+                    expectedIndex = 0, // eng signs track matching audio
+                    userSubtitleMode = null,
+                    userSubtitleLang = null, // no preference
+                    subtitles =
+                        listOf(
+                            subtitle(0, "eng", forced = false, title = "Signs & Songs"),
+                            subtitle(1, "spa", forced = true),
+                        ),
+                    streamAudioLang = "eng",
+                    itemPlayback = itemPlayback(subtitleIndex = TrackIndex.ONLY_FORCED),
+                ),
+                // Test 6: Unknown language forced track with no preference
+                TestInput(
+                    expectedIndex = 0, // unknown forced track
+                    userSubtitleMode = null,
+                    userSubtitleLang = null,
+                    subtitles =
+                        listOf(
+                            subtitle(0, null, forced = true), // unknown/null language
+                            subtitle(1, "spa", forced = false),
+                        ),
+                    streamAudioLang = "eng",
+                    itemPlayback = itemPlayback(subtitleIndex = TrackIndex.ONLY_FORCED),
+                ),
+                // Test 7: Unknown language forced track when no audio match
+                TestInput(
+                    expectedIndex = 0, // unknown forced track (step 3)
+                    userSubtitleMode = null,
+                    userSubtitleLang = null,
+                    subtitles =
+                        listOf(
+                            subtitle(0, "und", forced = true), // unknown language forced
+                            subtitle(1, "spa", forced = false),
+                        ),
+                    streamAudioLang = "eng", // no eng tracks exist
+                    itemPlayback = itemPlayback(subtitleIndex = TrackIndex.ONLY_FORCED),
+                ),
+                // Test 8: No matching forced track returns null (not irrelevant language)
+                TestInput(
+                    expectedIndex = null, // no forced track matches - return null instead of wrong language
+                    userSubtitleMode = null,
+                    userSubtitleLang = "eng",
+                    subtitles =
+                        listOf(
+                            subtitle(0, "chi", forced = true), // Chinese forced - wrong language
+                            subtitle(1, "spa", forced = true), // Spanish forced - wrong language
+                        ),
+                    streamAudioLang = "eng", // audio is English, no English forced
+                    itemPlayback = itemPlayback(subtitleIndex = TrackIndex.ONLY_FORCED),
+                ),
+            )
+    }
+}
+
 data class TestInput(
     val expectedIndex: Int?,
     val userSubtitleMode: SubtitlePlaybackMode?,
@@ -674,6 +800,7 @@ fun subtitle(
     lang: String?,
     default: Boolean = false,
     forced: Boolean = false,
+    title: String? = null,
 ): MediaStream =
     MediaStream(
         type = MediaStreamType.SUBTITLE,
@@ -686,6 +813,7 @@ fun subtitle(
         isExternal = false,
         isTextSubtitleStream = true,
         supportsExternalStream = true,
+        title = title,
     )
 
 private fun itemPlayback(

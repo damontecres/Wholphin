@@ -414,6 +414,17 @@ sealed interface AppPreference<Pref, T> {
                 summaryOff = R.string.disabled,
             )
 
+        val DirectPlayDoviProfile7 =
+            AppSwitchPreference<AppPreferences>(
+                title = R.string.force_dovi_profile_7,
+                defaultValue = false,
+                getter = { it.playbackPreferences.overrides.directPlayDolbyVisionEL },
+                setter = { prefs, value ->
+                    prefs.updatePlaybackOverrides { directPlayDolbyVisionEL = value }
+                },
+                summary = R.string.force_dovi_profile_7_summary,
+            )
+
         val RememberSelectedTab =
             AppSwitchPreference<AppPreferences>(
                 title = R.string.remember_selected_tab,
@@ -860,6 +871,13 @@ sealed interface AppPreference<Pref, T> {
                 summaryOn = R.string.enabled,
                 summaryOff = R.string.disabled,
             )
+
+        val SeerrIntegration =
+            AppClickablePreference<AppPreferences>(
+                title = R.string.seerr_integration,
+                getter = { },
+                setter = { prefs, _ -> prefs },
+            )
     }
 }
 
@@ -921,6 +939,7 @@ val basicPreferences =
             title = R.string.more,
             preferences =
                 listOf(
+                    AppPreference.SeerrIntegration,
                     AppPreference.AdvancedSettings,
                 ),
         ),
@@ -984,6 +1003,7 @@ val advancedPreferences =
                                 AppPreference.Ac3Supported,
                                 AppPreference.DirectPlayAss,
                                 AppPreference.DirectPlayPgs,
+                                AppPreference.DirectPlayDoviProfile7,
                             ),
                         ),
                         ConditionalPreferences(

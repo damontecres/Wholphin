@@ -80,6 +80,7 @@ import com.github.damontecres.wholphin.preferences.AppThemeColors
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.NavigationManager
+import com.github.damontecres.wholphin.services.SeerrServerRepository
 import com.github.damontecres.wholphin.services.SetupDestination
 import com.github.damontecres.wholphin.services.SetupNavigationManager
 import com.github.damontecres.wholphin.ui.FontAwesome
@@ -97,6 +98,8 @@ import com.github.damontecres.wholphin.util.ExceptionHandler
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.model.api.CollectionType
@@ -113,17 +116,24 @@ class NavDrawerViewModel
         val navigationManager: NavigationManager,
         val setupNavigationManager: SetupNavigationManager,
         val backdropService: BackdropService,
+        private val seerrServerRepository: SeerrServerRepository,
     ) : ViewModel() {
-        private var all: List<NavDrawerItem>? = null
+        //        private var all: List<NavDrawerItem>? = null
         val moreLibraries = MutableLiveData<List<NavDrawerItem>>(null)
         val libraries = MutableLiveData<List<NavDrawerItem>>(listOf())
         val selectedIndex = MutableLiveData(-1)
         val showMore = MutableLiveData(false)
 
+        init {
+            seerrServerRepository.active
+                .onEach {
+                    init()
+                }.launchIn(viewModelScope)
+        }
+
         fun init() {
             viewModelScope.launchIO {
-                val all = all ?: navDrawerItemRepository.getNavDrawerItems()
-                this@NavDrawerViewModel.all = all
+                val all = navDrawerItemRepository.getNavDrawerItems()
                 val hiddenItems = navDrawerItemRepository.getHiddenNavDrawerItems()
 
                 withContext(Dispatchers.Main) {
@@ -136,6 +146,8 @@ class NavDrawerViewModel
                             it.destination
                         } else if (it is NavDrawerItem.Favorites) {
                             Destination.Favorites
+                        } else if (it is NavDrawerItem.Discover) {
+                            Destination.Discover
                         } else if (it is CustomNavDrawerItem) {
                             it.destination
                         } else {
@@ -160,7 +172,7 @@ class NavDrawerViewModel
                                     null
                                 }
                             }
-//                        Timber.v("Found $index => $key")
+                        Timber.v("Found $index => $key")
                         if (index != null) {
                             selectedIndex.setValueOnMain(index)
                             break
@@ -196,6 +208,13 @@ sealed interface NavDrawerItem {
             get() = "a_more"
 
         override fun name(context: Context): String = context.getString(R.string.more)
+    }
+
+    object Discover : NavDrawerItem {
+        override val id: String
+            get() = "a_discover"
+
+        override fun name(context: Context): String = context.getString(R.string.discover)
     }
 }
 
@@ -302,6 +321,13 @@ fun NavDrawer(
 
             NavDrawerItem.More -> {
                 setShowMore(!showMore)
+            }
+
+            NavDrawerItem.Discover -> {
+                viewModel.setIndex(index)
+                viewModel.navigationManager.navigateToFromDrawer(
+                    Destination.Discover,
+                )
             }
 
             is ServerNavDrawerItem -> {
@@ -646,6 +672,10 @@ fun NavigationDrawerScope.NavItem(
 
             NavDrawerItem.More -> {
                 R.string.fa_ellipsis
+            }
+
+            NavDrawerItem.Discover -> {
+                R.string.fa_magnifying_glass_plus
             }
 
             is ServerNavDrawerItem -> {

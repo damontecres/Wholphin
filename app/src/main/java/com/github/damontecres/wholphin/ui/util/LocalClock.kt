@@ -12,7 +12,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import java.time.LocalDateTime
 
-val LocalClock = compositionLocalOf<Clock> { throw IllegalStateException() }
+val LocalClock = compositionLocalOf<Clock> { Clock() }
 
 /**
  * Represents the current time
@@ -21,21 +21,16 @@ data class Clock(
     /**
      * The current [LocalDateTime]
      */
-    val now: MutableState<LocalDateTime>,
+    val now: MutableState<LocalDateTime> = mutableStateOf(LocalDateTime.now()),
     /**
      * The current time formatted as a string with [TimeFormatter]
      */
-    val timeString: MutableState<String>,
+    val timeString: MutableState<String> = mutableStateOf(TimeFormatter.format(now.value)),
 )
 
 @Composable
 fun ProvideLocalClock(content: @Composable () -> Unit) {
-    val clock =
-        remember {
-            LocalDateTime
-                .now()
-                .let { Clock(mutableStateOf(it), mutableStateOf(TimeFormatter.format(it))) }
-        }
+    val clock = remember { Clock() }
     LaunchedEffect(Unit) {
         while (isActive) {
             val now = LocalDateTime.now()

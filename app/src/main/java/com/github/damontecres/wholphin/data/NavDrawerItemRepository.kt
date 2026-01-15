@@ -6,6 +6,7 @@ import com.github.damontecres.wholphin.data.model.NavDrawerPinnedItem
 import com.github.damontecres.wholphin.data.model.NavPinType
 import com.github.damontecres.wholphin.services.WholphinPluginService
 import com.github.damontecres.wholphin.services.NavDrawerItemType
+import com.github.damontecres.wholphin.services.SeerrServerRepository
 import com.github.damontecres.wholphin.ui.nav.CustomNavDrawerItem
 import com.github.damontecres.wholphin.ui.nav.CustomNavDrawerItemType
 import com.github.damontecres.wholphin.ui.nav.Destination
@@ -13,6 +14,7 @@ import com.github.damontecres.wholphin.ui.nav.NavDrawerItem
 import com.github.damontecres.wholphin.ui.nav.ServerNavDrawerItem
 import com.github.damontecres.wholphin.util.supportedCollectionTypes
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.flow.first
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.itemsApi
 import org.jellyfin.sdk.api.client.extensions.liveTvApi
@@ -34,6 +36,7 @@ class NavDrawerItemRepository
         private val serverRepository: ServerRepository,
         private val serverPreferencesDao: ServerPreferencesDao,
         private val pluginService: WholphinPluginService,
+        private val seerrServerRepository: SeerrServerRepository,
     ) {
         suspend fun getNavDrawerItems(): List<NavDrawerItem> {
             val user = serverRepository.currentUser.value
@@ -52,7 +55,12 @@ class NavDrawerItemRepository
                 }
             }
             
-            val builtins = listOf(NavDrawerItem.Favorites)
+            val builtins =
+                if (seerrServerRepository.active.first()) {
+                    listOf(NavDrawerItem.Favorites, NavDrawerItem.Discover)
+                } else {
+                    listOf(NavDrawerItem.Favorites)
+                }
             
             // If plugin config is available and not empty, use it to control middle section
             return if (pluginConfig != null && pluginConfig.items.isNotEmpty()) {
