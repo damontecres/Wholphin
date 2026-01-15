@@ -53,6 +53,7 @@ fun CollectionFolderCollection(
         )
     var selectedTabIndex by rememberSaveable { mutableIntStateOf(0) }
     val focusRequester = remember { FocusRequester() }
+    val tabFocusRequesters = remember { List(tabs.size) { FocusRequester() } }
 
     val firstTabFocusRequester = remember { FocusRequester() }
     LaunchedEffect(Unit) { firstTabFocusRequester.tryRequestFocus() }
@@ -79,6 +80,7 @@ fun CollectionFolderCollection(
                         .padding(start = 32.dp, top = 16.dp, bottom = 16.dp)
                         .focusRequester(firstTabFocusRequester),
                 tabs = tabs,
+                focusRequesters = tabFocusRequesters,
                 onClick = { selectedTabIndex = it },
             )
         }
@@ -88,7 +90,7 @@ fun CollectionFolderCollection(
                 RecommendedCollection(
                     parentId = collectionItem.id,
                     preferences = preferences,
-                    onFocusPosition = { position ->
+                    onFocusPosition = { _ ->
                         // Handle focus position for backdrop updates
                     },
                     modifier =
@@ -130,6 +132,7 @@ fun CollectionFolderCollection(
             2 -> {
                 GenreCardGrid(
                     itemId = collectionItem.id,
+                    includeItemTypes = listOf(BaseItemKind.MOVIE, BaseItemKind.SERIES),
                     modifier =
                         Modifier
                             .padding(start = 16.dp)
