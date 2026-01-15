@@ -370,4 +370,22 @@
     <string name="request_4k">請求 4K 版本</string>
     <string name="only_forced_subtitles">僅強制字幕</string>
     <string name="clear_track_choices">清除音軌/字幕選擇</string>
+    <string name="voice_search">語音搜尋</string>
+    <string name="voice_starting">開始</string>
+    <string name="voice_search_prompt">請說出搜尋內容</string>
+    <string name="processing">處理中</string>
+    <string name="press_back_to_cancel">按返回鍵取消</string>
+    <string name="voice_error_audio">語音錄製錯誤</string>
+    <string name="voice_error_client">語音辨識錯誤</string>
+    <string name="voice_error_permissions">請開啟麥克風權限</string>
+    <string name="voice_error_network">網路錯誤</string>
+    <string name="voice_error_network_timeout">網路逾時</string>
+    <string name="voice_error_no_match">未辨識到語音</string>
+    <string name="voice_error_busy">語音辨識忙碌中</string>
+    <string name="voice_error_server">伺服器錯誤</string>
+    <string name="voice_error_speech_timeout">未偵測到語音</string>
+    <string name="voice_error_unknown">未知錯誤</string>
+    <string name="voice_error_start_failed">無法啟動語音辨識</string>
+    <string name="voice_error_timeout">語音辨識逾時</string>
+    <string name="retry">重試</string>
 </resources>
