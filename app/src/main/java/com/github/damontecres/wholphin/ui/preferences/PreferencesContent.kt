@@ -92,12 +92,16 @@ fun PreferencesContent(
     val navDrawerPins by viewModel.navDrawerPins.observeAsState(mapOf())
     var cacheUsage by remember { mutableStateOf(CacheUsage(0, 0, 0)) }
     val seerrIntegrationEnabled by viewModel.seerrEnabled.collectAsState(false)
+    val pluginSeerrUrl by viewModel.pluginSeerrUrl.collectAsState()
     var seerrDialogMode by remember { mutableStateOf<SeerrDialogMode>(SeerrDialogMode.None) }
 
     LaunchedEffect(Unit) {
         viewModel.preferenceDataStore.data.collect {
             preferences = it
         }
+    }
+    LaunchedEffect(Unit) {
+        viewModel.fetchPluginSeerrUrl()
     }
     var updateCache by remember { mutableStateOf(false) }
     LaunchedEffect(updateCache) {
@@ -398,6 +402,7 @@ fun PreferencesContent(
                                             seerrDialogMode = SeerrDialogMode.Remove
                                         } else {
                                             seerrVm.resetStatus()
+                                            seerrVm.setInitialUrl(pluginSeerrUrl)
                                             seerrDialogMode = SeerrDialogMode.Add
                                         }
                                     },
@@ -506,6 +511,7 @@ fun PreferencesContent(
                         }
                     },
                     onDismissRequest = { seerrDialogMode = SeerrDialogMode.None },
+                    initialUrl = seerrVm.initialSeerrUrl,
                 )
             }
 

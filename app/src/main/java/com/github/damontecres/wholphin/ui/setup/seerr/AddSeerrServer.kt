@@ -42,6 +42,7 @@ fun AddSeerrServerApiKey(
     onSubmit: (url: String, apiKey: String) -> Unit,
     status: LoadingState,
     modifier: Modifier = Modifier,
+    initialUrl: String? = null,
 ) {
     var error by remember(status) { mutableStateOf((status as? LoadingState.Error)?.localizedMessage) }
     Column(
@@ -52,7 +53,7 @@ fun AddSeerrServerApiKey(
                 .padding(16.dp)
                 .wrapContentSize(),
     ) {
-        var url by remember { mutableStateOf("") }
+        var url by remember { mutableStateOf(initialUrl ?: "") }
         var apiKey by remember { mutableStateOf("") }
 
         val focusRequester = remember { FocusRequester() }
@@ -147,6 +148,7 @@ fun AddSeerrServerUsername(
     username: String,
     status: LoadingState,
     modifier: Modifier = Modifier,
+    initialUrl: String? = null,
 ) {
     var error by remember(status) { mutableStateOf((status as? LoadingState.Error)?.localizedMessage) }
     Column(
@@ -157,7 +159,7 @@ fun AddSeerrServerUsername(
                 .padding(16.dp)
                 .wrapContentSize(),
     ) {
-        var url by remember { mutableStateOf("") }
+        var url by remember { mutableStateOf(initialUrl ?: "") }
         var username by remember { mutableStateOf(username) }
         var password by remember { mutableStateOf("") }
 
