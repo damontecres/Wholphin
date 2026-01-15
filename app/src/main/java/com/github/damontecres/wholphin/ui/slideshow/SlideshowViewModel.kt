@@ -45,7 +45,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.libraryApi
-import org.jellyfin.sdk.api.client.extensions.userLibraryApi
 import org.jellyfin.sdk.api.client.extensions.videosApi
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.ImageType
@@ -56,8 +55,8 @@ import timber.log.Timber
 import java.util.UUID
 import kotlin.properties.Delegates
 
-@HiltViewModel(assistedFactory = ImageDetailsViewModel.Factory::class)
-class ImageDetailsViewModel
+@HiltViewModel(assistedFactory = SlideshowViewModel.Factory::class)
+class SlideshowViewModel
     @AssistedInject
     constructor(
         @param:ApplicationContext private val context: Context,
@@ -72,7 +71,7 @@ class ImageDetailsViewModel
         Player.Listener {
         @AssistedFactory
         interface Factory {
-            fun create(slideshow: Destination.Slideshow): ImageDetailsViewModel
+            fun create(slideshow: Destination.Slideshow): SlideshowViewModel
         }
 
         val player by lazy {
@@ -94,7 +93,7 @@ class ImageDetailsViewModel
 
         var slideshowDelay by Delegates.notNull<Long>()
 
-        private val album = MutableLiveData<BaseItem>()
+        //        private val album = MutableLiveData<BaseItem>()
         private val _pager = MutableLiveData<ApiRequestPager<GetItemsRequest>>()
         val pager: LiveData<List<BaseItem?>> = _pager.map { it }
         val position = MutableLiveData(0)
@@ -110,20 +109,20 @@ class ImageDetailsViewModel
 
         init {
             addCloseable {
-                player.removeListener(this@ImageDetailsViewModel)
+                player.removeListener(this@SlideshowViewModel)
                 player.release()
             }
-            player.addListener(this@ImageDetailsViewModel)
+            player.addListener(this@SlideshowViewModel)
             viewModelScope.launchIO {
                 val photoPrefs = userPreferencesService.getCurrent().appPreferences.photoPreferences
                 slideshowDelay = photoPrefs.slideshowDuration
-                val album =
-                    api.userLibraryApi
-                        .getItem(
-                            itemId = slideshowSettings.parentId,
-                        ).content
-                        .let { BaseItem(it, false) }
-                this@ImageDetailsViewModel.album.setValueOnMain(album)
+//                val album =
+//                    api.userLibraryApi
+//                        .getItem(
+//                            itemId = slideshowSettings.parentId,
+//                        ).content
+//                        .let { BaseItem(it, false) }
+//                this@SlideshowViewModel.album.setValueOnMain(album)
                 val includeItemTypes =
                     if (photoPrefs.slideshowPlayVideos) {
                         listOf(BaseItemKind.PHOTO, BaseItemKind.VIDEO)
@@ -146,18 +145,18 @@ class ImageDetailsViewModel
                         playbackEffectDao
                             .getPlaybackEffect(
                                 user.rowId,
-                                album.id,
+                                slideshowSettings.parentId,
                                 BaseItemKind.PHOTO_ALBUM,
                             )?.videoFilter
                     if (filter != null) {
-                        Timber.v("Got filter for album %s", album.id)
+                        Timber.v("Got filter for album %s", slideshowSettings.parentId)
                         albumImageFilter = filter
                     }
                 }
                 val pager =
                     ApiRequestPager(api, request, GetItemsRequestHandler, viewModelScope)
                         .init(slideshowSettings.index)
-                this@ImageDetailsViewModel._pager.setValueOnMain(pager)
+                this@SlideshowViewModel._pager.setValueOnMain(pager)
                 updatePosition(slideshowSettings.index)?.join()
                 if (slideshowSettings.startSlideshow) onMain { startSlideshow() }
             }
@@ -191,7 +190,7 @@ class ImageDetailsViewModel
                         val image = pager.getBlocking(position)
                         Timber.v("Got image for $position: ${image != null}")
                         if (image != null) {
-                            this@ImageDetailsViewModel.position.setValueOnMain(position)
+                            this@SlideshowViewModel.position.setValueOnMain(position)
 
                             val url =
                                 if (image.data.mediaType == MediaType.VIDEO) {
@@ -377,29 +376,27 @@ class ImageDetailsViewModel
         }
 
         fun saveGalleryFilter() {
-            album.value?.let { album ->
-                viewModelScope.launchIO(ExceptionHandler(autoToast = true)) {
-                    val vf = _imageFilter.value
-                    if (vf != null) {
-                        albumImageFilter = vf
-                        serverRepository.currentUser.value?.let { user ->
-                            playbackEffectDao
-                                .insert(
-                                    PlaybackEffect(
-                                        user.rowId,
-                                        album.id,
-                                        BaseItemKind.PHOTO_ALBUM,
-                                        vf,
-                                    ),
-                                )
-                            Timber.d("Saved VideoFilter for album %s", album.id)
-                            withContext(Dispatchers.Main) {
-                                showToast(
-                                    context,
-                                    "Saved",
-                                    Toast.LENGTH_SHORT,
-                                )
-                            }
+            viewModelScope.launchIO(ExceptionHandler(autoToast = true)) {
+                val vf = _imageFilter.value
+                if (vf != null) {
+                    albumImageFilter = vf
+                    serverRepository.currentUser.value?.let { user ->
+                        playbackEffectDao
+                            .insert(
+                                PlaybackEffect(
+                                    user.rowId,
+                                    slideshowSettings.parentId,
+                                    BaseItemKind.PHOTO_ALBUM,
+                                    vf,
+                                ),
+                            )
+                        Timber.d("Saved VideoFilter for album %s", slideshowSettings.parentId)
+                        withContext(Dispatchers.Main) {
+                            showToast(
+                                context,
+                                "Saved",
+                                Toast.LENGTH_SHORT,
+                            )
                         }
                     }
                 }
