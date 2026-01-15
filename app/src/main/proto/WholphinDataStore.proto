@@ -158,6 +158,7 @@ message AdvancedPreferences {
 
 message PhotoPreferences{
   int64 slideshow_duration = 1;
+  bool slideshow_play_videos = 2;
 }
 
 message AppPreferences {

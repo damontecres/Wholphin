@@ -128,6 +128,7 @@ class AppPreferencesSerializer
                             .newBuilder()
                             .apply {
                                 slideshowDuration = AppPreference.SlideshowDuration.defaultValue
+                                slideshowPlayVideos = AppPreference.SlideshowPlayVideos.defaultValue
                             }.build()
                 }.build()
 

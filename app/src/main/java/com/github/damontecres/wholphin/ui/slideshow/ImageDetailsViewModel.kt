@@ -120,10 +120,8 @@ class ImageDetailsViewModel
             }
             player.addListener(this@ImageDetailsViewModel)
             viewModelScope.launchIO {
-                slideshowDelay =
-                    userPreferencesService
-                        .getCurrent()
-                        .appPreferences.photoPreferences.slideshowDuration
+                val photoPrefs = userPreferencesService.getCurrent().appPreferences.photoPreferences
+                slideshowDelay = photoPrefs.slideshowDuration
                 val album =
                     api.userLibraryApi
                         .getItem(
@@ -131,10 +129,16 @@ class ImageDetailsViewModel
                         ).content
                         .let { BaseItem(it, false) }
                 this@ImageDetailsViewModel.album.setValueOnMain(album)
+                val includeItemTypes =
+                    if (photoPrefs.slideshowPlayVideos) {
+                        listOf(BaseItemKind.PHOTO, BaseItemKind.VIDEO)
+                    } else {
+                        listOf(BaseItemKind.PHOTO)
+                    }
                 val request =
                     GetItemsRequest(
                         parentId = parentId,
-                        includeItemTypes = listOf(BaseItemKind.PHOTO, BaseItemKind.VIDEO),
+                        includeItemTypes = includeItemTypes,
                         fields = PhotoItemFields,
                         recursive = true,
                     )
@@ -330,7 +334,8 @@ class ImageDetailsViewModel
                         delay(milliseconds)
 //                        Timber.v("pulseSlideshow after delay")
                         if (slideshowActive.first()) {
-                            nextImage()
+                            // Next image or loop to beginning
+                            if (!nextImage()) updatePosition(0)
                         }
                     }.apply {
                         invokeOnCompletion { if (it !is CancellationException) pulseSlideshow() }

@@ -906,6 +906,18 @@ sealed interface AppPreference<Pref, T> {
                     }
                 },
             )
+
+        val SlideshowPlayVideos =
+            AppSwitchPreference<AppPreferences>(
+                title = R.string.play_videos_during_slideshow,
+                defaultValue = false,
+                getter = { it.photoPreferences.slideshowPlayVideos },
+                setter = { prefs, value ->
+                    prefs.updatePhotoPreferences { slideshowPlayVideos = value }
+                },
+                summaryOn = R.string.enabled,
+                summaryOff = R.string.disabled,
+            )
     }
 }
 
@@ -988,6 +1000,7 @@ val advancedPreferences =
                         AppPreference.ControllerTimeout,
                         AppPreference.BackdropStylePref,
                         AppPreference.SlideshowDuration,
+                        AppPreference.SlideshowPlayVideos,
                     ),
             ),
         )
