@@ -10,7 +10,6 @@ import com.github.damontecres.wholphin.data.JellyfinServerDao
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.JellyfinServer
 import com.github.damontecres.wholphin.services.LoginBackgroundResult
-import com.github.damontecres.wholphin.services.PluginFeature
 import com.github.damontecres.wholphin.services.SetupDestination
 import com.github.damontecres.wholphin.services.SetupNavigationManager
 import com.github.damontecres.wholphin.services.WholphinPluginService
@@ -286,17 +285,13 @@ class SwitchServerViewModel
         }
 
         private suspend fun checkPluginBackground(server: JellyfinServer) {
-            // First check if plugin is available and supports login background
-            val capabilities = wholphinPluginService.getPluginCapabilities(server.url)
-            if (capabilities?.hasFeature(PluginFeature.LOGIN_BACKGROUND) == true) {
-                val backgroundResult = wholphinPluginService.getLoginBackground(server.url)
-                if (backgroundResult is LoginBackgroundResult.Available) {
-                    withContext(Dispatchers.Main) {
-                        serverLoginBackground.value =
-                            serverLoginBackground.value!!.toMutableMap().apply {
-                                put(server.id, backgroundResult)
-                            }
-                    }
+            val backgroundResult = wholphinPluginService.getLoginBackground(server.url)
+            if (backgroundResult is LoginBackgroundResult.Available) {
+                withContext(Dispatchers.Main) {
+                    serverLoginBackground.value =
+                        serverLoginBackground.value!!.toMutableMap().apply {
+                            put(server.id, backgroundResult)
+                        }
                 }
             }
         }

@@ -33,7 +33,6 @@ class WholphinPluginService
     ) {
         companion object {
             private const val PLUGIN_BASE_PATH = "/wholphin"
-            private const val CAPABILITIES_ENDPOINT = "$PLUGIN_BASE_PATH/capabilities"
             private const val LOGIN_BACKGROUND_ENDPOINT = "$PLUGIN_BASE_PATH/loginbackground"
             private const val HOME_ENDPOINT = "$PLUGIN_BASE_PATH/home"
             private const val SETTINGS_ENDPOINT = "$PLUGIN_BASE_PATH/settings"
@@ -44,54 +43,6 @@ class WholphinPluginService
             Json {
                 ignoreUnknownKeys = true
                 isLenient = true
-            }
-
-        /**
-         * Check which features/capabilities the Wholphin plugin supports
-         * 
-         * This should be called first to determine what endpoints are available.
-         * The plugin should implement a /wholphin/capabilities endpoint that returns
-         * a JSON object describing supported features.
-         *
-         * @param serverUrl The base URL of the Jellyfin server
-         * @return PluginCapabilities object describing available features, or null if plugin is not available
-         */
-        suspend fun getPluginCapabilities(serverUrl: String): PluginCapabilities? =
-            try {
-                val normalizedUrl = serverUrl.trimEnd('/')
-                val endpoint = "$normalizedUrl$CAPABILITIES_ENDPOINT"
-
-                val request =
-                    Request
-                        .Builder()
-                        .url(endpoint)
-                        .get()
-                        .build()
-
-                val response = standardOkHttpClient.newCall(request).execute()
-
-                if (response.isSuccessful) {
-                    val body = response.body?.string()
-                    if (body != null) {
-                        try {
-                            val capabilities = json.decodeFromString<PluginCapabilities>(body)
-                            Timber.i("Wholphin plugin capabilities on $serverUrl: $capabilities")
-                            capabilities
-                        } catch (e: Exception) {
-                            Timber.w(e, "Failed to parse plugin capabilities response")
-                            null
-                        }
-                    } else {
-                        Timber.w("Plugin capabilities endpoint returned empty body")
-                        null
-                    }
-                } else {
-                    Timber.v("Wholphin plugin capabilities not available on $serverUrl (status: ${response.code})")
-                    null
-                }
-            } catch (e: Exception) {
-                Timber.v(e, "Error checking for Wholphin plugin capabilities on $serverUrl")
-                null
             }
 
         /**
@@ -342,40 +293,6 @@ class WholphinPluginService
                 null
             }
     }
-
-@Serializable
-data class PluginCapabilities(
-    val version: String = "1.0.0",
-    val features: Features = Features(),
-) {
-    @Serializable
-    data class Features(
-        val loginBackground: Boolean = false,
-        val homeConfiguration: Boolean = false,
-        // Add more features here as the plugin grows
-        // val customThemes: Boolean = false,
-        // val enhancedMetadata: Boolean = false,
-        // val socialFeatures: Boolean = false,
-    )
-
-    /**
-     * Check if a specific feature is supported
-     */
-    fun hasFeature(feature: PluginFeature): Boolean =
-        when (feature) {
-            PluginFeature.LOGIN_BACKGROUND -> features.loginBackground
-            PluginFeature.HOME_CONFIGURATION -> features.homeConfiguration
-        }
-}
-
-/**
- * Enum of all possible plugin features for type-safe feature checking
- */
-enum class PluginFeature {
-    LOGIN_BACKGROUND,
-    HOME_CONFIGURATION,
-    // Add more features here as needed
-}
 
 @Serializable
 data class LoginBackgroundData(

@@ -10,7 +10,6 @@ import com.github.damontecres.wholphin.data.model.JellyfinUser
 import com.github.damontecres.wholphin.services.ImageUrlService
 import com.github.damontecres.wholphin.services.LoginBackgroundResult
 import com.github.damontecres.wholphin.services.NavigationManager
-import com.github.damontecres.wholphin.services.PluginFeature
 import com.github.damontecres.wholphin.services.SetupDestination
 import com.github.damontecres.wholphin.services.SetupNavigationManager
 import com.github.damontecres.wholphin.services.WholphinPluginService
@@ -96,13 +95,10 @@ class SwitchUserViewModel
                 }
                 
                 // Check for Wholphin plugin login background
-                val capabilities = wholphinPluginService.getPluginCapabilities(server.url)
-                if (capabilities?.hasFeature(PluginFeature.LOGIN_BACKGROUND) == true) {
-                    val backgroundResult = wholphinPluginService.getLoginBackground(server.url)
-                    if (backgroundResult is LoginBackgroundResult.Available) {
-                        withContext(Dispatchers.Main) {
-                            loginBackground.value = backgroundResult
-                        }
+                val backgroundResult = wholphinPluginService.getLoginBackground(server.url)
+                if (backgroundResult is LoginBackgroundResult.Available) {
+                    withContext(Dispatchers.Main) {
+                        loginBackground.value = backgroundResult
                     }
                 }
             }
