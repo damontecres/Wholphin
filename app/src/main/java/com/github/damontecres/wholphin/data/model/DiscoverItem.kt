@@ -91,7 +91,7 @@ data class DiscoverItem(
     override val playable: Boolean = false
     override val sortName: String get() = title ?: ""
 
-    val backDropUrl: String? get() = backdropPath?.let { "https://image.tmdb.org/t/p/w1920_and_h800_multi_faces$it" }
+    val backDropUrl: String? get() = backdropPath?.let { "https://image.tmdb.org/t/p/w1920_and_h1080_multi_faces$it" }
     val posterUrl: String? get() = posterPath?.let { "https://image.tmdb.org/t/p/w500$it" }
 
     val destination: Destination
