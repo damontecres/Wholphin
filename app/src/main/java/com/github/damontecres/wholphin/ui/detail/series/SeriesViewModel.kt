@@ -13,7 +13,6 @@ import com.github.damontecres.wholphin.data.model.DiscoverItem
 import com.github.damontecres.wholphin.data.model.ItemPlayback
 import com.github.damontecres.wholphin.data.model.Person
 import com.github.damontecres.wholphin.data.model.Trailer
-import com.github.damontecres.wholphin.preferences.ThemeSongVolume
 import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.ExtrasService
 import com.github.damontecres.wholphin.services.FavoriteWatchManager
@@ -222,15 +221,16 @@ class SeriesViewModel
             }
         }
 
-        /**
-         * If the series has a theme song & app settings allow, play it
-         */
-        fun maybePlayThemeSong(
-            seriesId: UUID,
-            playThemeSongs: ThemeSongVolume,
-        ) {
+        fun onResumePage() {
             viewModelScope.launchIO {
-                themeSongPlayer.playThemeFor(seriesId, playThemeSongs)
+                item.value?.let {
+                    backdropService.submit(it)
+                    val playThemeSongs =
+                        userPreferencesService
+                            .getCurrent()
+                            .appPreferences.interfacePreferences.playThemeSongs
+                    themeSongPlayer.playThemeFor(seriesId, playThemeSongs)
+                }
             }
         }
 
