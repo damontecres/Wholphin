@@ -140,42 +140,56 @@ class HomeViewModel
             
             refreshState.setValueOnMain(LoadingState.Success)
             
-            // Load each section based on its type
-            val loadedRows = config.sections.map { section ->
-                try {
-                    val items = when (section.type) {
-                        com.github.damontecres.wholphin.services.HomeSectionType.RESUME -> 
-                            loadResumeSection(userId, section.limit)
+            // Load each section in parallel and update individually
+            config.sections.forEachIndexed { index, section ->
+                viewModelScope.launch(Dispatchers.IO) {
+                    try {
+                        val items = when (section.type) {
+                            com.github.damontecres.wholphin.services.HomeSectionType.RESUME -> 
+                                loadResumeSection(userId, section.limit)
+                            
+                            com.github.damontecres.wholphin.services.HomeSectionType.NEXT_UP -> 
+                                loadNextUpSection(userId, section)
+                            
+                            com.github.damontecres.wholphin.services.HomeSectionType.LATEST -> 
+                                loadLatestSection(userId, section)
+                            
+                            com.github.damontecres.wholphin.services.HomeSectionType.ITEMS -> 
+                                loadItemsSection(userId, section)
+                            
+                            com.github.damontecres.wholphin.services.HomeSectionType.CUSTOM -> 
+                                loadCustomSection(section)
+                        }
                         
-                        com.github.damontecres.wholphin.services.HomeSectionType.NEXT_UP -> 
-                            loadNextUpSection(userId, section)
+                        val newRow = if (items.isNotEmpty()) {
+                            HomeRowLoadingState.Success(section.title, items)
+                        } else {
+                            // Keep empty sections visible in UI
+                            HomeRowLoadingState.Success(section.title, emptyList())
+                        }
                         
-                        com.github.damontecres.wholphin.services.HomeSectionType.LATEST -> 
-                            loadLatestSection(userId, section)
+                        // Update this specific row in the UI as soon as it's loaded
+                        withContext(Dispatchers.Main) {
+                            latestRows.value = latestRows.value?.toMutableList()?.apply {
+                                set(index, newRow)
+                            }
+                        }
+                    } catch (e: Exception) {
+                        Timber.e(e, "Error loading section ${section.id} (${section.type})")
+                        val errorRow = HomeRowLoadingState.Error(
+                            title = section.title,
+                            exception = e
+                        )
                         
-                        com.github.damontecres.wholphin.services.HomeSectionType.ITEMS -> 
-                            loadItemsSection(userId, section)
-                        
-                        com.github.damontecres.wholphin.services.HomeSectionType.CUSTOM -> 
-                            loadCustomSection(section)
+                        // Update this specific row with error in the UI
+                        withContext(Dispatchers.Main) {
+                            latestRows.value = latestRows.value?.toMutableList()?.apply {
+                                set(index, errorRow)
+                            }
+                        }
                     }
-                    
-                    if (items.isNotEmpty()) {
-                        HomeRowLoadingState.Success(section.title, items)
-                    } else {
-                        null // Skip empty sections
-                    }
-                } catch (e: Exception) {
-                    Timber.e(e, "Error loading section ${section.id} (${section.type})")
-                    HomeRowLoadingState.Error(
-                        title = section.title,
-                        exception = e
-                    )
                 }
-            }.filterNotNull()
-            
-            // Update UI with loaded sections
-            latestRows.setValueOnMain(loadedRows)
+            }
         }
 
         /**
