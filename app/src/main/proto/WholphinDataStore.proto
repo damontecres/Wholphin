@@ -140,6 +140,11 @@ enum BackdropStyle{
   BACKDROP_NONE = 2;
 }
 
+enum BoxSetViewMode {
+  DEFAULT_GRID = 0;
+  ADVANCED_VIEW = 1;
+}
+
 message InterfacePreferences {
   ThemeSongVolume play_theme_songs = 1;
   bool remember_selected_tab = 2;
@@ -150,6 +155,7 @@ message InterfacePreferences {
   SubtitlePreferences subtitles_preferences = 7;
   LiveTvPreferences live_tv_preferences = 8;
   BackdropStyle backdrop_style = 9;
+  BoxSetViewMode boxset_view_mode = 10;
 }
 
 message AdvancedPreferences {
