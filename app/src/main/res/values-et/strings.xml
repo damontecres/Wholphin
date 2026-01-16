@@ -386,4 +386,22 @@
     <string name="upcoming_tv">Lähiajal avaldatavad telesarjad ja -saated</string>
     <string name="request_4k">Küsi 4K versiooni</string>
     <string name="seerr_server_added">Seerri server on lisatud</string>
+    <string name="voice_search">Häälotsing</string>
+    <string name="voice_starting">Alustan</string>
+    <string name="voice_search_prompt">Otsimiseks kõnele</string>
+    <string name="processing">Töötlen</string>
+    <string name="press_back_to_cancel">Katkestamiseks vajuta Tagasi-nuppu</string>
+    <string name="voice_error_audio">Heli salvestamise viga</string>
+    <string name="voice_error_client">Kõnetuvastamise viga</string>
+    <string name="voice_error_permissions">Vajalik on õigus kasutada mikrofoni</string>
+    <string name="voice_error_network">Võrguühenduse viga</string>
+    <string name="voice_error_network_timeout">Võrguühenduse aegumine</string>
+    <string name="voice_error_no_match">Pole midagi kõneldut, mida tuvastada</string>
+    <string name="voice_error_busy">Kõnetuvastus on hõivatud</string>
+    <string name="voice_error_server">Serveri viga</string>
+    <string name="voice_error_speech_timeout">Pole tuvastatavat kõnelemist</string>
+    <string name="voice_error_unknown">Tundmatu viga</string>
+    <string name="voice_error_start_failed">Kõnetuvastuse käivitamine ei õnnestunud</string>
+    <string name="voice_error_timeout">Kõnetuvastus aegus</string>
+    <string name="retry">Proovi uuesti</string>
 </resources>
