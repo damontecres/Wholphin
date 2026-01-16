@@ -29,7 +29,10 @@ import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
@@ -61,6 +64,7 @@ class DiscoverSeriesViewModel
         val people = MutableLiveData<List<DiscoverItem>>(listOf())
         val similar = MutableLiveData<List<DiscoverItem>>(listOf())
         val recommended = MutableLiveData<List<DiscoverItem>>(listOf())
+        val canCancelRequest = MutableStateFlow(false)
 
         val userConfig = seerrServerRepository.current.map { it?.config }
         val request4kEnabled = seerrServerRepository.current.map { it?.request4kMovieEnabled ?: false }
@@ -93,6 +97,8 @@ class DiscoverSeriesViewModel
                 val tv = fetchAndSetItem().await()
                 val discoveredItem = DiscoverItem(tv)
                 backdropService.submit(discoveredItem)
+
+                updateCanCancel()
 
                 withContext(Dispatchers.Main) {
                     loading.value = LoadingState.Success
@@ -137,6 +143,12 @@ class DiscoverSeriesViewModel
             navigationManager.navigateTo(destination)
         }
 
+        private suspend fun updateCanCancel() {
+            val user = userConfig.firstOrNull()
+            val canCancel = canUserCancelRequest(user, tvSeries.value?.mediaInfo?.requests)
+            canCancelRequest.update { canCancel }
+        }
+
         fun request(
             id: Int,
             is4k: Boolean,
@@ -152,6 +164,7 @@ class DiscoverSeriesViewModel
                         ),
                     )
                 fetchAndSetItem().await()
+                updateCanCancel()
             }
         }
 
@@ -161,6 +174,7 @@ class DiscoverSeriesViewModel
                     // TODO handle multiple requests? Or just delete self's request?
                     seerrService.api.requestApi.requestRequestIdDelete(it.id.toString())
                     fetchAndSetItem().await()
+                    updateCanCancel()
                 }
             }
         }
