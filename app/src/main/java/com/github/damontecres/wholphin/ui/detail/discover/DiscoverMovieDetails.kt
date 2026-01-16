@@ -94,6 +94,7 @@ fun DiscoverMovieDetails(
     val loading by viewModel.loading.observeAsState(LoadingState.Loading)
     val userConfig by viewModel.userConfig.collectAsState(null)
     val request4kEnabled by viewModel.request4kEnabled.collectAsState(false)
+    val canCancel by viewModel.canCancelRequest.collectAsState()
 
     var overviewDialog by remember { mutableStateOf<ItemDetailsDialogInfo?>(null) }
     var moreDialog by remember { mutableStateOf<DialogParams?>(null) }
@@ -127,6 +128,7 @@ fun DiscoverMovieDetails(
                     movie = movie,
                     userConfig = userConfig,
                     rating = rating,
+                    canCancel = canCancel,
                     people = people,
                     trailers = trailers,
                     similar = similar,
@@ -234,6 +236,7 @@ fun DiscoverMovieDetailsContent(
     userConfig: SeerrUserConfig?,
     movie: MovieDetails,
     rating: DiscoverRating?,
+    canCancel: Boolean,
     people: List<DiscoverItem>,
     trailers: List<Trailer>,
     similar: List<DiscoverItem>,
@@ -284,15 +287,6 @@ fun DiscoverMovieDetailsContent(
                                 .fillMaxWidth()
                                 .padding(top = 32.dp, bottom = 16.dp),
                     )
-                    val canCancel =
-                        remember(movie, userConfig) {
-                            (
-                                // User requested this
-                                userConfig.hasPermission(SeerrPermission.REQUEST) &&
-                                    movie.mediaInfo?.requests?.any { it.requestedBy?.id == userConfig?.id } == true
-                            ) ||
-                                userConfig.hasPermission(SeerrPermission.MANAGE_REQUESTS)
-                        }
                     ExpandableDiscoverButtons(
                         availability =
                             SeerrAvailability.from(movie.mediaInfo?.status)

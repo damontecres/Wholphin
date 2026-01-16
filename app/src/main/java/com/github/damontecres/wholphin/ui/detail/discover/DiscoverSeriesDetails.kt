@@ -93,6 +93,7 @@ fun DiscoverSeriesDetails(
     val recommended by viewModel.recommended.observeAsState(listOf())
     val userConfig by viewModel.userConfig.collectAsState(null)
     val request4kEnabled by viewModel.request4kEnabled.collectAsState(false)
+    val canCancel by viewModel.canCancelRequest.collectAsState()
 
     var overviewDialog by remember { mutableStateOf<ItemDetailsDialogInfo?>(null) }
     var seasonDialog by remember { mutableStateOf<DialogParams?>(null) }
@@ -120,6 +121,7 @@ fun DiscoverSeriesDetails(
                     series = item,
                     userConfig = userConfig,
                     rating = rating,
+                    canCancel = canCancel,
                     seasons = seasons,
                     people = people,
                     similar = similar,
@@ -230,6 +232,7 @@ fun DiscoverSeriesDetailsContent(
     userConfig: SeerrUserConfig?,
     series: TvDetails,
     rating: DiscoverRating?,
+    canCancel: Boolean,
     seasons: List<Season>,
     similar: List<DiscoverItem>,
     recommended: List<DiscoverItem>,
@@ -290,15 +293,6 @@ fun DiscoverSeriesDetailsContent(
                                     .fillMaxWidth()
                                     .padding(top = 32.dp, bottom = 16.dp),
                         )
-                        val canCancel =
-                            remember(series, userConfig) {
-                                (
-                                    // User requested this
-                                    userConfig.hasPermission(SeerrPermission.REQUEST) &&
-                                        series.mediaInfo?.requests?.any { it.requestedBy?.id == userConfig?.id } == true
-                                ) ||
-                                    userConfig.hasPermission(SeerrPermission.MANAGE_REQUESTS)
-                            }
                         ExpandableDiscoverButtons(
                             availability =
                                 SeerrAvailability.from(series.mediaInfo?.status)
