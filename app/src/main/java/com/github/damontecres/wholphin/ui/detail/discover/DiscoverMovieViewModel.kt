@@ -195,7 +195,7 @@ class DiscoverMovieViewModel
 fun canUserCancelRequest(
     user: SeerrUserConfig?,
     requests: List<MediaRequest>?,
-) = user.hasPermission(SeerrPermission.MANAGE_REQUESTS) ||
+) = (user.hasPermission(SeerrPermission.MANAGE_REQUESTS) && requests?.isNotEmpty() == true) ||
     (
         // User requested this
         user.hasPermission(SeerrPermission.REQUEST) &&
