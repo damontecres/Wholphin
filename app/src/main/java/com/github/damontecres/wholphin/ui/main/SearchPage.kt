@@ -74,6 +74,7 @@ import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.ApiRequestPager
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.GetItemsRequestHandler
+import com.github.damontecres.wholphin.util.SearchRelevance
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -81,6 +82,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
+import org.jellyfin.sdk.api.client.extensions.itemsApi
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.request.GetItemsRequest
 import timber.log.Timber
@@ -185,17 +187,20 @@ class SearchViewModel
                                 listOf(
                                     BaseItemKind.MOVIE,
                                     BaseItemKind.SERIES,
-                                    BaseItemKind.EPISODE,
-                                    BaseItemKind.BOX_SET,
                                 ),
                             fields = SlimItemFields,
                             limit = 50,
                         )
-                    val pager =
-                        ApiRequestPager(api, request, GetItemsRequestHandler, viewModelScope)
-                    pager.init()
+
+                    val result = api.itemsApi.getItems(request).content
+                    val items =
+                        (result.items ?: emptyList()).map {
+                            BaseItem.from(it, api, false)
+                        }
+                    val sorted = items.sortedWith(compareBy { SearchRelevance.score(it, query) })
+
                     withContext(Dispatchers.Main) {
-                        combinedResults.value = SearchResult.Success(pager)
+                        combinedResults.value = SearchResult.Success(sorted)
                     }
                 } catch (ex: Exception) {
                     Timber.e(ex, "Exception in combined search")
