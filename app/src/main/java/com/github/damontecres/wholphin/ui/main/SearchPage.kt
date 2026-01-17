@@ -337,7 +337,7 @@ fun SearchPage(
         withContext(Dispatchers.IO) {
             // Want to focus on the first successful row after all of the ones before it are finished searching
             // Only consider visible rows based on tab selection
-            val isLibraryTab = selectedTab == 0 || !seerrActive
+            val isLibraryTab = selectedTab == 0 || !seerrActive || query.isBlank()
             val results =
                 if (isLibraryTab) {
                     if (combinedMode) {
@@ -444,7 +444,7 @@ fun SearchPage(
                 }
             }
         }
-        if (seerrActive) {
+        if (seerrActive && query.isNotBlank()) {
             item {
                 TabRow(
                     selectedTabIndex = selectedTab,
@@ -459,7 +459,7 @@ fun SearchPage(
                 )
             }
         }
-        if (selectedTab == 0 || !seerrActive) {
+        if (selectedTab == 0 || !seerrActive || query.isBlank()) {
             if (combinedMode) {
                 searchResultRow(
                     title = context.getString(R.string.results),
@@ -526,7 +526,7 @@ fun SearchPage(
                 )
             }
         }
-        if (selectedTab == 1 && seerrActive) {
+        if (selectedTab == 1 && seerrActive && query.isNotBlank()) {
             searchResultRow(
                 title = context.getString(R.string.discover),
                 result = seerrResults,
@@ -608,13 +608,7 @@ fun LazyListScope.searchResultRow(
             }
 
             is SearchResult.Success -> {
-                if (r.items.isEmpty()) {
-                    SearchResultPlaceholder(
-                        title = title,
-                        message = stringResource(R.string.no_results),
-                        modifier = modifier,
-                    )
-                } else {
+                if (r.items.isNotEmpty()) {
                     ItemRow(
                         title = title,
                         items = r.items,
@@ -627,13 +621,7 @@ fun LazyListScope.searchResultRow(
             }
 
             is SearchResult.SuccessSeerr -> {
-                if (r.items.isEmpty()) {
-                    SearchResultPlaceholder(
-                        title = title,
-                        message = stringResource(R.string.no_results),
-                        modifier = modifier,
-                    )
-                } else {
+                if (r.items.isNotEmpty()) {
                     ItemRow(
                         title = title,
                         items = r.items,
