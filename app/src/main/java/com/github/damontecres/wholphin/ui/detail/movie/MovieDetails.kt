@@ -430,7 +430,7 @@ fun MovieDetailsContent(
                         modifier =
                             Modifier
                                 .fillMaxWidth()
-                                .padding(top = 32.dp, bottom = 16.dp),
+                                .padding(top = 40.dp, bottom = 16.dp),
                     )
                     ExpandablePlayButtons(
                         resumePosition = resumePosition,

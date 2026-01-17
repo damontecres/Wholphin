@@ -52,10 +52,9 @@ fun MovieDetailsHeader(
         // Title
         Text(
             text = movie.name ?: "",
-            color = MaterialTheme.colorScheme.onSurface,
-            style = MaterialTheme.typography.displaySmall,
-            fontWeight = FontWeight.SemiBold,
-            maxLines = 2,
+            color = MaterialTheme.colorScheme.onBackground,
+            style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.SemiBold),
+            maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier
                 .fillMaxWidth(.75f)
