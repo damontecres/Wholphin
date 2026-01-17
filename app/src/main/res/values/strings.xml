@@ -433,6 +433,10 @@
     <string name="color_code_programs">Color-code programs</string>
     <string name="subtitle_delay">Subtitle delay</string>
     <string name="backdrop_display">Backdrop style</string>
+    <string name="combined_search_results">Combined search results</string>
+    <string name="combined_search_results_on">Show all results in a single list</string>
+    <string name="combined_search_results_off">Show results by category</string>
+    <string name="results">Results</string>
     <string name="resolution_switching">Resolution switching</string>
     <string name="local">Local</string>
     <string name="play_trailer">Play trailer</string>

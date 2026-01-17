@@ -13,8 +13,10 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -58,6 +60,7 @@ import com.github.damontecres.wholphin.ui.cards.EpisodeCard
 import com.github.damontecres.wholphin.ui.cards.ItemRow
 import com.github.damontecres.wholphin.ui.cards.SeasonCard
 import com.github.damontecres.wholphin.ui.components.SearchEditTextBox
+import com.github.damontecres.wholphin.ui.components.TabRow
 import com.github.damontecres.wholphin.ui.components.VoiceInputManager
 import com.github.damontecres.wholphin.ui.components.VoiceSearchButton
 import com.github.damontecres.wholphin.ui.data.RowColumn
@@ -95,29 +98,41 @@ class SearchViewModel
         val voiceState = voiceInputManager.state
         val soundLevel = voiceInputManager.soundLevel
         val partialResult = voiceInputManager.partialResult
+        val seerrActive = seerrService.active
 
         val movies = MutableLiveData<SearchResult>(SearchResult.NoQuery)
         val series = MutableLiveData<SearchResult>(SearchResult.NoQuery)
         val episodes = MutableLiveData<SearchResult>(SearchResult.NoQuery)
         val collections = MutableLiveData<SearchResult>(SearchResult.NoQuery)
         val seerrResults = MutableLiveData<SearchResult>(SearchResult.NoQuery)
+        val combinedResults = MutableLiveData<SearchResult>(SearchResult.NoQuery)
 
         private var currentQuery: String? = null
+        private var combinedMode: Boolean = false
 
-        fun search(query: String?) {
-            if (currentQuery == query) {
+        fun search(
+            query: String?,
+            combined: Boolean = false,
+        ) {
+            if (currentQuery == query && combinedMode == combined) {
                 return
             }
             currentQuery = query
+            combinedMode = combined
             if (query.isNotNullOrBlank()) {
-                movies.value = SearchResult.Searching
-                series.value = SearchResult.Searching
-                episodes.value = SearchResult.Searching
-                collections.value = SearchResult.Searching
-                searchInternal(query, BaseItemKind.MOVIE, movies)
-                searchInternal(query, BaseItemKind.SERIES, series)
-                searchInternal(query, BaseItemKind.EPISODE, episodes)
-                searchInternal(query, BaseItemKind.BOX_SET, collections)
+                if (combined) {
+                    combinedResults.value = SearchResult.Searching
+                    searchCombined(query)
+                } else {
+                    movies.value = SearchResult.Searching
+                    series.value = SearchResult.Searching
+                    episodes.value = SearchResult.Searching
+                    collections.value = SearchResult.Searching
+                    searchInternal(query, BaseItemKind.MOVIE, movies)
+                    searchInternal(query, BaseItemKind.SERIES, series)
+                    searchInternal(query, BaseItemKind.EPISODE, episodes)
+                    searchInternal(query, BaseItemKind.BOX_SET, collections)
+                }
                 searchSeerr(query)
             } else {
                 movies.value = SearchResult.NoQuery
@@ -125,6 +140,7 @@ class SearchViewModel
                 episodes.value = SearchResult.NoQuery
                 collections.value = SearchResult.NoQuery
                 seerrResults.value = SearchResult.NoQuery
+                combinedResults.value = SearchResult.NoQuery
             }
         }
 
@@ -153,6 +169,38 @@ class SearchViewModel
                     Timber.e(ex, "Exception searching for $type")
                     withContext(Dispatchers.Main) {
                         target.value = SearchResult.Error(ex)
+                    }
+                }
+            }
+        }
+
+        private fun searchCombined(query: String) {
+            viewModelScope.launch(ExceptionHandler() + Dispatchers.IO) {
+                try {
+                    val request =
+                        GetItemsRequest(
+                            searchTerm = query,
+                            recursive = true,
+                            includeItemTypes =
+                                listOf(
+                                    BaseItemKind.MOVIE,
+                                    BaseItemKind.SERIES,
+                                    BaseItemKind.EPISODE,
+                                    BaseItemKind.BOX_SET,
+                                ),
+                            fields = SlimItemFields,
+                            limit = 50,
+                        )
+                    val pager =
+                        ApiRequestPager(api, request, GetItemsRequestHandler, viewModelScope)
+                    pager.init()
+                    withContext(Dispatchers.Main) {
+                        combinedResults.value = SearchResult.Success(pager)
+                    }
+                } catch (ex: Exception) {
+                    Timber.e(ex, "Exception in combined search")
+                    withContext(Dispatchers.Main) {
+                        combinedResults.value = SearchResult.Error(ex)
                     }
                 }
             }
@@ -201,11 +249,13 @@ sealed interface SearchResult {
 }
 
 private const val SEARCH_ROW = 0
-private const val MOVIE_ROW = SEARCH_ROW + 1
-private const val COLLECTION_ROW = MOVIE_ROW + 1
-private const val SERIES_ROW = COLLECTION_ROW + 1
+private const val TAB_ROW = SEARCH_ROW + 1
+private const val MOVIE_ROW = TAB_ROW + 1
+private const val SERIES_ROW = MOVIE_ROW + 1
 private const val EPISODE_ROW = SERIES_ROW + 1
-private const val SEERR_ROW = EPISODE_ROW + 1
+private const val COLLECTION_ROW = EPISODE_ROW + 1
+private const val SEERR_ROW = COLLECTION_ROW + 1
+private const val COMBINED_ROW = TAB_ROW + 1
 
 /** Delay for focus to settle after voice search dialog dismisses. */
 private const val VOICE_RESULT_FOCUS_DELAY_MS = 350L
@@ -224,10 +274,16 @@ fun SearchPage(
     val series by viewModel.series.observeAsState(SearchResult.NoQuery)
     val episodes by viewModel.episodes.observeAsState(SearchResult.NoQuery)
     val seerrResults by viewModel.seerrResults.observeAsState(SearchResult.NoQuery)
+    val combinedResults by viewModel.combinedResults.observeAsState(SearchResult.NoQuery)
+    val combinedMode = userPreferences.appPreferences.interfacePreferences.combinedSearchResults
 
 //    val query = rememberTextFieldState()
     var query by rememberSaveable { mutableStateOf("") }
     val focusRequesters = remember { List(SEERR_ROW + 1) { FocusRequester() } }
+    val tabFocusRequesters = remember { List(2) { FocusRequester() } }
+
+    val seerrActive by viewModel.seerrActive.collectAsState(initial = false)
+    var selectedTab by rememberSaveable { mutableIntStateOf(0) }
 
     var position by rememberPosition(0, 0)
     var searchClicked by rememberSaveable { mutableStateOf(false) }
@@ -242,10 +298,10 @@ fun SearchPage(
     fun triggerImmediateSearch(searchQuery: String) {
         immediateSearchQuery = searchQuery
         searchClicked = true
-        viewModel.search(searchQuery)
+        viewModel.search(searchQuery, combinedMode)
     }
 
-    LaunchedEffect(query) {
+    LaunchedEffect(query, combinedMode) {
         when {
             immediateSearchQuery == query -> {
                 immediateSearchQuery = null
@@ -253,7 +309,7 @@ fun SearchPage(
 
             else -> {
                 delay(750L)
-                viewModel.search(query)
+                viewModel.search(query, combinedMode)
             }
         }
     }
@@ -264,21 +320,52 @@ fun SearchPage(
         viewModel.navigationManager.navigateTo(item.destination())
     }
 
-    LaunchedEffect(searchClicked, movies, collections, series, episodes, seerrResults) {
+    LaunchedEffect(
+        searchClicked,
+        movies,
+        collections,
+        series,
+        episodes,
+        seerrResults,
+        combinedResults,
+        combinedMode,
+        selectedTab,
+        seerrActive,
+    ) {
         if (!searchClicked) return@LaunchedEffect
 
         withContext(Dispatchers.IO) {
             // Want to focus on the first successful row after all of the ones before it are finished searching
-            val results = listOf(movies, collections, series, episodes, seerrResults)
+            // Only consider visible rows based on tab selection
+            val isLibraryTab = selectedTab == 0 || !seerrActive
+            val results =
+                if (isLibraryTab) {
+                    if (combinedMode) {
+                        listOf(combinedResults)
+                    } else {
+                        listOf(movies, series, episodes, collections)
+                    }
+                } else {
+                    listOf(seerrResults)
+                }
             val firstSuccess =
                 results.indexOfFirst { it is SearchResult.Success || it is SearchResult.SuccessSeerr }
             if (firstSuccess >= 0) {
                 val anyBeforeSearching =
                     results.subList(0, firstSuccess).any { it is SearchResult.Searching }
                 if (!anyBeforeSearching) {
-                    // 0-th row is the search bar
-                    position = RowColumn(firstSuccess + 1, 0)
-                    onMain { focusRequesters[firstSuccess + 1].tryRequestFocus() }
+                    val targetRow =
+                        if (isLibraryTab) {
+                            if (combinedMode) {
+                                COMBINED_ROW
+                            } else {
+                                MOVIE_ROW + firstSuccess
+                            }
+                        } else {
+                            SEERR_ROW
+                        }
+                    position = RowColumn(targetRow, 0)
+                    onMain { focusRequesters[targetRow].tryRequestFocus() }
                 }
             }
         }
@@ -357,82 +444,114 @@ fun SearchPage(
                 }
             }
         }
-        searchResultRow(
-            title = context.getString(R.string.movies),
-            result = movies,
-            rowIndex = MOVIE_ROW,
-            position = position,
-            focusRequester = focusRequesters[MOVIE_ROW],
-            onClickItem = onClickItem,
-            onClickPosition = { position = it },
-            modifier = Modifier.fillMaxWidth(),
-        )
-        searchResultRow(
-            title = context.getString(R.string.collections),
-            result = collections,
-            rowIndex = COLLECTION_ROW,
-            position = position,
-            focusRequester = focusRequesters[COLLECTION_ROW],
-            onClickItem = onClickItem,
-            onClickPosition = { position = it },
-            modifier = Modifier.fillMaxWidth(),
-        )
-        searchResultRow(
-            title = context.getString(R.string.tv_shows),
-            result = series,
-            rowIndex = SERIES_ROW,
-            position = position,
-            focusRequester = focusRequesters[SERIES_ROW],
-            onClickItem = onClickItem,
-            onClickPosition = { position = it },
-            modifier = Modifier.fillMaxWidth(),
-        )
-        searchResultRow(
-            title = context.getString(R.string.episodes),
-            result = episodes,
-            rowIndex = EPISODE_ROW,
-            position = position,
-            focusRequester = focusRequesters[EPISODE_ROW],
-            onClickItem = onClickItem,
-            onClickPosition = { position = it },
-            modifier = Modifier.fillMaxWidth(),
-            cardContent = @Composable { index, item, mod, onClick, onLongClick ->
-                EpisodeCard(
-                    item = item,
-                    onClick = {
-                        position = RowColumn(EPISODE_ROW, index)
-                        onClick.invoke()
-                    },
-                    onLongClick = onLongClick,
-                    imageHeight = 140.dp,
-                    modifier = mod.padding(horizontal = 8.dp),
+        if (seerrActive) {
+            item {
+                TabRow(
+                    selectedTabIndex = selectedTab,
+                    tabs =
+                        listOf(
+                            context.getString(R.string.library),
+                            context.getString(R.string.discover),
+                        ),
+                    focusRequesters = tabFocusRequesters,
+                    onClick = { selectedTab = it },
+                    modifier = Modifier.fillMaxWidth(),
                 )
-            },
-        )
-        searchResultRow(
-            title = context.getString(R.string.discover),
-            result = seerrResults,
-            rowIndex = SEERR_ROW,
-            position = position,
-            focusRequester = focusRequesters[SEERR_ROW],
-            onClickItem = { _, _ ->
-                // no-op
-            },
-            onClickDiscover = { _, item ->
-                val dest =
-                    if (item.jellyfinItemId != null && item.type.baseItemKind != null) {
-                        Destination.MediaItem(
-                            itemId = item.jellyfinItemId,
-                            type = item.type.baseItemKind,
+            }
+        }
+        if (selectedTab == 0 || !seerrActive) {
+            if (combinedMode) {
+                searchResultRow(
+                    title = context.getString(R.string.results),
+                    result = combinedResults,
+                    rowIndex = COMBINED_ROW,
+                    position = position,
+                    focusRequester = focusRequesters[COMBINED_ROW],
+                    onClickItem = onClickItem,
+                    onClickPosition = { position = it },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            } else {
+                searchResultRow(
+                    title = context.getString(R.string.movies),
+                    result = movies,
+                    rowIndex = MOVIE_ROW,
+                    position = position,
+                    focusRequester = focusRequesters[MOVIE_ROW],
+                    onClickItem = onClickItem,
+                    onClickPosition = { position = it },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                searchResultRow(
+                    title = context.getString(R.string.tv_shows),
+                    result = series,
+                    rowIndex = SERIES_ROW,
+                    position = position,
+                    focusRequester = focusRequesters[SERIES_ROW],
+                    onClickItem = onClickItem,
+                    onClickPosition = { position = it },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                searchResultRow(
+                    title = context.getString(R.string.episodes),
+                    result = episodes,
+                    rowIndex = EPISODE_ROW,
+                    position = position,
+                    focusRequester = focusRequesters[EPISODE_ROW],
+                    onClickItem = onClickItem,
+                    onClickPosition = { position = it },
+                    modifier = Modifier.fillMaxWidth(),
+                    cardContent = @Composable { index, item, mod, onClick, onLongClick ->
+                        EpisodeCard(
+                            item = item,
+                            onClick = {
+                                position = RowColumn(EPISODE_ROW, index)
+                                onClick.invoke()
+                            },
+                            onLongClick = onLongClick,
+                            imageHeight = 140.dp,
+                            modifier = mod.padding(horizontal = 8.dp),
                         )
-                    } else {
-                        Destination.DiscoveredItem(item)
-                    }
-                viewModel.navigationManager.navigateTo(dest)
-            },
-            onClickPosition = { position = it },
-            modifier = Modifier.fillMaxWidth(),
-        )
+                    },
+                )
+                searchResultRow(
+                    title = context.getString(R.string.collections),
+                    result = collections,
+                    rowIndex = COLLECTION_ROW,
+                    position = position,
+                    focusRequester = focusRequesters[COLLECTION_ROW],
+                    onClickItem = onClickItem,
+                    onClickPosition = { position = it },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+        }
+        if (selectedTab == 1 && seerrActive) {
+            searchResultRow(
+                title = context.getString(R.string.discover),
+                result = seerrResults,
+                rowIndex = SEERR_ROW,
+                position = position,
+                focusRequester = focusRequesters[SEERR_ROW],
+                onClickItem = { _, _ ->
+                    // no-op
+                },
+                onClickDiscover = { _, item ->
+                    val dest =
+                        if (item.jellyfinItemId != null && item.type.baseItemKind != null) {
+                            Destination.MediaItem(
+                                itemId = item.jellyfinItemId,
+                                type = item.type.baseItemKind,
+                            )
+                        } else {
+                            Destination.DiscoveredItem(item)
+                        }
+                    viewModel.navigationManager.navigateTo(dest)
+                },
+                onClickPosition = { position = it },
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
     }
 }
 
