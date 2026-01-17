@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -140,15 +139,16 @@ fun ExpandableDiscoverButtons(
         }
 
         // More button
-        item("more") {
-            ExpandablePlayButton(
-                R.string.more,
-                Duration.ZERO,
-                Icons.Default.MoreVert,
-                { moreOnClick.invoke() },
-                Modifier
-                    .onFocusChanged(buttonOnFocusChanged),
-            )
-        }
+        // No functionality yet
+//        item("more") {
+//            ExpandablePlayButton(
+//                R.string.more,
+//                Duration.ZERO,
+//                Icons.Default.MoreVert,
+//                { moreOnClick.invoke() },
+//                Modifier
+//                    .onFocusChanged(buttonOnFocusChanged),
+//            )
+//        }
     }
 }
