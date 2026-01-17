@@ -11,7 +11,9 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -24,6 +26,7 @@ import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.DiscoverItem
 import com.github.damontecres.wholphin.data.model.Person
 import com.github.damontecres.wholphin.ui.ifElse
+import com.github.damontecres.wholphin.ui.rememberInt
 
 @Composable
 fun PersonRow(
@@ -34,6 +37,7 @@ fun PersonRow(
     onLongClick: ((Int, Person) -> Unit)? = null,
 ) {
     val firstFocus = remember { FocusRequester() }
+    var position by rememberInt()
     Column(
         verticalArrangement = Arrangement.spacedBy(8.dp),
         modifier = modifier,
@@ -56,12 +60,18 @@ fun PersonRow(
             itemsIndexed(people) { index, person ->
                 PersonCard(
                     person = person,
-                    onClick = { onClick.invoke(person) },
-                    onLongClick = { onLongClick?.invoke(index, person) },
+                    onClick = {
+                        position = index
+                        onClick.invoke(person)
+                    },
+                    onLongClick = {
+                        position = index
+                        onLongClick?.invoke(index, person)
+                    },
                     modifier =
                         Modifier
                             .width(personRowCardWidth)
-                            .ifElse(index == 0, Modifier.focusRequester(firstFocus))
+                            .ifElse(index == position, Modifier.focusRequester(firstFocus))
                             .animateItem(),
                 )
             }
