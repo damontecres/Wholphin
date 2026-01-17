@@ -332,7 +332,7 @@ fun SeriesDetailsContent(
         Column(
             modifier =
                 Modifier
-                    .padding(16.dp)
+                    .padding(horizontal = 24.dp, vertical = 16.dp)
                     .fillMaxSize(),
         ) {
             LazyColumn(
@@ -607,15 +607,17 @@ fun SeriesDetailsHeader(
             style = MaterialTheme.typography.displaySmall,
             maxLines = 2,
             overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.fillMaxWidth(.75f),
+            modifier = Modifier
+                .fillMaxWidth(.75f)
+                .padding(start = 8.dp),
         )
         Column(
             verticalArrangement = Arrangement.spacedBy(4.dp),
             modifier = Modifier.fillMaxWidth(.60f),
         ) {
-            QuickDetails(series.ui.quickDetails, null)
+            QuickDetails(series.ui.quickDetails, null, Modifier.padding(start = 8.dp))
             dto.genres?.letNotEmpty {
-                GenreText(it)
+                GenreText(it, Modifier.padding(start = 8.dp))
             }
             dto.overview?.let { overview ->
                 OverviewText(
