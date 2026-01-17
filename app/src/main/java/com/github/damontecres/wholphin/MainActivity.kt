@@ -3,6 +3,7 @@ package com.github.damontecres.wholphin
 import android.content.Intent
 import android.content.res.Configuration
 import android.os.Bundle
+import android.view.WindowManager
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
@@ -136,6 +137,16 @@ class MainActivity : AppCompatActivity() {
             if (attrs.preferredDisplayModeId != modeId) {
                 Timber.d("Switch preferredDisplayModeId to %s", modeId)
                 window.attributes = attrs.apply { preferredDisplayModeId = modeId }
+            }
+        }
+        viewModel.serverRepository.currentUser.observe(this) { user ->
+            if (user?.hasPin == true) {
+                window?.setFlags(
+                    WindowManager.LayoutParams.FLAG_SECURE,
+                    WindowManager.LayoutParams.FLAG_SECURE,
+                )
+            } else {
+                window?.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
             }
         }
         viewModel.appStart()
@@ -292,14 +303,6 @@ class MainActivity : AppCompatActivity() {
         super.onRestart()
         Timber.d("onRestart")
         viewModel.appStart()
-//        val signInAutomatically =
-//            runBlocking { userPreferencesDataStore.data.firstOrNull()?.signInAutomatically } ?: true
-
-//        // TODO PIN-related
-// //        if (!signInAutomatically || serverRepository.currentUser.value?.hasPin == true) {
-//        if (!signInAutomatically) {
-//            serverRepository.closeSession()
-//        }
     }
 
     override fun onStop() {
@@ -392,7 +395,7 @@ class MainActivityViewModel
     @Inject
     constructor(
         private val preferences: DataStore<AppPreferences>,
-        private val serverRepository: ServerRepository,
+        val serverRepository: ServerRepository,
         private val navigationManager: SetupNavigationManager,
         private val deviceProfileService: DeviceProfileService,
         private val backdropService: BackdropService,
@@ -402,7 +405,8 @@ class MainActivityViewModel
                 try {
                     val prefs =
                         preferences.data.firstOrNull() ?: AppPreferences.getDefaultInstance()
-                    if (prefs.signInAutomatically) {
+                    val userHasPin = serverRepository.currentUser.value?.hasPin == true
+                    if (prefs.signInAutomatically && !userHasPin) {
                         val current =
                             serverRepository.restoreSession(
                                 prefs.currentServerId?.toUUIDOrNull(),
