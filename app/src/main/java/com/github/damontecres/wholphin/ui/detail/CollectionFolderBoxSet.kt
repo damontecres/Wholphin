@@ -31,7 +31,9 @@ import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.CollectionFolderFilter
 import com.github.damontecres.wholphin.preferences.BoxSetViewMode
 import com.github.damontecres.wholphin.preferences.UserPreferences
+import com.github.damontecres.wholphin.services.SeerrService
 import com.github.damontecres.wholphin.ui.components.CollectionFolderGrid
+import com.github.damontecres.wholphin.ui.components.DiscoverNetworkTab
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.components.RecommendedBoxSet
@@ -50,6 +52,7 @@ import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.first
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.userLibraryApi
 import org.jellyfin.sdk.model.api.ItemSortBy
@@ -178,7 +181,7 @@ private fun CollectionFolderBoxSetAdvanced(
     playEnabled: Boolean,
     modifier: Modifier,
 ) {
-    // Fetch BoxSet item to get name
+    // Fetch BoxSet item to get name and tags
     val boxSetViewModel: BoxSetViewModel =
         hiltViewModel<BoxSetViewModel, BoxSetViewModel.Factory>(
             creationCallback = { it.create(itemId) },
@@ -198,17 +201,44 @@ private fun CollectionFolderBoxSetAdvanced(
         LoadingState.Success -> {
             val boxSetName = boxSetItem?.name ?: stringResource(R.string.collection)
             
+            // Extract network_id from tags (e.g., "network_id:213" -> "213")
+            val networkId = remember(boxSetItem) {
+                boxSetItem?.data?.tags
+                    ?.firstOrNull { it.startsWith("network_id:", ignoreCase = true) }
+                    ?.substringAfter(":", "")
+                    ?.takeIf { it.isNotBlank() }
+            }
+            
+            // Check if Seerr is active
+            var seerrActive by remember { mutableStateOf(false) }
+            LaunchedEffect(Unit) {
+                seerrActive = preferencesViewModel.seerrService.active.first()
+            }
+            
+            // Show Discover tab only if network_id exists and Seerr is active
+            val showDiscoverTab = networkId != null && seerrActive
+            
             val rememberedTabIndex =
                 remember { preferencesViewModel.getRememberedTab(preferences, itemId, 0) }
 
-            val tabs =
-                listOf(
-                    stringResource(R.string.recommended_boxset_name, boxSetName),
-                    stringResource(R.string.library),
-                )
+            val tabs = buildList {
+                add(stringResource(R.string.recommended_boxset_name, boxSetName))
+                add(stringResource(R.string.library))
+                if (showDiscoverTab) {
+                    add(stringResource(R.string.discover))
+                }
+            }
             var selectedTabIndex by rememberSaveable { mutableIntStateOf(rememberedTabIndex) }
+            
+            // Clamp selectedTabIndex to valid range when tabs change
+            LaunchedEffect(tabs.size) {
+                if (selectedTabIndex >= tabs.size) {
+                    selectedTabIndex = 0
+                }
+            }
+            
             val focusRequester = remember { FocusRequester() }
-            val tabFocusRequesters = remember { List(tabs.size) { FocusRequester() } }
+            val tabFocusRequesters = remember(tabs.size) { List(tabs.size) { FocusRequester() } }
 
             val firstTabFocusRequester = remember { FocusRequester() }
 
@@ -283,6 +313,23 @@ private fun CollectionFolderBoxSetAdvanced(
                             playEnabled = playEnabled,
                             focusRequesterOnEmpty = tabFocusRequesters.getOrNull(selectedTabIndex),
                         )
+                    }
+
+                    // Discover tab (only shown if network_id exists and Seerr is active)
+                    2 -> {
+                        if (showDiscoverTab && networkId != null) {
+                            DiscoverNetworkTab(
+                                networkId = networkId,
+                                modifier =
+                                    Modifier
+                                        .padding(start = 16.dp)
+                                        .fillMaxSize()
+                                        .focusRequester(focusRequester),
+                                focusRequesterOnEmpty = tabFocusRequesters.getOrNull(selectedTabIndex),
+                            )
+                        } else {
+                            ErrorMessage("Invalid tab index $selectedTabIndex", null)
+                        }
                     }
 
                     else -> {

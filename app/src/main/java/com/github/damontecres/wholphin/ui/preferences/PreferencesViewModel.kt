@@ -19,6 +19,7 @@ import com.github.damontecres.wholphin.preferences.updateSubtitlePreferences
 import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.SeerrServerRepository
+import com.github.damontecres.wholphin.services.SeerrService
 import com.github.damontecres.wholphin.services.WholphinPluginService
 import com.github.damontecres.wholphin.ui.detail.DebugViewModel.Companion.sendAppLogs
 import com.github.damontecres.wholphin.ui.launchIO
@@ -50,6 +51,7 @@ class PreferencesViewModel
         private val navDrawerItemRepository: NavDrawerItemRepository,
         private val serverPreferencesDao: ServerPreferencesDao,
         private val seerrServerRepository: SeerrServerRepository,
+        val seerrService: SeerrService,
         private val wholphinPluginService: WholphinPluginService,
         private val deviceInfo: DeviceInfo,
         private val clientInfo: ClientInfo,
