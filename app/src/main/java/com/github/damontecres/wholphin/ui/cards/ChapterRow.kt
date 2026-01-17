@@ -42,7 +42,6 @@ fun ChapterRow(
             contentPadding = PaddingValues(vertical = 8.dp, horizontal = 16.dp),
             modifier =
                 Modifier
-                    .padding(start = 16.dp)
                     .fillMaxWidth()
                     .focusRestorer(),
         ) {

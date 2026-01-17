@@ -54,7 +54,6 @@ fun PersonRow(
             contentPadding = PaddingValues(8.dp),
             modifier =
                 Modifier
-                    .padding(start = 16.dp)
                     .fillMaxWidth()
                     .focusRestorer(firstFocus),
         ) {
