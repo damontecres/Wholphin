@@ -46,7 +46,7 @@ fun MovieDetailsHeader(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     Column(
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
         modifier = modifier,
     ) {
         // Title
@@ -65,21 +65,20 @@ fun MovieDetailsHeader(
             verticalArrangement = Arrangement.spacedBy(4.dp),
             modifier = Modifier.fillMaxWidth(.60f),
         ) {
-            val padding = 4.dp
             QuickDetails(
                 movie.ui.quickDetails,
                 movie.timeRemainingOrRuntime,
-                Modifier.padding(start = 8.dp, bottom = padding),
+                Modifier.padding(start = 8.dp),
             )
 
             dto.genres?.letNotEmpty {
-                GenreText(it, Modifier.padding(start = 8.dp, bottom = padding))
+                GenreText(it, Modifier.padding(start = 8.dp))
             }
 
             VideoStreamDetails(
                 chosenStreams = chosenStreams,
                 numberOfVersions = movie.data.mediaSourceCount ?: 0,
-                modifier = Modifier.padding(start = 8.dp, bottom = padding),
+                modifier = Modifier.padding(start = 8.dp, top = 4.dp, bottom = 16.dp),
             )
             dto.taglines?.firstOrNull()?.let { tagline ->
                 Text(
