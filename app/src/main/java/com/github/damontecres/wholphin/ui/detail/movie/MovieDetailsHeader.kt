@@ -57,7 +57,9 @@ fun MovieDetailsHeader(
             fontWeight = FontWeight.SemiBold,
             maxLines = 2,
             overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.fillMaxWidth(.75f),
+            modifier = Modifier
+                .fillMaxWidth(.75f)
+                .padding(start = 8.dp),
         )
 
         Column(
@@ -68,24 +70,24 @@ fun MovieDetailsHeader(
             QuickDetails(
                 movie.ui.quickDetails,
                 movie.timeRemainingOrRuntime,
-                Modifier.padding(bottom = padding),
+                Modifier.padding(start = 8.dp, bottom = padding),
             )
 
             dto.genres?.letNotEmpty {
-                GenreText(it, Modifier.padding(bottom = padding))
+                GenreText(it, Modifier.padding(start = 8.dp, bottom = padding))
             }
 
             VideoStreamDetails(
                 chosenStreams = chosenStreams,
                 numberOfVersions = movie.data.mediaSourceCount ?: 0,
-                modifier = Modifier.padding(bottom = padding),
+                modifier = Modifier.padding(start = 8.dp, bottom = padding),
             )
             dto.taglines?.firstOrNull()?.let { tagline ->
                 Text(
                     text = tagline,
                     style = MaterialTheme.typography.bodyLarge,
                     fontStyle = FontStyle.Italic,
-                    modifier = Modifier,
+                    modifier = Modifier.padding(start = 8.dp),
                 )
             }
 
@@ -120,6 +122,7 @@ fun MovieDetailsHeader(
                         text = stringResource(R.string.directed_by, it),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.padding(start = 8.dp),
                     )
                 }
         }
