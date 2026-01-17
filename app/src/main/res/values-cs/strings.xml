@@ -1,3 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="about">O aplikaci</string>
+    <string name="active_recordings">Aktivní nahrávání</string>
+    <string name="add_favorite">Oblíbené</string>
+    <string name="add_server">Přidat server</string>
+    <string name="add_user">Přidat uživatele</string>
+    <string name="audio">Zvuk</string>
+    <string name="birthplace">Místo narození</string>
 </resources>
