@@ -46,6 +46,7 @@ fun PersonRow(
             text = stringResource(title),
             style = MaterialTheme.typography.titleLarge,
             color = MaterialTheme.colorScheme.onBackground,
+            modifier = Modifier.padding(start = 8.dp),
         )
         LazyRow(
             state = rememberLazyListState(),
