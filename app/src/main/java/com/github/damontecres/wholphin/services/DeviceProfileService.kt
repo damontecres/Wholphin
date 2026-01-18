@@ -45,6 +45,7 @@ class DeviceProfileService
                             dolbyVisionELDirectPlay = prefs.overrides.directPlayDolbyVisionEL,
                             jellyfinTenEleven =
                                 serverVersion != null && serverVersion >= ServerVersion(10, 11, 0),
+                            preferFmp4Container = prefs.overrides.preferFmp4Container,
                         )
                     if (deviceProfile == null || this@DeviceProfileService.configuration != newConfig) {
                         this@DeviceProfileService.configuration = newConfig
@@ -58,6 +59,7 @@ class DeviceProfileService
                                 pgsDirectPlay = newConfig.pgsDirectPlay,
                                 dolbyVisionELDirectPlay = newConfig.dolbyVisionELDirectPlay,
                                 jellyfinTenEleven = newConfig.jellyfinTenEleven,
+                                preferFmp4Container = newConfig.preferFmp4Container,
                             )
                     }
                     this@DeviceProfileService.deviceProfile!!
@@ -76,4 +78,5 @@ data class DeviceProfileConfiguration(
     val pgsDirectPlay: Boolean,
     val dolbyVisionELDirectPlay: Boolean,
     val jellyfinTenEleven: Boolean,
+    val preferFmp4Container: Boolean,
 )

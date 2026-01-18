@@ -306,6 +306,7 @@
     <string name="downmix_stereo">Always downmix to stereo</string>
     <string name="ffmpeg_extension_pref">Use FFmpeg decoder module</string>
     <string name="global_content_scale">Default content scale</string>
+    <string name="prefer_fmp4_container">Prefer fMP4 container</string>
     <string name="install_update">Install update</string>
     <string name="installed_version">Installed version</string>
     <string name="max_homepage_items">Max items on home page rows</string>
