@@ -197,7 +197,7 @@ fun SeriesOverviewContent(
                             }
                         }
                         val state = rememberLazyListState(position.episodeRowIndex)
-                        var epPosition by rememberInt()
+                        var epPosition by rememberInt(position.episodeRowIndex)
                         LazyRow(
                             state = state,
                             horizontalArrangement = Arrangement.spacedBy(16.dp),
