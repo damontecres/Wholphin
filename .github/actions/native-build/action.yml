@@ -30,7 +30,7 @@ runs:
         python -m pip install --upgrade pip
         pip install jsonschema jinja2
         sudo apt update
-        sudo apt install -y build-essential autoconf pkg-config libtool ninja-build unzip wget meson
+        sudo apt install -y build-essential autoconf pkg-config libtool ninja-build unzip wget meson nasm
 
 
 # ffmpeg
