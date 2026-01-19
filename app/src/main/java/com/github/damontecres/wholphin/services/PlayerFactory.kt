@@ -3,12 +3,19 @@
 package com.github.damontecres.wholphin.services
 
 import android.content.Context
+import android.os.Build
+import android.os.Handler
 import androidx.annotation.OptIn
 import androidx.datastore.core.DataStore
+import androidx.media3.common.C
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.exoplayer.Renderer
+import androidx.media3.exoplayer.mediacodec.MediaCodecSelector
+import androidx.media3.exoplayer.video.MediaCodecVideoRenderer
+import androidx.media3.exoplayer.video.VideoRendererEventListener
 import com.github.damontecres.wholphin.preferences.AppPreference
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.MediaExtensionStatus
@@ -18,6 +25,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.runBlocking
 import timber.log.Timber
+import java.lang.reflect.Constructor
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -61,8 +69,8 @@ class PlayerFactory
                     PlayerBackend.EXO_PLAYER,
                     PlayerBackend.UNRECOGNIZED,
                     -> {
-                        val extensions =
-                            runBlocking { appPreferences.data.firstOrNull() }?.playbackPreferences?.overrides?.mediaExtensionsEnabled
+                        val extensions = prefs?.overrides?.mediaExtensionsEnabled
+                        val decodeAv1 = prefs?.overrides?.decodeAv1 == true
                         Timber.v("extensions=$extensions")
                         val rendererMode =
                             when (extensions) {
@@ -74,7 +82,7 @@ class PlayerFactory
                         ExoPlayer
                             .Builder(context)
                             .setRenderersFactory(
-                                DefaultRenderersFactory(context)
+                                WholphinRenderersFactory(context, decodeAv1)
                                     .setEnableDecoderFallback(true)
                                     .setExtensionRendererMode(rendererMode),
                             ).build()
@@ -96,3 +104,73 @@ val Player.isReleased: Boolean
             else -> throw IllegalStateException("Unknown Player type: ${this::class.qualifiedName}")
         }
     }
+
+// Code is adapted from https://github.com/androidx/media/blob/release/libraries/exoplayer/src/main/java/androidx/media3/exoplayer/DefaultRenderersFactory.java#L436
+class WholphinRenderersFactory(
+    context: Context,
+    private val av1Enabled: Boolean,
+) : DefaultRenderersFactory(context) {
+    override fun buildVideoRenderers(
+        context: Context,
+        extensionRendererMode: Int,
+        mediaCodecSelector: MediaCodecSelector,
+        enableDecoderFallback: Boolean,
+        eventHandler: Handler,
+        eventListener: VideoRendererEventListener,
+        allowedVideoJoiningTimeMs: Long,
+        out: ArrayList<Renderer>,
+    ) {
+        var videoRendererBuilder =
+            MediaCodecVideoRenderer
+                .Builder(context)
+                .setCodecAdapterFactory(codecAdapterFactory)
+                .setMediaCodecSelector(mediaCodecSelector)
+                .setAllowedJoiningTimeMs(allowedVideoJoiningTimeMs)
+                .setEnableDecoderFallback(enableDecoderFallback)
+                .setEventHandler(eventHandler)
+                .setEventListener(eventListener)
+                .setMaxDroppedFramesToNotify(MAX_DROPPED_VIDEO_FRAME_COUNT_TO_NOTIFY)
+                .experimentalSetParseAv1SampleDependencies(false)
+                .experimentalSetLateThresholdToDropDecoderInputUs(C.TIME_UNSET)
+        if (Build.VERSION.SDK_INT >= 34) {
+            videoRendererBuilder =
+                videoRendererBuilder.experimentalSetEnableMediaCodecBufferDecodeOnlyFlag(
+                    false,
+                )
+        }
+        out.add(videoRendererBuilder.build())
+
+        if (extensionRendererMode == EXTENSION_RENDERER_MODE_OFF) {
+            return
+        }
+        var extensionRendererIndex = out.size
+        if (extensionRendererMode == EXTENSION_RENDERER_MODE_PREFER) {
+            extensionRendererIndex--
+        }
+
+        if (av1Enabled) {
+            try {
+                val clazz = Class.forName("androidx.media3.decoder.av1.Libdav1dVideoRenderer")
+                val constructor: Constructor<*> =
+                    clazz.getConstructor(
+                        Long::class.javaPrimitiveType,
+                        Handler::class.java,
+                        VideoRendererEventListener::class.java,
+                        Int::class.javaPrimitiveType,
+                    )
+                val renderer =
+                    constructor.newInstance(
+                        allowedVideoJoiningTimeMs,
+                        eventHandler,
+                        eventListener,
+                        MAX_DROPPED_VIDEO_FRAME_COUNT_TO_NOTIFY,
+                    ) as Renderer
+                out.add(extensionRendererIndex++, renderer)
+                Timber.i("Loaded Libdav1dVideoRenderer.")
+            } catch (e: Exception) {
+                // The extension is present, but instantiation failed.
+                throw java.lang.IllegalStateException("Error instantiating AV1 extension", e)
+            }
+        }
+    }
+}
