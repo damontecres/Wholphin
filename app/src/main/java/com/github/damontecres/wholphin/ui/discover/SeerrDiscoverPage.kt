@@ -197,7 +197,7 @@ fun SeerrDiscoverPage(
         listOf(state.trending, state.movies, state.tv, state.upcomingMovies, state.upcomingTv)
     val ratingMap by viewModel.rating.collectAsState()
 
-    val focusRequesters = remember(2) { List(rows.size) { FocusRequester() } }
+    val focusRequesters = remember(rows) { List(rows.size) { FocusRequester() } }
     var position by rememberPosition(0, -1)
     val focusedItem =
         remember(position) {
@@ -212,6 +212,8 @@ fun SeerrDiscoverPage(
     LaunchedEffect(state.trending) {
         if (!firstFocused && state.trending.items is DataLoadingState.Success<*>) {
             firstFocused = focusRequesters.getOrNull(0)?.tryRequestFocus("discover") == true
+        } else if (firstFocused) {
+            focusRequesters.getOrNull(position.row)?.tryRequestFocus()
         }
     }
 
