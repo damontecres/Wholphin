@@ -221,7 +221,7 @@
     <string name="auto_play_next">Spill neste automatisk</string>
     <string name="check_for_updates">Sjekk etter oppdateringer</string>
     <string name="combine_continue_next_summary">Gjelder kun TV-serier</string>
-    <string name="combine_continue_next"><![CDATA[Slå sammen 'Fortsett å se' og 'Neste']]></string>
+    <string name="combine_continue_next"><![CDATA[Slå sammen \'Fortsett å se\' og \'Neste\']]></string>
     <string name="direct_play_ass">Direkteavspilling av ASS-undertekster</string>
     <string name="direct_play_pgs">Direkteavspilling av PGS-undertekster</string>
     <string name="downmix_stereo">Alltid nedmiks til stereo</string>

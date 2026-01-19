@@ -323,7 +323,7 @@
     <string name="spacing">Espacement</string>
     <string name="aspect_ratio">Format d\'image</string>
     <string name="show_details">Afficher les détails</string>
-    <string name="cast_and_crew">&lt; ![CDATA[Distribution et équipe]]&gt;</string>
+    <string name="cast_and_crew">Distribution et équipe</string>
     <string name="guest_stars">Invités spéciaux</string>
     <string name="edge_size">Taille des bordures</string>
     <string name="refresh_rate_switching">Changement de fréquence de rafraîchissement</string>
