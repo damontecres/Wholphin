@@ -402,4 +402,23 @@
     <string name="request_4k">Pedir em 4K</string>
     <string name="password">Palavra-passe</string>
     <string name="username">Utilizador</string>
+    <string name="voice_search">Pesquisa por voz</string>
+    <string name="voice_starting">A Iniciar</string>
+    <string name="voice_search_prompt">Fale para pesquisar</string>
+    <string name="processing">A Processar</string>
+    <string name="press_back_to_cancel">Pressione recuar para cancelar</string>
+    <string name="voice_error_audio">Erro na gravação de áudio</string>
+    <string name="voice_error_client">Erro no reconhecimento de voz</string>
+    <string name="voice_error_permissions">É necessária permissão para o microfone</string>
+    <string name="voice_error_network">Erro de rede</string>
+    <string name="voice_error_network_timeout">Tempo limite da rede</string>
+    <string name="voice_error_no_match">Nenhuma fala reconhecida</string>
+    <string name="voice_error_busy">Reconhecimento de voz ocupado</string>
+    <string name="voice_error_server">Erro do servidor</string>
+    <string name="voice_error_speech_timeout">Nenhuma fala detetada</string>
+    <string name="voice_error_unknown">Erro desconhecido</string>
+    <string name="voice_error_start_failed">Falha ao iniciar o reconhecimento de voz</string>
+    <string name="voice_error_timeout">Tempo limite do reconhecimento de voz expirado</string>
+    <string name="retry">Tentar novamente</string>
+    <string name="software_decoding_av1">Decodificação de AV1 por software</string>
 </resources>
