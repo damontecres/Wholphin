@@ -16,7 +16,7 @@ import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
@@ -35,17 +35,19 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.lifecycle.compose.LifecycleStartEffect
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.ExtrasItem
 import com.github.damontecres.wholphin.data.model.BaseItem
+import com.github.damontecres.wholphin.data.model.DiscoverItem
 import com.github.damontecres.wholphin.data.model.Person
 import com.github.damontecres.wholphin.data.model.Trailer
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.TrailerService
 import com.github.damontecres.wholphin.ui.Cards
+import com.github.damontecres.wholphin.ui.RequestOrRestoreFocus
 import com.github.damontecres.wholphin.ui.cards.ExtrasRow
 import com.github.damontecres.wholphin.ui.cards.ItemRow
 import com.github.damontecres.wholphin.ui.cards.PersonRow
@@ -61,7 +63,8 @@ import com.github.damontecres.wholphin.ui.components.GenreText
 import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.components.Optional
 import com.github.damontecres.wholphin.ui.components.OverviewText
-import com.github.damontecres.wholphin.ui.components.SeriesQuickDetails
+import com.github.damontecres.wholphin.ui.components.QuickDetails
+import com.github.damontecres.wholphin.ui.components.TrailerButton
 import com.github.damontecres.wholphin.ui.data.AddPlaylistViewModel
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialog
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialogInfo
@@ -70,11 +73,12 @@ import com.github.damontecres.wholphin.ui.detail.PlaylistDialog
 import com.github.damontecres.wholphin.ui.detail.PlaylistLoadingState
 import com.github.damontecres.wholphin.ui.detail.buildMoreDialogItemsForHome
 import com.github.damontecres.wholphin.ui.detail.buildMoreDialogItemsForPerson
-import com.github.damontecres.wholphin.ui.detail.movie.TrailerRow
+import com.github.damontecres.wholphin.ui.discover.DiscoverRow
+import com.github.damontecres.wholphin.ui.discover.DiscoverRowData
 import com.github.damontecres.wholphin.ui.letNotEmpty
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.rememberInt
-import com.github.damontecres.wholphin.ui.tryRequestFocus
+import com.github.damontecres.wholphin.util.DataLoadingState
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
 import kotlinx.coroutines.launch
@@ -105,6 +109,7 @@ fun SeriesDetails(
     val extras by viewModel.extras.observeAsState(listOf())
     val people by viewModel.people.observeAsState(listOf())
     val similar by viewModel.similar.observeAsState(listOf())
+    val discovered by viewModel.discovered.collectAsState()
 
     var overviewDialog by remember { mutableStateOf<ItemDetailsDialogInfo?>(null) }
     var showWatchConfirmation by remember { mutableStateOf(false) }
@@ -125,12 +130,10 @@ fun SeriesDetails(
 
         LoadingState.Success -> {
             item?.let { item ->
-                LifecycleStartEffect(destination.itemId) {
-                    viewModel.maybePlayThemeSong(
-                        destination.itemId,
-                        preferences.appPreferences.interfacePreferences.playThemeSongs,
-                    )
-                    onStopOrDispose {
+                LifecycleResumeEffect(destination.itemId) {
+                    viewModel.onResumePage()
+
+                    onPauseOrDispose {
                         viewModel.release()
                     }
                 }
@@ -209,6 +212,10 @@ fun SeriesDetails(
                     onClickExtra = { _, extra ->
                         viewModel.navigateTo(extra.destination)
                     },
+                    discovered = discovered,
+                    onClickDiscover = { index, item ->
+                        viewModel.navigateTo(item.destination)
+                    },
                     moreActions =
                         MoreDialogActions(
                             navigateTo = { viewModel.navigateTo(it) },
@@ -282,6 +289,7 @@ private const val PEOPLE_ROW = SEASONS_ROW + 1
 private const val TRAILER_ROW = PEOPLE_ROW + 1
 private const val EXTRAS_ROW = TRAILER_ROW + 1
 private const val SIMILAR_ROW = EXTRAS_ROW + 1
+private const val DISCOVER_ROW = SIMILAR_ROW + 1
 
 @Composable
 fun SeriesDetailsContent(
@@ -292,6 +300,7 @@ fun SeriesDetailsContent(
     trailers: List<Trailer>,
     extras: List<ExtrasItem>,
     people: List<Person>,
+    discovered: List<DiscoverItem>,
     played: Boolean,
     favorite: Boolean,
     onClickItem: (Int, BaseItem) -> Unit,
@@ -304,6 +313,7 @@ fun SeriesDetailsContent(
     trailerOnClick: (Trailer) -> Unit,
     onClickExtra: (Int, ExtrasItem) -> Unit,
     moreActions: MoreDialogActions,
+    onClickDiscover: (Int, DiscoverItem) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -311,11 +321,9 @@ fun SeriesDetailsContent(
     val bringIntoViewRequester = remember { BringIntoViewRequester() }
 
     var position by rememberInt()
-    val focusRequesters = remember { List(SIMILAR_ROW + 1) { FocusRequester() } }
+    val focusRequesters = remember { List(DISCOVER_ROW + 1) { FocusRequester() } }
     val playFocusRequester = remember { FocusRequester() }
-    LaunchedEffect(Unit) {
-        focusRequesters.getOrNull(position)?.tryRequestFocus()
-    }
+    RequestOrRestoreFocus(focusRequesters.getOrNull(position))
     var moreDialog by remember { mutableStateOf<DialogParams?>(null) }
 
     Box(
@@ -414,6 +422,18 @@ fun SeriesDetailsContent(
                                     }
                                 },
                         )
+                        TrailerButton(
+                            trailers = trailers,
+                            trailerOnClick = trailerOnClick,
+                            modifier =
+                                Modifier.onFocusChanged {
+                                    if (it.isFocused) {
+                                        scope.launch(ExceptionHandler()) {
+                                            bringIntoViewRequester.bringIntoView()
+                                        }
+                                    }
+                                },
+                        )
                     }
                 }
                 item {
@@ -472,21 +492,6 @@ fun SeriesDetailsContent(
                                 Modifier
                                     .fillMaxWidth()
                                     .focusRequester(focusRequesters[PEOPLE_ROW]),
-                        )
-                    }
-                }
-                if (trailers.isNotEmpty()) {
-                    item {
-                        TrailerRow(
-                            trailers = trailers,
-                            onClickTrailer = {
-                                position = TRAILER_ROW
-                                trailerOnClick.invoke(it)
-                            },
-                            modifier =
-                                Modifier
-                                    .fillMaxWidth()
-                                    .focusRequester(focusRequesters[TRAILER_ROW]),
                         )
                     }
                 }
@@ -552,6 +557,24 @@ fun SeriesDetailsContent(
                         )
                     }
                 }
+                if (discovered.isNotEmpty()) {
+                    item {
+                        DiscoverRow(
+                            row =
+                                DiscoverRowData(
+                                    stringResource(R.string.discover),
+                                    DataLoadingState.Success(discovered),
+                                ),
+                            onClickItem = { index: Int, item: DiscoverItem ->
+                                position = DISCOVER_ROW
+                                onClickDiscover.invoke(index, item)
+                            },
+                            onLongClickItem = { _, _ -> },
+                            onCardFocus = {},
+                            focusRequester = focusRequesters[DISCOVER_ROW],
+                        )
+                    }
+                }
             }
         }
     }
@@ -590,7 +613,7 @@ fun SeriesDetailsHeader(
             verticalArrangement = Arrangement.spacedBy(4.dp),
             modifier = Modifier.fillMaxWidth(.60f),
         ) {
-            SeriesQuickDetails(dto)
+            QuickDetails(series.ui.quickDetails, null)
             dto.genres?.letNotEmpty {
                 GenreText(it)
             }

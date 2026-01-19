@@ -10,6 +10,7 @@ import com.github.damontecres.wholphin.data.ItemPlaybackRepository
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.Chapter
+import com.github.damontecres.wholphin.data.model.DiscoverItem
 import com.github.damontecres.wholphin.data.model.ItemPlayback
 import com.github.damontecres.wholphin.data.model.Person
 import com.github.damontecres.wholphin.data.model.Trailer
@@ -19,12 +20,14 @@ import com.github.damontecres.wholphin.services.ExtrasService
 import com.github.damontecres.wholphin.services.FavoriteWatchManager
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.PeopleFavorites
+import com.github.damontecres.wholphin.services.SeerrService
 import com.github.damontecres.wholphin.services.StreamChoiceService
 import com.github.damontecres.wholphin.services.ThemeSongPlayer
 import com.github.damontecres.wholphin.services.TrailerService
 import com.github.damontecres.wholphin.services.UserPreferencesService
 import com.github.damontecres.wholphin.ui.SlimItemFields
 import com.github.damontecres.wholphin.ui.launchIO
+import com.github.damontecres.wholphin.ui.letNotEmpty
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.setValueOnMain
 import com.github.damontecres.wholphin.util.ExceptionHandler
@@ -39,6 +42,8 @@ import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
@@ -53,6 +58,7 @@ class MovieViewModel
     @AssistedInject
     constructor(
         private val api: ApiClient,
+        private val seerrService: SeerrService,
         @param:ApplicationContext private val context: Context,
         private val navigationManager: NavigationManager,
         val serverRepository: ServerRepository,
@@ -80,6 +86,7 @@ class MovieViewModel
         val extras = MutableLiveData<List<ExtrasItem>>(listOf())
         val similar = MutableLiveData<List<BaseItem>>()
         val chosenStreams = MutableLiveData<ChosenStreams?>(null)
+        val discovered = MutableStateFlow<List<DiscoverItem>>(listOf())
 
         init {
             init()
@@ -116,16 +123,19 @@ class MovieViewModel
                         item,
                         userPreferencesService.getCurrent(),
                     )
+                val remoteTrailers = trailerService.getRemoteTrailers(item)
                 withContext(Dispatchers.Main) {
                     this@MovieViewModel.item.value = item
                     chosenStreams.value = result
+                    this@MovieViewModel.trailers.value = remoteTrailers
                     loading.value = LoadingState.Success
                     backdropService.submit(item)
                 }
                 viewModelScope.launchIO {
-                    val trailers = trailerService.getTrailers(item)
-                    withContext(Dispatchers.Main) {
-                        this@MovieViewModel.trailers.value = trailers
+                    trailerService.getLocalTrailers(item).letNotEmpty { localTrailers ->
+                        withContext(Dispatchers.Main) {
+                            this@MovieViewModel.trailers.value = localTrailers + remoteTrailers
+                        }
                     }
                 }
                 viewModelScope.launchIO {
@@ -135,6 +145,10 @@ class MovieViewModel
                 viewModelScope.launchIO {
                     val extras = extrasService.getExtras(item.id)
                     this@MovieViewModel.extras.setValueOnMain(extras)
+                }
+                viewModelScope.launchIO {
+                    val results = seerrService.similar(item).orEmpty()
+                    discovered.update { results }
                 }
 
                 withContext(Dispatchers.Main) {
@@ -242,5 +256,20 @@ class MovieViewModel
         fun navigateTo(destination: Destination) {
             release()
             navigationManager.navigateTo(destination)
+        }
+
+        fun clearChosenStreams(chosenStreams: ChosenStreams?) {
+            viewModelScope.launchIO {
+                itemPlaybackRepository.deleteChosenStreams(chosenStreams)
+                item.value?.let { item ->
+                    val result =
+                        itemPlaybackRepository.getSelectedTracks(
+                            itemId,
+                            item,
+                            userPreferencesService.getCurrent(),
+                        )
+                    this@MovieViewModel.chosenStreams.setValueOnMain(result)
+                }
+            }
         }
     }

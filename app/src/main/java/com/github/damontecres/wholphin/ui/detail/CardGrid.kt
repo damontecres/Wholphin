@@ -73,12 +73,11 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import timber.log.Timber
-import java.util.UUID
 
 private const val DEBUG = false
 
 interface CardGridItem {
-    val id: UUID
+    val gridId: String
     val playable: Boolean
     val sortName: String
 }
@@ -117,12 +116,16 @@ fun <T : CardGridItem> CardGrid(
     val startPosition = initialPosition.coerceIn(0, (pager.size - 1).coerceAtLeast(0))
 
     val fractionCacheWindow = LazyLayoutCacheWindow(aheadFraction = 1f, behindFraction = 0.5f)
-    val gridState = rememberLazyGridState(cacheWindow = fractionCacheWindow)
+    var focusedIndex by rememberSaveable { mutableIntStateOf(initialPosition) }
+    val gridState =
+        rememberLazyGridState(
+            cacheWindow = fractionCacheWindow,
+            initialFirstVisibleItemIndex = focusedIndex,
+        )
     val scope = rememberCoroutineScope()
     val firstFocus = remember { FocusRequester() }
     val zeroFocus = remember { FocusRequester() }
     var previouslyFocusedIndex by rememberSaveable { mutableIntStateOf(0) }
-    var focusedIndex by rememberSaveable { mutableIntStateOf(initialPosition) }
 
     var alphabetFocus by remember { mutableStateOf(false) }
     val focusOn = { index: Int ->
@@ -192,210 +195,224 @@ fun <T : CardGridItem> CardGrid(
         }
     }
 
-    var longPressing by remember { mutableStateOf(false) }
-    Row(
-//        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        modifier =
-            modifier
-                .fillMaxSize()
-                .onKeyEvent {
-                    if (DEBUG) Timber.d("onKeyEvent: ${it.nativeKeyEvent}")
-                    if (useBackToJump && it.key == Key.Back && it.nativeKeyEvent.isLongPress) {
-                        longPressing = true
-                        val newPosition = previouslyFocusedIndex
-                        if (DEBUG) Timber.d("Back long pressed: newPosition=$newPosition")
-                        if (newPosition > 0) {
-                            focusOn(newPosition)
-                            scope.launch(ExceptionHandler()) {
-                                gridState.scrollToItem(newPosition, -columns)
-                                firstFocus.tryRequestFocus()
-                            }
-                        }
-                        return@onKeyEvent true
-                    } else if (it.type == KeyEventType.KeyUp) {
-                        if (longPressing && it.key == Key.Back) {
-                            longPressing = false
-                            return@onKeyEvent true
-                        }
-                        longPressing = false
-                    }
-                    if (it.type != KeyEventType.KeyUp) {
-                        return@onKeyEvent false
-                    } else if (useBackToJump && it.key == Key.Back && focusedIndex > 0) {
-                        jumpToTop()
-                        return@onKeyEvent true
-                    } else if (isPlayKeyUp(it)) {
-                        val item = pager.getOrNull(focusedIndex)
-                        if (item?.playable == true) {
-                            Timber.v("Clicked play on ${item.id}")
-                            onClickPlay.invoke(focusedIndex, item)
-                        }
-                        return@onKeyEvent true
-                    } else if (useJumpRemoteButtons && isForwardButton(it)) {
-                        jump(jump1)
-                        return@onKeyEvent true
-                    } else if (useJumpRemoteButtons && isBackwardButton(it)) {
-                        jump(-jump1)
-                        return@onKeyEvent true
-                    } else {
-                        return@onKeyEvent false
-                    }
-                },
-    ) {
-        if (showJumpButtons && pager.isNotEmpty()) {
-            JumpButtons(
-                jump1 = jump1,
-                jump2 = jump2,
-                jumpClick = { jump(it) },
-                modifier = Modifier.align(Alignment.CenterVertically),
+    if (pager.isEmpty()) {
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = modifier.fillMaxSize(),
+        ) {
+            Text(
+                text = stringResource(R.string.no_results),
+                style = MaterialTheme.typography.titleLarge,
+                color = MaterialTheme.colorScheme.onSurface,
+                textAlign = TextAlign.Center,
             )
         }
-        Box(
-            modifier = Modifier.weight(1f),
-        ) {
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(columns),
-                horizontalArrangement = Arrangement.spacedBy(spacing),
-                verticalArrangement = Arrangement.spacedBy(spacing),
-                state = gridState,
-                contentPadding = PaddingValues(16.dp),
-                modifier =
-                    Modifier
-                        .fillMaxSize()
-                        .focusGroup()
-                        .focusRestorer(firstFocus)
-                        .focusProperties {
-                            onExit = {
-                                // Leaving the grid, so "forget" the position
-//                                focusedIndex = -1
-                            }
-                            onEnter = {
-                                if (focusedIndex < 0 && gridState.firstVisibleItemIndex <= startPosition) {
-                                    focusedIndex = startPosition
+    } else {
+        var longPressing by remember { mutableStateOf(false) }
+        Row(
+//        horizontalArrangement = Arrangement.spacedBy(8.dp),
+            modifier =
+                modifier
+                    .fillMaxSize()
+                    .onKeyEvent {
+                        if (DEBUG) Timber.d("onKeyEvent: ${it.nativeKeyEvent}")
+                        if (useBackToJump && it.key == Key.Back && it.nativeKeyEvent.isLongPress) {
+                            longPressing = true
+                            val newPosition = previouslyFocusedIndex
+                            if (DEBUG) Timber.d("Back long pressed: newPosition=$newPosition")
+                            if (newPosition > 0) {
+                                focusOn(newPosition)
+                                scope.launch(ExceptionHandler()) {
+                                    gridState.scrollToItem(newPosition, -columns)
+                                    firstFocus.tryRequestFocus()
                                 }
                             }
-                        },
-            ) {
-                items(pager.size) { index ->
-                    val mod =
-                        if ((index == focusedIndex) or (focusedIndex < 0 && index == 0)) {
-                            if (DEBUG) Timber.d("Adding firstFocus to focusedIndex $index")
-                            Modifier
-                                .focusRequester(firstFocus)
-                                .focusRequester(gridFocusRequester)
-                                .focusRequester(alphabetFocusRequester)
-                        } else {
-                            Modifier
+                            return@onKeyEvent true
+                        } else if (it.type == KeyEventType.KeyUp) {
+                            if (longPressing && it.key == Key.Back) {
+                                longPressing = false
+                                return@onKeyEvent true
+                            }
+                            longPressing = false
                         }
-                    val item = pager[index]
-                    cardContent(
-                        item,
-                        {
-                            if (item != null) {
-                                focusedIndex = index
-                                onClickItem.invoke(index, item)
+                        if (it.type != KeyEventType.KeyUp) {
+                            return@onKeyEvent false
+                        } else if (useBackToJump && it.key == Key.Back && focusedIndex > 0) {
+                            jumpToTop()
+                            return@onKeyEvent true
+                        } else if (isPlayKeyUp(it)) {
+                            val item = pager.getOrNull(focusedIndex)
+                            if (item?.playable == true) {
+                                Timber.v("Clicked play on ${item.gridId}")
+                                onClickPlay.invoke(focusedIndex, item)
                             }
-                        },
-                        { if (item != null) onLongClickItem.invoke(index, item) },
-                        mod
-                            .ifElse(index == 0, Modifier.focusRequester(zeroFocus))
-                            .onFocusChanged { focusState ->
-                                if (DEBUG) {
-                                    Timber.v(
-                                        "$index isFocused=${focusState.isFocused}",
-                                    )
+                            return@onKeyEvent true
+                        } else if (useJumpRemoteButtons && isForwardButton(it)) {
+                            jump(jump1)
+                            return@onKeyEvent true
+                        } else if (useJumpRemoteButtons && isBackwardButton(it)) {
+                            jump(-jump1)
+                            return@onKeyEvent true
+                        } else {
+                            return@onKeyEvent false
+                        }
+                    },
+        ) {
+            if (showJumpButtons && pager.isNotEmpty()) {
+                JumpButtons(
+                    jump1 = jump1,
+                    jump2 = jump2,
+                    jumpClick = { jump(it) },
+                    modifier = Modifier.align(Alignment.CenterVertically),
+                )
+            }
+            Box(
+                modifier = Modifier.weight(1f),
+            ) {
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(columns),
+                    horizontalArrangement = Arrangement.spacedBy(spacing),
+                    verticalArrangement = Arrangement.spacedBy(spacing),
+                    state = gridState,
+                    contentPadding = PaddingValues(16.dp),
+                    modifier =
+                        Modifier
+                            .fillMaxSize()
+                            .focusGroup()
+                            .focusRestorer(firstFocus)
+                            .focusProperties {
+                                onExit = {
+                                    // Leaving the grid, so "forget" the position
+//                                focusedIndex = -1
                                 }
-                                if (focusState.isFocused) {
-                                    // Focused, so set that up
-                                    focusOn(index)
-                                    positionCallback?.invoke(columns, index)
-                                } else if (focusedIndex == index) {
+                                onEnter = {
+                                    if (focusedIndex < 0 && gridState.firstVisibleItemIndex <= startPosition) {
+                                        focusedIndex = startPosition
+                                    }
+                                }
+                            },
+                ) {
+                    items(pager.size) { index ->
+                        val mod =
+                            if ((index == focusedIndex) or (focusedIndex < 0 && index == 0)) {
+                                if (DEBUG) Timber.d("Adding firstFocus to focusedIndex $index")
+                                Modifier
+                                    .focusRequester(firstFocus)
+                                    .focusRequester(gridFocusRequester)
+                                    .focusRequester(alphabetFocusRequester)
+                            } else {
+                                Modifier
+                            }
+                        val item = pager[index]
+                        cardContent(
+                            item,
+                            {
+                                if (item != null) {
+                                    focusedIndex = index
+                                    onClickItem.invoke(index, item)
+                                }
+                            },
+                            { if (item != null) onLongClickItem.invoke(index, item) },
+                            mod
+                                .ifElse(index == 0, Modifier.focusRequester(zeroFocus))
+                                .onFocusChanged { focusState ->
+                                    if (DEBUG) {
+                                        Timber.v(
+                                            "$index isFocused=${focusState.isFocused}",
+                                        )
+                                    }
+                                    if (focusState.isFocused) {
+                                        // Focused, so set that up
+                                        focusOn(index)
+                                        positionCallback?.invoke(columns, index)
+                                    } else if (focusedIndex == index) {
 //                                        savedFocusedIndex = index
 //                                        // Was focused on this, so mark unfocused
 //                                        focusedIndex = -1
-                                }
-                            },
-                    )
+                                    }
+                                },
+                        )
+                    }
                 }
-            }
-            if (pager.isEmpty()) {
+                if (pager.isEmpty()) {
 //                focusedIndex = -1
-                Box(modifier = Modifier.fillMaxSize()) {
-                    Text(
-                        text = stringResource(R.string.no_results),
-                        color = MaterialTheme.colorScheme.onBackground,
-                        modifier = Modifier.align(Alignment.Center),
-                    )
+                    Box(modifier = Modifier.fillMaxSize()) {
+                        Text(
+                            text = stringResource(R.string.no_results),
+                            color = MaterialTheme.colorScheme.onBackground,
+                            modifier = Modifier.align(Alignment.Center),
+                        )
+                    }
                 }
-            }
-            if (showFooter) {
-                // Footer
-                Box(
-                    modifier =
-                        Modifier
-                            .align(Alignment.BottomCenter)
-                            .background(AppColors.TransparentBlack50),
-                ) {
-                    val index = (focusedIndex + 1).takeIf { it > 0 } ?: "?"
+                if (showFooter) {
+                    // Footer
+                    Box(
+                        modifier =
+                            Modifier
+                                .align(Alignment.BottomCenter)
+                                .background(AppColors.TransparentBlack50),
+                    ) {
+                        val index = (focusedIndex + 1).takeIf { it > 0 } ?: "?"
 //                        if (focusedIndex >= 0) {
 //                            focusedIndex + 1
 //                        } else {
 //                            max(savedFocusedIndex, focusedIndexOnExit) + 1
 //                        }
-                    Text(
-                        modifier = Modifier.padding(4.dp),
-                        color = MaterialTheme.colorScheme.onBackground,
-                        text = "$index / ${pager.size}",
-                    )
+                        Text(
+                            modifier = Modifier.padding(4.dp),
+                            color = MaterialTheme.colorScheme.onBackground,
+                            text = "$index / ${pager.size}",
+                        )
+                    }
                 }
             }
-        }
-        val context = LocalContext.current
-        val letters = context.getString(R.string.jump_letters)
-        // Letters
-        val currentLetter =
-            remember(focusedIndex) {
-                pager
-                    .getOrNull(focusedIndex)
-                    ?.sortName
-                    ?.first()
-                    ?.uppercaseChar()
-                    ?.let {
-                        if (it >= '0' && it <= '9') {
-                            '#'
-                        } else if (it >= 'A' && it <= 'Z') {
-                            it
-                        } else {
-                            null
-                        }
-                    }
-                    ?: letters[0]
-            }
-        if (showLetterButtons && pager.isNotEmpty()) {
-            AlphabetButtons(
-                letters = letters,
-                currentLetter = currentLetter,
-                modifier =
-                    Modifier
-                        .align(Alignment.CenterVertically)
-                        .padding(end = 16.dp),
-                // Add end padding to push away from edge
-                letterClicked = { letter ->
-                    scope.launch(ExceptionHandler()) {
-                        val jumpPosition =
-                            withContext(Dispatchers.IO) {
-                                letterPosition.invoke(letter)
+            val context = LocalContext.current
+            val letters = context.getString(R.string.jump_letters)
+            // Letters
+            val currentLetter =
+                remember(focusedIndex) {
+                    pager
+                        .getOrNull(focusedIndex)
+                        ?.sortName
+                        ?.firstOrNull()
+                        ?.uppercaseChar()
+                        ?.let {
+                            if (it >= '0' && it <= '9') {
+                                '#'
+                            } else if (it >= 'A' && it <= 'Z') {
+                                it
+                            } else {
+                                null
                             }
-                        Timber.d("Alphabet jump to $jumpPosition")
-                        if (jumpPosition >= 0) {
-                            pager.getOrNull(jumpPosition)
-                            gridState.scrollToItem(jumpPosition)
-                            focusOn(jumpPosition)
-                            alphabetFocus = true
                         }
-                    }
-                },
-            )
+                        ?: letters[0]
+                }
+            if (showLetterButtons && pager.isNotEmpty()) {
+                AlphabetButtons(
+                    letters = letters,
+                    currentLetter = currentLetter,
+                    modifier =
+                        Modifier
+                            .align(Alignment.CenterVertically)
+                            .padding(end = 16.dp),
+                    // Add end padding to push away from edge
+                    letterClicked = { letter ->
+                        scope.launch(ExceptionHandler()) {
+                            val jumpPosition =
+                                withContext(Dispatchers.IO) {
+                                    letterPosition.invoke(letter)
+                                }
+                            Timber.d("Alphabet jump to $jumpPosition")
+                            if (jumpPosition >= 0) {
+                                pager.getOrNull(jumpPosition)
+                                gridState.scrollToItem(jumpPosition)
+                                focusOn(jumpPosition)
+                                alphabetFocus = true
+                            }
+                        }
+                    },
+                )
+            }
         }
     }
 }

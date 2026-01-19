@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
@@ -29,6 +30,12 @@ data class MoreDialogActions(
     var onClickAddPlaylist: (UUID) -> Unit,
 )
 
+enum class ClearChosenStreams {
+    NONE,
+    ITEM_AND_SERIES,
+    SERIES,
+}
+
 /**
  * Build the [DialogItem]s when clicking "More"
  *
@@ -53,10 +60,12 @@ fun buildMoreDialogItems(
     sourceId: UUID?,
     watched: Boolean,
     favorite: Boolean,
+    canClearChosenStreams: Boolean,
     actions: MoreDialogActions,
     onChooseVersion: () -> Unit,
     onChooseTracks: (MediaStreamType) -> Unit,
     onShowOverview: () -> Unit,
+    onClearChosenStreams: () -> Unit,
 ): List<DialogItem> =
     buildList {
         add(
@@ -69,7 +78,6 @@ fun buildMoreDialogItems(
                     Destination.Playback(
                         item.id,
                         item.resumeMs ?: 0L,
-                        item,
                     ),
                 )
             },
@@ -157,6 +165,7 @@ fun buildMoreDialogItems(
                         Destination.MediaItem(
                             seriesId,
                             BaseItemKind.SERIES,
+                            null,
                         ),
                     )
                 },
@@ -172,6 +181,16 @@ fun buildMoreDialogItems(
                 },
             )
         }
+        if (canClearChosenStreams) {
+            add(
+                DialogItem(
+                    context.getString(R.string.clear_track_choices),
+                    Icons.Default.Delete,
+                ) {
+                    onClearChosenStreams()
+                },
+            )
+        }
         add(
             DialogItem(
                 context.getString(R.string.play_with_transcoding),
@@ -181,7 +200,6 @@ fun buildMoreDialogItems(
                     Destination.Playback(
                         item.id,
                         item.resumeMs ?: 0L,
-                        item,
                         forceTranscoding = true,
                     ),
                 )
@@ -290,6 +308,7 @@ fun buildMoreDialogItemsForHome(
                         Destination.MediaItem(
                             it,
                             BaseItemKind.SERIES,
+                            null,
                         ),
                     )
                 },
@@ -309,7 +328,7 @@ fun buildMoreDialogItemsForPerson(
                 context.getString(R.string.go_to),
                 Icons.Default.ArrowForward,
             ) {
-                actions.navigateTo(Destination.MediaItem(itemId, BaseItemKind.PERSON))
+                actions.navigateTo(Destination.MediaItem(itemId, BaseItemKind.PERSON, null))
             },
         )
         add(

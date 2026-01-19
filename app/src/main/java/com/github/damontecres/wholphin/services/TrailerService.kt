@@ -22,31 +22,53 @@ class TrailerService
         @param:ApplicationContext private val context: Context,
         private val api: ApiClient,
     ) {
-        suspend fun getTrailers(item: BaseItem): List<Trailer> {
-            val remoteTrailers =
-                item.data.remoteTrailers
-                    ?.mapNotNull { t ->
-                        t.url?.let { url ->
-                            val name =
-                                t.name
-                                    // TODO would be nice to clean up the trailer name
+        fun getRemoteTrailers(item: BaseItem): List<Trailer> =
+            item.data.remoteTrailers
+                ?.mapNotNull { t ->
+                    t.url?.let { url ->
+                        val name =
+                            t.name
+                                // TODO would be nice to clean up the trailer name
 //                                                ?.replace(item.name ?: "", "")
 //                                                ?.removePrefix(" - ")
-                                    ?: context.getString(R.string.trailer)
-                            RemoteTrailer(name, url)
-                        }
-                    }.orEmpty()
-                    .sortedBy { it.name }
-            val localTrailerCount = item.data.localTrailerCount ?: 0
+                                ?: context.getString(R.string.trailer)
+                        val subtitle =
+                            when (url.toUri().host) {
+                                "youtube.com", "www.youtube.com" -> "YouTube"
+                                else -> null
+                            }
+                        RemoteTrailer(name, url, subtitle)
+                    }
+                }.orEmpty()
+                .sortedWith(
+                    compareBy(
+                        {
+                            // Try to show official trailers first & teasers last
+                            when {
+                                it.name.contains("Official Trailer", true) -> 0
+                                it.name.contains("Official Theatrical Trailer", true) -> 0
+                                it.name.contains("Teaser", true) -> 10
+                                it.name.contains("Trailer", true) -> 1
+                                else -> 5
+                            }
+                        },
+                        {
+                            it.name
+                        },
+                    ),
+                )
+
+        suspend fun getLocalTrailers(item: BaseItem): List<Trailer> {
+            val localTrailerCount = item.data.localTrailerCount ?: return emptyList()
             val localTrailers =
                 if (localTrailerCount > 0) {
                     api.userLibraryApi.getLocalTrailers(item.id).content.map {
-                        LocalTrailer(BaseItem.Companion.from(it, api))
+                        LocalTrailer(BaseItem.from(it, api))
                     }
                 } else {
                     listOf()
                 }
-            return localTrailers + remoteTrailers
+            return localTrailers
         }
 
         companion object {
@@ -66,7 +88,6 @@ class TrailerService
                         navigateTo.invoke(
                             Destination.Playback(
                                 itemId = trailer.baseItem.id,
-                                item = trailer.baseItem,
                                 positionMs = 0L,
                             ),
                         )

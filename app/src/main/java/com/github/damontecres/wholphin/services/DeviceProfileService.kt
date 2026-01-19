@@ -42,6 +42,8 @@ class DeviceProfileService
                             downMixAudio = prefs.overrides.downmixStereo,
                             assDirectPlay = prefs.overrides.directPlayAss,
                             pgsDirectPlay = prefs.overrides.directPlayPgs,
+                            dolbyVisionELDirectPlay = prefs.overrides.directPlayDolbyVisionEL,
+                            decodeAv1 = prefs.overrides.decodeAv1,
                             jellyfinTenEleven =
                                 serverVersion != null && serverVersion >= ServerVersion(10, 11, 0),
                         )
@@ -55,6 +57,8 @@ class DeviceProfileService
                                 downMixAudio = newConfig.downMixAudio,
                                 assDirectPlay = newConfig.assDirectPlay,
                                 pgsDirectPlay = newConfig.pgsDirectPlay,
+                                dolbyVisionELDirectPlay = newConfig.dolbyVisionELDirectPlay,
+                                decodeAv1 = prefs.overrides.decodeAv1,
                                 jellyfinTenEleven = newConfig.jellyfinTenEleven,
                             )
                     }
@@ -72,5 +76,7 @@ data class DeviceProfileConfiguration(
     val downMixAudio: Boolean,
     val assDirectPlay: Boolean,
     val pgsDirectPlay: Boolean,
+    val dolbyVisionELDirectPlay: Boolean,
+    val decodeAv1: Boolean,
     val jellyfinTenEleven: Boolean,
 )

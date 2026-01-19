@@ -37,7 +37,6 @@ import com.github.damontecres.wholphin.ui.data.VideoSortOptions
 import com.github.damontecres.wholphin.ui.logTab
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.preferences.PreferencesViewModel
-import com.github.damontecres.wholphin.ui.tryRequestFocus
 import org.jellyfin.sdk.model.api.BaseItemKind
 
 @Composable
@@ -59,9 +58,10 @@ fun CollectionFolderMovie(
         )
     var selectedTabIndex by rememberSaveable { mutableIntStateOf(rememberedTabIndex) }
     val focusRequester = remember { FocusRequester() }
+    val tabFocusRequesters = remember { List(tabs.size) { FocusRequester() } }
 
     val firstTabFocusRequester = remember { FocusRequester() }
-    LaunchedEffect(Unit) { firstTabFocusRequester.tryRequestFocus() }
+//    LaunchedEffect(Unit) { firstTabFocusRequester.tryRequestFocus() }
 
     LaunchedEffect(selectedTabIndex) {
         logTab("movie", selectedTabIndex)
@@ -71,7 +71,6 @@ fun CollectionFolderMovie(
 
     var showHeader by rememberSaveable { mutableStateOf(true) }
 
-    LaunchedEffect(Unit) { focusRequester.tryRequestFocus() }
     Column(
         modifier = modifier,
     ) {
@@ -88,6 +87,7 @@ fun CollectionFolderMovie(
                         .focusRequester(firstTabFocusRequester),
                 tabs = tabs,
                 onClick = { selectedTabIndex = it },
+                focusRequesters = tabFocusRequesters,
             )
         }
         when (selectedTabIndex) {
@@ -115,6 +115,7 @@ fun CollectionFolderMovie(
                         preferencesViewModel.navigationManager.navigateTo(item.destination())
                     },
                     itemId = destination.itemId,
+                    viewModelKey = "${destination.itemId}_library",
                     initialFilter =
                         CollectionFolderFilter(
                             filter =
@@ -135,6 +136,7 @@ fun CollectionFolderMovie(
                         showHeader = position < columns
                     },
                     playEnabled = true,
+                    focusRequesterOnEmpty = tabFocusRequesters.getOrNull(selectedTabIndex),
                 )
             }
 
@@ -146,6 +148,7 @@ fun CollectionFolderMovie(
                         preferencesViewModel.navigationManager.navigateTo(item.destination())
                     },
                     itemId = destination.itemId,
+                    viewModelKey = "${destination.itemId}_collection",
                     initialFilter =
                         CollectionFolderFilter(
                             filter =
@@ -166,6 +169,7 @@ fun CollectionFolderMovie(
                         showHeader = position < columns
                     },
                     playEnabled = false,
+                    focusRequesterOnEmpty = tabFocusRequesters.getOrNull(selectedTabIndex),
                 )
             }
 
@@ -173,6 +177,7 @@ fun CollectionFolderMovie(
             3 -> {
                 GenreCardGrid(
                     itemId = destination.itemId,
+                    includeItemTypes = listOf(BaseItemKind.MOVIE),
                     modifier =
                         Modifier
                             .padding(start = 16.dp)

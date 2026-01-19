@@ -4,7 +4,6 @@ import android.content.Context
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.foundation.background
 import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
@@ -37,11 +36,11 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalConfiguration
@@ -79,6 +78,7 @@ import com.github.damontecres.wholphin.preferences.AppThemeColors
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.NavigationManager
+import com.github.damontecres.wholphin.services.SeerrServerRepository
 import com.github.damontecres.wholphin.services.SetupDestination
 import com.github.damontecres.wholphin.services.SetupNavigationManager
 import com.github.damontecres.wholphin.ui.FontAwesome
@@ -95,6 +95,8 @@ import com.github.damontecres.wholphin.util.ExceptionHandler
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.model.api.CollectionType
@@ -110,17 +112,25 @@ class NavDrawerViewModel
         val navigationManager: NavigationManager,
         val setupNavigationManager: SetupNavigationManager,
         val backdropService: BackdropService,
+        private val seerrServerRepository: SeerrServerRepository,
     ) : ViewModel() {
-        private var all: List<NavDrawerItem>? = null
+        //        private var all: List<NavDrawerItem>? = null
         val moreLibraries = MutableLiveData<List<NavDrawerItem>>(null)
         val libraries = MutableLiveData<List<NavDrawerItem>>(listOf())
         val selectedIndex = MutableLiveData(-1)
         val showMore = MutableLiveData(false)
 
+        init {
+            seerrServerRepository.active
+                .onEach {
+                    init()
+                }.launchIn(viewModelScope)
+        }
+
         fun init() {
             viewModelScope.launchIO {
-                val all = all ?: navDrawerItemRepository.getNavDrawerItems()
-                this@NavDrawerViewModel.all = all
+                val all = navDrawerItemRepository.getNavDrawerItems()
+//                this@NavDrawerViewModel.all = all
                 val libraries = navDrawerItemRepository.getFilteredNavDrawerItems(all)
                 val moreLibraries = all.toMutableList().apply { removeAll(libraries) }
 
@@ -129,11 +139,19 @@ class NavDrawerViewModel
                     this@NavDrawerViewModel.libraries.value = libraries
                 }
                 val asDestinations =
-                    (libraries + listOf(NavDrawerItem.More) + moreLibraries).map {
+                    (
+                        libraries +
+                            listOf(
+                                NavDrawerItem.More,
+                                NavDrawerItem.Discover,
+                            ) + moreLibraries
+                    ).map {
                         if (it is ServerNavDrawerItem) {
                             it.destination
                         } else if (it is NavDrawerItem.Favorites) {
                             Destination.Favorites
+                        } else if (it is NavDrawerItem.Discover) {
+                            Destination.Discover
                         } else {
                             null
                         }
@@ -156,7 +174,7 @@ class NavDrawerViewModel
                                     null
                                 }
                             }
-//                        Timber.v("Found $index => $key")
+                        Timber.v("Found $index => $key")
                         if (index != null) {
                             selectedIndex.setValueOnMain(index)
                             break
@@ -192,6 +210,13 @@ sealed interface NavDrawerItem {
             get() = "a_more"
 
         override fun name(context: Context): String = context.getString(R.string.more)
+    }
+
+    object Discover : NavDrawerItem {
+        override val id: String
+            get() = "a_discover"
+
+        override fun name(context: Context): String = context.getString(R.string.discover)
     }
 }
 
@@ -266,6 +291,13 @@ fun NavDrawer(
 
             NavDrawerItem.More -> {
                 setShowMore(!showMore)
+            }
+
+            NavDrawerItem.Discover -> {
+                viewModel.setIndex(index)
+                viewModel.navigationManager.navigateToFromDrawer(
+                    Destination.Discover,
+                )
             }
 
             is ServerNavDrawerItem -> {
@@ -346,10 +378,8 @@ fun NavDrawer(
                         Modifier
                             .fillMaxHeight()
                             .width(drawerWidth)
-                            .background(drawerBackground)
-                            .onFocusChanged {
-                                if (!it.hasFocus) {
-                                }
+                            .drawBehind {
+                                drawRect(drawerBackground)
                             },
                 ) {
                     // Even though some must be clicked, focusing on it should clear other focused items
@@ -607,6 +637,10 @@ fun NavigationDrawerScope.NavItem(
 
             NavDrawerItem.More -> {
                 R.string.fa_ellipsis
+            }
+
+            NavDrawerItem.Discover -> {
+                R.string.fa_magnifying_glass_plus
             }
 
             is ServerNavDrawerItem -> {

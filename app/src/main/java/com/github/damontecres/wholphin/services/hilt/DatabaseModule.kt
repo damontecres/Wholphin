@@ -12,6 +12,7 @@ import com.github.damontecres.wholphin.data.JellyfinServerDao
 import com.github.damontecres.wholphin.data.LibraryDisplayInfoDao
 import com.github.damontecres.wholphin.data.Migrations
 import com.github.damontecres.wholphin.data.PlaybackLanguageChoiceDao
+import com.github.damontecres.wholphin.data.SeerrServerDao
 import com.github.damontecres.wholphin.data.ServerPreferencesDao
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.AppPreferencesSerializer
@@ -60,6 +61,10 @@ object DatabaseModule {
     @Provides
     @Singleton
     fun playbackLanguageChoiceDao(db: AppDatabase): PlaybackLanguageChoiceDao = db.playbackLanguageChoiceDao()
+
+    @Provides
+    @Singleton
+    fun seerrServerDao(db: AppDatabase): SeerrServerDao = db.seerrServerDao()
 
     @Provides
     @Singleton

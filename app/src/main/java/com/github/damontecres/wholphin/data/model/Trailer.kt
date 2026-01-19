@@ -14,4 +14,5 @@ data class LocalTrailer(
 data class RemoteTrailer(
     override val name: String,
     val url: String,
+    val subtitle: String?,
 ) : Trailer

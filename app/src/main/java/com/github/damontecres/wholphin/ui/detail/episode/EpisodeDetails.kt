@@ -11,7 +11,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
@@ -26,11 +25,11 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.LifecycleResumeEffect
-import androidx.lifecycle.compose.LifecycleStartEffect
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.ChosenStreams
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.preferences.UserPreferences
+import com.github.damontecres.wholphin.ui.RequestOrRestoreFocus
 import com.github.damontecres.wholphin.ui.components.DialogParams
 import com.github.damontecres.wholphin.ui.components.DialogPopup
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
@@ -48,10 +47,10 @@ import com.github.damontecres.wholphin.ui.detail.PlaylistLoadingState
 import com.github.damontecres.wholphin.ui.detail.buildMoreDialogItems
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.rememberInt
-import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
 import kotlinx.coroutines.launch
+import org.jellyfin.sdk.model.api.MediaStreamType
 import org.jellyfin.sdk.model.api.MediaType
 import org.jellyfin.sdk.model.extensions.ticks
 import org.jellyfin.sdk.model.serializer.toUUID
@@ -113,12 +112,12 @@ fun EpisodeDetails(
 
         LoadingState.Success -> {
             item?.let { ep ->
-                LifecycleStartEffect(destination.itemId) {
+                LifecycleResumeEffect(destination.itemId) {
                     viewModel.maybePlayThemeSong(
                         destination.itemId,
                         preferences.appPreferences.interfacePreferences.playThemeSongs,
                     )
-                    onStopOrDispose {
+                    onPauseOrDispose {
                         viewModel.release()
                     }
                 }
@@ -131,7 +130,6 @@ fun EpisodeDetails(
                             Destination.Playback(
                                 ep.id,
                                 it.inWholeMilliseconds,
-                                ep,
                             ),
                         )
                     },
@@ -157,6 +155,7 @@ fun EpisodeDetails(
                                         favorite = ep.data.userData?.isFavorite ?: false,
                                         seriesId = ep.data.seriesId,
                                         sourceId = chosenStreams?.source?.id?.toUUIDOrNull(),
+                                        canClearChosenStreams = chosenStreams?.itemPlayback != null || chosenStreams?.plc != null,
                                         actions = moreActions,
                                         onChooseVersion = {
                                             chooseVersion =
@@ -182,6 +181,12 @@ fun EpisodeDetails(
                                                         chooseStream(
                                                             context = context,
                                                             streams = source.mediaStreams.orEmpty(),
+                                                            currentIndex =
+                                                                if (type == MediaStreamType.AUDIO) {
+                                                                    chosenStreams?.audioStream?.index
+                                                                } else {
+                                                                    chosenStreams?.subtitleStream?.index
+                                                                },
                                                             type = type,
                                                             onClick = { trackIndex ->
                                                                 viewModel.saveTrackSelection(
@@ -205,6 +210,9 @@ fun EpisodeDetails(
                                                         files = listOf(source),
                                                     )
                                             }
+                                        },
+                                        onClearChosenStreams = {
+                                            viewModel.clearChosenStreams(chosenStreams)
                                         },
                                     ),
                             )
@@ -291,9 +299,7 @@ fun EpisodeDetailsContent(
     val resumePosition = dto.userData?.playbackPositionTicks?.ticks ?: Duration.ZERO
 
     val bringIntoViewRequester = remember { BringIntoViewRequester() }
-    LaunchedEffect(Unit) {
-        focusRequesters.getOrNull(position)?.tryRequestFocus()
-    }
+    RequestOrRestoreFocus(focusRequesters.getOrNull(position))
     Box(modifier = modifier) {
         LazyColumn(
             verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -338,6 +344,8 @@ fun EpisodeDetailsContent(
                                 }
                             }
                         },
+                        trailers = null,
+                        trailerOnClick = {},
                         modifier =
                             Modifier
                                 .fillMaxWidth()

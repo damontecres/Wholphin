@@ -49,7 +49,6 @@ import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.Person
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.AspectRatios
-import com.github.damontecres.wholphin.ui.OneTimeLaunchedEffect
 import com.github.damontecres.wholphin.ui.cards.BannerCard
 import com.github.damontecres.wholphin.ui.cards.PersonRow
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
@@ -60,6 +59,7 @@ import com.github.damontecres.wholphin.ui.formatDateTime
 import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.logTab
 import com.github.damontecres.wholphin.ui.playback.isPlayKeyUp
+import com.github.damontecres.wholphin.ui.rememberInt
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.ui.util.rememberDelayedNestedScroll
 import kotlinx.coroutines.launch
@@ -107,6 +107,17 @@ fun SeriesOverviewContent(
 
     val scrollState = rememberScrollState()
     val scrollConnection = rememberDelayedNestedScroll()
+    var requestFocusAfterSeason by remember { mutableStateOf(false) }
+
+    val seasonStr = stringResource(R.string.tv_season)
+    val tabs =
+        seasons.map { season ->
+            season?.name
+                ?: season?.data?.indexNumber?.let { "$seasonStr $it" }
+                ?: ""
+        }
+    val focusRequesters = remember(seasons) { List(seasons.size) { FocusRequester() } }
+
     Box(
         modifier =
             modifier
@@ -138,16 +149,13 @@ fun SeriesOverviewContent(
                     }
                 TabRow(
                     selectedTabIndex = selectedTabIndex,
-                    tabs =
-                        seasons.mapNotNull {
-                            it?.name
-                                ?: it?.data?.indexNumber?.let { stringResource(R.string.tv_season) + " $it" }
-                                ?: ""
-                        },
+                    tabs = tabs,
                     onClick = {
                         selectedTabIndex = it
                         onChangeSeason.invoke(it)
+                        requestFocusAfterSeason = true
                     },
+                    focusRequesters = focusRequesters,
                     modifier =
                         Modifier
                             .focusRequester(tabRowFocusRequester)
@@ -181,13 +189,15 @@ fun SeriesOverviewContent(
                     }
 
                     is EpisodeList.Success -> {
-                        val state = rememberLazyListState()
-                        OneTimeLaunchedEffect {
-                            if (state.firstVisibleItemIndex != position.episodeRowIndex) {
-                                state.scrollToItem(position.episodeRowIndex)
+                        if (requestFocusAfterSeason) {
+                            // Changing seasons, so move focus once the new episodes are loaded
+                            LaunchedEffect(Unit) {
+                                firstItemFocusRequester.tryRequestFocus()
+                                requestFocusAfterSeason = false
                             }
-                            firstItemFocusRequester.tryRequestFocus()
                         }
+                        val state = rememberLazyListState(position.episodeRowIndex)
+                        var epPosition by rememberInt(position.episodeRowIndex)
                         LazyRow(
                             state = state,
                             horizontalArrangement = Arrangement.spacedBy(16.dp),
@@ -195,7 +205,7 @@ fun SeriesOverviewContent(
                             modifier =
                                 Modifier
                                     .focusRestorer(firstItemFocusRequester)
-                                    .focusRequester(episodeRowFocusRequester)
+//                                    .focusRequester(episodeRowFocusRequester)
                                     .onFocusChanged {
                                         cardRowHasFocus = it.hasFocus
                                     },
@@ -221,19 +231,23 @@ fun SeriesOverviewContent(
                                     playPercent =
                                         episode?.data?.userData?.playedPercentage
                                             ?: 0.0,
-                                    onClick = { if (episode != null) onClick.invoke(episode) },
+                                    onClick = {
+                                        epPosition = episodeIndex
+                                        if (episode != null) onClick.invoke(episode)
+                                    },
                                     onLongClick = {
-                                        if (episode != null) {
-                                            onLongClick.invoke(
-                                                episode,
-                                            )
-                                        }
+                                        epPosition = episodeIndex
+                                        if (episode != null) onLongClick.invoke(episode)
                                     },
                                     modifier =
                                         Modifier
                                             .ifElse(
                                                 episodeIndex == position.episodeRowIndex,
-                                                Modifier.focusRequester(firstItemFocusRequester),
+                                                Modifier
+                                                    .focusRequester(firstItemFocusRequester),
+                                            ).ifElse(
+                                                episodeIndex == epPosition,
+                                                Modifier.focusRequester(episodeRowFocusRequester),
                                             ).ifElse(
                                                 episodeIndex != position.episodeRowIndex,
                                                 Modifier

@@ -75,6 +75,7 @@
     <string name="no_scheduled_recordings">No scheduled recordings</string>
     <string name="no_update_available">No update available</string>
     <string name="none">None</string>
+    <string name="only_forced_subtitles">Only Forced Subtitles</string>
     <string name="outro">Outro</string>
     <string name="path">Path</string>
     <string name="people">People</string>
@@ -104,6 +105,24 @@
     <string name="search_and_download"><![CDATA[Search & Download]]></string>
     <string name="search">Search</string>
     <string name="searching">Searching…</string>
+    <string name="voice_search">Voice search</string>
+    <string name="voice_starting">Starting</string>
+    <string name="voice_search_prompt">Speak to search</string>
+    <string name="processing">Processing</string>
+    <string name="press_back_to_cancel">Press back to cancel</string>
+    <string name="voice_error_audio">Audio recording error</string>
+    <string name="voice_error_client">Voice recognition error</string>
+    <string name="voice_error_permissions">Microphone permission required</string>
+    <string name="voice_error_network">Network error</string>
+    <string name="voice_error_network_timeout">Network timeout</string>
+    <string name="voice_error_no_match">No speech recognized</string>
+    <string name="voice_error_busy">Voice recognition busy</string>
+    <string name="voice_error_server">Server error</string>
+    <string name="voice_error_speech_timeout">No speech detected</string>
+    <string name="voice_error_unknown">Unknown error</string>
+    <string name="voice_error_start_failed">Failed to start voice recognition</string>
+    <string name="voice_error_timeout">Voice recognition timed out</string>
+    <string name="retry">Retry</string>
     <string name="select_server">Select Server</string>
     <string name="select_user">Select User</string>
     <string name="show_debug_info">Show debug info</string>
@@ -252,6 +271,22 @@
         <item quantity="other">%d seconds</item>
     </plurals>
 
+    <plurals name="movies">
+        <item quantity="zero">Movies</item>
+        <item quantity="one">Movie</item>
+        <item quantity="other">Movies</item>
+    </plurals>
+    <plurals name="tv_shows">
+        <item quantity="zero">TV Shows</item>
+        <item quantity="one">TV Show</item>
+        <item quantity="other">TV Shows</item>
+    </plurals>
+    <plurals name="people">
+        <item quantity="zero">People</item>
+        <item quantity="one">Person</item>
+        <item quantity="other">People</item>
+    </plurals>
+
     <!-- Preferences/Setting specific strings -->
     <string name="pref_key_update_last_check_threshold" translatable="false">preference.update.threshold</string>
     <string name="pref_key_update_last_check" translatable="false">preference.update.lastTimestamp</string>
@@ -398,6 +433,34 @@
     <string name="color_code_programs">Color-code programs</string>
     <string name="subtitle_delay">Subtitle delay</string>
     <string name="backdrop_display">Backdrop style</string>
+    <string name="resolution_switching">Resolution switching</string>
+    <string name="local">Local</string>
+    <string name="play_trailer">Play trailer</string>
+    <string name="no_trailers">No trailers</string>
+    <string name="clear_track_choices">Clear track choices</string>
+    <string name="dts_x">DTS:X</string>
+    <string name="dts_hd">DTS:HD</string>
+    <string name="truehd">TrueHD</string>
+    <string name="dolby_digital">DD</string>
+    <string name="dolby_digital_plus">DD+</string>
+    <string name="dts">DTS</string>
+    <string name="force_dovi_profile_7">Direct play Dolby Vision Profile 7</string>
+    <string name="force_dovi_profile_7_summary">Ignores device compatibility checks</string>
+
+    <string name="discover">Discover</string>
+    <string name="request">Request</string>
+    <string name="pending">Pending</string>
+    <string name="seerr_integration">Seerr integration</string>
+    <string name="remove_seerr_server">Remove Seerr Server</string>
+    <string name="seerr_server_added">Seerr server added</string>
+    <string name="password">Password</string>
+    <string name="username">Username</string>
+    <string name="url">URL</string>
+    <string name="trending">Trending</string>
+    <string name="upcoming_movies">Upcoming Movies</string>
+    <string name="upcoming_tv">Upcoming TV Shows</string>
+    <string name="request_4k">Request in 4K</string>
+    <string name="software_decoding_av1">AV1 software decoding</string>
 
     <string-array name="theme_song_volume">
         <item>Disabled</item>

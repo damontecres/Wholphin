@@ -21,18 +21,23 @@ val LocalImageUrlService =
 /**
  * Colors not associated with the theme
  */
-sealed class AppColors private constructor() {
-    companion object {
-        val TransparentBlack25 = Color(0x40000000)
-        val TransparentBlack50 = Color(0x80000000)
-        val TransparentBlack75 = Color(0xBF000000)
+object AppColors {
+    val TransparentBlack25 = Color(0x40000000)
+    val TransparentBlack50 = Color(0x80000000)
+    val TransparentBlack75 = Color(0xBF000000)
 
-        val DarkGreen = Color(0xFF114000)
-        val DarkRed = Color(0xFF400000)
-        val DarkCyan = Color(0xFF21556E)
-        val DarkPurple = Color(0xFF261370)
+    val DarkGreen = Color(0xFF114000)
+    val DarkRed = Color(0xFF400000)
+    val DarkCyan = Color(0xFF21556E)
+    val DarkPurple = Color(0xFF261370)
 
-        val GoldenYellow = Color(0xFFDAB440)
+    val GoldenYellow = Color(0xFFDAB440)
+
+    object Discover {
+        val Blue = Color(37, 99, 235)
+        val Purple = Color(147, 51, 234)
+        val Green = Color(74, 222, 128)
+        val Yellow = Color(234, 179, 8)
     }
 }
 
@@ -51,6 +56,7 @@ val DefaultItemFields =
         ItemFields.SORT_NAME,
         ItemFields.CHAPTERS,
         ItemFields.MEDIA_SOURCES,
+        ItemFields.MEDIA_SOURCE_COUNT,
     )
 
 /**
@@ -63,10 +69,12 @@ val SlimItemFields =
         ItemFields.CHILD_COUNT,
         ItemFields.OVERVIEW,
         ItemFields.SORT_NAME,
+        ItemFields.MEDIA_SOURCE_COUNT,
     )
 
 object Cards {
     val height2x3 = 172.dp
+    val heightEpisode = height2x3 * .75f
     val playedPercentHeight = 6.dp
     val serverUserCircle = height2x3 * .75f
 }

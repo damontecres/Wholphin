@@ -30,6 +30,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -39,6 +40,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
@@ -67,7 +69,7 @@ import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.FavoriteWatchManager
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.ui.AspectRatios
-import com.github.damontecres.wholphin.ui.OneTimeLaunchedEffect
+import com.github.damontecres.wholphin.ui.RequestOrRestoreFocus
 import com.github.damontecres.wholphin.ui.SlimItemFields
 import com.github.damontecres.wholphin.ui.cards.GridCard
 import com.github.damontecres.wholphin.ui.data.AddPlaylistViewModel
@@ -87,15 +89,17 @@ import com.github.damontecres.wholphin.ui.setValueOnMain
 import com.github.damontecres.wholphin.ui.toServerString
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.ApiRequestPager
+import com.github.damontecres.wholphin.util.DataLoadingState
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.GetItemsRequestHandler
 import com.github.damontecres.wholphin.util.GetPersonsHandler
-import com.github.damontecres.wholphin.util.LoadingExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedFactory
+import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
@@ -114,13 +118,13 @@ import org.jellyfin.sdk.model.serializer.toUUIDOrNull
 import timber.log.Timber
 import java.util.TreeSet
 import java.util.UUID
-import javax.inject.Inject
 import kotlin.time.Duration
 
-@HiltViewModel
+@HiltViewModel(assistedFactory = CollectionFolderViewModel.Factory::class)
 class CollectionFolderViewModel
-    @Inject
+    @AssistedInject
     constructor(
+        private val savedStateHandle: SavedStateHandle,
         api: ApiClient,
         @param:ApplicationContext private val context: Context,
         private val serverRepository: ServerRepository,
@@ -128,62 +132,74 @@ class CollectionFolderViewModel
         private val favoriteWatchManager: FavoriteWatchManager,
         private val backdropService: BackdropService,
         val navigationManager: NavigationManager,
+        @Assisted itemId: String,
+        @Assisted initialSortAndDirection: SortAndDirection?,
+        @Assisted("recursive") private val recursive: Boolean,
+        @Assisted private val collectionFilter: CollectionFolderFilter,
+        @Assisted("useSeriesForPrimary") private val useSeriesForPrimary: Boolean,
+        @Assisted defaultViewOptions: ViewOptions,
     ) : ItemViewModel(api) {
-        val loading = MutableLiveData<LoadingState>(LoadingState.Loading)
+        @AssistedFactory
+        interface Factory {
+            fun create(
+                itemId: String,
+                initialSortAndDirection: SortAndDirection?,
+                @Assisted("recursive") recursive: Boolean,
+                collectionFilter: CollectionFolderFilter,
+                @Assisted("useSeriesForPrimary") useSeriesForPrimary: Boolean,
+                defaultViewOptions: ViewOptions,
+            ): CollectionFolderViewModel
+        }
+
+        val loading = MutableLiveData<DataLoadingState<List<BaseItem?>>>(DataLoadingState.Loading)
         val backgroundLoading = MutableLiveData<LoadingState>(LoadingState.Loading)
-        val pager = MutableLiveData<List<BaseItem?>>(listOf())
         val sortAndDirection = MutableLiveData<SortAndDirection>()
         val filter = MutableLiveData<GetItemsFilter>(GetItemsFilter())
         val viewOptions = MutableLiveData<ViewOptions>()
 
-        private var useSeriesForPrimary: Boolean = true
-        private lateinit var collectionFilter: CollectionFolderFilter
-
-        fun init(
-            itemId: String,
-            initialSortAndDirection: SortAndDirection?,
-            recursive: Boolean,
-            collectionFilter: CollectionFolderFilter,
-            useSeriesForPrimary: Boolean,
-            defaultViewOptions: ViewOptions,
-        ): Job =
-            viewModelScope.launch(
-                LoadingExceptionHandler(
-                    loading,
-                    context.getString(R.string.error_loading_collection, itemId),
-                ) + Dispatchers.IO,
-            ) {
-                this@CollectionFolderViewModel.collectionFilter = collectionFilter
-                this@CollectionFolderViewModel.useSeriesForPrimary = useSeriesForPrimary
-                this@CollectionFolderViewModel.itemId = itemId
-                itemId.toUUIDOrNull()?.let {
-                    fetchItem(it)
-                }
-
-                val libraryDisplayInfo =
-                    serverRepository.currentUser.value?.let { user ->
-                        libraryDisplayInfoDao.getItem(user, itemId)
-                    }
-                this@CollectionFolderViewModel.viewOptions.setValueOnMain(
-                    libraryDisplayInfo?.viewOptions ?: defaultViewOptions,
-                )
-
-                val sortAndDirection =
-                    if (collectionFilter.useSavedLibraryDisplayInfo) {
-                        libraryDisplayInfo?.sortAndDirection
-                    } else {
-                        null
-                    } ?: initialSortAndDirection ?: SortAndDirection.DEFAULT
-
-                val filterToUse =
-                    if (collectionFilter.useSavedLibraryDisplayInfo && libraryDisplayInfo?.filter != null) {
-                        collectionFilter.filter.merge(libraryDisplayInfo.filter)
-                    } else {
-                        collectionFilter.filter
-                    }
-
-                loadResults(true, sortAndDirection, recursive, filterToUse, useSeriesForPrimary)
+        var position: Int
+            get() = savedStateHandle.get<Int>("position") ?: 0
+            set(value) {
+                savedStateHandle["position"] = value
             }
+
+        init {
+            viewModelScope.launchIO {
+                super.itemId = itemId
+                try {
+                    itemId.toUUIDOrNull()?.let {
+                        fetchItem(it)
+                    }
+
+                    val libraryDisplayInfo =
+                        serverRepository.currentUser.value?.let { user ->
+                            libraryDisplayInfoDao.getItem(user, itemId)
+                        }
+                    this@CollectionFolderViewModel.viewOptions.setValueOnMain(
+                        libraryDisplayInfo?.viewOptions ?: defaultViewOptions,
+                    )
+
+                    val sortAndDirection =
+                        if (collectionFilter.useSavedLibraryDisplayInfo) {
+                            libraryDisplayInfo?.sortAndDirection
+                        } else {
+                            null
+                        } ?: initialSortAndDirection ?: SortAndDirection.DEFAULT
+
+                    val filterToUse =
+                        if (collectionFilter.useSavedLibraryDisplayInfo && libraryDisplayInfo?.filter != null) {
+                            collectionFilter.filter.merge(libraryDisplayInfo.filter)
+                        } else {
+                            collectionFilter.filter
+                        }
+
+                    loadResults(true, sortAndDirection, recursive, filterToUse, useSeriesForPrimary)
+                } catch (ex: Exception) {
+                    Timber.e(ex, "Error during init")
+                    loading.setValueOnMain(DataLoadingState.Error(ex))
+                }
+            }
+        }
 
         private fun saveLibraryDisplayInfo(
             newFilter: GetItemsFilter = this.filter.value!!,
@@ -192,7 +208,7 @@ class CollectionFolderViewModel
         ) {
             if (collectionFilter.useSavedLibraryDisplayInfo) {
                 serverRepository.currentUser.value?.let { user ->
-                    viewModelScope.launch(Dispatchers.IO) {
+                    viewModelScope.launchIO {
                         val libraryDisplayInfo =
                             LibraryDisplayInfo(
                                 userId = user.rowId,
@@ -252,8 +268,7 @@ class CollectionFolderViewModel
             viewModelScope.launch(Dispatchers.IO) {
                 withContext(Dispatchers.Main) {
                     if (resetState) {
-                        pager.value = listOf()
-                        loading.value = LoadingState.Loading
+                        loading.value = DataLoadingState.Loading
                     }
                     backgroundLoading.value = LoadingState.Loading
                     this@CollectionFolderViewModel.sortAndDirection.value = sortAndDirection
@@ -264,8 +279,7 @@ class CollectionFolderViewModel
                         createPager(sortAndDirection, recursive, filter, useSeriesForPrimary).init()
                     if (newPager.isNotEmpty()) newPager.getBlocking(0)
                     withContext(Dispatchers.Main) {
-                        pager.value = newPager
-                        loading.value = LoadingState.Success
+                        loading.value = DataLoadingState.Success(newPager)
                         backgroundLoading.value = LoadingState.Success
                     }
                 } catch (ex: Exception) {
@@ -276,8 +290,7 @@ class CollectionFolderViewModel
                         filter,
                     )
                     withContext(Dispatchers.Main) {
-                        loading.value = LoadingState.Error(ex)
-                        pager.value = listOf()
+                        loading.value = DataLoadingState.Error(ex)
                     }
                 }
             }
@@ -288,50 +301,14 @@ class CollectionFolderViewModel
             recursive: Boolean,
             filter: GetItemsFilter,
             useSeriesForPrimary: Boolean,
-        ): ApiRequestPager<out Any> {
-            val item = item.value
-            return when (filter.override) {
+        ): ApiRequestPager<out Any> =
+            when (filter.override) {
                 GetItemsFilterOverride.NONE -> {
-                    val includeItemTypes =
-                        item
-                            ?.data
-                            ?.collectionType
-                            ?.baseItemKinds
-                            .orEmpty()
                     val request =
-                        filter.applyTo(
-                            GetItemsRequest(
-                                parentId = item?.id,
-                                enableImageTypes = listOf(ImageType.PRIMARY, ImageType.THUMB),
-                                includeItemTypes = includeItemTypes,
-                                recursive = recursive,
-                                excludeItemIds = item?.let { listOf(item.id) },
-                                sortBy =
-                                    buildList {
-                                        if (sortAndDirection.sort != ItemSortBy.DEFAULT) {
-                                            add(sortAndDirection.sort)
-                                            if (sortAndDirection.sort != ItemSortBy.SORT_NAME) {
-                                                add(ItemSortBy.SORT_NAME)
-                                            }
-                                            if (item?.data?.collectionType == CollectionType.MOVIES) {
-                                                add(ItemSortBy.PRODUCTION_YEAR)
-                                            }
-                                        }
-                                    },
-                                sortOrder =
-                                    buildList {
-                                        if (sortAndDirection.sort != ItemSortBy.DEFAULT) {
-                                            add(sortAndDirection.direction)
-                                            if (sortAndDirection.sort != ItemSortBy.SORT_NAME) {
-                                                add(SortOrder.ASCENDING)
-                                            }
-                                            if (item?.data?.collectionType == CollectionType.MOVIES) {
-                                                add(SortOrder.ASCENDING)
-                                            }
-                                        }
-                                    },
-                                fields = SlimItemFields,
-                            ),
+                        createGetItemsRequest(
+                            sortAndDirection = sortAndDirection,
+                            recursive = recursive,
+                            filter = filter,
                         )
                     val newPager =
                         ApiRequestPager(
@@ -362,6 +339,55 @@ class CollectionFolderViewModel
                     newPager
                 }
             }
+
+        private fun createGetItemsRequest(
+            sortAndDirection: SortAndDirection,
+            recursive: Boolean,
+            filter: GetItemsFilter,
+        ): GetItemsRequest {
+            val item = item.value
+            val includeItemTypes =
+                item
+                    ?.data
+                    ?.collectionType
+                    ?.baseItemKinds
+                    .orEmpty()
+            val request =
+                filter.applyTo(
+                    GetItemsRequest(
+                        parentId = item?.id,
+                        enableImageTypes = listOf(ImageType.PRIMARY, ImageType.THUMB),
+                        includeItemTypes = includeItemTypes,
+                        recursive = recursive,
+                        excludeItemIds = item?.let { listOf(item.id) },
+                        sortBy =
+                            buildList {
+                                if (sortAndDirection.sort != ItemSortBy.DEFAULT) {
+                                    add(sortAndDirection.sort)
+                                    if (sortAndDirection.sort != ItemSortBy.SORT_NAME) {
+                                        add(ItemSortBy.SORT_NAME)
+                                    }
+                                    if (item?.data?.collectionType == CollectionType.MOVIES) {
+                                        add(ItemSortBy.PRODUCTION_YEAR)
+                                    }
+                                }
+                            },
+                        sortOrder =
+                            buildList {
+                                if (sortAndDirection.sort != ItemSortBy.DEFAULT) {
+                                    add(sortAndDirection.direction)
+                                    if (sortAndDirection.sort != ItemSortBy.SORT_NAME) {
+                                        add(SortOrder.ASCENDING)
+                                    }
+                                    if (item?.data?.collectionType == CollectionType.MOVIES) {
+                                        add(SortOrder.ASCENDING)
+                                    }
+                                }
+                            },
+                        fields = SlimItemFields,
+                    ),
+                )
+            return request
         }
 
         suspend fun getFilterOptionValues(filterOption: ItemFilterBy<*>): List<FilterValueOption> =
@@ -441,26 +467,25 @@ class CollectionFolderViewModel
 
         suspend fun positionOfLetter(letter: Char): Int? =
             withContext(Dispatchers.IO) {
-                item.value?.let { item ->
-                    val includeItemTypes =
-                        when (item.data.collectionType) {
-                            CollectionType.MOVIES -> listOf(BaseItemKind.MOVIE)
-                            CollectionType.TVSHOWS -> listOf(BaseItemKind.SERIES)
-                            CollectionType.HOMEVIDEOS -> listOf(BaseItemKind.VIDEO)
-                            else -> listOf()
-                        }
-                    val request =
-                        GetItemsRequest(
-                            parentId = item.id,
-                            includeItemTypes = includeItemTypes,
-                            nameLessThan = letter.toString(),
-                            limit = 0,
-                            enableTotalRecordCount = true,
-                            recursive = true,
-                        )
-                    val result by GetItemsRequestHandler.execute(api, request)
-                    result.totalRecordCount
+                val sort = sortAndDirection.value
+                val filter = filter.value
+                if (sort == null || filter == null) {
+                    return@withContext null
                 }
+                val request =
+                    createGetItemsRequest(
+                        sortAndDirection = sort,
+                        recursive = recursive,
+                        filter = filter,
+                    ).copy(
+                        enableImageTypes = null,
+                        fields = null,
+                        nameLessThan = letter.toString(),
+                        limit = 0,
+                        enableTotalRecordCount = true,
+                    )
+                val result by GetItemsRequestHandler.execute(api, request)
+                result.totalRecordCount
             }
 
         fun setWatched(
@@ -469,7 +494,9 @@ class CollectionFolderViewModel
             played: Boolean,
         ) = viewModelScope.launch(ExceptionHandler() + Dispatchers.IO) {
             favoriteWatchManager.setWatched(itemId, played)
-            (pager.value as? ApiRequestPager<*>)?.refreshItem(position, itemId)
+            (loading.value as? DataLoadingState.Success)?.let {
+                (it.data as? ApiRequestPager<*>)?.refreshItem(position, itemId)
+            }
         }
 
         fun setFavorite(
@@ -478,7 +505,9 @@ class CollectionFolderViewModel
             favorite: Boolean,
         ) = viewModelScope.launch(ExceptionHandler() + Dispatchers.IO) {
             favoriteWatchManager.setFavorite(itemId, favorite)
-            (pager.value as? ApiRequestPager<*>)?.refreshItem(position, itemId)
+            (loading.value as? DataLoadingState.Success)?.let {
+                (it.data as? ApiRequestPager<*>)?.refreshItem(position, itemId)
+            }
         }
 
         fun updateBackdrop(item: BaseItem) {
@@ -504,11 +533,13 @@ fun CollectionFolderGrid(
     playEnabled: Boolean,
     defaultViewOptions: ViewOptions,
     modifier: Modifier = Modifier,
+    viewModelKey: String? = itemId.toServerString(),
     initialSortAndDirection: SortAndDirection? = null,
     showTitle: Boolean = true,
     positionCallback: ((columns: Int, position: Int) -> Unit)? = null,
     useSeriesForPrimary: Boolean = true,
     filterOptions: List<ItemFilterBy<*>> = DefaultFilterOptions,
+    focusRequesterOnEmpty: FocusRequester? = null,
 ) = CollectionFolderGrid(
     preferences,
     itemId.toServerString(),
@@ -517,6 +548,7 @@ fun CollectionFolderGrid(
     onClickItem,
     sortOptions,
     playEnabled,
+    viewModelKey = viewModelKey,
     defaultViewOptions = defaultViewOptions,
     modifier = modifier,
     initialSortAndDirection = initialSortAndDirection,
@@ -524,6 +556,7 @@ fun CollectionFolderGrid(
     positionCallback = positionCallback,
     useSeriesForPrimary = useSeriesForPrimary,
     filterOptions = filterOptions,
+    focusRequesterOnEmpty = focusRequesterOnEmpty,
 )
 
 @Composable
@@ -537,31 +570,34 @@ fun CollectionFolderGrid(
     playEnabled: Boolean,
     defaultViewOptions: ViewOptions,
     modifier: Modifier = Modifier,
-    viewModel: CollectionFolderViewModel = hiltViewModel(key = itemId),
-    playlistViewModel: AddPlaylistViewModel = hiltViewModel(),
+    viewModelKey: String? = itemId,
     initialSortAndDirection: SortAndDirection? = null,
     showTitle: Boolean = true,
     positionCallback: ((columns: Int, position: Int) -> Unit)? = null,
     useSeriesForPrimary: Boolean = true,
     filterOptions: List<ItemFilterBy<*>> = DefaultFilterOptions,
+    focusRequesterOnEmpty: FocusRequester? = null,
+    playlistViewModel: AddPlaylistViewModel = hiltViewModel(),
+    viewModel: CollectionFolderViewModel =
+        hiltViewModel<CollectionFolderViewModel, CollectionFolderViewModel.Factory>(
+            key = viewModelKey,
+        ) {
+            it.create(
+                itemId = itemId,
+                initialSortAndDirection = initialSortAndDirection,
+                recursive = recursive,
+                collectionFilter = initialFilter,
+                useSeriesForPrimary = useSeriesForPrimary,
+                defaultViewOptions = defaultViewOptions,
+            )
+        },
 ) {
     val context = LocalContext.current
-    OneTimeLaunchedEffect {
-        viewModel.init(
-            itemId,
-            initialSortAndDirection,
-            recursive,
-            initialFilter,
-            useSeriesForPrimary,
-            defaultViewOptions,
-        )
-    }
     val sortAndDirection by viewModel.sortAndDirection.observeAsState(SortAndDirection.DEFAULT)
     val filter by viewModel.filter.observeAsState(initialFilter.filter)
     val loading by viewModel.loading.observeAsState(LoadingState.Loading)
     val backgroundLoading by viewModel.backgroundLoading.observeAsState(LoadingState.Loading)
     val item by viewModel.item.observeAsState()
-    val pager by viewModel.pager.observeAsState()
     val viewOptions by viewModel.viewOptions.observeAsState(defaultViewOptions)
 
     var moreDialog by remember { mutableStateOf<Optional<PositionItem>>(Optional.absent()) }
@@ -569,90 +605,91 @@ fun CollectionFolderGrid(
     val playlistState by playlistViewModel.playlistState.observeAsState(PlaylistLoadingState.Pending)
 
     when (val state = loading) {
-        is LoadingState.Error -> {
-            ErrorMessage(state)
-        }
-
-        LoadingState.Loading,
-        LoadingState.Pending,
+        DataLoadingState.Loading,
+        DataLoadingState.Pending,
         -> {
             LoadingPage()
         }
 
-        LoadingState.Success -> {
-            pager?.let { pager ->
-                val title =
-                    initialFilter.nameOverride
-                        ?: item?.name
-                        ?: item?.data?.collectionType?.name
-                        ?: stringResource(R.string.collection)
-                Box(modifier = modifier) {
-                    CollectionFolderGridContent(
-                        preferences = preferences,
-                        item = item,
-                        title = title,
-                        pager = pager,
-                        sortAndDirection = sortAndDirection!!,
-                        modifier = Modifier.fillMaxSize(),
-                        onClickItem = onClickItem,
-                        onLongClickItem = { position, item ->
-                            moreDialog.makePresent(PositionItem(position, item))
-                        },
-                        onSortChange = {
-                            viewModel.onSortChange(it, recursive, filter)
-                        },
-                        filterOptions = filterOptions,
-                        currentFilter = filter,
-                        onFilterChange = {
-                            viewModel.onFilterChange(it, recursive)
-                        },
-                        getPossibleFilterValues = {
-                            viewModel.getFilterOptionValues(it)
-                        },
-                        showTitle = showTitle,
-                        sortOptions = sortOptions,
-                        positionCallback = positionCallback,
-                        letterPosition = { viewModel.positionOfLetter(it) ?: -1 },
-                        viewOptions = viewOptions,
-                        defaultViewOptions = defaultViewOptions,
-                        onSaveViewOptions = { viewModel.saveViewOptions(it) },
-                        onChangeBackdrop = viewModel::updateBackdrop,
-                        playEnabled = playEnabled,
-                        onClickPlay = { _, item ->
-                            viewModel.navigationManager.navigateTo(Destination.Playback(item))
-                        },
-                        onClickPlayAll = { shuffle ->
-                            itemId.toUUIDOrNull()?.let {
-                                viewModel.navigationManager.navigateTo(
-                                    Destination.PlaybackList(
-                                        itemId = it,
-                                        startIndex = 0,
-                                        shuffle = shuffle,
-                                        recursive = recursive,
-                                        sortAndDirection = sortAndDirection,
-                                        filter = filter,
-                                    ),
-                                )
-                            }
-                        },
-                    )
+        is DataLoadingState.Error,
+        is DataLoadingState.Success<*>,
+        -> {
+            val title =
+                initialFilter.nameOverride
+                    ?: item?.name
+                    ?: item?.data?.collectionType?.name
+                    ?: stringResource(R.string.collection)
+            Box(modifier = modifier) {
+                CollectionFolderGridContent(
+                    preferences = preferences,
+                    initialPosition = viewModel.position,
+                    item = item,
+                    title = title,
+                    loadingState = state as DataLoadingState<List<BaseItem?>>,
+                    sortAndDirection = sortAndDirection!!,
+                    modifier = Modifier.fillMaxSize(),
+                    focusRequesterOnEmpty = focusRequesterOnEmpty,
+                    onClickItem = onClickItem,
+                    onLongClickItem = { position, item ->
+                        moreDialog.makePresent(PositionItem(position, item))
+                    },
+                    onSortChange = {
+                        viewModel.onSortChange(it, recursive, filter)
+                    },
+                    filterOptions = filterOptions,
+                    currentFilter = filter,
+                    onFilterChange = {
+                        viewModel.onFilterChange(it, recursive)
+                    },
+                    getPossibleFilterValues = {
+                        viewModel.getFilterOptionValues(it)
+                    },
+                    showTitle = showTitle,
+                    sortOptions = sortOptions,
+                    positionCallback = { columns, position ->
+                        viewModel.position = position
+                        positionCallback?.invoke(columns, position)
+                    },
+                    letterPosition = { viewModel.positionOfLetter(it) ?: -1 },
+                    viewOptions = viewOptions,
+                    defaultViewOptions = defaultViewOptions,
+                    onSaveViewOptions = { viewModel.saveViewOptions(it) },
+                    onChangeBackdrop = viewModel::updateBackdrop,
+                    playEnabled = playEnabled,
+                    onClickPlay = { _, item ->
+                        viewModel.navigationManager.navigateTo(Destination.Playback(item))
+                    },
+                    onClickPlayAll = { shuffle ->
+                        itemId.toUUIDOrNull()?.let {
+                            viewModel.navigationManager.navigateTo(
+                                Destination.PlaybackList(
+                                    itemId = it,
+                                    startIndex = 0,
+                                    shuffle = shuffle,
+                                    recursive = recursive,
+                                    sortAndDirection = sortAndDirection,
+                                    filter = filter,
+                                ),
+                            )
+                        }
+                    },
+                )
 
-                    AnimatedVisibility(
-                        backgroundLoading == LoadingState.Loading,
-                        modifier =
-                            Modifier
-                                .align(Alignment.Center)
-                                .padding(16.dp),
-                    ) {
-                        CircularProgress(
-                            Modifier
-                                .background(
-                                    MaterialTheme.colorScheme.background.copy(alpha = .25f),
-                                    shape = CircleShape,
-                                ).size(64.dp)
-                                .padding(4.dp),
-                        )
-                    }
+                AnimatedVisibility(
+                    backgroundLoading == LoadingState.Loading,
+                    modifier =
+                        Modifier
+                            .align(Alignment.Center)
+                            .padding(16.dp),
+                ) {
+                    CircularProgress(
+                        Modifier
+                            .background(
+                                MaterialTheme.colorScheme.background.copy(alpha = .25f),
+                                shape = CircleShape,
+                            ).size(64.dp)
+                            .padding(4.dp),
+                    )
                 }
             }
         }
@@ -713,7 +750,7 @@ fun CollectionFolderGridContent(
     preferences: UserPreferences,
     item: BaseItem?,
     title: String,
-    pager: List<BaseItem?>,
+    loadingState: DataLoadingState<List<BaseItem?>>,
     sortAndDirection: SortAndDirection,
     onClickItem: (Int, BaseItem) -> Unit,
     onLongClickItem: (Int, BaseItem) -> Unit,
@@ -728,25 +765,35 @@ fun CollectionFolderGridContent(
     onClickPlayAll: (shuffle: Boolean) -> Unit,
     onClickPlay: (Int, BaseItem) -> Unit,
     onChangeBackdrop: (BaseItem) -> Unit,
+    initialPosition: Int,
     modifier: Modifier = Modifier,
     showTitle: Boolean = true,
     positionCallback: ((columns: Int, position: Int) -> Unit)? = null,
     currentFilter: GetItemsFilter = GetItemsFilter(),
     filterOptions: List<ItemFilterBy<*>> = listOf(),
     onFilterChange: (GetItemsFilter) -> Unit = {},
+    focusRequesterOnEmpty: FocusRequester? = null,
 ) {
     val context = LocalContext.current
 
+    val pager = (loadingState as? DataLoadingState.Success)?.data
     var showHeader by rememberSaveable { mutableStateOf(true) }
     var showViewOptions by rememberSaveable { mutableStateOf(false) }
     var viewOptions by remember { mutableStateOf(viewOptions) }
+    val headerRowFocusRequester = remember { FocusRequester() }
 
     val gridFocusRequester = remember { FocusRequester() }
-    LaunchedEffect(Unit) { gridFocusRequester.tryRequestFocus() }
+    if (pager?.isNotEmpty() == true) {
+        RequestOrRestoreFocus(gridFocusRequester)
+    } else {
+        LaunchedEffect(Unit) {
+            (focusRequesterOnEmpty ?: headerRowFocusRequester).tryRequestFocus()
+        }
+    }
     var backdropImageUrl by remember { mutableStateOf<String?>(null) }
 
-    var position by rememberInt(0)
-    val focusedItem = pager.getOrNull(position)
+    var position by rememberInt(initialPosition)
+    val focusedItem = pager?.getOrNull(position)
     if (viewOptions.showDetails) {
         LaunchedEffect(focusedItem) {
             focusedItem?.let(onChangeBackdrop)
@@ -759,7 +806,7 @@ fun CollectionFolderGridContent(
             modifier = Modifier.fillMaxSize(),
         ) {
             AnimatedVisibility(
-                showHeader,
+                showHeader || loadingState !is DataLoadingState.Success,
                 enter = slideInVertically() + fadeIn(),
                 exit = slideOutVertically() + fadeOut(),
             ) {
@@ -786,7 +833,8 @@ fun CollectionFolderGridContent(
                         modifier =
                             Modifier
                                 .padding(start = 16.dp, end = endPadding)
-                                .fillMaxWidth(),
+                                .fillMaxWidth()
+                                .focusRequester(headerRowFocusRequester),
                     ) {
                         if (sortOptions.isNotEmpty() || filterOptions.isNotEmpty()) {
                             Row(
@@ -819,7 +867,7 @@ fun CollectionFolderGridContent(
                                 )
                             }
                         }
-                        if (playEnabled) {
+                        if (playEnabled && pager?.isNotEmpty() == true) {
                             Row(
                                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                                 verticalAlignment = Alignment.CenterVertically,
@@ -851,47 +899,62 @@ fun CollectionFolderGridContent(
                             .padding(16.dp),
                 )
             }
-            CardGrid(
-                pager = pager,
-                onClickItem = onClickItem,
-                onLongClickItem = onLongClickItem,
-                onClickPlay = onClickPlay,
-                letterPosition = letterPosition,
-                gridFocusRequester = gridFocusRequester,
-                showJumpButtons = false, // TODO add preference
-                showLetterButtons = sortAndDirection.sort == ItemSortBy.SORT_NAME,
-                modifier = Modifier.fillMaxSize(),
-                initialPosition = 0,
-                positionCallback = { columns, newPosition ->
-                    showHeader = newPosition < columns
-                    position = newPosition
-                    positionCallback?.invoke(columns, newPosition)
-                },
-                cardContent = { item, onClick, onLongClick, mod ->
-                    GridCard(
-                        item = item,
-                        onClick = onClick,
-                        onLongClick = onLongClick,
-                        imageContentScale = viewOptions.contentScale.scale,
-                        imageAspectRatio = viewOptions.aspectRatio.ratio,
-                        imageType = viewOptions.imageType,
-                        showTitle = viewOptions.showTitles,
-                        modifier = mod,
+            when (val state = loadingState) {
+                DataLoadingState.Pending,
+                DataLoadingState.Loading,
+                -> {
+                    // This shouldn't happen, so just show placeholder
+                    Text("Loading")
+                }
+
+                is DataLoadingState.Error -> {
+                    ErrorMessage(state.message, state.exception)
+                }
+
+                is DataLoadingState.Success<List<BaseItem?>> -> {
+                    CardGrid(
+                        pager = state.data,
+                        onClickItem = onClickItem,
+                        onLongClickItem = onLongClickItem,
+                        onClickPlay = onClickPlay,
+                        letterPosition = letterPosition,
+                        gridFocusRequester = gridFocusRequester,
+                        showJumpButtons = false, // TODO add preference
+                        showLetterButtons = sortAndDirection.sort == ItemSortBy.SORT_NAME,
+                        modifier = Modifier.fillMaxSize(),
+                        initialPosition = initialPosition,
+                        positionCallback = { columns, newPosition ->
+                            showHeader = newPosition < columns
+                            position = newPosition
+                            positionCallback?.invoke(columns, newPosition)
+                        },
+                        cardContent = { item, onClick, onLongClick, mod ->
+                            GridCard(
+                                item = item,
+                                onClick = onClick,
+                                onLongClick = onLongClick,
+                                imageContentScale = viewOptions.contentScale.scale,
+                                imageAspectRatio = viewOptions.aspectRatio.ratio,
+                                imageType = viewOptions.imageType,
+                                showTitle = viewOptions.showTitles,
+                                modifier = mod,
+                            )
+                        },
+                        columns = viewOptions.columns,
+                        spacing = viewOptions.spacing.dp,
                     )
-                },
-                columns = viewOptions.columns,
-                spacing = viewOptions.spacing.dp,
-            )
-            AnimatedVisibility(showViewOptions) {
-                ViewOptionsDialog(
-                    viewOptions = viewOptions,
-                    defaultViewOptions = defaultViewOptions,
-                    onDismissRequest = {
-                        showViewOptions = false
-                        onSaveViewOptions.invoke(viewOptions)
-                    },
-                    onViewOptionsChange = { viewOptions = it },
-                )
+                    AnimatedVisibility(showViewOptions) {
+                        ViewOptionsDialog(
+                            viewOptions = viewOptions,
+                            defaultViewOptions = defaultViewOptions,
+                            onDismissRequest = {
+                                showViewOptions = false
+                                onSaveViewOptions.invoke(viewOptions)
+                            },
+                            onViewOptionsChange = { viewOptions = it },
+                        )
+                    }
+                }
             }
         }
     }

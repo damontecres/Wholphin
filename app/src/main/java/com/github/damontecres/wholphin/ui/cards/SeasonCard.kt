@@ -88,6 +88,7 @@ fun SeasonCard(
         isPlayed = item?.data?.userData?.played ?: false,
         unplayedItemCount = item?.data?.userData?.unplayedItemCount ?: 0,
         playedPercentage = item?.data?.userData?.playedPercentage ?: 0.0,
+        numberOfVersions = item?.data?.mediaSourceCount ?: 0,
         onClick = onClick,
         onLongClick = onLongClick,
         modifier = modifier,
@@ -112,6 +113,7 @@ fun SeasonCard(
     isPlayed: Boolean,
     unplayedItemCount: Int,
     playedPercentage: Double,
+    numberOfVersions: Int,
     onClick: () -> Unit,
     onLongClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -172,6 +174,7 @@ fun SeasonCard(
                     watched = isPlayed,
                     unwatchedCount = unplayedItemCount,
                     watchedPercent = playedPercentage,
+                    numberOfVersions = numberOfVersions,
                     useFallbackText = false,
                     modifier =
                         Modifier

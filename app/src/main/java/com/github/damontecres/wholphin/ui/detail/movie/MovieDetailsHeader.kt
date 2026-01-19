@@ -24,8 +24,8 @@ import com.github.damontecres.wholphin.data.ChosenStreams
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.components.GenreText
-import com.github.damontecres.wholphin.ui.components.MovieQuickDetails
 import com.github.damontecres.wholphin.ui.components.OverviewText
+import com.github.damontecres.wholphin.ui.components.QuickDetails
 import com.github.damontecres.wholphin.ui.components.VideoStreamDetails
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.letNotEmpty
@@ -65,7 +65,11 @@ fun MovieDetailsHeader(
             modifier = Modifier.fillMaxWidth(.60f),
         ) {
             val padding = 4.dp
-            MovieQuickDetails(dto, Modifier.padding(bottom = padding))
+            QuickDetails(
+                movie.ui.quickDetails,
+                movie.timeRemainingOrRuntime,
+                Modifier.padding(bottom = padding),
+            )
 
             dto.genres?.letNotEmpty {
                 GenreText(it, Modifier.padding(bottom = padding))
@@ -73,6 +77,7 @@ fun MovieDetailsHeader(
 
             VideoStreamDetails(
                 chosenStreams = chosenStreams,
+                numberOfVersions = movie.data.mediaSourceCount ?: 0,
                 modifier = Modifier.padding(bottom = padding),
             )
             dto.taglines?.firstOrNull()?.let { tagline ->

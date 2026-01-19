@@ -153,7 +153,7 @@ class StreamChoiceService
             return source.mediaStreams?.letNotEmpty { streams ->
                 val candidates = streams.filter { it.type == MediaStreamType.SUBTITLE }
                 chooseSubtitleStream(
-                    audioStream,
+                    audioStream?.language,
                     candidates,
                     itemPlayback,
                     plc,
@@ -162,8 +162,42 @@ class StreamChoiceService
             }
         }
 
+        /**
+         * Resolves ONLY_FORCED to an actual subtitle track index.
+         * Returns the original index if not ONLY_FORCED or DISABLED.
+         */
+        suspend fun resolveSubtitleIndex(
+            source: MediaSourceInfo,
+            audioStreamIndex: Int?,
+            seriesId: UUID?,
+            subtitleIndex: Int,
+            prefs: UserPreferences,
+        ): Int? =
+            if (subtitleIndex != TrackIndex.ONLY_FORCED) {
+                subtitleIndex
+            } else {
+                val audioStream =
+                    source.mediaStreams?.firstOrNull {
+                        it.type == MediaStreamType.AUDIO && it.index == audioStreamIndex
+                    }
+                val itemPlayback =
+                    ItemPlayback(
+                        userId = serverRepository.currentUser.value!!.rowId,
+                        itemId = UUID.randomUUID(), // Not used for ONLY_FORCED resolution
+                        subtitleIndex = TrackIndex.ONLY_FORCED,
+                    )
+                chooseSubtitleStream(
+                    source = source,
+                    audioStream = audioStream,
+                    seriesId = seriesId,
+                    itemPlayback = itemPlayback,
+                    plc = null,
+                    prefs = prefs,
+                )?.index
+            }
+
         fun chooseSubtitleStream(
-            audioStream: MediaStream?,
+            audioStreamLang: String?,
             candidates: List<MediaStream>,
             itemPlayback: ItemPlayback?,
             playbackLanguageChoice: PlaybackLanguageChoice?,
@@ -171,6 +205,14 @@ class StreamChoiceService
         ): MediaStream? {
             if (itemPlayback?.subtitleIndex == TrackIndex.DISABLED) {
                 return null
+            } else if (itemPlayback?.subtitleIndex == TrackIndex.ONLY_FORCED) {
+                // Client-side manual override: User selected "Only Forced" in player menu
+                val seriesLang =
+                    playbackLanguageChoice?.subtitleLanguage?.takeIf { it.isNotNullOrBlank() }
+                val subtitleLanguage =
+                    (seriesLang ?: userConfig?.subtitleLanguagePreference)
+                        ?.takeIf { it.isNotNullOrBlank() }
+                return findForcedTrack(candidates, subtitleLanguage, audioStreamLang)
             } else if (itemPlayback?.subtitleIndexEnabled == true) {
                 return candidates.firstOrNull { it.index == itemPlayback.subtitleIndex }
             } else {
@@ -198,48 +240,61 @@ class StreamChoiceService
                             userConfig?.subtitleMode ?: SubtitlePlaybackMode.DEFAULT
                         }
                     }
+                val candidates =
+                    candidates
+                        .sortedWith(
+                            compareByDescending<MediaStream> { it.isExternal }
+                                .thenByDescending { it.isDefault }
+                                .thenByDescending {
+                                    !it.isForced && it.language.equals(subtitleLanguage, true)
+                                }.thenByDescending {
+                                    it.isForced && it.language.equals(subtitleLanguage, true)
+                                }.thenByDescending { it.isForced && it.language.isUnknown }
+                                .thenByDescending { it.isForced },
+                        )
                 return when (subtitleMode) {
                     SubtitlePlaybackMode.ALWAYS -> {
-                        if (subtitleLanguage != null) {
-                            candidates.firstOrNull { it.language == subtitleLanguage }
+                        if (subtitleLanguage.isNotNullOrBlank()) {
+                            candidates.firstOrNull {
+                                it.language.equals(subtitleLanguage, true) ||
+                                    it.language.isUnknown
+                            }
                         } else {
                             candidates.firstOrNull()
                         }
                     }
 
                     SubtitlePlaybackMode.ONLY_FORCED -> {
-                        if (subtitleLanguage != null) {
+                        if (subtitleLanguage.isNotNullOrBlank()) {
                             candidates.firstOrNull { it.language == subtitleLanguage && it.isForced }
+                                ?: candidates.firstOrNull { it.language.isUnknown && it.isForced }
                         } else {
                             candidates.firstOrNull { it.isForced }
                         }
                     }
 
                     SubtitlePlaybackMode.SMART -> {
-                        val audioLanguage = userConfig?.audioLanguagePreference
-                        val audioStreamLang = audioStream?.language
-                        if (audioLanguage.isNotNullOrBlank() && audioStreamLang.isNotNullOrBlank() && audioLanguage != audioStreamLang) {
-                            candidates.firstOrNull { it.language == subtitleLanguage }
+                        if (subtitleLanguage.isNotNullOrBlank()) {
+                            val audioLanguage = userConfig?.audioLanguagePreference
+                            if (audioLanguage.isNullOrBlank() || audioLanguage != audioStreamLang) {
+                                candidates.firstOrNull { it.language == subtitleLanguage }
+                                    ?: candidates.firstOrNull { it.language.isUnknown }
+                            } else {
+                                candidates.firstOrNull { it.isForced && it.language == subtitleLanguage }
+                                    ?: candidates.firstOrNull { it.isForced && it.language.isUnknown }
+                            }
                         } else {
-                            null
+                            candidates.firstOrNull { it.isDefault }
                         }
                     }
 
                     SubtitlePlaybackMode.DEFAULT -> {
-                        subtitleLanguage?.let { lang ->
-                            // Find best track that is in the preferred language
-                            (
-                                candidates.firstOrNull { it.isDefault && it.isForced && it.language == lang }
-                                    ?: candidates.firstOrNull { it.isDefault && it.language == lang }
-                                    ?: candidates.firstOrNull { it.isForced && it.language == lang }
-                            )
+                        if (subtitleLanguage.isNotNullOrBlank()) {
+                            candidates.firstOrNull { it.language == subtitleLanguage && (it.isDefault || it.isForced) }
+                                ?: candidates.firstOrNull { it.isDefault || it.isForced }
+                        } else {
+                            candidates.firstOrNull { it.isDefault || it.isForced }
                         }
-                            ?: (
-                                // If none in preferred language, just find the best track
-                                candidates.firstOrNull { it.isDefault && it.isForced }
-                                    ?: candidates.firstOrNull { it.isDefault }
-                                    ?: candidates.firstOrNull { it.isForced }
-                            )
                     }
 
                     SubtitlePlaybackMode.NONE -> {
@@ -248,4 +303,44 @@ class StreamChoiceService
                 }
             }
         }
+
+        /** Returns true if the track is forced (via metadata flag or title patterns). */
+        private fun isForcedOrSigns(track: MediaStream): Boolean {
+            if (track.isForced) return true
+            val title = track.title ?: track.displayTitle ?: return false
+            return title.contains("forced", ignoreCase = true) ||
+                title.contains("signs", ignoreCase = true) ||
+                title.contains("songs", ignoreCase = true)
+        }
+
+        /** Finds a forced/signs track: subtitle pref -> audio -> unknown -> null. */
+        private fun findForcedTrack(
+            candidates: List<MediaStream>,
+            subtitleLanguage: String?,
+            audioLanguage: String?,
+        ): MediaStream? {
+            // 1. User's preferred subtitle language
+            if (subtitleLanguage != null) {
+                candidates
+                    .firstOrNull { it.language.equals(subtitleLanguage, true) && isForcedOrSigns(it) }
+                    ?.let { return it }
+            }
+            // 2. Audio language (for sign-subtitles if no preference match)
+            if (audioLanguage != null) {
+                candidates
+                    .firstOrNull { it.language.equals(audioLanguage, true) && isForcedOrSigns(it) }
+                    ?.let { return it }
+            }
+            // 3. Unknown language forced track
+            return candidates.firstOrNull { it.language.isUnknown && isForcedOrSigns(it) }
+        }
     }
+
+private val String?.isUnknown: Boolean
+    get() =
+        this == null ||
+            this.equals("unknown", true) ||
+            this.equals("und", true) ||
+            this.equals("undetermined", true) ||
+            this.equals("mul", true) ||
+            this.equals("zxx", true)

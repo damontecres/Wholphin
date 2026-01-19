@@ -66,6 +66,8 @@ fun createDeviceProfile(
     downMixAudio: Boolean,
     assDirectPlay: Boolean,
     pgsDirectPlay: Boolean,
+    dolbyVisionELDirectPlay: Boolean,
+    decodeAv1: Boolean,
     jellyfinTenEleven: Boolean,
 ) = buildDeviceProfile {
     val allowedAudioCodecs =
@@ -156,6 +158,7 @@ fun createDeviceProfile(
 
         container(
             Codec.Container.ASF,
+            Codec.Container.DASH,
             Codec.Container.HLS,
             Codec.Container.M4V,
             Codec.Container.MKV,
@@ -210,7 +213,7 @@ fun createDeviceProfile(
                             "main",
                             "baseline",
                             "constrained baseline",
-                            if (supportsAVCHigh10) "main 10" else null,
+                            if (supportsAVCHigh10) "high 10" else null,
                         )
                 }
             }
@@ -336,6 +339,7 @@ fun createDeviceProfile(
 
         conditions {
             when {
+                decodeAv1 -> ProfileConditionValue.VIDEO_PROFILE notEquals "none"
                 !supportsAV1 -> ProfileConditionValue.VIDEO_PROFILE equals "none"
                 !supportsAV1Main10 -> ProfileConditionValue.VIDEO_PROFILE notEquals "main 10"
                 else -> ProfileConditionValue.VIDEO_PROFILE notEquals "none"
@@ -380,13 +384,15 @@ fun createDeviceProfile(
     }
 
     // AV1
-    codecProfile {
-        type = CodecType.VIDEO
-        codec = Codec.Video.AV1
+    if (!decodeAv1) {
+        codecProfile {
+            type = CodecType.VIDEO
+            codec = Codec.Video.AV1
 
-        conditions {
-            ProfileConditionValue.WIDTH lowerThanOrEquals maxResolutionAV1.width
-            ProfileConditionValue.HEIGHT lowerThanOrEquals maxResolutionAV1.height
+            conditions {
+                ProfileConditionValue.WIDTH lowerThanOrEquals maxResolutionAV1.width
+                ProfileConditionValue.HEIGHT lowerThanOrEquals maxResolutionAV1.height
+            }
         }
     }
 
@@ -408,16 +414,18 @@ fun createDeviceProfile(
         buildSet {
             if (jellyfinTenEleven) add("DOVIInvalid")
 
-            if (!supportsAV1DolbyVision) {
-                add(VideoRangeType.DOVI.serialName)
-                if (!supportsAV1HDR10) add(VideoRangeType.DOVI_WITH_HDR10.serialName)
-                if (jellyfinTenEleven && !supportsAV1HDR10Plus) add("DOVIWithHDR10Plus")
-            }
+            if (!decodeAv1) {
+                if (!supportsAV1DolbyVision) {
+                    add(VideoRangeType.DOVI.serialName)
+                    if (!supportsAV1HDR10) add(VideoRangeType.DOVI_WITH_HDR10.serialName)
+                    if (jellyfinTenEleven && !supportsAV1HDR10Plus) add("DOVIWithHDR10Plus")
+                }
 
-            if (!supportsAV1HDR10Plus) {
-                add(VideoRangeType.HDR10_PLUS.serialName)
+                if (!supportsAV1HDR10Plus) {
+                    add(VideoRangeType.HDR10_PLUS.serialName)
 
-                if (!mediaTest.supportsAV1HDR10()) add(VideoRangeType.HDR10.serialName)
+                    if (!mediaTest.supportsAV1HDR10()) add(VideoRangeType.HDR10.serialName)
+                }
             }
         }
 
@@ -427,9 +435,11 @@ fun createDeviceProfile(
             if (jellyfinTenEleven) add("DOVIInvalid")
 
             if (!supportsHevcDolbyVisionEL) {
-                if (jellyfinTenEleven) {
-                    add("DOVIWithEL")
-                    if (!supportsHevcHDR10Plus && !KnownDefects.hevcDoviHdr10PlusBug) add("DOVIWithELHDR10Plus")
+                if (!dolbyVisionELDirectPlay) {
+                    if (jellyfinTenEleven) {
+                        add("DOVIWithEL")
+                        if (!supportsHevcHDR10Plus && !KnownDefects.hevcDoviHdr10PlusBug) add("DOVIWithELHDR10Plus")
+                    }
                 }
 
                 if (!supportsHevcDolbyVision) {

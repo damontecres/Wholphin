@@ -41,7 +41,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
@@ -57,11 +56,13 @@ import androidx.tv.material3.ListItem
 import androidx.tv.material3.LocalContentColor
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
+import androidx.tv.material3.surfaceColorAtElevation
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.preferences.AppThemeColors
 import com.github.damontecres.wholphin.ui.AppColors
 import com.github.damontecres.wholphin.ui.PreviewTvSpec
 import com.github.damontecres.wholphin.ui.components.Button
+import com.github.damontecres.wholphin.ui.components.SelectedLeadingContent
 import com.github.damontecres.wholphin.ui.components.TextButton
 import com.github.damontecres.wholphin.ui.seekBack
 import com.github.damontecres.wholphin.ui.seekForward
@@ -462,12 +463,12 @@ fun PlaybackButton(
 }
 
 @Composable
-fun BottomDialog(
-    choices: List<String>,
+fun <T> BottomDialog(
+    choices: List<BottomDialogItem<T>>,
     onDismissRequest: () -> Unit,
-    onSelectChoice: (Int, String) -> Unit,
+    onSelectChoice: (Int, BottomDialogItem<T>) -> Unit,
     gravity: Int,
-    currentChoice: Int? = null,
+    currentChoice: BottomDialogItem<T>? = null,
 ) {
     // TODO enforcing a width ends up ignore the gravity
     Dialog(
@@ -485,7 +486,10 @@ fun BottomDialog(
                 Modifier
                     .wrapContentSize()
                     .padding(8.dp)
-                    .background(Color.DarkGray, shape = RoundedCornerShape(16.dp)),
+                    .background(
+                        MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp),
+                        shape = RoundedCornerShape(8.dp),
+                    ),
         ) {
             LazyColumn(
                 modifier =
@@ -498,37 +502,26 @@ fun BottomDialog(
             ) {
                 itemsIndexed(choices) { index, choice ->
                     val interactionSource = remember { MutableInteractionSource() }
-                    val focused = interactionSource.collectIsFocusedAsState().value
-                    val color =
-                        if (focused) {
-                            MaterialTheme.colorScheme.inverseOnSurface
-                        } else {
-                            MaterialTheme.colorScheme.onSurface
-                        }
                     ListItem(
-                        selected = index == currentChoice,
+                        selected = choice == currentChoice,
                         onClick = {
                             onDismissRequest()
                             onSelectChoice(index, choice)
                         },
                         leadingContent = {
-                            if (index == currentChoice) {
-                                Box(
-                                    modifier =
-                                        Modifier
-                                            .padding(horizontal = 4.dp)
-                                            .clip(CircleShape)
-                                            .align(Alignment.Center)
-                                            .background(color)
-                                            .size(8.dp),
-                                )
-                            }
+                            SelectedLeadingContent(choice == currentChoice)
                         },
                         headlineContent = {
                             Text(
-                                text = choice,
-                                color = color,
+                                text = choice.headline,
                             )
+                        },
+                        supportingContent = {
+                            choice.supporting?.let {
+                                Text(
+                                    text = it,
+                                )
+                            }
                         },
                         interactionSource = interactionSource,
                     )
@@ -540,6 +533,12 @@ fun BottomDialog(
 
 data class MoreButtonOptions(
     val options: Map<String, PlaybackAction>,
+)
+
+data class BottomDialogItem<T>(
+    val data: T,
+    val headline: String,
+    val supporting: String?,
 )
 
 @PreviewTvSpec

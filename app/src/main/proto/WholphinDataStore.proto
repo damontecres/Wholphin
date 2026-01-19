@@ -45,6 +45,8 @@ message PlaybackOverrides{
   bool direct_play_ass = 3;
   bool direct_play_pgs = 4;
   MediaExtensionStatus media_extensions_enabled = 5;
+  bool direct_play_dolby_vision_e_l = 6;
+  bool decode_av1 = 7;
 }
 
 message PlaybackPreferences {
@@ -72,6 +74,7 @@ message PlaybackPreferences {
   PlayerBackend player_backend = 20;
   MpvOptions mpv_options = 21;
   bool refresh_rate_switching = 22;
+  bool resolution_switching = 23;
 }
 
 message HomePagePreferences{

@@ -58,6 +58,7 @@ fun ItemCardImage(
     watched: Boolean,
     unwatchedCount: Int,
     watchedPercent: Double?,
+    numberOfVersions: Int,
     modifier: Modifier = Modifier,
     imageType: ImageType = ImageType.PRIMARY,
     useFallbackText: Boolean = true,
@@ -86,6 +87,7 @@ fun ItemCardImage(
         watched = watched,
         unwatchedCount = unwatchedCount,
         watchedPercent = watchedPercent,
+        numberOfVersions = numberOfVersions,
         modifier =
             modifier.onLayoutRectChanged(
                 throttleMillis = 100,
@@ -107,9 +109,17 @@ fun ItemCardImage(
     watched: Boolean,
     unwatchedCount: Int,
     watchedPercent: Double?,
+    numberOfVersions: Int,
     modifier: Modifier = Modifier,
     useFallbackText: Boolean = true,
     contentScale: ContentScale = ContentScale.Fit,
+    fallback: @Composable BoxScope.() -> Unit = {
+        ItemCardImageFallback(
+            name = name,
+            useFallbackText = useFallbackText,
+            modifier = Modifier,
+        )
+    },
 ) {
     var imageError by remember(imageUrl) { mutableStateOf(false) }
     Box(
@@ -131,11 +141,7 @@ fun ItemCardImage(
                         .align(Alignment.TopCenter),
             )
         } else {
-            ItemCardImageFallback(
-                name = name,
-                useFallbackText = useFallbackText,
-                modifier = Modifier,
-            )
+            fallback.invoke(this)
         }
         if (showOverlay) {
             ItemCardImageOverlay(
@@ -143,6 +149,7 @@ fun ItemCardImage(
                 watched = watched,
                 unwatchedCount = unwatchedCount,
                 watchedPercent = watchedPercent,
+                numberOfVersions = numberOfVersions,
                 modifier = Modifier,
             )
         }
@@ -198,20 +205,45 @@ fun ItemCardImageOverlay(
     watched: Boolean,
     unwatchedCount: Int,
     watchedPercent: Double?,
+    numberOfVersions: Int,
     modifier: Modifier = Modifier,
 ) {
     Box(modifier = modifier.fillMaxSize()) {
-        if (favorite) {
-            Text(
-                modifier =
-                    Modifier
-                        .align(Alignment.TopStart)
-                        .padding(8.dp),
-                color = colorResource(android.R.color.holo_red_light),
-                text = stringResource(R.string.fa_heart),
-                fontSize = 20.sp,
-                fontFamily = FontAwesome,
-            )
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            modifier =
+                Modifier
+                    .align(Alignment.TopStart)
+                    .padding(4.dp),
+        ) {
+            if (numberOfVersions > 1) {
+                Box(
+                    modifier =
+                        Modifier
+                            .background(
+                                AppColors.TransparentBlack50,
+                                shape = RoundedCornerShape(25),
+                            ),
+                ) {
+                    Text(
+                        text = numberOfVersions.toString(),
+                        color = MaterialTheme.colorScheme.onSurface,
+                        style = MaterialTheme.typography.bodyMedium,
+//                            fontSize = 16.sp,
+                        modifier = Modifier.padding(4.dp),
+                    )
+                }
+            }
+            if (favorite) {
+                Text(
+                    color = colorResource(android.R.color.holo_red_light),
+                    text = stringResource(R.string.fa_heart),
+                    fontSize = 20.sp,
+                    fontFamily = FontAwesome,
+                    modifier = Modifier,
+                )
+            }
         }
         Row(
             horizontalArrangement = Arrangement.spacedBy(4.dp),

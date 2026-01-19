@@ -29,6 +29,7 @@ import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -39,21 +40,25 @@ import androidx.compose.ui.unit.sp
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.ui.PreviewTvSpec
+import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.theme.WholphinTheme
 import com.github.damontecres.wholphin.ui.tryRequestFocus
+import timber.log.Timber
 
 @Composable
 fun TabRow(
     selectedTabIndex: Int,
     tabs: List<String>,
+    focusRequesters: List<FocusRequester>,
     onClick: (Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val state = rememberLazyListState()
     LaunchedEffect(selectedTabIndex) {
-        state.animateScrollToItem(selectedTabIndex, -(state.layoutInfo.viewportSize.width / 3.5).toInt())
+        if (selectedTabIndex >= 0) {
+            state.animateScrollToItem(selectedTabIndex, -(state.layoutInfo.viewportSize.width / 3.5).toInt())
+        }
     }
-    val focusRequesters = remember(tabs) { List(tabs.size) { FocusRequester() } }
     var rowHasFocus by remember { mutableStateOf(false) }
     LazyRow(
         state = state,
@@ -66,6 +71,7 @@ fun TabRow(
                     onEnter = {
                         // If entering from left or right, use last or first tab
                         // Otherwise use the selected tab
+                        Timber.v("onEnter requestedFocusDirection=$requestedFocusDirection, selectedTabIndex=$selectedTabIndex")
                         val focusRequester =
                             if (requestedFocusDirection == FocusDirection.Left) {
                                 focusRequesters.lastOrNull()
@@ -181,6 +187,7 @@ private fun TabRowPreview() {
             TabRow(
                 selectedTabIndex = 1,
                 tabs = listOf("Tab 1", "Tab 2", "Tab 3"),
+                focusRequesters = listOf(),
                 onClick = {},
             )
             Tab(

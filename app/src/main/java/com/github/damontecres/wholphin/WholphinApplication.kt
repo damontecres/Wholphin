@@ -7,6 +7,8 @@ import android.os.StrictMode.ThreadPolicy
 import android.util.Log
 import androidx.compose.runtime.Composer
 import androidx.compose.runtime.ExperimentalComposeRuntimeApi
+import androidx.hilt.work.HiltWorkerFactory
+import androidx.work.Configuration
 import dagger.hilt.android.HiltAndroidApp
 import org.acra.ACRA
 import org.acra.ReportField
@@ -14,10 +16,13 @@ import org.acra.config.dialog
 import org.acra.data.StringFormat
 import org.acra.ktx.initAcra
 import timber.log.Timber
+import javax.inject.Inject
 
 @OptIn(ExperimentalComposeRuntimeApi::class)
 @HiltAndroidApp
-class WholphinApplication : Application() {
+class WholphinApplication :
+    Application(),
+    Configuration.Provider {
     init {
         instance = this
 
@@ -93,6 +98,16 @@ class WholphinApplication : Application() {
         }
         ACRA.errorReporter.putCustomData("SDK_INT", Build.VERSION.SDK_INT.toString())
     }
+
+    @Inject
+    lateinit var workerFactory: HiltWorkerFactory
+
+    override val workManagerConfiguration: Configuration
+        get() =
+            Configuration
+                .Builder()
+                .setWorkerFactory(workerFactory)
+                .build()
 
     companion object {
         lateinit var instance: WholphinApplication

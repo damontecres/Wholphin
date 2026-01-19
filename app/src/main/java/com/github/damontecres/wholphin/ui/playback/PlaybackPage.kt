@@ -43,6 +43,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
@@ -137,6 +138,7 @@ fun PlaybackPage(
 
             val player = viewModel.player
             val mediaInfo by viewModel.currentMediaInfo.observeAsState()
+            val userDto by viewModel.currentUserDto.observeAsState()
 
             val currentPlayback by viewModel.currentPlayback.collectAsState()
             val currentItemPlayback by viewModel.currentItemPlayback.observeAsState(
@@ -160,7 +162,7 @@ fun PlaybackPage(
             var playbackDialog by remember { mutableStateOf<PlaybackDialogType?>(null) }
             OneTimeLaunchedEffect {
                 if (prefs.playerBackend == PlayerBackend.MPV) {
-                    scope.launch(Dispatchers.Main + ExceptionHandler()) {
+                    scope.launch(Dispatchers.IO + ExceptionHandler()) {
                         preferences.appPreferences.interfacePreferences.subtitlesPreferences.applyToMpv(
                             configuration,
                             density,
@@ -169,7 +171,15 @@ fun PlaybackPage(
                 }
             }
             AmbientPlayerListener(player)
-            var contentScale by remember { mutableStateOf(prefs.globalContentScale.scale) }
+            var contentScale by remember {
+                mutableStateOf(
+                    if (prefs.playerBackend == PlayerBackend.MPV) {
+                        ContentScale.FillBounds
+                    } else {
+                        prefs.globalContentScale.scale
+                    },
+                )
+            }
             var playbackSpeed by remember { mutableFloatStateOf(1.0f) }
             LaunchedEffect(playbackSpeed) { player.setPlaybackSpeed(playbackSpeed) }
 
@@ -304,15 +314,12 @@ fun PlaybackPage(
                             },
                     )
                     if (presentationState.coverSurface) {
-                        val isLoading by rememberPlayerLoadingState(player)
                         Box(
                             Modifier
                                 .matchParentSize()
                                 .background(Color.Black),
                         ) {
-                            if (isLoading) {
-                                LoadingPage(focusEnabled = false)
-                            }
+                            LoadingPage(focusEnabled = false)
                         }
                     }
 
@@ -521,6 +528,7 @@ fun PlaybackPage(
                             aspectRatio = it.aspectRatio ?: AspectRatios.WIDE,
                             onClick = {
                                 viewModel.reportInteraction()
+                                controllerViewState.hideControls()
                                 viewModel.playNextUp()
                             },
                             timeLeft = if (autoPlayEnabled) timeLeft.seconds else null,
@@ -589,6 +597,8 @@ fun PlaybackPage(
                             playbackSpeed = playbackSpeed,
                             contentScale = contentScale,
                             subtitleDelay = subtitleDelay,
+                            hasSubtitleDownloadPermission =
+                                remember(userDto) { userDto?.policy?.let { it.isAdministrator || it.enableSubtitleManagement } == true },
                         ),
                     onDismissRequest = {
                         playbackDialog = null
@@ -609,6 +619,7 @@ fun PlaybackPage(
                     onPlaybackActionClick = onPlaybackActionClick,
                     onChangeSubtitleDelay = { viewModel.updateSubtitleDelay(it) },
                     enableSubtitleDelay = player is MpvPlayer,
+                    enableVideoScale = player !is MpvPlayer,
                 )
             }
         }

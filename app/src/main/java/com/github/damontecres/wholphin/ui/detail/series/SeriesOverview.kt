@@ -16,11 +16,13 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.lifecycle.compose.LifecycleStartEffect
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.map
 import com.github.damontecres.wholphin.R
+import com.github.damontecres.wholphin.data.ChosenStreams
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.preferences.UserPreferences
+import com.github.damontecres.wholphin.ui.RequestOrRestoreFocus
 import com.github.damontecres.wholphin.ui.components.DialogParams
 import com.github.damontecres.wholphin.ui.components.DialogPopup
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
@@ -37,12 +39,12 @@ import com.github.damontecres.wholphin.ui.detail.buildMoreDialogItems
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.rememberInt
 import com.github.damontecres.wholphin.ui.seasonEpisode
-import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.LoadingState
 import kotlinx.coroutines.flow.update
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.UseSerializers
 import org.jellyfin.sdk.model.api.BaseItemKind
+import org.jellyfin.sdk.model.api.MediaStreamType
 import org.jellyfin.sdk.model.api.MediaType
 import org.jellyfin.sdk.model.api.PersonKind
 import org.jellyfin.sdk.model.extensions.ticks
@@ -158,25 +160,26 @@ fun SeriesOverview(
         LoadingState.Success -> {
             series?.let { series ->
 
-                LaunchedEffect(Unit) {
+                RequestOrRestoreFocus(
                     when (rowFocused) {
-                        EPISODE_ROW -> episodeRowFocusRequester.tryRequestFocus()
-                        CAST_AND_CREW_ROW -> castCrewRowFocusRequester.tryRequestFocus()
-                        GUEST_STAR_ROW -> guestStarRowFocusRequester.tryRequestFocus()
-                    }
-                }
-                LifecycleStartEffect(destination.itemId) {
-                    viewModel.maybePlayThemeSong(
-                        destination.itemId,
-                        preferences.appPreferences.interfacePreferences.playThemeSongs,
-                    )
-                    onStopOrDispose {
+                        EPISODE_ROW -> episodeRowFocusRequester
+                        CAST_AND_CREW_ROW -> castCrewRowFocusRequester
+                        GUEST_STAR_ROW -> guestStarRowFocusRequester
+                        else -> episodeRowFocusRequester
+                    },
+                    "series_overview",
+                )
+                LifecycleResumeEffect(destination.itemId) {
+                    viewModel.onResumePage()
+
+                    onPauseOrDispose {
                         viewModel.release()
                     }
                 }
 
                 fun buildMoreForEpisode(
                     ep: BaseItem,
+                    chosenStreams: ChosenStreams?,
                     fromLongClick: Boolean,
                 ): DialogParams =
                     DialogParams(
@@ -190,6 +193,7 @@ fun SeriesOverview(
                                 favorite = ep.data.userData?.isFavorite ?: false,
                                 seriesId = series.id,
                                 sourceId = chosenStreams?.source?.id?.toUUIDOrNull(),
+                                canClearChosenStreams = chosenStreams?.itemPlayback != null || chosenStreams?.plc != null,
                                 actions =
                                     MoreDialogActions(
                                         navigateTo = viewModel::navigateTo,
@@ -237,6 +241,12 @@ fun SeriesOverview(
                                                     context = context,
                                                     streams = source.mediaStreams.orEmpty(),
                                                     type = type,
+                                                    currentIndex =
+                                                        if (type == MediaStreamType.AUDIO) {
+                                                            chosenStreams?.audioStream?.index
+                                                        } else {
+                                                            chosenStreams?.subtitleStream?.index
+                                                        },
                                                     onClick = { trackIndex ->
                                                         viewModel.saveTrackSelection(
                                                             ep,
@@ -256,6 +266,9 @@ fun SeriesOverview(
                                             genres = ep.data.genres.orEmpty(),
                                             files = ep.data.mediaSources.orEmpty(),
                                         )
+                                },
+                                onClearChosenStreams = {
+                                    viewModel.clearChosenStreams(ep, chosenStreams)
                                 },
                             ),
                     )
@@ -297,12 +310,11 @@ fun SeriesOverview(
                             Destination.Playback(
                                 it.id,
                                 resumePosition.inWholeMilliseconds,
-                                it,
                             ),
                         )
                     },
                     onLongClick = { ep ->
-                        moreDialog = buildMoreForEpisode(ep, true)
+                        moreDialog = buildMoreForEpisode(ep, chosenStreams, true)
                     },
                     playOnClick = { resume ->
                         rowFocused = EPISODE_ROW
@@ -312,7 +324,6 @@ fun SeriesOverview(
                                 Destination.Playback(
                                     it.id,
                                     resume.inWholeMilliseconds,
-                                    it,
                                 ),
                             )
                         }
@@ -331,7 +342,7 @@ fun SeriesOverview(
                     },
                     moreOnClick = {
                         episodeList?.getOrNull(position.episodeRowIndex)?.let { ep ->
-                            moreDialog = buildMoreForEpisode(ep, false)
+                            moreDialog = buildMoreForEpisode(ep, chosenStreams, false)
                         }
                     },
                     overviewOnClick = {

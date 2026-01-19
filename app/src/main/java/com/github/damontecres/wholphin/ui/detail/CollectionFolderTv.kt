@@ -58,6 +58,7 @@ fun CollectionFolderTv(
         )
     var selectedTabIndex by rememberSaveable { mutableIntStateOf(rememberedTabIndex) }
     val focusRequester = remember { FocusRequester() }
+    val tabFocusRequesters = remember { List(tabs.size) { FocusRequester() } }
 
     val firstTabFocusRequester = remember { FocusRequester() }
     LaunchedEffect(Unit) { firstTabFocusRequester.tryRequestFocus() }
@@ -74,7 +75,6 @@ fun CollectionFolderTv(
 
     var showHeader by rememberSaveable { mutableStateOf(true) }
 
-    LaunchedEffect(Unit) { focusRequester.tryRequestFocus() }
     Column(
         modifier = modifier,
     ) {
@@ -91,6 +91,7 @@ fun CollectionFolderTv(
                         .focusRequester(firstTabFocusRequester),
                 tabs = tabs,
                 onClick = { selectedTabIndex = it },
+                focusRequesters = tabFocusRequesters,
             )
         }
         when (selectedTabIndex) {
@@ -138,6 +139,7 @@ fun CollectionFolderTv(
                         preferencesViewModel.navigationManager.navigateTo(item.destination())
                     },
                     playEnabled = false,
+                    focusRequesterOnEmpty = tabFocusRequesters.getOrNull(selectedTabIndex),
                 )
             }
 
@@ -145,6 +147,7 @@ fun CollectionFolderTv(
             2 -> {
                 GenreCardGrid(
                     itemId = destination.itemId,
+                    includeItemTypes = listOf(BaseItemKind.SERIES),
                     modifier =
                         Modifier
                             .padding(start = 16.dp)

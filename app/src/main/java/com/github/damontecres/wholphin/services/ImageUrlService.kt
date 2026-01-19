@@ -28,10 +28,11 @@ class ImageUrlService
             itemType: BaseItemKind,
             seriesId: UUID?,
             useSeriesForPrimary: Boolean,
+            imageTags: Map<ImageType, String?>,
             imageType: ImageType,
             fillWidth: Int? = null,
             fillHeight: Int? = null,
-        ): String =
+        ): String? =
             when (imageType) {
                 ImageType.BACKDROP,
                 ImageType.LOGO,
@@ -60,6 +61,13 @@ class ImageUrlService
                     if (useSeriesForPrimary && seriesId != null &&
                         (itemType == BaseItemKind.EPISODE || itemType == BaseItemKind.SEASON)
                     ) {
+                        getItemImageUrl(
+                            itemId = seriesId,
+                            imageType = imageType,
+                            fillWidth = fillWidth,
+                            fillHeight = fillHeight,
+                        )
+                    } else if (seriesId != null && itemType == BaseItemKind.SEASON && imageType !in imageTags) {
                         getItemImageUrl(
                             itemId = seriesId,
                             imageType = imageType,
@@ -98,6 +106,7 @@ class ImageUrlService
                     itemType = item.type,
                     seriesId = item.data.seriesId,
                     useSeriesForPrimary = item.useSeriesForPrimary,
+                    imageTags = item.data.imageTags.orEmpty(),
                     imageType = imageType,
                     fillWidth = fillWidth,
                     fillHeight = fillHeight,
@@ -124,8 +133,9 @@ class ImageUrlService
             backgroundColor: String? = null,
             foregroundLayer: String? = null,
             imageIndex: Int? = null,
-        ): String =
-            api.imageApi.getItemImageUrl(
+        ): String? {
+            if (api.baseUrl.isNullOrBlank()) return null
+            return api.imageApi.getItemImageUrl(
                 itemId = itemId,
                 imageType = imageType,
                 maxWidth = maxWidth,
@@ -144,6 +154,7 @@ class ImageUrlService
                 foregroundLayer = foregroundLayer,
                 imageIndex = imageIndex,
             )
+        }
 
         fun getUserImageUrl(userId: UUID) = api.imageApi.getUserImageUrl(userId)
 

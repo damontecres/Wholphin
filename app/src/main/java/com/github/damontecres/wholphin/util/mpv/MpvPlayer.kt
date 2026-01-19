@@ -53,6 +53,7 @@ import kotlin.concurrent.atomics.AtomicReference
 import kotlin.concurrent.atomics.ExperimentalAtomicApi
 import kotlin.concurrent.atomics.update
 import kotlin.time.Duration
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
 /**
@@ -69,7 +70,8 @@ class MpvPlayer(
 ) : BasePlayer(),
     MPVLib.EventObserver,
     TrackSelector.InvalidationListener,
-    Handler.Callback {
+    Handler.Callback,
+    SurfaceHolder.Callback {
     companion object {
         private const val DEBUG = false
     }
@@ -109,6 +111,7 @@ class MpvPlayer(
         Timber.v("config-dir=${context.filesDir.path}")
         MPVLib.addLogObserver(mpvLogger)
 
+        Timber.v("Creating MPVLib")
         MPVLib.create(context)
         MPVLib.setOptionString("config", "yes")
         MPVLib.setOptionString("config-dir", context.filesDir.path)
@@ -127,6 +130,7 @@ class MpvPlayer(
         MPVLib.setOptionString("demuxer-max-bytes", "${cacheMegs * 1024 * 1024}")
         MPVLib.setOptionString("demuxer-max-back-bytes", "${cacheMegs * 1024 * 1024}")
 
+        Timber.v("Initializing MPVLib")
         MPVLib.initialize()
 
         MPVLib.setOptionString("force-window", "no")
@@ -228,11 +232,6 @@ class MpvPlayer(
 
     override fun prepare() {
         if (DEBUG) Timber.v("prepare")
-        playbackState.update {
-            it.copy(
-                state = Player.STATE_READY,
-            )
-        }
     }
 
     override fun getPlaybackState(): Int {
@@ -243,7 +242,8 @@ class MpvPlayer(
     override fun getPlaybackSuppressionReason(): Int = PLAYBACK_SUPPRESSION_REASON_NONE
 
     override fun getPlayerError(): PlaybackException? {
-        TODO("Not yet implemented")
+        // TODO
+        return null
     }
 
     override fun setPlayWhenReady(playWhenReady: Boolean) {
@@ -391,8 +391,7 @@ class MpvPlayer(
 
     override fun getCurrentTimeline(): Timeline {
         if (DEBUG) Timber.v("getCurrentTimeline")
-        // TODO
-        return Timeline.EMPTY
+        return playbackState.load().timeline
     }
 
     override fun getCurrentPeriodIndex(): Int {
@@ -465,25 +464,53 @@ class MpvPlayer(
 
     override fun clearVideoSurfaceHolder(surfaceHolder: SurfaceHolder?): Unit = throw UnsupportedOperationException()
 
+    private var surfaceHolder: SurfaceHolder? = null
+
     override fun setVideoSurfaceView(surfaceView: SurfaceView?) {
-        throwIfReleased()
         if (DEBUG) Timber.v("setVideoSurfaceView")
-        val surface = surfaceView?.holder?.surface
-        if (surface != null && surface.isValid) {
-            Timber.v("Queued attach")
-            sendCommand(MpvCommand.ATTACH_SURFACE, surface)
-        } else {
-            clearVideoSurfaceView(null)
+        if (surfaceView != null) {
+            this.surfaceHolder?.removeCallback(this)
+            this.surfaceHolder = surfaceView.holder
+            if (surfaceView.holder != null) {
+                val surface = surfaceView.holder?.surface
+                surfaceView.holder.addCallback(this)
+                Timber.v("Got surface holder: isValid=${surface?.isValid}")
+                if (surface != null && surface.isValid) {
+                    Timber.v("Queued attach")
+                    sendCommand(MpvCommand.ATTACH_SURFACE, surface)
+                    return
+                }
+            }
         }
+        clearVideoSurfaceView(null)
     }
 
     override fun clearVideoSurfaceView(surfaceView: SurfaceView?) {
-        if (surface == surfaceView?.holder?.surface) {
+        if (surface != null && surface == surfaceView?.holder?.surface) {
             Timber.d("clearVideoSurfaceView")
             sendCommand(MpvCommand.ATTACH_SURFACE, null)
         } else {
-            Timber.w("clearVideoSurfaceView called with different surface")
+            Timber.w("clearVideoSurfaceView called with different surface: %s", surfaceView)
         }
+    }
+
+    override fun surfaceChanged(
+        holder: SurfaceHolder,
+        format: Int,
+        width: Int,
+        height: Int,
+    ) {
+        Timber.v("surfaceChanged: format=$format, width=$width, height=$height")
+    }
+
+    override fun surfaceCreated(holder: SurfaceHolder) {
+        Timber.v("surfaceCreated")
+        sendCommand(MpvCommand.ATTACH_SURFACE, holder.surface)
+    }
+
+    override fun surfaceDestroyed(holder: SurfaceHolder) {
+        Timber.v("surfaceDestroyed")
+        sendCommand(MpvCommand.ATTACH_SURFACE, null)
     }
 
     override fun setVideoTextureView(textureView: TextureView?): Unit = throw UnsupportedOperationException()
@@ -496,7 +523,7 @@ class MpvPlayer(
         return playbackState.load().videoSize
     }
 
-    override fun getSurfaceSize(): Size = throw UnsupportedOperationException()
+    override fun getSurfaceSize(): Size = surfaceHolder?.surfaceFrame?.let { Size(it.width(), it.height()) } ?: Size.UNKNOWN
 
     override fun getCurrentCues(): CueGroup = CueGroup.EMPTY_TIME_ZERO
 
@@ -623,21 +650,24 @@ class MpvPlayer(
             }
 
             MPV_EVENT_FILE_LOADED -> {
-                playbackState.update {
-                    it.copy(isLoadingFile = false)
-                }
-                notifyListeners(EVENT_IS_LOADING_CHANGED) { onIsLoadingChanged(false) }
                 Timber.d("event: MPV_EVENT_FILE_LOADED")
-                internalHandler.post(updatePlaybackState)
+                playbackState.update {
+                    it.copy(
+                        isLoadingFile = false,
+                    )
+                }
+                updatePlaybackState.run()
+                notifyListeners(EVENT_IS_LOADING_CHANGED) { onIsLoadingChanged(false) }
+
                 playbackState.load().media?.mediaItem?.let { media ->
                     media.localConfiguration?.subtitleConfigurations?.forEach {
                         val url = it.uri.toString()
                         val title = it.label ?: "External Subtitles"
                         Timber.v("Adding external subtitle track '$title'")
                         if (it.language.isNotNullOrBlank()) {
-                            MPVLib.command(arrayOf("sub-add", url, "auto", title, it.language!!))
+                            MPVLib.command(arrayOf("sub-add", url, "select", title, it.language!!))
                         } else {
-                            MPVLib.command(arrayOf("sub-add", url, "auto", title))
+                            MPVLib.command(arrayOf("sub-add", url, "select", title))
                         }
                     }
                 }
@@ -659,6 +689,7 @@ class MpvPlayer(
             MPV_EVENT_VIDEO_RECONFIG -> {
                 Timber.d("event: MPV_EVENT_VIDEO_RECONFIG")
                 updateTracksAndNotify()
+                updateVideoSizeAndNotify()
             }
 
             MPV_EVENT_END_FILE -> {
@@ -719,12 +750,78 @@ class MpvPlayer(
         notifyListeners(EVENT_TRACKS_CHANGED) { onTracksChanged(tracks) }
     }
 
+    private fun updateVideoSizeAndNotify() {
+        val width = MPVLib.getPropertyInt("width")
+        val height = MPVLib.getPropertyInt("height")
+        val videoSize =
+            if (width != null && height != null) {
+                VideoSize(width, height)
+            } else {
+                VideoSize.UNKNOWN
+            }
+        playbackState.update { it.copy(videoSize = videoSize) }
+        notifyListeners(EVENT_VIDEO_SIZE_CHANGED) { onVideoSizeChanged(videoSize) }
+    }
+
     private fun loadFile(media: MediaAndPosition) {
         Timber.v("loadFile: media=$media")
+        val timeline =
+            object : Timeline() {
+                override fun getWindowCount(): Int = 1
+
+                override fun getWindow(
+                    windowIndex: Int,
+                    window: Window,
+                    defaultPositionProjectionUs: Long,
+                ): Window =
+                    window.set(
+                        media.mediaItem.mediaId,
+                        media.mediaItem,
+                        null,
+                        C.TIME_UNSET,
+                        C.TIME_UNSET,
+                        C.TIME_UNSET,
+                        true,
+                        true,
+                        media.mediaItem.liveConfiguration,
+                        0L,
+                        C.TIME_UNSET,
+                        0,
+                        0,
+                        0,
+                    )
+
+                override fun getPeriodCount(): Int = 1
+
+                override fun getPeriod(
+                    periodIndex: Int,
+                    period: Period,
+                    setIds: Boolean,
+                ): Period =
+                    period.set(
+                        media.mediaItem.mediaId,
+                        media.mediaItem.mediaId,
+                        0,
+                        C.TIME_UNSET,
+                        0,
+                    )
+
+                override fun getIndexOfPeriod(uid: Any): Int = 0
+
+                override fun getUidOfPeriod(periodIndex: Int) = media.mediaItem.mediaId
+            }
         playbackState.update {
             it.copy(
                 isLoadingFile = true,
+                state = STATE_READY,
                 media = media,
+                timeline = timeline,
+            )
+        }
+        notifyListeners(EVENT_TIMELINE_CHANGED) {
+            onTimelineChanged(
+                timeline,
+                TIMELINE_CHANGE_REASON_PLAYLIST_CHANGED,
             )
         }
         notifyListeners(EVENT_IS_LOADING_CHANGED) { onIsLoadingChanged(true) }
@@ -792,7 +889,8 @@ class MpvPlayer(
 
     private val updatePlaybackState: Runnable =
         Runnable {
-            if (playbackState.load().media == null) {
+            val state = playbackState.load()
+            if (state.media == null) {
                 return@Runnable
             }
             val positionMs =
@@ -815,6 +913,53 @@ class MpvPlayer(
                     VideoSize.UNKNOWN
                 }
 
+            val mediaItem = state.media.mediaItem
+            val timeline =
+                object : Timeline() {
+                    override fun getWindowCount(): Int = 1
+
+                    override fun getWindow(
+                        windowIndex: Int,
+                        window: Window,
+                        defaultPositionProjectionUs: Long,
+                    ): Window =
+                        window.set(
+                            mediaItem.mediaId,
+                            mediaItem,
+                            null,
+                            C.TIME_UNSET,
+                            C.TIME_UNSET,
+                            C.TIME_UNSET,
+                            true,
+                            false,
+                            mediaItem.liveConfiguration,
+                            0L,
+                            if (durationMs != C.TIME_UNSET) durationMs.milliseconds.inWholeMicroseconds else C.TIME_UNSET,
+                            0,
+                            0,
+                            0,
+                        )
+
+                    override fun getPeriodCount(): Int = 1
+
+                    override fun getPeriod(
+                        periodIndex: Int,
+                        period: Period,
+                        setIds: Boolean,
+                    ): Period =
+                        period.set(
+                            mediaItem.mediaId,
+                            mediaItem.mediaId,
+                            0,
+                            state.durationMs.milliseconds.inWholeMicroseconds,
+                            0,
+                        )
+
+                    override fun getIndexOfPeriod(uid: Any): Int = 0
+
+                    override fun getUidOfPeriod(periodIndex: Int) = mediaItem.mediaId
+                }
+
             playbackState.update {
                 it.copy(
                     timestamp = System.currentTimeMillis(),
@@ -824,6 +969,13 @@ class MpvPlayer(
                     speed = speed,
                     isPaused = paused,
                     videoSize = videoSize,
+                    timeline = timeline,
+                )
+            }
+            notifyListeners(EVENT_TIMELINE_CHANGED) {
+                onTimelineChanged(
+                    timeline,
+                    TIMELINE_CHANGE_REASON_SOURCE_UPDATE,
                 )
             }
         }
@@ -835,12 +987,34 @@ class MpvPlayer(
         internalHandler.obtainMessage(cmd.ordinal, obj).sendToTarget()
     }
 
+    private val queuedCommands = mutableListOf<Pair<MpvCommand, Any?>>()
+
     override fun handleMessage(msg: Message): Boolean {
         val cmd = MpvCommand.entries[msg.what]
-        Timber.v("handleMessage: cmd=$cmd")
+        if (isReleased && cmd != MpvCommand.DESTROY) {
+            Timber.w("Player is released, ignoring command %s", cmd)
+            return true
+        }
+        if (surface == null && !cmd.isLifecycle) {
+            // If libmpv isn't ready, ueue the messages
+            // Note: this means nothing will play until it is attached to a surface,
+            // so MpvPlayer can't be used for background audio/music playback
+            Timber.v("MPV is not initialized/attached yet, queue cmd %s", cmd)
+            queuedCommands.add(Pair(cmd, msg.obj))
+        } else {
+            handleCommand(cmd, msg.obj)
+        }
+        return true
+    }
+
+    private fun handleCommand(
+        cmd: MpvCommand,
+        obj: Any?,
+    ) {
+        Timber.d("handleCommand: cmd=$cmd")
         when (cmd) {
             MpvCommand.PLAY_PAUSE -> {
-                val playWhenReady = msg.obj as Boolean
+                val playWhenReady = obj as Boolean
                 MPVLib.setPropertyBoolean("pause", !playWhenReady)
                 playbackState.update {
                     it.copy(isPaused = !playWhenReady)
@@ -854,13 +1028,13 @@ class MpvPlayer(
             }
 
             MpvCommand.SET_TRACK_SELECTION -> {
-                val (propertyName, trackId) = msg.obj as TrackSelection
+                val (propertyName, trackId) = obj as TrackSelection
                 MPVLib.setPropertyString(propertyName, trackId)
                 updateTracksAndNotify()
             }
 
             MpvCommand.SEEK -> {
-                val positionMs = msg.obj as Long
+                val positionMs = obj as Long
                 MPVLib.setPropertyDouble("time-pos", positionMs / 1000.0)
                 playbackState.update {
                     it.copy(positionMs = positionMs)
@@ -868,7 +1042,7 @@ class MpvPlayer(
             }
 
             MpvCommand.SET_SPEED -> {
-                val value = msg.obj as Float
+                val value = obj as Float
                 MPVLib.setPropertyDouble("speed", value.toDouble())
                 playbackState.update {
                     it.copy(speed = value)
@@ -876,7 +1050,7 @@ class MpvPlayer(
             }
 
             MpvCommand.SET_SUBTITLE_DELAY -> {
-                val value = msg.obj as Double
+                val value = obj as Double
                 MPVLib.setPropertyDouble("sub-delay", value)
                 playbackState.update {
                     it.copy(subtitleDelay = value)
@@ -884,22 +1058,30 @@ class MpvPlayer(
             }
 
             MpvCommand.LOAD_FILE -> {
-                loadFile(msg.obj as MediaAndPosition)
+                loadFile(obj as MediaAndPosition)
             }
 
             MpvCommand.ATTACH_SURFACE -> {
-                val surface = msg.obj as Surface?
+                val surface = obj as Surface?
                 if (surface == null || (this.surface != null && this.surface != surface)) {
                     // If clearing or changing the surface
                     MPVLib.detachSurface()
                     MPVLib.setPropertyString("vo", "null")
                     MPVLib.setPropertyString("force-window", "no")
+                    Timber.d("Detached surface")
                 }
                 if (surface != null) {
                     MPVLib.attachSurface(surface)
                     this.surface = surface
                     MPVLib.setOptionString("force-window", "yes")
                     Timber.d("Attached surface")
+                    if (queuedCommands.isNotEmpty()) {
+                        Timber.d("Processing queued commands")
+                        while (queuedCommands.isNotEmpty()) {
+                            val msg = queuedCommands.removeAt(0)
+                            handleCommand(msg.first, msg.second)
+                        }
+                    }
                 }
             }
 
@@ -914,7 +1096,6 @@ class MpvPlayer(
                 Timber.d("MPVLib destroyed")
             }
         }
-        return true
     }
 }
 
@@ -1005,6 +1186,7 @@ private data class PlaybackState(
     val videoSize: VideoSize,
     @param:Player.State val state: Int,
     val tracks: Tracks,
+    val timeline: Timeline,
 ) {
     companion object {
         val EMPTY =
@@ -1021,6 +1203,7 @@ private data class PlaybackState(
                 videoSize = VideoSize.UNKNOWN,
                 state = Player.STATE_IDLE,
                 subtitleDelay = 0.0,
+                timeline = Timeline.EMPTY,
             )
     }
 }
@@ -1035,14 +1218,16 @@ private data class MediaAndPosition(
     val startPositionMs: Long,
 )
 
-enum class MpvCommand {
-    PLAY_PAUSE,
-    SEEK,
-    SET_TRACK_SELECTION,
-    SET_SPEED,
-    SET_SUBTITLE_DELAY,
-    LOAD_FILE,
-    ATTACH_SURFACE,
-    INITIALIZE,
-    DESTROY,
+enum class MpvCommand(
+    val isLifecycle: Boolean,
+) {
+    PLAY_PAUSE(false),
+    SEEK(false),
+    SET_TRACK_SELECTION(false),
+    SET_SPEED(false),
+    SET_SUBTITLE_DELAY(false),
+    LOAD_FILE(false),
+    ATTACH_SURFACE(true),
+    INITIALIZE(true),
+    DESTROY(true),
 }

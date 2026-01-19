@@ -414,6 +414,29 @@ sealed interface AppPreference<Pref, T> {
                 summaryOff = R.string.disabled,
             )
 
+        val DirectPlayDoviProfile7 =
+            AppSwitchPreference<AppPreferences>(
+                title = R.string.force_dovi_profile_7,
+                defaultValue = false,
+                getter = { it.playbackPreferences.overrides.directPlayDolbyVisionEL },
+                setter = { prefs, value ->
+                    prefs.updatePlaybackOverrides { directPlayDolbyVisionEL = value }
+                },
+                summary = R.string.force_dovi_profile_7_summary,
+            )
+
+        val DecodeAv1 =
+            AppSwitchPreference<AppPreferences>(
+                title = R.string.software_decoding_av1,
+                defaultValue = true,
+                getter = { it.playbackPreferences.overrides.decodeAv1 },
+                setter = { prefs, value ->
+                    prefs.updatePlaybackOverrides { decodeAv1 = value }
+                },
+                summaryOn = R.string.enabled,
+                summaryOff = R.string.disabled,
+            )
+
         val RememberSelectedTab =
             AppSwitchPreference<AppPreferences>(
                 title = R.string.remember_selected_tab,
@@ -696,7 +719,25 @@ sealed interface AppPreference<Pref, T> {
                 defaultValue = false,
                 getter = { it.playbackPreferences.refreshRateSwitching },
                 setter = { prefs, value ->
-                    prefs.updatePlaybackPreferences { refreshRateSwitching = value }
+                    prefs.updatePlaybackPreferences {
+                        if (!value) resolutionSwitching = false
+                        refreshRateSwitching = value
+                    }
+                },
+                summaryOn = R.string.automatic,
+                summaryOff = R.string.disabled,
+            )
+
+        val ResolutionSwitching =
+            AppSwitchPreference<AppPreferences>(
+                title = R.string.resolution_switching,
+                defaultValue = false,
+                getter = { it.playbackPreferences.resolutionSwitching },
+                setter = { prefs, value ->
+                    prefs.updatePlaybackPreferences {
+                        if (value) refreshRateSwitching = true
+                        resolutionSwitching = value
+                    }
                 },
                 summaryOn = R.string.automatic,
                 summaryOff = R.string.disabled,
@@ -842,6 +883,13 @@ sealed interface AppPreference<Pref, T> {
                 summaryOn = R.string.enabled,
                 summaryOff = R.string.disabled,
             )
+
+        val SeerrIntegration =
+            AppClickablePreference<AppPreferences>(
+                title = R.string.seerr_integration,
+                getter = { },
+                setter = { prefs, _ -> prefs },
+            )
     }
 }
 
@@ -903,6 +951,7 @@ val basicPreferences =
             title = R.string.more,
             preferences =
                 listOf(
+                    AppPreference.SeerrIntegration,
                     AppPreference.AdvancedSettings,
                 ),
         ),
@@ -934,6 +983,7 @@ val advancedPreferences =
                         AppPreference.GlobalContentScale,
                         AppPreference.MaxBitrate,
                         AppPreference.RefreshRateSwitching,
+                        AppPreference.ResolutionSwitching,
                         AppPreference.PlaybackDebugInfo,
                     ),
             ),
@@ -965,6 +1015,8 @@ val advancedPreferences =
                                 AppPreference.Ac3Supported,
                                 AppPreference.DirectPlayAss,
                                 AppPreference.DirectPlayPgs,
+                                AppPreference.DirectPlayDoviProfile7,
+                                AppPreference.DecodeAv1,
                             ),
                         ),
                         ConditionalPreferences(

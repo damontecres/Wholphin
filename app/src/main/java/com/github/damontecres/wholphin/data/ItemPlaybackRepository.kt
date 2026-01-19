@@ -25,6 +25,7 @@ class ItemPlaybackRepository
     constructor(
         val serverRepository: ServerRepository,
         val itemPlaybackDao: ItemPlaybackDao,
+        private val playbackLanguageChoiceDao: PlaybackLanguageChoiceDao,
         private val streamChoiceService: StreamChoiceService,
     ) {
         suspend fun getSelectedTracks(
@@ -61,7 +62,7 @@ class ItemPlaybackRepository
                     )
                 val subtitleStream =
                     streamChoiceService.chooseSubtitleStream(
-                        audioStream = audioStream,
+                        audioStreamLang = audioStream?.language,
                         candidates =
                             source.mediaStreams
                                 ?.filter { it.type == MediaStreamType.SUBTITLE }
@@ -132,7 +133,7 @@ class ItemPlaybackRepository
                 Timber.v("Saving track selection %s", toSave)
                 toSave = saveItemPlayback(toSave)
                 val seriesId = item.data.seriesId
-                if (seriesId != null && trackIndex != TrackIndex.UNSPECIFIED) {
+                if (seriesId != null && (trackIndex >= 0 || trackIndex == TrackIndex.DISABLED)) {
                     if (type == MediaStreamType.AUDIO) {
                         val stream = source.mediaStreams?.first { it.index == trackIndex }
                         if (stream?.language != null) {
@@ -146,7 +147,7 @@ class ItemPlaybackRepository
                                 subtitlesDisabled = true,
                             )
                         } else {
-                            val stream = source.mediaStreams?.first { it.index == trackIndex }
+                            val stream = source.mediaStreams?.firstOrNull { it.index == trackIndex }
                             if (stream?.language != null) {
                                 streamChoiceService.updateSubtitles(
                                     item.data,
@@ -202,6 +203,18 @@ class ItemPlaybackRepository
                         delay.inWholeMilliseconds,
                     ),
                 )
+            }
+        }
+
+        suspend fun deleteChosenStreams(chosenStreams: ChosenStreams?) {
+            Timber.d("deleteChosenStreams: %s", chosenStreams)
+            chosenStreams?.plc?.let {
+                Timber.d("Deleting %s", it)
+                playbackLanguageChoiceDao.delete(it)
+            }
+            chosenStreams?.itemPlayback?.let {
+                Timber.d("Deleting %s", it)
+                itemPlaybackDao.deleteItem(it)
             }
         }
     }

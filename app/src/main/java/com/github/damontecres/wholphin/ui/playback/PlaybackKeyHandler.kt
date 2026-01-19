@@ -45,8 +45,9 @@ class PlaybackKeyHandler(
                     player.seekForward(seekForward)
                     updateSkipIndicator(seekForward.inWholeMilliseconds)
                 } else if (oneClickPause && isEnterKey(it)) {
+                    val wasPlaying = player.isPlaying
                     Util.handlePlayPauseButtonAction(player)
-                    if (!player.isPlaying) {
+                    if (wasPlaying) {
                         controllerViewState.showControls()
                     } else {
                         skipBackOnResume?.let {
@@ -61,27 +62,8 @@ class PlaybackKeyHandler(
             }
         } else if (isMedia(it)) {
             when (it.key) {
-                Key.MediaPlay -> {
-                    Util.handlePlayButtonAction(player)
-                    skipBackOnResume?.let {
-                        player.seekBack(it)
-                    }
-                }
-
-                Key.MediaPause -> {
-                    Util.handlePauseButtonAction(player)
-                    controllerViewState.showControls()
-                }
-
-                Key.MediaPlayPause -> {
-                    Util.handlePlayPauseButtonAction(player)
-                    if (!player.isPlaying) {
-                        controllerViewState.showControls()
-                    } else {
-                        skipBackOnResume?.let {
-                            player.seekBack(it)
-                        }
-                    }
+                Key.MediaPlay, Key.MediaPause, Key.MediaPlayPause -> {
+                    // no-op, MediaSession will handle
                 }
 
                 Key.MediaFastForward, Key.MediaSkipForward -> {

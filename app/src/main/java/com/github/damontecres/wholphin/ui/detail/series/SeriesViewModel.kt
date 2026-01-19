@@ -9,16 +9,16 @@ import com.github.damontecres.wholphin.data.ExtrasItem
 import com.github.damontecres.wholphin.data.ItemPlaybackRepository
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.BaseItem
+import com.github.damontecres.wholphin.data.model.DiscoverItem
 import com.github.damontecres.wholphin.data.model.ItemPlayback
 import com.github.damontecres.wholphin.data.model.Person
 import com.github.damontecres.wholphin.data.model.Trailer
-import com.github.damontecres.wholphin.preferences.ThemeSongVolume
-import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.ExtrasService
 import com.github.damontecres.wholphin.services.FavoriteWatchManager
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.PeopleFavorites
+import com.github.damontecres.wholphin.services.SeerrService
 import com.github.damontecres.wholphin.services.StreamChoiceService
 import com.github.damontecres.wholphin.services.ThemeSongPlayer
 import com.github.damontecres.wholphin.services.TrailerService
@@ -85,6 +85,7 @@ class SeriesViewModel
         val streamChoiceService: StreamChoiceService,
         private val userPreferencesService: UserPreferencesService,
         private val backdropService: BackdropService,
+        private val seerrService: SeerrService,
         @Assisted val seriesId: UUID,
         @Assisted val seasonEpisodeIds: SeasonEpisodeIds?,
         @Assisted val seriesPageType: SeriesPageType,
@@ -98,7 +99,6 @@ class SeriesViewModel
             ): SeriesViewModel
         }
 
-        private lateinit var prefs: UserPreferences
         val loading = MutableLiveData<LoadingState>(LoadingState.Loading)
         val seasons = MutableLiveData<List<BaseItem?>>(listOf())
         val episodes = MutableLiveData<EpisodeList>(EpisodeList.Loading)
@@ -109,6 +109,7 @@ class SeriesViewModel
         val similar = MutableLiveData<List<BaseItem>>()
 
         val peopleInEpisode = MutableLiveData<PeopleInItem>(PeopleInItem())
+        val discovered = MutableStateFlow<List<DiscoverItem>>(listOf())
 
         val position = MutableStateFlow(SeriesOverviewPosition(0, 0))
 
@@ -119,7 +120,6 @@ class SeriesViewModel
                     "Error loading series $seriesId",
                 ) + Dispatchers.IO,
             ) {
-                this@SeriesViewModel.prefs = userPreferencesService.getCurrent()
                 Timber.v("Start")
                 val item = fetchItem(seriesId)
                 backdropService.submit(item)
@@ -164,12 +164,13 @@ class SeriesViewModel
                             } ?: 0
                         Timber.v("Got initial season index: $index")
                         position.update {
-                            it.copy(seasonTabIndex = index)
+                            it.copy(seasonTabIndex = index.coerceAtLeast(0))
                         }
                     }
                 }
-
+                val remoteTrailers = trailerService.getRemoteTrailers(item)
                 withContext(Dispatchers.Main) {
+                    this@SeriesViewModel.trailers.value = remoteTrailers
                     this@SeriesViewModel.position.update {
                         it.copy(
                             episodeRowIndex =
@@ -182,9 +183,10 @@ class SeriesViewModel
                 }
                 if (seriesPageType == SeriesPageType.DETAILS) {
                     viewModelScope.launchIO {
-                        val trailers = trailerService.getTrailers(item)
-                        withContext(Dispatchers.Main) {
-                            this@SeriesViewModel.trailers.value = trailers
+                        trailerService.getLocalTrailers(item).letNotEmpty { localTrailers ->
+                            withContext(Dispatchers.Main) {
+                                this@SeriesViewModel.trailers.value = localTrailers + remoteTrailers
+                            }
                         }
                     }
                     viewModelScope.launchIO {
@@ -211,21 +213,23 @@ class SeriesViewModel
                             this@SeriesViewModel.similar.setValueOnMain(similar)
                         }
                     }
+                    viewModelScope.launchIO {
+                        val results = seerrService.similar(item).orEmpty()
+                        discovered.update { results }
+                    }
                 }
             }
         }
 
-        /**
-         * If the series has a theme song & app settings allow, play it
-         */
-        fun maybePlayThemeSong(
-            seriesId: UUID,
-            playThemeSongs: ThemeSongVolume,
-        ) {
+        fun onResumePage() {
             viewModelScope.launchIO {
-                themeSongPlayer.playThemeFor(seriesId, playThemeSongs)
-                addCloseable {
-                    themeSongPlayer.stop()
+                item.value?.let {
+                    backdropService.submit(it)
+                    val playThemeSongs =
+                        userPreferencesService
+                            .getCurrent()
+                            .appPreferences.interfacePreferences.playThemeSongs
+                    themeSongPlayer.playThemeFor(seriesId, playThemeSongs)
                 }
             }
         }
@@ -287,6 +291,7 @@ class SeriesViewModel
                     fields =
                         listOf(
                             ItemFields.MEDIA_SOURCES,
+                            ItemFields.MEDIA_SOURCE_COUNT,
                             ItemFields.MEDIA_STREAMS,
                             ItemFields.OVERVIEW,
                             ItemFields.CUSTOM_RATING,
@@ -514,6 +519,16 @@ class SeriesViewModel
                     }
             }
         }
+
+        fun clearChosenStreams(
+            item: BaseItem,
+            chosenStreams: ChosenStreams?,
+        ) {
+            viewModelScope.launchIO {
+                itemPlaybackRepository.deleteChosenStreams(chosenStreams)
+                lookUpChosenTracks(item.id, item)
+            }
+        }
     }
 
 sealed interface EpisodeList {
@@ -551,7 +566,10 @@ private suspend fun findIndexOf(
     val index =
         if (targetId != null && (targetNum == null || targetNum !in pager.indices)) {
             // No hint info, so have to check everything
-            pager.indexOfBlocking { equalsNotNull(it?.id, targetId) }
+            pager.indexOfBlocking {
+                equalsNotNull(it?.indexNumber, targetNum) ||
+                    equalsNotNull(it?.id, targetId)
+            }
         } else if (targetNum != null && targetNum in pager.indices) {
             // Start searching from the season number and choose direction from there
             val num = pager.getBlocking(targetNum)?.indexNumber
