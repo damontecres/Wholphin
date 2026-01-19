@@ -404,4 +404,5 @@
     <string name="voice_error_start_failed">Kõnetuvastuse käivitamine ei õnnestunud</string>
     <string name="voice_error_timeout">Kõnetuvastus aegus</string>
     <string name="retry">Proovi uuesti</string>
+    <string name="software_decoding_av1">AV1 tarkvaraline dekodeerimine</string>
 </resources>
