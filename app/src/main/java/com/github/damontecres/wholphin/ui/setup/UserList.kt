@@ -296,9 +296,10 @@ fun UserIconCardImage(
     name: String?,
     imageUrl: String?,
     modifier: Modifier = Modifier,
+    alpha: Float = 1f,
 ) {
     var imageError by remember { mutableStateOf(false) }
-    val userColor = rememberIdColor(id)
+    val userColor = rememberIdColor(id, alpha)
     Box(
         modifier =
             modifier.background(
