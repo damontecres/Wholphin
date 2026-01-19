@@ -388,4 +388,5 @@
     <string name="voice_error_start_failed">无法启动语音识别</string>
     <string name="voice_error_timeout">语音识别超时</string>
     <string name="retry">重试</string>
+    <string name="software_decoding_av1">AV1 软件解码</string>
 </resources>
