@@ -121,6 +121,7 @@ class SeriesViewModel
                 ) + Dispatchers.IO,
             ) {
                 Timber.v("Start")
+                addCloseable { themeSongPlayer.stop() }
                 val item = fetchItem(seriesId)
                 backdropService.submit(item)
 
