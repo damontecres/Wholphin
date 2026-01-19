@@ -67,7 +67,7 @@ class DiscoverSeriesViewModel
         val canCancelRequest = MutableStateFlow(false)
 
         val userConfig = seerrServerRepository.current.map { it?.config }
-        val request4kEnabled = seerrServerRepository.current.map { it?.request4kMovieEnabled ?: false }
+        val request4kEnabled = seerrServerRepository.current.map { it?.request4kTvEnabled ?: false }
 
         init {
             init()

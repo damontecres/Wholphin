@@ -425,6 +425,18 @@ sealed interface AppPreference<Pref, T> {
                 summary = R.string.force_dovi_profile_7_summary,
             )
 
+        val DecodeAv1 =
+            AppSwitchPreference<AppPreferences>(
+                title = R.string.software_decoding_av1,
+                defaultValue = true,
+                getter = { it.playbackPreferences.overrides.decodeAv1 },
+                setter = { prefs, value ->
+                    prefs.updatePlaybackOverrides { decodeAv1 = value }
+                },
+                summaryOn = R.string.enabled,
+                summaryOff = R.string.disabled,
+            )
+
         val RememberSelectedTab =
             AppSwitchPreference<AppPreferences>(
                 title = R.string.remember_selected_tab,
@@ -1018,6 +1030,7 @@ val advancedPreferences =
                                 AppPreference.DirectPlayAss,
                                 AppPreference.DirectPlayPgs,
                                 AppPreference.DirectPlayDoviProfile7,
+                                AppPreference.DecodeAv1,
                             ),
                         ),
                         ConditionalPreferences(

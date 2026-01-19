@@ -2,6 +2,7 @@ package com.github.damontecres.wholphin.ui.main
 
 import android.widget.Toast
 import androidx.compose.foundation.background
+import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -24,7 +25,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -61,7 +61,6 @@ import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.components.QuickDetails
 import com.github.damontecres.wholphin.ui.data.AddPlaylistViewModel
 import com.github.damontecres.wholphin.ui.data.RowColumn
-import com.github.damontecres.wholphin.ui.data.RowColumnSaver
 import com.github.damontecres.wholphin.ui.detail.MoreDialogActions
 import com.github.damontecres.wholphin.ui.detail.PlaylistDialog
 import com.github.damontecres.wholphin.ui.detail.PlaylistLoadingState
@@ -70,6 +69,7 @@ import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.playback.isPlayKeyUp
 import com.github.damontecres.wholphin.ui.playback.playable
+import com.github.damontecres.wholphin.ui.rememberPosition
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.HomeRowLoadingState
 import com.github.damontecres.wholphin.util.LoadingState
@@ -209,52 +209,32 @@ fun HomePageContent(
     onFocusPosition: ((RowColumn) -> Unit)? = null,
     loadingState: LoadingState? = null,
 ) {
-    val context = LocalContext.current
-    val scope = rememberCoroutineScope()
-    val firstRow =
-        remember {
-            homeRows
-                .indexOfFirst {
-                    when (it) {
-                        is HomeRowLoadingState.Error -> false
-                        is HomeRowLoadingState.Loading -> true
-                        is HomeRowLoadingState.Pending -> true
-                        is HomeRowLoadingState.Success -> it.items.isNotEmpty()
-                    }
-                }.coerceAtLeast(0)
-        }
-    var position by rememberSaveable(stateSaver = RowColumnSaver) {
-        mutableStateOf(RowColumn(firstRow, 0))
-    }
+    var position by rememberPosition()
     val focusedItem =
         position.let {
             (homeRows.getOrNull(it.row) as? HomeRowLoadingState.Success)?.items?.getOrNull(it.column)
         }
 
     val listState = rememberLazyListState()
-    val rowFocusRequesters = remember(homeRows.size) { List(homeRows.size) { FocusRequester() } }
-    var firstFocused by rememberSaveable { mutableStateOf(false) }
+    val rowFocusRequesters = remember(homeRows) { List(homeRows.size) { FocusRequester() } }
+    var firstFocused by remember { mutableStateOf(false) }
     LaunchedEffect(homeRows) {
         if (!firstFocused) {
-            // Waiting for the first home row to load, then focus on it
-            homeRows
-                .indexOfFirst { it is HomeRowLoadingState.Success && it.items.isNotEmpty() }
-                .takeIf { it >= 0 }
-                ?.let {
-                    rowFocusRequesters[it].tryRequestFocus()
-                    delay(50)
-                    listState.scrollToItem(it)
-                    firstFocused = true
-                }
-        }
-    }
-    LaunchedEffect(Unit) {
-        if (firstFocused) {
-            // After the first home row was loaded & focused, page recompositions should focus on the positioned row
-            val index = position.row
-            rowFocusRequesters.getOrNull(index)?.tryRequestFocus()
-            delay(50)
-            listState.scrollToItem(index)
+            if (position.row >= 0) {
+                rowFocusRequesters[position.row].tryRequestFocus()
+                firstFocused = true
+            } else {
+                // Waiting for the first home row to load, then focus on it
+                homeRows
+                    .indexOfFirst { it is HomeRowLoadingState.Success && it.items.isNotEmpty() }
+                    .takeIf { it >= 0 }
+                    ?.let {
+                        rowFocusRequesters[it].tryRequestFocus()
+                        firstFocused = true
+                        delay(50)
+                        listState.scrollToItem(it)
+                    }
+            }
         }
     }
     LaunchedEffect(position) {
@@ -353,6 +333,7 @@ fun HomePageContent(
                                     modifier =
                                         Modifier
                                             .fillMaxWidth()
+                                            .focusGroup()
                                             .focusRequester(rowFocusRequesters[rowIndex])
                                             .animateItem(),
                                     cardContent = { index, item, cardModifier, onClick, onLongClick ->
