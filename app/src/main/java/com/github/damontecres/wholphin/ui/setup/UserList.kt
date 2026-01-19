@@ -1,6 +1,7 @@
 package com.github.damontecres.wholphin.ui.setup
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -38,6 +39,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogProperties
 import androidx.tv.material3.Border
 import androidx.tv.material3.Button
@@ -51,10 +53,13 @@ import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.JellyfinUser
 import com.github.damontecres.wholphin.ui.Cards
 import com.github.damontecres.wholphin.ui.FontAwesome
+import com.github.damontecres.wholphin.ui.PreviewTvSpec
 import com.github.damontecres.wholphin.ui.components.DialogItem
 import com.github.damontecres.wholphin.ui.components.DialogPopup
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
+import com.github.damontecres.wholphin.ui.theme.WholphinTheme
 import com.github.damontecres.wholphin.ui.tryRequestFocus
+import java.util.UUID
 
 /**
  * Display a list of users plus option to add a new one or switch servers
@@ -281,6 +286,64 @@ private fun UserIconCard(
                 Modifier
                     .width(cardSize)
                     .padding(horizontal = 4.dp),
+        )
+    }
+}
+
+@Composable
+fun UserIconCardImage(
+    id: UUID,
+    name: String?,
+    imageUrl: String?,
+    modifier: Modifier = Modifier,
+) {
+    var imageError by remember { mutableStateOf(false) }
+    val userColor = rememberIdColor(id)
+    Box(
+        modifier =
+            modifier.background(
+                color = userColor,
+                shape = CircleShape,
+            ),
+        contentAlignment = Alignment.Center,
+    ) {
+        if (imageUrl.isNotNullOrBlank() && !imageError) {
+            AsyncImage(
+                model = imageUrl,
+                contentDescription = name,
+                contentScale = ContentScale.Crop,
+                onError = { imageError = true },
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .clip(CircleShape),
+            )
+        } else {
+            val firstLetter =
+                remember(id, name) {
+                    (name ?: id.toString()).firstOrNull()?.uppercase() ?: "?"
+                }
+            Text(
+                text = firstLetter,
+                style = MaterialTheme.typography.bodyLarge,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Normal,
+                color = MaterialTheme.colorScheme.onSurface,
+                textAlign = TextAlign.Center,
+            )
+        }
+    }
+}
+
+@PreviewTvSpec
+@Composable
+fun UserIconCardImagePreview() {
+    WholphinTheme {
+        UserIconCardImage(
+            id = UUID.randomUUID(),
+            name = "A smith",
+            imageUrl = null,
+            modifier = Modifier.size(24.dp),
         )
     }
 }

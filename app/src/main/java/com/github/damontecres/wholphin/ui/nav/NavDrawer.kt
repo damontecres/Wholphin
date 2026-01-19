@@ -19,7 +19,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.KeyboardArrowLeft
@@ -87,6 +86,7 @@ import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.preferences.PreferenceScreenOption
 import com.github.damontecres.wholphin.ui.setValueOnMain
+import com.github.damontecres.wholphin.ui.setup.UserIconCardImage
 import com.github.damontecres.wholphin.ui.spacedByWithFooter
 import com.github.damontecres.wholphin.ui.theme.LocalTheme
 import com.github.damontecres.wholphin.ui.toServerString
@@ -99,6 +99,8 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.jellyfin.sdk.api.client.ApiClient
+import org.jellyfin.sdk.api.client.extensions.imageApi
 import org.jellyfin.sdk.model.api.CollectionType
 import timber.log.Timber
 import java.util.UUID
@@ -108,6 +110,7 @@ import javax.inject.Inject
 class NavDrawerViewModel
     @Inject
     constructor(
+        private val api: ApiClient,
         private val navDrawerItemRepository: NavDrawerItemRepository,
         val navigationManager: NavigationManager,
         val setupNavigationManager: SetupNavigationManager,
@@ -191,6 +194,8 @@ class NavDrawerViewModel
         fun setShowMore(value: Boolean) {
             showMore.value = value
         }
+
+        fun getUserImage(user: JellyfinUser): String = api.imageApi.getUserImageUrl(user.id)
     }
 
 sealed interface NavDrawerItem {
@@ -386,12 +391,11 @@ fun NavDrawer(
                     val interactionSource = remember { MutableInteractionSource() }
                     val focused by interactionSource.collectIsFocusedAsState()
                     LaunchedEffect(focused) { if (focused) focusedIndex = Int.MIN_VALUE }
-                    IconNavItem(
-                        text = user?.name ?: "",
-                        subtext = server?.name ?: server?.url,
-                        icon = Icons.Default.AccountCircle,
-                        selected = false,
-                        drawerOpen = drawerState.isOpen,
+                    val userImageUrl = remember(user) { viewModel.getUserImage(user) }
+                    ProfileIcon(
+                        user = user,
+                        imageUrl = userImageUrl,
+                        serverName = server.name ?: server.url,
                         interactionSource = interactionSource,
                         onClick = {
                             viewModel.setupNavigationManager.navigateTo(
@@ -569,6 +573,44 @@ fun NavDrawer(
                 TimeDisplay()
             }
         }
+    }
+}
+
+@Composable
+fun NavigationDrawerScope.ProfileIcon(
+    user: JellyfinUser,
+    imageUrl: String?,
+    serverName: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
+) {
+    val focused by interactionSource.collectIsFocusedAsState()
+    NavigationDrawerItem(
+        modifier = modifier,
+        selected = false,
+        onClick = onClick,
+        leadingContent = {
+            UserIconCardImage(
+                id = user.id,
+                name = user.name,
+                imageUrl = imageUrl,
+                modifier = Modifier.fillMaxSize(),
+            )
+        },
+        supportingContent = {
+            Text(
+                text = serverName,
+                maxLines = 1,
+            )
+        },
+        interactionSource = interactionSource,
+    ) {
+        Text(
+            modifier = Modifier,
+            text = user.name ?: user.id.toString(),
+            maxLines = 1,
+        )
     }
 }
 
