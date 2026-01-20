@@ -11,7 +11,7 @@
     <string name="cancel">Mégse</string>
     <string name="chapters">Fejezetek</string>
     <string name="choose_stream">%1$s kiválasztása</string>
-    <string name="clear_image_cache">Képgyorsítótár törlése</string>
+    <string name="clear_image_cache">Kép-gyorsítótár törlése</string>
     <string name="collection">Gyűjtemény</string>
     <string name="collections">Gyűjtemények</string>
     <string name="community_rating">Közösségi értékelés</string>
@@ -233,7 +233,7 @@
     <string name="global_content_scale">Tartalom alapértelmezett méretezése</string>
     <string name="install_update">Frissítés telepítése</string>
     <string name="installed_version">Telepített verzió</string>
-    <string name="max_homepage_items">Maximális elemek soronként a kezdőlapon</string>
+    <string name="max_homepage_items">Elemek száma soronként a kezdőlapon</string>
     <string name="nav_drawer_pins_summary">Válassza ki az alapértelmezett elemeket, amelyek megjelennek, a többi el lesz rejtve</string>
     <string name="nav_drawer_pins">Navigációs menü elemeinek testreszabása</string>
     <string name="nav_drawer_switch_on_focus_summary_off">Kattintson az oldalak közti váltáshoz</string>
@@ -279,7 +279,7 @@
     <string name="skip_segment_recap">Összefoglaló átugrása</string>
     <string name="skip_segment_outro">Stáblista átugrása</string>
     <string name="skip_segment_intro">Intró átugrása</string>
-    <string name="played">Lejátszott</string>
+    <string name="played">Megnézett</string>
     <string name="filter">Szűrő</string>
     <string name="year">Év</string>
     <string name="decade">Évtized</string>
@@ -355,8 +355,20 @@
     <string name="enter_server_address">Adja meg a szerver címét</string>
     <string name="combine_continue_next"><![CDATA[Folytatás & Következő menü összevonása]]></string>
     <string name="player_backend">Lejátszás backend</string>
-    <string name="image_cache_size">Kép gyorsítótár méret (MB)</string>
+    <string name="image_cache_size">Kép-gyorsítótár mérete (MB)</string>
     <string name="cast_and_crew"><![CDATA[Stábtagok]]></string>
     <string name="nav_drawer_switch_on_focus">Navigációs menü oldalainak váltása fókusznál</string>
     <string name="playback_overrides">Lejátszás felülbírálatai</string>
+    <string name="resolution_switching">Felbontásváltás</string>
+    <string name="play_trailer">Előzetes lejátszása</string>
+    <string name="no_trailers">Nincsenek előzetesek</string>
+    <string name="local">Helyi</string>
+    <string name="dts_x">DTS:X</string>
+    <string name="dts_hd">DTS-HD</string>
+    <string name="truehd">TrueHD</string>
+    <string name="dolby_digital">DD</string>
+    <string name="dolby_digital_plus">DD+</string>
+    <string name="dts">DTS</string>
+    <string name="only_forced_subtitles">Csak kiegészítő felirat</string>
+    <string name="clear_track_choices">Sávválasztás törlése</string>
 </resources>
