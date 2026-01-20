@@ -75,7 +75,11 @@ class NavigationManager
             while (backStack.size > 1) {
                 backStack.removeLastOrNull()
             }
-            backStack[0] = destination
+            if (backStack.isEmpty()) {
+                backStack.add(0, destination)
+            } else {
+                backStack[0] = destination
+            }
             log()
         }
 

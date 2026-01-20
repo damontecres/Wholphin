@@ -150,7 +150,6 @@ class MainActivity : AppCompatActivity() {
             }
         }
         viewModel.appStart()
-        val requestedDestination = this.intent?.let(::extractDestination)
         setContent {
             val appPreferences by userPreferencesDataStore.data.collectAsState(null)
             appPreferences?.let { appPreferences ->
@@ -257,6 +256,10 @@ class MainActivity : AppCompatActivity() {
                                                     }
 
                                                     if (showContent) {
+                                                        val requestedDestination =
+                                                            remember(intent) {
+                                                                intent?.let(::extractDestination)
+                                                            }
                                                         ApplicationContent(
                                                             user = current.user,
                                                             server = current.server,
@@ -344,6 +347,7 @@ class MainActivity : AppCompatActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         Timber.v("onNewIntent")
+        setIntent(intent)
         extractDestination(intent)?.let {
             navigationManager.replace(it)
         }
