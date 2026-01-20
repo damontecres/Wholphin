@@ -396,6 +396,7 @@ fun NavDrawer(
                         user = user,
                         imageUrl = userImageUrl,
                         serverName = server.name ?: server.url,
+                        drawerOpen = drawerState.isOpen,
                         interactionSource = interactionSource,
                         onClick = {
                             viewModel.setupNavigationManager.navigateTo(
@@ -581,6 +582,7 @@ fun NavigationDrawerScope.ProfileIcon(
     user: JellyfinUser,
     imageUrl: String?,
     serverName: String,
+    drawerOpen: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
@@ -595,6 +597,7 @@ fun NavigationDrawerScope.ProfileIcon(
                 id = user.id,
                 name = user.name,
                 imageUrl = imageUrl,
+                alpha = if (drawerOpen) 1f else .5f,
                 modifier = Modifier.fillMaxSize(),
             )
         },
