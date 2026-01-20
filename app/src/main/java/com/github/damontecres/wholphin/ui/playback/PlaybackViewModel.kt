@@ -47,6 +47,7 @@ import com.github.damontecres.wholphin.services.PlaylistCreationResult
 import com.github.damontecres.wholphin.services.PlaylistCreator
 import com.github.damontecres.wholphin.services.RefreshRateService
 import com.github.damontecres.wholphin.services.StreamChoiceService
+import com.github.damontecres.wholphin.services.UserPreferencesService
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.nav.Destination
@@ -58,7 +59,6 @@ import com.github.damontecres.wholphin.ui.showToast
 import com.github.damontecres.wholphin.ui.toServerString
 import com.github.damontecres.wholphin.util.EqualityMutableLiveData
 import com.github.damontecres.wholphin.util.ExceptionHandler
-import com.github.damontecres.wholphin.util.LoadingExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
 import com.github.damontecres.wholphin.util.TrackActivityPlaybackListener
 import com.github.damontecres.wholphin.util.checkForSupport
@@ -66,6 +66,9 @@ import com.github.damontecres.wholphin.util.mpv.mpvDeviceProfile
 import com.github.damontecres.wholphin.util.profile.Codec
 import com.github.damontecres.wholphin.util.subtitleMimeTypes
 import com.github.damontecres.wholphin.util.supportItemKinds
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedFactory
+import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CancellationException
@@ -94,19 +97,21 @@ import org.jellyfin.sdk.model.DeviceInfo
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.MediaSegmentDto
 import org.jellyfin.sdk.model.api.MediaSegmentType
+import org.jellyfin.sdk.model.api.MediaSourceInfo
 import org.jellyfin.sdk.model.api.MediaStreamType
 import org.jellyfin.sdk.model.api.PlayMethod
 import org.jellyfin.sdk.model.api.PlaybackInfoDto
 import org.jellyfin.sdk.model.api.PlaystateCommand
 import org.jellyfin.sdk.model.api.PlaystateMessage
 import org.jellyfin.sdk.model.api.TrickplayInfo
+import org.jellyfin.sdk.model.api.VideoRange
+import org.jellyfin.sdk.model.api.VideoRangeType
 import org.jellyfin.sdk.model.extensions.inWholeTicks
 import org.jellyfin.sdk.model.extensions.ticks
 import org.jellyfin.sdk.model.serializer.toUUIDOrNull
 import timber.log.Timber
 import java.util.Date
 import java.util.UUID
-import javax.inject.Inject
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
@@ -114,10 +119,10 @@ import kotlin.time.Duration.Companion.seconds
 /**
  * This [ViewModel] is responsible for playing media including moving through playlists (including next up episodes)
  */
-@HiltViewModel
+@HiltViewModel(assistedFactory = PlaybackViewModel.Factory::class)
 @OptIn(markerClass = [UnstableApi::class])
 class PlaybackViewModel
-    @Inject
+    @AssistedInject
     constructor(
         @param:ApplicationContext internal val context: Context,
         internal val api: ApiClient,
@@ -132,12 +137,21 @@ class PlaybackViewModel
         private val deviceProfileService: DeviceProfileService,
         private val refreshRateService: RefreshRateService,
         val streamChoiceService: StreamChoiceService,
+        private val userPreferencesService: UserPreferencesService,
+        @Assisted private val destination: Destination,
     ) : ViewModel(),
         Player.Listener,
         AnalyticsListener {
-        val player by lazy {
-            playerFactory.createVideoPlayer()
+        @AssistedFactory
+        interface Factory {
+            fun create(destination: Destination): PlaybackViewModel
         }
+
+        val currentPlayer = MutableStateFlow<Player?>(null)
+
+        internal lateinit var player: Player
+        internal lateinit var playerBackend: PlayerBackend
+
         private var mediaSession: MediaSession? = null
         internal val mutex = Mutex()
 
@@ -174,7 +188,14 @@ class PlaybackViewModel
         val currentUserDto = serverRepository.currentUserDto
 
         init {
-            addCloseable {
+            viewModelScope.launchIO {
+                addCloseable { disconnectPlayer.run() }
+                init()
+            }
+        }
+
+        private val disconnectPlayer: Runnable = {
+            if (this::player.isInitialized) {
                 player.removeListener(this@PlaybackViewModel)
                 (player as? ExoPlayer)?.removeAnalyticsListener(this@PlaybackViewModel)
 
@@ -182,26 +203,71 @@ class PlaybackViewModel
                     it.release()
                     player.removeListener(it)
                 }
-                jobs.forEach { it.cancel() }
                 player.release()
                 mediaSession?.release()
             }
-            viewModelScope.launch(ExceptionHandler()) { controllerViewState.observe() }
+            jobs.forEach { it.cancel() }
+        }
+
+        private fun createPlayer(source: MediaSourceInfo) {
+            val videoStream = source.mediaStreams?.firstOrNull { it.type == MediaStreamType.VIDEO }
+            val isHdr =
+                if (videoStream != null) {
+                    videoStream.videoRange == VideoRange.HDR ||
+                        (videoStream.videoRangeType != VideoRangeType.SDR && videoStream.videoRangeType != VideoRangeType.UNKNOWN)
+                } else {
+                    false
+                }
+            val playerBackend =
+                when (preferences.appPreferences.playbackPreferences.playerBackend) {
+                    PlayerBackend.UNRECOGNIZED,
+                    PlayerBackend.EXO_PLAYER,
+                    -> PlayerBackend.EXO_PLAYER
+
+                    PlayerBackend.MPV -> PlayerBackend.MPV
+
+                    PlayerBackend.PREFER_MPV -> if (isHdr) PlayerBackend.EXO_PLAYER else PlayerBackend.MPV
+                }
+
+            Timber.i("Selected backend: %s", playerBackend)
+            disconnectPlayer.run()
+
+            player =
+                playerFactory.createVideoPlayer(
+                    playerBackend,
+                    preferences.appPreferences.playbackPreferences,
+                )
+            if (playerBackend == PlayerBackend.MPV) {
+            }
+            currentPlayer.update {
+                this@PlaybackViewModel.playerBackend = playerBackend
+                player
+            }
+        }
+
+        private fun configurePlayer() {
             player.addListener(this)
             (player as? ExoPlayer)?.addAnalyticsListener(this)
             jobs.add(subscribe())
             jobs.add(listenForTranscodeReason())
+            val sessionPlayer =
+                MediaSessionPlayer(
+                    player,
+                    controllerViewState,
+                    preferences.appPreferences.playbackPreferences,
+                )
+            mediaSession =
+                MediaSession
+                    .Builder(context, sessionPlayer)
+                    .build()
         }
 
         /**
          * Initialize from the UI to start playback
          */
-        fun init(
-            destination: Destination,
-            preferences: UserPreferences,
-        ) {
-            nextUp.value = null
-            this.preferences = preferences
+        private suspend fun init() {
+            nextUp.setValueOnMain(null)
+            this.preferences = userPreferencesService.getCurrent()
             if (preferences.appPreferences.playbackPreferences.refreshRateSwitching) {
                 addCloseable { refreshRateService.resetRefreshRate() }
             }
@@ -234,82 +300,64 @@ class PlaybackViewModel
                     }
                 }
             this.itemId = itemId
-            viewModelScope.launch(
-                Dispatchers.IO +
-                    LoadingExceptionHandler(
-                        loading,
-                        "Error preparing for playback for $itemId",
-                    ),
-            ) {
-                val queriedItem = api.userLibraryApi.getItem(itemId).content
-                val base =
-                    if (queriedItem.type.playable) {
-                        queriedItem
-                    } else if (destination is Destination.PlaybackList) {
-                        isPlaylist = true
-                        val playlistResult =
-                            playlistCreator.createFrom(
-                                item = queriedItem,
-                                startIndex = destination.startIndex ?: 0,
-                                sortAndDirection = destination.sortAndDirection,
-                                shuffled = destination.shuffle,
-                                recursive = destination.recursive,
-                                filter = destination.filter,
-                            )
-                        when (val r = playlistResult) {
-                            is PlaylistCreationResult.Error -> {
-                                loading.setValueOnMain(LoadingState.Error(r.message, r.ex))
-                                return@launch
-                            }
-
-                            is PlaylistCreationResult.Success -> {
-                                if (r.playlist.items.isEmpty()) {
-                                    showToast(context, "Playlist is empty", Toast.LENGTH_SHORT)
-                                    navigationManager.goBack()
-                                    return@launch
-                                }
-                                withContext(Dispatchers.Main) {
-                                    this@PlaybackViewModel.playlist.value = r.playlist
-                                }
-                                r.playlist.items
-                                    .first()
-                                    .data
-                            }
+            val queriedItem = api.userLibraryApi.getItem(itemId).content
+            val base =
+                if (queriedItem.type.playable) {
+                    queriedItem
+                } else if (destination is Destination.PlaybackList) {
+                    isPlaylist = true
+                    val playlistResult =
+                        playlistCreator.createFrom(
+                            item = queriedItem,
+                            startIndex = destination.startIndex ?: 0,
+                            sortAndDirection = destination.sortAndDirection,
+                            shuffled = destination.shuffle,
+                            recursive = destination.recursive,
+                            filter = destination.filter,
+                        )
+                    when (val r = playlistResult) {
+                        is PlaylistCreationResult.Error -> {
+                            loading.setValueOnMain(LoadingState.Error(r.message, r.ex))
+                            return
                         }
-                    } else {
-                        throw IllegalArgumentException("Item is not playable and not PlaybackList: ${queriedItem.type}")
+
+                        is PlaylistCreationResult.Success -> {
+                            if (r.playlist.items.isEmpty()) {
+                                showToast(context, "Playlist is empty", Toast.LENGTH_SHORT)
+                                navigationManager.goBack()
+                                return
+                            }
+                            withContext(Dispatchers.Main) {
+                                this@PlaybackViewModel.playlist.value = r.playlist
+                            }
+                            r.playlist.items
+                                .first()
+                                .data
+                        }
                     }
-
-                val sessionPlayer =
-                    MediaSessionPlayer(
-                        player,
-                        controllerViewState,
-                        preferences.appPreferences.playbackPreferences,
-                    )
-                mediaSession =
-                    MediaSession
-                        .Builder(context, sessionPlayer)
-                        .build()
-
-                val item = BaseItem.from(base, api)
-
-                val played =
-                    play(
-                        item,
-                        positionMs,
-                        itemPlayback,
-                        forceTranscoding,
-                    )
-                if (!played) {
-                    playNextUp()
+                } else {
+                    throw IllegalArgumentException("Item is not playable and not PlaybackList: ${queriedItem.type}")
                 }
 
-                if (!isPlaylist) {
-                    val result = playlistCreator.createFrom(queriedItem)
-                    if (result is PlaylistCreationResult.Success && result.playlist.items.isNotEmpty()) {
-                        withContext(Dispatchers.Main) {
-                            this@PlaybackViewModel.playlist.value = result.playlist
-                        }
+            viewModelScope.launch(ExceptionHandler()) { controllerViewState.observe() }
+
+            val item = BaseItem.from(base, api)
+            val played =
+                play(
+                    item,
+                    positionMs,
+                    itemPlayback,
+                    forceTranscoding,
+                )
+            if (!played) {
+                playNextUp()
+            }
+
+            if (!isPlaylist) {
+                val result = playlistCreator.createFrom(queriedItem)
+                if (result is PlaylistCreationResult.Success && result.playlist.items.isNotEmpty()) {
+                    withContext(Dispatchers.Main) {
+                        this@PlaybackViewModel.playlist.value = result.playlist
                     }
                 }
             }
@@ -379,6 +427,9 @@ class PlaybackViewModel
                     )
                     return@withContext false
                 }
+                // Create the correct player for the media
+                createPlayer(mediaSource)
+                configurePlayer()
 
                 val subtitleStreams =
                     mediaSource.mediaStreams
@@ -489,7 +540,6 @@ class PlaybackViewModel
             enableDirectStream: Boolean = !this.forceTranscoding,
         ) = withContext(Dispatchers.IO) {
             val itemId = item.id
-            val playerBackend = preferences.appPreferences.playbackPreferences.playerBackend
 
             val currentPlayback = this@PlaybackViewModel.currentPlayback.value
             if (currentPlayback != null && currentPlayback.item.id == item.id && currentPlayback.playMethod == PlayMethod.DIRECT_PLAY) {
