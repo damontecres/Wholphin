@@ -81,7 +81,7 @@
     <string name="auto_check_for_updates">Automatisch auf Aktualisierungen prüfen</string>
     <string name="check_for_updates">Auf Aktualisierungen prüfen</string>
     <string name="settings">Einstellungen</string>
-    <string name="choose_stream">Wählen %1$s</string>
+    <string name="choose_stream">%1$s Wählen</string>
     <string name="clear_image_cache">Bilder Cache leeren</string>
     <string name="community_rating">Community Bewertung</string>
     <string name="compose_error_message_title">Es ist ein Fehler aufgetreten! Drücke den Knopf um Logs zu deinem Server zu senden.</string>
@@ -369,4 +369,6 @@
     <string name="dolby_digital">DD</string>
     <string name="dolby_digital_plus">DD+</string>
     <string name="trending">Im Trend</string>
+    <string name="voice_error_start_failed">Starten der Spracherkennung fehlgeschlagen</string>
+    <string name="press_back_to_cancel">Zurück wählen um abzubrechen</string>
 </resources>
