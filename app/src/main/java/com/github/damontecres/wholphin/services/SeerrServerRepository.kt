@@ -190,21 +190,25 @@ private suspend fun login(
 ): User =
     when (authMethod) {
         SeerrAuthMethod.LOCAL -> {
+            // Establish the session cookie, then fetch the fully-populated user config.
             client.authApi.authLocalPost(
                 AuthLocalPostRequest(
                     email = username ?: "",
                     password = password ?: "",
                 ),
             )
+            client.usersApi.authMeGet()
         }
 
         SeerrAuthMethod.JELLYFIN -> {
+            // Establish the session cookie, then fetch the fully-populated user config.
             client.authApi.authJellyfinPost(
                 AuthJellyfinPostRequest(
                     username = username ?: "",
                     password = password ?: "",
                 ),
             )
+            client.usersApi.authMeGet()
         }
 
         SeerrAuthMethod.API_KEY -> {
