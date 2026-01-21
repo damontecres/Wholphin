@@ -150,8 +150,11 @@ class MainActivity : AppCompatActivity() {
                 window?.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
             }
         }
+        // CHANGED: Extract both user and server IDs from intent
         val overrideUserId = intent?.getStringExtra(INTENT_USER_ID)?.toUUIDOrNull()
-        viewModel.appStart(overrideUserId)
+        val overrideServerId = intent?.getStringExtra(INTENT_SERVER_ID)?.toUUIDOrNull()
+        viewModel.appStart(overrideUserId, overrideServerId)
+        
         setContent {
             val appPreferences by userPreferencesDataStore.data.collectAsState(null)
             appPreferences?.let { appPreferences ->
@@ -307,8 +310,10 @@ class MainActivity : AppCompatActivity() {
     override fun onRestart() {
         super.onRestart()
         Timber.d("onRestart")
+        // CHANGED: Extract both user and server IDs from intent on restart
         val overrideUserId = intent?.getStringExtra(INTENT_USER_ID)?.toUUIDOrNull()
-        viewModel.appStart(overrideUserId)
+        val overrideServerId = intent?.getStringExtra(INTENT_SERVER_ID)?.toUUIDOrNull()
+        viewModel.appStart(overrideUserId, overrideServerId)
     }
 
     override fun onStop() {
@@ -417,6 +422,7 @@ class MainActivity : AppCompatActivity() {
         const val INTENT_SEASON_NUMBER = "seaNum"
         const val INTENT_SEASON_ID = "seaId"
         const val INTENT_USER_ID = "userId"
+        const val INTENT_SERVER_ID = "serverId" // CHANGED: Added server ID intent key
         const val INTENT_AUTOPLAY = "autoplay"
     }
 }
@@ -431,7 +437,8 @@ class MainActivityViewModel
         private val deviceProfileService: DeviceProfileService,
         private val backdropService: BackdropService,
     ) : ViewModel() {
-        fun appStart(overrideUserId: java.util.UUID? = null) {
+        // CHANGED: Added overrideServerId parameter
+        fun appStart(overrideUserId: java.util.UUID? = null, overrideServerId: java.util.UUID? = null) {
             viewModelScope.launchIO {
                 try {
                     val prefs =
@@ -440,9 +447,11 @@ class MainActivityViewModel
 
                     // Deep-link / automation override: force a specific user immediately (bypass selection).
                     if (overrideUserId != null && !userHasPin) {
+                        // CHANGED: Use the override server ID if provided, otherwise fallback to prefs
+                        val targetServerId = overrideServerId ?: prefs.currentServerId?.toUUIDOrNull()
                         val current =
                             serverRepository.restoreSession(
-                                prefs.currentServerId?.toUUIDOrNull(),
+                                targetServerId,
                                 overrideUserId,
                             )
                         if (current != null) {
