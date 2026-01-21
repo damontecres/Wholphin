@@ -2,7 +2,7 @@
 <resources>
     <string name="about">O aplikaci</string>
     <string name="active_recordings">Aktivní nahrávání</string>
-    <string name="add_favorite">Oblíbený</string>
+    <string name="add_favorite">Oblíbené</string>
     <string name="add_server">Přidat server</string>
     <string name="add_user">Přidat uživatele</string>
     <string name="audio">Zvuk</string>
@@ -38,7 +38,7 @@
     <string name="episodes">Epizody</string>
     <string name="error_loading_collection">Chyba při načítání kolekce %1$s</string>
     <string name="external_track">Externí</string>
-    <string name="favorites">Oblíbené</string>
+    <string name="favorites">Oblíbený</string>
     <string name="file_size">Velikost</string>
     <string name="forced_track">Nucené</string>
     <string name="genres">Žánry</string>
@@ -63,9 +63,9 @@
     <string name="more">Více</string>
     <plurals name="movies">
         <item quantity="one">Filmy</item>
-        <item quantity="few"></item>
-        <item quantity="many"></item>
-        <item quantity="other"></item>
+        <item quantity="few"/>
+        <item quantity="many"/>
+        <item quantity="other"/>
     </plurals>
     <string name="name">Jméno</string>
     <string name="next_up">Další v pořadí</string>
@@ -80,9 +80,9 @@
     <string name="path">Cesta</string>
     <plurals name="people">
         <item quantity="one">Lidé</item>
-        <item quantity="few"></item>
-        <item quantity="many"></item>
-        <item quantity="other"></item>
+        <item quantity="few"/>
+        <item quantity="many"/>
+        <item quantity="other"/>
     </plurals>
     <string name="play_count">Počet přehrání</string>
     <string name="play_from_here">Přehrát odtud</string>
@@ -152,9 +152,9 @@
     <string name="trailer">Upoutávka</string>
     <plurals name="trailers">
         <item quantity="one">Upoutávky</item>
-        <item quantity="few"></item>
-        <item quantity="many"></item>
-        <item quantity="other"></item>
+        <item quantity="few"/>
+        <item quantity="many"/>
+        <item quantity="other"/>
     </plurals>
     <string name="tv_dvr_schedule">Harmonogram nahrávání</string>
     <string name="tv_guide">Televizní program</string>
@@ -162,9 +162,9 @@
     <string name="tv_seasons">Sezóny</string>
     <plurals name="tv_shows">
         <item quantity="one">Seriály</item>
-        <item quantity="few"></item>
-        <item quantity="many"></item>
-        <item quantity="other"></item>
+        <item quantity="few"/>
+        <item quantity="many"/>
+        <item quantity="other"/>
     </plurals>
     <string name="ui_interface">Prostředí</string>
     <string name="unknown">Neznámý</string>
@@ -191,57 +191,57 @@
     <string name="extras">Doplňky</string>
     <plurals name="other_extras">
         <item quantity="one">Jiný</item>
-        <item quantity="few"></item>
-        <item quantity="many"></item>
-        <item quantity="other"></item>
+        <item quantity="few"/>
+        <item quantity="many"/>
+        <item quantity="other"/>
     </plurals>
     <plurals name="behind_the_scenes">
         <item quantity="one">V zákulisí</item>
-        <item quantity="few"></item>
-        <item quantity="many"></item>
-        <item quantity="other"></item>
+        <item quantity="few"/>
+        <item quantity="many"/>
+        <item quantity="other"/>
     </plurals>
     <plurals name="theme_songs">
         <item quantity="one">Znělky</item>
-        <item quantity="few"></item>
-        <item quantity="many"></item>
-        <item quantity="other"></item>
+        <item quantity="few"/>
+        <item quantity="many"/>
+        <item quantity="other"/>
     </plurals>
     <plurals name="theme_videos">
         <item quantity="one">Tématická videa</item>
-        <item quantity="few"></item>
-        <item quantity="many"></item>
-        <item quantity="other"></item>
+        <item quantity="few"/>
+        <item quantity="many"/>
+        <item quantity="other"/>
     </plurals>
     <plurals name="clips">
         <item quantity="one">Klipy</item>
-        <item quantity="few"></item>
-        <item quantity="many"></item>
-        <item quantity="other"></item>
+        <item quantity="few"/>
+        <item quantity="many"/>
+        <item quantity="other"/>
     </plurals>
     <plurals name="deleted_scenes">
         <item quantity="one">Vymazané scény</item>
-        <item quantity="few"></item>
-        <item quantity="many"></item>
-        <item quantity="other"></item>
+        <item quantity="few"/>
+        <item quantity="many"/>
+        <item quantity="other"/>
     </plurals>
     <plurals name="interviews">
         <item quantity="one">Rozhovory</item>
-        <item quantity="few"></item>
-        <item quantity="many"></item>
-        <item quantity="other"></item>
+        <item quantity="few"/>
+        <item quantity="many"/>
+        <item quantity="other"/>
     </plurals>
     <plurals name="scenes">
         <item quantity="one">Scény</item>
-        <item quantity="few"></item>
-        <item quantity="many"></item>
-        <item quantity="other"></item>
+        <item quantity="few"/>
+        <item quantity="many"/>
+        <item quantity="other"/>
     </plurals>
     <plurals name="featurettes">
         <item quantity="one">Krátkometrážní filmy</item>
-        <item quantity="few"></item>
-        <item quantity="many"></item>
-        <item quantity="other"></item>
+        <item quantity="few"/>
+        <item quantity="many"/>
+        <item quantity="other"/>
     </plurals>
     <plurals name="hours">
         <item quantity="one">%d hodina</item>
@@ -428,15 +428,15 @@
     <string name="runtime_sort">Trvání</string>
     <plurals name="samples">
         <item quantity="one">Vzorky</item>
-        <item quantity="few"></item>
-        <item quantity="many"></item>
-        <item quantity="other"></item>
+        <item quantity="few"/>
+        <item quantity="many"/>
+        <item quantity="other"/>
     </plurals>
     <plurals name="shorts">
         <item quantity="one">Krátká videa</item>
-        <item quantity="few"></item>
-        <item quantity="many"></item>
-        <item quantity="other"></item>
+        <item quantity="few"/>
+        <item quantity="many"/>
+        <item quantity="other"/>
     </plurals>
     <plurals name="downloads">
         <item quantity="one">%s Stažen</item>
