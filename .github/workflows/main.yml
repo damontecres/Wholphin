@@ -55,6 +55,7 @@ jobs:
           KEY_PASSWORD: "${{ secrets.KEY_PASSWORD }}"
           KEY_STORE_PASSWORD: "${{ secrets.KEY_STORE_PASSWORD }}"
           SIGNING_KEY: "${{ secrets.SIGNING_KEY }}"
+          KEYSTORE_TYPE: "PKCS12"
         run: |
           ./gradlew clean assembleRelease assembleDebug --no-daemon
       - name: Verify signatures

@@ -87,6 +87,9 @@ android {
                 file("ci.keystore").writeBytes(
                     Base64.getDecoder().decode(System.getenv("SIGNING_KEY")),
                 )
+                // CI keystores created with modern `keytool` default to PKCS12. Allow overriding, but
+                // default to PKCS12 so GitHub Actions (JDK 21) can read the keystore reliably.
+                storeType = System.getenv("KEYSTORE_TYPE") ?: "PKCS12"
                 keyAlias = System.getenv("KEY_ALIAS")
                 keyPassword = System.getenv("KEY_PASSWORD")
                 storePassword = System.getenv("KEY_STORE_PASSWORD")
