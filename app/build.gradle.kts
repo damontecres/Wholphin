@@ -22,7 +22,7 @@ val isCI = if (System.getenv("CI") != null) System.getenv("CI").toBoolean() else
 val ffmpegModuleExists = project.file("libs/lib-decoder-ffmpeg-release.aar").exists()
 val av1ModuleExists = project.file("libs/lib-decoder-av1-release.aar").exists()
 
-// FIX: Hardcoded versioning to prevent Git errors in CI
+// Hardcoded versioning
 val gitTags = "v1"
 val gitDescribe = "v1.0.0-debug"
 
@@ -34,13 +34,10 @@ android {
         applicationId = "com.github.damontecres.wholphin"
         minSdk = 23
         targetSdk = 36
-        // Simple hardcoded versions
         versionCode = 1
         versionName = "1.0.0-debug"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
-
-    // REMOVED: signingConfigs block to force default debug key usage
 
     buildTypes {
         release {
@@ -236,10 +233,12 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     coreLibraryDesugaring(libs.desugar.jdk.libs)
-    if (ffmpegModuleExists || isCI) {
+
+    // CHANGED: Removed "|| isCI" to prevent checking for files that don't exist
+    if (ffmpegModuleExists) {
         implementation(files("libs/lib-decoder-ffmpeg-release.aar"))
     }
-    if (av1ModuleExists || isCI) {
+    if (av1ModuleExists) {
         implementation(files("libs/lib-decoder-av1-release.aar"))
     }
 
