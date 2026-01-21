@@ -757,6 +757,18 @@ sealed interface AppPreference<Pref, T> {
                 valueToIndex = { it.number },
             )
 
+        val ExoPlayerSettings =
+            AppDestinationPreference<AppPreferences>(
+                title = R.string.exoplayer_options,
+                destination = Destination.Settings(PreferenceScreenOption.EXO_PLAYER),
+            )
+
+        val MpvSettings =
+            AppDestinationPreference<AppPreferences>(
+                title = R.string.mpv_options,
+                destination = Destination.Settings(PreferenceScreenOption.MPV),
+            )
+
         val MpvHardwareDecoding =
             AppSwitchPreference<AppPreferences>(
                 title = R.string.mpv_hardware_decoding,
@@ -959,6 +971,40 @@ val basicPreferences =
 
 val uiPreferences = listOf<PreferenceGroup>()
 
+private val ExoPlayerSettings =
+    listOf(
+        AppPreference.FfmpegPreference,
+        AppPreference.DownMixStereo,
+        AppPreference.Ac3Supported,
+        AppPreference.DirectPlayAss,
+        AppPreference.DirectPlayPgs,
+        AppPreference.DirectPlayDoviProfile7,
+        AppPreference.DecodeAv1,
+    )
+
+val ExoPlayerPreferences =
+    listOf(
+        PreferenceGroup(
+            title = R.string.exoplayer_options,
+            preferences = ExoPlayerSettings,
+        ),
+    )
+
+private val MpvSettings =
+    listOf(
+        AppPreference.MpvHardwareDecoding,
+        AppPreference.MpvGpuNext,
+        AppPreference.MpvConfFile,
+    )
+
+val MpvPreferences =
+    listOf(
+        PreferenceGroup(
+            title = R.string.mpv_options,
+            preferences = MpvSettings,
+        ),
+    )
+
 val advancedPreferences =
     buildList {
         add(
@@ -1009,22 +1055,17 @@ val advancedPreferences =
                     listOf(
                         ConditionalPreferences(
                             { it.playbackPreferences.playerBackend == PlayerBackend.EXO_PLAYER },
-                            listOf(
-                                AppPreference.FfmpegPreference,
-                                AppPreference.DownMixStereo,
-                                AppPreference.Ac3Supported,
-                                AppPreference.DirectPlayAss,
-                                AppPreference.DirectPlayPgs,
-                                AppPreference.DirectPlayDoviProfile7,
-                                AppPreference.DecodeAv1,
-                            ),
+                            ExoPlayerSettings,
                         ),
                         ConditionalPreferences(
                             { it.playbackPreferences.playerBackend == PlayerBackend.MPV },
+                            MpvSettings,
+                        ),
+                        ConditionalPreferences(
+                            { it.playbackPreferences.playerBackend == PlayerBackend.PREFER_MPV },
                             listOf(
-                                AppPreference.MpvHardwareDecoding,
-                                AppPreference.MpvGpuNext,
-                                AppPreference.MpvConfFile,
+                                AppPreference.ExoPlayerSettings,
+                                AppPreference.MpvSettings,
                             ),
                         ),
                     ),
