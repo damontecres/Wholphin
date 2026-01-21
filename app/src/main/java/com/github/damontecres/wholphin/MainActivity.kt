@@ -74,6 +74,7 @@ import okhttp3.OkHttpClient
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.serializer.toUUIDOrNull
 import timber.log.Timber
+import java.util.UUID
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -150,9 +151,11 @@ class MainActivity : AppCompatActivity() {
                 window?.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
             }
         }
-        // Capture server ID too
-        val overrideUserId = intent?.getStringExtra(INTENT_USER_ID)?.toUUIDOrNull()
-        val overrideServerId = intent?.getStringExtra(INTENT_SERVER_ID)?.toUUIDOrNull()
+        
+        // PARSE IDs ROBUSTLY
+        val overrideUserId = parseUUID(intent?.getStringExtra(INTENT_USER_ID))
+        val overrideServerId = parseUUID(intent?.getStringExtra(INTENT_SERVER_ID))
+        
         viewModel.appStart(overrideUserId, overrideServerId)
         
         setContent {
@@ -310,8 +313,8 @@ class MainActivity : AppCompatActivity() {
     override fun onRestart() {
         super.onRestart()
         Timber.d("onRestart")
-        val overrideUserId = intent?.getStringExtra(INTENT_USER_ID)?.toUUIDOrNull()
-        val overrideServerId = intent?.getStringExtra(INTENT_SERVER_ID)?.toUUIDOrNull()
+        val overrideUserId = parseUUID(intent?.getStringExtra(INTENT_USER_ID))
+        val overrideServerId = parseUUID(intent?.getStringExtra(INTENT_SERVER_ID))
         viewModel.appStart(overrideUserId, overrideServerId)
     }
 
@@ -351,30 +354,50 @@ class MainActivity : AppCompatActivity() {
         Timber.d("onConfigurationChanged")
     }
 
+    // THE HYBRID FIX
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
-        Timber.v("onNewIntent")
         setIntent(intent)
         
-        // 1. Extract IDs from the new intent
-        val overrideUserId = intent.getStringExtra(INTENT_USER_ID)?.toUUIDOrNull()
-        val overrideServerId = intent.getStringExtra(INTENT_SERVER_ID)?.toUUIDOrNull()
+        val overrideUserId = parseUUID(intent.getStringExtra(INTENT_USER_ID))
+        val overrideServerId = parseUUID(intent.getStringExtra(INTENT_SERVER_ID))
+        val newItemId = parseUUID(intent.getStringExtra(INTENT_ITEM_ID))
 
-        // 2. Check Session State
         val currentUser = viewModel.serverRepository.currentUser.value
+        
+        // Are we already logged in as the correct user?
         val isSameSession = overrideUserId != null &&
                 currentUser?.id == overrideUserId &&
                 (overrideServerId == null || currentUser.serverId == overrideServerId)
 
         if (overrideUserId != null && !isSameSession) {
-            // CASE A: Wrong user/server. Must restart app flow.
-            viewModel.appStart(overrideUserId, overrideServerId)
-        } else {
-            // CASE B: Correct session. 
-            // We are already logged in as this user. Directly navigate.
-            extractDestination(intent)?.let { destination ->
-                navigationManager.replace(destination)
-            }
+            // SCENARIO 1: Stuck on Select Screen or Wrong User.
+            // Action: NUCLEAR RESTART. This forces a cold start, ensuring login works.
+            Timber.i("Automation: Different user/session. Restarting activity.")
+            val restartIntent = Intent(this, MainActivity::class.java)
+            restartIntent.putExtras(intent)
+            restartIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+            startActivity(restartIntent)
+            finish()
+            return
+        } 
+        
+        // SCENARIO 2: We are logged in correctly. 
+        // Action: Gentle Navigation (No restart).
+        
+        // Optimization: Don't do anything if we just launched this item.
+        if (newItemId != null && newItemId == viewModel.lastProcessedItemId) {
+             Timber.i("Automation: Ignoring duplicate request for item $newItemId")
+             return
+        }
+
+        Timber.i("Automation: Session valid, navigating directly.")
+        if (newItemId != null) {
+            viewModel.lastProcessedItemId = newItemId
+        }
+
+        extractDestination(intent)?.let { destination ->
+            navigationManager.replace(destination)
         }
     }
 
@@ -383,12 +406,12 @@ class MainActivity : AppCompatActivity() {
             val deepLinkDestination = parseDeepLink(it.data)
             if (deepLinkDestination != null) return deepLinkDestination
 
-            val itemId = it.getStringExtra(INTENT_ITEM_ID)?.toUUIDOrNull()
+            val itemId = parseUUID(it.getStringExtra(INTENT_ITEM_ID))
             val type = it.getStringExtra(INTENT_ITEM_TYPE)?.let(BaseItemKind::fromNameOrNull)
             val autoplay = it.getBooleanExtra(INTENT_AUTOPLAY, false)
             if (itemId != null && type != null) {
-                val seriesId = it.getStringExtra(INTENT_SERIES_ID)?.toUUIDOrNull()
-                val seasonId = it.getStringExtra(INTENT_SEASON_ID)?.toUUIDOrNull()
+                val seriesId = parseUUID(it.getStringExtra(INTENT_SERIES_ID))
+                val seasonId = parseUUID(it.getStringExtra(INTENT_SEASON_ID))
                 val episodeNumber = it.getIntExtra(INTENT_EPISODE_NUMBER, -1)
                 val seasonNumber = it.getIntExtra(INTENT_SEASON_NUMBER, -1)
                 if (seriesId != null && seasonId != null && episodeNumber >= 0 && seasonNumber >= 0) {
@@ -415,18 +438,38 @@ class MainActivity : AppCompatActivity() {
         if (uri == null) return null
         if (uri.scheme != "wholphin" || uri.host != "play") return null
 
-        // wholphin://play/{itemId}?autoplay={autoplay}[&type={type}]
-        val itemId = uri.pathSegments.firstOrNull()?.toUUIDOrNull() ?: return null
+        val itemId = parseUUID(uri.pathSegments.firstOrNull()) ?: return null
         val autoplay = uri.getQueryParameter("autoplay")?.toBooleanStrictOrNull() ?: false
         val type = uri.getQueryParameter("type")?.let(BaseItemKind::fromNameOrNull)
 
-        // If we don't know the type, we can still immediately start playback.
         if (autoplay && type == null) {
             return Destination.Playback(itemId = itemId, positionMs = 0L)
         }
         return if (type != null) {
             Destination.MediaItem(itemId = itemId, type = type, autoPlayOnLoad = autoplay)
         } else {
+            null
+        }
+    }
+    
+    // Helper: Handles UUIDs with or without dashes
+    private fun parseUUID(input: String?): UUID? {
+        if (input.isNullOrBlank()) return null
+        return try {
+            if (input.contains("-")) {
+                UUID.fromString(input)
+            } else {
+                // Insert dashes: 8-4-4-4-12
+                val f = input.replace("-", "")
+                if (f.length == 32) {
+                    val formatted = "${f.substring(0, 8)}-${f.substring(8, 12)}-${f.substring(12, 16)}-${f.substring(16, 20)}-${f.substring(20)}"
+                    UUID.fromString(formatted)
+                } else {
+                    null
+                }
+            }
+        } catch (e: Exception) {
+            Timber.w("Failed to parse UUID: $input")
             null
         }
     }
@@ -454,6 +497,10 @@ class MainActivityViewModel
         private val deviceProfileService: DeviceProfileService,
         private val backdropService: BackdropService,
     ) : ViewModel() {
+        
+        // TRACKER for the last item we successfully navigated to
+        var lastProcessedItemId: UUID? = null
+
         fun appStart(overrideUserId: java.util.UUID? = null, overrideServerId: java.util.UUID? = null) {
             viewModelScope.launchIO {
                 try {
@@ -461,11 +508,8 @@ class MainActivityViewModel
                         preferences.data.firstOrNull() ?: AppPreferences.getDefaultInstance()
                     val userHasPin = serverRepository.currentUser.value?.hasPin == true
 
-                    // FIX: Force automation if overrideUserId is present, IGNORING userHasPin status
-                    // This change (removing '&& !userHasPin') ensures the code is different and fixes the bug.
                     if (overrideUserId != null) {
-                        Timber.d("Automation: Attempting force login for user $overrideUserId")
-                        // Use override server ID if present, otherwise current pref
+                        Timber.i("Automation: Override active for user $overrideUserId")
                         val targetServerId = overrideServerId ?: prefs.currentServerId?.toUUIDOrNull()
                         val current =
                             serverRepository.restoreSession(
@@ -473,15 +517,18 @@ class MainActivityViewModel
                                 overrideUserId,
                             )
                         if (current != null) {
+                            Timber.i("Automation: Login success, navigating to app")
                             navigationManager.navigateTo(SetupDestination.AppContent(current))
                             return@launchIO
                         } 
-                        // FIX: If restore failed but we have a Server ID, try to at least go to that server's user list
-                        else if (targetServerId != null) {
-                             val server = serverRepository.serverDao.getServer(targetServerId)?.server
-                             if (server != null) {
-                                 navigationManager.navigateTo(SetupDestination.UserList(server))
-                                 return@launchIO
+                        else {
+                             Timber.w("Automation: Login failed for user $overrideUserId. Fallback to server selection.")
+                             if (targetServerId != null) {
+                                 val server = serverRepository.serverDao.getServer(targetServerId)?.server
+                                 if (server != null) {
+                                     navigationManager.navigateTo(SetupDestination.UserList(server))
+                                     return@launchIO
+                                 }
                              }
                         }
                     }
@@ -493,10 +540,8 @@ class MainActivityViewModel
                                 prefs.currentUserId?.toUUIDOrNull(),
                             )
                         if (current != null) {
-                            // Restored
                             navigationManager.navigateTo(SetupDestination.AppContent(current))
                         } else {
-                            // Did not restore
                             navigationManager.navigateTo(SetupDestination.ServerList)
                         }
                     } else {
@@ -521,7 +566,6 @@ class MainActivityViewModel
                 }
             }
             viewModelScope.launchIO {
-                // Create the mediaCodecCapabilitiesTest if needed
                 deviceProfileService.mediaCodecCapabilitiesTest.supportsAVC()
             }
         }
