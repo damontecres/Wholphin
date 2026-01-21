@@ -150,7 +150,6 @@ class MainActivity : AppCompatActivity() {
                 window?.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
             }
         }
-        // CHANGED: Extract both user and server IDs from intent
         val overrideUserId = intent?.getStringExtra(INTENT_USER_ID)?.toUUIDOrNull()
         val overrideServerId = intent?.getStringExtra(INTENT_SERVER_ID)?.toUUIDOrNull()
         viewModel.appStart(overrideUserId, overrideServerId)
@@ -310,7 +309,6 @@ class MainActivity : AppCompatActivity() {
     override fun onRestart() {
         super.onRestart()
         Timber.d("onRestart")
-        // CHANGED: Extract both user and server IDs from intent on restart
         val overrideUserId = intent?.getStringExtra(INTENT_USER_ID)?.toUUIDOrNull()
         val overrideServerId = intent?.getStringExtra(INTENT_SERVER_ID)?.toUUIDOrNull()
         viewModel.appStart(overrideUserId, overrideServerId)
@@ -352,12 +350,25 @@ class MainActivity : AppCompatActivity() {
         Timber.d("onConfigurationChanged")
     }
 
+    // CHANGED: Completely updated onNewIntent logic
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         Timber.v("onNewIntent")
         setIntent(intent)
-        extractDestination(intent)?.let {
-            navigationManager.replace(it)
+        
+        // 1. Extract IDs from the new intent
+        val overrideUserId = intent.getStringExtra(INTENT_USER_ID)?.toUUIDOrNull()
+        val overrideServerId = intent.getStringExtra(INTENT_SERVER_ID)?.toUUIDOrNull()
+
+        // 2. If IDs are provided, force the appStart logic (Login/Switch)
+        if (overrideUserId != null || overrideServerId != null) {
+            viewModel.appStart(overrideUserId, overrideServerId)
+        } 
+        // 3. If no auth IDs, just try to navigate (standard behavior)
+        else {
+            extractDestination(intent)?.let {
+                navigationManager.replace(it)
+            }
         }
     }
 
@@ -422,7 +433,7 @@ class MainActivity : AppCompatActivity() {
         const val INTENT_SEASON_NUMBER = "seaNum"
         const val INTENT_SEASON_ID = "seaId"
         const val INTENT_USER_ID = "userId"
-        const val INTENT_SERVER_ID = "serverId" // CHANGED: Added server ID intent key
+        const val INTENT_SERVER_ID = "serverId"
         const val INTENT_AUTOPLAY = "autoplay"
     }
 }
@@ -437,7 +448,6 @@ class MainActivityViewModel
         private val deviceProfileService: DeviceProfileService,
         private val backdropService: BackdropService,
     ) : ViewModel() {
-        // CHANGED: Added overrideServerId parameter
         fun appStart(overrideUserId: java.util.UUID? = null, overrideServerId: java.util.UUID? = null) {
             viewModelScope.launchIO {
                 try {
@@ -447,7 +457,6 @@ class MainActivityViewModel
 
                     // Deep-link / automation override: force a specific user immediately (bypass selection).
                     if (overrideUserId != null && !userHasPin) {
-                        // CHANGED: Use the override server ID if provided, otherwise fallback to prefs
                         val targetServerId = overrideServerId ?: prefs.currentServerId?.toUUIDOrNull()
                         val current =
                             serverRepository.restoreSession(
