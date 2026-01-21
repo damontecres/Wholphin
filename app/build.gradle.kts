@@ -19,7 +19,11 @@ plugins {
 }
 
 val isCI = if (System.getenv("CI") != null) System.getenv("CI").toBoolean() else false
-val shouldSign = isCI && System.getenv("KEY_ALIAS") != null
+val shouldSign =
+    isCI &&
+        !System.getenv("KEY_ALIAS").isNullOrBlank() &&
+        !System.getenv("KEY_PASSWORD").isNullOrBlank() &&
+        !System.getenv("KEY_STORE_PASSWORD").isNullOrBlank()
 val ffmpegModuleExists = project.file("libs/lib-decoder-ffmpeg-release.aar").exists()
 val av1ModuleExists = project.file("libs/lib-decoder-av1-release.aar").exists()
 
@@ -84,16 +88,30 @@ android {
     signingConfigs {
         if (shouldSign) {
             create("ci") {
-                file("ci.keystore").writeBytes(
-                    Base64.getDecoder().decode(System.getenv("SIGNING_KEY")),
-                )
+                val keystorePath = System.getenv("KEYSTORE_PATH") ?: "ci.keystore"
+                val keystoreFile = file(keystorePath)
+
+                // Prefer creating the keystore file in the workflow (more debuggable).
+                // If SIGNING_KEY is provided, fall back to decoding it here.
+                val signingKey = System.getenv("SIGNING_KEY")
+                if (!signingKey.isNullOrBlank()) {
+                    // Use MIME decoder to tolerate wrapped base64 (newlines).
+                    keystoreFile.writeBytes(Base64.getMimeDecoder().decode(signingKey))
+                }
+
+                if (!keystoreFile.exists() || keystoreFile.length() == 0L) {
+                    throw GradleException(
+                        "CI signing is enabled but keystore file is missing/empty at: ${keystoreFile.absolutePath}. " +
+                            "Provide KEYSTORE_PATH + decoded file, or provide SIGNING_KEY (base64).",
+                    )
+                }
                 // CI keystores created with modern `keytool` default to PKCS12. Allow overriding, but
                 // default to PKCS12 so GitHub Actions (JDK 21) can read the keystore reliably.
                 storeType = System.getenv("KEYSTORE_TYPE") ?: "PKCS12"
                 keyAlias = System.getenv("KEY_ALIAS")
                 keyPassword = System.getenv("KEY_PASSWORD")
                 storePassword = System.getenv("KEY_STORE_PASSWORD")
-                storeFile = file("ci.keystore")
+                storeFile = keystoreFile
                 enableV1Signing = true
                 enableV2Signing = true
                 enableV3Signing = true

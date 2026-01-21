@@ -48,14 +48,21 @@ jobs:
           echo "LATEST_TAG=$LATEST_TAG" >> "$GITHUB_ENV"
           echo "VERSION_NAME=$VERSION_NAME" >> "$GITHUB_ENV"
           echo "TAG_NAME=$TAG_NAME" >> "$GITHUB_ENV"
+      - name: Decode signing keystore
+        env:
+          SIGNING_KEY: "${{ secrets.SIGNING_KEY }}"
+        run: |
+          mkdir -p app
+          echo "$SIGNING_KEY" | base64 --decode > app/ci.keystore
+          keytool -list -keystore app/ci.keystore -storetype PKCS12 -storepass "${{ secrets.KEY_STORE_PASSWORD }}" >/dev/null
       - name: Build release app
         id: build
         env:
           KEY_ALIAS: "${{ secrets.KEY_ALIAS }}"
           KEY_PASSWORD: "${{ secrets.KEY_PASSWORD }}"
           KEY_STORE_PASSWORD: "${{ secrets.KEY_STORE_PASSWORD }}"
-          SIGNING_KEY: "${{ secrets.SIGNING_KEY }}"
           KEYSTORE_TYPE: "PKCS12"
+          KEYSTORE_PATH: "ci.keystore"
         run: |
           ./gradlew clean assembleRelease assembleDebug --no-daemon
       - name: Verify signatures
