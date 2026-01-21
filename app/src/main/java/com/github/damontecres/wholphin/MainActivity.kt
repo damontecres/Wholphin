@@ -370,10 +370,16 @@ class MainActivity : AppCompatActivity() {
                 currentUser?.id == overrideUserId &&
                 (overrideServerId == null || currentUser.serverId == overrideServerId)
 
-        if (overrideUserId != null && !isSameSession) {
-            // SCENARIO 1: Stuck on Select Screen or Wrong User.
-            // Action: NUCLEAR RESTART. This forces a cold start, ensuring login works.
-            Timber.i("Automation: Different user/session. Restarting activity.")
+        // navigationManager.replace() only works when ApplicationContent is composed (i.e. we're
+        // in AppContent). On Loading, ServerList, or UserList, that backstack isn't shown — only
+        // setupNavigationManager.backStack is. So we must restart to run appStart and reach AppContent.
+        val isInAppContent = setupNavigationManager.backStack.lastOrNull() is SetupDestination.AppContent
+        val mustRestartToReachApp = overrideUserId != null && !isInAppContent
+
+        if (overrideUserId != null && (!isSameSession || mustRestartToReachApp)) {
+            // SCENARIO 1: Stuck on Select Screen, Wrong User, or not yet in AppContent.
+            // Action: NUCLEAR RESTART. This forces a cold start, ensuring login and navigation work.
+            Timber.i("Automation: Different user/session or not in AppContent. Restarting activity.")
             val restartIntent = Intent(this, MainActivity::class.java)
             restartIntent.putExtras(intent)
             restartIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
