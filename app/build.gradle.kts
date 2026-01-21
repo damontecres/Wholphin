@@ -19,21 +19,12 @@ plugins {
 }
 
 val isCI = if (System.getenv("CI") != null) System.getenv("CI").toBoolean() else false
-// Removed 'shouldSign' logic as we are forcing default debug signing
 val ffmpegModuleExists = project.file("libs/lib-decoder-ffmpeg-release.aar").exists()
 val av1ModuleExists = project.file("libs/lib-decoder-av1-release.aar").exists()
 
-val gitTags =
-    providers
-        .exec { commandLine("git", "tag", "--list", "v*", "p*") }
-        .standardOutput.asText
-        .get()
-
-val gitDescribe =
-    providers
-        .exec { commandLine("git", "describe", "--tags", "--long", "--match=v*") }
-        .standardOutput.asText
-        .getOrElse("v0.0.0")
+// FIX: Hardcoded versioning to prevent Git errors in CI
+val gitTags = "v1"
+val gitDescribe = "v1.0.0-debug"
 
 android {
     namespace = "com.github.damontecres.wholphin"
@@ -43,8 +34,9 @@ android {
         applicationId = "com.github.damontecres.wholphin"
         minSdk = 23
         targetSdk = 36
-        versionCode = gitTags.trim().lines().size
-        versionName = gitDescribe.trim().removePrefix("v").ifBlank { "0.0.0" }
+        // Simple hardcoded versions
+        versionCode = 1
+        versionName = "1.0.0-debug"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -58,13 +50,11 @@ android {
                 "proguard-rules.pro",
             )
             isDebuggable = false
-            // REMOVED: Custom signing logic
         }
         debug {
             isMinifyEnabled = false
             isDebuggable = true
             applicationIdSuffix = ".debug"
-            // REMOVED: Custom signing logic
         }
     }
     compileOptions {
@@ -160,8 +150,6 @@ openApiGenerate {
         put("useCoroutines", true)
         put("enumPropertyNaming", "UPPERCASE")
         put("modelMutable", false)
-
-        // Note: this is only for downloading files, so it's not necessary to enable
         put("supportAndroidApiLevel25AndBelow", false)
     }
 }
