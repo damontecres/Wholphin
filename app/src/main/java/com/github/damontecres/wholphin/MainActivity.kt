@@ -371,8 +371,7 @@ class MainActivity : AppCompatActivity() {
             viewModel.appStart(overrideUserId, overrideServerId)
         } else {
             // CASE B: Correct session. 
-            // We removed the 'isAlreadyPlaying' check because we can't compile it safely.
-            // This will simply always navigate to the new destination.
+            // We are already logged in as this user. Directly navigate.
             extractDestination(intent)?.let { destination ->
                 navigationManager.replace(destination)
             }
@@ -462,8 +461,9 @@ class MainActivityViewModel
                         preferences.data.firstOrNull() ?: AppPreferences.getDefaultInstance()
                     val userHasPin = serverRepository.currentUser.value?.hasPin == true
 
-                    // Deep-link / automation override: force a specific user immediately (bypass selection).
-                    if (overrideUserId != null && !userHasPin) {
+                    // FIX: Force automation if overrideUserId is present, IGNORING userHasPin status
+                    if (overrideUserId != null) {
+                        // Use override server ID if present, otherwise current pref
                         val targetServerId = overrideServerId ?: prefs.currentServerId?.toUUIDOrNull()
                         val current =
                             serverRepository.restoreSession(
@@ -473,6 +473,14 @@ class MainActivityViewModel
                         if (current != null) {
                             navigationManager.navigateTo(SetupDestination.AppContent(current))
                             return@launchIO
+                        } 
+                        // FIX: If restore failed but we have a Server ID, try to at least go to that server's user list
+                        else if (targetServerId != null) {
+                             val server = serverRepository.serverDao.getServer(targetServerId)?.server
+                             if (server != null) {
+                                 navigationManager.navigateTo(SetupDestination.UserList(server))
+                                 return@launchIO
+                             }
                         }
                     }
 
