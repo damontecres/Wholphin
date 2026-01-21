@@ -150,6 +150,7 @@ class MainActivity : AppCompatActivity() {
                 window?.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
             }
         }
+        // MODIFIED: Capture server ID too
         val overrideUserId = intent?.getStringExtra(INTENT_USER_ID)?.toUUIDOrNull()
         val overrideServerId = intent?.getStringExtra(INTENT_SERVER_ID)?.toUUIDOrNull()
         viewModel.appStart(overrideUserId, overrideServerId)
@@ -350,7 +351,6 @@ class MainActivity : AppCompatActivity() {
         Timber.d("onConfigurationChanged")
     }
 
-    // CHANGED: Completely updated onNewIntent logic
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         Timber.v("onNewIntent")
@@ -360,16 +360,59 @@ class MainActivity : AppCompatActivity() {
         val overrideUserId = intent.getStringExtra(INTENT_USER_ID)?.toUUIDOrNull()
         val overrideServerId = intent.getStringExtra(INTENT_SERVER_ID)?.toUUIDOrNull()
 
-        // 2. If IDs are provided, force the appStart logic (Login/Switch)
-        if (overrideUserId != null || overrideServerId != null) {
+        // 2. Check Session State
+        val currentUser = viewModel.serverRepository.currentUser.value
+        val isSameSession = overrideUserId != null &&
+                currentUser?.id == overrideUserId &&
+                (overrideServerId == null || currentUser.serverId == overrideServerId)
+
+        if (overrideUserId != null && !isSameSession) {
+            // CASE A: Wrong user/server. Must restart app flow.
             viewModel.appStart(overrideUserId, overrideServerId)
-        } 
-        // 3. If no auth IDs, just try to navigate (standard behavior)
-        else {
-            extractDestination(intent)?.let {
-                navigationManager.replace(it)
+        } else {
+            // CASE B: Correct session. Check if we are already playing this specific content.
+            val newDest = extractDestination(intent)
+            
+            // "Peek" at the current screen
+            val currentDest = navigationManager.backStack.lastOrNull()
+
+            if (newDest != null && isAlreadyPlaying(currentDest, newDest)) {
+                Timber.i("Ignoring deep link - already playing content: $newDest")
+                return
+            }
+
+            // If not playing (or different movie), navigate.
+            if (newDest != null) {
+                navigationManager.replace(newDest)
             }
         }
+    }
+
+    // Helper to compare the new request vs current screen
+    private fun isAlreadyPlaying(current: Destination?, newRequest: Destination): Boolean {
+        if (current == null) return false
+
+        // 1. Exact Match (e.g. MediaItem vs MediaItem)
+        if (current == newRequest) return true
+
+        // 2. Playback vs MediaItem Match
+        // The app uses 'Playback' for the player, but the intent creates 'MediaItem'.
+        // We must manually check if the IDs match.
+        val currentId = when (current) {
+            is Destination.Playback -> current.itemId
+            is Destination.MediaItem -> current.itemId
+            is Destination.SeriesOverview -> current.seasonEpisode?.episodeId
+            else -> null
+        }
+
+        val newId = when (newRequest) {
+            is Destination.Playback -> newRequest.itemId
+            is Destination.MediaItem -> newRequest.itemId
+            is Destination.SeriesOverview -> newRequest.seasonEpisode?.episodeId
+            else -> null
+        }
+
+        return currentId != null && currentId == newId
     }
 
     private fun extractDestination(intent: Intent): Destination? =
@@ -448,6 +491,7 @@ class MainActivityViewModel
         private val deviceProfileService: DeviceProfileService,
         private val backdropService: BackdropService,
     ) : ViewModel() {
+        // MODIFIED: Accepts both User and Server overrides
         fun appStart(overrideUserId: java.util.UUID? = null, overrideServerId: java.util.UUID? = null) {
             viewModelScope.launchIO {
                 try {
@@ -457,6 +501,7 @@ class MainActivityViewModel
 
                     // Deep-link / automation override: force a specific user immediately (bypass selection).
                     if (overrideUserId != null && !userHasPin) {
+                        // Use override server ID if present, otherwise current pref
                         val targetServerId = overrideServerId ?: prefs.currentServerId?.toUUIDOrNull()
                         val current =
                             serverRepository.restoreSession(
