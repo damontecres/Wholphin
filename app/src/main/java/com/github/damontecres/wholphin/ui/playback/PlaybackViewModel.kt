@@ -539,67 +539,15 @@ class PlaybackViewModel
 
             val currentPlayback = this@PlaybackViewModel.currentPlayback.value
             if (currentPlayback != null && currentPlayback.item.id == item.id && currentPlayback.playMethod == PlayMethod.DIRECT_PLAY) {
-                // If direct playing, can try to switch tracks without playback restarting
-                // Except for external subtitles
-                // TODO there's probably no reason why we can't add external subtitles?
-                Timber.v("changeStreams direct play")
-
-                val source = currentPlayback.mediaSourceInfo
-                val externalSubtitle = source.findExternalSubtitle(subtitleIndex)
-
-                if (externalSubtitle == null) {
-                    val result =
-                        withContext(Dispatchers.Main) {
-                            TrackSelectionUtils.createTrackSelections(
-                                onMain { player.trackSelectionParameters },
-                                onMain { player.currentTracks },
-                                currentPlayer.value!!.backend,
-                                true,
-                                audioIndex,
-                                subtitleIndex,
-                                source,
-                            )
-                        }
-                    if (result.bothSelected) {
-                        onMain { player.trackSelectionParameters = result.trackSelectionParameters }
-                        // TODO lots of duplicate code in this block
-                        Timber.d("Changes tracks audio=$audioIndex, subtitle=$subtitleIndex")
-                        val itemPlayback =
-                            currentItemPlayback.copy(
-                                sourceId = source.id?.toUUIDOrNull(),
-                                audioIndex = audioIndex ?: TrackIndex.UNSPECIFIED,
-                                // Preserve special constants (ONLY_FORCED, DISABLED) instead of resolved index
-                                subtitleIndex =
-                                    if (currentItemPlayback.subtitleIndex < 0) {
-                                        currentItemPlayback.subtitleIndex
-                                    } else {
-                                        subtitleIndex ?: TrackIndex.DISABLED
-                                    },
-                            )
-                        if (userInitiated) {
-                            viewModelScope.launchIO {
-                                Timber.v("Saving user initiated item playback: %s", itemPlayback)
-                                val updated = itemPlaybackRepository.saveItemPlayback(itemPlayback)
-                                withContext(Dispatchers.Main) {
-                                    this@PlaybackViewModel.currentItemPlayback.value = updated
-                                }
-                            }
-                        }
-                        withContext(Dispatchers.Main) {
-                            this@PlaybackViewModel.currentPlayback.update {
-                                (it ?: currentPlayback).copy(
-                                    tracks = checkForSupport(player.currentTracks),
-                                )
-                            }
-
-                            this@PlaybackViewModel.currentItemPlayback.value = itemPlayback
-                        }
-                        loadSubtitleDelay()
-                        return@withContext
-                    }
-                } else {
-                    Timber.v("changeStreams direct play, external subtitle was requested")
-                }
+                val wasSuccessful =
+                    changeStreamsDirectPlay(
+                        currentPlayback = currentPlayback,
+                        currentItemPlayback = currentItemPlayback,
+                        audioIndex = audioIndex,
+                        subtitleIndex = subtitleIndex,
+                        userInitiated = userInitiated,
+                    )
+                if (wasSuccessful) return@withContext
             }
 
             Timber.d(
@@ -793,6 +741,81 @@ class PlaybackViewModel
                 }
             }
         }
+
+        /**
+         * If direct playing, can try to switch tracks without playback restarting
+         * Except for external subtitles
+         */
+        @OptIn(UnstableApi::class)
+        private suspend fun changeStreamsDirectPlay(
+            currentPlayback: CurrentPlayback,
+            currentItemPlayback: ItemPlayback,
+            audioIndex: Int?,
+            subtitleIndex: Int?,
+            userInitiated: Boolean,
+        ): Boolean =
+            withContext(Dispatchers.IO) {
+                // TODO there's probably no reason why we can't add external subtitles?
+                Timber.v("changeStreams direct play")
+
+                val source = currentPlayback.mediaSourceInfo
+                val externalSubtitle = source.findExternalSubtitle(subtitleIndex)
+
+                if (externalSubtitle == null) {
+                    val result =
+                        withContext(Dispatchers.Main) {
+                            TrackSelectionUtils.createTrackSelections(
+                                onMain { player.trackSelectionParameters },
+                                onMain { player.currentTracks },
+                                currentPlayer.value!!.backend,
+                                true,
+                                audioIndex,
+                                subtitleIndex,
+                                source,
+                            )
+                        }
+                    if (result.bothSelected) {
+                        onMain { player.trackSelectionParameters = result.trackSelectionParameters }
+                        // TODO lots of duplicate code in this block
+                        Timber.d("Changes tracks audio=$audioIndex, subtitle=$subtitleIndex")
+                        val itemPlayback =
+                            currentItemPlayback.copy(
+                                sourceId = source.id?.toUUIDOrNull(),
+                                audioIndex = audioIndex ?: TrackIndex.UNSPECIFIED,
+                                // Preserve special constants (ONLY_FORCED, DISABLED) instead of resolved index
+                                subtitleIndex =
+                                    if (currentItemPlayback.subtitleIndex < 0) {
+                                        currentItemPlayback.subtitleIndex
+                                    } else {
+                                        subtitleIndex ?: TrackIndex.DISABLED
+                                    },
+                            )
+                        if (userInitiated) {
+                            viewModelScope.launchIO {
+                                Timber.v("Saving user initiated item playback: %s", itemPlayback)
+                                val updated = itemPlaybackRepository.saveItemPlayback(itemPlayback)
+                                withContext(Dispatchers.Main) {
+                                    this@PlaybackViewModel.currentItemPlayback.value = updated
+                                }
+                            }
+                        }
+                        withContext(Dispatchers.Main) {
+                            this@PlaybackViewModel.currentPlayback.update {
+                                (it ?: currentPlayback).copy(
+                                    tracks = checkForSupport(player.currentTracks),
+                                )
+                            }
+
+                            this@PlaybackViewModel.currentItemPlayback.value = itemPlayback
+                        }
+                        loadSubtitleDelay()
+                        return@withContext true
+                    }
+                } else {
+                    Timber.v("changeStreams direct play, external subtitle was requested")
+                }
+                return@withContext false
+            }
 
         fun changeAudioStream(index: Int) {
             viewModelScope.launchIO {
