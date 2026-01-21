@@ -97,7 +97,6 @@ import org.jellyfin.sdk.model.DeviceInfo
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.MediaSegmentDto
 import org.jellyfin.sdk.model.api.MediaSegmentType
-import org.jellyfin.sdk.model.api.MediaSourceInfo
 import org.jellyfin.sdk.model.api.MediaStreamType
 import org.jellyfin.sdk.model.api.PlayMethod
 import org.jellyfin.sdk.model.api.PlaybackInfoDto
@@ -208,15 +207,7 @@ class PlaybackViewModel
             jobs.forEach { it.cancel() }
         }
 
-        private fun createPlayer(source: MediaSourceInfo) {
-            val videoStream = source.mediaStreams?.firstOrNull { it.type == MediaStreamType.VIDEO }
-            val isHdr =
-                if (videoStream != null) {
-                    videoStream.videoRange == VideoRange.HDR ||
-                        (videoStream.videoRangeType != VideoRangeType.SDR && videoStream.videoRangeType != VideoRangeType.UNKNOWN)
-                } else {
-                    false
-                }
+        private fun createPlayer(isHdr: Boolean) {
             val playerBackend =
                 when (preferences.appPreferences.playbackPreferences.playerBackend) {
                     PlayerBackend.UNRECOGNIZED,
@@ -423,8 +414,19 @@ class PlaybackViewModel
                     )
                     return@withContext false
                 }
+
+                val videoStream =
+                    mediaSource.mediaStreams
+                        ?.firstOrNull { it.type == MediaStreamType.VIDEO }
+                        ?.let {
+                            val isHdr =
+                                it.videoRange == VideoRange.HDR ||
+                                    (it.videoRangeType != VideoRangeType.SDR && it.videoRangeType != VideoRangeType.UNKNOWN)
+                            SimpleVideoStream(it.index, isHdr)
+                        }
+
                 // Create the correct player for the media
-                createPlayer(mediaSource)
+                createPlayer(videoStream?.hdr == true)
                 configurePlayer()
 
                 val subtitleStreams =
@@ -497,6 +499,8 @@ class PlaybackViewModel
                     this@PlaybackViewModel.currentItemPlayback.value = itemPlaybackToUse
                     updateCurrentMedia {
                         CurrentMediaInfo(
+                            sourceId = mediaSource.id,
+                            videoStream = videoStream,
                             audioStreams = audioStreams,
                             subtitleStreams = subtitleStreams,
                             chapters = chapters,
