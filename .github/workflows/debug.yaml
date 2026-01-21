@@ -24,12 +24,12 @@ jobs:
       run: chmod +x gradlew
 
     - name: Build Debug APK
-      # Uses the default Android debug key (safe and automatic)
       run: ./gradlew assembleDebug --stacktrace
 
     - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
-        name: wholphin-debug
-        path: app/build/outputs/apk/debug/app-debug.apk
+        name: Wholphin-Debug-Build
+        # CHANGED: Use a wildcard (*) to find the file regardless of what it is named
+        path: app/build/outputs/apk/debug/*.apk
         retention-days: 14
