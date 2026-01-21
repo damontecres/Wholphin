@@ -2,6 +2,7 @@ package com.github.damontecres.wholphin
 
 import android.content.Intent
 import android.content.res.Configuration
+import android.net.Uri
 import android.os.Bundle
 import android.view.WindowManager
 import androidx.activity.compose.setContent
@@ -73,6 +74,7 @@ import okhttp3.OkHttpClient
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.serializer.toUUIDOrNull
 import timber.log.Timber
+import java.util.UUID
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -149,7 +151,17 @@ class MainActivity : AppCompatActivity() {
                 window?.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
             }
         }
-        viewModel.appStart()
+        
+        // PARSE IDs ROBUSTLY
+        val overrideUserId = parseUUID(intent?.getStringExtra(INTENT_USER_ID))
+        val overrideServerId = parseUUID(intent?.getStringExtra(INTENT_SERVER_ID))
+
+        // Capture requested destination from intent in onCreate so it's available when AppContent
+        // is composed (avoids losing item/play target after nuclear restart or late composition).
+        viewModel.pendingRequestedDestination = extractDestination(intent)
+
+        viewModel.appStart(overrideUserId, overrideServerId)
+        
         setContent {
             val appPreferences by userPreferencesDataStore.data.collectAsState(null)
             appPreferences?.let { appPreferences ->
@@ -232,6 +244,7 @@ class MainActivity : AppCompatActivity() {
                                                                     appPreferences.updateUrl,
                                                                 )
                                                             } catch (ex: Exception) {
+                                                                if (ex is kotlinx.coroutines.CancellationException) throw ex
                                                                 Timber.w(
                                                                     ex,
                                                                     "Exception during update check",
@@ -257,9 +270,9 @@ class MainActivity : AppCompatActivity() {
 
                                                     if (showContent) {
                                                         val requestedDestination =
-                                                            remember(intent) {
-                                                                intent?.let(::extractDestination)
-                                                            }
+                                                            viewModel.pendingRequestedDestination
+                                                                ?.also { viewModel.pendingRequestedDestination = null }
+                                                                ?: intent?.let(::extractDestination)
                                                         ApplicationContent(
                                                             user = current.user,
                                                             server = current.server,
@@ -305,7 +318,9 @@ class MainActivity : AppCompatActivity() {
     override fun onRestart() {
         super.onRestart()
         Timber.d("onRestart")
-        viewModel.appStart()
+        val overrideUserId = parseUUID(intent?.getStringExtra(INTENT_USER_ID))
+        val overrideServerId = parseUUID(intent?.getStringExtra(INTENT_SERVER_ID))
+        viewModel.appStart(overrideUserId, overrideServerId)
     }
 
     override fun onStop() {
@@ -344,24 +359,71 @@ class MainActivity : AppCompatActivity() {
         Timber.d("onConfigurationChanged")
     }
 
+    // THE HYBRID FIX
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
-        Timber.v("onNewIntent")
         setIntent(intent)
-        extractDestination(intent)?.let {
-            navigationManager.replace(it)
+        
+        val overrideUserId = parseUUID(intent.getStringExtra(INTENT_USER_ID))
+        val overrideServerId = parseUUID(intent.getStringExtra(INTENT_SERVER_ID))
+        val newItemId = parseUUID(intent.getStringExtra(INTENT_ITEM_ID))
+
+        val currentUser = viewModel.serverRepository.currentUser.value
+        
+        // Are we already logged in as the correct user?
+        val isSameSession = overrideUserId != null &&
+                currentUser?.id == overrideUserId &&
+                (overrideServerId == null || currentUser.serverId == overrideServerId)
+
+        // navigationManager.replace() only works when ApplicationContent is composed (i.e. we're
+        // in AppContent). On Loading, ServerList, or UserList, that backstack isn't shown — only
+        // setupNavigationManager.backStack is. So we must restart to run appStart and reach AppContent.
+        val isInAppContent = setupNavigationManager.backStack.lastOrNull() is SetupDestination.AppContent
+        val mustRestartToReachApp = overrideUserId != null && !isInAppContent
+
+        if (overrideUserId != null && (!isSameSession || mustRestartToReachApp)) {
+            // SCENARIO 1: Stuck on Select Screen, Wrong User, or not yet in AppContent.
+            // Action: NUCLEAR RESTART. This forces a cold start, ensuring login and navigation work.
+            Timber.i("Automation: Different user/session or not in AppContent. Restarting activity.")
+            val restartIntent = Intent(this, MainActivity::class.java)
+            restartIntent.putExtras(intent)
+            intent.data?.let { restartIntent.data = it }
+            restartIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+            startActivity(restartIntent)
+            finish()
+            return
+        } 
+        
+        // SCENARIO 2: We are logged in correctly. 
+        // Action: Gentle Navigation (No restart).
+        
+        // Optimization: Don't do anything if we just launched this item.
+        if (newItemId != null && newItemId == viewModel.lastProcessedItemId) {
+             Timber.i("Automation: Ignoring duplicate request for item $newItemId")
+             return
+        }
+
+        Timber.i("Automation: Session valid, navigating directly.")
+        if (newItemId != null) {
+            viewModel.lastProcessedItemId = newItemId
+        }
+
+        extractDestination(intent)?.let { destination ->
+            navigationManager.replace(destination)
         }
     }
 
     private fun extractDestination(intent: Intent): Destination? =
         intent.let {
-            val itemId =
-                it.getStringExtra(INTENT_ITEM_ID)?.toUUIDOrNull()
-            val type =
-                it.getStringExtra(INTENT_ITEM_TYPE)?.let(BaseItemKind::fromNameOrNull)
+            val deepLinkDestination = parseDeepLink(it.data)
+            if (deepLinkDestination != null) return deepLinkDestination
+
+            val itemId = parseUUID(it.getStringExtra(INTENT_ITEM_ID))
+            val type = it.getStringExtra(INTENT_ITEM_TYPE)?.let(BaseItemKind::fromNameOrNull)
+            val autoplay = it.getBooleanExtra(INTENT_AUTOPLAY, false)
             if (itemId != null && type != null) {
-                val seriesId = it.getStringExtra(INTENT_SERIES_ID)?.toUUIDOrNull()
-                val seasonId = it.getStringExtra(INTENT_SEASON_ID)?.toUUIDOrNull()
+                val seriesId = parseUUID(it.getStringExtra(INTENT_SERIES_ID))
+                val seasonId = parseUUID(it.getStringExtra(INTENT_SEASON_ID))
                 val episodeNumber = it.getIntExtra(INTENT_EPISODE_NUMBER, -1)
                 val seasonNumber = it.getIntExtra(INTENT_SEASON_NUMBER, -1)
                 if (seriesId != null && seasonId != null && episodeNumber >= 0 && seasonNumber >= 0) {
@@ -377,12 +439,52 @@ class MainActivity : AppCompatActivity() {
                             ),
                     )
                 } else {
-                    Destination.MediaItem(itemId, type)
+                    Destination.MediaItem(itemId, type, autoPlayOnLoad = autoplay)
                 }
             } else {
                 null
             }
         }
+
+    private fun parseDeepLink(uri: Uri?): Destination? {
+        if (uri == null) return null
+        if (uri.scheme != "wholphin" || uri.host != "play") return null
+
+        val itemId = parseUUID(uri.pathSegments.firstOrNull()) ?: return null
+        val autoplay = uri.getQueryParameter("autoplay")?.toBooleanStrictOrNull() ?: false
+        val type = uri.getQueryParameter("type")?.let(BaseItemKind::fromNameOrNull)
+
+        if (autoplay && type == null) {
+            return Destination.Playback(itemId = itemId, positionMs = 0L)
+        }
+        return if (type != null) {
+            Destination.MediaItem(itemId = itemId, type = type, autoPlayOnLoad = autoplay)
+        } else {
+            null
+        }
+    }
+    
+    // Helper: Handles UUIDs with or without dashes
+    private fun parseUUID(input: String?): UUID? {
+        if (input.isNullOrBlank()) return null
+        return try {
+            if (input.contains("-")) {
+                UUID.fromString(input)
+            } else {
+                // Insert dashes: 8-4-4-4-12
+                val f = input.replace("-", "")
+                if (f.length == 32) {
+                    val formatted = "${f.substring(0, 8)}-${f.substring(8, 12)}-${f.substring(12, 16)}-${f.substring(16, 20)}-${f.substring(20)}"
+                    UUID.fromString(formatted)
+                } else {
+                    null
+                }
+            }
+        } catch (e: Exception) {
+            Timber.w("Failed to parse UUID: $input")
+            null
+        }
+    }
 
     companion object {
         const val INTENT_ITEM_ID = "itemId"
@@ -391,6 +493,9 @@ class MainActivity : AppCompatActivity() {
         const val INTENT_EPISODE_NUMBER = "epNum"
         const val INTENT_SEASON_NUMBER = "seaNum"
         const val INTENT_SEASON_ID = "seaId"
+        const val INTENT_USER_ID = "userId"
+        const val INTENT_SERVER_ID = "serverId"
+        const val INTENT_AUTOPLAY = "autoplay"
     }
 }
 
@@ -404,12 +509,45 @@ class MainActivityViewModel
         private val deviceProfileService: DeviceProfileService,
         private val backdropService: BackdropService,
     ) : ViewModel() {
-        fun appStart() {
+
+        /** Destination from the launching intent, consumed when AppContent is first composed. */
+        var pendingRequestedDestination: Destination? = null
+
+        // TRACKER for the last item we successfully navigated to
+        var lastProcessedItemId: UUID? = null
+
+        fun appStart(overrideUserId: java.util.UUID? = null, overrideServerId: java.util.UUID? = null) {
             viewModelScope.launchIO {
                 try {
                     val prefs =
                         preferences.data.firstOrNull() ?: AppPreferences.getDefaultInstance()
                     val userHasPin = serverRepository.currentUser.value?.hasPin == true
+
+                    if (overrideUserId != null) {
+                        Timber.i("Automation: Override active for user $overrideUserId")
+                        val targetServerId = overrideServerId ?: prefs.currentServerId?.toUUIDOrNull()
+                        val current =
+                            serverRepository.restoreSession(
+                                targetServerId,
+                                overrideUserId,
+                            )
+                        if (current != null) {
+                            Timber.i("Automation: Login success, navigating to app")
+                            navigationManager.navigateTo(SetupDestination.AppContent(current))
+                            return@launchIO
+                        } 
+                        else {
+                             Timber.w("Automation: Login failed for user $overrideUserId. Fallback to server selection.")
+                             if (targetServerId != null) {
+                                 val server = serverRepository.serverDao.getServer(targetServerId)?.server
+                                 if (server != null) {
+                                     navigationManager.navigateTo(SetupDestination.UserList(server))
+                                     return@launchIO
+                                 }
+                             }
+                        }
+                    }
+
                     if (prefs.signInAutomatically && !userHasPin) {
                         val current =
                             serverRepository.restoreSession(
@@ -417,10 +555,8 @@ class MainActivityViewModel
                                 prefs.currentUserId?.toUUIDOrNull(),
                             )
                         if (current != null) {
-                            // Restored
                             navigationManager.navigateTo(SetupDestination.AppContent(current))
                         } else {
-                            // Did not restore
                             navigationManager.navigateTo(SetupDestination.ServerList)
                         }
                     } else {
@@ -445,7 +581,6 @@ class MainActivityViewModel
                 }
             }
             viewModelScope.launchIO {
-                // Create the mediaCodecCapabilitiesTest if needed
                 deviceProfileService.mediaCodecCapabilitiesTest.supportsAVC()
             }
         }

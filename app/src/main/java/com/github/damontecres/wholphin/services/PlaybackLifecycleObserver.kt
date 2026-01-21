@@ -1,5 +1,6 @@
 package com.github.damontecres.wholphin.services
 
+import android.app.Activity
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import com.github.damontecres.wholphin.ui.nav.Destination
@@ -36,9 +37,16 @@ class PlaybackLifecycleObserver
         }
 
         override fun onPause(owner: LifecycleOwner) {
-            playerFactory.currentPlayer?.let {
-                wasPlaying = it.isPlaying
-                it.pause()
+            // Skip pausing when activity is finishing (e.g. nuclear restart): the player will be
+            // released as the activity is destroyed, and pause() can hit "Handler on a dead thread"
+            // if the player's handler is torn down before the message is processed.
+            if ((owner as? Activity)?.isFinishing != true) {
+                playerFactory.currentPlayer?.let {
+                    if (!it.isReleased) {
+                        wasPlaying = it.isPlaying
+                        it.pause()
+                    }
+                }
             }
             themeSongPlayer.stop()
         }

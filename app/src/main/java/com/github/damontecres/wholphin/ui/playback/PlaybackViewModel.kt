@@ -289,6 +289,7 @@ class PlaybackViewModel
                 mediaSession =
                     MediaSession
                         .Builder(context, sessionPlayer)
+                        .setId(UUID.randomUUID().toString())
                         .build()
 
                 val item = BaseItem.from(base, api)

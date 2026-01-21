@@ -93,6 +93,7 @@ fun DestinationContent(
                     SeriesDetails(
                         preferences,
                         destination,
+                        autoPlayOnLoad = destination.autoPlayOnLoad,
                         modifier,
                     )
                 }
@@ -101,6 +102,7 @@ fun DestinationContent(
                     MovieDetails(
                         preferences,
                         destination,
+                        autoPlayOnLoad = destination.autoPlayOnLoad,
                         modifier,
                     )
                 }
@@ -110,6 +112,7 @@ fun DestinationContent(
                     MovieDetails(
                         preferences,
                         destination,
+                        autoPlayOnLoad = destination.autoPlayOnLoad,
                         modifier,
                     )
                 }
@@ -118,6 +121,7 @@ fun DestinationContent(
                     EpisodeDetails(
                         preferences,
                         destination,
+                        autoPlayOnLoad = destination.autoPlayOnLoad,
                         modifier,
                     )
                 }
