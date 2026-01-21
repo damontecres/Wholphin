@@ -30,21 +30,14 @@ jobs:
         uses: ./.github/actions/native-build
         with:
           cache: false
-      - name: Decode signing keystore
-        env:
-          SIGNING_KEY: "${{ secrets.SIGNING_KEY }}"
-        run: |
-          mkdir -p app
-          echo "$SIGNING_KEY" | base64 --decode > app/ci.keystore
-          keytool -list -keystore app/ci.keystore -storetype PKCS12 -storepass "${{ secrets.KEY_STORE_PASSWORD }}" >/dev/null
       - name: Build app
         id: buildapp
         env:
           KEY_ALIAS: "${{ secrets.KEY_ALIAS }}"
           KEY_PASSWORD: "${{ secrets.KEY_PASSWORD }}"
           KEY_STORE_PASSWORD: "${{ secrets.KEY_STORE_PASSWORD }}"
+          SIGNING_KEY: "${{ secrets.SIGNING_KEY }}"
           KEYSTORE_TYPE: "PKCS12"
-          KEYSTORE_PATH: "ci.keystore"
         run: |
           ./gradlew clean assembleRelease --no-daemon
       - name: Verify signatures
