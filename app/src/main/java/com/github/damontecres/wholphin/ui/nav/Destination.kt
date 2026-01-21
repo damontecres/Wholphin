@@ -55,6 +55,7 @@ sealed class Destination(
         val itemId: UUID,
         val type: BaseItemKind,
         val collectionType: CollectionType? = null,
+        val autoPlayOnLoad: Boolean = false,
     ) : Destination() {
         constructor(item: BaseItem) : this(item.id, item.type, item.data.collectionType)
     }

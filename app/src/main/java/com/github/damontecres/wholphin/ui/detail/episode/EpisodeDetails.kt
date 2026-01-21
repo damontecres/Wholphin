@@ -12,6 +12,7 @@ import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -62,6 +63,7 @@ import kotlin.time.Duration
 fun EpisodeDetails(
     preferences: UserPreferences,
     destination: Destination.MediaItem,
+    autoPlayOnLoad: Boolean = false,
     modifier: Modifier = Modifier,
     viewModel: EpisodeViewModel =
         hiltViewModel<EpisodeViewModel, EpisodeViewModel.Factory>(
@@ -98,6 +100,24 @@ fun EpisodeDetails(
                 showPlaylistDialog.makePresent(itemId)
             },
         )
+
+    val didAutoPlay = remember(destination.itemId, autoPlayOnLoad) { mutableStateOf(false) }
+    LaunchedEffect(loading, item, autoPlayOnLoad) {
+        if (!didAutoPlay.value &&
+            autoPlayOnLoad &&
+            loading == LoadingState.Success &&
+            item != null
+        ) {
+            didAutoPlay.value = true
+            val resumeMs = (item!!.data.userData?.playbackPositionTicks?.ticks ?: Duration.ZERO).inWholeMilliseconds
+            viewModel.navigateTo(
+                Destination.Playback(
+                    item!!.id,
+                    resumeMs,
+                ),
+            )
+        }
+    }
 
     when (val state = loading) {
         is LoadingState.Error -> {

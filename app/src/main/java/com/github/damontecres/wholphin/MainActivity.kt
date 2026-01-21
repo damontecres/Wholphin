@@ -2,6 +2,7 @@ package com.github.damontecres.wholphin
 
 import android.content.Intent
 import android.content.res.Configuration
+import android.net.Uri
 import android.os.Bundle
 import android.view.WindowManager
 import androidx.activity.compose.setContent
@@ -149,7 +150,8 @@ class MainActivity : AppCompatActivity() {
                 window?.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
             }
         }
-        viewModel.appStart()
+        val overrideUserId = intent?.getStringExtra(INTENT_USER_ID)?.toUUIDOrNull()
+        viewModel.appStart(overrideUserId)
         setContent {
             val appPreferences by userPreferencesDataStore.data.collectAsState(null)
             appPreferences?.let { appPreferences ->
@@ -305,7 +307,8 @@ class MainActivity : AppCompatActivity() {
     override fun onRestart() {
         super.onRestart()
         Timber.d("onRestart")
-        viewModel.appStart()
+        val overrideUserId = intent?.getStringExtra(INTENT_USER_ID)?.toUUIDOrNull()
+        viewModel.appStart(overrideUserId)
     }
 
     override fun onStop() {
@@ -355,10 +358,12 @@ class MainActivity : AppCompatActivity() {
 
     private fun extractDestination(intent: Intent): Destination? =
         intent.let {
-            val itemId =
-                it.getStringExtra(INTENT_ITEM_ID)?.toUUIDOrNull()
-            val type =
-                it.getStringExtra(INTENT_ITEM_TYPE)?.let(BaseItemKind::fromNameOrNull)
+            val deepLinkDestination = parseDeepLink(it.data)
+            if (deepLinkDestination != null) return deepLinkDestination
+
+            val itemId = it.getStringExtra(INTENT_ITEM_ID)?.toUUIDOrNull()
+            val type = it.getStringExtra(INTENT_ITEM_TYPE)?.let(BaseItemKind::fromNameOrNull)
+            val autoplay = it.getBooleanExtra(INTENT_AUTOPLAY, false)
             if (itemId != null && type != null) {
                 val seriesId = it.getStringExtra(INTENT_SERIES_ID)?.toUUIDOrNull()
                 val seasonId = it.getStringExtra(INTENT_SEASON_ID)?.toUUIDOrNull()
@@ -377,12 +382,32 @@ class MainActivity : AppCompatActivity() {
                             ),
                     )
                 } else {
-                    Destination.MediaItem(itemId, type)
+                    Destination.MediaItem(itemId, type, autoPlayOnLoad = autoplay)
                 }
             } else {
                 null
             }
         }
+
+    private fun parseDeepLink(uri: Uri?): Destination? {
+        if (uri == null) return null
+        if (uri.scheme != "wholphin" || uri.host != "play") return null
+
+        // wholphin://play/{itemId}?autoplay={autoplay}[&type={type}]
+        val itemId = uri.pathSegments.firstOrNull()?.toUUIDOrNull() ?: return null
+        val autoplay = uri.getQueryParameter("autoplay")?.toBooleanStrictOrNull() ?: false
+        val type = uri.getQueryParameter("type")?.let(BaseItemKind::fromNameOrNull)
+
+        // If we don't know the type, we can still immediately start playback.
+        if (autoplay && type == null) {
+            return Destination.Playback(itemId = itemId, positionMs = 0L)
+        }
+        return if (type != null) {
+            Destination.MediaItem(itemId = itemId, type = type, autoPlayOnLoad = autoplay)
+        } else {
+            null
+        }
+    }
 
     companion object {
         const val INTENT_ITEM_ID = "itemId"
@@ -391,6 +416,8 @@ class MainActivity : AppCompatActivity() {
         const val INTENT_EPISODE_NUMBER = "epNum"
         const val INTENT_SEASON_NUMBER = "seaNum"
         const val INTENT_SEASON_ID = "seaId"
+        const val INTENT_USER_ID = "userId"
+        const val INTENT_AUTOPLAY = "autoplay"
     }
 }
 
@@ -404,12 +431,26 @@ class MainActivityViewModel
         private val deviceProfileService: DeviceProfileService,
         private val backdropService: BackdropService,
     ) : ViewModel() {
-        fun appStart() {
+        fun appStart(overrideUserId: java.util.UUID? = null) {
             viewModelScope.launchIO {
                 try {
                     val prefs =
                         preferences.data.firstOrNull() ?: AppPreferences.getDefaultInstance()
                     val userHasPin = serverRepository.currentUser.value?.hasPin == true
+
+                    // Deep-link / automation override: force a specific user immediately (bypass selection).
+                    if (overrideUserId != null && !userHasPin) {
+                        val current =
+                            serverRepository.restoreSession(
+                                prefs.currentServerId?.toUUIDOrNull(),
+                                overrideUserId,
+                            )
+                        if (current != null) {
+                            navigationManager.navigateTo(SetupDestination.AppContent(current))
+                            return@launchIO
+                        }
+                    }
+
                     if (prefs.signInAutomatically && !userHasPin) {
                         val current =
                             serverRepository.restoreSession(
