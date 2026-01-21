@@ -187,13 +187,13 @@ class PlaybackViewModel
 
         init {
             viewModelScope.launchIO {
-                addCloseable { disconnectPlayer.run() }
+                addCloseable { disconnectPlayer() }
                 init()
             }
         }
 
-        private val disconnectPlayer: Runnable = {
-            if (this::player.isInitialized) {
+        private fun disconnectPlayer() {
+            if (this@PlaybackViewModel::player.isInitialized) {
                 player.removeListener(this@PlaybackViewModel)
                 (player as? ExoPlayer)?.removeAnalyticsListener(this@PlaybackViewModel)
 
@@ -207,7 +207,7 @@ class PlaybackViewModel
             jobs.forEach { it.cancel() }
         }
 
-        private fun createPlayer(isHdr: Boolean) {
+        private suspend fun createPlayer(isHdr: Boolean) {
             val playerBackend =
                 when (preferences.appPreferences.playbackPreferences.playerBackend) {
                     PlayerBackend.UNRECOGNIZED,
@@ -220,7 +220,9 @@ class PlaybackViewModel
                 }
 
             Timber.i("Selected backend: %s", playerBackend)
-            disconnectPlayer.run()
+            withContext(Dispatchers.Main) {
+                disconnectPlayer()
+            }
 
             player =
                 playerFactory.createVideoPlayer(
@@ -674,7 +676,7 @@ class PlaybackViewModel
                     CurrentPlayback(
                         item = item,
                         tracks = listOf(),
-                        backend = preferences.appPreferences.playbackPreferences.playerBackend,
+                        backend = currentPlayer.value!!.backend,
                         playMethod = transcodeType,
                         playSessionId = response.playSessionId,
                         liveStreamId = source.liveStreamId,
@@ -1187,9 +1189,7 @@ class PlaybackViewModel
 
         fun release() {
             Timber.v("release")
-            activityListener?.release()
-            player.release()
-            mediaSession?.release()
+            disconnectPlayer()
             activityListener = null
         }
 

@@ -23,8 +23,10 @@ import com.github.damontecres.wholphin.preferences.PlaybackPreferences
 import com.github.damontecres.wholphin.preferences.PlayerBackend
 import com.github.damontecres.wholphin.util.mpv.MpvPlayer
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import timber.log.Timber
 import java.lang.reflect.Constructor
 import javax.inject.Inject
@@ -98,13 +100,15 @@ class PlayerFactory
             return newPlayer
         }
 
-        fun createVideoPlayer(
+        suspend fun createVideoPlayer(
             backend: PlayerBackend,
             prefs: PlaybackPreferences,
         ): Player {
-            if (currentPlayer?.isReleased == false) {
-                Timber.w("Player was not released before trying to create a new one!")
-                currentPlayer?.release()
+            withContext(Dispatchers.Main) {
+                if (currentPlayer?.isReleased == false) {
+                    Timber.w("Player was not released before trying to create a new one!")
+                    currentPlayer?.release()
+                }
             }
 
             val newPlayer =
