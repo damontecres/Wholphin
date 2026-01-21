@@ -19,7 +19,7 @@ plugins {
 }
 
 val isCI = if (System.getenv("CI") != null) System.getenv("CI").toBoolean() else false
-val shouldSign = isCI && System.getenv("KEY_ALIAS") != null
+// Removed 'shouldSign' logic as we are forcing default debug signing
 val ffmpegModuleExists = project.file("libs/lib-decoder-ffmpeg-release.aar").exists()
 val av1ModuleExists = project.file("libs/lib-decoder-av1-release.aar").exists()
 
@@ -48,6 +48,8 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    // REMOVED: signingConfigs block to force default debug key usage
+
     buildTypes {
         release {
             isMinifyEnabled = true
@@ -56,11 +58,13 @@ android {
                 "proguard-rules.pro",
             )
             isDebuggable = false
+            // REMOVED: Custom signing logic
         }
         debug {
             isMinifyEnabled = false
             isDebuggable = true
             applicationIdSuffix = ".debug"
+            // REMOVED: Custom signing logic
         }
     }
     compileOptions {
@@ -81,65 +85,17 @@ android {
     room {
         schemaDirectory("$projectDir/schemas")
     }
-    signingConfigs {
-        if (shouldSign) {
-            create("ci") {
-                file("ci.keystore").writeBytes(
-                    Base64.getDecoder().decode(System.getenv("SIGNING_KEY")),
-                )
-                // CI keystores created with modern `keytool` default to PKCS12. Allow overriding, but
-                // default to PKCS12 so GitHub Actions (JDK 21) can read the keystore reliably.
-                storeType = System.getenv("KEYSTORE_TYPE") ?: "PKCS12"
-                keyAlias = System.getenv("KEY_ALIAS")
-                keyPassword = System.getenv("KEY_PASSWORD")
-                storePassword = System.getenv("KEY_STORE_PASSWORD")
-                storeFile = file("ci.keystore")
-                enableV1Signing = true
-                enableV2Signing = true
-                enableV3Signing = true
-                enableV4Signing = true
-            }
-        }
-    }
-    buildTypes {
-        release {
-            isMinifyEnabled = false
 
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro",
-            )
-            if (shouldSign) {
-                signingConfig = signingConfigs.getByName("ci")
-            } else {
-                val localPropertiesFile = project.rootProject.file("local.properties")
-                if (localPropertiesFile.exists()) {
-                    val properties = Properties()
-                    properties.load(localPropertiesFile.inputStream())
-                    val signingConfigName = properties["release.signing.config"]?.toString()
-                    if (signingConfigName != null) {
-                        signingConfig = signingConfigs.getByName(signingConfigName)
-                    }
-                }
+    applicationVariants.all {
+        val variant = this
+        variant.outputs
+            .map { it as com.android.build.gradle.internal.api.BaseVariantOutputImpl }
+            .forEach { output ->
+                val abi = output.getFilter("ABI").let { if (it != null) "-$it" else "" }
+                val outputFileName =
+                    "Wholphin-${variant.baseName}-${variant.versionName}-${variant.versionCode}$abi.apk"
+                output.outputFileName = outputFileName
             }
-        }
-        debug {
-            if (shouldSign) {
-                signingConfig = signingConfigs.getByName("ci")
-            }
-        }
-
-        applicationVariants.all {
-            val variant = this
-            variant.outputs
-                .map { it as com.android.build.gradle.internal.api.BaseVariantOutputImpl }
-                .forEach { output ->
-                    val abi = output.getFilter("ABI").let { if (it != null) "-$it" else "" }
-                    val outputFileName =
-                        "Wholphin-${variant.baseName}-${variant.versionName}-${variant.versionCode}$abi.apk"
-                    output.outputFileName = outputFileName
-                }
-        }
     }
 
     splits {
