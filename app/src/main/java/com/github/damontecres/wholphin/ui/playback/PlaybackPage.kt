@@ -67,7 +67,6 @@ import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.preferences.skipBackOnResume
 import com.github.damontecres.wholphin.ui.AspectRatios
 import com.github.damontecres.wholphin.ui.LocalImageUrlService
-import com.github.damontecres.wholphin.ui.OneTimeLaunchedEffect
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.components.TextButton
@@ -124,9 +123,10 @@ fun PlaybackPage(
         }
 
         LoadingState.Success -> {
-            val player by viewModel.currentPlayer.collectAsState()
+            val playerState by viewModel.currentPlayer.collectAsState()
             PlaybackPageContent(
-                player = player!!,
+                player = playerState!!.player,
+                playerBackend = playerState!!.backend,
                 preferences = preferences,
                 destination = destination,
                 viewModel = viewModel,
@@ -140,6 +140,7 @@ fun PlaybackPage(
 @Composable
 fun PlaybackPageContent(
     player: Player,
+    playerBackend: PlayerBackend,
     preferences: UserPreferences,
     destination: Destination,
     modifier: Modifier = Modifier,
@@ -172,8 +173,8 @@ fun PlaybackPageContent(
     val subtitleSearchLanguage by viewModel.subtitleSearchLanguage.observeAsState(Locale.current.language)
 
     var playbackDialog by remember { mutableStateOf<PlaybackDialogType?>(null) }
-    OneTimeLaunchedEffect {
-        if (prefs.playerBackend == PlayerBackend.MPV) {
+    LaunchedEffect(player) {
+        if (playerBackend == PlayerBackend.MPV) {
             scope.launch(Dispatchers.IO + ExceptionHandler()) {
                 preferences.appPreferences.interfacePreferences.subtitlesPreferences.applyToMpv(
                     configuration,
@@ -184,9 +185,9 @@ fun PlaybackPageContent(
     }
 
     AmbientPlayerListener(player)
-    var contentScale by remember {
+    var contentScale by remember(playerBackend) {
         mutableStateOf(
-            if (prefs.playerBackend == PlayerBackend.MPV) {
+            if (playerBackend == PlayerBackend.MPV) {
                 ContentScale.FillBounds
             } else {
                 prefs.globalContentScale.scale

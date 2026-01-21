@@ -147,10 +147,9 @@ class PlaybackViewModel
             fun create(destination: Destination): PlaybackViewModel
         }
 
-        val currentPlayer = MutableStateFlow<Player?>(null)
+        val currentPlayer = MutableStateFlow<PlayerState?>(null)
 
         internal lateinit var player: Player
-        internal lateinit var playerBackend: PlayerBackend
 
         private var mediaSession: MediaSession? = null
         internal val mutex = Mutex()
@@ -237,11 +236,8 @@ class PlaybackViewModel
                     playerBackend,
                     preferences.appPreferences.playbackPreferences,
                 )
-            if (playerBackend == PlayerBackend.MPV) {
-            }
             currentPlayer.update {
-                this@PlaybackViewModel.playerBackend = playerBackend
-                player
+                PlayerState(player, playerBackend)
             }
         }
 
@@ -557,7 +553,7 @@ class PlaybackViewModel
                             TrackSelectionUtils.createTrackSelections(
                                 onMain { player.trackSelectionParameters },
                                 onMain { player.currentTracks },
-                                playerBackend,
+                                currentPlayer.value!!.backend,
                                 true,
                                 audioIndex,
                                 subtitleIndex,
@@ -621,7 +617,7 @@ class PlaybackViewModel
                         PlaybackInfoDto(
                             startTimeTicks = null,
                             deviceProfile =
-                                if (playerBackend == PlayerBackend.EXO_PLAYER) {
+                                if (currentPlayer.value!!.backend == PlayerBackend.EXO_PLAYER) {
                                     deviceProfileService.getOrCreateDeviceProfile(
                                         preferences.appPreferences.playbackPreferences,
                                         serverRepository.currentServer.value?.serverVersion,
@@ -777,7 +773,7 @@ class PlaybackViewModel
                                             TrackSelectionUtils.createTrackSelections(
                                                 player.trackSelectionParameters,
                                                 player.currentTracks,
-                                                playerBackend,
+                                                currentPlayer.value!!.backend,
                                                 source.supportsDirectPlay,
                                                 audioIndex.takeIf { transcodeType == PlayMethod.DIRECT_PLAY },
                                                 subtitleIndex,
@@ -1342,3 +1338,8 @@ class PlaybackViewModel
             }
         }
     }
+
+data class PlayerState(
+    val player: Player,
+    val backend: PlayerBackend,
+)
