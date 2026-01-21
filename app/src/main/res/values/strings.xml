@@ -532,8 +532,15 @@
     </string-array>
 
     <string-array name="player_backend_options">
-        <item>ExoPlayer (default)</item>
-        <item>MPV (Experimental)</item>
+        <item>ExoPlayer</item>
+        <item>MPV</item>
+        <item>Prefer MPV</item>
+    </string-array>
+
+    <string-array name="player_backend_options_subtitles">
+        <item />
+        <item />
+        <item>Use ExoPlayer for HDR playback</item>
     </string-array>
 
     <string-array name="aspect_ratios">

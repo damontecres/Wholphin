@@ -746,12 +746,13 @@ sealed interface AppPreference<Pref, T> {
         val PlayerBackendPref =
             AppChoicePreference<AppPreferences, PlayerBackend>(
                 title = R.string.player_backend,
-                defaultValue = PlayerBackend.EXO_PLAYER,
+                defaultValue = PlayerBackend.PREFER_MPV,
                 getter = { it.playbackPreferences.playerBackend },
                 setter = { prefs, value ->
                     prefs.updatePlaybackPreferences { playerBackend = value }
                 },
                 displayValues = R.array.player_backend_options,
+                subtitles = R.array.player_backend_options_subtitles,
                 indexToValue = { PlayerBackend.forNumber(it) },
                 valueToIndex = { it.number },
             )
@@ -1108,6 +1109,7 @@ data class AppChoicePreference<Pref, T>(
     override val getter: (prefs: Pref) -> T,
     override val setter: (prefs: Pref, value: T) -> Pref,
     @param:StringRes val summary: Int? = null,
+    @param:ArrayRes val subtitles: Int? = null,
 ) : AppPreference<Pref, T>
 
 data class AppMultiChoicePreference<Pref, T>(
