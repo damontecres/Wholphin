@@ -150,7 +150,7 @@ class MainActivity : AppCompatActivity() {
                 window?.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
             }
         }
-        // MODIFIED: Capture server ID too
+        // Capture server ID too
         val overrideUserId = intent?.getStringExtra(INTENT_USER_ID)?.toUUIDOrNull()
         val overrideServerId = intent?.getStringExtra(INTENT_SERVER_ID)?.toUUIDOrNull()
         viewModel.appStart(overrideUserId, overrideServerId)
@@ -373,8 +373,8 @@ class MainActivity : AppCompatActivity() {
             // CASE B: Correct session. Check if we are already playing this specific content.
             val newDest = extractDestination(intent)
             
-            // "Peek" at the current screen
-            val currentDest = navigationManager.backStack.lastOrNull()
+            // FIX: Using currentDestination.value instead of backStack
+            val currentDest = navigationManager.currentDestination.value
 
             if (newDest != null && isAlreadyPlaying(currentDest, newDest)) {
                 Timber.i("Ignoring deep link - already playing content: $newDest")
@@ -491,7 +491,6 @@ class MainActivityViewModel
         private val deviceProfileService: DeviceProfileService,
         private val backdropService: BackdropService,
     ) : ViewModel() {
-        // MODIFIED: Accepts both User and Server overrides
         fun appStart(overrideUserId: java.util.UUID? = null, overrideServerId: java.util.UUID? = null) {
             viewModelScope.launchIO {
                 try {
@@ -501,7 +500,6 @@ class MainActivityViewModel
 
                     // Deep-link / automation override: force a specific user immediately (bypass selection).
                     if (overrideUserId != null && !userHasPin) {
-                        // Use override server ID if present, otherwise current pref
                         val targetServerId = overrideServerId ?: prefs.currentServerId?.toUUIDOrNull()
                         val current =
                             serverRepository.restoreSession(
