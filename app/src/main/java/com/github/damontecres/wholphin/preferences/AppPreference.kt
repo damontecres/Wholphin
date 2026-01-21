@@ -465,7 +465,7 @@ sealed interface AppPreference<Pref, T> {
         val BoxSetViewModePref =
             AppChoicePreference<AppPreferences, BoxSetViewMode>(
                 title = R.string.boxset_view_mode,
-                defaultValue = BoxSetViewMode.DEFAULT_GRID,
+                defaultValue = BoxSetViewMode.ADVANCED_VIEW,
                 getter = { it.interfacePreferences.boxsetViewMode },
                 setter = { prefs, value ->
                     prefs.updateInterfacePreferences { boxsetViewMode = value }
