@@ -3,7 +3,6 @@ package com.github.damontecres.wholphin.ui.nav
 import android.content.Context
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
@@ -14,7 +13,6 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -338,9 +336,7 @@ fun NavDrawer(
         }
     }
 
-    val closedDrawerWidth = 40.dp
-    val drawerWidth by animateDpAsState(if (drawerState.isOpen) 260.dp else closedDrawerWidth)
-    val drawerPadding by animateDpAsState(if (drawerState.isOpen) 0.dp else 8.dp)
+    val closedDrawerWidth = NavigationDrawerItemDefaults.CollapsedDrawerItemWidth
     val drawerBackground by animateColorAsState(
         if (drawerState.isOpen) {
             MaterialTheme.colorScheme.surface
@@ -382,7 +378,6 @@ fun NavDrawer(
                     modifier =
                         Modifier
                             .fillMaxHeight()
-                            .width(drawerWidth)
                             .drawBehind {
                                 drawRect(drawerBackground)
                             },
@@ -403,7 +398,7 @@ fun NavDrawer(
                                 SetupDestination.UserList(server),
                             )
                         },
-                        modifier = Modifier.padding(start = drawerPadding),
+                        modifier = Modifier,
                     )
                     LazyColumn(
                         state = listState,
@@ -426,8 +421,8 @@ fun NavDrawer(
                                             scrollToSelected()
                                         }
                                     }
-                                }.fillMaxHeight()
-                                .padding(start = drawerPadding),
+                                }.fillMaxHeight(),
+//                                .padding(start = drawerPadding),
                     ) {
                         item {
                             val interactionSource = remember { MutableInteractionSource() }
@@ -449,7 +444,7 @@ fun NavDrawer(
                                         .ifElse(
                                             selectedIndex == -2,
                                             Modifier.focusRequester(focusRequester),
-                                        ).animateItem(),
+                                        ),
                             )
                         }
                         item {
@@ -475,7 +470,7 @@ fun NavDrawer(
                                         .ifElse(
                                             selectedIndex == -1,
                                             Modifier.focusRequester(focusRequester),
-                                        ).animateItem(),
+                                        ),
                             )
                         }
                         itemsIndexed(libraries) { index, it ->
@@ -497,7 +492,7 @@ fun NavDrawer(
                                         .ifElse(
                                             selectedIndex == index,
                                             Modifier.focusRequester(focusRequester),
-                                        ).animateItem(),
+                                        ),
                             )
                         }
                         if (showMore) {
@@ -526,7 +521,7 @@ fun NavDrawer(
                                             .ifElse(
                                                 selectedIndex == adjustedIndex,
                                                 Modifier.focusRequester(focusRequester),
-                                            ).animateItem(),
+                                            ),
                                 )
                             }
                         }
@@ -547,7 +542,7 @@ fun NavDrawer(
                                         ),
                                     )
                                 },
-                                modifier = Modifier.animateItem(),
+                                modifier = Modifier,
                             )
                         }
                     }
@@ -639,7 +634,7 @@ fun NavigationDrawerScope.IconNavItem(
                 icon,
                 contentDescription = null,
                 tint = color,
-                modifier = Modifier.padding(0.dp),
+                modifier = Modifier,
             )
         },
         supportingContent =
