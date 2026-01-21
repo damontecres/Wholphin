@@ -155,7 +155,11 @@ class MainActivity : AppCompatActivity() {
         // PARSE IDs ROBUSTLY
         val overrideUserId = parseUUID(intent?.getStringExtra(INTENT_USER_ID))
         val overrideServerId = parseUUID(intent?.getStringExtra(INTENT_SERVER_ID))
-        
+
+        // Capture requested destination from intent in onCreate so it's available when AppContent
+        // is composed (avoids losing item/play target after nuclear restart or late composition).
+        viewModel.pendingRequestedDestination = extractDestination(intent)
+
         viewModel.appStart(overrideUserId, overrideServerId)
         
         setContent {
@@ -240,6 +244,7 @@ class MainActivity : AppCompatActivity() {
                                                                     appPreferences.updateUrl,
                                                                 )
                                                             } catch (ex: Exception) {
+                                                                if (ex is kotlinx.coroutines.CancellationException) throw ex
                                                                 Timber.w(
                                                                     ex,
                                                                     "Exception during update check",
@@ -265,9 +270,9 @@ class MainActivity : AppCompatActivity() {
 
                                                     if (showContent) {
                                                         val requestedDestination =
-                                                            remember(intent) {
-                                                                intent?.let(::extractDestination)
-                                                            }
+                                                            viewModel.pendingRequestedDestination
+                                                                ?.also { viewModel.pendingRequestedDestination = null }
+                                                                ?: intent?.let(::extractDestination)
                                                         ApplicationContent(
                                                             user = current.user,
                                                             server = current.server,
@@ -382,6 +387,7 @@ class MainActivity : AppCompatActivity() {
             Timber.i("Automation: Different user/session or not in AppContent. Restarting activity.")
             val restartIntent = Intent(this, MainActivity::class.java)
             restartIntent.putExtras(intent)
+            intent.data?.let { restartIntent.data = it }
             restartIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
             startActivity(restartIntent)
             finish()
@@ -503,7 +509,10 @@ class MainActivityViewModel
         private val deviceProfileService: DeviceProfileService,
         private val backdropService: BackdropService,
     ) : ViewModel() {
-        
+
+        /** Destination from the launching intent, consumed when AppContent is first composed. */
+        var pendingRequestedDestination: Destination? = null
+
         // TRACKER for the last item we successfully navigated to
         var lastProcessedItemId: UUID? = null
 
