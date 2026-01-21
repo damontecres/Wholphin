@@ -946,8 +946,7 @@ val basicPreferences =
             title = R.string.profile_specific_settings,
             preferences =
                 listOf(
-                    // TODO PIN-related
-                    // AppPreference.RequireProfilePin,
+                    AppPreference.RequireProfilePin,
                     AppPreference.UserPinnedNavDrawerItems,
                 ),
         ),

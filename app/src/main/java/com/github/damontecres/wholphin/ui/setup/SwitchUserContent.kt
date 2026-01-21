@@ -141,13 +141,11 @@ fun SwitchUserContent(
                     users = users,
                     currentUser = currentUser,
                     onSwitchUser = { user ->
-                        // TODO PIN-related
-//                        if (user.pin.isNotNullOrBlank()) {
-//                            switchUserWithPin = user
-//                        } else {
-//                            viewModel.switchUser(user)
-//                        }
-                        viewModel.switchUser(user)
+                        if (user.hasPin) {
+                            switchUserWithPin = user
+                        } else {
+                            viewModel.switchUser(user)
+                        }
                     },
                     onAddUser = { showAddUser = true },
                     onRemoveUser = { user ->

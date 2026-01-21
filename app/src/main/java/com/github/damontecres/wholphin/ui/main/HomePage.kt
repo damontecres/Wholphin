@@ -238,7 +238,9 @@ fun HomePageContent(
         }
     }
     LaunchedEffect(position) {
-        listState.animateScrollToItem(position.row)
+        if (position.row >= 0) {
+            listState.animateScrollToItem(position.row)
+        }
     }
     LaunchedEffect(onUpdateBackdrop, focusedItem) {
         focusedItem?.let { onUpdateBackdrop.invoke(it) }
