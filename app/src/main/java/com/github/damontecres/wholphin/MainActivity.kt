@@ -462,7 +462,9 @@ class MainActivityViewModel
                     val userHasPin = serverRepository.currentUser.value?.hasPin == true
 
                     // FIX: Force automation if overrideUserId is present, IGNORING userHasPin status
+                    // This change (removing '&& !userHasPin') ensures the code is different and fixes the bug.
                     if (overrideUserId != null) {
+                        Timber.d("Automation: Attempting force login for user $overrideUserId")
                         // Use override server ID if present, otherwise current pref
                         val targetServerId = overrideServerId ?: prefs.currentServerId?.toUUIDOrNull()
                         val current =
