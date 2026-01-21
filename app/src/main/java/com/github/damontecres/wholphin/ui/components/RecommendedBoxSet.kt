@@ -130,15 +130,39 @@ class RecommendedBoxSetViewModel
                         .toBaseItems(api, false)
                 }
 
-                // Suggestions - Mixed Movies and Series
+                // Suggestions - Mixed Movies and Series (filtered to BoxSet items)
                 update(R.string.suggestions) {
                     val userId = serverRepository.currentUser.value?.id
+                    
+                    // First, fetch all items in this BoxSet to create a filter set
+                    val boxSetItemsRequest =
+                        GetItemsRequest(
+                            parentId = parentId,
+                            fields = listOf(),
+                            includeItemTypes = listOf(BaseItemKind.MOVIE, BaseItemKind.SERIES),
+                            recursive = true,
+                            enableUserData = false,
+                            startIndex = 0,
+                            limit = null, // Get all items
+                            enableTotalRecordCount = false,
+                        )
+                    val boxSetItemIds =
+                        GetItemsRequestHandler
+                            .execute(api, boxSetItemsRequest)
+                            .content
+                            .items
+                            .mapNotNull { it.id }
+                            .toSet()
+                    
+                    Timber.d("BoxSet has ${boxSetItemIds.size} items for filtering")
+                    
+                    // Fetch more suggestions to compensate for filtering
                     val movieRequest =
                         GetSuggestionsRequest(
                             userId = userId,
                             type = listOf(BaseItemKind.MOVIE),
                             startIndex = 0,
-                            limit = itemsPerRow / 2,
+                            limit = itemsPerRow * 2, // Fetch more since we'll filter
                             enableTotalRecordCount = false,
                         )
                     val seriesRequest =
@@ -146,7 +170,7 @@ class RecommendedBoxSetViewModel
                             userId = userId,
                             type = listOf(BaseItemKind.SERIES),
                             startIndex = 0,
-                            limit = itemsPerRow / 2,
+                            limit = itemsPerRow * 2, // Fetch more since we'll filter
                             enableTotalRecordCount = false,
                         )
 
@@ -154,14 +178,16 @@ class RecommendedBoxSetViewModel
                         GetSuggestionsRequestHandler
                             .execute(api, movieRequest)
                             .toBaseItems(api, false)
+                            .filter { it.id in boxSetItemIds }
                     val series =
                         GetSuggestionsRequestHandler
                             .execute(api, seriesRequest)
                             .toBaseItems(api, true)
+                            .filter { it.id in boxSetItemIds }
 
-                    Timber.d("BoxSet Suggestions - Movies: ${movies.size}, Series: ${series.size}")
+                    Timber.d("BoxSet Suggestions (filtered) - Movies: ${movies.size}, Series: ${series.size}")
                     val result = (movies + series).shuffled().take(itemsPerRow)
-                    Timber.d("BoxSet Suggestions - Combined: ${result.size} items")
+                    Timber.d("BoxSet Suggestions (filtered) - Combined: ${result.size} items")
                     result
                 }
 
