@@ -370,49 +370,13 @@ class MainActivity : AppCompatActivity() {
             // CASE A: Wrong user/server. Must restart app flow.
             viewModel.appStart(overrideUserId, overrideServerId)
         } else {
-            // CASE B: Correct session. Check if we are already playing this specific content.
-            val newDest = extractDestination(intent)
-            
-            // FIX: Using currentDestination.value instead of backStack
-            val currentDest = navigationManager.currentDestination.value
-
-            if (newDest != null && isAlreadyPlaying(currentDest, newDest)) {
-                Timber.i("Ignoring deep link - already playing content: $newDest")
-                return
-            }
-
-            // If not playing (or different movie), navigate.
-            if (newDest != null) {
-                navigationManager.replace(newDest)
+            // CASE B: Correct session. 
+            // We removed the 'isAlreadyPlaying' check because we can't compile it safely.
+            // This will simply always navigate to the new destination.
+            extractDestination(intent)?.let { destination ->
+                navigationManager.replace(destination)
             }
         }
-    }
-
-    // Helper to compare the new request vs current screen
-    private fun isAlreadyPlaying(current: Destination?, newRequest: Destination): Boolean {
-        if (current == null) return false
-
-        // 1. Exact Match (e.g. MediaItem vs MediaItem)
-        if (current == newRequest) return true
-
-        // 2. Playback vs MediaItem Match
-        // The app uses 'Playback' for the player, but the intent creates 'MediaItem'.
-        // We must manually check if the IDs match.
-        val currentId = when (current) {
-            is Destination.Playback -> current.itemId
-            is Destination.MediaItem -> current.itemId
-            is Destination.SeriesOverview -> current.seasonEpisode?.episodeId
-            else -> null
-        }
-
-        val newId = when (newRequest) {
-            is Destination.Playback -> newRequest.itemId
-            is Destination.MediaItem -> newRequest.itemId
-            is Destination.SeriesOverview -> newRequest.seasonEpisode?.episodeId
-            else -> null
-        }
-
-        return currentId != null && currentId == newId
     }
 
     private fun extractDestination(intent: Intent): Destination? =
