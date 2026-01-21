@@ -49,7 +49,6 @@ import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.AspectRatios
 import com.github.damontecres.wholphin.ui.Cards
-import com.github.damontecres.wholphin.ui.abbreviateNumber
 import com.github.damontecres.wholphin.ui.cards.BannerCard
 import com.github.damontecres.wholphin.ui.cards.ItemRow
 import com.github.damontecres.wholphin.ui.components.CircularProgress
@@ -339,21 +338,11 @@ fun HomePageContent(
                                             .focusRequester(rowFocusRequesters[rowIndex])
                                             .animateItem(),
                                     cardContent = { index, item, cardModifier, onClick, onLongClick ->
-                                        val cornerText =
-                                            remember(item) {
-                                                item?.data?.indexNumber?.let { "E$it" }
-                                                    ?: item
-                                                        ?.data
-                                                        ?.userData
-                                                        ?.unplayedItemCount
-                                                        ?.takeIf { it > 0 }
-                                                        ?.let { abbreviateNumber(it) }
-                                            }
                                         BannerCard(
                                             name = item?.data?.seriesName ?: item?.name,
                                             item = item,
                                             aspectRatio = AspectRatios.TALL,
-                                            cornerText = cornerText,
+                                            cornerText = item?.ui?.episdodeUnplayedCornerText,
                                             played = item?.data?.userData?.played ?: false,
                                             favorite = item?.favorite ?: false,
                                             playPercent =
