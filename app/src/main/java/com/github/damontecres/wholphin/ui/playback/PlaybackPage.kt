@@ -5,7 +5,9 @@ import androidx.annotation.Dimension
 import androidx.annotation.OptIn
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusable
@@ -281,6 +283,9 @@ fun PlaybackPage(
             BackHandler(showSegment) {
                 segmentCancelled = true
             }
+            BackHandler(controllerViewState.controlsVisible) {
+                controllerViewState.hideControls()
+            }
 
             Box(
                 modifier
@@ -339,13 +344,8 @@ fun PlaybackPage(
                         }
                     }
 
-                    // The playback controls
-                    AnimatedVisibility(
-                        controllerViewState.controlsVisible,
-                        Modifier,
-                        slideInVertically { it },
-                        slideOutVertically { it },
-                    ) {
+                    // Playback overlay: parent enter is near-instant so children’s slides show;
+                    // parent exit is a no-op that holds content so top (up) and bottom (down) can slide out.
                         PlaybackOverlay(
                             modifier =
                                 Modifier
@@ -377,7 +377,6 @@ fun PlaybackPage(
                             currentSegment = currentSegment,
                             showClock = preferences.appPreferences.interfacePreferences.showClock,
                         )
-                    }
 
                     // Subtitles
                     if (skipIndicatorDuration == 0L && currentItemPlayback.subtitleIndexEnabled) {
