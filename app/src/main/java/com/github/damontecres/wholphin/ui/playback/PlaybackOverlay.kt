@@ -1,6 +1,9 @@
 package com.github.damontecres.wholphin.ui.playback
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
@@ -11,6 +14,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -36,6 +40,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.onPreviewKeyEvent
@@ -143,29 +148,33 @@ fun PlaybackOverlay(
             )
         }
 
-    Box(
-        modifier = modifier,
-        contentAlignment = Alignment.BottomCenter,
-    ) {
-        AnimatedVisibility(
-            visible = controllerViewState.controlsVisible,
-            enter = fadeIn(),
-            exit = fadeOut(),
-            modifier = Modifier.matchParentSize(),
+    // Manual slide animation: AnimatedVisibility often doesn't run on TV (e.g. animator scale 0).
+    // progressValue: 0 = fully shown, 1 = fully hidden.
+    val progressValue by animateFloatAsState(
+        targetValue = if (controllerViewState.controlsVisible) 0f else 1f,
+        animationSpec = tween(durationMillis = 300),
+        label = "overlay_slide_progress"
+    )
+
+    BoxWithConstraints(modifier = modifier) {
+        val fullHeightPx = with(density) { maxHeight.toPx() }
+        Box(
+            Modifier.fillMaxSize(),
+            contentAlignment = Alignment.BottomCenter,
         ) {
+        // Scrim: fade via alpha
+        if (controllerViewState.controlsVisible || progressValue < 1f) {
             Box(
                 modifier =
                     Modifier
-                        .fillMaxSize()
+                        .matchParentSize()
+                        .graphicsLayer { alpha = 1f - progressValue }
                         .background(scrimBrush),
             )
         }
 
-        AnimatedVisibility(
-            state == OverlayViewState.CONTROLLER,
-            enter = slideInVertically() + fadeIn(),
-            exit = slideOutVertically() + fadeOut(),
-        ) {
+        // Controller (bottom): slide up on show, slide down on hide
+        if (state == OverlayViewState.CONTROLLER && (controllerViewState.controlsVisible || progressValue < 1f)) {
             val nextState =
                 if (chapters.isNotEmpty()) {
                     OverlayViewState.CHAPTERS
@@ -178,6 +187,7 @@ fun PlaybackOverlay(
                 verticalArrangement = Arrangement.spacedBy(8.dp),
                 modifier =
                     Modifier
+                        .graphicsLayer { translationY = progressValue * fullHeightPx }
                         .padding(bottom = 8.dp)
                         .onGloballyPositioned {
                             controllerHeight = with(density) { it.size.height.toDp() }
@@ -448,44 +458,49 @@ fun PlaybackOverlay(
             }
         }
         val logoImageUrl = LocalImageUrlService.current.rememberImageUrl(item, ImageType.LOGO)
-        AnimatedVisibility(
-            !showDebugInfo && logoImageUrl.isNotNullOrBlank() && controllerViewState.controlsVisible,
-            modifier =
-                Modifier
-                    .align(Alignment.TopStart),
-        ) {
+        // Logo (top): slide down on show, slide up on hide
+        if (!showDebugInfo && logoImageUrl.isNotNullOrBlank() && (controllerViewState.controlsVisible || progressValue < 1f)) {
             AsyncImage(
                 model = logoImageUrl,
                 contentDescription = "Logo",
                 alignment = Alignment.TopStart,
                 modifier =
                     Modifier
+                        .align(Alignment.TopStart)
+                        .graphicsLayer { translationY = -progressValue * fullHeightPx }
                         .size(width = 240.dp, height = 120.dp)
                         .padding(16.dp),
             )
         }
-        AnimatedVisibility(
-            !showDebugInfo && showClock && controllerViewState.controlsVisible,
-            modifier =
-                Modifier
-                    .align(Alignment.TopEnd),
-        ) {
-            TimeDisplay()
+        // Clock (top): slide down on show, slide up on hide
+        if (!showDebugInfo && showClock && (controllerViewState.controlsVisible || progressValue < 1f)) {
+            Box(
+                modifier =
+                    Modifier
+                        .align(Alignment.TopEnd)
+                        .graphicsLayer { translationY = -progressValue * fullHeightPx },
+            ) {
+                TimeDisplay()
+            }
         }
-        AnimatedVisibility(
-            showDebugInfo && controllerViewState.controlsVisible,
-            modifier =
-                Modifier
-                    .align(Alignment.TopStart),
-        ) {
-            PlaybackDebugOverlay(
-                currentPlayback = currentPlayback,
+        // Debug overlay (top): slide down on show, slide up on hide
+        if (showDebugInfo && (controllerViewState.controlsVisible || progressValue < 1f)) {
+            Box(
                 modifier =
                     Modifier
                         .align(Alignment.TopStart)
-                        .padding(8.dp)
-                        .background(AppColors.TransparentBlack50),
-            )
+                        .graphicsLayer { translationY = -progressValue * fullHeightPx },
+            ) {
+                PlaybackDebugOverlay(
+                    currentPlayback = currentPlayback,
+                    modifier =
+                        Modifier
+                            .align(Alignment.TopStart)
+                            .padding(8.dp)
+                            .background(AppColors.TransparentBlack50),
+                )
+            }
+        }
         }
     }
 }
