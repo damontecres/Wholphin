@@ -1,6 +1,5 @@
 package com.github.damontecres.wholphin.ui.main
 
-import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.focusable
@@ -25,7 +24,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -87,10 +85,8 @@ fun HomePage(
     playlistViewModel: AddPlaylistViewModel = hiltViewModel(),
 ) {
     val context = LocalContext.current
-    var firstLoad by rememberSaveable { mutableStateOf(true) }
     LaunchedEffect(Unit) {
-        viewModel.init(preferences).join()
-        firstLoad = false
+        viewModel.init()
     }
     val loading by viewModel.loadingState.observeAsState(LoadingState.Loading)
     val refreshing by viewModel.refreshState.observeAsState(LoadingState.Loading)
@@ -98,20 +94,6 @@ fun HomePage(
     val latestRows by viewModel.latestRows.observeAsState(listOf())
 
     val homeRows = remember(watchingRows, latestRows) { watchingRows + latestRows }
-
-    LaunchedEffect(loading) {
-        val state = loading
-        if (!firstLoad && state is LoadingState.Error) {
-            // After the first load, refreshes occur in the background and an ErrorMessage won't show
-            // So send a Toast on errors instead
-            Toast
-                .makeText(
-                    context,
-                    "Home refresh error: ${state.localizedMessage}",
-                    Toast.LENGTH_LONG,
-                ).show()
-        }
-    }
 
     when (val state = loading) {
         is LoadingState.Error -> {
