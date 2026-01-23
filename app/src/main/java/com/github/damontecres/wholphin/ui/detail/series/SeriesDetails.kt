@@ -600,7 +600,7 @@ fun SeriesDetailsHeader(
     val scope = rememberCoroutineScope()
     val dto = series.data
     Column(
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
         modifier = modifier,
     ) {
         Text(
@@ -619,7 +619,7 @@ fun SeriesDetailsHeader(
         ) {
             QuickDetails(series.ui.quickDetails, null, Modifier.padding(start = 8.dp))
             dto.genres?.letNotEmpty {
-                GenreText(it, Modifier.padding(start = 8.dp))
+                GenreText(it, Modifier.padding(start = 8.dp, bottom = 12.dp))
             }
             dto.overview?.let { overview ->
                 OverviewText(
