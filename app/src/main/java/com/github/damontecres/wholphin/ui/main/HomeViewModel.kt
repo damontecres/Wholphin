@@ -14,9 +14,11 @@ import com.github.damontecres.wholphin.services.DatePlayedService
 import com.github.damontecres.wholphin.services.FavoriteWatchManager
 import com.github.damontecres.wholphin.services.LatestNextUpService
 import com.github.damontecres.wholphin.services.NavigationManager
+import com.github.damontecres.wholphin.services.UserPreferencesService
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.nav.ServerNavDrawerItem
 import com.github.damontecres.wholphin.ui.setValueOnMain
+import com.github.damontecres.wholphin.ui.showToast
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.HomeRowLoadingState
 import com.github.damontecres.wholphin.util.LoadingExceptionHandler
@@ -24,7 +26,6 @@ import com.github.damontecres.wholphin.util.LoadingState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
@@ -47,6 +48,7 @@ class HomeViewModel
         private val datePlayedService: DatePlayedService,
         private val latestNextUpService: LatestNextUpService,
         private val backdropService: BackdropService,
+        private val userPreferencesService: UserPreferencesService,
     ) : ViewModel() {
         val loadingState = MutableLiveData<LoadingState>(LoadingState.Pending)
         val refreshState = MutableLiveData<LoadingState>(LoadingState.Pending)
@@ -57,18 +59,11 @@ class HomeViewModel
 
         init {
             datePlayedService.invalidateAll()
+            init()
         }
 
-        fun init(preferences: UserPreferences): Job {
-            val reload = loadingState.value != LoadingState.Success
-            if (reload) {
-                loadingState.value = LoadingState.Loading
-            }
-            refreshState.value = LoadingState.Loading
-            this.preferences = preferences
-            val prefs = preferences.appPreferences.homePagePreferences
-            val limit = prefs.maxItemsPerRow
-            return viewModelScope.launch(
+        fun init() {
+            viewModelScope.launch(
                 Dispatchers.IO +
                     LoadingExceptionHandler(
                         loadingState,
@@ -76,67 +71,83 @@ class HomeViewModel
                     ),
             ) {
                 Timber.d("init HomeViewModel")
+                val reload = loadingState.value != LoadingState.Success
+                if (reload) {
+                    loadingState.setValueOnMain(LoadingState.Loading)
+                }
+                refreshState.setValueOnMain(LoadingState.Loading)
+                this@HomeViewModel.preferences = userPreferencesService.getCurrent()
+                val prefs = preferences.appPreferences.homePagePreferences
+                val limit = prefs.maxItemsPerRow
                 if (reload) {
                     backdropService.clearBackdrop()
                 }
-
-                serverRepository.currentUserDto.value?.let { userDto ->
-                    val includedIds =
-                        navDrawerItemRepository
-                            .getFilteredNavDrawerItems(navDrawerItemRepository.getNavDrawerItems())
-                            .filter { it is ServerNavDrawerItem }
-                            .map { (it as ServerNavDrawerItem).itemId }
-                    val resume = latestNextUpService.getResume(userDto.id, limit, true)
-                    val nextUp =
-                        latestNextUpService.getNextUp(
-                            userDto.id,
-                            limit,
-                            prefs.enableRewatchingNextUp,
-                            false,
-                        )
-                    val watching =
-                        buildList {
-                            if (prefs.combineContinueNext) {
-                                val items = latestNextUpService.buildCombined(resume, nextUp)
-                                add(
-                                    HomeRowLoadingState.Success(
-                                        title = context.getString(R.string.continue_watching),
-                                        items = items,
-                                    ),
-                                )
-                            } else {
-                                if (resume.isNotEmpty()) {
+                try {
+                    serverRepository.currentUserDto.value?.let { userDto ->
+                        val includedIds =
+                            navDrawerItemRepository
+                                .getFilteredNavDrawerItems(navDrawerItemRepository.getNavDrawerItems())
+                                .filter { it is ServerNavDrawerItem }
+                                .map { (it as ServerNavDrawerItem).itemId }
+                        val resume = latestNextUpService.getResume(userDto.id, limit, true)
+                        val nextUp =
+                            latestNextUpService.getNextUp(
+                                userDto.id,
+                                limit,
+                                prefs.enableRewatchingNextUp,
+                                false,
+                            )
+                        val watching =
+                            buildList {
+                                if (prefs.combineContinueNext) {
+                                    val items = latestNextUpService.buildCombined(resume, nextUp)
                                     add(
                                         HomeRowLoadingState.Success(
                                             title = context.getString(R.string.continue_watching),
-                                            items = resume,
+                                            items = items,
                                         ),
                                     )
-                                }
-                                if (nextUp.isNotEmpty()) {
-                                    add(
-                                        HomeRowLoadingState.Success(
-                                            title = context.getString(R.string.next_up),
-                                            items = nextUp,
-                                        ),
-                                    )
+                                } else {
+                                    if (resume.isNotEmpty()) {
+                                        add(
+                                            HomeRowLoadingState.Success(
+                                                title = context.getString(R.string.continue_watching),
+                                                items = resume,
+                                            ),
+                                        )
+                                    }
+                                    if (nextUp.isNotEmpty()) {
+                                        add(
+                                            HomeRowLoadingState.Success(
+                                                title = context.getString(R.string.next_up),
+                                                items = nextUp,
+                                            ),
+                                        )
+                                    }
                                 }
                             }
-                        }
 
-                    val latest = latestNextUpService.getLatest(userDto, limit, includedIds)
-                    val pendingLatest = latest.map { HomeRowLoadingState.Loading(it.title) }
+                        val latest = latestNextUpService.getLatest(userDto, limit, includedIds)
+                        val pendingLatest = latest.map { HomeRowLoadingState.Loading(it.title) }
 
-                    withContext(Dispatchers.Main) {
-                        this@HomeViewModel.watchingRows.value = watching
-                        if (reload) {
-                            this@HomeViewModel.latestRows.value = pendingLatest
+                        withContext(Dispatchers.Main) {
+                            this@HomeViewModel.watchingRows.value = watching
+                            if (reload) {
+                                this@HomeViewModel.latestRows.value = pendingLatest
+                            }
+                            loadingState.value = LoadingState.Success
                         }
-                        loadingState.value = LoadingState.Success
+                        refreshState.setValueOnMain(LoadingState.Success)
+                        val loadedLatest = latestNextUpService.loadLatest(latest)
+                        this@HomeViewModel.latestRows.setValueOnMain(loadedLatest)
                     }
-                    refreshState.setValueOnMain(LoadingState.Success)
-                    val loadedLatest = latestNextUpService.loadLatest(latest)
-                    this@HomeViewModel.latestRows.setValueOnMain(loadedLatest)
+                } catch (ex: Exception) {
+                    Timber.e(ex)
+                    if (!reload) {
+                        loadingState.setValueOnMain(LoadingState.Error(ex))
+                    } else {
+                        showToast(context, "Error refreshing home: ${ex.localizedMessage}")
+                    }
                 }
             }
         }
@@ -147,7 +158,7 @@ class HomeViewModel
         ) = viewModelScope.launch(ExceptionHandler() + Dispatchers.IO) {
             favoriteWatchManager.setWatched(itemId, played)
             withContext(Dispatchers.Main) {
-                init(preferences)
+                init()
             }
         }
 
@@ -157,7 +168,7 @@ class HomeViewModel
         ) = viewModelScope.launch(ExceptionHandler() + Dispatchers.IO) {
             favoriteWatchManager.setFavorite(itemId, favorite)
             withContext(Dispatchers.Main) {
-                init(preferences)
+                init()
             }
         }
 
