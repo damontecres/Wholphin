@@ -1,10 +1,10 @@
 package com.github.damontecres.wholphin.ui.slideshow
 
+import androidx.annotation.OptIn
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.runtime.Composable
@@ -12,8 +12,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.media3.common.Player
+import androidx.media3.common.util.UnstableApi
 import androidx.media3.ui.compose.state.rememberPlayPauseButtonState
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
@@ -21,8 +24,10 @@ import com.github.damontecres.wholphin.ui.components.OverviewText
 import com.github.damontecres.wholphin.ui.components.QuickDetails
 import com.github.damontecres.wholphin.ui.components.StreamLabel
 import com.github.damontecres.wholphin.ui.components.VideoStreamDetails
+import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import org.jellyfin.sdk.model.api.MediaType
 
+@OptIn(UnstableApi::class)
 @Composable
 fun ImageDetailsHeader(
     slideshowEnabled: Boolean,
@@ -47,18 +52,23 @@ fun ImageDetailsHeader(
         verticalArrangement = Arrangement.spacedBy(8.dp),
         modifier =
             modifier
-                .fillMaxWidth()
-                .height(440.dp)
                 .bringIntoViewRequester(bringIntoViewRequester),
     ) {
-        // Title
-        Text(
-            text = image.image.title ?: "",
-//                        color = MaterialTheme.colorScheme.onBackground,
-            color = MaterialTheme.colorScheme.onSurface,
-            style = MaterialTheme.typography.displayMedium,
-        )
-        QuickDetails(image.image.ui.quickDetails, null)
+        image.image.title?.let {
+            Text(
+                text = it,
+                style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.SemiBold),
+                color = MaterialTheme.colorScheme.onBackground,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.fillMaxWidth(.75f),
+            )
+        }
+        if (image.image.ui.quickDetails
+                .isNotNullOrBlank()
+        ) {
+            QuickDetails(image.image.ui.quickDetails, null)
+        }
         Row(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {

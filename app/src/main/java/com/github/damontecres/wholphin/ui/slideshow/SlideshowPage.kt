@@ -15,6 +15,7 @@ import androidx.compose.foundation.gestures.rememberTransformableState
 import androidx.compose.foundation.gestures.transformable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -486,12 +487,13 @@ fun SlideshowPage(
             showOverlay,
             enter = slideInVertically { it },
             exit = slideOutVertically { it },
+            modifier = Modifier.align(Alignment.BottomStart),
         ) {
             imageState?.let { imageState ->
                 ImageOverlay(
                     modifier =
                         contentModifier
-                            .fillMaxSize()
+                            .fillMaxWidth()
                             .background(AppColors.TransparentBlack50),
                     onDismiss = { showOverlay = false },
                     player = player,

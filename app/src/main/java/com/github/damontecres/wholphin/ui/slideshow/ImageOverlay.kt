@@ -2,8 +2,7 @@ package com.github.damontecres.wholphin.ui.slideshow
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -110,10 +109,10 @@ fun ImageOverlay(
                 start = horizontalPadding,
                 end = horizontalPadding,
                 top = 16.dp,
-                bottom = 135.dp,
+                bottom = 16.dp,
             ),
         verticalArrangement = Arrangement.spacedBy(8.dp),
-        modifier = modifier.fillMaxSize(),
+        modifier = modifier,
     ) {
         item {
             ImageDetailsHeader(
@@ -131,16 +130,7 @@ fun ImageOverlay(
                 onRotate = onRotate,
                 onReset = onReset,
                 onShowFilterDialogClick = onShowFilterDialogClick,
-                modifier = Modifier,
-            )
-        }
-        val startPadding = 24.dp
-        val bottomPadding = 16.dp
-
-        item {
-            ImageDetailsFooter(
-                image,
-                Modifier.padding(start = startPadding, bottom = bottomPadding, top = 24.dp),
+                modifier = Modifier.fillMaxWidth(),
             )
         }
     }
