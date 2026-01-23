@@ -36,6 +36,8 @@ enum class PreferenceScreenOption {
     ADVANCED,
     USER_INTERFACE,
     SUBTITLES,
+    EXO_PLAYER,
+    MPV,
     ;
 
     companion object {
