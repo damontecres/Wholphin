@@ -83,9 +83,14 @@ class HomeViewModel
                 }
 
                 serverRepository.currentUserDto.value?.let { userDto ->
-                    // Try to fetch custom sections from the plugin first
-                    Timber.d("HomeViewModel: Attempting to fetch custom sections for user ${userDto.id}")
-                    val customSections = homeScreenSectionsService.getCustomSections(userDto.id)
+                    // Try to fetch custom sections from the plugin first (if enabled)
+                    val enableCustomHomeRows = preferences.appPreferences.interfacePreferences.enableCustomHomeRows
+                    Timber.d("HomeViewModel: Custom home rows enabled=$enableCustomHomeRows")
+                    val customSections = if (enableCustomHomeRows) {
+                        homeScreenSectionsService.getCustomSections(userDto.id)
+                    } else {
+                        null
+                    }
                     
                     if (customSections != null) {
                         // Plugin sections are available, use them

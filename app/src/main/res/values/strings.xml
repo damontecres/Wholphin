@@ -164,6 +164,7 @@
     <string name="play_with_transcoding">Play with transcoding</string>
     <string name="media_information">Media Information</string>
     <string name="show_clock">Show Clock</string>
+    <string name="custom_home_rows">Custom Home Rows</string>
     <string name="aired_episode_order">Aired Episode Order</string>
     <string name="create_playlist">Create new playlist</string>
     <string name="add_to_playlist">Add to playlist</string>

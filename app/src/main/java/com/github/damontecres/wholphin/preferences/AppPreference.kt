@@ -682,6 +682,18 @@ sealed interface AppPreference<Pref, T> {
                 summaryOff = R.string.disabled,
             )
 
+        val CustomHomeRows =
+            AppSwitchPreference<AppPreferences>(
+                title = R.string.custom_home_rows,
+                defaultValue = false,
+                getter = { it.interfacePreferences.enableCustomHomeRows },
+                setter = { prefs, value ->
+                    prefs.updateInterfacePreferences { enableCustomHomeRows = value }
+                },
+                summaryOn = R.string.enabled,
+                summaryOff = R.string.disabled,
+            )
+
         val BackdropStylePref =
             AppChoicePreference<AppPreferences, BackdropStyle>(
                 title = R.string.backdrop_display,
@@ -968,6 +980,7 @@ val advancedPreferences =
                         AppPreference.ShowClock,
                         // Temporarily disabled, see https://github.com/damontecres/Wholphin/pull/127#issuecomment-3478058418
 //                    AppPreference.NavDrawerSwitchOnFocus,
+                        AppPreference.CustomHomeRows,
                         AppPreference.ControllerTimeout,
                         AppPreference.BackdropStylePref,
                     ),
