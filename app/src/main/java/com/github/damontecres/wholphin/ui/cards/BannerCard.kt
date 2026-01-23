@@ -60,6 +60,8 @@ fun BannerCard(
     cardHeight: Dp = 120.dp,
     aspectRatio: Float = AspectRatios.WIDE,
     interactionSource: MutableInteractionSource? = null,
+    imageType: ImageType = ImageType.PRIMARY,
+    imageContentScale: ContentScale = ContentScale.FillBounds,
 ) {
     val imageUrlService = LocalImageUrlService.current
     val density = LocalDensity.current
@@ -74,11 +76,11 @@ fun BannerCard(
             }
         }
     val imageUrl =
-        remember(item, fillHeight) {
+        remember(item, fillHeight, imageType) {
             if (item != null) {
                 imageUrlService.getItemImageUrl(
                     item,
-                    ImageType.PRIMARY,
+                    imageType,
                     fillWidth = null,
                     fillHeight = fillHeight,
                 )
@@ -107,7 +109,7 @@ fun BannerCard(
                 AsyncImage(
                     model = imageUrl,
                     contentDescription = null,
-                    contentScale = ContentScale.FillBounds,
+                    contentScale = imageContentScale,
                     onError = { imageError = true },
                     modifier = Modifier.fillMaxSize(),
                 )

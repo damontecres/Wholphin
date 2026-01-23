@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -26,6 +25,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.tv.material3.Icon
+import androidx.tv.material3.ListItem
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import androidx.tv.material3.surfaceColorAtElevation
@@ -44,6 +44,7 @@ enum class MoveDirection {
 @Composable
 fun HomePageRowList(
     state: HomePageSettingsState,
+    onClick: (Int, HomeRowConfigDisplay) -> Unit,
     onClickAdd: () -> Unit,
     onClickMove: (MoveDirection, Int) -> Unit,
     onClickDelete: (Int) -> Unit,
@@ -66,6 +67,7 @@ fun HomePageRowList(
                     deleteAllowed = row.config !is HomeRowConfig.ContinueWatching,
                     onClickMove = { onClickMove.invoke(it, index) },
                     onClickDelete = { onClickDelete.invoke(index) },
+                    onClick = { onClick.invoke(index, row) },
                     modifier =
                         Modifier
                             .fillMaxWidth()
@@ -92,6 +94,7 @@ fun HomeRowConfigContent(
     moveUpAllowed: Boolean,
     moveDownAllowed: Boolean,
     deleteAllowed: Boolean,
+    onClick: () -> Unit,
     onClickMove: (MoveDirection) -> Unit,
     onClickDelete: () -> Unit,
     modifier: Modifier,
@@ -111,15 +114,18 @@ fun HomeRowConfigContent(
                         shape = RoundedCornerShape(8.dp),
                     ),
         ) {
-            Text(
-                text = config.title,
-                color = MaterialTheme.colorScheme.onSurface,
-                style = MaterialTheme.typography.titleMedium,
-                overflow = TextOverflow.Ellipsis,
-                modifier =
-                    Modifier
-                        .weight(1f)
-                        .padding(start = 4.dp),
+            ListItem(
+                selected = false,
+                headlineContent = {
+                    Text(
+                        text = config.title,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier =
+                        Modifier,
+                    )
+                },
+                onClick = onClick,
+                modifier = Modifier.weight(1f),
             )
             Row(
                 horizontalArrangement = Arrangement.spacedBy(4.dp),

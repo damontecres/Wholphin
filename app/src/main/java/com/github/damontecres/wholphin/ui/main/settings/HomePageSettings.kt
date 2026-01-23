@@ -159,6 +159,7 @@ class HomePageSettingsViewModel
                                                     HomeRowLoadingState.Success(
                                                         title = context.getString(R.string.continue_watching),
                                                         items = items,
+                                                        viewOptions = row.viewOptions,
                                                     ),
                                                 )
                                             } else {
@@ -167,6 +168,7 @@ class HomePageSettingsViewModel
                                                         HomeRowLoadingState.Success(
                                                             title = context.getString(R.string.continue_watching),
                                                             items = resume,
+                                                            viewOptions = row.viewOptions,
                                                         ),
                                                     )
                                                 }
@@ -175,6 +177,7 @@ class HomePageSettingsViewModel
                                                         HomeRowLoadingState.Success(
                                                             title = context.getString(R.string.next_up),
                                                             items = nextUp,
+                                                            viewOptions = row.viewOptions,
                                                         ),
                                                     )
                                                 }
@@ -202,7 +205,13 @@ class HomePageSettingsViewModel
                                     val title =
                                         name?.let { context.getString(R.string.genres_in, it) }
                                             ?: context.getString(R.string.genres)
-                                    listOf(HomeRowLoadingState.Success(title, items))
+                                    listOf(
+                                        HomeRowLoadingState.Success(
+                                            title,
+                                            items,
+                                            viewOptions = row.viewOptions,
+                                        ),
+                                    )
                                 }
 
                                 is HomeRowConfig.RecentlyAdded -> {
@@ -222,7 +231,17 @@ class HomePageSettingsViewModel
                                             limit = limit,
                                             isPlayed = null, // Server will handle user's preference
                                         )
-                                    latestNextUpService.loadLatest(listOf(LatestData(title, request)))
+                                    latestNextUpService
+                                        .loadLatest(listOf(LatestData(title, request)))
+                                        .let {
+                                            it.map {
+                                                if (it is HomeRowLoadingState.Success) {
+                                                    it.copy(viewOptions = row.viewOptions)
+                                                } else {
+                                                    it
+                                                }
+                                            }
+                                        }
                                 }
 
                                 is HomeRowConfig.RecentlyReleased -> {
@@ -342,6 +361,39 @@ class HomePageSettingsViewModel
                 fetchRowData()
             }
         }
+
+        fun updateViewOptions(
+            rowId: UUID,
+            viewOptions: HomeRowViewOptions,
+        ) {
+            viewModelScope.launchIO {
+                _state.update {
+                    val index = state.value.rows.indexOfFirst { it.config.id == rowId }
+                    val newRowConfig =
+                        state.value.rows[index]
+                            .config
+                            .updateViewOptions(viewOptions)
+                    val newRow = state.value.rows[index].copy(config = newRowConfig)
+                    it.copy(
+                        rows =
+                            it.rows.toMutableList().apply {
+                                set(index, newRow)
+                            },
+                        rowData =
+                            it.rowData.toMutableList().apply {
+                                val row = it.rowData[index]
+                                val newRow =
+                                    if (row is HomeRowLoadingState.Success) {
+                                        row.copy(viewOptions = viewOptions)
+                                    } else {
+                                        row
+                                    }
+                                set(index, newRow)
+                            },
+                    )
+                }
+            }
+        }
     }
 
 data class HomePageSettingsState(
@@ -410,6 +462,9 @@ fun HomePageSettings(
                         onClickAdd = { destination = HomePageSettingsDestination.ChooseLibrary },
                         onClickMove = viewModel::moveRow,
                         onClickDelete = viewModel::deleteRow,
+                        onClick = { index, row ->
+                            destination = HomePageSettingsDestination.RowSettings(row.config.id)
+                        },
                         modifier = destModifier,
                     )
                 }
@@ -434,7 +489,17 @@ fun HomePageSettings(
                 }
 
                 is HomePageSettingsDestination.RowSettings -> {
-                    TODO()
+                    val row =
+                        state.rows
+                            .first { it.config.id == dest.rowId }
+                    HomePageRowSettings(
+                        title = row.title,
+                        viewOptions = row.config.viewOptions,
+                        onViewOptionsChange = {
+                            viewModel.updateViewOptions(dest.rowId, it)
+                        },
+                        modifier = destModifier,
+                    )
                 }
             }
         }

@@ -1,6 +1,6 @@
 package com.github.damontecres.wholphin.ui.main.settings
 
-import com.github.damontecres.wholphin.data.model.HomeRowConfigDisplay
+import java.util.UUID
 
 sealed interface HomePageSettingsDestination {
     data object RowList : HomePageSettingsDestination
@@ -12,6 +12,6 @@ sealed interface HomePageSettingsDestination {
     ) : HomePageSettingsDestination
 
     data class RowSettings(
-        val row: HomeRowConfigDisplay,
+        val rowId: UUID,
     ) : HomePageSettingsDestination
 }

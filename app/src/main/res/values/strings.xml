@@ -465,6 +465,7 @@
     <string name="add_row">Add row</string>
     <string name="genres_in">Genres in %1$s</string>
     <string name="recently_released_in">Recently released in %1$s</string>
+    <string name="height">Height</string>
 
     <string-array name="theme_song_volume">
         <item>Disabled</item>

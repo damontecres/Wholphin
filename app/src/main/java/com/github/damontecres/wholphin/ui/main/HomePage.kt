@@ -46,7 +46,6 @@ import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.preferences.UserPreferences
-import com.github.damontecres.wholphin.ui.AspectRatios
 import com.github.damontecres.wholphin.ui.Cards
 import com.github.damontecres.wholphin.ui.cards.BannerCard
 import com.github.damontecres.wholphin.ui.cards.ItemRow
@@ -67,6 +66,7 @@ import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.playback.isPlayKeyUp
 import com.github.damontecres.wholphin.ui.playback.playable
+import com.github.damontecres.wholphin.ui.playback.scale
 import com.github.damontecres.wholphin.ui.rememberPosition
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.HomeRowLoadingState
@@ -308,6 +308,7 @@ fun HomePageContent(
 
                         is HomeRowLoadingState.Success -> {
                             if (row.items.isNotEmpty()) {
+                                val viewOptions = row.viewOptions
                                 ItemRow(
                                     title = row.title,
                                     items = row.items,
@@ -323,11 +324,14 @@ fun HomePageContent(
                                             .focusGroup()
                                             .focusRequester(rowFocusRequesters[rowIndex])
                                             .animateItem(),
+                                    horizontalPadding = viewOptions.spacing.dp,
                                     cardContent = { index, item, cardModifier, onClick, onLongClick ->
                                         BannerCard(
                                             name = item?.data?.seriesName ?: item?.name,
                                             item = item,
-                                            aspectRatio = AspectRatios.TALL,
+                                            aspectRatio = viewOptions.aspectRatio.ratio,
+                                            imageType = viewOptions.imageType.imageType,
+                                            imageContentScale = viewOptions.contentScale.scale,
                                             cornerText = item?.ui?.episdodeUnplayedCornerText,
                                             played = item?.data?.userData?.played ?: false,
                                             favorite = item?.favorite ?: false,
@@ -366,7 +370,7 @@ fun HomePageContent(
                                                         return@onKeyEvent false
                                                     },
                                             interactionSource = null,
-                                            cardHeight = Cards.height2x3,
+                                            cardHeight = viewOptions.heightDp.dp,
                                         )
                                     },
                                 )
