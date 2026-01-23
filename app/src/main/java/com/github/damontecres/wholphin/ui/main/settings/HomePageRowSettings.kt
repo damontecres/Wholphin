@@ -21,6 +21,7 @@ fun HomePageRowSettings(
     title: String,
     viewOptions: HomeRowViewOptions,
     onViewOptionsChange: (HomeRowViewOptions) -> Unit,
+    onApplyApplyAll: () -> Unit,
     modifier: Modifier = Modifier,
     defaultViewOptions: HomeRowViewOptions = HomeRowViewOptions(),
 ) {
@@ -46,6 +47,8 @@ fun HomePageRowSettings(
                     onClickPreference = { pref ->
                         if (pref == HomeRowViewOptions.ViewOptionsReset) {
                             onViewOptionsChange.invoke(defaultViewOptions)
+                        } else if (pref == HomeRowViewOptions.ViewOptionsApplyAll) {
+                            onApplyApplyAll.invoke()
                         }
                     },
                     modifier = Modifier.background(MaterialTheme.colorScheme.surfaceColorAtElevation(5.dp)),

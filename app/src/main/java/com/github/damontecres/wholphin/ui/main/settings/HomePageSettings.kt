@@ -394,6 +394,21 @@ class HomePageSettingsViewModel
                 }
             }
         }
+
+        fun updateViewOptionsForAll(viewOptions: HomeRowViewOptions) {
+            _state.update {
+                it.copy(
+                    rowData =
+                        it.rowData.toMutableList().map { row ->
+                            if (row is HomeRowLoadingState.Success) {
+                                row.copy(viewOptions = viewOptions)
+                            } else {
+                                row
+                            }
+                        },
+                )
+            }
+        }
     }
 
 data class HomePageSettingsState(
@@ -497,6 +512,9 @@ fun HomePageSettings(
                         viewOptions = row.config.viewOptions,
                         onViewOptionsChange = {
                             viewModel.updateViewOptions(dest.rowId, it)
+                        },
+                        onApplyApplyAll = {
+                            viewModel.updateViewOptionsForAll(row.config.viewOptions)
                         },
                         modifier = destModifier,
                     )

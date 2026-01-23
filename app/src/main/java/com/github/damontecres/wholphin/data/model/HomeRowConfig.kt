@@ -81,7 +81,7 @@ data class HomeRowViewOptions(
             AppSliderPreference<HomeRowViewOptions>(
                 title = R.string.height,
                 defaultValue = Cards.HEIGHT_2X3_DP.toLong(),
-                min = Cards.HEIGHT_2X3_DP / 2L,
+                min = 64L,
                 max = Cards.HEIGHT_2X3_DP + 64L,
                 interval = 4,
                 getter = { it.heightDp.toLong() },
@@ -154,6 +154,11 @@ data class HomeRowViewOptions(
                 valueToIndex = { it.ordinal },
             )
 
+        val ViewOptionsApplyAll =
+            AppClickablePreference<ViewOptions>(
+                title = R.string.apply_all_rows,
+            )
+
         val ViewOptionsReset =
             AppClickablePreference<ViewOptions>(
                 title = R.string.reset,
@@ -169,6 +174,7 @@ data class HomeRowViewOptions(
                 ViewOptionsColumns,
                 ViewOptionsSpacing,
                 ViewOptionsContentScale,
+                ViewOptionsApplyAll,
                 ViewOptionsReset,
             )
     }

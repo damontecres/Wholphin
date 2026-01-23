@@ -466,6 +466,7 @@
     <string name="genres_in">Genres in %1$s</string>
     <string name="recently_released_in">Recently released in %1$s</string>
     <string name="height">Height</string>
+    <string name="apply_all_rows">Apply to all rows</string>
 
     <string-array name="theme_song_volume">
         <item>Disabled</item>
