@@ -34,6 +34,7 @@ import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.main.HomePageContent
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.util.ApiRequestPager
+import com.github.damontecres.wholphin.util.HomeRow
 import com.github.damontecres.wholphin.util.HomeRowLoadingState
 import com.github.damontecres.wholphin.util.LoadingState
 import kotlinx.coroutines.Dispatchers
@@ -61,7 +62,16 @@ abstract class RecommendedViewModel(
         viewModelScope.launchIO {
             val row = rows.value.getOrNull(position.row)
             if (row is HomeRowLoadingState.Success) {
-                (row.items as? ApiRequestPager<*>)?.refreshItem(position.column, itemId)
+                when (row.data) {
+                    is HomeRow.BaseItemHomeRow -> {
+                        (row.data.items as? ApiRequestPager<*>)?.refreshItem(
+                            position.column,
+                            itemId,
+                        )
+                    }
+
+                    is HomeRow.GenreHowRow -> {}
+                }
             }
         }
     }

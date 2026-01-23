@@ -54,6 +54,7 @@ import com.github.damontecres.wholphin.ui.components.DialogParams
 import com.github.damontecres.wholphin.ui.components.DialogPopup
 import com.github.damontecres.wholphin.ui.components.EpisodeName
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
+import com.github.damontecres.wholphin.ui.components.Genre
 import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.components.QuickDetails
 import com.github.damontecres.wholphin.ui.data.AddPlaylistViewModel
@@ -69,6 +70,7 @@ import com.github.damontecres.wholphin.ui.playback.playable
 import com.github.damontecres.wholphin.ui.playback.scale
 import com.github.damontecres.wholphin.ui.rememberPosition
 import com.github.damontecres.wholphin.ui.tryRequestFocus
+import com.github.damontecres.wholphin.util.HomeRow
 import com.github.damontecres.wholphin.util.HomeRowLoadingState
 import com.github.damontecres.wholphin.util.LoadingState
 import kotlinx.coroutines.delay
@@ -182,6 +184,13 @@ fun HomePage(
     }
 }
 
+fun HomeRowLoadingState.getItem(index: Int) =
+    when (val data = (this as? HomeRowLoadingState.Success)?.data) {
+        is HomeRow.BaseItemHomeRow -> data.items.getOrNull(index)
+        is HomeRow.GenreHowRow -> data.items.getOrNull(index)
+        null -> null
+    }
+
 @Composable
 fun HomePageContent(
     homeRows: List<HomeRowLoadingState>,
@@ -198,7 +207,7 @@ fun HomePageContent(
     var position by rememberPosition()
     val focusedItem =
         position.let {
-            (homeRows.getOrNull(it.row) as? HomeRowLoadingState.Success)?.items?.getOrNull(it.column)
+            homeRows.getOrNull(it.row)?.getItem(it.column)
         }
 
     val rowFocusRequesters = remember(homeRows) { List(homeRows.size) { FocusRequester() } }
@@ -211,7 +220,7 @@ fun HomePageContent(
             } else {
                 // Waiting for the first home row to load, then focus on it
                 homeRows
-                    .indexOfFirst { it is HomeRowLoadingState.Success && it.items.isNotEmpty() }
+                    .indexOfFirst { it is HomeRowLoadingState.Success && it.data.isNotEmpty() }
                     .takeIf { it >= 0 }
                     ?.let {
                         rowFocusRequesters[it].tryRequestFocus()
@@ -228,17 +237,29 @@ fun HomePageContent(
         }
     }
     LaunchedEffect(onUpdateBackdrop, focusedItem) {
-        focusedItem?.let { onUpdateBackdrop.invoke(it) }
+        (focusedItem as? BaseItem)?.let { onUpdateBackdrop.invoke(it) }
     }
     Box(modifier = modifier) {
         Column(modifier = Modifier.fillMaxSize()) {
-            HomePageHeader(
-                item = focusedItem,
-                modifier =
-                    Modifier
-                        .padding(top = 48.dp, bottom = 32.dp, start = 32.dp)
-                        .fillMaxHeight(.33f),
-            )
+            val headerModifier =
+                Modifier
+                    .padding(top = 48.dp, bottom = 32.dp, start = 32.dp)
+                    .fillMaxHeight(.33f)
+            when (focusedItem) {
+                is BaseItem -> {
+                    HomePageHeader(
+                        item = focusedItem,
+                        modifier = headerModifier,
+                    )
+                }
+
+                is Genre -> {
+                    Text(
+                        text = focusedItem.name,
+                        modifier = headerModifier,
+                    )
+                }
+            }
             LazyColumn(
                 state = listState,
                 verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -307,73 +328,55 @@ fun HomePageContent(
                         }
 
                         is HomeRowLoadingState.Success -> {
-                            if (row.items.isNotEmpty()) {
-                                val viewOptions = row.viewOptions
-                                ItemRow(
-                                    title = row.title,
-                                    items = row.items,
-                                    onClickItem = { index, item ->
-                                        onClickItem.invoke(RowColumn(rowIndex, index), item)
-                                    },
-                                    onLongClickItem = { index, item ->
-                                        onLongClickItem.invoke(RowColumn(rowIndex, index), item)
-                                    },
-                                    modifier =
-                                        Modifier
-                                            .fillMaxWidth()
-                                            .focusGroup()
-                                            .focusRequester(rowFocusRequesters[rowIndex])
-                                            .animateItem(),
-                                    horizontalPadding = viewOptions.spacing.dp,
-                                    cardContent = { index, item, cardModifier, onClick, onLongClick ->
-                                        BannerCard(
-                                            name = item?.data?.seriesName ?: item?.name,
-                                            item = item,
-                                            aspectRatio = viewOptions.aspectRatio.ratio,
-                                            imageType = viewOptions.imageType.imageType,
-                                            imageContentScale = viewOptions.contentScale.scale,
-                                            cornerText = item?.ui?.episdodeUnplayedCornerText,
-                                            played = item?.data?.userData?.played ?: false,
-                                            favorite = item?.favorite ?: false,
-                                            playPercent =
-                                                item?.data?.userData?.playedPercentage
-                                                    ?: 0.0,
-                                            onClick = onClick,
-                                            onLongClick = onLongClick,
-                                            modifier =
-                                                cardModifier
-                                                    .onFocusChanged {
-                                                        if (it.isFocused) {
-                                                            position = RowColumn(rowIndex, index)
-//                                                            item?.let(onUpdateBackdrop)
-                                                        }
-                                                        if (it.isFocused && onFocusPosition != null) {
-                                                            val nonEmptyRowBefore =
-                                                                homeRows
-                                                                    .subList(0, rowIndex)
-                                                                    .count {
-                                                                        it is HomeRowLoadingState.Success && it.items.isEmpty()
-                                                                    }
-                                                            onFocusPosition.invoke(
-                                                                RowColumn(
-                                                                    rowIndex - nonEmptyRowBefore,
-                                                                    index,
-                                                                ),
-                                                            )
-                                                        }
-                                                    }.onKeyEvent {
-                                                        if (isPlayKeyUp(it) && item?.type?.playable == true) {
-                                                            Timber.v("Clicked play on ${item.id}")
-                                                            onClickPlay.invoke(position, item)
-                                                            return@onKeyEvent true
-                                                        }
-                                                        return@onKeyEvent false
-                                                    },
-                                            interactionSource = null,
-                                            cardHeight = viewOptions.heightDp.dp,
+                            if (row.data.isNotEmpty()) {
+                                when (row.data) {
+                                    is HomeRow.BaseItemHomeRow -> {
+                                        BaseItemRow(
+                                            row = row,
+                                            rowData = row.data,
+                                            onClickItem = { index, item ->
+                                                onClickItem.invoke(RowColumn(rowIndex, index), item)
+                                            },
+                                            onLongClickItem = { index, item ->
+                                                onLongClickItem.invoke(
+                                                    RowColumn(rowIndex, index),
+                                                    item,
+                                                )
+                                            },
+                                            onCardFocus = { index ->
+                                                position = RowColumn(rowIndex, index)
+                                                if (onFocusPosition != null) {
+                                                    val nonEmptyRowBefore =
+                                                        homeRows
+                                                            .subList(0, rowIndex)
+                                                            .count {
+                                                                it is HomeRowLoadingState.Success && it.data.isEmpty()
+                                                            }
+                                                    onFocusPosition.invoke(
+                                                        RowColumn(
+                                                            rowIndex - nonEmptyRowBefore,
+                                                            index,
+                                                        ),
+                                                    )
+                                                }
+                                            },
+                                            onClickPlay = { index ->
+                                                row.data.items.get(index)?.let {
+                                                    onClickPlay.invoke(
+                                                        RowColumn(rowIndex, index),
+                                                        it,
+                                                    )
+                                                }
+                                            },
+                                            modifier = Modifier,
+                                            focusRequester = rowFocusRequesters[rowIndex],
                                         )
-                                    },
-                                )
+                                    }
+
+                                    is HomeRow.GenreHowRow -> {
+                                        TODO()
+                                    }
+                                }
                             }
                         }
                     }
@@ -474,4 +477,63 @@ fun HomePageHeader(
             }
         }
     }
+}
+
+@Composable
+fun BaseItemRow(
+    row: HomeRowLoadingState.Success,
+    rowData: HomeRow.BaseItemHomeRow,
+    onClickItem: (Int, BaseItem) -> Unit,
+    onLongClickItem: (Int, BaseItem) -> Unit,
+    onClickPlay: (Int) -> Unit,
+    onCardFocus: (Int) -> Unit,
+    modifier: Modifier = Modifier,
+    focusRequester: FocusRequester = remember { FocusRequester() },
+) {
+    val viewOptions = row.viewOptions
+    ItemRow(
+        title = row.title,
+        items = rowData.items,
+        onClickItem = onClickItem,
+        onLongClickItem = onLongClickItem,
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .focusGroup()
+                .focusRequester(focusRequester),
+        horizontalPadding = viewOptions.spacing.dp,
+        cardContent = { index, item, cardModifier, onClick, onLongClick ->
+            BannerCard(
+                name = item?.data?.seriesName ?: item?.name,
+                item = item,
+                aspectRatio = viewOptions.aspectRatio.ratio,
+                imageType = viewOptions.imageType.imageType,
+                imageContentScale = viewOptions.contentScale.scale,
+                cornerText = item?.ui?.episdodeUnplayedCornerText,
+                played = item?.data?.userData?.played ?: false,
+                favorite = item?.favorite ?: false,
+                playPercent =
+                    item?.data?.userData?.playedPercentage
+                        ?: 0.0,
+                onClick = onClick,
+                onLongClick = onLongClick,
+                modifier =
+                    cardModifier
+                        .onFocusChanged {
+                            if (it.isFocused) {
+                                onCardFocus.invoke(index)
+                            }
+                        }.onKeyEvent {
+                            if (isPlayKeyUp(it) && item?.type?.playable == true) {
+                                Timber.v("Clicked play on ${item.id}")
+                                onClickPlay.invoke(index)
+                                return@onKeyEvent true
+                            }
+                            return@onKeyEvent false
+                        },
+                interactionSource = null,
+                cardHeight = viewOptions.heightDp.dp,
+            )
+        },
+    )
 }
