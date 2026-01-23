@@ -462,6 +462,8 @@
     <string name="request_4k">Request in 4K</string>
     <string name="software_decoding_av1">AV1 software decoding</string>
     <string name="upgrade_mpv_toast">MPV is now the default player except for HDR.\nYou can change this in settings.</string>
+    <string name="add_row">Add row</string>
+    <string name="genres_in">Genres in %1$s</string>
 
     <string-array name="theme_song_volume">
         <item>Disabled</item>

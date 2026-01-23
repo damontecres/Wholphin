@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
@@ -192,6 +193,7 @@ fun HomePageContent(
     modifier: Modifier = Modifier,
     onFocusPosition: ((RowColumn) -> Unit)? = null,
     loadingState: LoadingState? = null,
+    listState: LazyListState = rememberLazyListState(),
 ) {
     var position by rememberPosition()
     val focusedItem =
@@ -199,7 +201,6 @@ fun HomePageContent(
             (homeRows.getOrNull(it.row) as? HomeRowLoadingState.Success)?.items?.getOrNull(it.column)
         }
 
-    val listState = rememberLazyListState()
     val rowFocusRequesters = remember(homeRows) { List(homeRows.size) { FocusRequester() } }
     var firstFocused by remember { mutableStateOf(false) }
     LaunchedEffect(homeRows) {

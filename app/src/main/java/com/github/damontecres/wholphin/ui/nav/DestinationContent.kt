@@ -32,6 +32,7 @@ import com.github.damontecres.wholphin.ui.detail.series.SeriesOverview
 import com.github.damontecres.wholphin.ui.discover.DiscoverPage
 import com.github.damontecres.wholphin.ui.main.HomePage
 import com.github.damontecres.wholphin.ui.main.SearchPage
+import com.github.damontecres.wholphin.ui.main.settings.HomePageSettings
 import com.github.damontecres.wholphin.ui.playback.PlaybackPage
 import com.github.damontecres.wholphin.ui.preferences.PreferencesPage
 import com.github.damontecres.wholphin.ui.setup.InstallUpdatePage
@@ -58,6 +59,10 @@ fun DestinationContent(
                 preferences = preferences,
                 modifier = modifier,
             )
+        }
+
+        is Destination.HomeSettings -> {
+            HomePageSettings(modifier)
         }
 
         is Destination.PlaybackList,
