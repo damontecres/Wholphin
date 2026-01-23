@@ -23,3 +23,8 @@ data class SimpleMediaStream(
             )
     }
 }
+
+data class SimpleVideoStream(
+    val index: Int,
+    val hdr: Boolean,
+)
