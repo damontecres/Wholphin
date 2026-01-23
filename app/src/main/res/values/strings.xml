@@ -460,6 +460,7 @@
     <string name="upcoming_movies">Upcoming Movies</string>
     <string name="upcoming_tv">Upcoming TV Shows</string>
     <string name="request_4k">Request in 4K</string>
+    <string name="software_decoding_av1">AV1 software decoding</string>
 
     <string name="brightness">Brightness</string>
     <string name="contrast">Constrast</string>

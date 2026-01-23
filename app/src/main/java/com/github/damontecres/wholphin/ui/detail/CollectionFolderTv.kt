@@ -75,7 +75,6 @@ fun CollectionFolderTv(
 
     var showHeader by rememberSaveable { mutableStateOf(true) }
 
-    LaunchedEffect(Unit) { focusRequester.tryRequestFocus() }
     Column(
         modifier = modifier,
     ) {

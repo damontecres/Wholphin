@@ -46,6 +46,7 @@ message PlaybackOverrides{
   bool direct_play_pgs = 4;
   MediaExtensionStatus media_extensions_enabled = 5;
   bool direct_play_dolby_vision_e_l = 6;
+  bool decode_av1 = 7;
 }
 
 message PlaybackPreferences {
