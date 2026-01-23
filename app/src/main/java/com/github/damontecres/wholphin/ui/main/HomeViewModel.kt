@@ -12,6 +12,7 @@ import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.DatePlayedService
 import com.github.damontecres.wholphin.services.FavoriteWatchManager
+import com.github.damontecres.wholphin.services.HomeScreenSectionsService
 import com.github.damontecres.wholphin.services.LatestNextUpService
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.ui.launchIO
@@ -47,6 +48,7 @@ class HomeViewModel
         private val datePlayedService: DatePlayedService,
         private val latestNextUpService: LatestNextUpService,
         private val backdropService: BackdropService,
+        private val homeScreenSectionsService: HomeScreenSectionsService,
     ) : ViewModel() {
         val loadingState = MutableLiveData<LoadingState>(LoadingState.Pending)
         val refreshState = MutableLiveData<LoadingState>(LoadingState.Pending)
@@ -81,62 +83,93 @@ class HomeViewModel
                 }
 
                 serverRepository.currentUserDto.value?.let { userDto ->
-                    val includedIds =
-                        navDrawerItemRepository
-                            .getFilteredNavDrawerItems(navDrawerItemRepository.getNavDrawerItems())
-                            .filter { it is ServerNavDrawerItem }
-                            .map { (it as ServerNavDrawerItem).itemId }
-                    val resume = latestNextUpService.getResume(userDto.id, limit, true)
-                    val nextUp =
-                        latestNextUpService.getNextUp(
-                            userDto.id,
-                            limit,
-                            prefs.enableRewatchingNextUp,
-                            false,
-                        )
-                    val watching =
-                        buildList {
-                            if (prefs.combineContinueNext) {
-                                val items = latestNextUpService.buildCombined(resume, nextUp)
-                                add(
-                                    HomeRowLoadingState.Success(
-                                        title = context.getString(R.string.continue_watching),
-                                        items = items,
-                                    ),
-                                )
-                            } else {
-                                if (resume.isNotEmpty()) {
+                    // Try to fetch custom sections from the plugin first
+                    Timber.d("HomeViewModel: Attempting to fetch custom sections for user ${userDto.id}")
+                    val customSections = homeScreenSectionsService.getCustomSections(userDto.id)
+                    
+                    if (customSections != null) {
+                        // Plugin sections are available, use them
+                        // The plugin provides all sections in order, including continue watching and next up
+                        Timber.i("HomeViewModel: Using custom home screen sections from plugin (${customSections.size} sections)")
+                        withContext(Dispatchers.Main) {
+                            // Plugin sections replace the entire home screen
+                            // We'll put them all in latestRows and keep watchingRows empty
+                            // since the plugin manages the order and includes watching sections
+                            this@HomeViewModel.watchingRows.value = emptyList()
+                            if (reload) {
+                                this@HomeViewModel.latestRows.value = customSections.map { 
+                                    if (it is HomeRowLoadingState.Success) {
+                                        HomeRowLoadingState.Loading(it.title)
+                                    } else {
+                                        it
+                                    }
+                                }
+                            }
+                            loadingState.value = LoadingState.Success
+                        }
+                        refreshState.setValueOnMain(LoadingState.Success)
+                        // Sections are already loaded, just set them
+                        this@HomeViewModel.latestRows.setValueOnMain(customSections)
+                    } else {
+                        // Plugin not available, use default behavior
+                        Timber.d("HomeViewModel: Plugin not available, using default home screen sections")
+                        val includedIds =
+                            navDrawerItemRepository
+                                .getFilteredNavDrawerItems(navDrawerItemRepository.getNavDrawerItems())
+                                .filter { it is ServerNavDrawerItem }
+                                .map { (it as ServerNavDrawerItem).itemId }
+                        val resume = latestNextUpService.getResume(userDto.id, limit, true)
+                        val nextUp =
+                            latestNextUpService.getNextUp(
+                                userDto.id,
+                                limit,
+                                prefs.enableRewatchingNextUp,
+                                false,
+                            )
+                        val watching =
+                            buildList {
+                                if (prefs.combineContinueNext) {
+                                    val items = latestNextUpService.buildCombined(resume, nextUp)
                                     add(
                                         HomeRowLoadingState.Success(
                                             title = context.getString(R.string.continue_watching),
-                                            items = resume,
+                                            items = items,
                                         ),
                                     )
-                                }
-                                if (nextUp.isNotEmpty()) {
-                                    add(
-                                        HomeRowLoadingState.Success(
-                                            title = context.getString(R.string.next_up),
-                                            items = nextUp,
-                                        ),
-                                    )
+                                } else {
+                                    if (resume.isNotEmpty()) {
+                                        add(
+                                            HomeRowLoadingState.Success(
+                                                title = context.getString(R.string.continue_watching),
+                                                items = resume,
+                                            ),
+                                        )
+                                    }
+                                    if (nextUp.isNotEmpty()) {
+                                        add(
+                                            HomeRowLoadingState.Success(
+                                                title = context.getString(R.string.next_up),
+                                                items = nextUp,
+                                            ),
+                                        )
+                                    }
                                 }
                             }
-                        }
 
-                    val latest = latestNextUpService.getLatest(userDto, limit, includedIds)
-                    val pendingLatest = latest.map { HomeRowLoadingState.Loading(it.title) }
+                        val latest = latestNextUpService.getLatest(userDto, limit, includedIds)
+                        val pendingLatest = latest.map { HomeRowLoadingState.Loading(it.title) }
 
-                    withContext(Dispatchers.Main) {
-                        this@HomeViewModel.watchingRows.value = watching
-                        if (reload) {
-                            this@HomeViewModel.latestRows.value = pendingLatest
+                        withContext(Dispatchers.Main) {
+                            this@HomeViewModel.watchingRows.value = watching
+                            if (reload) {
+                                this@HomeViewModel.latestRows.value = pendingLatest
+                            }
+                            loadingState.value = LoadingState.Success
                         }
-                        loadingState.value = LoadingState.Success
+                        refreshState.setValueOnMain(LoadingState.Success)
+                        val loadedLatest = latestNextUpService.loadLatest(latest)
+                        this@HomeViewModel.latestRows.setValueOnMain(loadedLatest)
                     }
-                    refreshState.setValueOnMain(LoadingState.Success)
-                    val loadedLatest = latestNextUpService.loadLatest(latest)
-                    this@HomeViewModel.latestRows.setValueOnMain(loadedLatest)
                 }
             }
         }
