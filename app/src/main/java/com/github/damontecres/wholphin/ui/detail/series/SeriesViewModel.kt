@@ -13,7 +13,6 @@ import com.github.damontecres.wholphin.data.model.DiscoverItem
 import com.github.damontecres.wholphin.data.model.ItemPlayback
 import com.github.damontecres.wholphin.data.model.Person
 import com.github.damontecres.wholphin.data.model.Trailer
-import com.github.damontecres.wholphin.preferences.ThemeSongVolume
 import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.ExtrasService
 import com.github.damontecres.wholphin.services.FavoriteWatchManager
@@ -122,6 +121,7 @@ class SeriesViewModel
                 ) + Dispatchers.IO,
             ) {
                 Timber.v("Start")
+                addCloseable { themeSongPlayer.stop() }
                 val item = fetchItem(seriesId)
                 backdropService.submit(item)
 
@@ -222,15 +222,16 @@ class SeriesViewModel
             }
         }
 
-        /**
-         * If the series has a theme song & app settings allow, play it
-         */
-        fun maybePlayThemeSong(
-            seriesId: UUID,
-            playThemeSongs: ThemeSongVolume,
-        ) {
+        fun onResumePage() {
             viewModelScope.launchIO {
-                themeSongPlayer.playThemeFor(seriesId, playThemeSongs)
+                item.value?.let {
+                    backdropService.submit(it)
+                    val playThemeSongs =
+                        userPreferencesService
+                            .getCurrent()
+                            .appPreferences.interfacePreferences.playThemeSongs
+                    themeSongPlayer.playThemeFor(seriesId, playThemeSongs)
+                }
             }
         }
 
@@ -291,6 +292,7 @@ class SeriesViewModel
                     fields =
                         listOf(
                             ItemFields.MEDIA_SOURCES,
+                            ItemFields.MEDIA_SOURCE_COUNT,
                             ItemFields.MEDIA_STREAMS,
                             ItemFields.OVERVIEW,
                             ItemFields.CUSTOM_RATING,

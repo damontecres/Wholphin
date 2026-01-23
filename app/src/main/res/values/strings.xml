@@ -105,6 +105,24 @@
     <string name="search_and_download"><![CDATA[Search & Download]]></string>
     <string name="search">Search</string>
     <string name="searching">Searching…</string>
+    <string name="voice_search">Voice search</string>
+    <string name="voice_starting">Starting</string>
+    <string name="voice_search_prompt">Speak to search</string>
+    <string name="processing">Processing</string>
+    <string name="press_back_to_cancel">Press back to cancel</string>
+    <string name="voice_error_audio">Audio recording error</string>
+    <string name="voice_error_client">Voice recognition error</string>
+    <string name="voice_error_permissions">Microphone permission required</string>
+    <string name="voice_error_network">Network error</string>
+    <string name="voice_error_network_timeout">Network timeout</string>
+    <string name="voice_error_no_match">No speech recognized</string>
+    <string name="voice_error_busy">Voice recognition busy</string>
+    <string name="voice_error_server">Server error</string>
+    <string name="voice_error_speech_timeout">No speech detected</string>
+    <string name="voice_error_unknown">Unknown error</string>
+    <string name="voice_error_start_failed">Failed to start voice recognition</string>
+    <string name="voice_error_timeout">Voice recognition timed out</string>
+    <string name="retry">Retry</string>
     <string name="select_server">Select Server</string>
     <string name="select_user">Select User</string>
     <string name="show_debug_info">Show debug info</string>
@@ -434,6 +452,7 @@
     <string name="pending">Pending</string>
     <string name="seerr_integration">Seerr integration</string>
     <string name="remove_seerr_server">Remove Seerr Server</string>
+    <string name="seerr_server_added">Seerr server added</string>
     <string name="password">Password</string>
     <string name="username">Username</string>
     <string name="url">URL</string>
@@ -441,6 +460,8 @@
     <string name="upcoming_movies">Upcoming Movies</string>
     <string name="upcoming_tv">Upcoming TV Shows</string>
     <string name="request_4k">Request in 4K</string>
+    <string name="software_decoding_av1">AV1 software decoding</string>
+    <string name="upgrade_mpv_toast">MPV is now the default player except for HDR.\nYou can change this in settings.</string>
 
     <string-array name="theme_song_volume">
         <item>Disabled</item>
@@ -512,8 +533,15 @@
     </string-array>
 
     <string-array name="player_backend_options">
-        <item>ExoPlayer (default)</item>
-        <item>MPV (Experimental)</item>
+        <item>ExoPlayer</item>
+        <item>MPV</item>
+        <item>Prefer MPV</item>
+    </string-array>
+
+    <string-array name="player_backend_options_subtitles">
+        <item />
+        <item />
+        <item>Use ExoPlayer for HDR playback</item>
     </string-array>
 
     <string-array name="aspect_ratios">

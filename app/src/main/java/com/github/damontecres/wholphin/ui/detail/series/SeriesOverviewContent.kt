@@ -55,10 +55,10 @@ import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.components.SeriesName
 import com.github.damontecres.wholphin.ui.components.TabRow
-import com.github.damontecres.wholphin.ui.formatDateTime
 import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.logTab
 import com.github.damontecres.wholphin.ui.playback.isPlayKeyUp
+import com.github.damontecres.wholphin.ui.rememberInt
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.ui.util.rememberDelayedNestedScroll
 import kotlinx.coroutines.launch
@@ -196,7 +196,7 @@ fun SeriesOverviewContent(
                             }
                         }
                         val state = rememberLazyListState(position.episodeRowIndex)
-
+                        var epPosition by rememberInt(position.episodeRowIndex)
                         LazyRow(
                             state = state,
                             horizontalArrangement = Arrangement.spacedBy(16.dp),
@@ -204,7 +204,7 @@ fun SeriesOverviewContent(
                             modifier =
                                 Modifier
                                     .focusRestorer(firstItemFocusRequester)
-                                    .focusRequester(episodeRowFocusRequester)
+//                                    .focusRequester(episodeRowFocusRequester)
                                     .onFocusChanged {
                                         cardRowHasFocus = it.hasFocus
                                     },
@@ -214,9 +214,6 @@ fun SeriesOverviewContent(
                                 if (interactionSource.collectIsFocusedAsState().value) {
                                     onFocusEpisode.invoke(episodeIndex)
                                 }
-                                val cornerText =
-                                    episode?.data?.indexNumber?.let { "E$it" }
-                                        ?: episode?.data?.premiereDate?.let(::formatDateTime)
                                 BannerCard(
                                     name = episode?.name,
                                     item = episode,
@@ -225,24 +222,28 @@ fun SeriesOverviewContent(
                                             ?.aspectRatio
                                             ?.coerceAtLeast(AspectRatios.FOUR_THREE)
                                             ?: (AspectRatios.WIDE),
-                                    cornerText = cornerText,
+                                    cornerText = episode?.ui?.episodeCornerText,
                                     played = episode?.data?.userData?.played ?: false,
                                     playPercent =
                                         episode?.data?.userData?.playedPercentage
                                             ?: 0.0,
-                                    onClick = { if (episode != null) onClick.invoke(episode) },
+                                    onClick = {
+                                        epPosition = episodeIndex
+                                        if (episode != null) onClick.invoke(episode)
+                                    },
                                     onLongClick = {
-                                        if (episode != null) {
-                                            onLongClick.invoke(
-                                                episode,
-                                            )
-                                        }
+                                        epPosition = episodeIndex
+                                        if (episode != null) onLongClick.invoke(episode)
                                     },
                                     modifier =
                                         Modifier
                                             .ifElse(
                                                 episodeIndex == position.episodeRowIndex,
-                                                Modifier.focusRequester(firstItemFocusRequester),
+                                                Modifier
+                                                    .focusRequester(firstItemFocusRequester),
+                                            ).ifElse(
+                                                episodeIndex == epPosition,
+                                                Modifier.focusRequester(episodeRowFocusRequester),
                                             ).ifElse(
                                                 episodeIndex != position.episodeRowIndex,
                                                 Modifier

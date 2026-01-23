@@ -48,25 +48,24 @@ import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.SeerrUserConfig
 import com.github.damontecres.wholphin.services.TrailerService
 import com.github.damontecres.wholphin.ui.cards.DiscoverItemCard
+import com.github.damontecres.wholphin.ui.cards.DiscoverPersonRow
 import com.github.damontecres.wholphin.ui.cards.ItemRow
 import com.github.damontecres.wholphin.ui.components.DialogItem
 import com.github.damontecres.wholphin.ui.components.DialogParams
 import com.github.damontecres.wholphin.ui.components.DialogPopup
-import com.github.damontecres.wholphin.ui.components.DotSeparatedRow
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.GenreText
 import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.components.OverviewText
+import com.github.damontecres.wholphin.ui.components.QuickDetails
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialog
 import com.github.damontecres.wholphin.ui.data.ItemDetailsDialogInfo
-import com.github.damontecres.wholphin.ui.discover.DiscoverRow
-import com.github.damontecres.wholphin.ui.discover.DiscoverRowData
 import com.github.damontecres.wholphin.ui.letNotEmpty
+import com.github.damontecres.wholphin.ui.listToDotString
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.rememberInt
 import com.github.damontecres.wholphin.ui.roundMinutes
 import com.github.damontecres.wholphin.ui.tryRequestFocus
-import com.github.damontecres.wholphin.util.DataLoadingState
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
 import kotlinx.coroutines.launch
@@ -94,6 +93,7 @@ fun DiscoverSeriesDetails(
     val recommended by viewModel.recommended.observeAsState(listOf())
     val userConfig by viewModel.userConfig.collectAsState(null)
     val request4kEnabled by viewModel.request4kEnabled.collectAsState(false)
+    val canCancel by viewModel.canCancelRequest.collectAsState()
 
     var overviewDialog by remember { mutableStateOf<ItemDetailsDialogInfo?>(null) }
     var seasonDialog by remember { mutableStateOf<DialogParams?>(null) }
@@ -121,6 +121,7 @@ fun DiscoverSeriesDetails(
                     series = item,
                     userConfig = userConfig,
                     rating = rating,
+                    canCancel = canCancel,
                     seasons = seasons,
                     people = people,
                     similar = similar,
@@ -231,6 +232,7 @@ fun DiscoverSeriesDetailsContent(
     userConfig: SeerrUserConfig?,
     series: TvDetails,
     rating: DiscoverRating?,
+    canCancel: Boolean,
     seasons: List<Season>,
     similar: List<DiscoverItem>,
     recommended: List<DiscoverItem>,
@@ -291,15 +293,6 @@ fun DiscoverSeriesDetailsContent(
                                     .fillMaxWidth()
                                     .padding(top = 32.dp, bottom = 16.dp),
                         )
-                        val canCancel =
-                            remember(series, userConfig) {
-                                (
-                                    // User requested this
-                                    userConfig.hasPermission(SeerrPermission.REQUEST) &&
-                                        series.mediaInfo?.requests?.any { it.requestedBy?.id == userConfig?.id } == true
-                                ) ||
-                                    userConfig.hasPermission(SeerrPermission.MANAGE_REQUESTS)
-                            }
                         ExpandableDiscoverButtons(
                             availability =
                                 SeerrAvailability.from(series.mediaInfo?.status)
@@ -358,22 +351,17 @@ fun DiscoverSeriesDetailsContent(
 //                }
                 if (people.isNotEmpty()) {
                     item {
-                        DiscoverRow(
-                            row =
-                                DiscoverRowData(
-                                    stringResource(R.string.people),
-                                    DataLoadingState.Success(people),
-                                ),
-                            onClickItem = { index: Int, item: DiscoverItem ->
+                        DiscoverPersonRow(
+                            people = people,
+                            onClick = {
                                 position = PEOPLE_ROW
-                                onClickPerson.invoke(item)
+                                onClickPerson.invoke(it)
                             },
-                            onLongClickItem = { index, person ->
+                            onLongClick = { index, person ->
                                 position = PEOPLE_ROW
                                 onLongClickPerson.invoke(index, person)
                             },
-                            onCardFocus = {},
-                            focusRequester = focusRequesters[PEOPLE_ROW],
+                            modifier = Modifier.focusRequester(focusRequesters[PEOPLE_ROW]),
                         )
                     }
                 }
@@ -485,16 +473,16 @@ fun DiscoverSeriesDetailsHeader(
                             ?.toString()
                             ?.let(::add)
                         // TODO
+                    }.let {
+                        listToDotString(
+                            it,
+                            rating?.audienceRating,
+                            rating?.criticRating?.toFloat(),
+                        )
                     }
                 }
 
-            DotSeparatedRow(
-                texts = details,
-                communityRating = rating?.audienceRating,
-                criticRating = rating?.criticRating?.toFloat(),
-                textStyle = MaterialTheme.typography.titleSmall,
-                modifier = Modifier,
-            )
+            QuickDetails(details, null)
             series.genres?.mapNotNull { it.name }?.letNotEmpty {
                 GenreText(it, Modifier.padding(bottom = padding))
             }

@@ -21,6 +21,7 @@ plugins {
 val isCI = if (System.getenv("CI") != null) System.getenv("CI").toBoolean() else false
 val shouldSign = isCI && System.getenv("KEY_ALIAS") != null
 val ffmpegModuleExists = project.file("libs/lib-decoder-ffmpeg-release.aar").exists()
+val av1ModuleExists = project.file("libs/lib-decoder-av1-release.aar").exists()
 
 val gitTags =
     providers
@@ -292,9 +293,13 @@ dependencies {
     if (ffmpegModuleExists || isCI) {
         implementation(files("libs/lib-decoder-ffmpeg-release.aar"))
     }
+    if (av1ModuleExists || isCI) {
+        implementation(files("libs/lib-decoder-av1-release.aar"))
+    }
 
     testImplementation(libs.mockk.android)
     testImplementation(libs.mockk.agent)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.androidx.core.testing)
+    testImplementation(libs.robolectric)
 }

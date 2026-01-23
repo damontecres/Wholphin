@@ -46,6 +46,8 @@ import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.SeerrAuthMethod
 import com.github.damontecres.wholphin.preferences.AppPreference
 import com.github.damontecres.wholphin.preferences.AppPreferences
+import com.github.damontecres.wholphin.preferences.ExoPlayerPreferences
+import com.github.damontecres.wholphin.preferences.MpvPreferences
 import com.github.damontecres.wholphin.preferences.PlayerBackend
 import com.github.damontecres.wholphin.preferences.advancedPreferences
 import com.github.damontecres.wholphin.preferences.basicPreferences
@@ -92,7 +94,7 @@ fun PreferencesContent(
     val navDrawerPins by viewModel.navDrawerPins.observeAsState(mapOf())
     var cacheUsage by remember { mutableStateOf(CacheUsage(0, 0, 0)) }
     val seerrIntegrationEnabled by viewModel.seerrEnabled.collectAsState(false)
-    var showSeerrServerDialog by remember { mutableStateOf(false) }
+    var seerrDialogMode by remember { mutableStateOf<SeerrDialogMode>(SeerrDialogMode.None) }
 
     LaunchedEffect(Unit) {
         viewModel.preferenceDataStore.data.collect {
@@ -125,6 +127,8 @@ fun PreferencesContent(
             PreferenceScreenOption.ADVANCED -> advancedPreferences
             PreferenceScreenOption.USER_INTERFACE -> uiPreferences
             PreferenceScreenOption.SUBTITLES -> SubtitleSettings.preferences
+            PreferenceScreenOption.EXO_PLAYER -> ExoPlayerPreferences
+            PreferenceScreenOption.MPV -> MpvPreferences
         }
     val screenTitle =
         when (preferenceScreenOption) {
@@ -132,6 +136,8 @@ fun PreferencesContent(
             PreferenceScreenOption.ADVANCED -> R.string.advanced_settings
             PreferenceScreenOption.USER_INTERFACE -> R.string.ui_interface
             PreferenceScreenOption.SUBTITLES -> R.string.subtitle_style
+            PreferenceScreenOption.EXO_PLAYER -> R.string.exoplayer_options
+            PreferenceScreenOption.MPV -> R.string.mpv_options
         }
 
     var visible by remember { mutableStateOf(false) }
@@ -393,7 +399,14 @@ fun PreferencesContent(
                             AppPreference.SeerrIntegration -> {
                                 ClickPreference(
                                     title = stringResource(pref.title),
-                                    onClick = { showSeerrServerDialog = true },
+                                    onClick = {
+                                        if (seerrIntegrationEnabled) {
+                                            seerrDialogMode = SeerrDialogMode.Remove
+                                        } else {
+                                            seerrVm.resetStatus()
+                                            seerrDialogMode = SeerrDialogMode.Add
+                                        }
+                                    },
                                     modifier = Modifier,
                                     summary =
                                         if (seerrIntegrationEnabled) {
@@ -465,25 +478,29 @@ fun PreferencesContent(
                 )
             }
         }
-        if (showSeerrServerDialog) {
-            val status by seerrVm.serverConnectionStatus.collectAsState(LoadingState.Pending)
-            LaunchedEffect(status) {
-                if (status == LoadingState.Success) {
-                    showSeerrServerDialog = false
-                }
-            }
-            if (seerrIntegrationEnabled) {
+        when (seerrDialogMode) {
+            SeerrDialogMode.Remove -> {
                 ConfirmDialog(
                     title = stringResource(R.string.remove_seerr_server),
                     body = "",
-                    onCancel = { showSeerrServerDialog = false },
+                    onCancel = { seerrDialogMode = SeerrDialogMode.None },
                     onConfirm = {
                         seerrVm.removeServer()
-                        showSeerrServerDialog = false
+                        seerrDialogMode = SeerrDialogMode.None
                     },
                 )
-            } else {
+            }
+
+            SeerrDialogMode.Add -> {
                 val currentUser by seerrVm.currentUser.observeAsState()
+                val status by seerrVm.serverConnectionStatus.collectAsState(LoadingState.Pending)
+                val serverAddedMessage = stringResource(R.string.seerr_server_added)
+                LaunchedEffect(status) {
+                    if (status == LoadingState.Success) {
+                        Toast.makeText(context, serverAddedMessage, Toast.LENGTH_SHORT).show()
+                        seerrDialogMode = SeerrDialogMode.None
+                    }
+                }
                 AddSeerServerDialog(
                     currentUsername = currentUser?.name,
                     status = status,
@@ -494,9 +511,11 @@ fun PreferencesContent(
                             seerrVm.submitServer(url, username ?: "", passwordOrApiKey, method)
                         }
                     },
-                    onDismissRequest = { showSeerrServerDialog = false },
+                    onDismissRequest = { seerrDialogMode = SeerrDialogMode.None },
                 )
             }
+
+            SeerrDialogMode.None -> {}
         }
     }
 }
@@ -514,6 +533,8 @@ fun PreferencesPage(
             PreferenceScreenOption.BASIC,
             PreferenceScreenOption.ADVANCED,
             PreferenceScreenOption.USER_INTERFACE,
+            PreferenceScreenOption.EXO_PLAYER,
+            PreferenceScreenOption.MPV,
             -> {
                 PreferencesContent(
                     initialPreferences,
@@ -539,3 +560,11 @@ data class CacheUsage(
     val imageMemoryMax: Long,
     val imageDiskUsed: Long,
 )
+
+private sealed class SeerrDialogMode {
+    data object None : SeerrDialogMode()
+
+    data object Add : SeerrDialogMode()
+
+    data object Remove : SeerrDialogMode()
+}

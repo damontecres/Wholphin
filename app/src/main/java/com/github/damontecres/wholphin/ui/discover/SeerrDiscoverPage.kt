@@ -42,8 +42,8 @@ import com.github.damontecres.wholphin.ui.cards.DiscoverItemCard
 import com.github.damontecres.wholphin.ui.cards.ItemRow
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.data.RowColumn
-import com.github.damontecres.wholphin.ui.detail.discover.DiscoverQuickDetails
 import com.github.damontecres.wholphin.ui.launchIO
+import com.github.damontecres.wholphin.ui.listToDotString
 import com.github.damontecres.wholphin.ui.main.HomePageHeader
 import com.github.damontecres.wholphin.ui.rememberPosition
 import com.github.damontecres.wholphin.ui.tryRequestFocus
@@ -197,7 +197,7 @@ fun SeerrDiscoverPage(
         listOf(state.trending, state.movies, state.tv, state.upcomingMovies, state.upcomingTv)
     val ratingMap by viewModel.rating.collectAsState()
 
-    val focusRequesters = remember(2) { List(rows.size) { FocusRequester() } }
+    val focusRequesters = remember(rows) { List(rows.size) { FocusRequester() } }
     var position by rememberPosition(0, -1)
     val focusedItem =
         remember(position) {
@@ -212,23 +212,38 @@ fun SeerrDiscoverPage(
     LaunchedEffect(state.trending) {
         if (!firstFocused && state.trending.items is DataLoadingState.Success<*>) {
             firstFocused = focusRequesters.getOrNull(0)?.tryRequestFocus("discover") == true
+        } else if (firstFocused) {
+            focusRequesters.getOrNull(position.row)?.tryRequestFocus()
         }
     }
 
     Column(
         modifier = modifier,
     ) {
+        val details =
+            remember(focusedItem, ratingMap) {
+                buildList {
+                    focusedItem
+                        ?.releaseDate
+                        ?.year
+                        ?.toString()
+                        ?.let(::add)
+                }.let {
+                    val rating = focusedItem?.id?.let { ratingMap[it] }
+                    listToDotString(
+                        it,
+                        rating?.audienceRating,
+                        rating?.criticRating?.toFloat(),
+                    )
+                }
+            }
         HomePageHeader(
             title = focusedItem?.title,
             subtitle = focusedItem?.subtitle,
             overview = focusedItem?.overview,
             overviewTwoLines = true,
-            quickDetails = {
-                DiscoverQuickDetails(
-                    item = focusedItem,
-                    rating = focusedItem?.id?.let { ratingMap[it] },
-                )
-            },
+            quickDetails = details,
+            timeRemaining = null,
             modifier =
                 Modifier
                     .padding(top = 24.dp, bottom = 16.dp, start = 32.dp)

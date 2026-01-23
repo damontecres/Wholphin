@@ -27,6 +27,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.isSpecified
 import androidx.compose.ui.unit.sp
 import androidx.tv.material3.Card
 import androidx.tv.material3.CardDefaults
@@ -40,7 +41,6 @@ import com.github.damontecres.wholphin.ui.AspectRatios
 import com.github.damontecres.wholphin.ui.Cards
 import com.github.damontecres.wholphin.ui.FontAwesome
 import com.github.damontecres.wholphin.ui.LocalImageUrlService
-import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import org.jellyfin.sdk.model.api.ImageType
 
 /**
@@ -63,17 +63,19 @@ fun BannerCard(
 ) {
     val imageUrlService = LocalImageUrlService.current
     val density = LocalDensity.current
+    val fillHeight =
+        remember(cardHeight) {
+            if (cardHeight.isSpecified) {
+                with(density) {
+                    cardHeight.roundToPx()
+                }
+            } else {
+                null
+            }
+        }
     val imageUrl =
-        remember(item, cardHeight) {
+        remember(item, fillHeight) {
             if (item != null) {
-                val fillHeight =
-                    if (cardHeight != Dp.Unspecified) {
-                        with(density) {
-                            cardHeight.roundToPx()
-                        }
-                    } else {
-                        null
-                    }
                 imageUrlService.getItemImageUrl(
                     item,
                     ImageType.PRIMARY,
@@ -101,7 +103,7 @@ fun BannerCard(
                     .fillMaxSize(),
 //                    .background(MaterialTheme.colorScheme.surfaceVariant),
         ) {
-            if (!imageError && imageUrl.isNotNullOrBlank()) {
+            if (!imageError && imageUrl != null) {
                 AsyncImage(
                     model = imageUrl,
                     contentDescription = null,
@@ -121,7 +123,7 @@ fun BannerCard(
                             .align(Alignment.Center),
                 )
             }
-            if (played || cornerText.isNotNullOrBlank()) {
+            if (played || cornerText != null) {
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(4.dp),
                     verticalAlignment = Alignment.CenterVertically,
@@ -133,7 +135,7 @@ fun BannerCard(
                     if (played && (playPercent <= 0 || playPercent >= 100)) {
                         WatchedIcon(Modifier.size(24.dp))
                     }
-                    if (cornerText.isNotNullOrBlank()) {
+                    if (cornerText != null) {
                         Box(
                             modifier =
                                 Modifier

@@ -22,10 +22,11 @@ import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.api.seerr.model.MovieDetails
 import com.github.damontecres.wholphin.data.model.DiscoverRating
 import com.github.damontecres.wholphin.preferences.UserPreferences
-import com.github.damontecres.wholphin.ui.components.DotSeparatedRow
 import com.github.damontecres.wholphin.ui.components.GenreText
 import com.github.damontecres.wholphin.ui.components.OverviewText
+import com.github.damontecres.wholphin.ui.components.QuickDetails
 import com.github.damontecres.wholphin.ui.letNotEmpty
+import com.github.damontecres.wholphin.ui.listToDotString
 import com.github.damontecres.wholphin.ui.roundMinutes
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import kotlinx.coroutines.launch
@@ -88,16 +89,16 @@ fun DiscoverMovieDetailsHeader(
                             ?.firstOrNull()
                             ?.certification
                             ?.let(::add)
+                    }.let {
+                        listToDotString(
+                            it,
+                            rating?.audienceRating,
+                            rating?.criticRating?.toFloat(),
+                        )
                     }
                 }
 
-            DotSeparatedRow(
-                texts = details,
-                communityRating = rating?.audienceRating,
-                criticRating = rating?.criticRating?.toFloat(),
-                textStyle = MaterialTheme.typography.titleSmall,
-                modifier = Modifier,
-            )
+            QuickDetails(details, null)
             movie.genres?.mapNotNull { it.name }?.letNotEmpty {
                 GenreText(it, Modifier.padding(bottom = padding))
             }

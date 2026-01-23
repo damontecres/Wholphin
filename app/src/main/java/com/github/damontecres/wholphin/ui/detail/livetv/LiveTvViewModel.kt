@@ -1,7 +1,10 @@
 package com.github.damontecres.wholphin.ui.detail.livetv
 
 import android.content.Context
+import android.text.format.DateUtils
+import androidx.compose.runtime.Stable
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.datastore.core.DataStore
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -15,8 +18,10 @@ import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.ui.AppColors
 import com.github.damontecres.wholphin.ui.data.RowColumn
 import com.github.damontecres.wholphin.ui.detail.series.SeasonEpisode
+import com.github.damontecres.wholphin.ui.dot
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.launchIO
+import com.github.damontecres.wholphin.ui.roundMinutes
 import com.github.damontecres.wholphin.ui.setValueOnMain
 import com.github.damontecres.wholphin.ui.toServerString
 import com.github.damontecres.wholphin.util.ExceptionHandler
@@ -50,6 +55,7 @@ import org.jellyfin.sdk.model.api.request.GetLiveTvChannelsRequest
 import org.jellyfin.sdk.model.extensions.ticks
 import timber.log.Timber
 import java.time.LocalDateTime
+import java.time.ZoneId
 import java.time.temporal.ChronoUnit
 import java.util.UUID
 import javax.inject.Inject
@@ -58,6 +64,7 @@ import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
+import kotlin.time.toKotlinDuration
 
 const val MAX_HOURS = 48L
 
@@ -528,6 +535,7 @@ data class TvChannel(
     val imageUrl: String?,
 )
 
+@Stable
 data class TvProgram(
     val id: UUID,
     val channelId: UUID,
@@ -547,6 +555,49 @@ data class TvProgram(
     val officialRating: String? = null,
 ) {
     val isFake = category == ProgramCategory.FAKE
+
+    val quickDetails by lazy {
+        val now = LocalDateTime.now()
+        buildAnnotatedString {
+            val differentDay = start.toLocalDate() != now.toLocalDate()
+            val time =
+                DateUtils.formatDateRange(
+                    WholphinApplication.instance,
+                    start
+                        .atZone(ZoneId.systemDefault())
+                        .toInstant()
+                        .epochSecond * 1000,
+                    end
+                        .atZone(ZoneId.systemDefault())
+                        .toInstant()
+                        .epochSecond * 1000,
+                    DateUtils.FORMAT_SHOW_TIME or if (differentDay) DateUtils.FORMAT_SHOW_WEEKDAY else 0,
+                )
+            append(time)
+            dot()
+
+            if (!isFake) {
+                duration
+                    .roundMinutes
+                    .toString()
+                    .let(::append)
+                dot()
+                if (now.isAfter(start) && now.isBefore(end)) {
+                    java.time.Duration
+                        .between(now, end)
+                        .toKotlinDuration()
+                        .roundMinutes
+                        .let { append("$it left") }
+                    dot()
+                }
+                seasonEpisode?.let { "S${it.season} E${it.episode}" }?.let {
+                    append(it)
+                    dot()
+                }
+                officialRating?.let(::append)
+            }
+        }
+    }
 
     companion object {
         private val NO_DATA = WholphinApplication.instance.getString(R.string.no_data)

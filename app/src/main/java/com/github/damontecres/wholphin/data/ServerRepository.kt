@@ -142,8 +142,6 @@ class ServerRepository
                 } else {
                     val user = serverAndUsers.users.firstOrNull { it.id == userId }
                     if (user != null) {
-                        // TODO pin-related
-//                if (user != null && !user.hasPin) {
                         return changeUser(serverAndUsers.server, user)
                     }
                 }
