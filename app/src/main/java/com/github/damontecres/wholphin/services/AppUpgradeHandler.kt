@@ -16,6 +16,7 @@ import com.github.damontecres.wholphin.preferences.updateAdvancedPreferences
 import com.github.damontecres.wholphin.preferences.updateInterfacePreferences
 import com.github.damontecres.wholphin.preferences.updateLiveTvPreferences
 import com.github.damontecres.wholphin.preferences.updateMpvOptions
+import com.github.damontecres.wholphin.preferences.updatePhotoPreferences
 import com.github.damontecres.wholphin.preferences.updatePlaybackOverrides
 import com.github.damontecres.wholphin.preferences.updatePlaybackPreferences
 import com.github.damontecres.wholphin.preferences.updateSubtitlePreferences
@@ -208,5 +209,13 @@ suspend fun upgradeApp(
             it.updatePlaybackPreferences { playerBackend = PlayerBackend.PREFER_MPV }
         }
         showToast(context, context.getString(R.string.upgrade_mpv_toast), Toast.LENGTH_LONG)
+    }
+
+    if (previous.isEqualOrBefore(Version.fromString("0.4.0-2-g0"))) {
+        appPreferences.updateData {
+            it.updatePhotoPreferences {
+                slideshowDuration = AppPreference.SlideshowDuration.defaultValue
+            }
+        }
     }
 }
