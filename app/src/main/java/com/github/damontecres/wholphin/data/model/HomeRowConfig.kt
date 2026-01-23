@@ -13,29 +13,33 @@ import java.util.UUID
 
 @Serializable
 sealed class HomeRowConfig {
+    abstract val id: UUID
     abstract val viewOptions: HomeRowViewOptions
 
     @Serializable
     data class ContinueWatching(
+        override val id: UUID,
         val combined: Boolean,
         override val viewOptions: HomeRowViewOptions,
     ) : HomeRowConfig()
 
     @Serializable
     data class RecentlyAdded(
+        override val id: UUID,
         val parentId: UUID,
         override val viewOptions: HomeRowViewOptions,
     ) : HomeRowConfig()
 
     @Serializable
     data class RecentlyReleased(
+        override val id: UUID,
         val parentId: UUID,
         override val viewOptions: HomeRowViewOptions,
     ) : HomeRowConfig()
 
     @Serializable
     data class Genres(
-        val genreId: UUID,
+        override val id: UUID,
         val parentId: UUID,
         override val viewOptions: HomeRowViewOptions,
     ) : HomeRowConfig()

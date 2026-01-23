@@ -1,15 +1,18 @@
 package com.github.damontecres.wholphin.ui.main.settings
 
 import android.content.Context
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -96,7 +99,11 @@ class HomePageSettingsViewModel
                                     ?: context.getString(R.string.recently_added)
                             HomeRowConfigDisplay(
                                 title,
-                                HomeRowConfig.RecentlyAdded(id, HomeRowViewOptions()),
+                                HomeRowConfig.RecentlyAdded(
+                                    UUID.randomUUID(),
+                                    id,
+                                    HomeRowViewOptions(),
+                                ),
                             )
                         }
                 val rowConfig =
@@ -104,6 +111,7 @@ class HomePageSettingsViewModel
                         HomeRowConfigDisplay(
                             context.getString(R.string.continue_watching),
                             HomeRowConfig.ContinueWatching(
+                                UUID.randomUUID(),
                                 prefs.combineContinueNext,
                                 HomeRowViewOptions(),
                             ),
@@ -274,6 +282,66 @@ class HomePageSettingsViewModel
                 )
             }
         }
+
+        fun addRow(
+            library: Library,
+            rowType: LibraryRowType,
+        ) {
+            viewModelScope.launchIO {
+                val newRow =
+                    when (rowType) {
+                        LibraryRowType.RECENTLY_ADDED -> {
+                            val title =
+                                library.name.let { context.getString(R.string.recently_added_in, it) }
+                            HomeRowConfigDisplay(
+                                title,
+                                HomeRowConfig.RecentlyAdded(
+                                    UUID.randomUUID(),
+                                    library.itemId,
+                                    HomeRowViewOptions(),
+                                ),
+                            )
+                        }
+
+                        LibraryRowType.RECENTLY_RELEASED -> {
+                            val title =
+                                library.name.let {
+                                    context.getString(
+                                        R.string.recently_released_in,
+                                        it,
+                                    )
+                                }
+                            HomeRowConfigDisplay(
+                                title,
+                                HomeRowConfig.RecentlyReleased(
+                                    UUID.randomUUID(),
+                                    library.itemId,
+                                    HomeRowViewOptions(),
+                                ),
+                            )
+                        }
+
+                        LibraryRowType.GENRES -> {
+                            val title = library.name.let { context.getString(R.string.genres_in, it) }
+                            HomeRowConfigDisplay(
+                                title,
+                                HomeRowConfig.Genres(
+                                    UUID.randomUUID(),
+                                    library.itemId,
+                                    HomeRowViewOptions(),
+                                ),
+                            )
+                        }
+                    }
+                _state.update {
+                    it.copy(
+                        loading = LoadingState.Loading,
+                        rows = it.rows.toMutableList().apply { add(newRow) },
+                    )
+                }
+                fetchRowData()
+            }
+        }
     }
 
 data class HomePageSettingsState(
@@ -293,6 +361,7 @@ data class HomePageSettingsState(
     }
 }
 
+@Immutable
 data class Library(
     val itemId: UUID,
     val name: String,
@@ -309,10 +378,66 @@ fun HomePageSettings(
     val state by viewModel.state.collectAsState()
     val listState = rememberLazyListState()
     var destination by remember { mutableStateOf<HomePageSettingsDestination>(HomePageSettingsDestination.RowList) }
+
+    BackHandler(destination is HomePageSettingsDestination.ChooseRowType) {
+        destination = HomePageSettingsDestination.ChooseLibrary
+    }
+    BackHandler(destination is HomePageSettingsDestination.ChooseLibrary) {
+        destination = HomePageSettingsDestination.RowList
+    }
+    BackHandler(destination is HomePageSettingsDestination.RowSettings) {
+        destination = HomePageSettingsDestination.RowList
+    }
     Row(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         modifier = modifier,
     ) {
+        Box(
+            modifier =
+                Modifier
+                    .width(settingsWidth)
+                    .fillMaxHeight()
+                    .background(color = MaterialTheme.colorScheme.surface),
+        ) {
+            val destModifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(4.dp)
+            when (val dest = destination) {
+                HomePageSettingsDestination.RowList -> {
+                    HomePageRowList(
+                        state = state,
+                        onClickAdd = { destination = HomePageSettingsDestination.ChooseLibrary },
+                        onClickMove = viewModel::moveRow,
+                        onClickDelete = viewModel::deleteRow,
+                        modifier = destModifier,
+                    )
+                }
+
+                is HomePageSettingsDestination.ChooseLibrary -> {
+                    HomePageLibraryList(
+                        libraries = state.libraries,
+                        onClick = { destination = HomePageSettingsDestination.ChooseRowType(it) },
+                        modifier = destModifier,
+                    )
+                }
+
+                is HomePageSettingsDestination.ChooseRowType -> {
+                    HomePageLibraryRowTypeList(
+                        library = dest.library,
+                        onClick = {
+                            viewModel.addRow(dest.library, it)
+                            destination = HomePageSettingsDestination.RowList
+                        },
+                        modifier = destModifier,
+                    )
+                }
+
+                is HomePageSettingsDestination.RowSettings -> {
+                    TODO()
+                }
+            }
+        }
         HomePageContent(
             loadingState = state.loading,
             homeRows = state.rowData,
@@ -322,38 +447,10 @@ fun HomePageSettings(
             showClock = false,
             onUpdateBackdrop = viewModel::updateBackdrop,
             listState = listState,
-            modifier = Modifier.fillMaxHeight().weight(1f),
-        )
-        Box(
             modifier =
                 Modifier
-                    .width(settingsWidth)
                     .fillMaxHeight()
-                    .background(color = MaterialTheme.colorScheme.surface),
-        ) {
-            when (destination) {
-                HomePageSettingsDestination.RowList -> {
-                    HomePageRowList(
-                        state = state,
-                        onClickAdd = { destination = HomePageSettingsDestination.ChooseLibrary },
-                        onClickMove = viewModel::moveRow,
-                        onClickDelete = viewModel::deleteRow,
-                        modifier = Modifier.fillMaxSize(),
-                    )
-                }
-
-                is HomePageSettingsDestination.ChooseLibrary -> {
-                    TODO()
-                }
-
-                is HomePageSettingsDestination.ChooseRow -> {
-                    TODO()
-                }
-
-                is HomePageSettingsDestination.RowSettings -> {
-                    TODO()
-                }
-            }
-        }
+                    .weight(1f),
+        )
     }
 }

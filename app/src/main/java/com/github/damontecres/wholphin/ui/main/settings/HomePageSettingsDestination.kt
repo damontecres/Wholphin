@@ -7,7 +7,7 @@ sealed interface HomePageSettingsDestination {
 
     data object ChooseLibrary : HomePageSettingsDestination
 
-    data class ChooseRow(
+    data class ChooseRowType(
         val library: Library,
     ) : HomePageSettingsDestination
 

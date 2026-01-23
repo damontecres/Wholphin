@@ -4,7 +4,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -31,6 +30,7 @@ import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import androidx.tv.material3.surfaceColorAtElevation
 import com.github.damontecres.wholphin.R
+import com.github.damontecres.wholphin.data.model.HomeRowConfig
 import com.github.damontecres.wholphin.data.model.HomeRowConfigDisplay
 import com.github.damontecres.wholphin.ui.FontAwesome
 import com.github.damontecres.wholphin.ui.components.Button
@@ -52,18 +52,18 @@ fun HomePageRowList(
 ) {
     Column(modifier = modifier) {
         LazyColumn(
-            contentPadding = PaddingValues(8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
             modifier =
                 modifier
                     .fillMaxHeight()
                     .focusRestorer(firstFocus),
         ) {
-            itemsIndexed(state.rows) { index, row ->
+            itemsIndexed(state.rows, key = { _, row -> row.config.id }) { index, row ->
                 HomeRowConfigContent(
                     config = row,
                     moveUpAllowed = index > 0,
                     moveDownAllowed = index != state.rows.lastIndex,
+                    deleteAllowed = row.config !is HomeRowConfig.ContinueWatching,
                     onClickMove = { onClickMove.invoke(it, index) },
                     onClickDelete = { onClickDelete.invoke(index) },
                     modifier =
@@ -91,6 +91,7 @@ fun HomeRowConfigContent(
     config: HomeRowConfigDisplay,
     moveUpAllowed: Boolean,
     moveDownAllowed: Boolean,
+    deleteAllowed: Boolean,
     onClickMove: (MoveDirection) -> Unit,
     onClickDelete: () -> Unit,
     modifier: Modifier,
@@ -108,14 +109,17 @@ fun HomeRowConfigContent(
                     .background(
                         color = MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp),
                         shape = RoundedCornerShape(8.dp),
-                    ).padding(8.dp),
+                    ),
         ) {
             Text(
                 text = config.title,
                 color = MaterialTheme.colorScheme.onSurface,
                 style = MaterialTheme.typography.titleMedium,
                 overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.weight(1f),
+                modifier =
+                    Modifier
+                        .weight(1f)
+                        .padding(start = 4.dp),
             )
             Row(
                 horizontalArrangement = Arrangement.spacedBy(4.dp),
@@ -141,7 +145,7 @@ fun HomeRowConfigContent(
                 }
                 Button(
                     onClick = onClickDelete,
-                    enabled = true,
+                    enabled = deleteAllowed,
                 ) {
                     Icon(
                         imageVector = Icons.Default.Delete,
