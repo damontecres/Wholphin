@@ -338,7 +338,7 @@ fun SeriesDetailsContent(
         ) {
             LazyColumn(
                 contentPadding = PaddingValues(bottom = 80.dp),
-                verticalArrangement = Arrangement.spacedBy(0.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
                 modifier = Modifier,
             ) {
                 item {
@@ -355,7 +355,7 @@ fun SeriesDetailsContent(
                         horizontalArrangement = Arrangement.spacedBy(16.dp),
                         modifier =
                             Modifier
-                                .padding(start = 16.dp)
+                                .padding(start = 8.dp)
                                 .focusRequester(focusRequesters[HEADER_ROW])
                                 .focusRestorer(playFocusRequester)
                                 .focusGroup()
