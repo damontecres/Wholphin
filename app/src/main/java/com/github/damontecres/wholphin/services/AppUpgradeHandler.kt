@@ -2,12 +2,15 @@ package com.github.damontecres.wholphin.services
 
 import android.content.Context
 import android.os.Build
+import android.widget.Toast
 import androidx.core.content.edit
 import androidx.datastore.core.DataStore
 import androidx.preference.PreferenceManager
+import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.WholphinApplication
 import com.github.damontecres.wholphin.preferences.AppPreference
 import com.github.damontecres.wholphin.preferences.AppPreferences
+import com.github.damontecres.wholphin.preferences.PlayerBackend
 import com.github.damontecres.wholphin.preferences.update
 import com.github.damontecres.wholphin.preferences.updateAdvancedPreferences
 import com.github.damontecres.wholphin.preferences.updateInterfacePreferences
@@ -15,9 +18,11 @@ import com.github.damontecres.wholphin.preferences.updateLiveTvPreferences
 import com.github.damontecres.wholphin.preferences.updateMpvOptions
 import com.github.damontecres.wholphin.preferences.updatePhotoPreferences
 import com.github.damontecres.wholphin.preferences.updatePlaybackOverrides
+import com.github.damontecres.wholphin.preferences.updatePlaybackPreferences
 import com.github.damontecres.wholphin.preferences.updateSubtitlePreferences
 import com.github.damontecres.wholphin.ui.preferences.PreferencesViewModel
 import com.github.damontecres.wholphin.ui.preferences.subtitle.SubtitleSettings
+import com.github.damontecres.wholphin.ui.showToast
 import com.github.damontecres.wholphin.util.Version
 import dagger.hilt.android.qualifiers.ApplicationContext
 import timber.log.Timber
@@ -199,7 +204,14 @@ suspend fun upgradeApp(
         }
     }
 
-    if (previous.isEqualOrBefore(Version.fromString("0.4.0-0-g0"))) {
+    if (previous.isEqualOrBefore(Version.fromString("0.4.0-1-g0"))) {
+        appPreferences.updateData {
+            it.updatePlaybackPreferences { playerBackend = PlayerBackend.PREFER_MPV }
+        }
+        showToast(context, context.getString(R.string.upgrade_mpv_toast), Toast.LENGTH_LONG)
+    }
+
+    if (previous.isEqualOrBefore(Version.fromString("0.4.0-2-g0"))) {
         appPreferences.updateData {
             it.updatePhotoPreferences {
                 slideshowDuration = AppPreference.SlideshowDuration.defaultValue

@@ -32,6 +32,7 @@ enum MediaExtensionStatus{
 enum PlayerBackend{
   EXO_PLAYER = 0;
   MPV = 1;
+  PREFER_MPV = 2;
 }
 
 message MpvOptions{

@@ -23,6 +23,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.tv.material3.Icon
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import androidx.tv.material3.surfaceColorAtElevation
@@ -37,6 +38,7 @@ import com.github.damontecres.wholphin.preferences.AppSwitchPreference
 import com.github.damontecres.wholphin.ui.components.DialogItem
 import com.github.damontecres.wholphin.ui.components.DialogParams
 import com.github.damontecres.wholphin.ui.components.DialogPopup
+import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import kotlinx.coroutines.launch
@@ -171,6 +173,8 @@ fun <T> ComposablePreference(
 
         is AppChoicePreference -> {
             val values = stringArrayResource(preference.displayValues).toList()
+            val subtitles =
+                preference.subtitles?.let { stringArrayResource(preference.subtitles).toList() }
             val summary =
                 preference.summary?.let { stringResource(it) }
                     ?: preference.summary(context, value)
@@ -188,24 +192,31 @@ fun <T> ComposablePreference(
                             fromLongClick = false,
                             items =
                                 values.mapIndexed { index, it ->
-                                    if (index == selectedIndex) {
-                                        DialogItem(
-                                            text = it,
-                                            icon = Icons.Default.Done,
-                                            onClick = {
-                                                onValueChange(preference.indexToValue(index))
-                                                dialogParams = null
-                                            },
-                                        )
-                                    } else {
-                                        DialogItem(
-                                            text = it,
-                                            onClick = {
-                                                onValueChange(preference.indexToValue(index))
-                                                dialogParams = null
-                                            },
-                                        )
-                                    }
+                                    DialogItem(
+                                        headlineContent = {
+                                            Text(it)
+                                        },
+                                        leadingContent = {
+                                            if (index == selectedIndex) {
+                                                Icon(
+                                                    imageVector = Icons.Default.Done,
+                                                    contentDescription = "selected",
+                                                )
+                                            }
+                                        },
+                                        supportingContent = {
+                                            subtitles?.let {
+                                                val text = subtitles[index]
+                                                if (text.isNotNullOrBlank()) {
+                                                    Text(text)
+                                                }
+                                            }
+                                        },
+                                        onClick = {
+                                            onValueChange(preference.indexToValue(index))
+                                            dialogParams = null
+                                        },
+                                    )
                                 },
                         )
                 },
