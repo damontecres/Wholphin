@@ -11,6 +11,7 @@
     <string name="birthplace">Birthplace</string>
     <string name="bitrate">Bitrate</string>
     <string name="born">Born</string>
+    <string name="boxset_view_mode">BoxSet View Mode</string>
     <string name="cancel_recording">Cancel Recording</string>
     <string name="cancel_series_recording">Cancel Series Recording</string>
     <string name="cancel">Cancel</string>
@@ -41,6 +42,7 @@
     <string name="enter_server_address">Enter server address</string>
     <string name="episodes">Episodes</string>
     <string name="error_loading_collection">Error loading collection %1$s</string>
+    <string name="error_loading_network_discover">Error loading network discover</string>
     <string name="external_track">External</string>
     <string name="favorites">Favorites</string>
     <string name="file_size">Size</string>
@@ -96,6 +98,7 @@
     <string name="recently_recorded">Recently Recorded</string>
     <string name="recently_released">Recently Released</string>
     <string name="recommended">Recommended</string>
+    <string name="recommended_boxset_name">Recommended: %1$s</string>
     <string name="record_program">Record Program</string>
     <string name="record_series">Record Series</string>
     <string name="remove_favorite">Unfavorite</string>
@@ -142,6 +145,10 @@
     <string name="subtitle">Subtitle</string>
     <string name="subtitles">Subtitles</string>
     <string name="suggestions">Suggestions</string>
+    <string name="content">Content</string>
+    <string name="latest_movies">Latest Movies</string>
+    <string name="latest_series">Latest Series</string>
+    <string name="series">Series</string>
     <string name="switch_servers">Switch servers</string>
     <string name="switch_user">Switch</string>
     <string name="top_unwatched">Top Rated Unwatched</string>
@@ -561,6 +568,11 @@
         <item>Image with dynamic color</item>
         <item>Image only</item>
         <item>None</item>
+    </string-array>
+
+    <string-array name="boxset_view_modes">
+        <item>Default Grid</item>
+        <item>Advanced View</item>
     </string-array>
 
 </resources>

@@ -27,6 +27,13 @@ class SwitchSeerrViewModel
         val currentUser = serverRepository.currentUser
 
         val serverConnectionStatus = MutableStateFlow<LoadingState>(LoadingState.Pending)
+        
+        var initialSeerrUrl: String? = null
+            private set
+
+        fun setInitialUrl(url: String?) {
+            initialSeerrUrl = url
+        }
 
         private fun cleanUrl(url: String) =
             if (!url.endsWith("/api/v1")) {

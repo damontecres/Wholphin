@@ -8,9 +8,11 @@ import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.JellyfinServer
 import com.github.damontecres.wholphin.data.model.JellyfinUser
 import com.github.damontecres.wholphin.services.ImageUrlService
+import com.github.damontecres.wholphin.services.LoginBackgroundResult
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.SetupDestination
 import com.github.damontecres.wholphin.services.SetupNavigationManager
+import com.github.damontecres.wholphin.services.WholphinPluginService
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.setValueOnMain
 import com.github.damontecres.wholphin.util.ExceptionHandler
@@ -47,6 +49,7 @@ class SwitchUserViewModel
         val navigationManager: NavigationManager,
         val setupNavigationManager: SetupNavigationManager,
         val imageUrlService: ImageUrlService,
+        val wholphinPluginService: WholphinPluginService,
         @Assisted val server: JellyfinServer,
     ) : ViewModel() {
         @AssistedFactory
@@ -58,6 +61,8 @@ class SwitchUserViewModel
 
         val users = MutableLiveData<List<JellyfinUserAndImage>>(listOf())
         val quickConnectState = MutableLiveData<QuickConnectResult?>(null)
+        
+        val loginBackground = MutableLiveData<LoginBackgroundResult.Available?>(null)
 
         private var quickConnectJob: Job? = null
 
@@ -87,6 +92,14 @@ class SwitchUserViewModel
                 val serverUsers = getUsers()
                 withContext(Dispatchers.Main) {
                     users.setValueOnMain(serverUsers)
+                }
+                
+                // Check for Wholphin plugin login background
+                val backgroundResult = wholphinPluginService.getLoginBackground(server.url)
+                if (backgroundResult is LoginBackgroundResult.Available) {
+                    withContext(Dispatchers.Main) {
+                        loginBackground.value = backgroundResult
+                    }
                 }
             }
 

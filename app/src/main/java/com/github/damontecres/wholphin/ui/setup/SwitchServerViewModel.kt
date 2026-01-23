@@ -9,8 +9,10 @@ import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.JellyfinServerDao
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.JellyfinServer
+import com.github.damontecres.wholphin.services.LoginBackgroundResult
 import com.github.damontecres.wholphin.services.SetupDestination
 import com.github.damontecres.wholphin.services.SetupNavigationManager
+import com.github.damontecres.wholphin.services.WholphinPluginService
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.setValueOnMain
 import com.github.damontecres.wholphin.ui.showToast
@@ -42,10 +44,12 @@ class SwitchServerViewModel
         val serverRepository: ServerRepository,
         val serverDao: JellyfinServerDao,
         val navigationManager: SetupNavigationManager,
+        val wholphinPluginService: WholphinPluginService,
     ) : ViewModel() {
         val servers = MutableLiveData<List<JellyfinServer>>(listOf())
         val serverStatus = MutableLiveData<Map<UUID, ServerConnectionStatus>>(mapOf())
         val serverQuickConnect = MutableLiveData<Map<UUID, Boolean>>(mapOf())
+        val serverLoginBackground = MutableLiveData<Map<UUID, LoginBackgroundResult.Available>>(mapOf())
 
         val discoveredServers = MutableLiveData<List<JellyfinServer>>(listOf())
 
@@ -60,6 +64,7 @@ class SwitchServerViewModel
                 withContext(Dispatchers.Main) {
                     serverStatus.value = mapOf()
                     serverQuickConnect.value = mapOf()
+                    serverLoginBackground.value = mapOf()
                 }
 
                 val allServers =
@@ -120,6 +125,8 @@ class SwitchServerViewModel
                             )
                         }
                 }
+                // Check for Wholphin plugin background
+                checkPluginBackground(server)
                 result
             } catch (ex: Exception) {
                 val status = ServerConnectionStatus.Error(ex.localizedMessage)
@@ -273,6 +280,18 @@ class SwitchServerViewModel
                     withContext(Dispatchers.Main) {
                         discoveredServers.value = newServerList
                     }
+                }
+            }
+        }
+
+        private suspend fun checkPluginBackground(server: JellyfinServer) {
+            val backgroundResult = wholphinPluginService.getLoginBackground(server.url)
+            if (backgroundResult is LoginBackgroundResult.Available) {
+                withContext(Dispatchers.Main) {
+                    serverLoginBackground.value =
+                        serverLoginBackground.value!!.toMutableMap().apply {
+                            put(server.id, backgroundResult)
+                        }
                 }
             }
         }

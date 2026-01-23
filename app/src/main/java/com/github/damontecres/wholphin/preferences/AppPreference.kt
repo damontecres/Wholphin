@@ -462,6 +462,19 @@ sealed interface AppPreference<Pref, T> {
                 valueToIndex = { if (it != AppThemeColors.UNRECOGNIZED) it.number else 0 },
             )
 
+        val BoxSetViewModePref =
+            AppChoicePreference<AppPreferences, BoxSetViewMode>(
+                title = R.string.boxset_view_mode,
+                defaultValue = BoxSetViewMode.ADVANCED_VIEW,
+                getter = { it.interfacePreferences.boxsetViewMode },
+                setter = { prefs, value ->
+                    prefs.updateInterfacePreferences { boxsetViewMode = value }
+                },
+                displayValues = R.array.boxset_view_modes,
+                indexToValue = { BoxSetViewMode.forNumber(it) },
+                valueToIndex = { if (it != BoxSetViewMode.UNRECOGNIZED) it.number else 0 },
+            )
+
         val InstalledVersion =
             AppClickablePreference<AppPreferences>(
                 title = R.string.installed_version,
@@ -920,6 +933,7 @@ val basicPreferences =
                     AppPreference.RememberSelectedTab,
                     AppPreference.SubtitleStyle,
                     AppPreference.ThemeColors,
+                    AppPreference.BoxSetViewModePref,
                 ),
         ),
         PreferenceGroup(

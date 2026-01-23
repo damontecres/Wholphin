@@ -19,6 +19,7 @@ fun AddSeerServerDialog(
     status: LoadingState,
     onSubmit: (url: String, username: String?, passwordOrApiKey: String, method: SeerrAuthMethod) -> Unit,
     onDismissRequest: () -> Unit,
+    initialUrl: String? = null,
 ) {
     var authMethod by remember { mutableStateOf<SeerrAuthMethod?>(null) }
     LaunchedEffect(status) {
@@ -39,6 +40,7 @@ fun AddSeerServerDialog(
                     },
                     username = currentUsername ?: "",
                     status = status,
+                    initialUrl = initialUrl,
                 )
             }
         }
@@ -52,6 +54,7 @@ fun AddSeerServerDialog(
                         onSubmit.invoke(url, null, apiKey, SeerrAuthMethod.API_KEY)
                     },
                     status = status,
+                    initialUrl = initialUrl,
                 )
             }
         }
