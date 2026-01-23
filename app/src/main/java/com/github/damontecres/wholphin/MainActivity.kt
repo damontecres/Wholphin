@@ -831,7 +831,6 @@ class MainActivityViewModel
                             navigationManager.navigateTo(SetupDestination.ServerList)
                         }
                     } else {
-                        navigationManager.navigateTo(SetupDestination.Loading)
                         backdropService.clearBackdrop()
                         val currentServerId = prefs.currentServerId?.toUUIDOrNull()
                         if (currentServerId != null) {
@@ -843,7 +842,14 @@ class MainActivityViewModel
                                 navigationManager.navigateTo(SetupDestination.ServerList)
                             }
                         } else {
-                            navigationManager.navigateTo(SetupDestination.ServerList)
+                            // If sign in automatically is disabled and only one server exists, skip server select
+                            val servers = serverRepository.serverDao.getServers()
+                            if (servers.size == 1) {
+                                val singleServer = servers.first().server
+                                navigationManager.navigateTo(SetupDestination.UserList(singleServer))
+                            } else {
+                                navigationManager.navigateTo(SetupDestination.ServerList)
+                            }
                         }
                     }
                 } catch (ex: Exception) {
