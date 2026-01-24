@@ -27,7 +27,22 @@ sealed class HomeRowConfig {
     @Serializable
     data class ContinueWatching(
         override val id: UUID,
-        val combined: Boolean,
+        override val viewOptions: HomeRowViewOptions,
+    ) : HomeRowConfig() {
+        override fun updateViewOptions(viewOptions: HomeRowViewOptions): HomeRowConfig = this.copy(viewOptions = viewOptions)
+    }
+
+    @Serializable
+    data class NextUp(
+        override val id: UUID,
+        override val viewOptions: HomeRowViewOptions,
+    ) : HomeRowConfig() {
+        override fun updateViewOptions(viewOptions: HomeRowViewOptions): HomeRowConfig = this.copy(viewOptions = viewOptions)
+    }
+
+    @Serializable
+    data class ContinueWatchingCombined(
+        override val id: UUID,
         override val viewOptions: HomeRowViewOptions,
     ) : HomeRowConfig() {
         override fun updateViewOptions(viewOptions: HomeRowViewOptions): HomeRowConfig = this.copy(viewOptions = viewOptions)

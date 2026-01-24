@@ -111,17 +111,36 @@ class HomePageSettingsViewModel
                                 ),
                             )
                         }
-                val rowConfig =
-                    listOf(
-                        HomeRowConfigDisplay(
-                            context.getString(R.string.continue_watching),
-                            HomeRowConfig.ContinueWatching(
-                                UUID.randomUUID(),
-                                prefs.combineContinueNext,
-                                HomeRowViewOptions(),
+                val continueWatchingRows =
+                    if (prefs.combineContinueNext) {
+                        listOf(
+                            HomeRowConfigDisplay(
+                                context.getString(R.string.combine_continue_next),
+                                HomeRowConfig.ContinueWatchingCombined(
+                                    UUID.randomUUID(),
+                                    HomeRowViewOptions(),
+                                ),
                             ),
-                        ),
-                    ) + includedIds
+                        )
+                    } else {
+                        listOf(
+                            HomeRowConfigDisplay(
+                                context.getString(R.string.continue_watching),
+                                HomeRowConfig.ContinueWatching(
+                                    UUID.randomUUID(),
+                                    HomeRowViewOptions(),
+                                ),
+                            ),
+                            HomeRowConfigDisplay(
+                                context.getString(R.string.next_up),
+                                HomeRowConfig.NextUp(
+                                    UUID.randomUUID(),
+                                    HomeRowViewOptions(),
+                                ),
+                            ),
+                        )
+                    }
+                val rowConfig = continueWatchingRows + includedIds
                 _state.update {
                     it.copy(rows = rowConfig)
                 }
@@ -148,6 +167,16 @@ class HomePageSettingsViewModel
                             when (row) {
                                 is HomeRowConfig.ContinueWatching -> {
                                     val resume = latestNextUpService.getResume(userDto.id, limit, true)
+                                    listOf(
+                                        HomeRowLoadingState.Success(
+                                            title = context.getString(R.string.continue_watching),
+                                            items = resume,
+                                            viewOptions = row.viewOptions,
+                                        ),
+                                    )
+                                }
+
+                                is HomeRowConfig.NextUp -> {
                                     val nextUp =
                                         latestNextUpService.getNextUp(
                                             userDto.id,
@@ -155,40 +184,37 @@ class HomePageSettingsViewModel
                                             prefs.enableRewatchingNextUp,
                                             false,
                                         )
-                                    val watching =
-                                        buildList {
-                                            if (row.combined) {
-                                                val items =
-                                                    latestNextUpService.buildCombined(resume, nextUp)
-                                                add(
-                                                    HomeRowLoadingState.Success(
-                                                        title = context.getString(R.string.continue_watching),
-                                                        items = items,
-                                                        viewOptions = row.viewOptions,
-                                                    ),
-                                                )
-                                            } else {
-                                                if (resume.isNotEmpty()) {
-                                                    add(
-                                                        HomeRowLoadingState.Success(
-                                                            title = context.getString(R.string.continue_watching),
-                                                            items = resume,
-                                                            viewOptions = row.viewOptions,
-                                                        ),
-                                                    )
-                                                }
-                                                if (nextUp.isNotEmpty()) {
-                                                    add(
-                                                        HomeRowLoadingState.Success(
-                                                            title = context.getString(R.string.next_up),
-                                                            items = nextUp,
-                                                            viewOptions = row.viewOptions,
-                                                        ),
-                                                    )
-                                                }
-                                            }
-                                        }
-                                    watching
+                                    listOf(
+                                        HomeRowLoadingState.Success(
+                                            title = context.getString(R.string.next_up),
+                                            items = nextUp,
+                                            viewOptions = row.viewOptions,
+                                        ),
+                                    )
+                                }
+
+                                is HomeRowConfig.ContinueWatchingCombined -> {
+                                    val resume =
+                                        latestNextUpService.getResume(userDto.id, limit, true)
+                                    val nextUp =
+                                        latestNextUpService.getNextUp(
+                                            userDto.id,
+                                            limit,
+                                            prefs.enableRewatchingNextUp,
+                                            false,
+                                        )
+
+                                    listOf(
+                                        HomeRowLoadingState.Success(
+                                            title = context.getString(R.string.continue_watching),
+                                            items =
+                                                latestNextUpService.buildCombined(
+                                                    resume,
+                                                    nextUp,
+                                                ),
+                                            viewOptions = row.viewOptions,
+                                        ),
+                                    )
                                 }
 
                                 is HomeRowConfig.Genres -> {
@@ -318,6 +344,50 @@ class HomePageSettingsViewModel
                     rows = rows,
                     rowData = rowData,
                 )
+            }
+        }
+
+        fun addRow(type: MetaRowType) {
+            viewModelScope.launchIO {
+                val newRow =
+                    when (type) {
+                        MetaRowType.CONTINUE_WATCHING -> {
+                            HomeRowConfigDisplay(
+                                context.getString(R.string.continue_watching),
+                                HomeRowConfig.ContinueWatching(
+                                    UUID.randomUUID(),
+                                    HomeRowViewOptions(),
+                                ),
+                            )
+                        }
+
+                        MetaRowType.NEXT_UP -> {
+                            HomeRowConfigDisplay(
+                                context.getString(R.string.continue_watching),
+                                HomeRowConfig.NextUp(
+                                    UUID.randomUUID(),
+                                    HomeRowViewOptions(),
+                                ),
+                            )
+                        }
+
+                        MetaRowType.COMBINED_CONTINUE_WATCHING -> {
+                            HomeRowConfigDisplay(
+                                context.getString(R.string.combine_continue_next),
+                                HomeRowConfig.ContinueWatchingCombined(
+                                    UUID.randomUUID(),
+                                    HomeRowViewOptions(),
+                                ),
+                            )
+                        }
+                    }
+                _state.update {
+                    it.copy(
+                        loading = LoadingState.Loading,
+                        rows = it.rows.toMutableList().apply { add(newRow) },
+                    )
+                }
+                fetchRowData()
             }
         }
 
@@ -510,6 +580,7 @@ fun HomePageSettings(
                     HomePageLibraryList(
                         libraries = state.libraries,
                         onClick = { destination = HomePageSettingsDestination.ChooseRowType(it) },
+                        onClickMeta = { viewModel.addRow(it) },
                         modifier = destModifier,
                     )
                 }

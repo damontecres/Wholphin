@@ -30,7 +30,6 @@ import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import androidx.tv.material3.surfaceColorAtElevation
 import com.github.damontecres.wholphin.R
-import com.github.damontecres.wholphin.data.model.HomeRowConfig
 import com.github.damontecres.wholphin.data.model.HomeRowConfigDisplay
 import com.github.damontecres.wholphin.ui.FontAwesome
 import com.github.damontecres.wholphin.ui.components.Button
@@ -64,7 +63,7 @@ fun HomePageRowList(
                     config = row,
                     moveUpAllowed = index > 0,
                     moveDownAllowed = index != state.rows.lastIndex,
-                    deleteAllowed = row.config !is HomeRowConfig.ContinueWatching,
+                    deleteAllowed = true,
                     onClickMove = { onClickMove.invoke(it, index) },
                     onClickDelete = { onClickDelete.invoke(index) },
                     onClick = { onClick.invoke(index, row) },
