@@ -15,9 +15,11 @@ import com.github.damontecres.wholphin.services.FavoriteWatchManager
 import com.github.damontecres.wholphin.services.HomeScreenSectionsService
 import com.github.damontecres.wholphin.services.LatestNextUpService
 import com.github.damontecres.wholphin.services.NavigationManager
+import com.github.damontecres.wholphin.services.UserPreferencesService
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.nav.ServerNavDrawerItem
 import com.github.damontecres.wholphin.ui.setValueOnMain
+import com.github.damontecres.wholphin.ui.showToast
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.HomeRowLoadingState
 import com.github.damontecres.wholphin.util.LoadingExceptionHandler
@@ -25,7 +27,6 @@ import com.github.damontecres.wholphin.util.LoadingState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
@@ -49,6 +50,7 @@ class HomeViewModel
         private val latestNextUpService: LatestNextUpService,
         private val backdropService: BackdropService,
         private val homeScreenSectionsService: HomeScreenSectionsService,
+        private val userPreferencesService: UserPreferencesService,
     ) : ViewModel() {
         val loadingState = MutableLiveData<LoadingState>(LoadingState.Pending)
         val refreshState = MutableLiveData<LoadingState>(LoadingState.Pending)
@@ -59,18 +61,11 @@ class HomeViewModel
 
         init {
             datePlayedService.invalidateAll()
+            init()
         }
 
-        fun init(preferences: UserPreferences): Job {
-            val reload = loadingState.value != LoadingState.Success
-            if (reload) {
-                loadingState.value = LoadingState.Loading
-            }
-            refreshState.value = LoadingState.Loading
-            this.preferences = preferences
-            val prefs = preferences.appPreferences.homePagePreferences
-            val limit = prefs.maxItemsPerRow
-            return viewModelScope.launch(
+        fun init() {
+            viewModelScope.launch(
                 Dispatchers.IO +
                     LoadingExceptionHandler(
                         loadingState,
@@ -78,6 +73,14 @@ class HomeViewModel
                     ),
             ) {
                 Timber.d("init HomeViewModel")
+                val reload = loadingState.value != LoadingState.Success
+                if (reload) {
+                    loadingState.setValueOnMain(LoadingState.Loading)
+                }
+                refreshState.setValueOnMain(LoadingState.Loading)
+                this@HomeViewModel.preferences = userPreferencesService.getCurrent()
+                val prefs = preferences.appPreferences.homePagePreferences
+                val limit = prefs.maxItemsPerRow
                 if (reload) {
                     backdropService.clearBackdrop()
                 }
@@ -159,6 +162,8 @@ class HomeViewModel
                     } else {
                         // Plugin not available, use default behavior
                         Timber.d("HomeViewModel: Plugin not available, using default home screen sections")
+                try {
+                    serverRepository.currentUserDto.value?.let { userDto ->
                         val includedIds =
                             navDrawerItemRepository
                                 .getFilteredNavDrawerItems(navDrawerItemRepository.getNavDrawerItems())
@@ -216,6 +221,13 @@ class HomeViewModel
                         val loadedLatest = latestNextUpService.loadLatest(latest)
                         this@HomeViewModel.latestRows.setValueOnMain(loadedLatest)
                     }
+                } catch (ex: Exception) {
+                    Timber.e(ex)
+                    if (!reload) {
+                        loadingState.setValueOnMain(LoadingState.Error(ex))
+                    } else {
+                        showToast(context, "Error refreshing home: ${ex.localizedMessage}")
+                    }
                 }
             }
         }
@@ -226,7 +238,7 @@ class HomeViewModel
         ) = viewModelScope.launch(ExceptionHandler() + Dispatchers.IO) {
             favoriteWatchManager.setWatched(itemId, played)
             withContext(Dispatchers.Main) {
-                init(preferences)
+                init()
             }
         }
 
@@ -236,7 +248,7 @@ class HomeViewModel
         ) = viewModelScope.launch(ExceptionHandler() + Dispatchers.IO) {
             favoriteWatchManager.setFavorite(itemId, favorite)
             withContext(Dispatchers.Main) {
-                init(preferences)
+                init()
             }
         }
 

@@ -3,7 +3,6 @@ package com.github.damontecres.wholphin.ui.nav
 import android.content.Context
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
@@ -14,7 +13,6 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -26,13 +24,10 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
@@ -94,7 +89,6 @@ import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
@@ -117,9 +111,9 @@ class NavDrawerViewModel
         val backdropService: BackdropService,
         private val seerrServerRepository: SeerrServerRepository,
     ) : ViewModel() {
-        //        private var all: List<NavDrawerItem>? = null
         val moreLibraries = MutableLiveData<List<NavDrawerItem>>(null)
         val libraries = MutableLiveData<List<NavDrawerItem>>(listOf())
+
         val selectedIndex = MutableLiveData(-1)
         val showMore = MutableLiveData(false)
 
@@ -133,7 +127,6 @@ class NavDrawerViewModel
         fun init() {
             viewModelScope.launchIO {
                 val all = navDrawerItemRepository.getNavDrawerItems()
-//                this@NavDrawerViewModel.all = all
                 val libraries = navDrawerItemRepository.getFilteredNavDrawerItems(all)
                 val moreLibraries = all.toMutableList().apply { removeAll(libraries) }
 
@@ -183,6 +176,37 @@ class NavDrawerViewModel
                             break
                         }
                     }
+                }
+            }
+        }
+
+        fun onClickDrawerItem(
+            index: Int,
+            item: NavDrawerItem,
+        ) {
+            if (item !is NavDrawerItem.More) setShowMore(false)
+            when (item) {
+                NavDrawerItem.Favorites -> {
+                    setIndex(index)
+                    navigationManager.navigateToFromDrawer(
+                        Destination.Favorites,
+                    )
+                }
+
+                NavDrawerItem.More -> {
+                    setShowMore(!showMore.value!!)
+                }
+
+                NavDrawerItem.Discover -> {
+                    setIndex(index)
+                    navigationManager.navigateToFromDrawer(
+                        Destination.Discover,
+                    )
+                }
+
+                is ServerNavDrawerItem -> {
+                    setIndex(index)
+                    navigationManager.navigateToFromDrawer(item.destination)
                 }
             }
         }
@@ -250,7 +274,7 @@ fun NavDrawer(
     viewModel: NavDrawerViewModel =
         hiltViewModel(
             LocalView.current.findViewTreeViewModelStoreOwner()!!,
-            key = "${server?.id}_${user?.id}", // Keyed to the server & user to ensure its reset when switching either
+            key = "${server.id}_${user.id}", // Keyed to the server & user to ensure its reset when switching either
         ),
 ) {
     val drawerState = rememberDrawerState(DrawerValue.Closed)
@@ -271,76 +295,14 @@ fun NavDrawer(
     LaunchedEffect(Unit) { viewModel.init() }
 
     val showMore by viewModel.showMore.observeAsState(false)
-//    val libraries = if (showPinnedOnly) pinnedLibraries else allLibraries
     // A negative index is a built in page, >=0 is a library
     val selectedIndex by viewModel.selectedIndex.observeAsState(-1)
-    var focusedIndex by remember { mutableIntStateOf(Int.MIN_VALUE) }
-    val derivedFocusedIndex by remember { derivedStateOf { focusedIndex } }
-
-    fun setShowMore(value: Boolean) {
-        viewModel.setShowMore(value)
-    }
 
     BackHandler(enabled = showMore && drawerState.currentValue == DrawerValue.Open) {
-        setShowMore(false)
+        viewModel.setShowMore(false)
     }
 
-    val onClick = { index: Int, item: NavDrawerItem ->
-        when (item) {
-            NavDrawerItem.Favorites -> {
-                viewModel.setIndex(index)
-                viewModel.navigationManager.navigateToFromDrawer(
-                    Destination.Favorites,
-                )
-            }
-
-            NavDrawerItem.More -> {
-                setShowMore(!showMore)
-            }
-
-            NavDrawerItem.Discover -> {
-                viewModel.setIndex(index)
-                viewModel.navigationManager.navigateToFromDrawer(
-                    Destination.Discover,
-                )
-            }
-
-            is ServerNavDrawerItem -> {
-                viewModel.setIndex(index)
-                viewModel.navigationManager.navigateToFromDrawer(item.destination)
-            }
-        }
-    }
-    // Temporarily disabled, see https://github.com/damontecres/Wholphin/pull/127#issuecomment-3478058418
-    if (false && preferences.appPreferences.interfacePreferences.navDrawerSwitchOnFocus) {
-        LaunchedEffect(derivedFocusedIndex) {
-            val index = derivedFocusedIndex
-            delay(600)
-            if (index != selectedIndex) {
-                if (index == -1) {
-                    viewModel.setIndex(-1)
-                    viewModel.navigationManager.goToHome()
-                } else if (index in libraries.indices) {
-                    if (moreLibraries.isEmpty() || index != libraries.lastIndex) {
-                        libraries.getOrNull(index)?.let {
-                            onClick.invoke(index, it)
-                        }
-                    }
-                } else {
-                    val newIndex = libraries.size - index + 1
-                    if (newIndex in moreLibraries.indices) {
-                        moreLibraries.getOrNull(newIndex)?.let {
-                            onClick.invoke(index, it)
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    val closedDrawerWidth = 40.dp
-    val drawerWidth by animateDpAsState(if (drawerState.isOpen) 260.dp else closedDrawerWidth)
-    val drawerPadding by animateDpAsState(if (drawerState.isOpen) 0.dp else 8.dp)
+    val closedDrawerWidth = NavigationDrawerItemDefaults.CollapsedDrawerItemWidth
     val drawerBackground by animateColorAsState(
         if (drawerState.isOpen) {
             MaterialTheme.colorScheme.surface
@@ -382,15 +344,12 @@ fun NavDrawer(
                     modifier =
                         Modifier
                             .fillMaxHeight()
-                            .width(drawerWidth)
                             .drawBehind {
                                 drawRect(drawerBackground)
                             },
                 ) {
                     // Even though some must be clicked, focusing on it should clear other focused items
                     val interactionSource = remember { MutableInteractionSource() }
-                    val focused by interactionSource.collectIsFocusedAsState()
-                    LaunchedEffect(focused) { if (focused) focusedIndex = Int.MIN_VALUE }
                     val userImageUrl = remember(user) { viewModel.getUserImage(user) }
                     ProfileIcon(
                         user = user,
@@ -403,7 +362,7 @@ fun NavDrawer(
                                 SetupDestination.UserList(server),
                             )
                         },
-                        modifier = Modifier.padding(start = drawerPadding),
+                        modifier = Modifier,
                     )
                     LazyColumn(
                         state = listState,
@@ -426,13 +385,10 @@ fun NavDrawer(
                                             scrollToSelected()
                                         }
                                     }
-                                }.fillMaxHeight()
-                                .padding(start = drawerPadding),
+                                }.fillMaxHeight(),
                     ) {
                         item {
                             val interactionSource = remember { MutableInteractionSource() }
-                            val focused by interactionSource.collectIsFocusedAsState()
-                            LaunchedEffect(focused) { if (focused) focusedIndex = -2 }
                             IconNavItem(
                                 text = stringResource(R.string.search),
                                 icon = Icons.Default.Search,
@@ -449,13 +405,11 @@ fun NavDrawer(
                                         .ifElse(
                                             selectedIndex == -2,
                                             Modifier.focusRequester(focusRequester),
-                                        ).animateItem(),
+                                        ),
                             )
                         }
                         item {
                             val interactionSource = remember { MutableInteractionSource() }
-                            val focused by interactionSource.collectIsFocusedAsState()
-                            LaunchedEffect(focused) { if (focused) focusedIndex = -1 }
                             IconNavItem(
                                 text = stringResource(R.string.home),
                                 icon = Icons.Default.Home,
@@ -475,13 +429,11 @@ fun NavDrawer(
                                         .ifElse(
                                             selectedIndex == -1,
                                             Modifier.focusRequester(focusRequester),
-                                        ).animateItem(),
+                                        ),
                             )
                         }
                         itemsIndexed(libraries) { index, it ->
                             val interactionSource = remember { MutableInteractionSource() }
-                            val focused by interactionSource.collectIsFocusedAsState()
-                            LaunchedEffect(focused) { if (focused) focusedIndex = index }
                             NavItem(
                                 library = it,
                                 selected = selectedIndex == index,
@@ -489,31 +441,26 @@ fun NavDrawer(
                                 drawerOpen = drawerState.isOpen,
                                 interactionSource = interactionSource,
                                 onClick = {
-                                    onClick.invoke(index, it)
-                                    if (it !is NavDrawerItem.More) setShowMore(false)
+                                    viewModel.onClickDrawerItem(index, it)
                                 },
                                 modifier =
                                     Modifier
                                         .ifElse(
                                             selectedIndex == index,
                                             Modifier.focusRequester(focusRequester),
-                                        ).animateItem(),
+                                        ),
                             )
                         }
                         if (showMore) {
                             itemsIndexed(moreLibraries) { index, it ->
                                 val adjustedIndex = (index + libraries.size + 1)
                                 val interactionSource = remember { MutableInteractionSource() }
-                                val focused by interactionSource.collectIsFocusedAsState()
-                                LaunchedEffect(focused) {
-                                    if (focused) focusedIndex = adjustedIndex
-                                }
                                 NavItem(
                                     library = it,
                                     selected = selectedIndex == adjustedIndex,
                                     moreExpanded = showMore,
                                     drawerOpen = drawerState.isOpen,
-                                    onClick = { onClick.invoke(adjustedIndex, it) },
+                                    onClick = { viewModel.onClickDrawerItem(adjustedIndex, it) },
                                     containerColor =
                                         if (drawerState.isOpen) {
                                             MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp)
@@ -526,14 +473,12 @@ fun NavDrawer(
                                             .ifElse(
                                                 selectedIndex == adjustedIndex,
                                                 Modifier.focusRequester(focusRequester),
-                                            ).animateItem(),
+                                            ),
                                 )
                             }
                         }
                         item {
                             val interactionSource = remember { MutableInteractionSource() }
-                            val focused by interactionSource.collectIsFocusedAsState()
-                            LaunchedEffect(focused) { if (focused) focusedIndex = Int.MIN_VALUE }
                             IconNavItem(
                                 text = stringResource(R.string.settings),
                                 icon = Icons.Default.Settings,
@@ -547,7 +492,7 @@ fun NavDrawer(
                                         ),
                                     )
                                 },
-                                modifier = Modifier.animateItem(),
+                                modifier = Modifier,
                             )
                         }
                     }
@@ -587,7 +532,6 @@ fun NavigationDrawerScope.ProfileIcon(
     modifier: Modifier = Modifier,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
 ) {
-    val focused by interactionSource.collectIsFocusedAsState()
     NavigationDrawerItem(
         modifier = modifier,
         selected = false,
@@ -639,7 +583,7 @@ fun NavigationDrawerScope.IconNavItem(
                 icon,
                 contentDescription = null,
                 tint = color,
-                modifier = Modifier.padding(0.dp),
+                modifier = Modifier,
             )
         },
         supportingContent =
@@ -675,29 +619,31 @@ fun NavigationDrawerScope.NavItem(
     val context = LocalContext.current
     val useFont = library !is ServerNavDrawerItem || library.type != CollectionType.LIVETV
     val icon =
-        when (library) {
-            NavDrawerItem.Favorites -> {
-                R.string.fa_heart
-            }
+        remember(library) {
+            when (library) {
+                NavDrawerItem.Favorites -> {
+                    R.string.fa_heart
+                }
 
-            NavDrawerItem.More -> {
-                R.string.fa_ellipsis
-            }
+                NavDrawerItem.More -> {
+                    R.string.fa_ellipsis
+                }
 
-            NavDrawerItem.Discover -> {
-                R.string.fa_magnifying_glass_plus
-            }
+                NavDrawerItem.Discover -> {
+                    R.string.fa_magnifying_glass_plus
+                }
 
-            is ServerNavDrawerItem -> {
-                when (library.type) {
-                    CollectionType.MOVIES -> R.string.fa_film
-                    CollectionType.TVSHOWS -> R.string.fa_tv
-                    CollectionType.HOMEVIDEOS -> R.string.fa_video
-                    CollectionType.LIVETV -> R.drawable.gf_dvr
-                    CollectionType.MUSIC -> R.string.fa_music
-                    CollectionType.BOXSETS -> R.string.fa_open_folder
-                    CollectionType.PLAYLISTS -> R.string.fa_list_ul
-                    else -> R.string.fa_film
+                is ServerNavDrawerItem -> {
+                    when (library.type) {
+                        CollectionType.MOVIES -> R.string.fa_film
+                        CollectionType.TVSHOWS -> R.string.fa_tv
+                        CollectionType.HOMEVIDEOS -> R.string.fa_video
+                        CollectionType.LIVETV -> R.drawable.gf_dvr
+                        CollectionType.MUSIC -> R.string.fa_music
+                        CollectionType.BOXSETS -> R.string.fa_open_folder
+                        CollectionType.PLAYLISTS -> R.string.fa_list_ul
+                        else -> R.string.fa_film
+                    }
                 }
             }
         }
@@ -732,14 +678,17 @@ fun NavigationDrawerScope.NavItem(
                 }
             }
         },
-        trailingContent = {
+        trailingContent =
             if (library is NavDrawerItem.More) {
-                Icon(
-                    imageVector = if (moreExpanded) Icons.Default.ArrowDropDown else Icons.Default.KeyboardArrowLeft,
-                    contentDescription = null,
-                )
-            }
-        },
+                {
+                    Icon(
+                        imageVector = if (moreExpanded) Icons.Default.ArrowDropDown else Icons.Default.KeyboardArrowLeft,
+                        contentDescription = null,
+                    )
+                }
+            } else {
+                null
+            },
         interactionSource = interactionSource,
     ) {
         Text(
