@@ -27,4 +27,5 @@ data class SimpleMediaStream(
 data class SimpleVideoStream(
     val index: Int,
     val hdr: Boolean,
+    val is4k: Boolean,
 )

@@ -207,7 +207,10 @@ class PlaybackViewModel
             jobs.forEach { it.cancel() }
         }
 
-        private suspend fun createPlayer(isHdr: Boolean) {
+        private suspend fun createPlayer(
+            isHdr: Boolean,
+            is4k: Boolean,
+        ) {
             val playerBackend =
                 when (preferences.appPreferences.playbackPreferences.playerBackend) {
                     PlayerBackend.UNRECOGNIZED,
@@ -424,11 +427,12 @@ class PlaybackViewModel
                             val isHdr =
                                 it.videoRange == VideoRange.HDR ||
                                     (it.videoRangeType != VideoRangeType.SDR && it.videoRangeType != VideoRangeType.UNKNOWN)
-                            SimpleVideoStream(it.index, isHdr)
+                            val is4k = (it.width ?: 0) >= 3840 || (it.height ?: 0) >= 2160
+                            SimpleVideoStream(it.index, isHdr, is4k)
                         }
 
                 // Create the correct player for the media
-                createPlayer(videoStream?.hdr == true)
+                createPlayer(videoStream?.hdr == true, videoStream?.is4k == true)
                 configurePlayer()
 
                 val subtitleStreams =
