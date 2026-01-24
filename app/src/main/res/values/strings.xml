@@ -165,6 +165,7 @@
     <string name="media_information">Media Information</string>
     <string name="show_clock">Show Clock</string>
     <string name="custom_home_rows">Custom Home Rows</string>
+    <string name="custom_home_rows_use_native_continue_next">Use native Continue Watching / Next Up</string>
     <string name="aired_episode_order">Aired Episode Order</string>
     <string name="create_playlist">Create new playlist</string>
     <string name="add_to_playlist">Add to playlist</string>

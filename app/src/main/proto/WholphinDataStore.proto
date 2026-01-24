@@ -152,6 +152,7 @@ message InterfacePreferences {
   LiveTvPreferences live_tv_preferences = 8;
   BackdropStyle backdrop_style = 9;
   bool enable_custom_home_rows = 10;
+  bool custom_home_rows_use_native_continue_next = 11;
 }
 
 message AdvancedPreferences {

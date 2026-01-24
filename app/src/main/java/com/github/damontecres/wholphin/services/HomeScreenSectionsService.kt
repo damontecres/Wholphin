@@ -8,7 +8,6 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
@@ -17,15 +16,25 @@ import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.jellyfin.sdk.api.client.ApiClient
+import org.jellyfin.sdk.api.client.extensions.itemsApi
+import org.jellyfin.sdk.api.client.extensions.userLibraryApi
 import org.jellyfin.sdk.api.client.util.AuthorizationHeaderBuilder
 import org.jellyfin.sdk.model.ClientInfo
 import org.jellyfin.sdk.model.DeviceInfo
 import org.jellyfin.sdk.model.api.BaseItemDto
 import org.jellyfin.sdk.model.api.BaseItemDtoQueryResult
+import org.jellyfin.sdk.model.api.BaseItemKind
+import org.jellyfin.sdk.model.api.request.GetItemsRequest
+import org.jellyfin.sdk.model.serializer.toUUIDOrNull
 import timber.log.Timber
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
+
+data class CustomHomeRow(
+    val sectionId: String,
+    val row: HomeRowLoadingState,
+)
 
 /**
  * Service for fetching custom home screen sections from the Home Screen Sections plugin.
@@ -68,7 +77,7 @@ class HomeScreenSectionsService
          * Fetches custom home screen sections from the plugin.
          * Returns null if the plugin is not available or not configured.
          */
-        suspend fun getCustomSections(userId: UUID): List<HomeRowLoadingState>? =
+        suspend fun getCustomSections(userId: UUID): List<CustomHomeRow>? =
             withContext(Dispatchers.IO) {
                 try {
                     Timber.d("HomeScreenSectionsService: getCustomSections called for userId=$userId")
@@ -107,18 +116,26 @@ class HomeScreenSectionsService
                             try {
                                 val items = fetchSectionItems(baseUrl, accessToken, section, userId)
                                 if (items.isNotEmpty()) {
-                                    HomeRowLoadingState.Success(
-                                        title = section.displayText,
-                                        items = items,
+                                    CustomHomeRow(
+                                        sectionId = section.id,
+                                        row =
+                                            HomeRowLoadingState.Success(
+                                                title = section.displayText,
+                                                items = items,
+                                            ),
                                     )
                                 } else {
                                     null
                                 }
                             } catch (ex: Exception) {
                                 Timber.e(ex, "Error fetching section ${section.id}")
-                                HomeRowLoadingState.Error(
-                                    title = section.displayText,
-                                    exception = ex,
+                                CustomHomeRow(
+                                    sectionId = section.id,
+                                    row =
+                                        HomeRowLoadingState.Error(
+                                            title = section.displayText,
+                                            exception = ex,
+                                        ),
                                 )
                             }
                         }
@@ -136,7 +153,7 @@ class HomeScreenSectionsService
                 }
             }
 
-        private suspend fun fetchAvailableSections(
+        private fun fetchAvailableSections(
             baseUrl: String,
             accessToken: String,
             userId: UUID,
@@ -216,6 +233,12 @@ class HomeScreenSectionsService
                         limit = obj["Limit"]?.jsonPrimitive?.contentOrNull?.toIntOrNull() ?: 1,
                         route = obj["Route"]?.jsonPrimitive?.contentOrNull,
                         additionalData = obj["AdditionalData"]?.jsonPrimitive?.contentOrNull,
+                        originalPayloadId =
+                            obj["OriginalPayload"]
+                                ?.jsonObject
+                                ?.get("Id")
+                                ?.jsonPrimitive
+                                ?.contentOrNull,
                     )
                     Timber.d("HomeScreenSectionsService: Parsed section: ${section.id} - ${section.displayText}")
                     section
@@ -324,12 +347,124 @@ class HomeScreenSectionsService
                     }
                     
                     Timber.d("HomeScreenSectionsService: Successfully parsed ${items.size} items for section ${section.id}")
+                    // If this row is backed by a Collection Sections entry, append a trailing item
+                    // that opens the full collection (box set). The plugin often only returns the
+                    // first N items from the collection.
+                    // Collection Sections tends to put the collection id in OriginalPayload.Id (32-char server id).
+                    // AdditionalData is used by other section types (e.g. BecauseYouWatched), so try both.
+                    val maybeCollectionIdFromSection =
+                        parseAnyIdToUuidOrNull(section.originalPayloadId)
+                            ?: parseAnyIdToUuidOrNull(section.additionalData)
+                    // Fallback: infer from returned items. For items that are members of a collection,
+                    // Jellyfin commonly sets ParentId to the BoxSet id.
+                    val maybeCollectionIdFromItems =
+                        items
+                            .asSequence()
+                            .mapNotNull { it.data.parentId }
+                            .firstOrNull()
+
+                    val candidateCollectionIds =
+                        listOfNotNull(maybeCollectionIdFromSection, maybeCollectionIdFromItems)
+                            .distinct()
+
+                    Timber.d(
+                        "HomeScreenSectionsService: view-all candidates for %s: fromSection=%s, fromItems=%s, rawOriginalPayloadId=%s, rawAdditionalData=%s",
+                        section.id,
+                        maybeCollectionIdFromSection,
+                        maybeCollectionIdFromItems,
+                        section.originalPayloadId,
+                        section.additionalData,
+                    )
+
+                    for (candidateId in candidateCollectionIds) {
+                        try {
+                            val boxSetDto = api.userLibraryApi.getItem(candidateId).content
+                            if (boxSetDto.type == BaseItemKind.BOX_SET) {
+                                Timber.d("HomeScreenSectionsService: Appending collection link item for $candidateId")
+                                val viewAllDto = boxSetDto.copy(name = "View All")
+                                return@use items + BaseItem.from(viewAllDto, api, useSeriesForPrimary = false)
+                            }
+                        } catch (ex: Exception) {
+                            Timber.d(
+                                ex,
+                                "HomeScreenSectionsService: Failed fetching collection item for id=$candidateId",
+                            )
+                        }
+                    }
+
+                    // Last-chance fallback for custom collection rows where we only have a name.
+                    // Some Collection Sections setups provide AdditionalData as the collection name.
+                    val maybeCollectionName = section.additionalData?.trim().orEmpty()
+                    if (candidateCollectionIds.isEmpty() && maybeCollectionName.isNotBlank()) {
+                        try {
+                            Timber.d(
+                                "HomeScreenSectionsService: Attempting to resolve collection by name \"$maybeCollectionName\"",
+                            )
+                            val searchResult =
+                                api.itemsApi
+                                    .getItems(
+                                        GetItemsRequest(
+                                            searchTerm = maybeCollectionName,
+                                            includeItemTypes = listOf(BaseItemKind.BOX_SET),
+                                            recursive = true,
+                                            limit = 10,
+                                        ),
+                                    ).content.items
+                            val match =
+                                searchResult.firstOrNull {
+                                    it.type == BaseItemKind.BOX_SET &&
+                                        it.name?.equals(maybeCollectionName, ignoreCase = true) == true
+                                } ?: searchResult.firstOrNull { it.type == BaseItemKind.BOX_SET }
+
+                            if (match?.id != null) {
+                                Timber.d(
+                                    "HomeScreenSectionsService: Resolved collection by name to id=${match.id}",
+                                )
+                                val viewAllDto = match.copy(name = "View All")
+                                return@use items + BaseItem.from(viewAllDto, api, useSeriesForPrimary = false)
+                            }
+                        } catch (ex: Exception) {
+                            Timber.d(ex, "HomeScreenSectionsService: Failed resolving collection by name")
+                        }
+                    }
+
                     items
                 } else {
                     Timber.w("HomeScreenSectionsService: Failed to fetch section items, status=${response.code}")
-                    emptyList<BaseItem>()
+                    emptyList()
                 }
             }
+        }
+
+        private fun parseAnyIdToUuidOrNull(raw: String?): UUID? {
+            val v = raw?.trim().orEmpty()
+            if (v.isBlank()) return null
+
+            // First try Jellyfin SDK helper (handles UUID-ish strings).
+            v.toUUIDOrNull()?.let { return it }
+
+            // Jellyfin sometimes uses a 32-char hex string without dashes.
+            if (v.length == 32 && v.all { it.isDigit() || it.lowercaseChar() in 'a'..'f' }) {
+                val dashed =
+                    buildString(36) {
+                        append(v.take(8))
+                        append('-')
+                        append(v.substring(8, 12))
+                        append('-')
+                        append(v.substring(12, 16))
+                        append('-')
+                        append(v.substring(16, 20))
+                        append('-')
+                        append(v.substring(20, 32))
+                    }
+                return try {
+                    UUID.fromString(dashed)
+                } catch (_: IllegalArgumentException) {
+                    null
+                }
+            }
+
+            return null
         }
     }
 
@@ -341,4 +476,5 @@ private data class HomeSection(
     val limit: Int,
     val route: String? = null,
     val additionalData: String? = null,
+    val originalPayloadId: String? = null,
 )

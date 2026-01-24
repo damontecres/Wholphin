@@ -214,6 +214,17 @@ fun HomePageContent(
         position.let {
             (homeRows.getOrNull(it.row) as? HomeRowLoadingState.Success)?.items?.getOrNull(it.column)
         }
+    // If the focused item is the synthetic "View All" card, keep the header/backdrop
+    // driven by the last real item in that row so the top area doesn't go blank.
+    val headerItem =
+        if (focusedItem?.type == BaseItemKind.BOX_SET && focusedItem.name == "View All") {
+            (homeRows.getOrNull(position.row) as? HomeRowLoadingState.Success)
+                ?.items
+                ?.asReversed()
+                ?.firstOrNull { it != null && !(it.type == BaseItemKind.BOX_SET && it.name == "View All") }
+        } else {
+            focusedItem
+        }
 
     val listState = rememberLazyListState()
     val rowFocusRequesters = remember(homeRows) { List(homeRows.size) { FocusRequester() } }
@@ -242,13 +253,13 @@ fun HomePageContent(
             listState.animateScrollToItem(position.row)
         }
     }
-    LaunchedEffect(onUpdateBackdrop, focusedItem) {
-        focusedItem?.let { onUpdateBackdrop.invoke(it) }
+    LaunchedEffect(onUpdateBackdrop, headerItem) {
+        headerItem?.let { onUpdateBackdrop.invoke(it) }
     }
     Box(modifier = modifier) {
         Column(modifier = Modifier.fillMaxSize()) {
             HomePageHeader(
-                item = focusedItem,
+                item = headerItem,
                 modifier =
                     Modifier
                         .padding(top = 48.dp, bottom = 32.dp, start = 32.dp)
@@ -353,6 +364,7 @@ fun HomePageContent(
                                             name = item?.data?.seriesName ?: item?.name,
                                             item = item,
                                             aspectRatio = AspectRatios.TALL,
+                                            forceTextOnly = item?.type == BaseItemKind.BOX_SET && item.name == "View All",
                                             cornerText = cornerText,
                                             played = item?.data?.userData?.played ?: false,
                                             favorite = item?.favorite ?: false,

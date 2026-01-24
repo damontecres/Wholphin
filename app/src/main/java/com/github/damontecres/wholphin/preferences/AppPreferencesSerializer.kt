@@ -93,6 +93,8 @@ class AppPreferencesSerializer
                                     AppPreference.NavDrawerSwitchOnFocus.defaultValue
                                 showClock = AppPreference.ShowClock.defaultValue
                                 enableCustomHomeRows = AppPreference.CustomHomeRows.defaultValue
+                                customHomeRowsUseNativeContinueNext =
+                                    AppPreference.CustomHomeRowsUseNativeContinueNext.defaultValue
                                 backdropStyle = AppPreference.BackdropStylePref.defaultValue
 
                                 subtitlesPreferences =

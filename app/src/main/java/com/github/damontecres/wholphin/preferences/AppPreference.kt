@@ -694,6 +694,18 @@ sealed interface AppPreference<Pref, T> {
                 summaryOff = R.string.disabled,
             )
 
+        val CustomHomeRowsUseNativeContinueNext =
+            AppSwitchPreference<AppPreferences>(
+                title = R.string.custom_home_rows_use_native_continue_next,
+                defaultValue = false,
+                getter = { it.interfacePreferences.customHomeRowsUseNativeContinueNext },
+                setter = { prefs, value ->
+                    prefs.updateInterfacePreferences { customHomeRowsUseNativeContinueNext = value }
+                },
+                summaryOn = R.string.enabled,
+                summaryOff = R.string.disabled,
+            )
+
         val BackdropStylePref =
             AppChoicePreference<AppPreferences, BackdropStyle>(
                 title = R.string.backdrop_display,
@@ -913,12 +925,20 @@ val basicPreferences =
                 listOf(
                     AppPreference.SignInAuto,
                     AppPreference.HomePageItems,
-                    AppPreference.CombineContinueNext,
                     AppPreference.RewatchNextUp,
                     AppPreference.PlayThemeMusic,
                     AppPreference.RememberSelectedTab,
                     AppPreference.SubtitleStyle,
                     AppPreference.ThemeColors,
+                ),
+            conditionalPreferences =
+                listOf(
+                    // When Custom Home Rows is enabled, the server/plugin controls the row composition,
+                    // so the local "Combine Continue Watching & Next Up" setting has no effect.
+                    ConditionalPreferences(
+                        condition = { !it.interfacePreferences.enableCustomHomeRows },
+                        preferences = listOf(AppPreference.CombineContinueNext),
+                    ),
                 ),
         ),
         PreferenceGroup(
@@ -981,8 +1001,25 @@ val advancedPreferences =
                         // Temporarily disabled, see https://github.com/damontecres/Wholphin/pull/127#issuecomment-3478058418
 //                    AppPreference.NavDrawerSwitchOnFocus,
                         AppPreference.CustomHomeRows,
-                        AppPreference.ControllerTimeout,
-                        AppPreference.BackdropStylePref,
+                    ),
+                conditionalPreferences =
+                    listOf(
+                        ConditionalPreferences(
+                            condition = { it.interfacePreferences.enableCustomHomeRows },
+                            preferences =
+                                listOf(
+                                    AppPreference.CustomHomeRowsUseNativeContinueNext,
+                                ),
+                        ),
+                        // Always-on preferences that should appear after the custom-home-row options
+                        ConditionalPreferences(
+                            condition = { true },
+                            preferences =
+                                listOf(
+                                    AppPreference.ControllerTimeout,
+                                    AppPreference.BackdropStylePref,
+                                ),
+                        ),
                     ),
             ),
         )
