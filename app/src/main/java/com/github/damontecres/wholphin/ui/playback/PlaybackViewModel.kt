@@ -211,6 +211,7 @@ class PlaybackViewModel
             isHdr: Boolean,
             is4k: Boolean,
         ) {
+            val softwareDecoding = !preferences.appPreferences.playbackPreferences.mpvOptions.enableHardwareDecoding
             val playerBackend =
                 when (preferences.appPreferences.playbackPreferences.playerBackend) {
                     PlayerBackend.UNRECOGNIZED,
@@ -219,7 +220,7 @@ class PlaybackViewModel
 
                     PlayerBackend.MPV -> PlayerBackend.MPV
 
-                    PlayerBackend.PREFER_MPV -> if (isHdr) PlayerBackend.EXO_PLAYER else PlayerBackend.MPV
+                    PlayerBackend.PREFER_MPV -> if (isHdr || (is4k && softwareDecoding)) PlayerBackend.EXO_PLAYER else PlayerBackend.MPV
                 }
 
             Timber.i("Selected backend: %s", playerBackend)
