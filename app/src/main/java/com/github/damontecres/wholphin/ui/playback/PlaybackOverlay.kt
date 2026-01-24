@@ -33,6 +33,7 @@ import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -156,6 +157,25 @@ fun PlaybackOverlay(
         label = "overlay_slide_progress"
     )
 
+    // If the overlay is dismissed (e.g. Back) while a sub-panel is open (Chapters/Queue),
+    // don't transition through the controller UI (which causes a brief flash).
+    // Instead, wait until the overlay is fully hidden, then reset state.
+    var resetStateAfterHide by remember { mutableStateOf(false) }
+    LaunchedEffect(controllerViewState.controlsVisible) {
+        if (!controllerViewState.controlsVisible) {
+            resetStateAfterHide = true
+        }
+    }
+    LaunchedEffect(resetStateAfterHide) {
+        if (!resetStateAfterHide) return@LaunchedEffect
+        snapshotFlow { progressValue }.collect { p ->
+            if (p >= 1f) {
+                state = OverlayViewState.CONTROLLER
+                resetStateAfterHide = false
+            }
+        }
+    }
+
     BoxWithConstraints(modifier = modifier) {
         val fullHeightPx = with(density) { maxHeight.toPx() }
         Box(
@@ -256,7 +276,7 @@ fun PlaybackOverlay(
             }
         }
         AnimatedVisibility(
-            state == OverlayViewState.CHAPTERS,
+            controllerViewState.controlsVisible && state == OverlayViewState.CHAPTERS,
             enter = slideInVertically { it / 2 } + fadeIn(),
             exit = slideOutVertically { it / 2 } + fadeOut(),
         ) {
@@ -335,7 +355,7 @@ fun PlaybackOverlay(
             }
         }
         AnimatedVisibility(
-            state == OverlayViewState.QUEUE,
+            controllerViewState.controlsVisible && state == OverlayViewState.QUEUE,
             enter = slideInVertically { it / 2 } + fadeIn(),
             exit = slideOutVertically { it / 2 } + fadeOut(),
         ) {
