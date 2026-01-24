@@ -11,6 +11,7 @@ import com.github.damontecres.wholphin.api.seerr.model.PublicSettings
 import com.github.damontecres.wholphin.api.seerr.model.User
 import com.github.damontecres.wholphin.data.SeerrServerDao
 import com.github.damontecres.wholphin.data.ServerRepository
+import com.github.damontecres.wholphin.data.model.HomePageResolvedSettings
 import com.github.damontecres.wholphin.data.model.SeerrAuthMethod
 import com.github.damontecres.wholphin.data.model.SeerrPermission
 import com.github.damontecres.wholphin.data.model.SeerrServer
@@ -213,6 +214,7 @@ class UserSwitchListener
         private val seerrServerRepository: SeerrServerRepository,
         private val seerrServerDao: SeerrServerDao,
         private val seerrApi: SeerrApi,
+        private val homeSettingsService: HomeSettingsService,
     ) {
         init {
             context as AppCompatActivity
@@ -220,41 +222,58 @@ class UserSwitchListener
                 serverRepository.currentUser.asFlow().collect { user ->
                     Timber.d("New user")
                     seerrServerRepository.clear()
+                    homeSettingsService.currentSettings.update { HomePageResolvedSettings.EMPTY }
                     if (user != null) {
-                        seerrServerDao
-                            .getUsersByJellyfinUser(user.rowId)
-                            .firstOrNull()
-                            ?.let { seerrUser ->
-                                val server = seerrServerDao.getServer(seerrUser.serverId)?.server
-                                if (server != null) {
-                                    Timber.i("Found a seerr user & server")
-                                    seerrApi.update(server.url, seerrUser.credential)
-                                    val userConfig =
-                                        if (seerrUser.authMethod != SeerrAuthMethod.API_KEY) {
-                                            try {
-                                                login(
-                                                    seerrApi.api,
-                                                    seerrUser.authMethod,
-                                                    seerrUser.username,
-                                                    seerrUser.password,
-                                                )
-                                            } catch (ex: Exception) {
-                                                Timber.w(ex, "Error logging into %s", server.url)
-                                                seerrServerRepository.clear()
-                                                return@let
+                        // Check for home settings
+                        launchIO {
+                            homeSettingsService.updateCurrent(user.id)
+                        }
+                        // Check for seerr server
+                        launchIO {
+                            seerrServerDao
+                                .getUsersByJellyfinUser(user.rowId)
+                                .firstOrNull()
+                                ?.let { seerrUser ->
+                                    val server =
+                                        seerrServerDao.getServer(seerrUser.serverId)?.server
+                                    if (server != null) {
+                                        Timber.i("Found a seerr user & server")
+                                        seerrApi.update(server.url, seerrUser.credential)
+                                        val userConfig =
+                                            if (seerrUser.authMethod != SeerrAuthMethod.API_KEY) {
+                                                try {
+                                                    login(
+                                                        seerrApi.api,
+                                                        seerrUser.authMethod,
+                                                        seerrUser.username,
+                                                        seerrUser.password,
+                                                    )
+                                                } catch (ex: Exception) {
+                                                    Timber.w(
+                                                        ex,
+                                                        "Error logging into %s",
+                                                        server.url,
+                                                    )
+                                                    seerrServerRepository.clear()
+                                                    return@let
+                                                }
+                                            } else {
+                                                try {
+                                                    seerrApi.api.usersApi.authMeGet()
+                                                } catch (ex: Exception) {
+                                                    Timber.w(
+                                                        ex,
+                                                        "Error logging into %s",
+                                                        server.url,
+                                                    )
+                                                    seerrServerRepository.clear()
+                                                    return@let
+                                                }
                                             }
-                                        } else {
-                                            try {
-                                                seerrApi.api.usersApi.authMeGet()
-                                            } catch (ex: Exception) {
-                                                Timber.w(ex, "Error logging into %s", server.url)
-                                                seerrServerRepository.clear()
-                                                return@let
-                                            }
-                                        }
-                                    seerrServerRepository.set(server, seerrUser, userConfig)
+                                        seerrServerRepository.set(server, seerrUser, userConfig)
+                                    }
                                 }
-                            }
+                        }
                     }
                 }
             }

@@ -144,9 +144,21 @@ data class HomeRowConfigDisplay(
 @Serializable
 @SerialName("HomePageSettings")
 data class HomePageSettings(
-    val version: Int = 1,
     val rows: List<HomeRowConfig>,
-)
+    val version: Int = 1,
+) {
+    companion object {
+        val EMPTY = HomePageSettings(listOf())
+    }
+}
+
+data class HomePageResolvedSettings(
+    val rows: List<HomeRowConfigDisplay>,
+) {
+    companion object {
+        val EMPTY = HomePageResolvedSettings(listOf())
+    }
+}
 
 @Serializable
 data class HomeRowViewOptions(

@@ -9,6 +9,7 @@ import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.NavDrawerItemRepository
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.BaseItem
+import com.github.damontecres.wholphin.data.model.HomePageResolvedSettings
 import com.github.damontecres.wholphin.data.model.HomePageSettings
 import com.github.damontecres.wholphin.data.model.HomeRowConfig
 import com.github.damontecres.wholphin.data.model.HomeRowConfigDisplay
@@ -33,6 +34,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.userLibraryApi
@@ -43,7 +45,6 @@ import org.jellyfin.sdk.model.api.UserDto
 import org.jellyfin.sdk.model.api.request.GetGenresRequest
 import org.jellyfin.sdk.model.api.request.GetItemsRequest
 import org.jellyfin.sdk.model.api.request.GetLatestMediaRequest
-import org.jellyfin.sdk.model.serializer.toUUID
 import timber.log.Timber
 import java.util.UUID
 import javax.inject.Inject
@@ -77,177 +78,18 @@ class HomeSettingsViewModel
                             it as ServerNavDrawerItem
                             Library(it.itemId, it.name, it.type)
                         }
-                _state.update { it.copy(libraries = libraries) }
-
-                val localSettings =
-                    try {
-                        homeSettingsService.loadFromLocal()
-                    } catch (ex: Exception) {
-                        Timber.e(ex)
-                        showToast(context, "Error loading settings: ${ex.localizedMessage}")
-                        null
-                    }
-                if (localSettings != null) {
-                    val displays = localSettings.rows.map { convert(it) }
-                    _state.update {
-                        it.copy(rows = displays)
-                    }
-                } else {
-
-                    // Or create default
-                    val prefs =
-                        userPreferencesService.getCurrent().appPreferences.homePagePreferences
-                    val includedIds =
-                        navDrawerItemRepository
-                            .getFilteredNavDrawerItems(navDrawerItems)
-                            .filter { it is ServerNavDrawerItem }
-                            .mapIndexed { index, it ->
-                                val id = (it as ServerNavDrawerItem).itemId
-                                val name = libraries.firstOrNull { it.itemId == id }?.name
-                                val title =
-                                    name?.let { context.getString(R.string.recently_added_in, it) }
-                                        ?: context.getString(R.string.recently_added)
-                                HomeRowConfigDisplay(
-                                    title,
-                                    HomeRowConfig.RecentlyAdded(
-                                        index,
-                                        id,
-                                        HomeRowViewOptions(),
-                                    ),
-                                )
-                            }
-                    val continueWatchingRows =
-                        if (prefs.combineContinueNext) {
-                            listOf(
-                                HomeRowConfigDisplay(
-                                    context.getString(R.string.combine_continue_next),
-                                    HomeRowConfig.ContinueWatchingCombined(
-                                        includedIds.size + 1,
-                                        HomeRowViewOptions(),
-                                    ),
-                                ),
-                            )
-                        } else {
-                            listOf(
-                                HomeRowConfigDisplay(
-                                    context.getString(R.string.continue_watching),
-                                    HomeRowConfig.ContinueWatching(
-                                        includedIds.size + 1,
-                                        HomeRowViewOptions(),
-                                    ),
-                                ),
-                                HomeRowConfigDisplay(
-                                    context.getString(R.string.next_up),
-                                    HomeRowConfig.NextUp(
-                                        includedIds.size + 2,
-                                        HomeRowViewOptions(),
-                                    ),
-                                ),
-                            )
-                        }
-                    val rowConfig =
-                        continueWatchingRows + includedIds +
-                            // TODO remove after testing
-                            listOf(
-                                HomeRowConfigDisplay(
-                                    "Collection",
-                                    HomeRowConfig.ByParent(
-                                        id = 100,
-                                        parentId = "34ab6fd1f51c41bb014981f2e334f465".toUUID(),
-                                        recursive = true,
-                                        viewOptions = HomeRowViewOptions(),
-                                    ),
-                                ),
-                                HomeRowConfigDisplay(
-                                    "Playlist",
-                                    HomeRowConfig.ByParent(
-                                        id = 101,
-                                        parentId = "f94be36e9836127a0bccfc7843b19e5b".toUUID(),
-                                        recursive = true,
-                                        viewOptions = HomeRowViewOptions(),
-                                    ),
-                                ),
-                            )
-                    _state.update {
-                        it.copy(rows = rowConfig)
-                    }
+                val currentSettings =
+                    homeSettingsService.currentSettings.first { it != HomePageResolvedSettings.EMPTY }
+                Timber.v("currentSettings=%s", currentSettings)
+                _state.update {
+                    it.copy(
+                        libraries = libraries,
+                        rows = currentSettings.rows,
+                    )
                 }
-
                 fetchRowData()
             }
         }
-
-        private suspend fun convert(config: HomeRowConfig): HomeRowConfigDisplay =
-            when (config) {
-                is HomeRowConfig.ByParent -> {
-                    val name =
-                        api.userLibraryApi
-                            .getItem(itemId = config.parentId)
-                            .content.name ?: ""
-                    HomeRowConfigDisplay(
-                        name,
-                        config,
-                    )
-                }
-
-                is HomeRowConfig.ContinueWatching -> {
-                    HomeRowConfigDisplay(
-                        context.getString(R.string.continue_watching),
-                        config,
-                    )
-                }
-
-                is HomeRowConfig.ContinueWatchingCombined -> {
-                    HomeRowConfigDisplay(
-                        context.getString(R.string.combine_continue_next),
-                        config,
-                    )
-                }
-
-                is HomeRowConfig.Genres -> {
-                    val name =
-                        api.userLibraryApi
-                            .getItem(itemId = config.parentId)
-                            .content.name ?: ""
-                    HomeRowConfigDisplay(
-                        context.getString(R.string.genres_in, name),
-                        config,
-                    )
-                }
-
-                is HomeRowConfig.GetItems -> {
-                    HomeRowConfigDisplay(config.name, config)
-                }
-
-                is HomeRowConfig.NextUp -> {
-                    HomeRowConfigDisplay(
-                        context.getString(R.string.next_up),
-                        config,
-                    )
-                }
-
-                is HomeRowConfig.RecentlyAdded -> {
-                    val name =
-                        api.userLibraryApi
-                            .getItem(itemId = config.parentId)
-                            .content.name ?: ""
-                    HomeRowConfigDisplay(
-                        context.getString(R.string.recently_added_in, name),
-                        config,
-                    )
-                }
-
-                is HomeRowConfig.RecentlyReleased -> {
-                    val name =
-                        api.userLibraryApi
-                            .getItem(itemId = config.parentId)
-                            .content.name ?: ""
-                    HomeRowConfigDisplay(
-                        context.getString(R.string.recently_released_in, name),
-                        config,
-                    )
-                }
-            }
 
         fun updateBackdrop(item: BaseItem) {
             viewModelScope.launchIO {
@@ -709,14 +551,16 @@ class HomeSettingsViewModel
 
         fun saveToLocal() {
             viewModelScope.launchIO {
-                val rows = state.value.rows.map { it.config }
-                val settings = HomePageSettings(rows = rows)
-                try {
-                    homeSettingsService.saveToLocal(settings)
-                    showToast(context, context.getString(R.string.save), Toast.LENGTH_SHORT)
-                } catch (ex: Exception) {
-                    Timber.e(ex)
-                    showToast(context, "Error saving: ${ex.localizedMessage}")
+                serverRepository.currentUser.value?.let { user ->
+                    val rows = state.value.rows.map { it.config }
+                    val settings = HomePageSettings(rows = rows)
+                    try {
+                        homeSettingsService.saveToLocal(user.id, settings)
+                        showToast(context, context.getString(R.string.save), Toast.LENGTH_SHORT)
+                    } catch (ex: Exception) {
+                        Timber.e(ex)
+                        showToast(context, "Error saving: ${ex.localizedMessage}")
+                    }
                 }
             }
         }

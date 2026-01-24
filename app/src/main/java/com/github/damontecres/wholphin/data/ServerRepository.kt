@@ -18,7 +18,6 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import org.jellyfin.sdk.Jellyfin
 import org.jellyfin.sdk.api.client.ApiClient
-import org.jellyfin.sdk.api.client.extensions.displayPreferencesApi
 import org.jellyfin.sdk.api.client.extensions.systemApi
 import org.jellyfin.sdk.api.client.extensions.userApi
 import org.jellyfin.sdk.model.api.AuthenticationResult
@@ -103,27 +102,6 @@ class ServerRepository
                             currentUserId = updatedUser.id.toServerString()
                         }.build()
                 }
-                val settings =
-                    apiClient.displayPreferencesApi
-                        .getDisplayPreferences(
-                            displayPreferencesId = "settings",
-                            userId = user.id,
-                            client = "wholphin",
-                        ).content
-                val newSettings =
-                    settings.copy(
-                        customPrefs =
-                            settings.customPrefs.toMutableMap().apply {
-                                put("test_key", "test_value")
-                            },
-                    )
-                apiClient.displayPreferencesApi.updateDisplayPreferences(
-                    displayPreferencesId = "settings",
-                    userId = user.id,
-                    client = "wholphin",
-                    data = newSettings,
-                )
-                Timber.v("settings=$settings")
                 withContext(Dispatchers.Main) {
                     _current.value = CurrentUser(updatedServer, updatedUser)
                     _currentUserDto.value = userDto
