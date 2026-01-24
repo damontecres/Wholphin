@@ -83,6 +83,7 @@ sealed class HomeRowConfig {
     }
 }
 
+@Serializable
 data class HomeRowConfigDisplay(
     val title: String,
     val config: HomeRowConfig,

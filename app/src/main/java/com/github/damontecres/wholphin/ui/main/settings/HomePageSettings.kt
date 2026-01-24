@@ -52,7 +52,6 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
-import kotlinx.serialization.json.Json
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.userLibraryApi
 import org.jellyfin.sdk.model.api.CollectionType
@@ -61,7 +60,6 @@ import org.jellyfin.sdk.model.api.SortOrder
 import org.jellyfin.sdk.model.api.request.GetGenresRequest
 import org.jellyfin.sdk.model.api.request.GetItemsRequest
 import org.jellyfin.sdk.model.api.request.GetLatestMediaRequest
-import timber.log.Timber
 import java.util.UUID
 import javax.inject.Inject
 
@@ -151,8 +149,8 @@ class HomePageSettingsViewModel
                 _state.update {
                     it.copy(rows = rowConfig)
                 }
-                val json = Json.encodeToString(rowConfig.map { it.config })
-                Timber.v("json=$json")
+//                val json = Json.encodeToString(rowConfig)
+//                Timber.v("json=$json")
 
                 fetchRowData()
             }
