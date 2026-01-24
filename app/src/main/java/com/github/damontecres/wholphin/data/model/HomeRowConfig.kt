@@ -12,6 +12,7 @@ import com.github.damontecres.wholphin.ui.AspectRatio
 import com.github.damontecres.wholphin.ui.Cards
 import com.github.damontecres.wholphin.ui.components.ViewOptionImageType
 import com.github.damontecres.wholphin.ui.components.ViewOptions
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.UseSerializers
 import org.jellyfin.sdk.model.serializer.UUIDSerializer
@@ -19,38 +20,42 @@ import java.util.UUID
 
 @Serializable
 sealed class HomeRowConfig {
-    abstract val id: UUID
+    abstract val id: Int
     abstract val viewOptions: HomeRowViewOptions
 
     abstract fun updateViewOptions(viewOptions: HomeRowViewOptions): HomeRowConfig
 
     @Serializable
+    @SerialName("ContinueWatching")
     data class ContinueWatching(
-        override val id: UUID,
+        override val id: Int,
         override val viewOptions: HomeRowViewOptions,
     ) : HomeRowConfig() {
         override fun updateViewOptions(viewOptions: HomeRowViewOptions): HomeRowConfig = this.copy(viewOptions = viewOptions)
     }
 
     @Serializable
+    @SerialName("NextUp")
     data class NextUp(
-        override val id: UUID,
+        override val id: Int,
         override val viewOptions: HomeRowViewOptions,
     ) : HomeRowConfig() {
         override fun updateViewOptions(viewOptions: HomeRowViewOptions): HomeRowConfig = this.copy(viewOptions = viewOptions)
     }
 
     @Serializable
+    @SerialName("ContinueWatchingCombined")
     data class ContinueWatchingCombined(
-        override val id: UUID,
+        override val id: Int,
         override val viewOptions: HomeRowViewOptions,
     ) : HomeRowConfig() {
         override fun updateViewOptions(viewOptions: HomeRowViewOptions): HomeRowConfig = this.copy(viewOptions = viewOptions)
     }
 
     @Serializable
+    @SerialName("RecentlyAdded")
     data class RecentlyAdded(
-        override val id: UUID,
+        override val id: Int,
         val parentId: UUID,
         override val viewOptions: HomeRowViewOptions,
     ) : HomeRowConfig() {
@@ -58,8 +63,9 @@ sealed class HomeRowConfig {
     }
 
     @Serializable
+    @SerialName("RecentlyReleased")
     data class RecentlyReleased(
-        override val id: UUID,
+        override val id: Int,
         val parentId: UUID,
         override val viewOptions: HomeRowViewOptions,
     ) : HomeRowConfig() {
@@ -67,8 +73,9 @@ sealed class HomeRowConfig {
     }
 
     @Serializable
+    @SerialName("Genres")
     data class Genres(
-        override val id: UUID,
+        override val id: Int,
         val parentId: UUID,
         override val viewOptions: HomeRowViewOptions,
     ) : HomeRowConfig() {

@@ -37,13 +37,14 @@ import com.github.damontecres.wholphin.services.LatestNextUpService
 import com.github.damontecres.wholphin.services.UserPreferencesService
 import com.github.damontecres.wholphin.ui.AspectRatio
 import com.github.damontecres.wholphin.ui.Cards
+import com.github.damontecres.wholphin.ui.DefaultItemFields
 import com.github.damontecres.wholphin.ui.SlimItemFields
 import com.github.damontecres.wholphin.ui.components.getGenreImageMap
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.main.HomePageContent
-import com.github.damontecres.wholphin.ui.main.LatestData
 import com.github.damontecres.wholphin.ui.nav.ServerNavDrawerItem
 import com.github.damontecres.wholphin.util.GetGenresRequestHandler
+import com.github.damontecres.wholphin.util.GetItemsRequestHandler
 import com.github.damontecres.wholphin.util.HomeRowLoadingState
 import com.github.damontecres.wholphin.util.LoadingState
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -51,10 +52,16 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.serialization.json.Json
 import org.jellyfin.sdk.api.client.ApiClient
+import org.jellyfin.sdk.api.client.extensions.userLibraryApi
 import org.jellyfin.sdk.model.api.CollectionType
+import org.jellyfin.sdk.model.api.ItemSortBy
+import org.jellyfin.sdk.model.api.SortOrder
 import org.jellyfin.sdk.model.api.request.GetGenresRequest
+import org.jellyfin.sdk.model.api.request.GetItemsRequest
 import org.jellyfin.sdk.model.api.request.GetLatestMediaRequest
+import timber.log.Timber
 import java.util.UUID
 import javax.inject.Inject
 
@@ -96,7 +103,7 @@ class HomePageSettingsViewModel
                     navDrawerItemRepository
                         .getFilteredNavDrawerItems(navDrawerItems)
                         .filter { it is ServerNavDrawerItem }
-                        .map {
+                        .mapIndexed { index, it ->
                             val id = (it as ServerNavDrawerItem).itemId
                             val name = libraries.firstOrNull { it.itemId == id }?.name
                             val title =
@@ -105,7 +112,7 @@ class HomePageSettingsViewModel
                             HomeRowConfigDisplay(
                                 title,
                                 HomeRowConfig.RecentlyAdded(
-                                    UUID.randomUUID(),
+                                    index,
                                     id,
                                     HomeRowViewOptions(),
                                 ),
@@ -117,7 +124,7 @@ class HomePageSettingsViewModel
                             HomeRowConfigDisplay(
                                 context.getString(R.string.combine_continue_next),
                                 HomeRowConfig.ContinueWatchingCombined(
-                                    UUID.randomUUID(),
+                                    includedIds.size + 1,
                                     HomeRowViewOptions(),
                                 ),
                             ),
@@ -127,14 +134,14 @@ class HomePageSettingsViewModel
                             HomeRowConfigDisplay(
                                 context.getString(R.string.continue_watching),
                                 HomeRowConfig.ContinueWatching(
-                                    UUID.randomUUID(),
+                                    includedIds.size + 1,
                                     HomeRowViewOptions(),
                                 ),
                             ),
                             HomeRowConfigDisplay(
                                 context.getString(R.string.next_up),
                                 HomeRowConfig.NextUp(
-                                    UUID.randomUUID(),
+                                    includedIds.size + 2,
                                     HomeRowViewOptions(),
                                 ),
                             ),
@@ -144,6 +151,8 @@ class HomePageSettingsViewModel
                 _state.update {
                     it.copy(rows = rowConfig)
                 }
+                val json = Json.encodeToString(rowConfig.map { it.config })
+                Timber.v("json=$json")
 
                 fetchRowData()
             }
@@ -276,21 +285,52 @@ class HomePageSettingsViewModel
                                             limit = limit,
                                             isPlayed = null, // Server will handle user's preference
                                         )
-                                    latestNextUpService
-                                        .loadLatest(listOf(LatestData(title, request)))
-                                        .let {
-                                            it.map {
-                                                if (it is HomeRowLoadingState.Success) {
-                                                    it.copy(viewOptions = row.viewOptions)
-                                                } else {
-                                                    it
-                                                }
+                                    val latest =
+                                        api.userLibraryApi
+                                            .getLatestMedia(request)
+                                            .content
+                                            .map { BaseItem.from(it, api, true) }
+                                            .let {
+                                                HomeRowLoadingState.Success(
+                                                    title,
+                                                    it,
+                                                    row.viewOptions,
+                                                )
                                             }
-                                        }
+                                    listOf(latest)
                                 }
 
                                 is HomeRowConfig.RecentlyReleased -> {
-                                    TODO()
+                                    val name =
+                                        _state.value.libraries
+                                            .firstOrNull { it.itemId == row.parentId }
+                                            ?.name
+                                    val title =
+                                        name?.let {
+                                            context.getString(R.string.recently_released_in, it)
+                                        } ?: context.getString(R.string.recently_released)
+                                    val request =
+                                        GetItemsRequest(
+                                            parentId = row.parentId,
+                                            limit = limit,
+                                            sortBy = listOf(ItemSortBy.PREMIERE_DATE),
+                                            sortOrder = listOf(SortOrder.DESCENDING),
+                                            fields = DefaultItemFields,
+                                            recursive = true,
+                                        )
+                                    GetItemsRequestHandler
+                                        .execute(api, request)
+                                        .content.items
+                                        .map { BaseItem.from(it, api, true) }
+                                        .let {
+                                            listOf(
+                                                HomeRowLoadingState.Success(
+                                                    title,
+                                                    it,
+                                                    row.viewOptions,
+                                                ),
+                                            )
+                                        }
                                 }
                             }
                         }.flatten()
@@ -349,13 +389,14 @@ class HomePageSettingsViewModel
 
         fun addRow(type: MetaRowType) {
             viewModelScope.launchIO {
+                val id = state.value.rows.size
                 val newRow =
                     when (type) {
                         MetaRowType.CONTINUE_WATCHING -> {
                             HomeRowConfigDisplay(
                                 context.getString(R.string.continue_watching),
                                 HomeRowConfig.ContinueWatching(
-                                    UUID.randomUUID(),
+                                    id,
                                     HomeRowViewOptions(),
                                 ),
                             )
@@ -365,7 +406,7 @@ class HomePageSettingsViewModel
                             HomeRowConfigDisplay(
                                 context.getString(R.string.continue_watching),
                                 HomeRowConfig.NextUp(
-                                    UUID.randomUUID(),
+                                    id,
                                     HomeRowViewOptions(),
                                 ),
                             )
@@ -375,7 +416,7 @@ class HomePageSettingsViewModel
                             HomeRowConfigDisplay(
                                 context.getString(R.string.combine_continue_next),
                                 HomeRowConfig.ContinueWatchingCombined(
-                                    UUID.randomUUID(),
+                                    id,
                                     HomeRowViewOptions(),
                                 ),
                             )
@@ -396,6 +437,7 @@ class HomePageSettingsViewModel
             rowType: LibraryRowType,
         ) {
             viewModelScope.launchIO {
+                val id = state.value.rows.size
                 val newRow =
                     when (rowType) {
                         LibraryRowType.RECENTLY_ADDED -> {
@@ -404,7 +446,7 @@ class HomePageSettingsViewModel
                             HomeRowConfigDisplay(
                                 title,
                                 HomeRowConfig.RecentlyAdded(
-                                    UUID.randomUUID(),
+                                    id,
                                     library.itemId,
                                     HomeRowViewOptions(),
                                 ),
@@ -422,7 +464,7 @@ class HomePageSettingsViewModel
                             HomeRowConfigDisplay(
                                 title,
                                 HomeRowConfig.RecentlyReleased(
-                                    UUID.randomUUID(),
+                                    id,
                                     library.itemId,
                                     HomeRowViewOptions(),
                                 ),
@@ -434,7 +476,7 @@ class HomePageSettingsViewModel
                             HomeRowConfigDisplay(
                                 title,
                                 HomeRowConfig.Genres(
-                                    UUID.randomUUID(),
+                                    id,
                                     library.itemId,
                                     HomeRowViewOptions(
                                         heightDp = (Cards.HEIGHT_2X3_DP * .75f).toInt(),
@@ -455,17 +497,17 @@ class HomePageSettingsViewModel
         }
 
         fun updateViewOptions(
-            rowId: UUID,
+            rowId: Int,
             viewOptions: HomeRowViewOptions,
         ) {
             viewModelScope.launchIO {
                 _state.update {
-                    val index = state.value.rows.indexOfFirst { it.config.id == rowId }
+                    val index = it.rows.indexOfFirst { it.config.id == rowId }
                     val newRowConfig =
-                        state.value.rows[index]
+                        it.rows[index]
                             .config
                             .updateViewOptions(viewOptions)
-                    val newRow = state.value.rows[index].copy(config = newRowConfig)
+                    val newRow = it.rows[index].copy(config = newRowConfig)
                     it.copy(
                         rows =
                             it.rows.toMutableList().apply {
@@ -580,7 +622,10 @@ fun HomePageSettings(
                     HomePageLibraryList(
                         libraries = state.libraries,
                         onClick = { destination = HomePageSettingsDestination.ChooseRowType(it) },
-                        onClickMeta = { viewModel.addRow(it) },
+                        onClickMeta = {
+                            viewModel.addRow(it)
+                            destination = HomePageSettingsDestination.RowList
+                        },
                         modifier = destModifier,
                     )
                 }
