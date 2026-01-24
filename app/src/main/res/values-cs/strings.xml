@@ -452,4 +452,5 @@
     <string name="anamorphic">Anamorfní</string>
     <string name="interlaced">Prokládané</string>
     <string name="color_code_programs">Color code programs</string>
+    <string name="upgrade_mpv_toast">MPV je nyní výchozím přehrávačem mimo HDR.\nToto můžete změnit v nastavení.</string>
 </resources>
