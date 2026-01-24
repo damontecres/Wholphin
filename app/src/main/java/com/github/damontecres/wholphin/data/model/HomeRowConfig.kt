@@ -81,6 +81,16 @@ sealed class HomeRowConfig {
     ) : HomeRowConfig() {
         override fun updateViewOptions(viewOptions: HomeRowViewOptions): HomeRowConfig = this.copy(viewOptions = viewOptions)
     }
+
+    @Serializable
+    @SerialName("Collection")
+    data class Collection(
+        override val id: Int,
+        val collectionId: UUID,
+        override val viewOptions: HomeRowViewOptions,
+    ) : HomeRowConfig() {
+        override fun updateViewOptions(viewOptions: HomeRowViewOptions): HomeRowConfig = this.copy(viewOptions = viewOptions)
+    }
 }
 
 @Serializable

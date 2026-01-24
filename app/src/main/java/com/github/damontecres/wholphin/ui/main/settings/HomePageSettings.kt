@@ -31,6 +31,7 @@ import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.HomeRowConfig
 import com.github.damontecres.wholphin.data.model.HomeRowConfigDisplay
 import com.github.damontecres.wholphin.data.model.HomeRowViewOptions
+import com.github.damontecres.wholphin.preferences.HomePagePreferences
 import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.ImageUrlService
 import com.github.damontecres.wholphin.services.LatestNextUpService
@@ -46,6 +47,7 @@ import com.github.damontecres.wholphin.ui.nav.ServerNavDrawerItem
 import com.github.damontecres.wholphin.util.GetGenresRequestHandler
 import com.github.damontecres.wholphin.util.GetItemsRequestHandler
 import com.github.damontecres.wholphin.util.HomeRowLoadingState
+import com.github.damontecres.wholphin.util.HomeRowLoadingState.Success
 import com.github.damontecres.wholphin.util.LoadingState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -57,9 +59,11 @@ import org.jellyfin.sdk.api.client.extensions.userLibraryApi
 import org.jellyfin.sdk.model.api.CollectionType
 import org.jellyfin.sdk.model.api.ItemSortBy
 import org.jellyfin.sdk.model.api.SortOrder
+import org.jellyfin.sdk.model.api.UserDto
 import org.jellyfin.sdk.model.api.request.GetGenresRequest
 import org.jellyfin.sdk.model.api.request.GetItemsRequest
 import org.jellyfin.sdk.model.api.request.GetLatestMediaRequest
+import org.jellyfin.sdk.model.serializer.toUUID
 import java.util.UUID
 import javax.inject.Inject
 
@@ -145,7 +149,19 @@ class HomePageSettingsViewModel
                             ),
                         )
                     }
-                val rowConfig = continueWatchingRows + includedIds
+                val rowConfig =
+                    continueWatchingRows + includedIds +
+                        // TODO remove after testing
+                        listOf(
+                            HomeRowConfigDisplay(
+                                "Collection",
+                                HomeRowConfig.Collection(
+                                    100,
+                                    "34ab6fd1f51c41bb014981f2e334f465".toUUID(),
+                                    HomeRowViewOptions(),
+                                ),
+                            ),
+                        )
                 _state.update {
                     it.copy(rows = rowConfig)
                 }
@@ -171,166 +187,7 @@ class HomePageSettingsViewModel
                         .map { it.config }
                         .map { row ->
                             // TODO parallelize
-                            when (row) {
-                                is HomeRowConfig.ContinueWatching -> {
-                                    val resume = latestNextUpService.getResume(userDto.id, limit, true)
-                                    listOf(
-                                        HomeRowLoadingState.Success(
-                                            title = context.getString(R.string.continue_watching),
-                                            items = resume,
-                                            viewOptions = row.viewOptions,
-                                        ),
-                                    )
-                                }
-
-                                is HomeRowConfig.NextUp -> {
-                                    val nextUp =
-                                        latestNextUpService.getNextUp(
-                                            userDto.id,
-                                            limit,
-                                            prefs.enableRewatchingNextUp,
-                                            false,
-                                        )
-                                    listOf(
-                                        HomeRowLoadingState.Success(
-                                            title = context.getString(R.string.next_up),
-                                            items = nextUp,
-                                            viewOptions = row.viewOptions,
-                                        ),
-                                    )
-                                }
-
-                                is HomeRowConfig.ContinueWatchingCombined -> {
-                                    val resume =
-                                        latestNextUpService.getResume(userDto.id, limit, true)
-                                    val nextUp =
-                                        latestNextUpService.getNextUp(
-                                            userDto.id,
-                                            limit,
-                                            prefs.enableRewatchingNextUp,
-                                            false,
-                                        )
-
-                                    listOf(
-                                        HomeRowLoadingState.Success(
-                                            title = context.getString(R.string.continue_watching),
-                                            items =
-                                                latestNextUpService.buildCombined(
-                                                    resume,
-                                                    nextUp,
-                                                ),
-                                            viewOptions = row.viewOptions,
-                                        ),
-                                    )
-                                }
-
-                                is HomeRowConfig.Genres -> {
-                                    val request =
-                                        GetGenresRequest(
-                                            parentId = row.parentId,
-                                            userId = userDto.id,
-                                            limit = limit,
-                                        )
-                                    val items =
-                                        GetGenresRequestHandler
-                                            .execute(api, request)
-                                            .content.items
-                                    val genreIds = items.map { it.id }
-                                    val genreImages =
-                                        getGenreImageMap(
-                                            api = api,
-                                            imageUrlService = imageUrlService,
-                                            genres = genreIds,
-                                            parentId = row.parentId,
-                                            includeItemTypes = null,
-                                            cardWidthPx = null,
-                                        )
-                                    val genres =
-                                        items.map {
-                                            BaseItem(it, false, genreImages[it.id])
-                                        }
-
-                                    val name =
-                                        _state.value.libraries
-                                            .firstOrNull { it.itemId == row.parentId }
-                                            ?.name
-                                    val title =
-                                        name?.let { context.getString(R.string.genres_in, it) }
-                                            ?: context.getString(R.string.genres)
-                                    listOf(
-                                        HomeRowLoadingState.Success(
-                                            title,
-                                            genres,
-                                            viewOptions = row.viewOptions,
-                                        ),
-                                    )
-                                }
-
-                                is HomeRowConfig.RecentlyAdded -> {
-                                    val name =
-                                        _state.value.libraries
-                                            .firstOrNull { it.itemId == row.parentId }
-                                            ?.name
-                                    val title =
-                                        name?.let { context.getString(R.string.recently_added_in, it) }
-                                            ?: context.getString(R.string.recently_added)
-                                    val request =
-                                        GetLatestMediaRequest(
-                                            fields = SlimItemFields,
-                                            imageTypeLimit = 1,
-                                            parentId = row.parentId,
-                                            groupItems = true,
-                                            limit = limit,
-                                            isPlayed = null, // Server will handle user's preference
-                                        )
-                                    val latest =
-                                        api.userLibraryApi
-                                            .getLatestMedia(request)
-                                            .content
-                                            .map { BaseItem.from(it, api, true) }
-                                            .let {
-                                                HomeRowLoadingState.Success(
-                                                    title,
-                                                    it,
-                                                    row.viewOptions,
-                                                )
-                                            }
-                                    listOf(latest)
-                                }
-
-                                is HomeRowConfig.RecentlyReleased -> {
-                                    val name =
-                                        _state.value.libraries
-                                            .firstOrNull { it.itemId == row.parentId }
-                                            ?.name
-                                    val title =
-                                        name?.let {
-                                            context.getString(R.string.recently_released_in, it)
-                                        } ?: context.getString(R.string.recently_released)
-                                    val request =
-                                        GetItemsRequest(
-                                            parentId = row.parentId,
-                                            limit = limit,
-                                            sortBy = listOf(ItemSortBy.PREMIERE_DATE),
-                                            sortOrder = listOf(SortOrder.DESCENDING),
-                                            fields = DefaultItemFields,
-                                            recursive = true,
-                                        )
-                                    GetItemsRequestHandler
-                                        .execute(api, request)
-                                        .content.items
-                                        .map { BaseItem.from(it, api, true) }
-                                        .let {
-                                            listOf(
-                                                HomeRowLoadingState.Success(
-                                                    title,
-                                                    it,
-                                                    row.viewOptions,
-                                                ),
-                                            )
-                                        }
-                                }
-                            }
+                            parseRow(prefs, userDto, row, limit)
                         }.flatten()
                 }
             rows?.let { rows ->
@@ -339,6 +196,197 @@ class HomePageSettingsViewModel
                 }
             }
         }
+
+        private suspend fun parseRow(
+            prefs: HomePagePreferences,
+            userDto: UserDto,
+            row: HomeRowConfig,
+            limit: Int,
+        ): List<HomeRowLoadingState> =
+            when (row) {
+                is HomeRowConfig.ContinueWatching -> {
+                    val resume = latestNextUpService.getResume(userDto.id, limit, true)
+                    listOf(
+                        Success(
+                            title = context.getString(R.string.continue_watching),
+                            items = resume,
+                            viewOptions = row.viewOptions,
+                        ),
+                    )
+                }
+
+                is HomeRowConfig.NextUp -> {
+                    val nextUp =
+                        latestNextUpService.getNextUp(
+                            userDto.id,
+                            limit,
+                            prefs.enableRewatchingNextUp,
+                            false,
+                        )
+                    listOf(
+                        Success(
+                            title = context.getString(R.string.next_up),
+                            items = nextUp,
+                            viewOptions = row.viewOptions,
+                        ),
+                    )
+                }
+
+                is HomeRowConfig.ContinueWatchingCombined -> {
+                    val resume =
+                        latestNextUpService.getResume(userDto.id, limit, true)
+                    val nextUp =
+                        latestNextUpService.getNextUp(
+                            userDto.id,
+                            limit,
+                            prefs.enableRewatchingNextUp,
+                            false,
+                        )
+
+                    listOf(
+                        Success(
+                            title = context.getString(R.string.continue_watching),
+                            items =
+                                latestNextUpService.buildCombined(
+                                    resume,
+                                    nextUp,
+                                ),
+                            viewOptions = row.viewOptions,
+                        ),
+                    )
+                }
+
+                is HomeRowConfig.Genres -> {
+                    val request =
+                        GetGenresRequest(
+                            parentId = row.parentId,
+                            userId = userDto.id,
+                            limit = limit,
+                        )
+                    val items =
+                        GetGenresRequestHandler
+                            .execute(api, request)
+                            .content.items
+                    val genreIds = items.map { it.id }
+                    val genreImages =
+                        getGenreImageMap(
+                            api = api,
+                            imageUrlService = imageUrlService,
+                            genres = genreIds,
+                            parentId = row.parentId,
+                            includeItemTypes = null,
+                            cardWidthPx = null,
+                        )
+                    val genres =
+                        items.map {
+                            BaseItem(it, false, genreImages[it.id])
+                        }
+
+                    val name =
+                        _state.value.libraries
+                            .firstOrNull { it.itemId == row.parentId }
+                            ?.name
+                    val title =
+                        name?.let { context.getString(R.string.genres_in, it) }
+                            ?: context.getString(R.string.genres)
+                    listOf(
+                        Success(
+                            title,
+                            genres,
+                            viewOptions = row.viewOptions,
+                        ),
+                    )
+                }
+
+                is HomeRowConfig.RecentlyAdded -> {
+                    val name =
+                        _state.value.libraries
+                            .firstOrNull { it.itemId == row.parentId }
+                            ?.name
+                    val title =
+                        name?.let { context.getString(R.string.recently_added_in, it) }
+                            ?: context.getString(R.string.recently_added)
+                    val request =
+                        GetLatestMediaRequest(
+                            fields = SlimItemFields,
+                            imageTypeLimit = 1,
+                            parentId = row.parentId,
+                            groupItems = true,
+                            limit = limit,
+                            isPlayed = null, // Server will handle user's preference
+                        )
+                    val latest =
+                        api.userLibraryApi
+                            .getLatestMedia(request)
+                            .content
+                            .map { BaseItem.from(it, api, true) }
+                            .let {
+                                Success(
+                                    title,
+                                    it,
+                                    row.viewOptions,
+                                )
+                            }
+                    listOf(latest)
+                }
+
+                is HomeRowConfig.RecentlyReleased -> {
+                    val name =
+                        _state.value.libraries
+                            .firstOrNull { it.itemId == row.parentId }
+                            ?.name
+                    val title =
+                        name?.let {
+                            context.getString(R.string.recently_released_in, it)
+                        } ?: context.getString(R.string.recently_released)
+                    val request =
+                        GetItemsRequest(
+                            parentId = row.parentId,
+                            limit = limit,
+                            sortBy = listOf(ItemSortBy.PREMIERE_DATE),
+                            sortOrder = listOf(SortOrder.DESCENDING),
+                            fields = DefaultItemFields,
+                            recursive = true,
+                        )
+                    GetItemsRequestHandler
+                        .execute(api, request)
+                        .content.items
+                        .map { BaseItem.from(it, api, true) }
+                        .let {
+                            listOf(
+                                Success(
+                                    title,
+                                    it,
+                                    row.viewOptions,
+                                ),
+                            )
+                        }
+                }
+
+                is HomeRowConfig.Collection -> {
+                    val collection by api.userLibraryApi.getItem(itemId = row.collectionId)
+                    val request =
+                        GetItemsRequest(
+                            parentId = row.collectionId,
+                            limit = limit,
+                            fields = DefaultItemFields,
+                            recursive = true,
+                        )
+                    GetItemsRequestHandler
+                        .execute(api, request)
+                        .content.items
+                        .map { BaseItem.from(it, api, true) }
+                        .let {
+                            listOf(
+                                Success(
+                                    collection.name ?: "",
+                                    it,
+                                    row.viewOptions,
+                                ),
+                            )
+                        }
+                }
+            }
 
         private fun <T> List<T>.move(
             direction: MoveDirection,
