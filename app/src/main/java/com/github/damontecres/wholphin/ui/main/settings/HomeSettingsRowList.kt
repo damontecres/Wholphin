@@ -41,7 +41,7 @@ enum class MoveDirection {
 }
 
 @Composable
-fun HomePageRowList(
+fun HomeSettingsRowList(
     state: HomePageSettingsState,
     onClick: (Int, HomeRowConfigDisplay) -> Unit,
     onClickAdd: () -> Unit,

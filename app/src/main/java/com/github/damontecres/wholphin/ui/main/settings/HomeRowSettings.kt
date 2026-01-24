@@ -17,7 +17,7 @@ import com.github.damontecres.wholphin.preferences.AppPreference
 import com.github.damontecres.wholphin.ui.preferences.ComposablePreference
 
 @Composable
-fun HomePageRowSettings(
+fun HomeRowSettings(
     title: String,
     viewOptions: HomeRowViewOptions,
     onViewOptionsChange: (HomeRowViewOptions) -> Unit,

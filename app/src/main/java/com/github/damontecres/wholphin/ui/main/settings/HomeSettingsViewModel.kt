@@ -1,29 +1,9 @@
 package com.github.damontecres.wholphin.ui.main.settings
 
 import android.content.Context
-import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.tv.material3.MaterialTheme
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.NavDrawerItemRepository
 import com.github.damontecres.wholphin.data.ServerRepository
@@ -40,12 +20,10 @@ import com.github.damontecres.wholphin.ui.DefaultItemFields
 import com.github.damontecres.wholphin.ui.SlimItemFields
 import com.github.damontecres.wholphin.ui.components.getGenreImageMap
 import com.github.damontecres.wholphin.ui.launchIO
-import com.github.damontecres.wholphin.ui.main.HomePageContent
 import com.github.damontecres.wholphin.ui.nav.ServerNavDrawerItem
 import com.github.damontecres.wholphin.util.GetGenresRequestHandler
 import com.github.damontecres.wholphin.util.GetItemsRequestHandler
 import com.github.damontecres.wholphin.util.HomeRowLoadingState
-import com.github.damontecres.wholphin.util.HomeRowLoadingState.Success
 import com.github.damontecres.wholphin.util.LoadingState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -66,7 +44,7 @@ import java.util.UUID
 import javax.inject.Inject
 
 @HiltViewModel
-class HomePageSettingsViewModel
+class HomeSettingsViewModel
     @Inject
     constructor(
         @param:ApplicationContext private val context: Context,
@@ -215,7 +193,7 @@ class HomePageSettingsViewModel
                 is HomeRowConfig.ContinueWatching -> {
                     val resume = latestNextUpService.getResume(userDto.id, limit, true)
                     listOf(
-                        Success(
+                        HomeRowLoadingState.Success(
                             title = context.getString(R.string.continue_watching),
                             items = resume,
                             viewOptions = row.viewOptions,
@@ -232,7 +210,7 @@ class HomePageSettingsViewModel
                             false,
                         )
                     listOf(
-                        Success(
+                        HomeRowLoadingState.Success(
                             title = context.getString(R.string.next_up),
                             items = nextUp,
                             viewOptions = row.viewOptions,
@@ -252,7 +230,7 @@ class HomePageSettingsViewModel
                         )
 
                     listOf(
-                        Success(
+                        HomeRowLoadingState.Success(
                             title = context.getString(R.string.continue_watching),
                             items =
                                 latestNextUpService.buildCombined(
@@ -298,7 +276,7 @@ class HomePageSettingsViewModel
                         name?.let { context.getString(R.string.genres_in, it) }
                             ?: context.getString(R.string.genres)
                     listOf(
-                        Success(
+                        HomeRowLoadingState.Success(
                             title,
                             genres,
                             viewOptions = row.viewOptions,
@@ -327,9 +305,9 @@ class HomePageSettingsViewModel
                         api.userLibraryApi
                             .getLatestMedia(request)
                             .content
-                            .map { BaseItem.from(it, api, true) }
+                            .map { BaseItem.Companion.from(it, api, true) }
                             .let {
-                                Success(
+                                HomeRowLoadingState.Success(
                                     title,
                                     it,
                                     row.viewOptions,
@@ -359,10 +337,10 @@ class HomePageSettingsViewModel
                     GetItemsRequestHandler
                         .execute(api, request)
                         .content.items
-                        .map { BaseItem.from(it, api, true) }
+                        .map { BaseItem.Companion.from(it, api, true) }
                         .let {
                             listOf(
-                                Success(
+                                HomeRowLoadingState.Success(
                                     title,
                                     it,
                                     row.viewOptions,
@@ -392,7 +370,7 @@ class HomePageSettingsViewModel
                         .map { BaseItem(it, true) }
                         .let {
                             listOf(
-                                Success(
+                                HomeRowLoadingState.Success(
                                     name ?: context.getString(R.string.collection),
                                     it,
                                     row.viewOptions,
@@ -427,10 +405,10 @@ class HomePageSettingsViewModel
                     GetItemsRequestHandler
                         .execute(api, request)
                         .content.items
-                        .map { BaseItem.from(it, api, true) }
+                        .map { BaseItem.Companion.from(it, api, true) }
                         .let {
                             listOf(
-                                Success(
+                                HomeRowLoadingState.Success(
                                     name ?: context.getString(R.string.collection),
                                     it,
                                     row.viewOptions,
@@ -662,110 +640,3 @@ data class Library(
     val name: String,
     val collectionType: CollectionType,
 )
-
-val settingsWidth = 300.dp
-
-@Composable
-fun HomePageSettings(
-    modifier: Modifier,
-    viewModel: HomePageSettingsViewModel = hiltViewModel(),
-) {
-    val state by viewModel.state.collectAsState()
-    val listState = rememberLazyListState()
-    var destination by remember { mutableStateOf<HomePageSettingsDestination>(HomePageSettingsDestination.RowList) }
-
-    BackHandler(destination is HomePageSettingsDestination.ChooseRowType) {
-        destination = HomePageSettingsDestination.ChooseLibrary
-    }
-    BackHandler(destination is HomePageSettingsDestination.ChooseLibrary) {
-        destination = HomePageSettingsDestination.RowList
-    }
-    BackHandler(destination is HomePageSettingsDestination.RowSettings) {
-        destination = HomePageSettingsDestination.RowList
-    }
-    Row(
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        modifier = modifier,
-    ) {
-        Box(
-            modifier =
-                Modifier
-                    .width(settingsWidth)
-                    .fillMaxHeight()
-                    .background(color = MaterialTheme.colorScheme.surface),
-        ) {
-            val destModifier =
-                Modifier
-                    .fillMaxSize()
-                    .padding(4.dp)
-            when (val dest = destination) {
-                HomePageSettingsDestination.RowList -> {
-                    HomePageRowList(
-                        state = state,
-                        onClickAdd = { destination = HomePageSettingsDestination.ChooseLibrary },
-                        onClickMove = viewModel::moveRow,
-                        onClickDelete = viewModel::deleteRow,
-                        onClick = { index, row ->
-                            destination = HomePageSettingsDestination.RowSettings(row.config.id)
-                        },
-                        modifier = destModifier,
-                    )
-                }
-
-                is HomePageSettingsDestination.ChooseLibrary -> {
-                    HomePageLibraryList(
-                        libraries = state.libraries,
-                        onClick = { destination = HomePageSettingsDestination.ChooseRowType(it) },
-                        onClickMeta = {
-                            viewModel.addRow(it)
-                            destination = HomePageSettingsDestination.RowList
-                        },
-                        modifier = destModifier,
-                    )
-                }
-
-                is HomePageSettingsDestination.ChooseRowType -> {
-                    HomePageLibraryRowTypeList(
-                        library = dest.library,
-                        onClick = {
-                            viewModel.addRow(dest.library, it)
-                            destination = HomePageSettingsDestination.RowList
-                        },
-                        modifier = destModifier,
-                    )
-                }
-
-                is HomePageSettingsDestination.RowSettings -> {
-                    val row =
-                        state.rows
-                            .first { it.config.id == dest.rowId }
-                    HomePageRowSettings(
-                        title = row.title,
-                        viewOptions = row.config.viewOptions,
-                        onViewOptionsChange = {
-                            viewModel.updateViewOptions(dest.rowId, it)
-                        },
-                        onApplyApplyAll = {
-                            viewModel.updateViewOptionsForAll(row.config.viewOptions)
-                        },
-                        modifier = destModifier,
-                    )
-                }
-            }
-        }
-        HomePageContent(
-            loadingState = state.loading,
-            homeRows = state.rowData,
-            onClickItem = { _, _ -> },
-            onLongClickItem = { _, _ -> },
-            onClickPlay = { _, _ -> },
-            showClock = false,
-            onUpdateBackdrop = viewModel::updateBackdrop,
-            listState = listState,
-            modifier =
-                Modifier
-                    .fillMaxHeight()
-                    .weight(1f),
-        )
-    }
-}

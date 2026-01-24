@@ -24,7 +24,7 @@ import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 
 @Composable
-fun HomePageLibraryRowTypeList(
+fun HomeLibraryRowTypeList(
     library: Library,
     onClick: (LibraryRowType) -> Unit,
     modifier: Modifier,

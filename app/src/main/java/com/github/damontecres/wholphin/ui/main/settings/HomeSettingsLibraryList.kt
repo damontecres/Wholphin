@@ -24,7 +24,7 @@ import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 
 @Composable
-fun HomePageLibraryList(
+fun HomeSettingsLibraryList(
     libraries: List<Library>,
     onClick: (Library) -> Unit,
     onClickMeta: (MetaRowType) -> Unit,
