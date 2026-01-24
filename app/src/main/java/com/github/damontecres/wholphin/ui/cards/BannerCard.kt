@@ -78,12 +78,13 @@ fun BannerCard(
     val imageUrl =
         remember(item, fillHeight, imageType) {
             if (item != null) {
-                imageUrlService.getItemImageUrl(
-                    item,
-                    imageType,
-                    fillWidth = null,
-                    fillHeight = fillHeight,
-                )
+                item.imageUrlOverride
+                    ?: imageUrlService.getItemImageUrl(
+                        item,
+                        imageType,
+                        fillWidth = null,
+                        fillHeight = fillHeight,
+                    )
             } else {
                 null
             }

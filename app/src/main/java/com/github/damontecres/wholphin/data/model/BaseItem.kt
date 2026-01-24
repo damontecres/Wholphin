@@ -32,6 +32,7 @@ import kotlin.time.Duration
 data class BaseItem(
     val data: BaseItemDto,
     val useSeriesForPrimary: Boolean,
+    val imageUrlOverride: String? = null,
 ) : CardGridItem {
     val id get() = data.id
 

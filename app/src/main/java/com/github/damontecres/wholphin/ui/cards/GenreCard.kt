@@ -42,11 +42,29 @@ fun GenreCard(
     onLongClick: () -> Unit,
     modifier: Modifier = Modifier,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
+) = GenreCard(
+    genreId = genre?.id,
+    name = genre?.name,
+    imageUrl = genre?.imageUrl,
+    onClick = onClick,
+    onLongClick = onLongClick,
+    modifier = modifier,
+    interactionSource = interactionSource,
+)
+
+@Composable
+fun GenreCard(
+    genreId: UUID?,
+    name: String?,
+    imageUrl: String?,
+    onClick: () -> Unit,
+    onLongClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
 ) {
-    val background = rememberIdColor(genre?.id).copy(alpha = .6f)
+    val background = rememberIdColor(genreId).copy(alpha = .6f)
     Card(
-        modifier =
-        modifier,
+        modifier = modifier,
         onClick = onClick,
         onLongClick = onLongClick,
         interactionSource = interactionSource,
@@ -63,12 +81,12 @@ fun GenreCard(
                     .fillMaxSize()
                     .clip(RoundedCornerShape(8.dp)),
         ) {
-            if (genre?.imageUrl.isNotNullOrBlank()) {
+            if (imageUrl != null) {
                 AsyncImage(
                     model =
                         ImageRequest
                             .Builder(LocalContext.current)
-                            .data(genre.imageUrl)
+                            .data(imageUrl)
                             .crossfade(true)
                             .build(),
                     contentScale = ContentScale.FillBounds,
@@ -88,7 +106,7 @@ fun GenreCard(
                         .background(background),
             ) {
                 Text(
-                    text = genre?.name ?: "",
+                    text = name ?: "",
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
@@ -112,7 +130,6 @@ private fun GenreCardPreview() {
                 UUID.randomUUID(),
                 "Adventure",
                 null,
-                Color.Black,
             )
         GenreCard(
             genre = genre,

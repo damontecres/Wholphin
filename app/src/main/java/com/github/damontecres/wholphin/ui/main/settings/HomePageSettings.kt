@@ -32,9 +32,13 @@ import com.github.damontecres.wholphin.data.model.HomeRowConfig
 import com.github.damontecres.wholphin.data.model.HomeRowConfigDisplay
 import com.github.damontecres.wholphin.data.model.HomeRowViewOptions
 import com.github.damontecres.wholphin.services.BackdropService
+import com.github.damontecres.wholphin.services.ImageUrlService
 import com.github.damontecres.wholphin.services.LatestNextUpService
 import com.github.damontecres.wholphin.services.UserPreferencesService
+import com.github.damontecres.wholphin.ui.AspectRatio
+import com.github.damontecres.wholphin.ui.Cards
 import com.github.damontecres.wholphin.ui.SlimItemFields
+import com.github.damontecres.wholphin.ui.components.getGenreImageMap
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.main.HomePageContent
 import com.github.damontecres.wholphin.ui.main.LatestData
@@ -65,6 +69,7 @@ class HomePageSettingsViewModel
         private val navDrawerItemRepository: NavDrawerItemRepository,
         private val backdropService: BackdropService,
         private val latestNextUpService: LatestNextUpService,
+        private val imageUrlService: ImageUrlService,
     ) : ViewModel() {
         private val _state = MutableStateFlow(HomePageSettingsState.EMPTY)
         val state: StateFlow<HomePageSettingsState> = _state
@@ -197,7 +202,21 @@ class HomePageSettingsViewModel
                                         GetGenresRequestHandler
                                             .execute(api, request)
                                             .content.items
-                                            .map { BaseItem(it, false) }
+                                    val genreIds = items.map { it.id }
+                                    val genreImages =
+                                        getGenreImageMap(
+                                            api = api,
+                                            imageUrlService = imageUrlService,
+                                            genres = genreIds,
+                                            parentId = row.parentId,
+                                            includeItemTypes = null,
+                                            cardWidthPx = null,
+                                        )
+                                    val genres =
+                                        items.map {
+                                            BaseItem(it, false, genreImages[it.id])
+                                        }
+
                                     val name =
                                         _state.value.libraries
                                             .firstOrNull { it.itemId == row.parentId }
@@ -208,7 +227,7 @@ class HomePageSettingsViewModel
                                     listOf(
                                         HomeRowLoadingState.Success(
                                             title,
-                                            items,
+                                            genres,
                                             viewOptions = row.viewOptions,
                                         ),
                                     )
@@ -347,7 +366,10 @@ class HomePageSettingsViewModel
                                 HomeRowConfig.Genres(
                                     UUID.randomUUID(),
                                     library.itemId,
-                                    HomeRowViewOptions(),
+                                    HomeRowViewOptions(
+                                        heightDp = (Cards.HEIGHT_2X3_DP * .75f).toInt(),
+                                        aspectRatio = AspectRatio.WIDE,
+                                    ),
                                 ),
                             )
                         }

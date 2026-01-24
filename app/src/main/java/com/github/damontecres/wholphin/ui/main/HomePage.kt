@@ -48,6 +48,7 @@ import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.Cards
 import com.github.damontecres.wholphin.ui.cards.BannerCard
+import com.github.damontecres.wholphin.ui.cards.GenreCard
 import com.github.damontecres.wholphin.ui.cards.ItemRow
 import com.github.damontecres.wholphin.ui.components.CircularProgress
 import com.github.damontecres.wholphin.ui.components.DialogParams
@@ -326,52 +327,67 @@ fun HomePageContent(
                                             .animateItem(),
                                     horizontalPadding = viewOptions.spacing.dp,
                                     cardContent = { index, item, cardModifier, onClick, onLongClick ->
-                                        BannerCard(
-                                            name = item?.data?.seriesName ?: item?.name,
-                                            item = item,
-                                            aspectRatio = viewOptions.aspectRatio.ratio,
-                                            imageType = viewOptions.imageType.imageType,
-                                            imageContentScale = viewOptions.contentScale.scale,
-                                            cornerText = item?.ui?.episdodeUnplayedCornerText,
-                                            played = item?.data?.userData?.played ?: false,
-                                            favorite = item?.favorite ?: false,
-                                            playPercent =
-                                                item?.data?.userData?.playedPercentage
-                                                    ?: 0.0,
-                                            onClick = onClick,
-                                            onLongClick = onLongClick,
-                                            modifier =
-                                                cardModifier
-                                                    .onFocusChanged {
-                                                        if (it.isFocused) {
-                                                            position = RowColumn(rowIndex, index)
-//                                                            item?.let(onUpdateBackdrop)
-                                                        }
-                                                        if (it.isFocused && onFocusPosition != null) {
-                                                            val nonEmptyRowBefore =
-                                                                homeRows
-                                                                    .subList(0, rowIndex)
-                                                                    .count {
-                                                                        it is HomeRowLoadingState.Success && it.items.isEmpty()
-                                                                    }
-                                                            onFocusPosition.invoke(
-                                                                RowColumn(
-                                                                    rowIndex - nonEmptyRowBefore,
-                                                                    index,
-                                                                ),
-                                                            )
-                                                        }
-                                                    }.onKeyEvent {
-                                                        if (isPlayKeyUp(it) && item?.type?.playable == true) {
-                                                            Timber.v("Clicked play on ${item.id}")
-                                                            onClickPlay.invoke(position, item)
-                                                            return@onKeyEvent true
-                                                        }
-                                                        return@onKeyEvent false
-                                                    },
-                                            interactionSource = null,
-                                            cardHeight = viewOptions.heightDp.dp,
-                                        )
+                                        val mod =
+                                            cardModifier
+                                                .onFocusChanged {
+                                                    if (it.isFocused) {
+                                                        position = RowColumn(rowIndex, index)
+                                                    }
+                                                    if (it.isFocused && onFocusPosition != null) {
+                                                        val nonEmptyRowBefore =
+                                                            homeRows
+                                                                .subList(0, rowIndex)
+                                                                .count {
+                                                                    it is HomeRowLoadingState.Success && it.items.isEmpty()
+                                                                }
+                                                        onFocusPosition.invoke(
+                                                            RowColumn(
+                                                                rowIndex - nonEmptyRowBefore,
+                                                                index,
+                                                            ),
+                                                        )
+                                                    }
+                                                }.onKeyEvent {
+                                                    if (isPlayKeyUp(it) && item?.type?.playable == true) {
+                                                        Timber.v("Clicked play on ${item.id}")
+                                                        onClickPlay.invoke(position, item)
+                                                        return@onKeyEvent true
+                                                    }
+                                                    return@onKeyEvent false
+                                                }
+                                        when (item?.type) {
+                                            BaseItemKind.GENRE -> {
+                                                GenreCard(
+                                                    genreId = item.id,
+                                                    name = item.name,
+                                                    imageUrl = item.imageUrlOverride,
+                                                    onClick = onClick,
+                                                    onLongClick = onLongClick,
+                                                    modifier = mod.height(viewOptions.heightDp.dp),
+                                                )
+                                            }
+
+                                            else -> {
+                                                BannerCard(
+                                                    name = item?.data?.seriesName ?: item?.name,
+                                                    item = item,
+                                                    aspectRatio = viewOptions.aspectRatio.ratio,
+                                                    imageType = viewOptions.imageType.imageType,
+                                                    imageContentScale = viewOptions.contentScale.scale,
+                                                    cornerText = item?.ui?.episdodeUnplayedCornerText,
+                                                    played = item?.data?.userData?.played ?: false,
+                                                    favorite = item?.favorite ?: false,
+                                                    playPercent =
+                                                        item?.data?.userData?.playedPercentage
+                                                            ?: 0.0,
+                                                    onClick = onClick,
+                                                    onLongClick = onLongClick,
+                                                    modifier = mod,
+                                                    interactionSource = null,
+                                                    cardHeight = viewOptions.heightDp.dp,
+                                                )
+                                            }
+                                        }
                                     },
                                 )
                             }
