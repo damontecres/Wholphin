@@ -209,4 +209,12 @@ suspend fun upgradeApp(
         }
         showToast(context, context.getString(R.string.upgrade_mpv_toast), Toast.LENGTH_LONG)
     }
+
+    if (previous.isEqualOrBefore(Version.fromString("0.4.0-2-g0"))) {
+        appPreferences.updateData {
+            it.updateMpvOptions {
+                useGpuNext = false
+            }
+        }
+    }
 }
