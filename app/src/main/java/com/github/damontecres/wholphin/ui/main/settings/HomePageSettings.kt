@@ -36,8 +36,6 @@ import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.ImageUrlService
 import com.github.damontecres.wholphin.services.LatestNextUpService
 import com.github.damontecres.wholphin.services.UserPreferencesService
-import com.github.damontecres.wholphin.ui.AspectRatio
-import com.github.damontecres.wholphin.ui.Cards
 import com.github.damontecres.wholphin.ui.DefaultItemFields
 import com.github.damontecres.wholphin.ui.SlimItemFields
 import com.github.damontecres.wholphin.ui.components.getGenreImageMap
@@ -155,10 +153,20 @@ class HomePageSettingsViewModel
                         listOf(
                             HomeRowConfigDisplay(
                                 "Collection",
-                                HomeRowConfig.Collection(
-                                    100,
-                                    "34ab6fd1f51c41bb014981f2e334f465".toUUID(),
-                                    HomeRowViewOptions(),
+                                HomeRowConfig.ByParent(
+                                    id = 100,
+                                    parentId = "34ab6fd1f51c41bb014981f2e334f465".toUUID(),
+                                    recursive = true,
+                                    viewOptions = HomeRowViewOptions(),
+                                ),
+                            ),
+                            HomeRowConfigDisplay(
+                                "Playlist",
+                                HomeRowConfig.ByParent(
+                                    id = 101,
+                                    parentId = "f94be36e9836127a0bccfc7843b19e5b".toUUID(),
+                                    recursive = true,
+                                    viewOptions = HomeRowViewOptions(),
                                 ),
                             ),
                         )
@@ -363,15 +371,59 @@ class HomePageSettingsViewModel
                         }
                 }
 
-                is HomeRowConfig.Collection -> {
-                    val collection by api.userLibraryApi.getItem(itemId = row.collectionId)
+                is HomeRowConfig.ByParent -> {
                     val request =
                         GetItemsRequest(
-                            parentId = row.collectionId,
+                            userId = userDto.id,
+                            parentId = row.parentId,
+                            recursive = row.recursive,
+                            sortBy = row.sort?.let { listOf(it.sort) },
+                            sortOrder = row.sort?.let { listOf(it.direction) },
                             limit = limit,
                             fields = DefaultItemFields,
-                            recursive = true,
                         )
+                    val name =
+                        api.userLibraryApi
+                            .getItem(itemId = row.parentId)
+                            .content.name
+                    GetItemsRequestHandler
+                        .execute(api, request)
+                        .content.items
+                        .map { BaseItem(it, true) }
+                        .let {
+                            listOf(
+                                Success(
+                                    name ?: context.getString(R.string.collection),
+                                    it,
+                                    row.viewOptions,
+                                ),
+                            )
+                        }
+                }
+
+                is HomeRowConfig.GetItems -> {
+                    val request =
+                        row.getItems.let {
+                            if (it.limit == null) {
+                                it.copy(
+                                    userId = userDto.id,
+                                    limit = limit,
+                                )
+                            } else {
+                                it.copy(
+                                    userId = userDto.id,
+                                )
+                            }
+                        }
+                    val name =
+                        if (row.name == null && request.parentId != null) {
+                            // If a name was not provided, use the parent's name if available
+                            api.userLibraryApi
+                                .getItem(itemId = request.parentId!!)
+                                .content.name
+                        } else {
+                            row.name
+                        }
                     GetItemsRequestHandler
                         .execute(api, request)
                         .content.items
@@ -379,7 +431,7 @@ class HomePageSettingsViewModel
                         .let {
                             listOf(
                                 Success(
-                                    collection.name ?: "",
+                                    name ?: context.getString(R.string.collection),
                                     it,
                                     row.viewOptions,
                                 ),
@@ -524,10 +576,6 @@ class HomePageSettingsViewModel
                                 HomeRowConfig.Genres(
                                     id,
                                     library.itemId,
-                                    HomeRowViewOptions(
-                                        heightDp = (Cards.HEIGHT_2X3_DP * .75f).toInt(),
-                                        aspectRatio = AspectRatio.WIDE,
-                                    ),
                                 ),
                             )
                         }

@@ -1,13 +1,17 @@
 package com.github.damontecres.wholphin.test
 
 import com.github.damontecres.wholphin.data.model.HomeRowConfig
-import com.github.damontecres.wholphin.data.model.HomeRowConfigDisplay
 import com.github.damontecres.wholphin.data.model.HomeRowViewOptions
 import com.github.damontecres.wholphin.preferences.PrefContentScale
 import com.github.damontecres.wholphin.ui.AspectRatio
 import com.github.damontecres.wholphin.ui.components.ViewOptionImageType
+import com.github.damontecres.wholphin.ui.data.SortAndDirection
 import kotlinx.serialization.json.Json
 import org.jellyfin.sdk.model.UUID
+import org.jellyfin.sdk.model.api.BaseItemKind
+import org.jellyfin.sdk.model.api.ItemSortBy
+import org.jellyfin.sdk.model.api.SortOrder
+import org.jellyfin.sdk.model.api.request.GetItemsRequest
 import org.junit.Assert
 import org.junit.Test
 import kotlin.reflect.KClass
@@ -16,65 +20,62 @@ class TestHomeRowSamples {
     companion object {
         val SAMPLES =
             listOf(
-                HomeRowConfigDisplay(
-                    title = "Recently added",
-                    config =
-                        HomeRowConfig.RecentlyAdded(
-                            id = 0,
+                HomeRowConfig.RecentlyAdded(
+                    id = 0,
+                    parentId = UUID.randomUUID(),
+                    viewOptions =
+                        HomeRowViewOptions(
+                            heightDp = 100,
+                            spacing = 8,
+                            contentScale = PrefContentScale.CROP,
+                            aspectRatio = AspectRatio.FOUR_THREE,
+                            imageType = ViewOptionImageType.THUMB,
+                            showTitles = false,
+                            useSeries = false,
+                        ),
+                ),
+                HomeRowConfig.RecentlyReleased(
+                    id = 0,
+                    parentId = UUID.randomUUID(),
+                    viewOptions = HomeRowViewOptions(),
+                ),
+                HomeRowConfig.Genres(
+                    id = 0,
+                    parentId = UUID.randomUUID(),
+                    viewOptions = HomeRowViewOptions(),
+                ),
+                HomeRowConfig.ContinueWatching(
+                    id = 0,
+                    viewOptions = HomeRowViewOptions(),
+                ),
+                HomeRowConfig.NextUp(
+                    id = 0,
+                    viewOptions = HomeRowViewOptions(),
+                ),
+                HomeRowConfig.ContinueWatchingCombined(
+                    id = 0,
+                    viewOptions = HomeRowViewOptions(),
+                ),
+                HomeRowConfig.ByParent(
+                    id = 0,
+                    parentId = UUID.randomUUID(),
+                    recursive = true,
+                    sort = SortAndDirection(ItemSortBy.CRITIC_RATING, SortOrder.ASCENDING),
+                    viewOptions = HomeRowViewOptions(),
+                ),
+                HomeRowConfig.GetItems(
+                    id = 0,
+                    name = "Episodes by date created",
+                    getItems =
+                        GetItemsRequest(
                             parentId = UUID.randomUUID(),
-                            viewOptions =
-                                HomeRowViewOptions(
-                                    heightDp = 100,
-                                    spacing = 8,
-                                    contentScale = PrefContentScale.CROP,
-                                    aspectRatio = AspectRatio.FOUR_THREE,
-                                    imageType = ViewOptionImageType.THUMB,
-                                    showTitles = false,
-                                    useSeries = false,
-                                ),
+                            recursive = true,
+                            isFavorite = true,
+                            includeItemTypes = listOf(BaseItemKind.EPISODE),
+                            sortBy = listOf(ItemSortBy.DATE_CREATED),
+                            sortOrder = listOf(SortOrder.DESCENDING),
                         ),
-                ),
-                HomeRowConfigDisplay(
-                    title = "Recently released",
-                    config =
-                        HomeRowConfig.RecentlyReleased(
-                            id = 0,
-                            parentId = UUID.randomUUID(),
-                            viewOptions = HomeRowViewOptions(),
-                        ),
-                ),
-                HomeRowConfigDisplay(
-                    title = "Genres",
-                    config =
-                        HomeRowConfig.Genres(
-                            id = 0,
-                            parentId = UUID.randomUUID(),
-                            viewOptions = HomeRowViewOptions(),
-                        ),
-                ),
-                HomeRowConfigDisplay(
-                    title = "Continue watching",
-                    config =
-                        HomeRowConfig.ContinueWatching(
-                            id = 0,
-                            viewOptions = HomeRowViewOptions(),
-                        ),
-                ),
-                HomeRowConfigDisplay(
-                    title = "Next up",
-                    config =
-                        HomeRowConfig.NextUp(
-                            id = 0,
-                            viewOptions = HomeRowViewOptions(),
-                        ),
-                ),
-                HomeRowConfigDisplay(
-                    title = "Combined",
-                    config =
-                        HomeRowConfig.ContinueWatchingCombined(
-                            id = 0,
-                            viewOptions = HomeRowViewOptions(),
-                        ),
+                    viewOptions = HomeRowViewOptions(),
                 ),
             )
     }
@@ -84,13 +85,15 @@ class TestHomeRowSamples {
         // This ensures there is a sample for each possible HomeRowConfig type
         val foundTypes = mutableSetOf<KClass<out HomeRowConfig>>()
         SAMPLES.forEach {
-            when (it.config) {
-                is HomeRowConfig.ContinueWatching -> foundTypes.add(HomeRowConfig.ContinueWatching::class)
-                is HomeRowConfig.ContinueWatchingCombined -> foundTypes.add(HomeRowConfig.ContinueWatchingCombined::class)
-                is HomeRowConfig.Genres -> foundTypes.add(HomeRowConfig.Genres::class)
-                is HomeRowConfig.NextUp -> foundTypes.add(HomeRowConfig.NextUp::class)
-                is HomeRowConfig.RecentlyAdded -> foundTypes.add(HomeRowConfig.RecentlyAdded::class)
-                is HomeRowConfig.RecentlyReleased -> foundTypes.add(HomeRowConfig.RecentlyReleased::class)
+            when (it) {
+                is HomeRowConfig.ContinueWatching -> foundTypes.add(it::class)
+                is HomeRowConfig.ContinueWatchingCombined -> foundTypes.add(it::class)
+                is HomeRowConfig.Genres -> foundTypes.add(it::class)
+                is HomeRowConfig.NextUp -> foundTypes.add(it::class)
+                is HomeRowConfig.RecentlyAdded -> foundTypes.add(it::class)
+                is HomeRowConfig.RecentlyReleased -> foundTypes.add(it::class)
+                is HomeRowConfig.ByParent -> foundTypes.add(it::class)
+                is HomeRowConfig.GetItems -> foundTypes.add(it::class)
             }
         }
         Assert.assertEquals(HomeRowConfig::class.sealedSubclasses.size, foundTypes.size)
@@ -107,6 +110,6 @@ class TestHomeRowSamples {
             }
         val string = json.encodeToString(SAMPLES)
         println(string)
-        json.decodeFromString<List<HomeRowConfigDisplay>>(string)
+        json.decodeFromString<List<HomeRowConfig>>(string)
     }
 }

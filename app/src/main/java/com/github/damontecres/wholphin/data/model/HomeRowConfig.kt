@@ -12,9 +12,11 @@ import com.github.damontecres.wholphin.ui.AspectRatio
 import com.github.damontecres.wholphin.ui.Cards
 import com.github.damontecres.wholphin.ui.components.ViewOptionImageType
 import com.github.damontecres.wholphin.ui.components.ViewOptions
+import com.github.damontecres.wholphin.ui.data.SortAndDirection
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.UseSerializers
+import org.jellyfin.sdk.model.api.request.GetItemsRequest
 import org.jellyfin.sdk.model.serializer.UUIDSerializer
 import java.util.UUID
 
@@ -25,6 +27,9 @@ sealed class HomeRowConfig {
 
     abstract fun updateViewOptions(viewOptions: HomeRowViewOptions): HomeRowConfig
 
+    /**
+     * Continue watching media that the user has started but not finished
+     */
     @Serializable
     @SerialName("ContinueWatching")
     data class ContinueWatching(
@@ -34,6 +39,9 @@ sealed class HomeRowConfig {
         override fun updateViewOptions(viewOptions: HomeRowViewOptions): HomeRowConfig = this.copy(viewOptions = viewOptions)
     }
 
+    /**
+     * Next up row for next episodes in a series the user has started
+     */
     @Serializable
     @SerialName("NextUp")
     data class NextUp(
@@ -43,6 +51,9 @@ sealed class HomeRowConfig {
         override fun updateViewOptions(viewOptions: HomeRowViewOptions): HomeRowConfig = this.copy(viewOptions = viewOptions)
     }
 
+    /**
+     * Combined [ContinueWatching] and [NextUp]
+     */
     @Serializable
     @SerialName("ContinueWatchingCombined")
     data class ContinueWatchingCombined(
@@ -52,6 +63,9 @@ sealed class HomeRowConfig {
         override fun updateViewOptions(viewOptions: HomeRowViewOptions): HomeRowConfig = this.copy(viewOptions = viewOptions)
     }
 
+    /**
+     * Media recently added to a library
+     */
     @Serializable
     @SerialName("RecentlyAdded")
     data class RecentlyAdded(
@@ -62,6 +76,9 @@ sealed class HomeRowConfig {
         override fun updateViewOptions(viewOptions: HomeRowViewOptions): HomeRowConfig = this.copy(viewOptions = viewOptions)
     }
 
+    /**
+     * Media recently released (premiere date) in a library
+     */
     @Serializable
     @SerialName("RecentlyReleased")
     data class RecentlyReleased(
@@ -72,31 +89,63 @@ sealed class HomeRowConfig {
         override fun updateViewOptions(viewOptions: HomeRowViewOptions): HomeRowConfig = this.copy(viewOptions = viewOptions)
     }
 
+    /**
+     * Row of a genres in a library
+     */
     @Serializable
     @SerialName("Genres")
     data class Genres(
         override val id: Int,
         val parentId: UUID,
+        override val viewOptions: HomeRowViewOptions =
+            HomeRowViewOptions(
+                heightDp = (Cards.HEIGHT_2X3_DP * .75f).toInt(),
+                aspectRatio = AspectRatio.WIDE,
+            ),
+    ) : HomeRowConfig() {
+        override fun updateViewOptions(viewOptions: HomeRowViewOptions): HomeRowConfig = this.copy(viewOptions = viewOptions)
+    }
+
+    /**
+     * Fetch by parent ID such as a library, collection, or playlist with optional simple sorting
+     */
+    @Serializable
+    @SerialName("ByParent")
+    data class ByParent(
+        override val id: Int,
+        val parentId: UUID,
+        val recursive: Boolean,
+        val sort: SortAndDirection? = null,
         override val viewOptions: HomeRowViewOptions,
     ) : HomeRowConfig() {
         override fun updateViewOptions(viewOptions: HomeRowViewOptions): HomeRowConfig = this.copy(viewOptions = viewOptions)
     }
 
+    /**
+     * An arbitrary [GetItemsRequest] allowing to query for anything
+     */
     @Serializable
-    @SerialName("Collection")
-    data class Collection(
+    @SerialName("GetItems")
+    data class GetItems(
         override val id: Int,
-        val collectionId: UUID,
+        val name: String?,
+        val getItems: GetItemsRequest,
         override val viewOptions: HomeRowViewOptions,
     ) : HomeRowConfig() {
         override fun updateViewOptions(viewOptions: HomeRowViewOptions): HomeRowConfig = this.copy(viewOptions = viewOptions)
     }
 }
 
-@Serializable
 data class HomeRowConfigDisplay(
     val title: String,
     val config: HomeRowConfig,
+)
+
+@Serializable
+@SerialName("HomePageConfiguration")
+data class HomePageConfiguration(
+    val version: Int = 1,
+    val rows: List<HomeRowConfig>,
 )
 
 @Serializable
