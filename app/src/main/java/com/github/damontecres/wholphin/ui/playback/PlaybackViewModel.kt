@@ -428,7 +428,8 @@ class PlaybackViewModel
                             val isHdr =
                                 it.videoRange == VideoRange.HDR ||
                                     (it.videoRangeType != VideoRangeType.SDR && it.videoRangeType != VideoRangeType.UNKNOWN)
-                            val is4k = (it.width ?: 0) >= 3840 || (it.height ?: 0) >= 2160
+                            // Often times 4k movies have a wider aspect ratio so the height is lower even though the width is still 3840
+                            val is4k = (it.width ?: 0) >= 3840 || (it.height ?: 0) >= 1600
                             SimpleVideoStream(it.index, isHdr, is4k)
                         }
 
