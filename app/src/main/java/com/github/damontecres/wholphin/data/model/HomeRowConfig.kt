@@ -99,7 +99,7 @@ sealed class HomeRowConfig {
         val parentId: UUID,
         override val viewOptions: HomeRowViewOptions =
             HomeRowViewOptions(
-                heightDp = (Cards.HEIGHT_2X3_DP * .75f).toInt(),
+                heightDp = (Cards.HEIGHT_2X3_DP * .75f).toInt().let { it - it % 4 },
                 aspectRatio = AspectRatio.WIDE,
             ),
     ) : HomeRowConfig() {
@@ -128,7 +128,7 @@ sealed class HomeRowConfig {
     @SerialName("GetItems")
     data class GetItems(
         override val id: Int,
-        val name: String?,
+        val name: String,
         val getItems: GetItemsRequest,
         override val viewOptions: HomeRowViewOptions,
     ) : HomeRowConfig() {
@@ -142,8 +142,8 @@ data class HomeRowConfigDisplay(
 )
 
 @Serializable
-@SerialName("HomePageConfiguration")
-data class HomePageConfiguration(
+@SerialName("HomePageSettings")
+data class HomePageSettings(
     val version: Int = 1,
     val rows: List<HomeRowConfig>,
 )

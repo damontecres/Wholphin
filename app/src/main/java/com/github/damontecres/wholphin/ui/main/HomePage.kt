@@ -195,6 +195,7 @@ fun HomePageContent(
     onFocusPosition: ((RowColumn) -> Unit)? = null,
     loadingState: LoadingState? = null,
     listState: LazyListState = rememberLazyListState(),
+    takeFocus: Boolean = true,
 ) {
     var position by rememberPosition()
     val focusedItem =
@@ -204,22 +205,24 @@ fun HomePageContent(
 
     val rowFocusRequesters = remember(homeRows) { List(homeRows.size) { FocusRequester() } }
     var firstFocused by remember { mutableStateOf(false) }
-    LaunchedEffect(homeRows) {
-        if (!firstFocused) {
-            if (position.row >= 0) {
-                rowFocusRequesters[position.row].tryRequestFocus()
-                firstFocused = true
-            } else {
-                // Waiting for the first home row to load, then focus on it
-                homeRows
-                    .indexOfFirst { it is HomeRowLoadingState.Success && it.items.isNotEmpty() }
-                    .takeIf { it >= 0 }
-                    ?.let {
-                        rowFocusRequesters[it].tryRequestFocus()
-                        firstFocused = true
-                        delay(50)
-                        listState.scrollToItem(it)
-                    }
+    if (takeFocus) {
+        LaunchedEffect(homeRows) {
+            if (!firstFocused) {
+                if (position.row >= 0) {
+                    rowFocusRequesters[position.row].tryRequestFocus()
+                    firstFocused = true
+                } else {
+                    // Waiting for the first home row to load, then focus on it
+                    homeRows
+                        .indexOfFirst { it is HomeRowLoadingState.Success && it.items.isNotEmpty() }
+                        .takeIf { it >= 0 }
+                        ?.let {
+                            rowFocusRequesters[it].tryRequestFocus()
+                            firstFocused = true
+                            delay(50)
+                            listState.scrollToItem(it)
+                        }
+                }
             }
         }
     }
@@ -421,19 +424,17 @@ fun HomePageHeader(
     item: BaseItem?,
     modifier: Modifier = Modifier,
 ) {
-    item?.let {
-        val isEpisode = item.type == BaseItemKind.EPISODE
-        val dto = item.data
-        HomePageHeader(
-            title = item.title,
-            subtitle = if (isEpisode) dto.name else null,
-            overview = dto.overview,
-            overviewTwoLines = isEpisode,
-            quickDetails = item.ui.quickDetails,
-            timeRemaining = item.timeRemainingOrRuntime,
-            modifier = modifier,
-        )
-    }
+    val isEpisode = item?.type == BaseItemKind.EPISODE
+    val dto = item?.data
+    HomePageHeader(
+        title = item?.title,
+        subtitle = if (isEpisode) dto?.name else null,
+        overview = dto?.overview,
+        overviewTwoLines = isEpisode,
+        quickDetails = item?.ui?.quickDetails ?: AnnotatedString(""),
+        timeRemaining = item?.timeRemainingOrRuntime,
+        modifier = modifier,
+    )
 }
 
 @Composable

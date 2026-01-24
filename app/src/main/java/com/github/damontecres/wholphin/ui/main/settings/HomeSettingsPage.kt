@@ -15,12 +15,16 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.tv.material3.MaterialTheme
 import com.github.damontecres.wholphin.ui.main.HomePageContent
+import com.github.damontecres.wholphin.util.ExceptionHandler
+import kotlinx.coroutines.launch
+import timber.log.Timber
 
 val settingsWidth = 300.dp
 
@@ -29,9 +33,11 @@ fun HomeSettingsPage(
     modifier: Modifier,
     viewModel: HomeSettingsViewModel = hiltViewModel(),
 ) {
-    val state by viewModel.state.collectAsState()
+    val scope = rememberCoroutineScope()
     val listState = rememberLazyListState()
     var destination by remember { mutableStateOf<HomeSettingsDestination>(HomeSettingsDestination.RowList) }
+
+    val state by viewModel.state.collectAsState()
 
     BackHandler(destination is HomeSettingsDestination.ChooseRowType) {
         destination = HomeSettingsDestination.ChooseLibrary
@@ -62,10 +68,15 @@ fun HomeSettingsPage(
                     HomeSettingsRowList(
                         state = state,
                         onClickAdd = { destination = HomeSettingsDestination.ChooseLibrary },
+                        onClickSaveLocal = { viewModel.saveToLocal() },
                         onClickMove = viewModel::moveRow,
                         onClickDelete = viewModel::deleteRow,
                         onClick = { index, row ->
                             destination = HomeSettingsDestination.RowSettings(row.config.id)
+                            scope.launch(ExceptionHandler()) {
+                                Timber.v("Scroll to $index")
+                                listState.scrollToItem(index)
+                            }
                         },
                         modifier = destModifier,
                     )
@@ -121,6 +132,7 @@ fun HomeSettingsPage(
             showClock = false,
             onUpdateBackdrop = viewModel::updateBackdrop,
             listState = listState,
+            takeFocus = false,
             modifier =
                 Modifier
                     .fillMaxHeight()

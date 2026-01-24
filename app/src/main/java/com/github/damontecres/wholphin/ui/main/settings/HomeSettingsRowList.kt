@@ -13,8 +13,12 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Create
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -33,7 +37,7 @@ import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.HomeRowConfigDisplay
 import com.github.damontecres.wholphin.ui.FontAwesome
 import com.github.damontecres.wholphin.ui.components.Button
-import com.github.damontecres.wholphin.ui.ifElse
+import com.github.damontecres.wholphin.ui.tryRequestFocus
 
 enum class MoveDirection {
     UP,
@@ -44,12 +48,14 @@ enum class MoveDirection {
 fun HomeSettingsRowList(
     state: HomePageSettingsState,
     onClick: (Int, HomeRowConfigDisplay) -> Unit,
+    onClickSaveLocal: () -> Unit,
     onClickAdd: () -> Unit,
     onClickMove: (MoveDirection, Int) -> Unit,
     onClickDelete: (Int) -> Unit,
     modifier: Modifier,
     firstFocus: FocusRequester = remember { FocusRequester() },
 ) {
+    LaunchedEffect(Unit) { firstFocus.tryRequestFocus() }
     Column(modifier = modifier) {
         LazyColumn(
             verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -58,6 +64,45 @@ fun HomeSettingsRowList(
                     .fillMaxHeight()
                     .focusRestorer(firstFocus),
         ) {
+            item {
+                ListItem(
+                    selected = false,
+                    headlineContent = {
+                        Text(
+                            text = stringResource(R.string.add_row),
+                        )
+                    },
+                    leadingContent = {
+                        Icon(
+                            imageVector = Icons.Default.Add,
+                            contentDescription = null,
+                        )
+                    },
+                    onClick = onClickAdd,
+                    modifier = Modifier.focusRequester(firstFocus),
+                )
+            }
+            item {
+                ListItem(
+                    selected = false,
+                    headlineContent = {
+                        Text(
+                            text = stringResource(R.string.save),
+                        )
+                    },
+                    leadingContent = {
+                        Icon(
+                            imageVector = Icons.Default.Create,
+                            contentDescription = null,
+                        )
+                    },
+                    onClick = onClickSaveLocal,
+                    modifier = Modifier,
+                )
+            }
+            item {
+                HorizontalDivider()
+            }
             itemsIndexed(state.rows, key = { _, row -> row.config.id }) { index, row ->
                 HomeRowConfigContent(
                     config = row,
@@ -69,19 +114,8 @@ fun HomeSettingsRowList(
                     onClick = { onClick.invoke(index, row) },
                     modifier =
                         Modifier
-                            .fillMaxWidth()
-                            .ifElse(index == 0, Modifier.focusRequester(firstFocus)),
+                            .fillMaxWidth(),
                 )
-            }
-            item {
-                Button(
-                    onClick = onClickAdd,
-                    modifier = Modifier.ifElse(state.rows.isEmpty(), Modifier.focusRequester(firstFocus)),
-                ) {
-                    Text(
-                        text = stringResource(R.string.add_row),
-                    )
-                }
             }
         }
     }
