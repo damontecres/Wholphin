@@ -467,6 +467,7 @@
     <string name="recently_released_in">Recently released in %1$s</string>
     <string name="height">Height</string>
     <string name="apply_all_rows">Apply to all rows</string>
+    <string name="customize_home">Customize home page</string>
 
     <string-array name="theme_song_volume">
         <item>Disabled</item>

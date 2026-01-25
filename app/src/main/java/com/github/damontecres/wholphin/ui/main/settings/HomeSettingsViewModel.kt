@@ -100,7 +100,7 @@ class HomeSettingsViewModel
                     }
                 }
             rows?.let { rows ->
-                _state.update {
+                updateState {
                     it.copy(loading = LoadingState.Success, rowData = rows)
                 }
             }
@@ -128,7 +128,7 @@ class HomeSettingsViewModel
             direction: MoveDirection,
             index: Int,
         ) {
-            _state.update {
+            updateState {
                 val rows = it.rows.move(direction, index)
                 // TODO would be more efficient to move rowData, but uncombined continue watching is two rows
 //                val rowData = it.rowData.move(direction, index)
@@ -141,7 +141,7 @@ class HomeSettingsViewModel
         }
 
         fun deleteRow(index: Int) {
-            _state.update {
+            updateState {
                 val rows = it.rows.toMutableList().apply { removeAt(index) }
                 val rowData = it.rowData.toMutableList().apply { removeAt(index) }
                 it.copy(
@@ -186,7 +186,7 @@ class HomeSettingsViewModel
                             )
                         }
                     }
-                _state.update {
+                updateState {
                     it.copy(
                         loading = LoadingState.Loading,
                         rows = it.rows.toMutableList().apply { add(newRow) },
@@ -246,7 +246,7 @@ class HomeSettingsViewModel
                             )
                         }
                     }
-                _state.update {
+                updateState {
                     it.copy(
                         loading = LoadingState.Loading,
                         rows = it.rows.toMutableList().apply { add(newRow) },
@@ -261,7 +261,7 @@ class HomeSettingsViewModel
             viewOptions: HomeRowViewOptions,
         ) {
             viewModelScope.launchIO {
-                _state.update {
+                updateState {
                     val index = it.rows.indexOfFirst { it.config.id == rowId }
                     val newRowConfig =
                         it.rows[index]
@@ -290,7 +290,7 @@ class HomeSettingsViewModel
         }
 
         fun updateViewOptionsForAll(viewOptions: HomeRowViewOptions) {
-            _state.update {
+            updateState {
                 it.copy(
                     rowData =
                         it.rowData.toMutableList().map { row ->
@@ -318,6 +318,13 @@ class HomeSettingsViewModel
                     }
                 }
             }
+        }
+
+        private fun updateState(update: (HomePageSettingsState) -> HomePageSettingsState) {
+            _state.update {
+                update.invoke(it)
+            }
+            homeSettingsService.currentSettings.update { HomePageResolvedSettings(state.value.rows) }
         }
     }
 

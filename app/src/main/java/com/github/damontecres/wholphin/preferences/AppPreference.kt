@@ -617,6 +617,12 @@ sealed interface AppPreference<Pref, T> {
                 setter = { prefs, _ -> prefs },
             )
 
+        val CustomizeHome =
+            AppDestinationPreference<AppPreferences>(
+                title = R.string.customize_home,
+                destination = Destination.HomeSettings,
+            )
+
         val SendCrashReports =
             AppSwitchPreference<AppPreferences>(
                 title = R.string.send_crash_reports,
@@ -946,6 +952,7 @@ val basicPreferences =
             preferences =
                 listOf(
                     AppPreference.RequireProfilePin,
+                    AppPreference.CustomizeHome,
                     AppPreference.UserPinnedNavDrawerItems,
                 ),
         ),
