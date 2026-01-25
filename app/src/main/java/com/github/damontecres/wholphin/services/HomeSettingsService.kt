@@ -309,16 +309,15 @@ class HomeSettingsService
             userDto: UserDto,
             libraries: List<Library>,
             limit: Int = prefs.maxItemsPerRow,
-        ): List<HomeRowLoadingState> =
+        ): HomeRowLoadingState =
             when (row) {
                 is HomeRowConfig.ContinueWatching -> {
                     val resume = latestNextUpService.getResume(userDto.id, limit, true)
-                    listOf(
-                        HomeRowLoadingState.Success(
-                            title = context.getString(R.string.continue_watching),
-                            items = resume,
-                            viewOptions = row.viewOptions,
-                        ),
+
+                    HomeRowLoadingState.Success(
+                        title = context.getString(R.string.continue_watching),
+                        items = resume,
+                        viewOptions = row.viewOptions,
                     )
                 }
 
@@ -330,12 +329,11 @@ class HomeSettingsService
                             prefs.enableRewatchingNextUp,
                             false,
                         )
-                    listOf(
-                        HomeRowLoadingState.Success(
-                            title = context.getString(R.string.next_up),
-                            items = nextUp,
-                            viewOptions = row.viewOptions,
-                        ),
+
+                    HomeRowLoadingState.Success(
+                        title = context.getString(R.string.next_up),
+                        items = nextUp,
+                        viewOptions = row.viewOptions,
                     )
                 }
 
@@ -350,16 +348,14 @@ class HomeSettingsService
                             false,
                         )
 
-                    listOf(
-                        HomeRowLoadingState.Success(
-                            title = context.getString(R.string.continue_watching),
-                            items =
-                                latestNextUpService.buildCombined(
-                                    resume,
-                                    nextUp,
-                                ),
-                            viewOptions = row.viewOptions,
-                        ),
+                    HomeRowLoadingState.Success(
+                        title = context.getString(R.string.continue_watching),
+                        items =
+                            latestNextUpService.buildCombined(
+                                resume,
+                                nextUp,
+                            ),
+                        viewOptions = row.viewOptions,
                     )
                 }
 
@@ -397,12 +393,11 @@ class HomeSettingsService
                     val title =
                         name?.let { context.getString(R.string.genres_in, it) }
                             ?: context.getString(R.string.genres)
-                    listOf(
-                        HomeRowLoadingState.Success(
-                            title,
-                            genres,
-                            viewOptions = row.viewOptions,
-                        ),
+
+                    HomeRowLoadingState.Success(
+                        title,
+                        genres,
+                        viewOptions = row.viewOptions,
                     )
                 }
 
@@ -435,7 +430,7 @@ class HomeSettingsService
                                     row.viewOptions,
                                 )
                             }
-                    listOf(latest)
+                    latest
                 }
 
                 is HomeRowConfig.RecentlyReleased -> {
@@ -461,12 +456,10 @@ class HomeSettingsService
                         .content.items
                         .map { BaseItem.Companion.from(it, api, true) }
                         .let {
-                            listOf(
-                                HomeRowLoadingState.Success(
-                                    title,
-                                    it,
-                                    row.viewOptions,
-                                ),
+                            HomeRowLoadingState.Success(
+                                title,
+                                it,
+                                row.viewOptions,
                             )
                         }
                 }
@@ -491,12 +484,10 @@ class HomeSettingsService
                         .content.items
                         .map { BaseItem(it, true) }
                         .let {
-                            listOf(
-                                HomeRowLoadingState.Success(
-                                    name ?: context.getString(R.string.collection),
-                                    it,
-                                    row.viewOptions,
-                                ),
+                            HomeRowLoadingState.Success(
+                                name ?: context.getString(R.string.collection),
+                                it,
+                                row.viewOptions,
                             )
                         }
                 }
@@ -529,12 +520,10 @@ class HomeSettingsService
                         .content.items
                         .map { BaseItem.Companion.from(it, api, true) }
                         .let {
-                            listOf(
-                                HomeRowLoadingState.Success(
-                                    name ?: context.getString(R.string.collection),
-                                    it,
-                                    row.viewOptions,
-                                ),
+                            HomeRowLoadingState.Success(
+                                name ?: context.getString(R.string.collection),
+                                it,
+                                row.viewOptions,
                             )
                         }
                 }

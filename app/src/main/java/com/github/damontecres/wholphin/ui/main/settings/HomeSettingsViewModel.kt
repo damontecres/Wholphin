@@ -96,7 +96,7 @@ class HomeSettingsViewModel
                                     libraries = state.libraries,
                                     limit = limit,
                                 )
-                            }.flatten()
+                            }
                     }
                 }
             rows?.let { rows ->

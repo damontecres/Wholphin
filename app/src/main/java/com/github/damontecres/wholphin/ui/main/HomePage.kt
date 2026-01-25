@@ -21,6 +21,7 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
@@ -90,12 +91,10 @@ fun HomePage(
     LaunchedEffect(Unit) {
         viewModel.init()
     }
-    val loading by viewModel.loadingState.observeAsState(LoadingState.Loading)
-    val refreshing by viewModel.refreshState.observeAsState(LoadingState.Loading)
-    val watchingRows by viewModel.watchingRows.observeAsState(listOf())
-    val latestRows by viewModel.latestRows.observeAsState(listOf())
-
-    val homeRows = remember(watchingRows, latestRows) { watchingRows + latestRows }
+    val state by viewModel.state.collectAsState()
+    val loading = state.loadingState
+    val refreshing = state.refreshState
+    val homeRows = state.homeRows
 
     when (val state = loading) {
         is LoadingState.Error -> {
