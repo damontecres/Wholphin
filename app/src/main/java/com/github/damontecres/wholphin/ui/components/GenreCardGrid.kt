@@ -41,6 +41,7 @@ import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -111,6 +112,7 @@ class GenreViewModel
                 val genreToUrl =
                     getGenreImageMap(
                         api = api,
+                        scope = viewModelScope,
                         imageUrlService = imageUrlService,
                         genres = genres.map { it.id },
                         parentId = itemId,
@@ -141,8 +143,9 @@ class GenreViewModel
             }
     }
 
-suspend fun ViewModel.getGenreImageMap(
+suspend fun getGenreImageMap(
     api: ApiClient,
+    scope: CoroutineScope,
     imageUrlService: ImageUrlService,
     genres: List<UUID>,
     parentId: UUID,
@@ -153,7 +156,7 @@ suspend fun ViewModel.getGenreImageMap(
     val semaphore = Semaphore(4)
     genres
         .map { genreId ->
-            viewModelScope.async(Dispatchers.IO) {
+            scope.async(Dispatchers.IO) {
                 semaphore.withPermit {
                     val item =
                         GetItemsRequestHandler
