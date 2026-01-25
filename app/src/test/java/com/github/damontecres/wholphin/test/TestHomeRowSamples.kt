@@ -23,7 +23,6 @@ class TestHomeRowSamples {
         val SAMPLES =
             listOf(
                 HomeRowConfig.RecentlyAdded(
-                    id = 0,
                     parentId = UUID.randomUUID(),
                     viewOptions =
                         HomeRowViewOptions(
@@ -37,36 +36,29 @@ class TestHomeRowSamples {
                         ),
                 ),
                 HomeRowConfig.RecentlyReleased(
-                    id = 0,
                     parentId = UUID.randomUUID(),
                     viewOptions = HomeRowViewOptions(),
                 ),
                 HomeRowConfig.Genres(
-                    id = 0,
                     parentId = UUID.randomUUID(),
                     viewOptions = HomeRowViewOptions(),
                 ),
                 HomeRowConfig.ContinueWatching(
-                    id = 0,
                     viewOptions = HomeRowViewOptions(),
                 ),
                 HomeRowConfig.NextUp(
-                    id = 0,
                     viewOptions = HomeRowViewOptions(),
                 ),
                 HomeRowConfig.ContinueWatchingCombined(
-                    id = 0,
                     viewOptions = HomeRowViewOptions(),
                 ),
                 HomeRowConfig.ByParent(
-                    id = 0,
                     parentId = UUID.randomUUID(),
                     recursive = true,
                     sort = SortAndDirection(ItemSortBy.CRITIC_RATING, SortOrder.ASCENDING),
                     viewOptions = HomeRowViewOptions(),
                 ),
                 HomeRowConfig.GetItems(
-                    id = 0,
                     name = "Episodes by date created",
                     getItems =
                         GetItemsRequest(
@@ -116,7 +108,7 @@ class TestHomeRowSamples {
     }
 
     @Test
-    fun test() {
+    fun `Parse list of rows with an unknown type`() {
         val service =
             HomeSettingsService(
                 context = mockk(),
@@ -133,7 +125,6 @@ class TestHomeRowSamples {
             "rows": [
                 {
                     "type": "RecentlyAdded",
-                    "id": 0,
                     "parentId": "1dd1c2fd-2e1b-48e4-ba94-17a2350fe9cf"
                 },
                 {

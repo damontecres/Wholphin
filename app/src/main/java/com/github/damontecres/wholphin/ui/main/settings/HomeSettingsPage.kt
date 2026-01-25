@@ -72,7 +72,7 @@ fun HomeSettingsPage(
                         onClickMove = viewModel::moveRow,
                         onClickDelete = viewModel::deleteRow,
                         onClick = { index, row ->
-                            destination = HomeSettingsDestination.RowSettings(row.config.id)
+                            destination = HomeSettingsDestination.RowSettings(row.id)
                             scope.launch(ExceptionHandler()) {
                                 Timber.v("Scroll to $index")
                                 listState.scrollToItem(index)
@@ -108,7 +108,7 @@ fun HomeSettingsPage(
                 is HomeSettingsDestination.RowSettings -> {
                     val row =
                         state.rows
-                            .first { it.config.id == dest.rowId }
+                            .first { it.id == dest.rowId }
                     HomeRowSettings(
                         title = row.title,
                         viewOptions = row.config.viewOptions,

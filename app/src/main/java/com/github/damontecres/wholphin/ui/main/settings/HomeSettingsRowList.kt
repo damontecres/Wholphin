@@ -103,7 +103,7 @@ fun HomeSettingsRowList(
             item {
                 HorizontalDivider()
             }
-            itemsIndexed(state.rows, key = { _, row -> row.config.id }) { index, row ->
+            itemsIndexed(state.rows, key = { _, row -> row.id }) { index, row ->
                 HomeRowConfigContent(
                     config = row,
                     moveUpAllowed = index > 0,

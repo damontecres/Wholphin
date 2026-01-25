@@ -6,7 +6,6 @@ import com.github.damontecres.wholphin.data.NavDrawerItemRepository
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.HomePageSettings
 import com.github.damontecres.wholphin.data.model.HomeRowConfig
-import com.github.damontecres.wholphin.data.model.HomeRowViewOptions
 import com.github.damontecres.wholphin.preferences.HomePagePreferences
 import com.github.damontecres.wholphin.ui.DefaultItemFields
 import com.github.damontecres.wholphin.ui.SlimItemFields
@@ -38,7 +37,6 @@ import org.jellyfin.sdk.model.api.UserDto
 import org.jellyfin.sdk.model.api.request.GetGenresRequest
 import org.jellyfin.sdk.model.api.request.GetItemsRequest
 import org.jellyfin.sdk.model.api.request.GetLatestMediaRequest
-import org.jellyfin.sdk.model.serializer.toUUID
 import timber.log.Timber
 import java.io.File
 import javax.inject.Inject
@@ -63,6 +61,11 @@ class HomeSettingsService
 
         val currentSettings = MutableStateFlow(HomePageResolvedSettings.EMPTY)
 
+        /**
+         * Saves a [HomePageSettings] to the server for the user under the display preference ID
+         *
+         * @see loadFromServer
+         */
         suspend fun saveToServer(
             userId: UUID,
             settings: HomePageSettings,
@@ -81,6 +84,13 @@ class HomeSettingsService
             )
         }
 
+        /**
+         * Reads a [HomePageSettings] from the server for the user and display preference ID
+         *
+         * Returns null if there is none saved
+         *
+         * @see saveToServer
+         */
         suspend fun loadFromServer(
             userId: UUID,
             displayPreferencesId: String = DISPLAY_PREF_ID,
@@ -102,8 +112,16 @@ class HomeSettingsService
                 client = context.getString(R.string.app_name),
             ).content
 
+        /**
+         * Computes the filename for locally saved [HomePageSettings]
+         */
         private fun filename(userId: UUID) = "${CUSTOM_PREF_ID}_${userId.toServerString()}.json"
 
+        /**
+         * Save the [HomePageSettings] for the user locally on the device
+         *
+         * @see loadFromLocal
+         */
         @OptIn(ExperimentalSerializationApi::class)
         suspend fun saveToLocal(
             userId: UUID,
@@ -116,6 +134,11 @@ class HomeSettingsService
             }
         }
 
+        /**
+         * Reads [HomePageSettings] for the user if it exists
+         *
+         * @see saveToLocal
+         */
         @OptIn(ExperimentalSerializationApi::class)
         suspend fun loadFromLocal(userId: UUID): HomePageSettings? {
             val dir = File(context.filesDir, CUSTOM_PREF_ID)
@@ -129,6 +152,11 @@ class HomeSettingsService
             }
         }
 
+        /**
+         * Decodes [HomePageSettings] from a [JsonElement] skipping any unknown/unparsable rows
+         *
+         * This is public only for testing
+         */
         fun decode(element: JsonElement): HomePageSettings {
             val rowsElement = element.jsonObject["rows"]?.jsonArray
             val rows =
@@ -145,7 +173,14 @@ class HomeSettingsService
             return HomePageSettings(rows)
         }
 
-        suspend fun updateCurrent(userId: UUID) {
+        /**
+         * Loads [HomePageSettings] into [currentSettings]
+         *
+         * First checks locally, then on the server, and finally creates a default if needed
+         *
+         * Does not persist either the server nor default
+         */
+        suspend fun loadCurrentSettings(userId: UUID) {
             Timber.v("Getting setting for %s", userId)
             // User local then server/remote otherwise create a default
             val settings = loadFromLocal(userId) ?: loadFromServer(userId)
@@ -153,7 +188,10 @@ class HomeSettingsService
                 if (settings != null) {
                     Timber.v("Found settings")
                     // Resolve
-                    val resolvedRows = settings.rows.map { convert(it) }
+                    val resolvedRows =
+                        settings.rows.mapIndexed { index, config ->
+                            resolve(index, config)
+                        }
                     HomePageResolvedSettings(resolvedRows)
                 } else {
                     createDefault(userId)
@@ -162,7 +200,10 @@ class HomeSettingsService
             currentSettings.update { resolvedSettings }
         }
 
-        suspend fun createDefault(userId: UUID): HomePageResolvedSettings {
+        /**
+         * Create a default [HomePageResolvedSettings] using the available libraries
+         */
+        private suspend fun createDefault(userId: UUID): HomePageResolvedSettings {
             Timber.v("Creating default settings")
             val navDrawerItems = navDrawerItemRepository.getNavDrawerItems()
             val libraries =
@@ -179,76 +220,51 @@ class HomeSettingsService
                     .getFilteredNavDrawerItems(navDrawerItems)
                     .filter { it is ServerNavDrawerItem }
                     .mapIndexed { index, it ->
-                        val id = (it as ServerNavDrawerItem).itemId
-                        val name = libraries.firstOrNull { it.itemId == id }?.name
+                        val parentId = (it as ServerNavDrawerItem).itemId
+                        val name = libraries.firstOrNull { it.itemId == parentId }?.name
                         val title =
                             name?.let { context.getString(R.string.recently_added_in, it) }
                                 ?: context.getString(R.string.recently_added)
                         HomeRowConfigDisplay(
-                            title,
-                            HomeRowConfig.RecentlyAdded(
-                                index,
-                                id,
-                                HomeRowViewOptions(),
-                            ),
+                            id = index,
+                            title = title,
+                            config = HomeRowConfig.RecentlyAdded(parentId),
                         )
                     }
             val continueWatchingRows =
-                if (prefs.combineContinueNext) {
+                if (prefs.combineContinueNext) { // TODO
                     listOf(
                         HomeRowConfigDisplay(
-                            context.getString(R.string.combine_continue_next),
-                            HomeRowConfig.ContinueWatchingCombined(
-                                includedIds.size + 1,
-                                HomeRowViewOptions(),
-                            ),
+                            id = includedIds.size + 1,
+                            title = context.getString(R.string.combine_continue_next),
+                            config = HomeRowConfig.ContinueWatchingCombined(),
                         ),
                     )
                 } else {
                     listOf(
                         HomeRowConfigDisplay(
-                            context.getString(R.string.continue_watching),
-                            HomeRowConfig.ContinueWatching(
-                                includedIds.size + 1,
-                                HomeRowViewOptions(),
-                            ),
+                            id = includedIds.size + 1,
+                            title = context.getString(R.string.continue_watching),
+                            config = HomeRowConfig.ContinueWatching(),
                         ),
                         HomeRowConfigDisplay(
-                            context.getString(R.string.next_up),
-                            HomeRowConfig.NextUp(
-                                includedIds.size + 2,
-                                HomeRowViewOptions(),
-                            ),
+                            id = includedIds.size + 2,
+                            title = context.getString(R.string.next_up),
+                            config = HomeRowConfig.NextUp(),
                         ),
                     )
                 }
-            val rowConfig =
-                continueWatchingRows + includedIds +
-                    // TODO remove after testing
-                    listOf(
-                        HomeRowConfigDisplay(
-                            "Collection",
-                            HomeRowConfig.ByParent(
-                                id = 100,
-                                parentId = "34ab6fd1f51c41bb014981f2e334f465".toUUID(),
-                                recursive = true,
-                                viewOptions = HomeRowViewOptions(),
-                            ),
-                        ),
-                        HomeRowConfigDisplay(
-                            "Playlist",
-                            HomeRowConfig.ByParent(
-                                id = 101,
-                                parentId = "f94be36e9836127a0bccfc7843b19e5b".toUUID(),
-                                recursive = true,
-                                viewOptions = HomeRowViewOptions(),
-                            ),
-                        ),
-                    )
+            val rowConfig = continueWatchingRows + includedIds
             return HomePageResolvedSettings(rowConfig)
         }
 
-        suspend fun convert(config: HomeRowConfig): HomeRowConfigDisplay =
+        /**
+         * Converts a [HomeRowConfig] into [HomeRowConfigDisplay] for UI purposes
+         */
+        private suspend fun resolve(
+            id: Int,
+            config: HomeRowConfig,
+        ): HomeRowConfigDisplay =
             when (config) {
                 is HomeRowConfig.ByParent -> {
                     val name =
@@ -256,6 +272,7 @@ class HomeSettingsService
                             .getItem(itemId = config.parentId)
                             .content.name ?: ""
                     HomeRowConfigDisplay(
+                        id,
                         name,
                         config,
                     )
@@ -263,6 +280,7 @@ class HomeSettingsService
 
                 is HomeRowConfig.ContinueWatching -> {
                     HomeRowConfigDisplay(
+                        id,
                         context.getString(R.string.continue_watching),
                         config,
                     )
@@ -270,6 +288,7 @@ class HomeSettingsService
 
                 is HomeRowConfig.ContinueWatchingCombined -> {
                     HomeRowConfigDisplay(
+                        id,
                         context.getString(R.string.combine_continue_next),
                         config,
                     )
@@ -281,17 +300,19 @@ class HomeSettingsService
                             .getItem(itemId = config.parentId)
                             .content.name ?: ""
                     HomeRowConfigDisplay(
+                        id,
                         context.getString(R.string.genres_in, name),
                         config,
                     )
                 }
 
                 is HomeRowConfig.GetItems -> {
-                    HomeRowConfigDisplay(config.name, config)
+                    HomeRowConfigDisplay(id, config.name, config)
                 }
 
                 is HomeRowConfig.NextUp -> {
                     HomeRowConfigDisplay(
+                        id,
                         context.getString(R.string.next_up),
                         config,
                     )
@@ -303,6 +324,7 @@ class HomeSettingsService
                             .getItem(itemId = config.parentId)
                             .content.name ?: ""
                     HomeRowConfigDisplay(
+                        id,
                         context.getString(R.string.recently_added_in, name),
                         config,
                     )
@@ -314,12 +336,16 @@ class HomeSettingsService
                             .getItem(itemId = config.parentId)
                             .content.name ?: ""
                     HomeRowConfigDisplay(
+                        id,
                         context.getString(R.string.recently_released_in, name),
                         config,
                     )
                 }
             }
 
+        /**
+         * Fetch the data from the server for a given [HomeRowConfig]
+         */
         suspend fun fetchDataForRow(
             row: HomeRowConfig,
             scope: CoroutineScope,
@@ -553,11 +579,20 @@ class HomeSettingsService
         }
     }
 
+/**
+ * A [HomeRowConfig] with a resolved ID and title so it is usable in the UI
+ */
 data class HomeRowConfigDisplay(
+    val id: Int,
     val title: String,
     val config: HomeRowConfig,
 )
 
+/**
+ * List of resolved [HomeRowConfig]s as [HomeRowConfigDisplay]s
+ *
+ * @see HomePageSettings
+ */
 data class HomePageResolvedSettings(
     val rows: List<HomeRowConfigDisplay>,
 ) {

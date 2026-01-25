@@ -225,7 +225,7 @@ class UserSwitchListener
                     if (user != null) {
                         // Check for home settings
                         launchIO {
-                            homeSettingsService.updateCurrent(user.id)
+                            homeSettingsService.loadCurrentSettings(user.id)
                         }
                         // Check for seerr server
                         launchIO {

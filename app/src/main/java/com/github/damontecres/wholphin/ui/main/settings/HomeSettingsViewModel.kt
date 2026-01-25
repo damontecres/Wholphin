@@ -162,31 +162,25 @@ class HomeSettingsViewModel
                     when (type) {
                         MetaRowType.CONTINUE_WATCHING -> {
                             HomeRowConfigDisplay(
-                                context.getString(R.string.continue_watching),
-                                HomeRowConfig.ContinueWatching(
-                                    id,
-                                    HomeRowViewOptions(),
-                                ),
+                                id = id,
+                                title = context.getString(R.string.continue_watching),
+                                config = HomeRowConfig.ContinueWatching(),
                             )
                         }
 
                         MetaRowType.NEXT_UP -> {
                             HomeRowConfigDisplay(
-                                context.getString(R.string.continue_watching),
-                                HomeRowConfig.NextUp(
-                                    id,
-                                    HomeRowViewOptions(),
-                                ),
+                                id = id,
+                                title = context.getString(R.string.continue_watching),
+                                config = HomeRowConfig.NextUp(),
                             )
                         }
 
                         MetaRowType.COMBINED_CONTINUE_WATCHING -> {
                             HomeRowConfigDisplay(
-                                context.getString(R.string.combine_continue_next),
-                                HomeRowConfig.ContinueWatchingCombined(
-                                    id,
-                                    HomeRowViewOptions(),
-                                ),
+                                id = id,
+                                title = context.getString(R.string.combine_continue_next),
+                                config = HomeRowConfig.ContinueWatchingCombined(),
                             )
                         }
                     }
@@ -212,12 +206,9 @@ class HomeSettingsViewModel
                             val title =
                                 library.name.let { context.getString(R.string.recently_added_in, it) }
                             HomeRowConfigDisplay(
-                                title,
-                                HomeRowConfig.RecentlyAdded(
-                                    id,
-                                    library.itemId,
-                                    HomeRowViewOptions(),
-                                ),
+                                id = id,
+                                title = title,
+                                config = HomeRowConfig.RecentlyAdded(library.itemId),
                             )
                         }
 
@@ -230,23 +221,18 @@ class HomeSettingsViewModel
                                     )
                                 }
                             HomeRowConfigDisplay(
-                                title,
-                                HomeRowConfig.RecentlyReleased(
-                                    id,
-                                    library.itemId,
-                                    HomeRowViewOptions(),
-                                ),
+                                id = id,
+                                title = title,
+                                config = HomeRowConfig.RecentlyReleased(library.itemId),
                             )
                         }
 
                         LibraryRowType.GENRES -> {
                             val title = library.name.let { context.getString(R.string.genres_in, it) }
                             HomeRowConfigDisplay(
-                                title,
-                                HomeRowConfig.Genres(
-                                    id,
-                                    library.itemId,
-                                ),
+                                id = id,
+                                title = title,
+                                config = HomeRowConfig.Genres(library.itemId),
                             )
                         }
                     }
@@ -266,7 +252,7 @@ class HomeSettingsViewModel
         ) {
             viewModelScope.launchIO {
                 updateState {
-                    val index = it.rows.indexOfFirst { it.config.id == rowId }
+                    val index = it.rows.indexOfFirst { it.id == rowId }
                     val newRowConfig =
                         it.rows[index]
                             .config

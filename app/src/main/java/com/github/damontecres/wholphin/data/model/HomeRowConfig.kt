@@ -22,7 +22,6 @@ import java.util.UUID
 
 @Serializable
 sealed interface HomeRowConfig {
-    val id: Int
     val viewOptions: HomeRowViewOptions
 
     fun updateViewOptions(viewOptions: HomeRowViewOptions): HomeRowConfig
@@ -33,7 +32,6 @@ sealed interface HomeRowConfig {
     @Serializable
     @SerialName("ContinueWatching")
     data class ContinueWatching(
-        override val id: Int,
         override val viewOptions: HomeRowViewOptions = HomeRowViewOptions(),
     ) : HomeRowConfig {
         override fun updateViewOptions(viewOptions: HomeRowViewOptions): ContinueWatching = this.copy(viewOptions = viewOptions)
@@ -45,7 +43,6 @@ sealed interface HomeRowConfig {
     @Serializable
     @SerialName("NextUp")
     data class NextUp(
-        override val id: Int,
         override val viewOptions: HomeRowViewOptions = HomeRowViewOptions(),
     ) : HomeRowConfig {
         override fun updateViewOptions(viewOptions: HomeRowViewOptions): NextUp = this.copy(viewOptions = viewOptions)
@@ -57,7 +54,6 @@ sealed interface HomeRowConfig {
     @Serializable
     @SerialName("ContinueWatchingCombined")
     data class ContinueWatchingCombined(
-        override val id: Int,
         override val viewOptions: HomeRowViewOptions = HomeRowViewOptions(),
     ) : HomeRowConfig {
         override fun updateViewOptions(viewOptions: HomeRowViewOptions): ContinueWatchingCombined = this.copy(viewOptions = viewOptions)
@@ -69,7 +65,6 @@ sealed interface HomeRowConfig {
     @Serializable
     @SerialName("RecentlyAdded")
     data class RecentlyAdded(
-        override val id: Int,
         val parentId: UUID,
         override val viewOptions: HomeRowViewOptions = HomeRowViewOptions(),
     ) : HomeRowConfig {
@@ -82,7 +77,6 @@ sealed interface HomeRowConfig {
     @Serializable
     @SerialName("RecentlyReleased")
     data class RecentlyReleased(
-        override val id: Int,
         val parentId: UUID,
         override val viewOptions: HomeRowViewOptions = HomeRowViewOptions(),
     ) : HomeRowConfig {
@@ -95,7 +89,6 @@ sealed interface HomeRowConfig {
     @Serializable
     @SerialName("Genres")
     data class Genres(
-        override val id: Int,
         val parentId: UUID,
         override val viewOptions: HomeRowViewOptions =
             HomeRowViewOptions(
@@ -112,7 +105,6 @@ sealed interface HomeRowConfig {
     @Serializable
     @SerialName("ByParent")
     data class ByParent(
-        override val id: Int,
         val parentId: UUID,
         val recursive: Boolean,
         val sort: SortAndDirection? = null,
@@ -127,7 +119,6 @@ sealed interface HomeRowConfig {
     @Serializable
     @SerialName("GetItems")
     data class GetItems(
-        override val id: Int,
         val name: String,
         val getItems: GetItemsRequest,
         override val viewOptions: HomeRowViewOptions = HomeRowViewOptions(),
@@ -136,6 +127,11 @@ sealed interface HomeRowConfig {
     }
 }
 
+/**
+ * Root class for home page settings
+ *
+ * Contains the list of rows and a version
+ */
 @Serializable
 @SerialName("HomePageSettings")
 data class HomePageSettings(
@@ -152,6 +148,11 @@ data class HomePageSettings(
  */
 const val SUPPORTED_HOME_PAGE_SETTINGS_VERSION = 1
 
+/**
+ * View options for displaying a row
+ *
+ * Allows for changing things like height or aspect ratio
+ */
 @Serializable
 data class HomeRowViewOptions(
     val heightDp: Int = Cards.HEIGHT_2X3_DP,
