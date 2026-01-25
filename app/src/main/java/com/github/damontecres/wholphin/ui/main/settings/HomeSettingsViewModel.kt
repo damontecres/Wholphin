@@ -17,6 +17,7 @@ import com.github.damontecres.wholphin.data.model.HomeRowViewOptions
 import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.HomeSettingsService
 import com.github.damontecres.wholphin.services.UserPreferencesService
+import com.github.damontecres.wholphin.services.hilt.IoCoroutineScope
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.nav.ServerNavDrawerItem
 import com.github.damontecres.wholphin.ui.showToast
@@ -24,6 +25,7 @@ import com.github.damontecres.wholphin.util.HomeRowLoadingState
 import com.github.damontecres.wholphin.util.LoadingState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
@@ -43,11 +45,13 @@ class HomeSettingsViewModel
         private val userPreferencesService: UserPreferencesService,
         private val navDrawerItemRepository: NavDrawerItemRepository,
         private val backdropService: BackdropService,
+        @param:IoCoroutineScope private val ioScope: CoroutineScope,
     ) : ViewModel() {
         private val _state = MutableStateFlow(HomePageSettingsState.EMPTY)
         val state: StateFlow<HomePageSettingsState> = _state
 
         init {
+            addCloseable { saveToLocal() }
             viewModelScope.launchIO {
                 val navDrawerItems =
                     navDrawerItemRepository
@@ -305,11 +309,13 @@ class HomeSettingsViewModel
         }
 
         fun saveToLocal() {
-            viewModelScope.launchIO {
+            // This uses injected ioScope so that it will still run when the page is closing
+            ioScope.launchIO {
                 serverRepository.currentUser.value?.let { user ->
                     val rows = state.value.rows.map { it.config }
                     val settings = HomePageSettings(rows = rows)
                     try {
+                        Timber.d("saveToLocal")
                         homeSettingsService.saveToLocal(user.id, settings)
                         showToast(context, context.getString(R.string.save), Toast.LENGTH_SHORT)
                     } catch (ex: Exception) {
