@@ -7,7 +7,6 @@ import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.HomePageSettings
 import com.github.damontecres.wholphin.data.model.HomeRowConfig
 import com.github.damontecres.wholphin.data.model.HomeRowViewOptions
-import com.github.damontecres.wholphin.data.model.SUPPORTED_HOME_PAGE_SETTINGS_VERSION
 import com.github.damontecres.wholphin.preferences.HomePagePreferences
 import com.github.damontecres.wholphin.ui.DefaultItemFields
 import com.github.damontecres.wholphin.ui.SlimItemFields
@@ -24,8 +23,11 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.decodeFromStream
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.decodeFromJsonElement
 import kotlinx.serialization.json.encodeToStream
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonObject
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.displayPreferencesApi
 import org.jellyfin.sdk.api.client.extensions.userLibraryApi
@@ -85,9 +87,8 @@ class HomeSettingsService
         ): HomePageSettings? {
             val current = getDisplayPreferences(userId, displayPreferencesId)
             return current.customPrefs[DISPLAY_PREF_ID]?.let {
-                Json
-                    .decodeFromString<HomePageSettings>(it)
-                    .takeIf { it.version <= SUPPORTED_HOME_PAGE_SETTINGS_VERSION }
+                val jsonElement = jsonParser.parseToJsonElement(it)
+                decode(jsonElement)
             }
         }
 
@@ -120,14 +121,28 @@ class HomeSettingsService
             val dir = File(context.filesDir, CUSTOM_PREF_ID)
             val file = File(dir, filename(userId))
             return if (file.exists()) {
-                file.inputStream().use {
-                    jsonParser
-                        .decodeFromStream<HomePageSettings>(it)
-                        .takeIf { it.version <= SUPPORTED_HOME_PAGE_SETTINGS_VERSION }
-                }
+                val fileContents = file.readText()
+                val jsonElement = jsonParser.parseToJsonElement(fileContents)
+                decode(jsonElement)
             } else {
                 null
             }
+        }
+
+        fun decode(element: JsonElement): HomePageSettings {
+            val rowsElement = element.jsonObject["rows"]?.jsonArray
+            val rows =
+                rowsElement
+                    ?.mapNotNull { row ->
+                        try {
+                            jsonParser.decodeFromJsonElement<HomeRowConfig>(row)
+                        } catch (ex: Exception) {
+                            Timber.w(ex, "Unknown row %s", row)
+                            // TODO maybe use placeholder instead of null?
+                            null
+                        }
+                    }.orEmpty()
+            return HomePageSettings(rows)
         }
 
         suspend fun updateCurrent(userId: UUID) {

@@ -3,9 +3,11 @@ package com.github.damontecres.wholphin.test
 import com.github.damontecres.wholphin.data.model.HomeRowConfig
 import com.github.damontecres.wholphin.data.model.HomeRowViewOptions
 import com.github.damontecres.wholphin.preferences.PrefContentScale
+import com.github.damontecres.wholphin.services.HomeSettingsService
 import com.github.damontecres.wholphin.ui.AspectRatio
 import com.github.damontecres.wholphin.ui.components.ViewOptionImageType
 import com.github.damontecres.wholphin.ui.data.SortAndDirection
+import io.mockk.mockk
 import kotlinx.serialization.json.Json
 import org.jellyfin.sdk.model.UUID
 import org.jellyfin.sdk.model.api.BaseItemKind
@@ -111,5 +113,38 @@ class TestHomeRowSamples {
         val string = json.encodeToString(SAMPLES)
         println(string)
         json.decodeFromString<List<HomeRowConfig>>(string)
+    }
+
+    @Test
+    fun test() {
+        val service =
+            HomeSettingsService(
+                context = mockk(),
+                api = mockk(),
+                userPreferencesService = mockk(),
+                navDrawerItemRepository = mockk(),
+                latestNextUpService = mockk(),
+                imageUrlService = mockk(),
+            )
+
+        val str = """{
+            "type": "HomePageSettings",
+            "version": 1,
+            "rows": [
+                {
+                    "type": "RecentlyAdded",
+                    "id": 0,
+                    "parentId": "1dd1c2fd-2e1b-48e4-ba94-17a2350fe9cf"
+                },
+                {
+                    "type": "Does not exist",
+                    "viewOptions": {}
+                }
+            ]
+        }"""
+
+        val jsonElement = service.jsonParser.parseToJsonElement(str)
+        val settings = service.decode(jsonElement)
+        Assert.assertEquals(1, settings.rows.size)
     }
 }

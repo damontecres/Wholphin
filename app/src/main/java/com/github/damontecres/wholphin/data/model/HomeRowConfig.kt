@@ -34,7 +34,7 @@ sealed interface HomeRowConfig {
     @SerialName("ContinueWatching")
     data class ContinueWatching(
         override val id: Int,
-        override val viewOptions: HomeRowViewOptions,
+        override val viewOptions: HomeRowViewOptions = HomeRowViewOptions(),
     ) : HomeRowConfig {
         override fun updateViewOptions(viewOptions: HomeRowViewOptions): ContinueWatching = this.copy(viewOptions = viewOptions)
     }
@@ -46,7 +46,7 @@ sealed interface HomeRowConfig {
     @SerialName("NextUp")
     data class NextUp(
         override val id: Int,
-        override val viewOptions: HomeRowViewOptions,
+        override val viewOptions: HomeRowViewOptions = HomeRowViewOptions(),
     ) : HomeRowConfig {
         override fun updateViewOptions(viewOptions: HomeRowViewOptions): NextUp = this.copy(viewOptions = viewOptions)
     }
@@ -58,7 +58,7 @@ sealed interface HomeRowConfig {
     @SerialName("ContinueWatchingCombined")
     data class ContinueWatchingCombined(
         override val id: Int,
-        override val viewOptions: HomeRowViewOptions,
+        override val viewOptions: HomeRowViewOptions = HomeRowViewOptions(),
     ) : HomeRowConfig {
         override fun updateViewOptions(viewOptions: HomeRowViewOptions): ContinueWatchingCombined = this.copy(viewOptions = viewOptions)
     }
@@ -71,7 +71,7 @@ sealed interface HomeRowConfig {
     data class RecentlyAdded(
         override val id: Int,
         val parentId: UUID,
-        override val viewOptions: HomeRowViewOptions,
+        override val viewOptions: HomeRowViewOptions = HomeRowViewOptions(),
     ) : HomeRowConfig {
         override fun updateViewOptions(viewOptions: HomeRowViewOptions): RecentlyAdded = this.copy(viewOptions = viewOptions)
     }
@@ -84,7 +84,7 @@ sealed interface HomeRowConfig {
     data class RecentlyReleased(
         override val id: Int,
         val parentId: UUID,
-        override val viewOptions: HomeRowViewOptions,
+        override val viewOptions: HomeRowViewOptions = HomeRowViewOptions(),
     ) : HomeRowConfig {
         override fun updateViewOptions(viewOptions: HomeRowViewOptions): RecentlyReleased = this.copy(viewOptions = viewOptions)
     }
@@ -116,7 +116,7 @@ sealed interface HomeRowConfig {
         val parentId: UUID,
         val recursive: Boolean,
         val sort: SortAndDirection? = null,
-        override val viewOptions: HomeRowViewOptions,
+        override val viewOptions: HomeRowViewOptions = HomeRowViewOptions(),
     ) : HomeRowConfig {
         override fun updateViewOptions(viewOptions: HomeRowViewOptions): ByParent = this.copy(viewOptions = viewOptions)
     }
@@ -130,7 +130,7 @@ sealed interface HomeRowConfig {
         override val id: Int,
         val name: String,
         val getItems: GetItemsRequest,
-        override val viewOptions: HomeRowViewOptions,
+        override val viewOptions: HomeRowViewOptions = HomeRowViewOptions(),
     ) : HomeRowConfig {
         override fun updateViewOptions(viewOptions: HomeRowViewOptions): GetItems = this.copy(viewOptions = viewOptions)
     }
