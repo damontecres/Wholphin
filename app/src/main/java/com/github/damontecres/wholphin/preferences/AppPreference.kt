@@ -783,7 +783,7 @@ sealed interface AppPreference<Pref, T> {
         val MpvGpuNext =
             AppSwitchPreference<AppPreferences>(
                 title = R.string.mpv_use_gpu_next,
-                defaultValue = true,
+                defaultValue = false,
                 getter = { it.playbackPreferences.mpvOptions.useGpuNext },
                 setter = { prefs, value ->
                     prefs.updateMpvOptions { useGpuNext = value }
