@@ -56,9 +56,10 @@ fun MovieDetailsHeader(
             style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.SemiBold),
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
-            modifier = Modifier
-                .fillMaxWidth(.75f)
-                .padding(start = 8.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth(.75f)
+                    .padding(start = 8.dp),
         )
 
         Column(
