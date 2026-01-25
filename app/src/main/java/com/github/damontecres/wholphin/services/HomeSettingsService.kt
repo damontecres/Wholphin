@@ -4,11 +4,10 @@ import android.content.Context
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.NavDrawerItemRepository
 import com.github.damontecres.wholphin.data.model.BaseItem
-import com.github.damontecres.wholphin.data.model.HomePageResolvedSettings
 import com.github.damontecres.wholphin.data.model.HomePageSettings
 import com.github.damontecres.wholphin.data.model.HomeRowConfig
-import com.github.damontecres.wholphin.data.model.HomeRowConfigDisplay
 import com.github.damontecres.wholphin.data.model.HomeRowViewOptions
+import com.github.damontecres.wholphin.data.model.SUPPORTED_HOME_PAGE_SETTINGS_VERSION
 import com.github.damontecres.wholphin.preferences.HomePagePreferences
 import com.github.damontecres.wholphin.ui.DefaultItemFields
 import com.github.damontecres.wholphin.ui.SlimItemFields
@@ -86,7 +85,9 @@ class HomeSettingsService
         ): HomePageSettings? {
             val current = getDisplayPreferences(userId, displayPreferencesId)
             return current.customPrefs[DISPLAY_PREF_ID]?.let {
-                Json.decodeFromString<HomePageSettings>(it)
+                Json
+                    .decodeFromString<HomePageSettings>(it)
+                    .takeIf { it.version <= SUPPORTED_HOME_PAGE_SETTINGS_VERSION }
             }
         }
 
@@ -120,7 +121,9 @@ class HomeSettingsService
             val file = File(dir, filename(userId))
             return if (file.exists()) {
                 file.inputStream().use {
-                    jsonParser.decodeFromStream<HomePageSettings>(it)
+                    jsonParser
+                        .decodeFromStream<HomePageSettings>(it)
+                        .takeIf { it.version <= SUPPORTED_HOME_PAGE_SETTINGS_VERSION }
                 }
             } else {
                 null
@@ -534,3 +537,16 @@ class HomeSettingsService
             const val CUSTOM_PREF_ID = "home_settings"
         }
     }
+
+data class HomeRowConfigDisplay(
+    val title: String,
+    val config: HomeRowConfig,
+)
+
+data class HomePageResolvedSettings(
+    val rows: List<HomeRowConfigDisplay>,
+) {
+    companion object {
+        val EMPTY = HomePageResolvedSettings(listOf())
+    }
+}

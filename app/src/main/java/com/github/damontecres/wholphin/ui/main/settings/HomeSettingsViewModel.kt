@@ -9,12 +9,12 @@ import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.NavDrawerItemRepository
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.BaseItem
-import com.github.damontecres.wholphin.data.model.HomePageResolvedSettings
 import com.github.damontecres.wholphin.data.model.HomePageSettings
 import com.github.damontecres.wholphin.data.model.HomeRowConfig
-import com.github.damontecres.wholphin.data.model.HomeRowConfigDisplay
 import com.github.damontecres.wholphin.data.model.HomeRowViewOptions
 import com.github.damontecres.wholphin.services.BackdropService
+import com.github.damontecres.wholphin.services.HomePageResolvedSettings
+import com.github.damontecres.wholphin.services.HomeRowConfigDisplay
 import com.github.damontecres.wholphin.services.HomeSettingsService
 import com.github.damontecres.wholphin.services.UserPreferencesService
 import com.github.damontecres.wholphin.services.hilt.IoCoroutineScope
@@ -316,8 +316,12 @@ class HomeSettingsViewModel
                     val settings = HomePageSettings(rows = rows)
                     try {
                         Timber.d("saveToLocal")
-                        homeSettingsService.saveToLocal(user.id, settings)
-                        showToast(context, context.getString(R.string.save), Toast.LENGTH_SHORT)
+                        val local = homeSettingsService.loadFromLocal(user.id)
+                        // Only save if there are changes
+                        if (local != settings) {
+                            homeSettingsService.saveToLocal(user.id, settings)
+                            showToast(context, context.getString(R.string.save), Toast.LENGTH_SHORT)
+                        }
                     } catch (ex: Exception) {
                         Timber.e(ex)
                         showToast(context, "Error saving: ${ex.localizedMessage}")

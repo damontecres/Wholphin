@@ -34,7 +34,7 @@ import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import androidx.tv.material3.surfaceColorAtElevation
 import com.github.damontecres.wholphin.R
-import com.github.damontecres.wholphin.data.model.HomeRowConfigDisplay
+import com.github.damontecres.wholphin.services.HomeRowConfigDisplay
 import com.github.damontecres.wholphin.ui.FontAwesome
 import com.github.damontecres.wholphin.ui.components.Button
 import com.github.damontecres.wholphin.ui.tryRequestFocus
@@ -108,7 +108,7 @@ fun HomeSettingsRowList(
                     config = row,
                     moveUpAllowed = index > 0,
                     moveDownAllowed = index != state.rows.lastIndex,
-                    deleteAllowed = true,
+                    deleteAllowed = state.rows.size > 1,
                     onClickMove = { onClickMove.invoke(it, index) },
                     onClickDelete = { onClickDelete.invoke(index) },
                     onClick = { onClick.invoke(index, row) },

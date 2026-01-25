@@ -21,11 +21,11 @@ import org.jellyfin.sdk.model.serializer.UUIDSerializer
 import java.util.UUID
 
 @Serializable
-sealed class HomeRowConfig {
-    abstract val id: Int
-    abstract val viewOptions: HomeRowViewOptions
+sealed interface HomeRowConfig {
+    val id: Int
+    val viewOptions: HomeRowViewOptions
 
-    abstract fun updateViewOptions(viewOptions: HomeRowViewOptions): HomeRowConfig
+    fun updateViewOptions(viewOptions: HomeRowViewOptions): HomeRowConfig
 
     /**
      * Continue watching media that the user has started but not finished
@@ -35,8 +35,8 @@ sealed class HomeRowConfig {
     data class ContinueWatching(
         override val id: Int,
         override val viewOptions: HomeRowViewOptions,
-    ) : HomeRowConfig() {
-        override fun updateViewOptions(viewOptions: HomeRowViewOptions): HomeRowConfig = this.copy(viewOptions = viewOptions)
+    ) : HomeRowConfig {
+        override fun updateViewOptions(viewOptions: HomeRowViewOptions): ContinueWatching = this.copy(viewOptions = viewOptions)
     }
 
     /**
@@ -47,8 +47,8 @@ sealed class HomeRowConfig {
     data class NextUp(
         override val id: Int,
         override val viewOptions: HomeRowViewOptions,
-    ) : HomeRowConfig() {
-        override fun updateViewOptions(viewOptions: HomeRowViewOptions): HomeRowConfig = this.copy(viewOptions = viewOptions)
+    ) : HomeRowConfig {
+        override fun updateViewOptions(viewOptions: HomeRowViewOptions): NextUp = this.copy(viewOptions = viewOptions)
     }
 
     /**
@@ -59,8 +59,8 @@ sealed class HomeRowConfig {
     data class ContinueWatchingCombined(
         override val id: Int,
         override val viewOptions: HomeRowViewOptions,
-    ) : HomeRowConfig() {
-        override fun updateViewOptions(viewOptions: HomeRowViewOptions): HomeRowConfig = this.copy(viewOptions = viewOptions)
+    ) : HomeRowConfig {
+        override fun updateViewOptions(viewOptions: HomeRowViewOptions): ContinueWatchingCombined = this.copy(viewOptions = viewOptions)
     }
 
     /**
@@ -72,8 +72,8 @@ sealed class HomeRowConfig {
         override val id: Int,
         val parentId: UUID,
         override val viewOptions: HomeRowViewOptions,
-    ) : HomeRowConfig() {
-        override fun updateViewOptions(viewOptions: HomeRowViewOptions): HomeRowConfig = this.copy(viewOptions = viewOptions)
+    ) : HomeRowConfig {
+        override fun updateViewOptions(viewOptions: HomeRowViewOptions): RecentlyAdded = this.copy(viewOptions = viewOptions)
     }
 
     /**
@@ -85,8 +85,8 @@ sealed class HomeRowConfig {
         override val id: Int,
         val parentId: UUID,
         override val viewOptions: HomeRowViewOptions,
-    ) : HomeRowConfig() {
-        override fun updateViewOptions(viewOptions: HomeRowViewOptions): HomeRowConfig = this.copy(viewOptions = viewOptions)
+    ) : HomeRowConfig {
+        override fun updateViewOptions(viewOptions: HomeRowViewOptions): RecentlyReleased = this.copy(viewOptions = viewOptions)
     }
 
     /**
@@ -102,8 +102,8 @@ sealed class HomeRowConfig {
                 heightDp = (Cards.HEIGHT_2X3_DP * .75f).toInt().let { it - it % 4 },
                 aspectRatio = AspectRatio.WIDE,
             ),
-    ) : HomeRowConfig() {
-        override fun updateViewOptions(viewOptions: HomeRowViewOptions): HomeRowConfig = this.copy(viewOptions = viewOptions)
+    ) : HomeRowConfig {
+        override fun updateViewOptions(viewOptions: HomeRowViewOptions): Genres = this.copy(viewOptions = viewOptions)
     }
 
     /**
@@ -117,8 +117,8 @@ sealed class HomeRowConfig {
         val recursive: Boolean,
         val sort: SortAndDirection? = null,
         override val viewOptions: HomeRowViewOptions,
-    ) : HomeRowConfig() {
-        override fun updateViewOptions(viewOptions: HomeRowViewOptions): HomeRowConfig = this.copy(viewOptions = viewOptions)
+    ) : HomeRowConfig {
+        override fun updateViewOptions(viewOptions: HomeRowViewOptions): ByParent = this.copy(viewOptions = viewOptions)
     }
 
     /**
@@ -131,34 +131,26 @@ sealed class HomeRowConfig {
         val name: String,
         val getItems: GetItemsRequest,
         override val viewOptions: HomeRowViewOptions,
-    ) : HomeRowConfig() {
-        override fun updateViewOptions(viewOptions: HomeRowViewOptions): HomeRowConfig = this.copy(viewOptions = viewOptions)
+    ) : HomeRowConfig {
+        override fun updateViewOptions(viewOptions: HomeRowViewOptions): GetItems = this.copy(viewOptions = viewOptions)
     }
 }
-
-data class HomeRowConfigDisplay(
-    val title: String,
-    val config: HomeRowConfig,
-)
 
 @Serializable
 @SerialName("HomePageSettings")
 data class HomePageSettings(
     val rows: List<HomeRowConfig>,
-    val version: Int = 1,
+    val version: Int = SUPPORTED_HOME_PAGE_SETTINGS_VERSION,
 ) {
     companion object {
         val EMPTY = HomePageSettings(listOf())
     }
 }
 
-data class HomePageResolvedSettings(
-    val rows: List<HomeRowConfigDisplay>,
-) {
-    companion object {
-        val EMPTY = HomePageResolvedSettings(listOf())
-    }
-}
+/**
+ * This is the max version supported by this version of the app
+ */
+const val SUPPORTED_HOME_PAGE_SETTINGS_VERSION = 1
 
 @Serializable
 data class HomeRowViewOptions(
