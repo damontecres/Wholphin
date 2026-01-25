@@ -2,6 +2,7 @@ package com.github.damontecres.wholphin.services.hilt
 
 import android.content.Context
 import androidx.datastore.core.DataStore
+import androidx.work.WorkManager
 import com.github.damontecres.wholphin.BuildConfig
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.ServerRepository
@@ -178,6 +179,9 @@ object AppModule {
 
     @Provides
     @Singleton
+    fun workManager(
+        @ApplicationContext context: Context,
+    ): WorkManager = WorkManager.getInstance(context)
     fun seerrApi(
         @StandardOkHttpClient okHttpClient: OkHttpClient,
     ) = SeerrApi(okHttpClient)
