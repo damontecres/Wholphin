@@ -371,4 +371,5 @@
     <string name="trending">Im Trend</string>
     <string name="voice_error_start_failed">Starten der Spracherkennung fehlgeschlagen</string>
     <string name="press_back_to_cancel">Zurück wählen um abzubrechen</string>
+    <string name="upgrade_mpv_toast">MPV ist jetzt der Standard-Player, außer für HDR.\nDas kannst du in den Einstellungen ändern.</string>
 </resources>
