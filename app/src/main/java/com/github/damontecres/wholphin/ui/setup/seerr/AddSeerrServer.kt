@@ -289,7 +289,7 @@ fun AddSeerrServerUsername(
         Button(
             onClick = { onSubmit.invoke(url, username, password) },
             enabled =
-                error.isNullOrBlank() && url.isNotNullOrBlank() && username.isNotNullOrBlank() && password.isNotNullOrBlank() &&
+                error.isNullOrBlank() && url.isNotNullOrBlank() && username.isNotNullOrBlank() &&
                     status != LoadingState.Loading,
             modifier = Modifier.align(Alignment.CenterHorizontally),
         ) {
