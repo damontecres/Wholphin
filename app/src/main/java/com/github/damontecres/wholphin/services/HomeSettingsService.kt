@@ -550,22 +550,13 @@ class HomeSettingsService
                                 )
                             }
                         }
-                    val name =
-                        if (row.name == null && request.parentId != null) {
-                            // If a name was not provided, use the parent's name if available
-                            api.userLibraryApi
-                                .getItem(itemId = request.parentId!!)
-                                .content.name
-                        } else {
-                            row.name
-                        }
                     GetItemsRequestHandler
                         .execute(api, request)
                         .content.items
-                        .map { BaseItem.Companion.from(it, api, true) }
+                        .map { BaseItem(it, true) }
                         .let {
                             HomeRowLoadingState.Success(
-                                name ?: context.getString(R.string.collection),
+                                row.name,
                                 it,
                                 row.viewOptions,
                             )

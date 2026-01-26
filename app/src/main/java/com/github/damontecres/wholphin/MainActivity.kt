@@ -265,7 +265,9 @@ class MainActivity : AppCompatActivity() {
                                                             server = current.server,
                                                             startDestination =
                                                                 requestedDestination
-                                                                    ?: Destination.Home(),
+                                                                    // TODO undo after testing
+                                                                    // ?: Destination.Home(),
+                                                                    ?: Destination.HomeSettings,
                                                             navigationManager = navigationManager,
                                                             preferences = preferences,
                                                             modifier = Modifier.fillMaxSize(),

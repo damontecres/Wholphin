@@ -78,6 +78,9 @@ fun HomeSettingsPage(
                                 listState.scrollToItem(index)
                             }
                         },
+                        onClickResize = {
+                            viewModel.resizeCards(it)
+                        },
                         modifier = destModifier,
                     )
                 }

@@ -16,6 +16,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Create
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -48,6 +49,7 @@ enum class MoveDirection {
 fun HomeSettingsRowList(
     state: HomePageSettingsState,
     onClick: (Int, HomeRowConfigDisplay) -> Unit,
+    onClickResize: (Int) -> Unit,
     onClickSaveLocal: () -> Unit,
     onClickAdd: () -> Unit,
     onClickMove: (MoveDirection, Int) -> Unit,
@@ -80,6 +82,42 @@ fun HomeSettingsRowList(
                     },
                     onClick = onClickAdd,
                     modifier = Modifier.focusRequester(firstFocus),
+                )
+            }
+            item {
+                ListItem(
+                    selected = false,
+                    headlineContent = {
+                        Text(
+                            text = "Increase card sizes",
+                        )
+                    },
+                    leadingContent = {
+                        Icon(
+                            imageVector = Icons.Default.Edit,
+                            contentDescription = null,
+                        )
+                    },
+                    onClick = { onClickResize.invoke(1) },
+                    modifier = Modifier,
+                )
+            }
+            item {
+                ListItem(
+                    selected = false,
+                    headlineContent = {
+                        Text(
+                            text = "Decrease card sizes",
+                        )
+                    },
+                    leadingContent = {
+                        Icon(
+                            imageVector = Icons.Default.Edit,
+                            contentDescription = null,
+                        )
+                    },
+                    onClick = { onClickResize.invoke(-1) },
+                    modifier = Modifier,
                 )
             }
             item {
