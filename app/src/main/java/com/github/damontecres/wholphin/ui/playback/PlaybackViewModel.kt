@@ -332,7 +332,19 @@ class PlaybackViewModel
                     throw IllegalArgumentException("Item is not playable and not PlaybackList: ${queriedItem.type}")
                 }
 
-            viewModelScope.launch(ExceptionHandler()) { controllerViewState.observe() }
+                val sessionPlayer =
+                    MediaSessionPlayer(
+                        player,
+                        controllerViewState,
+                        preferences.appPreferences.playbackPreferences,
+                    )
+                mediaSession =
+                    MediaSession
+                        .Builder(context, sessionPlayer)
+                        .setId(UUID.randomUUID().toString())
+                        .build()
+
+                val item = BaseItem.from(base, api)
 
             val item = BaseItem.from(base, api)
             val played =

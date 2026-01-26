@@ -18,6 +18,7 @@ import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -91,6 +92,7 @@ import kotlin.time.Duration
 fun SeriesDetails(
     preferences: UserPreferences,
     destination: Destination.MediaItem,
+    autoPlayOnLoad: Boolean = false,
     modifier: Modifier = Modifier,
     viewModel: SeriesViewModel =
         hiltViewModel<SeriesViewModel, SeriesViewModel.Factory>(
@@ -116,6 +118,18 @@ fun SeriesDetails(
     var seasonDialog by remember { mutableStateOf<DialogParams?>(null) }
     var showPlaylistDialog by remember { mutableStateOf<Optional<UUID>>(Optional.absent()) }
     val playlistState by playlistViewModel.playlistState.observeAsState(PlaylistLoadingState.Pending)
+
+    val didAutoPlay = remember(destination.itemId, autoPlayOnLoad) { mutableStateOf(false) }
+    LaunchedEffect(loading, item, autoPlayOnLoad) {
+        if (!didAutoPlay.value &&
+            autoPlayOnLoad &&
+            loading == LoadingState.Success &&
+            item != null
+        ) {
+            didAutoPlay.value = true
+            viewModel.playNextUp()
+        }
+    }
 
     when (val state = loading) {
         is LoadingState.Error -> {
