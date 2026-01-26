@@ -27,6 +27,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -183,6 +184,8 @@ fun DiscoverItemCard(
                 text = item?.title ?: "",
                 maxLines = 1,
                 textAlign = TextAlign.Center,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.SemiBold,
                 modifier =
                     Modifier
                         .fillMaxWidth()
@@ -193,6 +196,8 @@ fun DiscoverItemCard(
                 text = item?.releaseDate?.year?.toString() ?: "",
                 maxLines = 1,
                 textAlign = TextAlign.Center,
+                style = MaterialTheme.typography.bodySmall,
+                fontWeight = FontWeight.Normal,
                 modifier =
                     Modifier
                         .fillMaxWidth()
