@@ -240,7 +240,7 @@ fun AddSeerrServerUsername(
                         },
                     ),
                 isInputValid = { true },
-                modifier = Modifier.focusRequester(focusRequester),
+                modifier = Modifier.focusRequester(usernameFocusRequester),
             )
         }
         Row(
