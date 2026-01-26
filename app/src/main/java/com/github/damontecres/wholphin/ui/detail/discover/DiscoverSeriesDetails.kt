@@ -256,7 +256,7 @@ fun DiscoverSeriesDetailsContent(
     val bringIntoViewRequester = remember { BringIntoViewRequester() }
 
     var position by rememberInt()
-    val focusRequesters = remember { List(SIMILAR_ROW + 1) { FocusRequester() } }
+    val focusRequesters = remember { List(RECOMMENDED_ROW + 1) { FocusRequester() } }
     val playFocusRequester = remember { FocusRequester() }
     LaunchedEffect(Unit) {
         focusRequesters.getOrNull(position)?.tryRequestFocus()
@@ -399,7 +399,7 @@ fun DiscoverSeriesDetailsContent(
                     item {
                         ItemRow(
                             title = stringResource(R.string.recommended),
-                            items = similar,
+                            items = recommended,
                             onClickItem = { index, item ->
                                 position = RECOMMENDED_ROW
                                 onClickItem.invoke(index, item)

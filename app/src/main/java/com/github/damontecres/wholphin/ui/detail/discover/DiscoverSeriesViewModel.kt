@@ -39,6 +39,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
+import timber.log.Timber
 
 @HiltViewModel(assistedFactory = DiscoverSeriesViewModel.Factory::class)
 class DiscoverSeriesViewModel
@@ -65,8 +66,8 @@ class DiscoverSeriesViewModel
         val seasons = MutableLiveData<List<Season>>(listOf())
         val trailers = MutableLiveData<List<Trailer>>(listOf())
         val people = MutableLiveData<List<DiscoverItem>>(listOf())
-        val similar = MutableLiveData<List<DiscoverItem>>(listOf())
-        val recommended = MutableLiveData<List<DiscoverItem>>(listOf())
+        val similar = MutableLiveData<List<DiscoverItem>>()
+        val recommended = MutableLiveData<List<DiscoverItem>>()
         val canCancelRequest = MutableStateFlow(false)
 
         val userConfig = seerrServerRepository.current.map { it?.config }
@@ -97,6 +98,7 @@ class DiscoverSeriesViewModel
                         "Error fetching movie",
                     ),
             ) {
+                Timber.v("Init for tv %s", item.id)
                 val tv = fetchAndSetItem().await()
                 val discoveredItem = DiscoverItem(tv)
                 backdropService.submit(discoveredItem)
@@ -113,8 +115,8 @@ class DiscoverSeriesViewModel
                 if (!similar.isInitialized) {
                     viewModelScope.launchIO {
                         val result =
-                            seerrService.api.moviesApi
-                                .movieMovieIdSimilarGet(movieId = item.id, page = 2)
+                            seerrService.api.tvApi
+                                .tvTvIdSimilarGet(tvId = item.id, page = 1)
                                 .results
                                 ?.map(::DiscoverItem)
                                 .orEmpty()
@@ -122,12 +124,12 @@ class DiscoverSeriesViewModel
                     }
                     viewModelScope.launchIO {
                         val result =
-                            seerrService.api.moviesApi
-                                .movieMovieIdRecommendationsGet(movieId = item.id, page = 2)
+                            seerrService.api.tvApi
+                                .tvTvIdRecommendationsGet(tvId = item.id, page = 1)
                                 .results
                                 ?.map(::DiscoverItem)
                                 .orEmpty()
-                        similar.setValueOnMain(result)
+                        recommended.setValueOnMain(result)
                     }
                 }
                 val people =
