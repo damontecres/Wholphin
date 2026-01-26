@@ -137,7 +137,8 @@ class SeerrServerRepository
             username: String?,
             passwordOrApiKey: String,
         ): LoadingState {
-            val api = SeerrApiClient(url, passwordOrApiKey, okHttpClient)
+            val apiKey = passwordOrApiKey.takeIf { authMethod == SeerrAuthMethod.API_KEY }
+            val api = SeerrApiClient(url, apiKey, okHttpClient)
             login(api, authMethod, username, passwordOrApiKey)
             return LoadingState.Success
         }
