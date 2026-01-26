@@ -4,17 +4,20 @@ import android.content.Context
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.github.damontecres.wholphin.api.seerr.model.RelatedVideo
 import com.github.damontecres.wholphin.api.seerr.model.RequestPostRequest
 import com.github.damontecres.wholphin.api.seerr.model.Season
 import com.github.damontecres.wholphin.api.seerr.model.TvDetails
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.DiscoverItem
 import com.github.damontecres.wholphin.data.model.DiscoverRating
+import com.github.damontecres.wholphin.data.model.RemoteTrailer
 import com.github.damontecres.wholphin.data.model.Trailer
 import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.SeerrServerRepository
 import com.github.damontecres.wholphin.services.SeerrService
+import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.setValueOnMain
@@ -137,6 +140,15 @@ class DiscoverSeriesViewModel
                             ?.map(::DiscoverItem)
                             .orEmpty()
                 this@DiscoverSeriesViewModel.people.setValueOnMain(people)
+
+                val trailers =
+                    tv.relatedVideos
+                        ?.filter { it.type == RelatedVideo.Type.TRAILER }
+                        ?.filter { it.name.isNotNullOrBlank() && it.url.isNotNullOrBlank() }
+                        ?.map {
+                            RemoteTrailer(it.name!!, it.url!!, null)
+                        }.orEmpty()
+                this@DiscoverSeriesViewModel.trailers.setValueOnMain(trailers)
             }
 
         fun navigateTo(destination: Destination) {

@@ -1226,6 +1226,10 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/WatchProviders'
+        relatedVideos:
+          type: array
+          items:
+            $ref: '#/components/schemas/RelatedVideo'
     MediaRequest:
       type: object
       properties:

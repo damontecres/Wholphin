@@ -89,6 +89,7 @@ fun DiscoverSeriesDetails(
     val item by viewModel.tvSeries.observeAsState()
     val seasons by viewModel.seasons.observeAsState(listOf())
     val people by viewModel.people.observeAsState(listOf())
+    val trailers by viewModel.trailers.observeAsState(listOf())
     val similar by viewModel.similar.observeAsState(listOf())
     val recommended by viewModel.recommended.observeAsState(listOf())
     val userConfig by viewModel.userConfig.collectAsState(null)
@@ -155,7 +156,7 @@ fun DiscoverSeriesDetails(
                     trailerOnClick = {
                         TrailerService.onClick(context, it, viewModel::navigateTo)
                     },
-                    trailers = listOf(),
+                    trailers = trailers,
                     requestOnClick = {
                         item.id?.let { id ->
                             if (request4kEnabled) {
