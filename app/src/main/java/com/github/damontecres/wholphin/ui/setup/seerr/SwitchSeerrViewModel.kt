@@ -1,5 +1,6 @@
 package com.github.damontecres.wholphin.ui.setup.seerr
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.github.damontecres.wholphin.api.seerr.infrastructure.ClientException
@@ -8,8 +9,10 @@ import com.github.damontecres.wholphin.data.model.SeerrAuthMethod
 import com.github.damontecres.wholphin.services.SeerrServerRepository
 import com.github.damontecres.wholphin.services.SeerrService
 import com.github.damontecres.wholphin.ui.launchIO
+import com.github.damontecres.wholphin.ui.showToast
 import com.github.damontecres.wholphin.util.LoadingState
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import jakarta.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
@@ -20,6 +23,7 @@ import timber.log.Timber
 class SwitchSeerrViewModel
     @Inject
     constructor(
+        @param:ApplicationContext private val context: Context,
         private val seerrServerRepository: SeerrServerRepository,
         private val seerrService: SeerrService,
         private val serverRepository: ServerRepository,
@@ -44,37 +48,8 @@ class SwitchSeerrViewModel
 
         fun submitServer(
             url: String,
-            apiKey: String,
-        ) {
-            viewModelScope.launchIO {
-                val url = cleanUrl(url)
-                val result =
-                    try {
-                        seerrServerRepository.testConnection(
-                            authMethod = SeerrAuthMethod.API_KEY,
-                            url = url,
-                            username = null,
-                            passwordOrApiKey = apiKey,
-                        )
-                    } catch (ex: ClientException) {
-                        Timber.w(ex, "Error logging in via API Key")
-                        if (ex.statusCode == 401 || ex.statusCode == 403) {
-                            LoadingState.Error("Invalid credentials", ex)
-                        } else {
-                            LoadingState.Error(ex)
-                        }
-                    }
-                if (result is LoadingState.Success) {
-                    seerrServerRepository.addAndChangeServer(url, apiKey)
-                }
-                serverConnectionStatus.update { result }
-            }
-        }
-
-        fun submitServer(
-            url: String,
             username: String,
-            password: String,
+            passwordOrApiKey: String,
             authMethod: SeerrAuthMethod,
         ) {
             viewModelScope.launchIO {
@@ -84,19 +59,39 @@ class SwitchSeerrViewModel
                         seerrServerRepository.testConnection(
                             authMethod = authMethod,
                             url = url,
-                            username = username,
-                            passwordOrApiKey = password,
+                            username = username.takeIf { authMethod != SeerrAuthMethod.API_KEY },
+                            passwordOrApiKey = passwordOrApiKey,
                         )
                     } catch (ex: ClientException) {
-                        Timber.w(ex, "Error logging in via %s", authMethod)
+                        Timber.w(ex, "Error logging in via API Key")
                         if (ex.statusCode == 401 || ex.statusCode == 403) {
+                            showToast(context, "Invalid credentials")
                             LoadingState.Error("Invalid credentials", ex)
                         } else {
+                            showToast(context, "Error: ${ex.localizedMessage}")
                             LoadingState.Error(ex)
                         }
                     }
                 if (result is LoadingState.Success) {
-                    seerrServerRepository.addAndChangeServer(url, authMethod, username, password)
+                    when (authMethod) {
+                        SeerrAuthMethod.LOCAL,
+                        SeerrAuthMethod.JELLYFIN,
+                        -> {
+                            seerrServerRepository.addAndChangeServer(
+                                url,
+                                authMethod,
+                                username,
+                                passwordOrApiKey,
+                            )
+                        }
+
+                        SeerrAuthMethod.API_KEY -> {
+                            seerrServerRepository.addAndChangeServer(
+                                url,
+                                passwordOrApiKey,
+                            )
+                        }
+                    }
                 }
                 serverConnectionStatus.update { result }
             }

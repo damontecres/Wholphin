@@ -43,7 +43,6 @@ import androidx.tv.material3.surfaceColorAtElevation
 import coil3.SingletonImageLoader
 import coil3.imageLoader
 import com.github.damontecres.wholphin.R
-import com.github.damontecres.wholphin.data.model.SeerrAuthMethod
 import com.github.damontecres.wholphin.preferences.AppPreference
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.ExoPlayerPreferences
@@ -504,13 +503,7 @@ fun PreferencesContent(
                 AddSeerServerDialog(
                     currentUsername = currentUser?.name,
                     status = status,
-                    onSubmit = { url: String, username: String?, passwordOrApiKey: String, method: SeerrAuthMethod ->
-                        if (method == SeerrAuthMethod.API_KEY) {
-                            seerrVm.submitServer(url, passwordOrApiKey)
-                        } else {
-                            seerrVm.submitServer(url, username ?: "", passwordOrApiKey, method)
-                        }
-                    },
+                    onSubmit = seerrVm::submitServer,
                     onDismissRequest = { seerrDialogMode = SeerrDialogMode.None },
                 )
             }
