@@ -897,8 +897,6 @@ components:
             - Bloopers
         site:
           type: string
-          enum:
-            - 'YouTube'
     MovieDetails:
       type: object
       properties:

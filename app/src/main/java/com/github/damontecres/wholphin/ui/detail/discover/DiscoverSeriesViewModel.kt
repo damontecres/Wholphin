@@ -148,7 +148,7 @@ class DiscoverSeriesViewModel
                         ?.filter { it.type == RelatedVideo.Type.TRAILER }
                         ?.filter { it.name.isNotNullOrBlank() && it.url.isNotNullOrBlank() }
                         ?.map {
-                            RemoteTrailer(it.name!!, it.url!!, null)
+                            RemoteTrailer(it.name!!, it.url!!, it.site)
                         }.orEmpty()
                 this@DiscoverSeriesViewModel.trailers.setValueOnMain(trailers)
             }
