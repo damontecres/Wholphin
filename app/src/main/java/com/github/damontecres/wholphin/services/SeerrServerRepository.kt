@@ -30,6 +30,7 @@ import okhttp3.OkHttpClient
 import timber.log.Timber
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlin.time.Duration.Companion.seconds
 
 /**
  * Manages saves/loading Seerr servers from the local DB. Also will update the current [SeerrApi] as needed.
@@ -138,7 +139,16 @@ class SeerrServerRepository
             passwordOrApiKey: String,
         ): LoadingState {
             val apiKey = passwordOrApiKey.takeIf { authMethod == SeerrAuthMethod.API_KEY }
-            val api = SeerrApiClient(url, apiKey, okHttpClient)
+            val api =
+                SeerrApiClient(
+                    url,
+                    apiKey,
+                    okHttpClient
+                        .newBuilder()
+                        .connectTimeout(5.seconds)
+                        .readTimeout(6.seconds)
+                        .build(),
+                )
             login(api, authMethod, username, passwordOrApiKey)
             return LoadingState.Success
         }
