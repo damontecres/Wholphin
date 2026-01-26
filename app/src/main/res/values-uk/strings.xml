@@ -66,9 +66,9 @@
     <string name="more">Більше</string>
     <plurals name="movies">
         <item quantity="one">Фільми</item>
-        <item quantity="few"></item>
-        <item quantity="many"></item>
-        <item quantity="other"></item>
+        <item quantity="few"/>
+        <item quantity="many"/>
+        <item quantity="other"/>
     </plurals>
     <string name="name">Ім\'я</string>
     <string name="next_up">Наступний</string>
@@ -83,9 +83,9 @@
     <string name="path">Шлях</string>
     <plurals name="people">
         <item quantity="one">Люди</item>
-        <item quantity="few"></item>
-        <item quantity="many"></item>
-        <item quantity="other"></item>
+        <item quantity="few"/>
+        <item quantity="many"/>
+        <item quantity="other"/>
     </plurals>
     <string name="play_count">Кількість відтворень</string>
     <string name="play_from_here">Відтворити звідси</string>
@@ -156,9 +156,9 @@
     <string name="trailer">Трейлер</string>
     <plurals name="trailers">
         <item quantity="one">Трейлери</item>
-        <item quantity="few"></item>
-        <item quantity="many"></item>
-        <item quantity="other"></item>
+        <item quantity="few"/>
+        <item quantity="many"/>
+        <item quantity="other"/>
     </plurals>
     <string name="tv_dvr_schedule">Розклад DVR</string>
     <string name="tv_guide">Посібник</string>
@@ -166,9 +166,9 @@
     <string name="tv_seasons">Сезони</string>
     <plurals name="tv_shows">
         <item quantity="one">Серіали</item>
-        <item quantity="few"></item>
-        <item quantity="many"></item>
-        <item quantity="other"></item>
+        <item quantity="few"/>
+        <item quantity="many"/>
+        <item quantity="other"/>
     </plurals>
     <string name="ui_interface">Інтерфейс</string>
     <string name="unknown">Невідомо</string>
@@ -196,69 +196,69 @@
     <string name="extras">Додатково</string>
     <plurals name="other_extras">
         <item quantity="one">Інше</item>
-        <item quantity="few"></item>
-        <item quantity="many"></item>
-        <item quantity="other"></item>
+        <item quantity="few"/>
+        <item quantity="many"/>
+        <item quantity="other"/>
     </plurals>
     <plurals name="behind_the_scenes">
         <item quantity="one">Позакадром</item>
-        <item quantity="few"></item>
-        <item quantity="many"></item>
-        <item quantity="other"></item>
+        <item quantity="few"/>
+        <item quantity="many"/>
+        <item quantity="other"/>
     </plurals>
     <plurals name="theme_songs">
         <item quantity="one">Тематичні пісні</item>
-        <item quantity="few"></item>
-        <item quantity="many"></item>
-        <item quantity="other"></item>
+        <item quantity="few"/>
+        <item quantity="many"/>
+        <item quantity="other"/>
     </plurals>
     <plurals name="theme_videos">
         <item quantity="one">Тематичні відео</item>
-        <item quantity="few"></item>
-        <item quantity="many"></item>
-        <item quantity="other"></item>
+        <item quantity="few"/>
+        <item quantity="many"/>
+        <item quantity="other"/>
     </plurals>
     <plurals name="clips">
         <item quantity="one">Кліпи</item>
-        <item quantity="few"></item>
-        <item quantity="many"></item>
-        <item quantity="other"></item>
+        <item quantity="few"/>
+        <item quantity="many"/>
+        <item quantity="other"/>
     </plurals>
     <plurals name="deleted_scenes">
         <item quantity="one">Видалені сцени</item>
-        <item quantity="few"></item>
-        <item quantity="many"></item>
-        <item quantity="other"></item>
+        <item quantity="few"/>
+        <item quantity="many"/>
+        <item quantity="other"/>
     </plurals>
     <plurals name="interviews">
         <item quantity="one">Інтерв\'ю</item>
-        <item quantity="few"></item>
-        <item quantity="many"></item>
-        <item quantity="other"></item>
+        <item quantity="few"/>
+        <item quantity="many"/>
+        <item quantity="other"/>
     </plurals>
     <plurals name="scenes">
         <item quantity="one">Сцени</item>
-        <item quantity="few"></item>
-        <item quantity="many"></item>
-        <item quantity="other"></item>
+        <item quantity="few"/>
+        <item quantity="many"/>
+        <item quantity="other"/>
     </plurals>
     <plurals name="samples">
         <item quantity="one">Зразки</item>
-        <item quantity="few"></item>
-        <item quantity="many"></item>
-        <item quantity="other"></item>
+        <item quantity="few"/>
+        <item quantity="many"/>
+        <item quantity="other"/>
     </plurals>
     <plurals name="featurettes">
         <item quantity="one">Короткометражні фільми</item>
-        <item quantity="few"></item>
-        <item quantity="many"></item>
-        <item quantity="other"></item>
+        <item quantity="few"/>
+        <item quantity="many"/>
+        <item quantity="other"/>
     </plurals>
     <plurals name="shorts">
         <item quantity="one">Шорти</item>
-        <item quantity="few"></item>
-        <item quantity="many"></item>
-        <item quantity="other"></item>
+        <item quantity="few"/>
+        <item quantity="many"/>
+        <item quantity="other"/>
     </plurals>
     <plurals name="downloads">
         <item quantity="one">%s завантаження</item>
@@ -452,4 +452,5 @@
     <string name="upcoming_tv">Заплановані Серіали</string>
     <string name="request_4k">Запит в 4К</string>
     <string name="software_decoding_av1">Програмне декодування AV1</string>
+    <string name="upgrade_mpv_toast">MPV тепер є плеєром за замовчуванням, за винятком для HDR.\nВи можете змінити це в налаштуваннях.</string>
 </resources>
