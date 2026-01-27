@@ -162,6 +162,9 @@ fun SeekBarDisplay(
         targetValue = 6.dp.times((if (isFocused) 2f else 1f)),
     )
 
+    var leftRepeatCount by remember { mutableStateOf(0) }
+    var rightRepeatCount by remember { mutableStateOf(0) }
+
     Column(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -173,16 +176,39 @@ fun SeekBarDisplay(
                     .height(animatedIndicatorHeight)
                     .padding(horizontal = 4.dp)
                     .onPreviewKeyEvent { event ->
-                        val trigger =
-                            event.type == KeyEventType.KeyUp || event.nativeKeyEvent.repeatCount > 0
+                        val repeatCount = event.nativeKeyEvent.repeatCount
+                        val trigger = event.type == KeyEventType.KeyUp || repeatCount > 0
+
                         when (event.nativeKeyEvent.keyCode) {
                             KeyEvent.KEYCODE_DPAD_LEFT, KeyEvent.KEYCODE_SYSTEM_NAVIGATION_LEFT -> {
-                                if (trigger) onLeft.invoke()
+                                if (event.type == KeyEventType.KeyUp) {
+                                    leftRepeatCount = 0
+                                } else if (trigger) {
+                                    leftRepeatCount = repeatCount
+                                    val multiplier = when {
+                                        repeatCount < 10 -> 1
+                                        repeatCount < 20 -> 2
+                                        repeatCount < 30 -> 4
+                                        else -> 8
+                                    }
+                                    repeat(multiplier) { onLeft.invoke() }
+                                }
                                 return@onPreviewKeyEvent true
                             }
 
                             KeyEvent.KEYCODE_DPAD_RIGHT, KeyEvent.KEYCODE_SYSTEM_NAVIGATION_RIGHT -> {
-                                if (trigger) onRight.invoke()
+                                if (event.type == KeyEventType.KeyUp) {
+                                    rightRepeatCount = 0
+                                } else if (trigger) {
+                                    rightRepeatCount = repeatCount
+                                    val multiplier = when {
+                                        repeatCount < 10 -> 1
+                                        repeatCount < 20 -> 2
+                                        repeatCount < 30 -> 4
+                                        else -> 8
+                                    }
+                                    repeat(multiplier) { onRight.invoke() }
+                                }
                                 return@onPreviewKeyEvent true
                             }
                         }
