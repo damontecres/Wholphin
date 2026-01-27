@@ -695,6 +695,18 @@ sealed interface AppPreference<Pref, T> {
                 valueToIndex = { it.number },
             )
 
+        val CombinedSearchResults =
+            AppSwitchPreference<AppPreferences>(
+                title = R.string.combined_search_results,
+                defaultValue = false,
+                getter = { it.interfacePreferences.combinedSearchResults },
+                setter = { prefs, value ->
+                    prefs.updateInterfacePreferences { combinedSearchResults = value }
+                },
+                summaryOn = R.string.combined_search_results_on,
+                summaryOff = R.string.combined_search_results_off,
+            )
+
         val OneClickPause =
             AppSwitchPreference<AppPreferences>(
                 title = R.string.one_click_pause,
@@ -1017,6 +1029,15 @@ val advancedPreferences =
 //                    AppPreference.NavDrawerSwitchOnFocus,
                         AppPreference.ControllerTimeout,
                         AppPreference.BackdropStylePref,
+                    ),
+            ),
+        )
+        add(
+            PreferenceGroup(
+                title = R.string.search,
+                preferences =
+                    listOf(
+                        AppPreference.CombinedSearchResults,
                     ),
             ),
         )

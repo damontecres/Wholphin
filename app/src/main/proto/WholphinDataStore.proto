@@ -152,6 +152,7 @@ message InterfacePreferences {
   SubtitlePreferences subtitles_preferences = 7;
   LiveTvPreferences live_tv_preferences = 8;
   BackdropStyle backdrop_style = 9;
+  bool combined_search_results = 10;
 }
 
 message AdvancedPreferences {
