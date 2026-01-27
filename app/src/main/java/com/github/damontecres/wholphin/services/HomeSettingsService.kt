@@ -15,7 +15,9 @@ import com.github.damontecres.wholphin.ui.nav.ServerNavDrawerItem
 import com.github.damontecres.wholphin.ui.toServerString
 import com.github.damontecres.wholphin.util.GetGenresRequestHandler
 import com.github.damontecres.wholphin.util.GetItemsRequestHandler
+import com.github.damontecres.wholphin.util.GetPersonsHandler
 import com.github.damontecres.wholphin.util.HomeRowLoadingState
+import com.github.damontecres.wholphin.util.HomeRowLoadingState.Success
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -31,12 +33,15 @@ import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.displayPreferencesApi
 import org.jellyfin.sdk.api.client.extensions.userLibraryApi
 import org.jellyfin.sdk.model.UUID
+import org.jellyfin.sdk.model.api.BaseItemKind
+import org.jellyfin.sdk.model.api.ImageType
 import org.jellyfin.sdk.model.api.ItemSortBy
 import org.jellyfin.sdk.model.api.SortOrder
 import org.jellyfin.sdk.model.api.UserDto
 import org.jellyfin.sdk.model.api.request.GetGenresRequest
 import org.jellyfin.sdk.model.api.request.GetItemsRequest
 import org.jellyfin.sdk.model.api.request.GetLatestMediaRequest
+import org.jellyfin.sdk.model.api.request.GetPersonsRequest
 import timber.log.Timber
 import java.io.File
 import javax.inject.Inject
@@ -183,7 +188,19 @@ class HomeSettingsService
         suspend fun loadCurrentSettings(userId: UUID) {
             Timber.v("Getting setting for %s", userId)
             // User local then server/remote otherwise create a default
-            val settings = loadFromLocal(userId) ?: loadFromServer(userId)
+            val settings =
+                try {
+                    loadFromLocal(userId)
+                } catch (ex: Exception) {
+                    Timber.w(ex, "Error loading local settings")
+                    // TODO show toast?
+                    null
+                } ?: try {
+                    loadFromServer(userId)
+                } catch (ex: Exception) {
+                    Timber.w(ex, "Error loading remote settings")
+                    null
+                }
             val resolvedSettings =
                 if (settings != null) {
                     Timber.v("Found settings")
@@ -341,6 +358,11 @@ class HomeSettingsService
                         config,
                     )
                 }
+
+                is HomeRowConfig.Favorite -> {
+                    val name = context.getString(R.string.favorites) // TODO "Favorite <type>"
+                    HomeRowConfigDisplay(id, name, config)
+                }
             }
 
         /**
@@ -358,7 +380,7 @@ class HomeSettingsService
                 is HomeRowConfig.ContinueWatching -> {
                     val resume = latestNextUpService.getResume(userDto.id, limit, true)
 
-                    HomeRowLoadingState.Success(
+                    Success(
                         title = context.getString(R.string.continue_watching),
                         items = resume,
                         viewOptions = row.viewOptions,
@@ -374,7 +396,7 @@ class HomeSettingsService
                             false,
                         )
 
-                    HomeRowLoadingState.Success(
+                    Success(
                         title = context.getString(R.string.next_up),
                         items = nextUp,
                         viewOptions = row.viewOptions,
@@ -392,7 +414,7 @@ class HomeSettingsService
                             false,
                         )
 
-                    HomeRowLoadingState.Success(
+                    Success(
                         title = context.getString(R.string.continue_watching),
                         items =
                             latestNextUpService.buildCombined(
@@ -438,7 +460,7 @@ class HomeSettingsService
                         name?.let { context.getString(R.string.genres_in, it) }
                             ?: context.getString(R.string.genres)
 
-                    HomeRowLoadingState.Success(
+                    Success(
                         title,
                         genres,
                         viewOptions = row.viewOptions,
@@ -468,7 +490,7 @@ class HomeSettingsService
                             .content
                             .map { BaseItem.Companion.from(it, api, true) }
                             .let {
-                                HomeRowLoadingState.Success(
+                                Success(
                                     title,
                                     it,
                                     row.viewOptions,
@@ -500,7 +522,7 @@ class HomeSettingsService
                         .content.items
                         .map { BaseItem.Companion.from(it, api, true) }
                         .let {
-                            HomeRowLoadingState.Success(
+                            Success(
                                 title,
                                 it,
                                 row.viewOptions,
@@ -528,7 +550,7 @@ class HomeSettingsService
                         .content.items
                         .map { BaseItem(it, true) }
                         .let {
-                            HomeRowLoadingState.Success(
+                            Success(
                                 name ?: context.getString(R.string.collection),
                                 it,
                                 row.viewOptions,
@@ -555,12 +577,58 @@ class HomeSettingsService
                         .content.items
                         .map { BaseItem(it, true) }
                         .let {
-                            HomeRowLoadingState.Success(
+                            Success(
                                 row.name,
                                 it,
                                 row.viewOptions,
                             )
                         }
+                }
+
+                is HomeRowConfig.Favorite -> {
+                    if (row.kind == BaseItemKind.PERSON) {
+                        val request =
+                            GetPersonsRequest(
+                                userId = userDto.id,
+                                limit = limit,
+                                fields = DefaultItemFields,
+                                isFavorite = true,
+                                enableImages = true,
+                                enableImageTypes = listOf(ImageType.PRIMARY),
+                            )
+                        GetPersonsHandler
+                            .execute(api, request)
+                            .content.items
+                            .map { BaseItem(it, true) }
+                            .let {
+                                Success(
+                                    context.getString(R.string.favorites), // TODO
+                                    it,
+                                    row.viewOptions,
+                                )
+                            }
+                    } else {
+                        val request =
+                            GetItemsRequest(
+                                userId = userDto.id,
+                                recursive = true,
+                                limit = limit,
+                                fields = DefaultItemFields,
+                                includeItemTypes = listOf(row.kind),
+                                isFavorite = true,
+                            )
+                        GetItemsRequestHandler
+                            .execute(api, request)
+                            .content.items
+                            .map { BaseItem(it, false) }
+                            .let {
+                                Success(
+                                    context.getString(R.string.favorites), // TODO
+                                    it,
+                                    row.viewOptions,
+                                )
+                            }
+                    }
                 }
             }
 

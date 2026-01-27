@@ -23,9 +23,11 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusRestorer
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -57,6 +59,7 @@ fun HomeSettingsRowList(
     modifier: Modifier,
     firstFocus: FocusRequester = remember { FocusRequester() },
 ) {
+    val focusManager = LocalFocusManager.current
     LaunchedEffect(Unit) { firstFocus.tryRequestFocus() }
     Column(modifier = modifier) {
         LazyColumn(
@@ -148,7 +151,14 @@ fun HomeSettingsRowList(
                     moveDownAllowed = index != state.rows.lastIndex,
                     deleteAllowed = state.rows.size > 1,
                     onClickMove = { onClickMove.invoke(it, index) },
-                    onClickDelete = { onClickDelete.invoke(index) },
+                    onClickDelete = {
+                        if (index != state.rows.lastIndex) {
+                            focusManager.moveFocus(FocusDirection.Down)
+                        } else {
+                            focusManager.moveFocus(FocusDirection.Up)
+                        }
+                        onClickDelete.invoke(index)
+                    },
                     onClick = { onClick.invoke(index, row) },
                     modifier =
                         Modifier

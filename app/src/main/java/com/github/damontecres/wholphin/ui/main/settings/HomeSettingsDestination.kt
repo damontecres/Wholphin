@@ -17,4 +17,8 @@ sealed interface HomeSettingsDestination : NavKey {
     data class RowSettings(
         val rowId: Int,
     ) : HomeSettingsDestination
+
+    data object ChooseFavorite : HomeSettingsDestination
+
+    data object ChooseDiscover : HomeSettingsDestination
 }

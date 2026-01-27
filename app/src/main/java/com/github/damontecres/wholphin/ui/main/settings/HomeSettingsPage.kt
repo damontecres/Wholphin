@@ -22,6 +22,8 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.tv.material3.MaterialTheme
 import com.github.damontecres.wholphin.ui.main.HomePageContent
+import com.github.damontecres.wholphin.ui.main.settings.HomeSettingsDestination.ChooseRowType
+import com.github.damontecres.wholphin.ui.main.settings.HomeSettingsDestination.RowSettings
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import kotlinx.coroutines.launch
 import timber.log.Timber
@@ -38,14 +40,15 @@ fun HomeSettingsPage(
     var destination by remember { mutableStateOf<HomeSettingsDestination>(HomeSettingsDestination.RowList) }
 
     val state by viewModel.state.collectAsState()
+    val discoverEnabled by viewModel.discoverEnabled.collectAsState(false)
 
-    BackHandler(destination is HomeSettingsDestination.ChooseRowType) {
+    BackHandler(destination is ChooseRowType) {
         destination = HomeSettingsDestination.ChooseLibrary
     }
     BackHandler(destination is HomeSettingsDestination.ChooseLibrary) {
         destination = HomeSettingsDestination.RowList
     }
-    BackHandler(destination is HomeSettingsDestination.RowSettings) {
+    BackHandler(destination is RowSettings) {
         destination = HomeSettingsDestination.RowList
     }
     Row(
@@ -72,7 +75,7 @@ fun HomeSettingsPage(
                         onClickMove = viewModel::moveRow,
                         onClickDelete = viewModel::deleteRow,
                         onClick = { index, row ->
-                            destination = HomeSettingsDestination.RowSettings(row.id)
+                            destination = RowSettings(row.id)
                             scope.launch(ExceptionHandler()) {
                                 Timber.v("Scroll to $index")
                                 listState.scrollToItem(index)
@@ -88,16 +91,32 @@ fun HomeSettingsPage(
                 is HomeSettingsDestination.ChooseLibrary -> {
                     HomeSettingsLibraryList(
                         libraries = state.libraries,
-                        onClick = { destination = HomeSettingsDestination.ChooseRowType(it) },
+                        showDiscover = discoverEnabled,
+                        onClick = { destination = ChooseRowType(it) },
                         onClickMeta = {
-                            viewModel.addRow(it)
-                            destination = HomeSettingsDestination.RowList
+                            when (it) {
+                                MetaRowType.CONTINUE_WATCHING,
+                                MetaRowType.NEXT_UP,
+                                MetaRowType.COMBINED_CONTINUE_WATCHING,
+                                -> {
+                                    viewModel.addRow(it)
+                                    destination = HomeSettingsDestination.RowList
+                                }
+
+                                MetaRowType.FAVORITES -> {
+                                    destination = HomeSettingsDestination.ChooseFavorite
+                                }
+
+                                MetaRowType.DISCOVER -> {
+                                    destination = HomeSettingsDestination.ChooseDiscover
+                                }
+                            }
                         },
                         modifier = destModifier,
                     )
                 }
 
-                is HomeSettingsDestination.ChooseRowType -> {
+                is ChooseRowType -> {
                     HomeLibraryRowTypeList(
                         library = dest.library,
                         onClick = {
@@ -108,7 +127,7 @@ fun HomeSettingsPage(
                     )
                 }
 
-                is HomeSettingsDestination.RowSettings -> {
+                is RowSettings -> {
                     val row =
                         state.rows
                             .first { it.id == dest.rowId }
@@ -122,6 +141,18 @@ fun HomeSettingsPage(
                             viewModel.updateViewOptionsForAll(row.config.viewOptions)
                         },
                         modifier = destModifier,
+                    )
+                }
+
+                HomeSettingsDestination.ChooseDiscover -> {
+                    TODO()
+                }
+
+                HomeSettingsDestination.ChooseFavorite -> {
+                    HomeSettingsFavoriteList(
+                        onClick = { type ->
+                            viewModel.addFavoriteRow(type)
+                        },
                     )
                 }
             }

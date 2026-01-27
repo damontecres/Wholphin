@@ -11,11 +11,15 @@ import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.HomePageSettings
 import com.github.damontecres.wholphin.data.model.HomeRowConfig
+import com.github.damontecres.wholphin.data.model.HomeRowConfig.ContinueWatching
+import com.github.damontecres.wholphin.data.model.HomeRowConfig.ContinueWatchingCombined
+import com.github.damontecres.wholphin.data.model.HomeRowConfig.NextUp
 import com.github.damontecres.wholphin.data.model.HomeRowViewOptions
 import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.HomePageResolvedSettings
 import com.github.damontecres.wholphin.services.HomeRowConfigDisplay
 import com.github.damontecres.wholphin.services.HomeSettingsService
+import com.github.damontecres.wholphin.services.SeerrServerRepository
 import com.github.damontecres.wholphin.services.UserPreferencesService
 import com.github.damontecres.wholphin.services.hilt.IoCoroutineScope
 import com.github.damontecres.wholphin.ui.launchIO
@@ -30,6 +34,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
+import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.CollectionType
 import timber.log.Timber
 import java.util.UUID
@@ -45,10 +50,13 @@ class HomeSettingsViewModel
         private val userPreferencesService: UserPreferencesService,
         private val navDrawerItemRepository: NavDrawerItemRepository,
         private val backdropService: BackdropService,
+        private val seerrServerRepository: SeerrServerRepository,
         @param:IoCoroutineScope private val ioScope: CoroutineScope,
     ) : ViewModel() {
         private val _state = MutableStateFlow(HomePageSettingsState.EMPTY)
         val state: StateFlow<HomePageSettingsState> = _state
+
+        val discoverEnabled = seerrServerRepository.active
 
         init {
             addCloseable { saveToLocal() }
@@ -164,7 +172,7 @@ class HomeSettingsViewModel
                             HomeRowConfigDisplay(
                                 id = id,
                                 title = context.getString(R.string.continue_watching),
-                                config = HomeRowConfig.ContinueWatching(),
+                                config = ContinueWatching(),
                             )
                         }
 
@@ -172,7 +180,7 @@ class HomeSettingsViewModel
                             HomeRowConfigDisplay(
                                 id = id,
                                 title = context.getString(R.string.continue_watching),
-                                config = HomeRowConfig.NextUp(),
+                                config = NextUp(),
                             )
                         }
 
@@ -180,8 +188,16 @@ class HomeSettingsViewModel
                             HomeRowConfigDisplay(
                                 id = id,
                                 title = context.getString(R.string.combine_continue_next),
-                                config = HomeRowConfig.ContinueWatchingCombined(),
+                                config = ContinueWatchingCombined(),
                             )
+                        }
+
+                        MetaRowType.FAVORITES -> {
+                            throw IllegalArgumentException("Should use addRow(BaseItemKind) instead")
+                        }
+
+                        MetaRowType.DISCOVER -> {
+                            TODO()
                         }
                     }
                 updateState {
@@ -236,6 +252,26 @@ class HomeSettingsViewModel
                             )
                         }
                     }
+                updateState {
+                    it.copy(
+                        loading = LoadingState.Loading,
+                        rows = it.rows.toMutableList().apply { add(newRow) },
+                    )
+                }
+                fetchRowData()
+            }
+        }
+
+        fun addFavoriteRow(type: BaseItemKind) {
+            viewModelScope.launchIO {
+                Timber.v("Adding favorite row for $type")
+                val id = state.value.rows.size
+                val newRow =
+                    HomeRowConfigDisplay(
+                        id = id,
+                        title = context.getString(favoriteOptions[type]!!),
+                        config = HomeRowConfig.Favorite(type),
+                    )
                 updateState {
                     it.copy(
                         loading = LoadingState.Loading,

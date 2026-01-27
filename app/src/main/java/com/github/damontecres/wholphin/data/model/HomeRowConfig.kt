@@ -10,6 +10,7 @@ import com.github.damontecres.wholphin.ui.data.SortAndDirection
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.UseSerializers
+import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.request.GetItemsRequest
 import org.jellyfin.sdk.model.serializer.UUIDSerializer
 import java.util.UUID
@@ -86,11 +87,31 @@ sealed interface HomeRowConfig {
         val parentId: UUID,
         override val viewOptions: HomeRowViewOptions =
             HomeRowViewOptions(
-                heightDp = (Cards.HEIGHT_2X3_DP * .75f).toInt().let { it - it % 4 },
+                heightDp = Cards.HEIGHT_EPISODE,
                 aspectRatio = AspectRatio.WIDE,
             ),
     ) : HomeRowConfig {
         override fun updateViewOptions(viewOptions: HomeRowViewOptions): Genres = this.copy(viewOptions = viewOptions)
+    }
+
+    /**
+     * Favorites for a specific type
+     */
+    @Serializable
+    @SerialName("Favorite")
+    data class Favorite(
+        val kind: BaseItemKind,
+        override val viewOptions: HomeRowViewOptions =
+            if (kind == BaseItemKind.EPISODE) {
+                HomeRowViewOptions(
+                    heightDp = Cards.HEIGHT_EPISODE,
+                    aspectRatio = AspectRatio.WIDE,
+                )
+            } else {
+                HomeRowViewOptions()
+            },
+    ) : HomeRowConfig {
+        override fun updateViewOptions(viewOptions: HomeRowViewOptions): Favorite = this.copy(viewOptions = viewOptions)
     }
 
     /**
