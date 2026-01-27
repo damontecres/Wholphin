@@ -89,6 +89,7 @@ fun DiscoverSeriesDetails(
     val item by viewModel.tvSeries.observeAsState()
     val seasons by viewModel.seasons.observeAsState(listOf())
     val people by viewModel.people.observeAsState(listOf())
+    val trailers by viewModel.trailers.observeAsState(listOf())
     val similar by viewModel.similar.observeAsState(listOf())
     val recommended by viewModel.recommended.observeAsState(listOf())
     val userConfig by viewModel.userConfig.collectAsState(null)
@@ -155,7 +156,7 @@ fun DiscoverSeriesDetails(
                     trailerOnClick = {
                         TrailerService.onClick(context, it, viewModel::navigateTo)
                     },
-                    trailers = listOf(),
+                    trailers = trailers,
                     requestOnClick = {
                         item.id?.let { id ->
                             if (request4kEnabled) {
@@ -255,7 +256,7 @@ fun DiscoverSeriesDetailsContent(
     val bringIntoViewRequester = remember { BringIntoViewRequester() }
 
     var position by rememberInt()
-    val focusRequesters = remember { List(SIMILAR_ROW + 1) { FocusRequester() } }
+    val focusRequesters = remember { List(RECOMMENDED_ROW + 1) { FocusRequester() } }
     val playFocusRequester = remember { FocusRequester() }
     LaunchedEffect(Unit) {
         focusRequesters.getOrNull(position)?.tryRequestFocus()
@@ -398,7 +399,7 @@ fun DiscoverSeriesDetailsContent(
                     item {
                         ItemRow(
                             title = stringResource(R.string.recommended),
-                            items = similar,
+                            items = recommended,
                             onClickItem = { index, item ->
                                 position = RECOMMENDED_ROW
                                 onClickItem.invoke(index, item)

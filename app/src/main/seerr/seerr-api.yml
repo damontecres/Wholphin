@@ -897,8 +897,6 @@ components:
             - Bloopers
         site:
           type: string
-          enum:
-            - 'YouTube'
     MovieDetails:
       type: object
       properties:
@@ -1226,6 +1224,10 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/WatchProviders'
+        relatedVideos:
+          type: array
+          items:
+            $ref: '#/components/schemas/RelatedVideo'
     MediaRequest:
       type: object
       properties:
