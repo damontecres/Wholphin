@@ -62,6 +62,7 @@ import com.github.damontecres.wholphin.ui.detail.MoreDialogActions
 import com.github.damontecres.wholphin.ui.detail.PlaylistDialog
 import com.github.damontecres.wholphin.ui.detail.PlaylistLoadingState
 import com.github.damontecres.wholphin.ui.detail.buildMoreDialogItemsForHome
+import com.github.damontecres.wholphin.ui.indexOfFirstOrNull
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.playback.isPlayKeyUp
@@ -203,15 +204,15 @@ fun HomePageContent(
     val rowFocusRequesters = remember(homeRows) { List(homeRows.size) { FocusRequester() } }
     var firstFocused by remember { mutableStateOf(false) }
     LaunchedEffect(homeRows) {
-        if (!firstFocused) {
+        if (!firstFocused && homeRows.isNotEmpty()) {
             if (position.row >= 0) {
-                rowFocusRequesters[position.row].tryRequestFocus()
+                val index = position.row.coerceIn(0, rowFocusRequesters.lastIndex)
+                rowFocusRequesters.getOrNull(index)?.tryRequestFocus()
                 firstFocused = true
             } else {
                 // Waiting for the first home row to load, then focus on it
                 homeRows
-                    .indexOfFirst { it is HomeRowLoadingState.Success && it.items.isNotEmpty() }
-                    .takeIf { it >= 0 }
+                    .indexOfFirstOrNull { it is HomeRowLoadingState.Success && it.items.isNotEmpty() }
                     ?.let {
                         rowFocusRequesters[it].tryRequestFocus()
                         firstFocused = true
