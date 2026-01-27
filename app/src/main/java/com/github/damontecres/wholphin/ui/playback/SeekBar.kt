@@ -80,15 +80,15 @@ fun SteppedSeekBarImpl(
         enabled = enabled,
         progress = progressToUse,
         bufferedProgress = bufferedProgress,
-        onLeft = {
+        onLeft = { multiplier ->
             controllerViewState.pulseControls()
-            seekProgress = (progressToUse - offset).coerceAtLeast(0f)
+            seekProgress = (progressToUse - offset * multiplier).coerceAtLeast(0f)
             hasSeeked = true
             seek(seekProgress)
         },
-        onRight = {
+        onRight = { multiplier ->
             controllerViewState.pulseControls()
-            seekProgress = (progressToUse + offset).coerceAtMost(1f)
+            seekProgress = (progressToUse + offset * multiplier).coerceAtMost(1f)
             hasSeeked = true
             seek(seekProgress)
         },
@@ -126,16 +126,16 @@ fun IntervalSeekBarImpl(
         enabled = enabled,
         progress = (progressToUse.toDouble() / durationMs).toFloat(),
         bufferedProgress = bufferedProgress,
-        onLeft = {
+        onLeft = { multiplier ->
             controllerViewState.pulseControls()
-            seekPositionMs = (progressToUse - seekBack.inWholeMilliseconds).coerceAtLeast(0L)
+            seekPositionMs = (progressToUse - seekBack.inWholeMilliseconds * multiplier).coerceAtLeast(0L)
             hasSeeked = true
             onSeek(seekPositionMs)
         },
-        onRight = {
+        onRight = { multiplier ->
             controllerViewState.pulseControls()
             seekPositionMs =
-                (progressToUse + seekForward.inWholeMilliseconds).coerceAtMost(durationMs)
+                (progressToUse + seekForward.inWholeMilliseconds * multiplier).coerceAtMost(durationMs)
             hasSeeked = true
             onSeek(seekPositionMs)
         },
@@ -148,8 +148,8 @@ fun IntervalSeekBarImpl(
 fun SeekBarDisplay(
     progress: Float,
     bufferedProgress: Float,
-    onLeft: () -> Unit,
-    onRight: () -> Unit,
+    onLeft: (Int) -> Unit,
+    onRight: (Int) -> Unit,
     interactionSource: MutableInteractionSource,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
@@ -186,12 +186,12 @@ fun SeekBarDisplay(
                                 } else if (trigger) {
                                     leftRepeatCount = repeatCount
                                     val multiplier = when {
-                                        repeatCount < 10 -> 1
-                                        repeatCount < 20 -> 2
-                                        repeatCount < 30 -> 4
-                                        else -> 8
+                                        repeatCount < 15 -> 1
+                                        repeatCount < 30 -> 2
+                                        repeatCount < 45 -> 3
+                                        else -> 4
                                     }
-                                    repeat(multiplier) { onLeft.invoke() }
+                                    onLeft.invoke(multiplier)
                                 }
                                 return@onPreviewKeyEvent true
                             }
@@ -202,21 +202,18 @@ fun SeekBarDisplay(
                                 } else if (trigger) {
                                     rightRepeatCount = repeatCount
                                     val multiplier = when {
-                                        repeatCount < 10 -> 1
-                                        repeatCount < 20 -> 2
-                                        repeatCount < 30 -> 4
-                                        else -> 8
+                                        repeatCount < 15 -> 1
+                                        repeatCount < 30 -> 2
+                                        repeatCount < 45 -> 3
+                                        else -> 4
                                     }
-                                    repeat(multiplier) { onRight.invoke() }
+                                    onRight.invoke(multiplier)
                                 }
                                 return@onPreviewKeyEvent true
                             }
                         }
                         false
-                    }.handleDPadKeyEvents(
-                        onLeft = onLeft,
-                        onRight = onRight,
-                    ).focusable(enabled = enabled, interactionSource = interactionSource),
+                    }.focusable(enabled = enabled, interactionSource = interactionSource),
             onDraw = {
                 val yOffset = size.height.div(2)
                 drawLine(
