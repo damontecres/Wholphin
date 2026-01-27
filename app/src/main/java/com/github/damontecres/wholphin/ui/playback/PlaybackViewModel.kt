@@ -219,18 +219,22 @@ class PlaybackViewModel
                     PlayerBackend.PREFER_MPV -> if (isHdr) PlayerBackend.EXO_PLAYER else PlayerBackend.MPV
                 }
 
-            Timber.i("Selected backend: %s", playerBackend)
-            withContext(Dispatchers.Main) {
-                disconnectPlayer()
-            }
+            Timber.d("Selected backend: %s", playerBackend)
+            if (currentPlayer.value?.backend != playerBackend) {
+                Timber.i("Switching player backend to %s", playerBackend)
+                withContext(Dispatchers.Main) {
+                    disconnectPlayer()
+                }
 
-            player =
-                playerFactory.createVideoPlayer(
-                    playerBackend,
-                    preferences.appPreferences.playbackPreferences,
-                )
-            currentPlayer.update {
-                PlayerState(player, playerBackend)
+                player =
+                    playerFactory.createVideoPlayer(
+                        playerBackend,
+                        preferences.appPreferences.playbackPreferences,
+                    )
+                currentPlayer.update {
+                    PlayerState(player, playerBackend)
+                }
+                configurePlayer()
             }
         }
 
@@ -429,7 +433,6 @@ class PlaybackViewModel
 
                 // Create the correct player for the media
                 createPlayer(videoStream?.hdr == true)
-                configurePlayer()
 
                 val subtitleStreams =
                     mediaSource.mediaStreams
