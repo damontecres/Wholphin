@@ -510,7 +510,7 @@ class TestStreamChoiceServiceMultipleChoices(
                         ),
                 ),
                 TestInput(
-                    2,
+                    0,
                     SubtitlePlaybackMode.SMART,
                     subtitles =
                         listOf(
