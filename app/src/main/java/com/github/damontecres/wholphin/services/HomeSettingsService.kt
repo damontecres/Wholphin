@@ -6,6 +6,7 @@ import com.github.damontecres.wholphin.data.NavDrawerItemRepository
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.HomePageSettings
 import com.github.damontecres.wholphin.data.model.HomeRowConfig
+import com.github.damontecres.wholphin.preferences.DefaultUserConfiguration
 import com.github.damontecres.wholphin.preferences.HomePagePreferences
 import com.github.damontecres.wholphin.ui.DefaultItemFields
 import com.github.damontecres.wholphin.ui.SlimItemFields
@@ -18,6 +19,7 @@ import com.github.damontecres.wholphin.util.GetItemsRequestHandler
 import com.github.damontecres.wholphin.util.GetPersonsHandler
 import com.github.damontecres.wholphin.util.HomeRowLoadingState
 import com.github.damontecres.wholphin.util.HomeRowLoadingState.Success
+import com.github.damontecres.wholphin.util.supportedHomeCollectionTypes
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -31,7 +33,9 @@ import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.displayPreferencesApi
+import org.jellyfin.sdk.api.client.extensions.userApi
 import org.jellyfin.sdk.api.client.extensions.userLibraryApi
+import org.jellyfin.sdk.api.client.extensions.userViewsApi
 import org.jellyfin.sdk.model.UUID
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.ImageType
@@ -42,6 +46,7 @@ import org.jellyfin.sdk.model.api.request.GetGenresRequest
 import org.jellyfin.sdk.model.api.request.GetItemsRequest
 import org.jellyfin.sdk.model.api.request.GetLatestMediaRequest
 import org.jellyfin.sdk.model.api.request.GetPersonsRequest
+import org.jellyfin.sdk.model.api.request.GetRecordingsRequest
 import timber.log.Timber
 import java.io.File
 import javax.inject.Inject
@@ -58,10 +63,12 @@ class HomeSettingsService
         private val latestNextUpService: LatestNextUpService,
         private val imageUrlService: ImageUrlService,
     ) {
+        @OptIn(ExperimentalSerializationApi::class)
         val jsonParser =
             Json {
                 isLenient = true
                 ignoreUnknownKeys = true
+                allowTrailingComma = true
             }
 
         val currentSettings = MutableStateFlow(HomePageResolvedSettings.EMPTY)
@@ -201,18 +208,18 @@ class HomeSettingsService
                     Timber.w(ex, "Error loading remote settings")
                     null
                 }
-            val resolvedSettings =
-                if (settings != null) {
-                    Timber.v("Found settings")
-                    // Resolve
-                    val resolvedRows =
-                        settings.rows.mapIndexed { index, config ->
-                            resolve(index, config)
-                        }
-                    HomePageResolvedSettings(resolvedRows)
-                } else {
-                    createDefault(userId)
-                }
+            val resolvedSettings = parseFromWebConfig(userId)!!
+            if (settings != null) {
+                Timber.v("Found settings")
+                // Resolve
+                val resolvedRows =
+                    settings.rows.mapIndexed { index, config ->
+                        resolve(index, config)
+                    }
+                HomePageResolvedSettings(resolvedRows)
+            } else {
+                createDefault(userId)
+            }
 
             currentSettings.update { resolvedSettings }
         }
@@ -273,6 +280,112 @@ class HomeSettingsService
                 }
             val rowConfig = continueWatchingRows + includedIds
             return HomePageResolvedSettings(rowConfig)
+        }
+
+        suspend fun parseFromWebConfig(userId: UUID): HomePageResolvedSettings? {
+            val customPrefs =
+                api.displayPreferencesApi
+                    .getDisplayPreferences(
+                        displayPreferencesId = "usersettings",
+                        userId = userId,
+                        client = "emby",
+                    ).content.customPrefs
+            val userDto by api.userApi.getUserById(userId)
+            val config = userDto.configuration ?: DefaultUserConfiguration
+            val libraries =
+                api.userViewsApi
+                    .getUserViews(userId = userId)
+                    .content.items
+                    .filter {
+                        it.collectionType in supportedHomeCollectionTypes &&
+                            it.id !in config.latestItemsExcludes
+                    }
+
+            return if (customPrefs.isNotEmpty()) {
+                var id = 0
+                val rowConfigs =
+                    (0..9)
+                        .mapNotNull { idx ->
+                            val sectionType =
+                                HomeSectionType.fromString(customPrefs["homesection$idx"]?.lowercase())
+                            Timber.v(
+                                "sectionType=$sectionType, %s",
+                                customPrefs["homesection$idx"]?.lowercase(),
+                            )
+                            val config =
+                                when (sectionType) {
+                                    HomeSectionType.ACTIVE_RECORDINGS -> {
+                                        // GetRecordingsRequest
+                                        TODO()
+                                    }
+
+                                    HomeSectionType.RESUME -> {
+                                        HomeRowConfigDisplay(
+                                            id = id++,
+                                            title = context.getString(R.string.continue_watching),
+                                            config = HomeRowConfig.ContinueWatching(),
+                                        )
+                                    }
+
+                                    HomeSectionType.NEXT_UP -> {
+                                        HomeRowConfigDisplay(
+                                            id = id++,
+                                            title = context.getString(R.string.next_up),
+                                            config = HomeRowConfig.NextUp(),
+                                        )
+                                    }
+
+                                    HomeSectionType.LIVE_TV -> {
+                                        if (userDto.policy?.enableLiveTvAccess == true) {
+                                            // GetRecommendedProgramsRequest
+                                            TODO()
+                                        } else {
+                                            null
+                                        }
+                                    }
+
+                                    HomeSectionType.LATEST_MEDIA -> {
+                                        // Handled below
+                                        null
+                                    }
+
+                                    // Unsupported
+                                    HomeSectionType.RESUME_AUDIO,
+                                    HomeSectionType.RESUME_BOOK,
+                                    -> {
+                                        null
+                                    }
+
+                                    HomeSectionType.SMALL_LIBRARY_TILES,
+                                    HomeSectionType.LIBRARY_BUTTONS,
+                                    HomeSectionType.NONE,
+                                    null,
+                                    -> {
+                                        null
+                                    }
+                                }
+                            if (sectionType == HomeSectionType.LATEST_MEDIA) {
+                                libraries.map {
+                                    HomeRowConfigDisplay(
+                                        id = id++,
+                                        title =
+                                            context.getString(
+                                                R.string.recently_added_in,
+                                                it.name ?: "",
+                                            ),
+                                        config = HomeRowConfig.RecentlyAdded(it.id),
+                                    )
+                                }
+                            } else if (config != null) {
+                                listOf(config)
+                            } else {
+                                null
+                            }
+                        }.flatten()
+                HomePageResolvedSettings(rowConfigs)
+            } else {
+                null
+            }
         }
 
         /**
@@ -362,6 +475,14 @@ class HomeSettingsService
                 is HomeRowConfig.Favorite -> {
                     val name = context.getString(R.string.favorites) // TODO "Favorite <type>"
                     HomeRowConfigDisplay(id, name, config)
+                }
+
+                is HomeRowConfig.Recordings -> {
+                    TODO()
+                }
+
+                is HomeRowConfig.TvPrograms -> {
+                    TODO()
                 }
             }
 
@@ -630,6 +751,15 @@ class HomeSettingsService
                             }
                     }
                 }
+
+                is HomeRowConfig.Recordings -> {
+                    GetRecordingsRequest()
+                    TODO()
+                }
+
+                is HomeRowConfig.TvPrograms -> {
+                    TODO()
+                }
             }
 
         companion object {
@@ -657,5 +787,26 @@ data class HomePageResolvedSettings(
 ) {
     companion object {
         val EMPTY = HomePageResolvedSettings(listOf())
+    }
+}
+
+// https://github.com/jellyfin/jellyfin/blob/v10.11.6/src/Jellyfin.Database/Jellyfin.Database.Implementations/Enums/HomeSectionType.cs
+enum class HomeSectionType(
+    val serialName: String,
+) {
+    NONE("none"),
+    SMALL_LIBRARY_TILES("smalllibrarytitles"),
+    LIBRARY_BUTTONS("librarybuttons"),
+    ACTIVE_RECORDINGS("activerecordings"),
+    RESUME("resume"),
+    RESUME_AUDIO("resumeaudio"),
+    LATEST_MEDIA("latestmedia"),
+    NEXT_UP("nextup"),
+    LIVE_TV("livetv"),
+    RESUME_BOOK("resumebook"),
+    ;
+
+    companion object {
+        fun fromString(homeKey: String?) = homeKey?.let { entries.firstOrNull { it.serialName == homeKey } }
     }
 }

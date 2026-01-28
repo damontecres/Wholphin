@@ -115,6 +115,28 @@ sealed interface HomeRowConfig {
     }
 
     /**
+     *
+     */
+    @Serializable
+    @SerialName("Recordings")
+    data class Recordings(
+        override val viewOptions: HomeRowViewOptions = HomeRowViewOptions(),
+    ) : HomeRowConfig {
+        override fun updateViewOptions(viewOptions: HomeRowViewOptions): Recordings = this.copy(viewOptions = viewOptions)
+    }
+
+    /**
+     *
+     */
+    @Serializable
+    @SerialName("TvPrograms")
+    data class TvPrograms(
+        override val viewOptions: HomeRowViewOptions = HomeRowViewOptions(),
+    ) : HomeRowConfig {
+        override fun updateViewOptions(viewOptions: HomeRowViewOptions): TvPrograms = this.copy(viewOptions = viewOptions)
+    }
+
+    /**
      * Fetch by parent ID such as a library, collection, or playlist with optional simple sorting
      */
     @Serializable
