@@ -417,8 +417,12 @@ class MainActivityViewModel
                                 prefs.currentUserId?.toUUIDOrNull(),
                             )
                         if (current != null) {
-                            // Restored
-                            navigationManager.navigateTo(SetupDestination.AppContent(current))
+                            if (current.user.hasPin) {
+                                navigationManager.navigateTo(SetupDestination.UserList(current.server))
+                            } else {
+                                // Restored
+                                navigationManager.navigateTo(SetupDestination.AppContent(current))
+                            }
                         } else {
                             // Did not restore
                             navigationManager.navigateTo(SetupDestination.ServerList)
