@@ -339,6 +339,52 @@ class HomeSettingsViewModel
             }
         }
 
+        fun saveToRemote() {
+            viewModelScope.launchIO {
+                serverRepository.currentUser.value?.let { user ->
+                    Timber.d("Saving home settings to remote")
+                    val rows = state.value.rows.map { it.config }
+                    val settings = HomePageSettings(rows = rows)
+                    try {
+                        Timber.d("saveToRemote")
+                        homeSettingsService.saveToServer(user.id, settings)
+                    } catch (ex: Exception) {
+                        Timber.e(ex)
+                        showToast(context, "Error saving: ${ex.localizedMessage}")
+                    }
+                }
+            }
+        }
+
+        fun loadFromRemote() {
+            viewModelScope.launchIO {
+                serverRepository.currentUser.value?.let { user ->
+                    Timber.d("Loading home settings from remote")
+                    try {
+                        _state.update { it.copy(loading = LoadingState.Loading) }
+                        val result = homeSettingsService.loadFromServer(user.id)
+                        if (result != null) {
+                            Timber.v("Got remote settings")
+                            val newRows =
+                                result.rows.mapIndexed { index, config ->
+                                    homeSettingsService.resolve(index, config)
+                                }
+                            _state.update {
+                                it.copy(rows = newRows)
+                            }
+                        } else {
+                            Timber.v("No remote settings")
+                            showToast(context, "No server-side settings found")
+                        }
+                        fetchRowData()
+                    } catch (ex: Exception) {
+                        Timber.e(ex)
+                        showToast(context, "Error: ${ex.localizedMessage}")
+                    }
+                }
+            }
+        }
+
         fun saveToLocal() {
             // This uses injected ioScope so that it will still run when the page is closing
             ioScope.launchIO {

@@ -399,7 +399,7 @@ class HomeSettingsService
         /**
          * Converts a [HomeRowConfig] into [HomeRowConfigDisplay] for UI purposes
          */
-        private suspend fun resolve(
+        suspend fun resolve(
             id: Int,
             config: HomeRowConfig,
         ): HomeRowConfigDisplay =

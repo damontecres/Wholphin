@@ -12,8 +12,12 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
@@ -23,6 +27,8 @@ import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.surfaceColorAtElevation
+import com.github.damontecres.wholphin.R
+import com.github.damontecres.wholphin.ui.components.ConfirmDialog
 import com.github.damontecres.wholphin.ui.main.HomePageContent
 import com.github.damontecres.wholphin.ui.main.settings.HomeSettingsDestination.ChooseRowType
 import com.github.damontecres.wholphin.ui.main.settings.HomeSettingsDestination.RowSettings
@@ -41,6 +47,7 @@ fun HomeSettingsPage(
     val scope = rememberCoroutineScope()
     val listState = rememberLazyListState()
     val backStack = rememberNavBackStack(HomeSettingsDestination.RowList)
+    var showConfirmDialog by remember { mutableStateOf<(() -> Unit)?>(null) }
 
     val state by viewModel.state.collectAsState()
     val discoverEnabled by viewModel.discoverEnabled.collectAsState(false)
@@ -86,7 +93,16 @@ fun HomeSettingsPage(
                                 HomeSettingsRowList(
                                     state = state,
                                     onClickAdd = { backStack.add(HomeSettingsDestination.AddRow) },
-                                    onClickSaveLocal = { viewModel.saveToLocal() },
+                                    onClickSave = {
+                                        showConfirmDialog = {
+                                            viewModel.saveToRemote()
+                                        }
+                                    },
+                                    onClickLoad = {
+                                        showConfirmDialog = {
+                                            viewModel.loadFromRemote()
+                                        }
+                                    },
                                     onClickMove = viewModel::moveRow,
                                     onClickDelete = viewModel::deleteRow,
                                     onClick = { index, row ->
@@ -187,6 +203,17 @@ fun HomeSettingsPage(
                 Modifier
                     .fillMaxHeight()
                     .weight(1f),
+        )
+    }
+    showConfirmDialog?.let { onConfirm ->
+        ConfirmDialog(
+            title = stringResource(R.string.confirm),
+            body = "Overwrite?",
+            onCancel = { showConfirmDialog = null },
+            onConfirm = {
+                onConfirm.invoke()
+                showConfirmDialog = null
+            },
         )
     }
 }

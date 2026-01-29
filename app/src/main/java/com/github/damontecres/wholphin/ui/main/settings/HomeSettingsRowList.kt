@@ -12,7 +12,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Create
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.HorizontalDivider
@@ -27,9 +26,11 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.tv.material3.Icon
+import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.services.HomeRowConfigDisplay
@@ -47,7 +48,8 @@ fun HomeSettingsRowList(
     state: HomePageSettingsState,
     onClick: (Int, HomeRowConfigDisplay) -> Unit,
     onClickResize: (Int) -> Unit,
-    onClickSaveLocal: () -> Unit,
+    onClickSave: () -> Unit,
+    onClickLoad: () -> Unit,
     onClickAdd: () -> Unit,
     onClickMove: (MoveDirection, Int) -> Unit,
     onClickDelete: (Int) -> Unit,
@@ -83,20 +85,56 @@ fun HomeSettingsRowList(
                 )
             }
             item {
+                Row {
+                    HomeSettingsListItem(
+                        selected = false,
+                        headlineContent = {
+                            Text(
+                                text = "Increase card sizes",
+                            )
+                        },
+                        leadingContent = {
+                            Icon(
+                                imageVector = Icons.Default.Edit,
+                                contentDescription = null,
+                            )
+                        },
+                        onClick = { onClickResize.invoke(1) },
+                        modifier = Modifier.weight(1f),
+                    )
+                    HomeSettingsListItem(
+                        selected = false,
+                        headlineContent = {
+                            Text(
+                                text = "Decrease card sizes",
+                            )
+                        },
+                        leadingContent = {
+                            Icon(
+                                imageVector = Icons.Default.Edit,
+                                contentDescription = null,
+                            )
+                        },
+                        onClick = { onClickResize.invoke(-1) },
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+            }
+            item {
                 HomeSettingsListItem(
                     selected = false,
                     headlineContent = {
                         Text(
-                            text = "Increase card sizes",
+                            text = stringResource(R.string.save_to_server),
                         )
                     },
                     leadingContent = {
-                        Icon(
-                            imageVector = Icons.Default.Edit,
-                            contentDescription = null,
+                        Text(
+                            text = stringResource(R.string.fa_cloud_arrow_up),
+                            fontFamily = FontAwesome,
                         )
                     },
-                    onClick = { onClickResize.invoke(1) },
+                    onClick = onClickSave,
                     modifier = Modifier,
                 )
             }
@@ -105,38 +143,26 @@ fun HomeSettingsRowList(
                     selected = false,
                     headlineContent = {
                         Text(
-                            text = "Decrease card sizes",
+                            text = stringResource(R.string.load_from_server),
                         )
                     },
                     leadingContent = {
-                        Icon(
-                            imageVector = Icons.Default.Edit,
-                            contentDescription = null,
-                        )
-                    },
-                    onClick = { onClickResize.invoke(-1) },
-                    modifier = Modifier,
-                )
-            }
-            item {
-                HomeSettingsListItem(
-                    selected = false,
-                    headlineContent = {
                         Text(
-                            text = stringResource(R.string.save),
+                            text = stringResource(R.string.fa_cloud_arrow_down),
+                            fontFamily = FontAwesome,
                         )
                     },
-                    leadingContent = {
-                        Icon(
-                            imageVector = Icons.Default.Create,
-                            contentDescription = null,
-                        )
-                    },
-                    onClick = onClickSaveLocal,
+                    onClick = onClickLoad,
                     modifier = Modifier,
                 )
             }
             item {
+                Text(
+                    text = stringResource(R.string.home_rows),
+                    style = MaterialTheme.typography.titleLarge,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth(),
+                )
                 HorizontalDivider()
             }
             itemsIndexed(state.rows, key = { _, row -> row.id }) { index, row ->
@@ -192,8 +218,7 @@ fun HomeRowConfigContent(
                     Text(
                         text = config.title,
                         overflow = TextOverflow.Ellipsis,
-                        modifier =
-                        Modifier,
+                        modifier = Modifier,
                     )
                 },
                 onClick = onClick,
