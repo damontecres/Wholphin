@@ -33,6 +33,7 @@ import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.displayPreferencesApi
+import org.jellyfin.sdk.api.client.extensions.liveTvApi
 import org.jellyfin.sdk.api.client.extensions.userApi
 import org.jellyfin.sdk.api.client.extensions.userLibraryApi
 import org.jellyfin.sdk.api.client.extensions.userViewsApi
@@ -46,6 +47,7 @@ import org.jellyfin.sdk.model.api.request.GetGenresRequest
 import org.jellyfin.sdk.model.api.request.GetItemsRequest
 import org.jellyfin.sdk.model.api.request.GetLatestMediaRequest
 import org.jellyfin.sdk.model.api.request.GetPersonsRequest
+import org.jellyfin.sdk.model.api.request.GetRecommendedProgramsRequest
 import org.jellyfin.sdk.model.api.request.GetRecordingsRequest
 import timber.log.Timber
 import java.io.File
@@ -315,8 +317,11 @@ class HomeSettingsService
                             val config =
                                 when (sectionType) {
                                     HomeSectionType.ACTIVE_RECORDINGS -> {
-                                        // GetRecordingsRequest
-                                        TODO()
+                                        HomeRowConfigDisplay(
+                                            id = id++,
+                                            title = context.getString(R.string.active_recordings),
+                                            config = HomeRowConfig.Recordings(),
+                                        )
                                     }
 
                                     HomeSectionType.RESUME -> {
@@ -337,8 +342,11 @@ class HomeSettingsService
 
                                     HomeSectionType.LIVE_TV -> {
                                         if (userDto.policy?.enableLiveTvAccess == true) {
-                                            // GetRecommendedProgramsRequest
-                                            TODO()
+                                            HomeRowConfigDisplay(
+                                                id = id++,
+                                                title = context.getString(R.string.live_tv),
+                                                config = HomeRowConfig.TvPrograms(),
+                                            )
                                         } else {
                                             null
                                         }
@@ -478,11 +486,19 @@ class HomeSettingsService
                 }
 
                 is HomeRowConfig.Recordings -> {
-                    TODO()
+                    HomeRowConfigDisplay(
+                        id = id,
+                        title = context.getString(R.string.active_recordings),
+                        config,
+                    )
                 }
 
                 is HomeRowConfig.TvPrograms -> {
-                    TODO()
+                    HomeRowConfigDisplay(
+                        id = id,
+                        title = context.getString(R.string.live_tv),
+                        config,
+                    )
                 }
             }
 
@@ -753,12 +769,48 @@ class HomeSettingsService
                 }
 
                 is HomeRowConfig.Recordings -> {
-                    GetRecordingsRequest()
-                    TODO()
+                    val request =
+                        GetRecordingsRequest(
+                            userId = userDto.id,
+                            isInProgress = true,
+                            fields = DefaultItemFields,
+                            limit = limit,
+                            enableImages = true,
+                            enableUserData = true,
+                        )
+                    api.liveTvApi
+                        .getRecordings(request)
+                        .content.items
+                        .map { BaseItem(it, true) }
+                        .let {
+                            Success(
+                                context.getString(R.string.active_recordings),
+                                it,
+                                row.viewOptions,
+                            )
+                        }
                 }
 
                 is HomeRowConfig.TvPrograms -> {
-                    TODO()
+                    val request =
+                        GetRecommendedProgramsRequest(
+                            userId = userDto.id,
+                            fields = DefaultItemFields,
+                            limit = limit,
+                            enableImages = true,
+                            enableUserData = true,
+                        )
+                    api.liveTvApi
+                        .getRecommendedPrograms(request)
+                        .content.items
+                        .map { BaseItem(it, true) }
+                        .let {
+                            Success(
+                                context.getString(R.string.live_tv),
+                                it,
+                                row.viewOptions,
+                            )
+                        }
                 }
             }
 

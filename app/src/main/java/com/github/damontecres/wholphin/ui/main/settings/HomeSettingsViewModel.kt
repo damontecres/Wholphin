@@ -34,8 +34,10 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
+import kotlinx.serialization.Serializable
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.CollectionType
+import org.jellyfin.sdk.model.serializer.UUIDSerializer
 import timber.log.Timber
 import java.util.UUID
 import javax.inject.Inject
@@ -400,8 +402,9 @@ data class HomePageSettingsState(
 }
 
 @Immutable
+@Serializable
 data class Library(
-    val itemId: UUID,
+    @Serializable(UUIDSerializer::class) val itemId: UUID,
     val name: String,
     val collectionType: CollectionType,
 )
