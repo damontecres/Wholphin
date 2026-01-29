@@ -30,11 +30,16 @@ import com.github.damontecres.wholphin.util.LoadingState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
 import kotlinx.serialization.Serializable
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.CollectionType
@@ -95,24 +100,29 @@ class HomeSettingsViewModel
 
         private suspend fun fetchRowData() {
             val limit = 6
+            val semaphore = Semaphore(4)
             val rows =
                 serverRepository.currentUserDto.value?.let { userDto ->
                     val prefs = userPreferencesService.getCurrent().appPreferences.homePagePreferences
-                    state.value.let { state ->
-                        state.rows
-                            .map { it.config }
-                            .map { row ->
-                                // TODO parallelize
-                                homeSettingsService.fetchDataForRow(
-                                    row = row,
-                                    scope = viewModelScope,
-                                    prefs = prefs,
-                                    userDto = userDto,
-                                    libraries = state.libraries,
-                                    limit = limit,
-                                )
-                            }
-                    }
+                    state.value
+                        .let { state ->
+                            state.rows
+                                .map { it.config }
+                                .map { row ->
+                                    viewModelScope.async(Dispatchers.IO) {
+                                        semaphore.withPermit {
+                                            homeSettingsService.fetchDataForRow(
+                                                row = row,
+                                                scope = viewModelScope,
+                                                prefs = prefs,
+                                                userDto = userDto,
+                                                libraries = state.libraries,
+                                                limit = limit,
+                                            )
+                                        }
+                                    }
+                                }
+                        }.awaitAll()
                 }
             rows?.let { rows ->
                 rows
@@ -152,16 +162,17 @@ class HomeSettingsViewModel
             direction: MoveDirection,
             index: Int,
         ) {
-            updateState {
-                val rows = it.rows.move(direction, index)
-                // TODO would be more efficient to move rowData, but uncombined continue watching is two rows
-//                val rowData = it.rowData.move(direction, index)
-                it.copy(
-                    loading = LoadingState.Loading,
-                    rows = rows,
-                )
+            viewModelScope.launchIO {
+                updateState {
+                    val rows = it.rows.move(direction, index)
+                    val rowData = it.rowData.move(direction, index)
+                    it.copy(
+                        rows = rows,
+                        rowData = rowData,
+                    )
+                }
             }
-            viewModelScope.launchIO { fetchRowData() }
+//            viewModelScope.launchIO { fetchRowData() }
         }
 
         fun deleteRow(index: Int) {

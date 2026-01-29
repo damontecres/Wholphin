@@ -14,6 +14,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
@@ -65,7 +66,7 @@ fun HomeSettingsGlobal(
                         )
                     },
                     onClick = { onClickResize.invoke(1) },
-                    modifier = Modifier,
+                    modifier = Modifier.focusRequester(firstFocus),
                 )
             }
             item {

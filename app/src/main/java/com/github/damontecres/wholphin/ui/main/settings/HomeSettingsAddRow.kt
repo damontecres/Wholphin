@@ -11,7 +11,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -24,7 +23,6 @@ import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.ui.ifElse
-import com.github.damontecres.wholphin.ui.tryRequestFocus
 
 @Composable
 fun HomeSettingsAddRow(
@@ -35,7 +33,7 @@ fun HomeSettingsAddRow(
     modifier: Modifier,
     firstFocus: FocusRequester = remember { FocusRequester() },
 ) {
-    LaunchedEffect(Unit) { firstFocus.tryRequestFocus() }
+//    LaunchedEffect(Unit) { firstFocus.tryRequestFocus() }
     Column(modifier = modifier) {
         Text(
             text = "Add row for...",

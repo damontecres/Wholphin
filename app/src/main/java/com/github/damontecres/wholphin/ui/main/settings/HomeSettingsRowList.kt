@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
@@ -17,7 +18,10 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection
@@ -36,7 +40,9 @@ import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.services.HomeRowConfigDisplay
 import com.github.damontecres.wholphin.ui.FontAwesome
 import com.github.damontecres.wholphin.ui.components.Button
+import com.github.damontecres.wholphin.ui.rememberInt
 import com.github.damontecres.wholphin.ui.tryRequestFocus
+import kotlinx.coroutines.launch
 
 enum class MoveDirection {
     UP,
@@ -55,7 +61,16 @@ fun HomeSettingsRowList(
     firstFocus: FocusRequester = remember { FocusRequester() },
 ) {
     val focusManager = LocalFocusManager.current
-    LaunchedEffect(Unit) { firstFocus.tryRequestFocus() }
+    val scope = rememberCoroutineScope()
+    val listState = rememberLazyListState()
+
+    val itemsBeforeRows = 3
+    val focusRequesters =
+        remember(state.rows.size) { List(itemsBeforeRows + state.rows.size) { FocusRequester() } }
+
+    var position by rememberInt(0)
+
+    LaunchedEffect(Unit) { focusRequesters.getOrNull(position)?.tryRequestFocus() }
     Column(modifier = modifier) {
         Text(
             text = stringResource(R.string.customize_home),
@@ -64,6 +79,7 @@ fun HomeSettingsRowList(
             modifier = Modifier.fillMaxWidth(),
         )
         LazyColumn(
+            state = listState,
             verticalArrangement = Arrangement.spacedBy(8.dp),
             modifier =
                 modifier
@@ -84,8 +100,11 @@ fun HomeSettingsRowList(
                             contentDescription = null,
                         )
                     },
-                    onClick = onClickAdd,
-                    modifier = Modifier.focusRequester(firstFocus),
+                    onClick = {
+                        position = 0
+                        onClickAdd.invoke()
+                    },
+                    modifier = Modifier.focusRequester(focusRequesters[0]),
                 )
             }
             item {
@@ -102,8 +121,11 @@ fun HomeSettingsRowList(
                             contentDescription = null,
                         )
                     },
-                    onClick = onClickSettings,
-                    modifier = Modifier,
+                    onClick = {
+                        position = 1
+                        onClickSettings.invoke()
+                    },
+                    modifier = Modifier.focusRequester(focusRequesters[1]),
                 )
             }
             item {
@@ -121,7 +143,18 @@ fun HomeSettingsRowList(
                     moveUpAllowed = index > 0,
                     moveDownAllowed = index != state.rows.lastIndex,
                     deleteAllowed = state.rows.size > 1,
-                    onClickMove = { onClickMove.invoke(it, index) },
+                    onClickMove = {
+                        onClickMove.invoke(it, index)
+                        scope.launch {
+                            val scrollIndex =
+                                itemsBeforeRows + if (it == MoveDirection.UP) index - 1 else index + 1
+                            if (scrollIndex < listState.firstVisibleItemIndex ||
+                                scrollIndex > listState.layoutInfo.visibleItemsInfo.lastIndex
+                            ) {
+                                listState.animateScrollToItem(scrollIndex)
+                            }
+                        }
+                    },
                     onClickDelete = {
                         if (index != state.rows.lastIndex) {
                             focusManager.moveFocus(FocusDirection.Down)
@@ -130,10 +163,15 @@ fun HomeSettingsRowList(
                         }
                         onClickDelete.invoke(index)
                     },
-                    onClick = { onClick.invoke(index, row) },
+                    onClick = {
+                        position = itemsBeforeRows + index
+                        onClick.invoke(index, row)
+                    },
                     modifier =
                         Modifier
-                            .fillMaxWidth(),
+                            .fillMaxWidth()
+                            .animateItem()
+                            .focusRequester(focusRequesters[itemsBeforeRows + index]),
                 )
             }
         }
