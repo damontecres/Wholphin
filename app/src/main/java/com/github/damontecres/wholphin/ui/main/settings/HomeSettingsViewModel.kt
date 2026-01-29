@@ -296,13 +296,15 @@ class HomeSettingsViewModel
             viewOptions: HomeRowViewOptions,
         ) {
             viewModelScope.launchIO {
+                var fetchData = false
                 updateState {
                     val index = it.rows.indexOfFirst { it.id == rowId }
-                    val newRowConfig =
-                        it.rows[index]
-                            .config
-                            .updateViewOptions(viewOptions)
+                    val config = it.rows[index].config
+                    val newRowConfig = config.updateViewOptions(viewOptions)
                     val newRow = it.rows[index].copy(config = newRowConfig)
+                    if (config.viewOptions.useSeries != viewOptions.useSeries) {
+                        fetchData = true
+                    }
                     it.copy(
                         rows =
                             it.rows.toMutableList().apply {
@@ -320,6 +322,9 @@ class HomeSettingsViewModel
                                 set(index, newRow)
                             },
                     )
+                }
+                if (fetchData) {
+                    fetchRowData()
                 }
             }
         }

@@ -110,7 +110,7 @@ class HomeSettingsService
             displayPreferencesId: String = DISPLAY_PREF_ID,
         ): HomePageSettings? {
             val current = getDisplayPreferences(userId, displayPreferencesId)
-            return current.customPrefs[DISPLAY_PREF_ID]?.let {
+            return current.customPrefs[CUSTOM_PREF_ID]?.let {
                 val jsonElement = jsonParser.parseToJsonElement(it)
                 decode(jsonElement)
             }
@@ -515,7 +515,13 @@ class HomeSettingsService
         ): HomeRowLoadingState =
             when (row) {
                 is HomeRowConfig.ContinueWatching -> {
-                    val resume = latestNextUpService.getResume(userDto.id, limit, true)
+                    val resume =
+                        latestNextUpService.getResume(
+                            userDto.id,
+                            limit,
+                            true,
+                            row.viewOptions.useSeries,
+                        )
 
                     Success(
                         title = context.getString(R.string.continue_watching),
@@ -531,6 +537,7 @@ class HomeSettingsService
                             limit,
                             prefs.enableRewatchingNextUp,
                             false,
+                            row.viewOptions.useSeries,
                         )
 
                     Success(
@@ -542,13 +549,19 @@ class HomeSettingsService
 
                 is HomeRowConfig.ContinueWatchingCombined -> {
                     val resume =
-                        latestNextUpService.getResume(userDto.id, limit, true)
+                        latestNextUpService.getResume(
+                            userDto.id,
+                            limit,
+                            true,
+                            row.viewOptions.useSeries,
+                        )
                     val nextUp =
                         latestNextUpService.getNextUp(
                             userDto.id,
                             limit,
                             prefs.enableRewatchingNextUp,
                             false,
+                            row.viewOptions.useSeries,
                         )
 
                     Success(
@@ -625,7 +638,7 @@ class HomeSettingsService
                         api.userLibraryApi
                             .getLatestMedia(request)
                             .content
-                            .map { BaseItem.Companion.from(it, api, true) }
+                            .map { BaseItem.Companion.from(it, api, row.viewOptions.useSeries) }
                             .let {
                                 Success(
                                     title,
@@ -657,7 +670,7 @@ class HomeSettingsService
                     GetItemsRequestHandler
                         .execute(api, request)
                         .content.items
-                        .map { BaseItem.Companion.from(it, api, true) }
+                        .map { BaseItem.Companion.from(it, api, row.viewOptions.useSeries) }
                         .let {
                             Success(
                                 title,
@@ -685,7 +698,7 @@ class HomeSettingsService
                     GetItemsRequestHandler
                         .execute(api, request)
                         .content.items
-                        .map { BaseItem(it, true) }
+                        .map { BaseItem(it, row.viewOptions.useSeries) }
                         .let {
                             Success(
                                 name ?: context.getString(R.string.collection),
@@ -712,7 +725,7 @@ class HomeSettingsService
                     GetItemsRequestHandler
                         .execute(api, request)
                         .content.items
-                        .map { BaseItem(it, true) }
+                        .map { BaseItem(it, row.viewOptions.useSeries) }
                         .let {
                             Success(
                                 row.name,
@@ -757,7 +770,7 @@ class HomeSettingsService
                         GetItemsRequestHandler
                             .execute(api, request)
                             .content.items
-                            .map { BaseItem(it, false) }
+                            .map { BaseItem(it, row.viewOptions.useSeries) }
                             .let {
                                 Success(
                                     context.getString(R.string.favorites), // TODO
@@ -781,7 +794,7 @@ class HomeSettingsService
                     api.liveTvApi
                         .getRecordings(request)
                         .content.items
-                        .map { BaseItem(it, true) }
+                        .map { BaseItem(it, row.viewOptions.useSeries) }
                         .let {
                             Success(
                                 context.getString(R.string.active_recordings),
@@ -803,7 +816,7 @@ class HomeSettingsService
                     api.liveTvApi
                         .getRecommendedPrograms(request)
                         .content.items
-                        .map { BaseItem(it, true) }
+                        .map { BaseItem(it, row.viewOptions.useSeries) }
                         .let {
                             Success(
                                 context.getString(R.string.live_tv),

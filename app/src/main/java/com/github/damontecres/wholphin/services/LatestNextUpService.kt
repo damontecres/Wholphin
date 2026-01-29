@@ -43,6 +43,7 @@ class LatestNextUpService
             userId: UUID,
             limit: Int,
             includeEpisodes: Boolean,
+            useSeriesForPrimary: Boolean = true,
         ): List<BaseItem> {
             val request =
                 GetResumeItemsRequest(
@@ -65,7 +66,7 @@ class LatestNextUpService
                     .getResumeItems(request)
                     .content
                     .items
-                    .map { BaseItem.from(it, api, true) }
+                    .map { BaseItem.from(it, api, useSeriesForPrimary) }
             return items
         }
 
@@ -74,6 +75,7 @@ class LatestNextUpService
             limit: Int,
             enableRewatching: Boolean,
             enableResumable: Boolean,
+            useSeriesForPrimary: Boolean = true,
         ): List<BaseItem> {
             val request =
                 GetNextUpRequest(
@@ -91,7 +93,7 @@ class LatestNextUpService
                     .getNextUp(request)
                     .content
                     .items
-                    .map { BaseItem.from(it, api, true) }
+                    .map { BaseItem.from(it, api, useSeriesForPrimary) }
             return nextUp
         }
 

@@ -135,7 +135,7 @@ internal object Options {
 
     val ViewOptionsUseSeries =
         AppSwitchPreference<HomeRowViewOptions>(
-            title = R.string.go_to_series, // TODO
+            title = R.string.use_series,
             defaultValue = true,
             getter = { it.useSeries },
             setter = { vo, value -> vo.copy(useSeries = value) },
@@ -175,11 +175,11 @@ internal object Options {
             ViewOptionsAspectRatio,
             // TODO
 //                ViewOptionsShowTitles,
-//                ViewOptionsUseSeries,
+            ViewOptionsUseSeries,
             ViewOptionsColumns,
             ViewOptionsSpacing,
             ViewOptionsContentScale,
-            ViewOptionsApplyAll,
+//            ViewOptionsApplyAll,
             ViewOptionsReset,
         )
 }
