@@ -355,7 +355,7 @@ class TestStreamChoiceServiceSmart(
                     userAudioLang = null,
                 ),
                 TestInput(
-                    1,
+                    null,
                     SubtitlePlaybackMode.SMART,
                     subtitles =
                         listOf(
@@ -365,6 +365,18 @@ class TestStreamChoiceServiceSmart(
                         ),
                     streamAudioLang = "eng",
                     userSubtitleLang = "eng",
+                    userAudioLang = null,
+                ),
+                TestInput(
+                    null,
+                    SubtitlePlaybackMode.SMART,
+                    subtitles =
+                        listOf(
+                            subtitle(0, "eng"),
+                            subtitle(1, "spa"),
+                        ),
+                    streamAudioLang = "spa",
+                    userSubtitleLang = "spa",
                     userAudioLang = null,
                 ),
             )
@@ -498,7 +510,7 @@ class TestStreamChoiceServiceMultipleChoices(
                         ),
                 ),
                 TestInput(
-                    2,
+                    0,
                     SubtitlePlaybackMode.SMART,
                     subtitles =
                         listOf(

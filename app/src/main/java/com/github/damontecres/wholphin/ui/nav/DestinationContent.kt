@@ -284,6 +284,7 @@ fun DestinationContent(
                 }
 
                 SeerrItemType.PERSON -> {
+                    LaunchedEffect(Unit) { onClearBackdrop.invoke() }
                     DiscoverPersonPage(
                         person = destination.item,
                         modifier = modifier,
