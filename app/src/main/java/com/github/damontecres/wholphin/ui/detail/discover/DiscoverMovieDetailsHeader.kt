@@ -25,6 +25,7 @@ import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.components.GenreText
 import com.github.damontecres.wholphin.ui.components.OverviewText
 import com.github.damontecres.wholphin.ui.components.QuickDetails
+import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.letNotEmpty
 import com.github.damontecres.wholphin.ui.listToDotString
 import com.github.damontecres.wholphin.ui.roundMinutes
@@ -103,7 +104,8 @@ fun DiscoverMovieDetailsHeader(
                 GenreText(it, Modifier.padding(bottom = padding))
             }
 
-            movie.tagline?.let { tagline ->
+            val tagline = remember { movie.tagline?.takeIf { it.isNotNullOrBlank() } }
+            tagline?.let {
                 Text(
                     text = tagline,
                     style = MaterialTheme.typography.bodyLarge,
@@ -134,8 +136,9 @@ fun DiscoverMovieDetailsHeader(
                 remember(movie.credits?.crew) {
                     movie.credits
                         ?.crew
-                        ?.filter { it.job == "Directing" }
+                        ?.filter { it.job == "Director" && it.name.isNotNullOrBlank() }
                         ?.joinToString(", ") { it.name!! }
+                        ?.takeIf { it.isNotNullOrBlank() }
                 }
 
             directorName
