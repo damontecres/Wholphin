@@ -13,7 +13,7 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -47,10 +47,8 @@ enum class MoveDirection {
 fun HomeSettingsRowList(
     state: HomePageSettingsState,
     onClick: (Int, HomeRowConfigDisplay) -> Unit,
-    onClickResize: (Int) -> Unit,
-    onClickSave: () -> Unit,
-    onClickLoad: () -> Unit,
     onClickAdd: () -> Unit,
+    onClickSettings: () -> Unit,
     onClickMove: (MoveDirection, Int) -> Unit,
     onClickDelete: (Int) -> Unit,
     modifier: Modifier,
@@ -59,6 +57,12 @@ fun HomeSettingsRowList(
     val focusManager = LocalFocusManager.current
     LaunchedEffect(Unit) { firstFocus.tryRequestFocus() }
     Column(modifier = modifier) {
+        Text(
+            text = stringResource(R.string.customize_home),
+            style = MaterialTheme.typography.titleLarge,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth(),
+        )
         LazyColumn(
             verticalArrangement = Arrangement.spacedBy(8.dp),
             modifier =
@@ -85,74 +89,20 @@ fun HomeSettingsRowList(
                 )
             }
             item {
-                Row {
-                    HomeSettingsListItem(
-                        selected = false,
-                        headlineContent = {
-                            Text(
-                                text = "Increase card sizes",
-                            )
-                        },
-                        leadingContent = {
-                            Icon(
-                                imageVector = Icons.Default.Edit,
-                                contentDescription = null,
-                            )
-                        },
-                        onClick = { onClickResize.invoke(1) },
-                        modifier = Modifier.weight(1f),
-                    )
-                    HomeSettingsListItem(
-                        selected = false,
-                        headlineContent = {
-                            Text(
-                                text = "Decrease card sizes",
-                            )
-                        },
-                        leadingContent = {
-                            Icon(
-                                imageVector = Icons.Default.Edit,
-                                contentDescription = null,
-                            )
-                        },
-                        onClick = { onClickResize.invoke(-1) },
-                        modifier = Modifier.weight(1f),
-                    )
-                }
-            }
-            item {
                 HomeSettingsListItem(
                     selected = false,
                     headlineContent = {
                         Text(
-                            text = stringResource(R.string.save_to_server),
+                            text = stringResource(R.string.settings),
                         )
                     },
                     leadingContent = {
-                        Text(
-                            text = stringResource(R.string.fa_cloud_arrow_up),
-                            fontFamily = FontAwesome,
+                        Icon(
+                            imageVector = Icons.Default.Settings,
+                            contentDescription = null,
                         )
                     },
-                    onClick = onClickSave,
-                    modifier = Modifier,
-                )
-            }
-            item {
-                HomeSettingsListItem(
-                    selected = false,
-                    headlineContent = {
-                        Text(
-                            text = stringResource(R.string.load_from_server),
-                        )
-                    },
-                    leadingContent = {
-                        Text(
-                            text = stringResource(R.string.fa_cloud_arrow_down),
-                            fontFamily = FontAwesome,
-                        )
-                    },
-                    onClick = onClickLoad,
+                    onClick = onClickSettings,
                     modifier = Modifier,
                 )
             }

@@ -29,4 +29,7 @@ sealed interface HomeSettingsDestination : NavKey {
 
     @Serializable
     data object ChooseDiscover : HomeSettingsDestination
+
+    @Serializable
+    data object GlobalSettings : HomeSettingsDestination
 }

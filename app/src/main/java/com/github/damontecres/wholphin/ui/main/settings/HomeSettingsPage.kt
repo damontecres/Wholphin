@@ -82,27 +82,18 @@ fun HomeSettingsPage(
                     ),
                 modifier = Modifier.background(MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp)),
                 entryProvider = { key ->
-                    key as HomeSettingsDestination
-                    NavEntry(key, contentKey = key.toString()) {
+                    val dest = key as HomeSettingsDestination
+                    NavEntry(dest, contentKey = key.toString()) {
                         val destModifier =
                             Modifier
                                 .fillMaxSize()
                                 .padding(4.dp)
-                        when (val dest = key) {
+                        when (dest) {
                             HomeSettingsDestination.RowList -> {
                                 HomeSettingsRowList(
                                     state = state,
                                     onClickAdd = { backStack.add(HomeSettingsDestination.AddRow) },
-                                    onClickSave = {
-                                        showConfirmDialog = {
-                                            viewModel.saveToRemote()
-                                        }
-                                    },
-                                    onClickLoad = {
-                                        showConfirmDialog = {
-                                            viewModel.loadFromRemote()
-                                        }
-                                    },
+                                    onClickSettings = { backStack.add(HomeSettingsDestination.GlobalSettings) },
                                     onClickMove = viewModel::moveRow,
                                     onClickDelete = viewModel::deleteRow,
                                     onClick = { index, row ->
@@ -111,9 +102,6 @@ fun HomeSettingsPage(
                                             Timber.v("Scroll to $index")
                                             listState.scrollToItem(index)
                                         }
-                                    },
-                                    onClickResize = {
-                                        viewModel.resizeCards(it)
                                     },
                                     modifier = destModifier,
                                 )
@@ -182,6 +170,25 @@ fun HomeSettingsPage(
                                     onClick = { type ->
                                         addRow { viewModel.addFavoriteRow(type) }
                                     },
+                                )
+                            }
+
+                            HomeSettingsDestination.GlobalSettings -> {
+                                HomeSettingsGlobal(
+                                    onClickResize = { viewModel.resizeCards(it) },
+                                    onClickSave = {
+                                        showConfirmDialog = {
+                                            viewModel.saveToRemote()
+                                        }
+                                    },
+                                    onClickLoad = {
+                                        showConfirmDialog = {
+                                            viewModel.loadFromRemote()
+                                        }
+                                    },
+                                    onClickLoadWeb = {
+                                    },
+                                    modifier = destModifier,
                                 )
                             }
                         }
