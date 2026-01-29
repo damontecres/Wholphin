@@ -27,6 +27,7 @@ import com.github.damontecres.wholphin.ui.main.HomePageContent
 import com.github.damontecres.wholphin.ui.main.settings.HomeSettingsDestination.ChooseRowType
 import com.github.damontecres.wholphin.ui.main.settings.HomeSettingsDestination.RowSettings
 import com.github.damontecres.wholphin.util.ExceptionHandler
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import timber.log.Timber
 
@@ -43,6 +44,15 @@ fun HomeSettingsPage(
 
     val state by viewModel.state.collectAsState()
     val discoverEnabled by viewModel.discoverEnabled.collectAsState(false)
+
+    // Adds a row, waits until its done loading, then scrolls to the new row
+    fun addRow(func: () -> Job) {
+        scope.launch(ExceptionHandler(autoToast = true)) {
+            backStack.add(HomeSettingsDestination.RowList)
+            func.invoke().join()
+            listState.animateScrollToItem(state.rows.lastIndex)
+        }
+    }
 
     Row(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -104,8 +114,7 @@ fun HomeSettingsPage(
                                             MetaRowType.NEXT_UP,
                                             MetaRowType.COMBINED_CONTINUE_WATCHING,
                                             -> {
-                                                viewModel.addRow(it)
-                                                backStack.add(HomeSettingsDestination.RowList)
+                                                addRow { viewModel.addRow(it) }
                                             }
 
                                             MetaRowType.FAVORITES -> {
@@ -124,9 +133,8 @@ fun HomeSettingsPage(
                             is ChooseRowType -> {
                                 HomeLibraryRowTypeList(
                                     library = dest.library,
-                                    onClick = {
-                                        viewModel.addRow(dest.library, it)
-                                        backStack.add(HomeSettingsDestination.RowList)
+                                    onClick = { type ->
+                                        addRow { viewModel.addRow(dest.library, type) }
                                     },
                                     modifier = destModifier,
                                 )
@@ -156,7 +164,7 @@ fun HomeSettingsPage(
                             HomeSettingsDestination.ChooseFavorite -> {
                                 HomeSettingsFavoriteList(
                                     onClick = { type ->
-                                        viewModel.addFavoriteRow(type)
+                                        addRow { viewModel.addFavoriteRow(type) }
                                     },
                                 )
                             }

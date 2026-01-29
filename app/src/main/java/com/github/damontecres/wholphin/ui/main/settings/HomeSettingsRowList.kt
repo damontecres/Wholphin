@@ -1,6 +1,5 @@
 package com.github.damontecres.wholphin.ui.main.settings
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -11,7 +10,6 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Create
@@ -32,10 +30,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.tv.material3.Icon
-import androidx.tv.material3.ListItem
-import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
-import androidx.tv.material3.surfaceColorAtElevation
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.services.HomeRowConfigDisplay
 import com.github.damontecres.wholphin.ui.FontAwesome
@@ -70,7 +65,7 @@ fun HomeSettingsRowList(
                     .focusRestorer(firstFocus),
         ) {
             item {
-                ListItem(
+                HomeSettingsListItem(
                     selected = false,
                     headlineContent = {
                         Text(
@@ -88,7 +83,7 @@ fun HomeSettingsRowList(
                 )
             }
             item {
-                ListItem(
+                HomeSettingsListItem(
                     selected = false,
                     headlineContent = {
                         Text(
@@ -106,7 +101,7 @@ fun HomeSettingsRowList(
                 )
             }
             item {
-                ListItem(
+                HomeSettingsListItem(
                     selected = false,
                     headlineContent = {
                         Text(
@@ -124,7 +119,7 @@ fun HomeSettingsRowList(
                 )
             }
             item {
-                ListItem(
+                HomeSettingsListItem(
                     selected = false,
                     headlineContent = {
                         Text(
@@ -189,13 +184,9 @@ fun HomeRowConfigContent(
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    .heightIn(min = 40.dp, max = 88.dp)
-                    .background(
-                        color = MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp),
-                        shape = RoundedCornerShape(8.dp),
-                    ),
+                    .heightIn(min = 40.dp, max = 88.dp),
         ) {
-            ListItem(
+            HomeSettingsListItem(
                 selected = false,
                 headlineContent = {
                     Text(

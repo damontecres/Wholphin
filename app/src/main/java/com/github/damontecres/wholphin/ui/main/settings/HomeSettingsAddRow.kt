@@ -20,7 +20,6 @@ import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.tv.material3.ListItem
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.R
@@ -68,7 +67,7 @@ fun HomeSettingsAddRow(
                     MetaRowType.COMBINED_CONTINUE_WATCHING,
                 ),
             ) { index, type ->
-                ListItem(
+                HomeSettingsListItem(
                     selected = false,
                     headlineContent = {
                         Text(stringResource(type.stringId))
@@ -91,7 +90,7 @@ fun HomeSettingsAddRow(
                 )
             }
             itemsIndexed(libraries) { index, library ->
-                ListItem(
+                HomeSettingsListItem(
                     selected = false,
                     headlineContent = {
                         Text(library.name)
@@ -114,7 +113,7 @@ fun HomeSettingsAddRow(
                 )
             }
             item {
-                ListItem(
+                HomeSettingsListItem(
                     selected = false,
                     headlineContent = {
                         Text(stringResource(MetaRowType.FAVORITES.stringId))
@@ -125,7 +124,7 @@ fun HomeSettingsAddRow(
             }
             if (showDiscover) {
                 item {
-                    ListItem(
+                    HomeSettingsListItem(
                         selected = false,
                         headlineContent = {
                             Text(stringResource(MetaRowType.DISCOVER.stringId))

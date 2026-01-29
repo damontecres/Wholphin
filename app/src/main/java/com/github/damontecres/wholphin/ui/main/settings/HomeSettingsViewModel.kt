@@ -30,6 +30,7 @@ import com.github.damontecres.wholphin.util.LoadingState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
@@ -114,6 +115,15 @@ class HomeSettingsViewModel
                     }
                 }
             rows?.let { rows ->
+                rows
+                    .firstOrNull { it is HomeRowLoadingState.Success && it.items.isNotEmpty() }
+                    ?.let {
+                        it as HomeRowLoadingState.Success
+                        it.items.firstOrNull()?.let {
+                            Timber.v("Updating backdrop")
+                            updateBackdrop(it)
+                        }
+                    }
                 updateState {
                     it.copy(loading = LoadingState.Success, rowData = rows)
                 }
@@ -165,7 +175,7 @@ class HomeSettingsViewModel
             }
         }
 
-        fun addRow(type: MetaRowType) {
+        fun addRow(type: MetaRowType): Job =
             viewModelScope.launchIO {
                 val id = state.value.rows.size
                 val newRow =
@@ -210,12 +220,11 @@ class HomeSettingsViewModel
                 }
                 fetchRowData()
             }
-        }
 
         fun addRow(
             library: Library,
             rowType: LibraryRowType,
-        ) {
+        ): Job =
             viewModelScope.launchIO {
                 val id = state.value.rows.size
                 val newRow =
@@ -262,9 +271,8 @@ class HomeSettingsViewModel
                 }
                 fetchRowData()
             }
-        }
 
-        fun addFavoriteRow(type: BaseItemKind) {
+        fun addFavoriteRow(type: BaseItemKind): Job =
             viewModelScope.launchIO {
                 Timber.v("Adding favorite row for $type")
                 val id = state.value.rows.size
@@ -282,7 +290,6 @@ class HomeSettingsViewModel
                 }
                 fetchRowData()
             }
-        }
 
         fun updateViewOptions(
             rowId: Int,
