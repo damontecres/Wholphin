@@ -182,6 +182,7 @@ object AppModule {
     fun workManager(
         @ApplicationContext context: Context,
     ): WorkManager = WorkManager.getInstance(context)
+
     fun seerrApi(
         @StandardOkHttpClient okHttpClient: OkHttpClient,
     ) = SeerrApi(okHttpClient)
