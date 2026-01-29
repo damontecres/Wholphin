@@ -28,6 +28,7 @@ import androidx.navigation3.ui.NavDisplay
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.surfaceColorAtElevation
 import com.github.damontecres.wholphin.R
+import com.github.damontecres.wholphin.data.model.HomeRowConfig
 import com.github.damontecres.wholphin.ui.components.ConfirmDialog
 import com.github.damontecres.wholphin.ui.main.HomePageContent
 import com.github.damontecres.wholphin.ui.main.settings.HomeSettingsDestination.ChooseRowType
@@ -50,7 +51,8 @@ fun HomeSettingsPage(
     var showConfirmDialog by remember { mutableStateOf<(() -> Unit)?>(null) }
 
     val state by viewModel.state.collectAsState()
-    val discoverEnabled by viewModel.discoverEnabled.collectAsState(false)
+    // TODO discover rows
+    val discoverEnabled = false // by viewModel.discoverEnabled.collectAsState(false)
 
     // Adds a row, waits until its done loading, then scrolls to the new row
     fun addRow(func: () -> Job) {
@@ -157,6 +159,7 @@ fun HomeSettingsPage(
                                     onApplyApplyAll = {
                                         viewModel.updateViewOptionsForAll(row.config.viewOptions)
                                     },
+                                    userGenreSettings = row.config is HomeRowConfig.Genres,
                                     modifier = destModifier,
                                 )
                             }

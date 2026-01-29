@@ -56,7 +56,7 @@ fun HomeSettingsFavoriteList(
     }
 }
 
-val favoriteOptions =
+val favoriteOptions by lazy {
     mapOf(
         BaseItemKind.MOVIE to R.string.movies,
         BaseItemKind.SERIES to R.string.tv_shows,
@@ -65,4 +65,5 @@ val favoriteOptions =
         BaseItemKind.PLAYLIST to R.string.playlists,
         BaseItemKind.PERSON to R.string.people,
     )
-val favoriteOptionsList = favoriteOptions.keys.toList()
+}
+val favoriteOptionsList by lazy { favoriteOptions.keys.toList() }

@@ -37,9 +37,11 @@ fun HomeRowSettings(
     viewOptions: HomeRowViewOptions,
     onViewOptionsChange: (HomeRowViewOptions) -> Unit,
     onApplyApplyAll: () -> Unit,
+    userGenreSettings: Boolean,
     modifier: Modifier = Modifier,
     defaultViewOptions: HomeRowViewOptions = HomeRowViewOptions(),
 ) {
+    val options = if (userGenreSettings) Options.GENRE_OPTIONS else Options.OPTIONS
     val firstFocus = remember { FocusRequester() }
     LaunchedEffect(Unit) { firstFocus.tryRequestFocus() }
     Column(modifier = modifier) {
@@ -49,7 +51,7 @@ fun HomeRowSettings(
             color = MaterialTheme.colorScheme.onSurface,
         )
         LazyColumn {
-            itemsIndexed(Options.OPTIONS) { index, pref ->
+            itemsIndexed(options) { index, pref ->
                 pref as AppPreference<HomeRowViewOptions, Any>
                 val interactionSource = remember { MutableInteractionSource() }
                 val value = pref.getter.invoke(viewOptions)
@@ -82,7 +84,7 @@ fun HomeRowSettings(
 }
 
 internal object Options {
-    val ViewOptionsColumns =
+    val ViewOptionsCardHeight =
         AppSliderPreference<HomeRowViewOptions>(
             title = R.string.height,
             defaultValue = Cards.HEIGHT_2X3_DP.toLong(),
@@ -176,10 +178,17 @@ internal object Options {
             // TODO
 //                ViewOptionsShowTitles,
             ViewOptionsUseSeries,
-            ViewOptionsColumns,
+            ViewOptionsCardHeight,
             ViewOptionsSpacing,
             ViewOptionsContentScale,
 //            ViewOptionsApplyAll,
+            ViewOptionsReset,
+        )
+
+    val GENRE_OPTIONS =
+        listOf(
+            ViewOptionsCardHeight,
+            ViewOptionsSpacing,
             ViewOptionsReset,
         )
 }
