@@ -2,7 +2,7 @@
 <resources>
     <string name="about">Über diese App</string>
     <string name="active_recordings">Aktive Aufnahmen</string>
-    <string name="add_favorite">Favoriten</string>
+    <string name="add_favorite">Zu Favoriten hinzufügen</string>
     <string name="add_server">Server hinzufügen</string>
     <string name="add_user">Benutzer hinzufügen</string>
     <string name="audio">Ton</string>
@@ -56,7 +56,7 @@
     <string name="tv_shows">Serien</string>
     <string name="ui_interface">Oberfläche</string>
     <string name="unknown">Unbekannt</string>
-    <string name="updates">Updates</string>
+    <string name="updates">Aktualisierungen</string>
     <string name="version">Version</string>
     <string name="watch_live">Live ansehen</string>
     <string name="years_old">%1$d Jahre alt</string>
@@ -86,7 +86,7 @@
     <string name="community_rating">Community Bewertung</string>
     <string name="compose_error_message_title">Es ist ein Fehler aufgetreten! Drücke den Knopf um Logs zu deinem Server zu senden.</string>
     <string name="directed_by">Regie von %1$s</string>
-    <string name="disabled">Deaktivert</string>
+    <string name="disabled">Deaktiviert</string>
     <string name="discovered_servers">Gefundene Server</string>
     <string name="downloading">Herunterladen…</string>
     <string name="enabled">Aktiviert</string>
@@ -118,7 +118,7 @@
     <string name="next_up">Als nächstes</string>
     <string name="none">Keine</string>
     <string name="play_from_here">Von hier wiedergeben</string>
-    <string name="play">Ansehen</string>
+    <string name="play">Abspielen</string>
     <string name="playback_speed">Wiedergabegeschwindigkeit</string>
     <string name="playback">Wiedergabe</string>
     <string name="preview">Vorschau</string>
@@ -143,7 +143,7 @@
     <string name="subtitle_download_too_long">Der Download benötigt eine längere Zeit, evtl. musst du die Wiedergabe erneut starten</string>
     <string name="subtitle">Untertitel</string>
     <string name="suggestions">Vorschläge</string>
-    <string name="switch_user">Wechsel</string>
+    <string name="switch_user">Wechseln</string>
     <string name="top_unwatched">Top Bewertet Ungesehen</string>
     <string name="tv_guide">Fernsehprogramm</string>
     <string name="play_with_transcoding">Mit Transkodierung abspielen</string>
@@ -207,12 +207,12 @@
         <item quantity="other"/>
     </plurals>
     <plurals name="clips">
-        <item quantity="one">Clips</item>
-        <item quantity="other"/>
+        <item quantity="one">Clip</item>
+        <item quantity="other">Clips</item>
     </plurals>
     <plurals name="interviews">
-        <item quantity="one">Interviews</item>
-        <item quantity="other"/>
+        <item quantity="one">Interview</item>
+        <item quantity="other">Interviews</item>
     </plurals>
     <plurals name="samples">
         <item quantity="one">Beispiele</item>
@@ -321,4 +321,52 @@
     <string name="no">Nein</string>
     <string name="show_titles">Titel anzeigen</string>
     <string name="live_tv_repeat">Wiederholen</string>
+    <string name="general">Generell</string>
+    <string name="no_trailers">Keine Trailer</string>
+    <string name="play_trailer">Trailer abspielen</string>
+    <string name="local">Lokal</string>
+    <string name="verbose_logging">detaillierte Protokollierung</string>
+    <string name="use_server_credentials">Login via Server</string>
+    <string name="press_enter_to_confirm">Drücke die mittlere Taste zur Bestätigung</string>
+    <string name="image_cache_size">Größe des Festplatten-Caches für Bilder (MB)</string>
+    <string name="cast_and_crew">Besetzung &amp; Mitwirkende</string>
+    <string name="container">Container</string>
+    <string name="codec">Codec</string>
+    <string name="level">Level</string>
+    <string name="bit_depth">Bittiefe</string>
+    <string name="avc">AVC</string>
+    <string name="sdr">SDR</string>
+    <string name="hdr">HDR</string>
+    <string name="hdr10">HDR10</string>
+    <string name="hdr10_plus">HDR10+</string>
+    <string name="hlg">HLG</string>
+    <string name="bit_unit">bit</string>
+    <string name="sample_rate_unit">Hz</string>
+    <string name="only_forced_subtitles">Nur erzwungene Untertitel</string>
+    <string name="voice_starting">Beginne</string>
+    <string name="processing">verarbeite</string>
+    <string name="voice_error_permissions">Mikrofonzugriff erforderlich</string>
+    <string name="voice_error_network">Netzwerkfehler</string>
+    <string name="voice_error_network_timeout">Netzwerk Zeitüberschreitung</string>
+    <string name="voice_error_server">Serverfehler</string>
+    <string name="voice_error_unknown">unbekannter Fehler</string>
+    <string name="retry">wiederholen</string>
+    <string name="layout">🇩🇪 Layout</string>
+    <string name="sample_rate">Abtastrate</string>
+    <string name="dts">DTS</string>
+    <string name="discover">Entdecke</string>
+    <string name="request">Anfrage</string>
+    <string name="pending">Ausstehend</string>
+    <string name="seerr_integration">Seerr Integration</string>
+    <string name="seerr_server_added">Seerr server hinzugefügt</string>
+    <string name="password">Passwort</string>
+    <string name="username">Benutzername</string>
+    <string name="url">URL</string>
+    <string name="request_4k">In 4K anfragen</string>
+    <string name="dts_x">DTS:X</string>
+    <string name="dts_hd">DTS:HD</string>
+    <string name="truehd">TrueHD</string>
+    <string name="dolby_digital">DD</string>
+    <string name="dolby_digital_plus">DD+</string>
+    <string name="trending">Im Trend</string>
 </resources>

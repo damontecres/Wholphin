@@ -170,10 +170,8 @@ fun SeriesOverview(
                     "series_overview",
                 )
                 LifecycleResumeEffect(destination.itemId) {
-                    viewModel.maybePlayThemeSong(
-                        destination.itemId,
-                        preferences.appPreferences.interfacePreferences.playThemeSongs,
-                    )
+                    viewModel.onResumePage()
+
                     onPauseOrDispose {
                         viewModel.release()
                     }
@@ -312,7 +310,6 @@ fun SeriesOverview(
                             Destination.Playback(
                                 it.id,
                                 resumePosition.inWholeMilliseconds,
-                                it,
                             ),
                         )
                     },
@@ -327,7 +324,6 @@ fun SeriesOverview(
                                 Destination.Playback(
                                     it.id,
                                     resume.inWholeMilliseconds,
-                                    it,
                                 ),
                             )
                         }

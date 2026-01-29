@@ -75,7 +75,6 @@ fun CollectionFolderTv(
 
     var showHeader by rememberSaveable { mutableStateOf(true) }
 
-    LaunchedEffect(Unit) { focusRequester.tryRequestFocus() }
     Column(
         modifier = modifier,
     ) {
@@ -148,6 +147,7 @@ fun CollectionFolderTv(
             2 -> {
                 GenreCardGrid(
                     itemId = destination.itemId,
+                    includeItemTypes = listOf(BaseItemKind.SERIES),
                     modifier =
                         Modifier
                             .padding(start = 16.dp)

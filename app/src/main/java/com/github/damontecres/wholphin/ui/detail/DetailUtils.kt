@@ -78,7 +78,6 @@ fun buildMoreDialogItems(
                     Destination.Playback(
                         item.id,
                         item.resumeMs ?: 0L,
-                        item,
                     ),
                 )
             },
@@ -166,6 +165,7 @@ fun buildMoreDialogItems(
                         Destination.MediaItem(
                             seriesId,
                             BaseItemKind.SERIES,
+                            null,
                         ),
                     )
                 },
@@ -200,7 +200,6 @@ fun buildMoreDialogItems(
                     Destination.Playback(
                         item.id,
                         item.resumeMs ?: 0L,
-                        item,
                         forceTranscoding = true,
                     ),
                 )
@@ -309,6 +308,7 @@ fun buildMoreDialogItemsForHome(
                         Destination.MediaItem(
                             it,
                             BaseItemKind.SERIES,
+                            null,
                         ),
                     )
                 },
@@ -328,7 +328,7 @@ fun buildMoreDialogItemsForPerson(
                 context.getString(R.string.go_to),
                 Icons.Default.ArrowForward,
             ) {
-                actions.navigateTo(Destination.MediaItem(itemId, BaseItemKind.PERSON))
+                actions.navigateTo(Destination.MediaItem(itemId, BaseItemKind.PERSON, null))
             },
         )
         add(

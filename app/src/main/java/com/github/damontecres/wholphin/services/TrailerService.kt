@@ -88,7 +88,6 @@ class TrailerService
                         navigateTo.invoke(
                             Destination.Playback(
                                 itemId = trailer.baseItem.id,
-                                item = trailer.baseItem,
                                 positionMs = 0L,
                             ),
                         )

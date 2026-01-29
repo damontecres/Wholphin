@@ -19,6 +19,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableIntStateOf
@@ -44,12 +45,15 @@ import coil3.imageLoader
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.preferences.AppPreference
 import com.github.damontecres.wholphin.preferences.AppPreferences
+import com.github.damontecres.wholphin.preferences.ExoPlayerPreferences
+import com.github.damontecres.wholphin.preferences.MpvPreferences
 import com.github.damontecres.wholphin.preferences.PlayerBackend
 import com.github.damontecres.wholphin.preferences.advancedPreferences
 import com.github.damontecres.wholphin.preferences.basicPreferences
 import com.github.damontecres.wholphin.preferences.uiPreferences
 import com.github.damontecres.wholphin.preferences.updatePlaybackPreferences
 import com.github.damontecres.wholphin.services.UpdateChecker
+import com.github.damontecres.wholphin.ui.components.ConfirmDialog
 import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.nav.Destination
@@ -58,9 +62,12 @@ import com.github.damontecres.wholphin.ui.playSoundOnFocus
 import com.github.damontecres.wholphin.ui.preferences.subtitle.SubtitleSettings
 import com.github.damontecres.wholphin.ui.preferences.subtitle.SubtitleStylePage
 import com.github.damontecres.wholphin.ui.setup.UpdateViewModel
+import com.github.damontecres.wholphin.ui.setup.seerr.AddSeerServerDialog
+import com.github.damontecres.wholphin.ui.setup.seerr.SwitchSeerrViewModel
 import com.github.damontecres.wholphin.ui.showToast
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.ExceptionHandler
+import com.github.damontecres.wholphin.util.LoadingState
 import kotlinx.coroutines.launch
 import timber.log.Timber
 
@@ -71,6 +78,7 @@ fun PreferencesContent(
     modifier: Modifier = Modifier,
     viewModel: PreferencesViewModel = hiltViewModel(),
     updateVM: UpdateViewModel = hiltViewModel(),
+    seerrVm: SwitchSeerrViewModel = hiltViewModel(),
     onFocus: (Int, Int) -> Unit = { _, _ -> },
 ) {
     val context = LocalContext.current
@@ -84,6 +92,8 @@ fun PreferencesContent(
 
     val navDrawerPins by viewModel.navDrawerPins.observeAsState(mapOf())
     var cacheUsage by remember { mutableStateOf(CacheUsage(0, 0, 0)) }
+    val seerrIntegrationEnabled by viewModel.seerrEnabled.collectAsState(false)
+    var seerrDialogMode by remember { mutableStateOf<SeerrDialogMode>(SeerrDialogMode.None) }
 
     LaunchedEffect(Unit) {
         viewModel.preferenceDataStore.data.collect {
@@ -116,6 +126,8 @@ fun PreferencesContent(
             PreferenceScreenOption.ADVANCED -> advancedPreferences
             PreferenceScreenOption.USER_INTERFACE -> uiPreferences
             PreferenceScreenOption.SUBTITLES -> SubtitleSettings.preferences
+            PreferenceScreenOption.EXO_PLAYER -> ExoPlayerPreferences
+            PreferenceScreenOption.MPV -> MpvPreferences
         }
     val screenTitle =
         when (preferenceScreenOption) {
@@ -123,6 +135,8 @@ fun PreferencesContent(
             PreferenceScreenOption.ADVANCED -> R.string.advanced_settings
             PreferenceScreenOption.USER_INTERFACE -> R.string.ui_interface
             PreferenceScreenOption.SUBTITLES -> R.string.subtitle_style
+            PreferenceScreenOption.EXO_PLAYER -> R.string.exoplayer_options
+            PreferenceScreenOption.MPV -> R.string.mpv_options
         }
 
     var visible by remember { mutableStateOf(false) }
@@ -381,6 +395,29 @@ fun PreferencesContent(
                                 )
                             }
 
+                            AppPreference.SeerrIntegration -> {
+                                ClickPreference(
+                                    title = stringResource(pref.title),
+                                    onClick = {
+                                        if (seerrIntegrationEnabled) {
+                                            seerrDialogMode = SeerrDialogMode.Remove
+                                        } else {
+                                            seerrVm.resetStatus()
+                                            seerrDialogMode = SeerrDialogMode.Add
+                                        }
+                                    },
+                                    modifier = Modifier,
+                                    summary =
+                                        if (seerrIntegrationEnabled) {
+                                            stringResource(R.string.enabled)
+                                        } else {
+                                            null
+                                        },
+                                    onLongClick = {},
+                                    interactionSource = interactionSource,
+                                )
+                            }
+
                             else -> {
                                 val value = pref.getter.invoke(preferences)
                                 ComposablePreference(
@@ -440,6 +477,39 @@ fun PreferencesContent(
                 )
             }
         }
+        when (seerrDialogMode) {
+            SeerrDialogMode.Remove -> {
+                ConfirmDialog(
+                    title = stringResource(R.string.remove_seerr_server),
+                    body = "",
+                    onCancel = { seerrDialogMode = SeerrDialogMode.None },
+                    onConfirm = {
+                        seerrVm.removeServer()
+                        seerrDialogMode = SeerrDialogMode.None
+                    },
+                )
+            }
+
+            SeerrDialogMode.Add -> {
+                val currentUser by seerrVm.currentUser.observeAsState()
+                val status by seerrVm.serverConnectionStatus.collectAsState(LoadingState.Pending)
+                val serverAddedMessage = stringResource(R.string.seerr_server_added)
+                LaunchedEffect(status) {
+                    if (status == LoadingState.Success) {
+                        Toast.makeText(context, serverAddedMessage, Toast.LENGTH_SHORT).show()
+                        seerrDialogMode = SeerrDialogMode.None
+                    }
+                }
+                AddSeerServerDialog(
+                    currentUsername = currentUser?.name,
+                    status = status,
+                    onSubmit = seerrVm::submitServer,
+                    onDismissRequest = { seerrDialogMode = SeerrDialogMode.None },
+                )
+            }
+
+            SeerrDialogMode.None -> {}
+        }
     }
 }
 
@@ -456,6 +526,8 @@ fun PreferencesPage(
             PreferenceScreenOption.BASIC,
             PreferenceScreenOption.ADVANCED,
             PreferenceScreenOption.USER_INTERFACE,
+            PreferenceScreenOption.EXO_PLAYER,
+            PreferenceScreenOption.MPV,
             -> {
                 PreferencesContent(
                     initialPreferences,
@@ -481,3 +553,11 @@ data class CacheUsage(
     val imageMemoryMax: Long,
     val imageDiskUsed: Long,
 )
+
+private sealed class SeerrDialogMode {
+    data object None : SeerrDialogMode()
+
+    data object Add : SeerrDialogMode()
+
+    data object Remove : SeerrDialogMode()
+}

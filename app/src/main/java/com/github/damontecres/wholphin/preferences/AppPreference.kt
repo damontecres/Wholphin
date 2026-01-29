@@ -425,6 +425,18 @@ sealed interface AppPreference<Pref, T> {
                 summary = R.string.force_dovi_profile_7_summary,
             )
 
+        val DecodeAv1 =
+            AppSwitchPreference<AppPreferences>(
+                title = R.string.software_decoding_av1,
+                defaultValue = true,
+                getter = { it.playbackPreferences.overrides.decodeAv1 },
+                setter = { prefs, value ->
+                    prefs.updatePlaybackOverrides { decodeAv1 = value }
+                },
+                summaryOn = R.string.enabled,
+                summaryOff = R.string.disabled,
+            )
+
         val RememberSelectedTab =
             AppSwitchPreference<AppPreferences>(
                 title = R.string.remember_selected_tab,
@@ -734,14 +746,27 @@ sealed interface AppPreference<Pref, T> {
         val PlayerBackendPref =
             AppChoicePreference<AppPreferences, PlayerBackend>(
                 title = R.string.player_backend,
-                defaultValue = PlayerBackend.EXO_PLAYER,
+                defaultValue = PlayerBackend.PREFER_MPV,
                 getter = { it.playbackPreferences.playerBackend },
                 setter = { prefs, value ->
                     prefs.updatePlaybackPreferences { playerBackend = value }
                 },
                 displayValues = R.array.player_backend_options,
+                subtitles = R.array.player_backend_options_subtitles,
                 indexToValue = { PlayerBackend.forNumber(it) },
                 valueToIndex = { it.number },
+            )
+
+        val ExoPlayerSettings =
+            AppDestinationPreference<AppPreferences>(
+                title = R.string.exoplayer_options,
+                destination = Destination.Settings(PreferenceScreenOption.EXO_PLAYER),
+            )
+
+        val MpvSettings =
+            AppDestinationPreference<AppPreferences>(
+                title = R.string.mpv_options,
+                destination = Destination.Settings(PreferenceScreenOption.MPV),
             )
 
         val MpvHardwareDecoding =
@@ -758,7 +783,7 @@ sealed interface AppPreference<Pref, T> {
         val MpvGpuNext =
             AppSwitchPreference<AppPreferences>(
                 title = R.string.mpv_use_gpu_next,
-                defaultValue = true,
+                defaultValue = false,
                 getter = { it.playbackPreferences.mpvOptions.useGpuNext },
                 setter = { prefs, value ->
                     prefs.updateMpvOptions { useGpuNext = value }
@@ -871,6 +896,13 @@ sealed interface AppPreference<Pref, T> {
                 summaryOn = R.string.enabled,
                 summaryOff = R.string.disabled,
             )
+
+        val SeerrIntegration =
+            AppClickablePreference<AppPreferences>(
+                title = R.string.seerr_integration,
+                getter = { },
+                setter = { prefs, _ -> prefs },
+            )
     }
 }
 
@@ -913,8 +945,7 @@ val basicPreferences =
             title = R.string.profile_specific_settings,
             preferences =
                 listOf(
-                    // TODO PIN-related
-                    // AppPreference.RequireProfilePin,
+                    AppPreference.RequireProfilePin,
                     AppPreference.UserPinnedNavDrawerItems,
                 ),
         ),
@@ -932,12 +963,47 @@ val basicPreferences =
             title = R.string.more,
             preferences =
                 listOf(
+                    AppPreference.SeerrIntegration,
                     AppPreference.AdvancedSettings,
                 ),
         ),
     )
 
 val uiPreferences = listOf<PreferenceGroup>()
+
+private val ExoPlayerSettings =
+    listOf(
+        AppPreference.FfmpegPreference,
+        AppPreference.DownMixStereo,
+        AppPreference.Ac3Supported,
+        AppPreference.DirectPlayAss,
+        AppPreference.DirectPlayPgs,
+        AppPreference.DirectPlayDoviProfile7,
+        AppPreference.DecodeAv1,
+    )
+
+val ExoPlayerPreferences =
+    listOf(
+        PreferenceGroup(
+            title = R.string.exoplayer_options,
+            preferences = ExoPlayerSettings,
+        ),
+    )
+
+private val MpvSettings =
+    listOf(
+        AppPreference.MpvHardwareDecoding,
+        AppPreference.MpvGpuNext,
+        AppPreference.MpvConfFile,
+    )
+
+val MpvPreferences =
+    listOf(
+        PreferenceGroup(
+            title = R.string.mpv_options,
+            preferences = MpvSettings,
+        ),
+    )
 
 val advancedPreferences =
     buildList {
@@ -989,21 +1055,17 @@ val advancedPreferences =
                     listOf(
                         ConditionalPreferences(
                             { it.playbackPreferences.playerBackend == PlayerBackend.EXO_PLAYER },
-                            listOf(
-                                AppPreference.FfmpegPreference,
-                                AppPreference.DownMixStereo,
-                                AppPreference.Ac3Supported,
-                                AppPreference.DirectPlayAss,
-                                AppPreference.DirectPlayPgs,
-                                AppPreference.DirectPlayDoviProfile7,
-                            ),
+                            ExoPlayerSettings,
                         ),
                         ConditionalPreferences(
                             { it.playbackPreferences.playerBackend == PlayerBackend.MPV },
+                            MpvSettings,
+                        ),
+                        ConditionalPreferences(
+                            { it.playbackPreferences.playerBackend == PlayerBackend.PREFER_MPV },
                             listOf(
-                                AppPreference.MpvHardwareDecoding,
-                                AppPreference.MpvGpuNext,
-                                AppPreference.MpvConfFile,
+                                AppPreference.ExoPlayerSettings,
+                                AppPreference.MpvSettings,
                             ),
                         ),
                     ),
@@ -1088,6 +1150,7 @@ data class AppChoicePreference<Pref, T>(
     override val getter: (prefs: Pref) -> T,
     override val setter: (prefs: Pref, value: T) -> Pref,
     @param:StringRes val summary: Int? = null,
+    @param:ArrayRes val subtitles: Int? = null,
 ) : AppPreference<Pref, T>
 
 data class AppMultiChoicePreference<Pref, T>(

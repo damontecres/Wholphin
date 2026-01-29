@@ -3,6 +3,7 @@ package com.github.damontecres.wholphin
 import android.content.Intent
 import android.content.res.Configuration
 import android.os.Bundle
+import android.view.WindowManager
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
@@ -51,6 +52,7 @@ import com.github.damontecres.wholphin.services.ServerEventListener
 import com.github.damontecres.wholphin.services.SetupDestination
 import com.github.damontecres.wholphin.services.SetupNavigationManager
 import com.github.damontecres.wholphin.services.UpdateChecker
+import com.github.damontecres.wholphin.services.UserSwitchListener
 import com.github.damontecres.wholphin.services.hilt.AuthOkHttpClient
 import com.github.damontecres.wholphin.services.tvprovider.TvProviderSchedulerService
 import com.github.damontecres.wholphin.ui.CoilConfig
@@ -106,6 +108,9 @@ class MainActivity : AppCompatActivity() {
     lateinit var refreshRateService: RefreshRateService
 
     @Inject
+    lateinit var userSwitchListener: UserSwitchListener
+
+    @Inject
     lateinit var tvProviderSchedulerService: TvProviderSchedulerService
 
     // Note: unused but injected to ensure it is created
@@ -134,8 +139,17 @@ class MainActivity : AppCompatActivity() {
                 window.attributes = attrs.apply { preferredDisplayModeId = modeId }
             }
         }
+        viewModel.serverRepository.currentUser.observe(this) { user ->
+            if (user?.hasPin == true) {
+                window?.setFlags(
+                    WindowManager.LayoutParams.FLAG_SECURE,
+                    WindowManager.LayoutParams.FLAG_SECURE,
+                )
+            } else {
+                window?.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
+            }
+        }
         viewModel.appStart()
-        val requestedDestination = this.intent?.let(::extractDestination)
         setContent {
             val appPreferences by userPreferencesDataStore.data.collectAsState(null)
             appPreferences?.let { appPreferences ->
@@ -242,6 +256,10 @@ class MainActivity : AppCompatActivity() {
                                                     }
 
                                                     if (showContent) {
+                                                        val requestedDestination =
+                                                            remember(intent) {
+                                                                intent?.let(::extractDestination)
+                                                            }
                                                         ApplicationContent(
                                                             user = current.user,
                                                             server = current.server,
@@ -288,14 +306,6 @@ class MainActivity : AppCompatActivity() {
         super.onRestart()
         Timber.d("onRestart")
         viewModel.appStart()
-//        val signInAutomatically =
-//            runBlocking { userPreferencesDataStore.data.firstOrNull()?.signInAutomatically } ?: true
-
-//        // TODO PIN-related
-// //        if (!signInAutomatically || serverRepository.currentUser.value?.hasPin == true) {
-//        if (!signInAutomatically) {
-//            serverRepository.closeSession()
-//        }
     }
 
     override fun onStop() {
@@ -337,6 +347,7 @@ class MainActivity : AppCompatActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         Timber.v("onNewIntent")
+        setIntent(intent)
         extractDestination(intent)?.let {
             navigationManager.replace(it)
         }
@@ -388,7 +399,7 @@ class MainActivityViewModel
     @Inject
     constructor(
         private val preferences: DataStore<AppPreferences>,
-        private val serverRepository: ServerRepository,
+        val serverRepository: ServerRepository,
         private val navigationManager: SetupNavigationManager,
         private val deviceProfileService: DeviceProfileService,
         private val backdropService: BackdropService,
@@ -398,15 +409,20 @@ class MainActivityViewModel
                 try {
                     val prefs =
                         preferences.data.firstOrNull() ?: AppPreferences.getDefaultInstance()
-                    if (prefs.signInAutomatically) {
+                    val userHasPin = serverRepository.currentUser.value?.hasPin == true
+                    if (prefs.signInAutomatically && !userHasPin) {
                         val current =
                             serverRepository.restoreSession(
                                 prefs.currentServerId?.toUUIDOrNull(),
                                 prefs.currentUserId?.toUUIDOrNull(),
                             )
                         if (current != null) {
-                            // Restored
-                            navigationManager.navigateTo(SetupDestination.AppContent(current))
+                            if (current.user.hasPin) {
+                                navigationManager.navigateTo(SetupDestination.UserList(current.server))
+                            } else {
+                                // Restored
+                                navigationManager.navigateTo(SetupDestination.AppContent(current))
+                            }
                         } else {
                             // Did not restore
                             navigationManager.navigateTo(SetupDestination.ServerList)

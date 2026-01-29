@@ -37,6 +37,9 @@ import com.github.damontecres.wholphin.util.GetGenresRequestHandler
 import com.github.damontecres.wholphin.util.GetItemsRequestHandler
 import com.github.damontecres.wholphin.util.LoadingExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedFactory
+import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
@@ -55,29 +58,32 @@ import org.jellyfin.sdk.model.api.request.GetGenresRequest
 import org.jellyfin.sdk.model.api.request.GetItemsRequest
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
-import javax.inject.Inject
 
-@HiltViewModel
+@HiltViewModel(assistedFactory = GenreViewModel.Factory::class)
 class GenreViewModel
-    @Inject
+    @AssistedInject
     constructor(
         private val api: ApiClient,
         private val imageUrlService: ImageUrlService,
         private val serverRepository: ServerRepository,
         val navigationManager: NavigationManager,
+        @Assisted private val itemId: UUID,
+        @Assisted private val includeItemTypes: List<BaseItemKind>?,
     ) : ViewModel() {
-        private lateinit var itemId: UUID
+        @AssistedFactory
+        interface Factory {
+            fun create(
+                itemId: UUID,
+                includeItemTypes: List<BaseItemKind>?,
+            ): GenreViewModel
+        }
 
         val item = MutableLiveData<BaseItem?>(null)
         val loading = MutableLiveData<LoadingState>(LoadingState.Pending)
         val genres = MutableLiveData<List<Genre>>(listOf())
 
-        fun init(
-            itemId: UUID,
-            cardWidthPx: Int,
-        ) {
+        fun init(cardWidthPx: Int) {
             loading.value = LoadingState.Loading
-            this.itemId = itemId
             viewModelScope.launch(Dispatchers.IO + LoadingExceptionHandler(loading, "Failed to fetch genres")) {
                 val item =
                     api.userLibraryApi.getItem(itemId = itemId).content.let {
@@ -89,6 +95,7 @@ class GenreViewModel
                         userId = serverRepository.currentUser.value?.id,
                         parentId = itemId,
                         fields = SlimItemFields,
+                        includeItemTypes = includeItemTypes,
                     )
                 val genres =
                     GetGenresRequestHandler
@@ -97,12 +104,10 @@ class GenreViewModel
                         .map {
                             Genre(it.id, it.name ?: "", null, Color.Black)
                         }
-//                val pager = ApiRequestPager(api, request, GetGenresRequestHandler, viewModelScope).init()
                 withContext(Dispatchers.Main) {
                     this@GenreViewModel.genres.value = genres
                     loading.value = LoadingState.Success
                 }
-//                val excludeItemIds = mutableSetOf<UUID>()
                 val genreToUrl = ConcurrentHashMap<UUID, String?>()
                 val semaphore = Semaphore(4)
                 genres
@@ -114,34 +119,28 @@ class GenreViewModel
                                         .execute(
                                             api,
                                             GetItemsRequest(
-//                                                excludeItemIds = excludeItemIds,
                                                 parentId = itemId,
                                                 recursive = true,
                                                 limit = 1,
                                                 sortBy = listOf(ItemSortBy.RANDOM),
                                                 fields = listOf(ItemFields.GENRES),
-                                                imageTypes = listOf(ImageType.THUMB),
+                                                imageTypes = listOf(ImageType.BACKDROP),
                                                 imageTypeLimit = 1,
-                                                includeItemTypes =
-                                                    listOf(
-                                                        BaseItemKind.MOVIE,
-                                                        BaseItemKind.SERIES,
-                                                    ),
+                                                includeItemTypes = includeItemTypes,
                                                 genreIds = listOf(genre.id),
                                                 enableTotalRecordCount = false,
                                             ),
                                         ).content.items
                                         .firstOrNull()
                                 if (item != null) {
-//                                    excludeItemIds.add(item.id)
                                     genreToUrl[genre.id] =
                                         imageUrlService.getItemImageUrl(
                                             itemId = item.id,
                                             itemType = item.type,
                                             seriesId = null,
-                                            useSeriesForPrimary = false,
+                                            useSeriesForPrimary = true,
                                             imageType = ImageType.BACKDROP,
-                                            imageTags = emptyMap(),
+                                            imageTags = item.imageTags.orEmpty(),
                                             fillWidth = cardWidthPx,
                                         )
                                 }
@@ -173,11 +172,12 @@ class GenreViewModel
     }
 
 data class Genre(
-    override val id: UUID,
+    val id: UUID,
     val name: String,
     val imageUrl: String?,
     val color: Color,
 ) : CardGridItem {
+    override val gridId: String get() = id.toString()
     override val playable: Boolean = false
     override val sortName: String get() = name
 }
@@ -185,8 +185,12 @@ data class Genre(
 @Composable
 fun GenreCardGrid(
     itemId: UUID,
+    includeItemTypes: List<BaseItemKind>?,
     modifier: Modifier = Modifier,
-    viewModel: GenreViewModel = hiltViewModel(),
+    viewModel: GenreViewModel =
+        hiltViewModel<GenreViewModel, GenreViewModel.Factory>(
+            creationCallback = { it.create(itemId, includeItemTypes) },
+        ),
 ) {
     val columns = 4
     val spacing = 16.dp
@@ -204,7 +208,7 @@ fun GenreCardGrid(
             }
         }
     OneTimeLaunchedEffect {
-        viewModel.init(itemId, cardWidthPx)
+        viewModel.init(cardWidthPx)
     }
     val loading by viewModel.loading.observeAsState(LoadingState.Pending)
     val genres by viewModel.genres.observeAsState(listOf())
@@ -238,7 +242,11 @@ fun GenreCardGrid(
                                                 genre.name,
                                                 item?.title,
                                             ).joinToString(" "),
-                                        filter = GetItemsFilter(genres = listOf(genre.id)),
+                                        filter =
+                                            GetItemsFilter(
+                                                genres = listOf(genre.id),
+                                                includeItemTypes = includeItemTypes,
+                                            ),
                                         useSavedLibraryDisplayInfo = false,
                                     ),
                                 recursive = true,
