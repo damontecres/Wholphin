@@ -56,7 +56,6 @@ import kotlin.contracts.contract
 import kotlin.coroutines.CoroutineContext
 import kotlin.math.min
 import kotlin.time.Duration
-import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 
@@ -234,7 +233,7 @@ val Duration.roundMinutes: Duration
  * Rounds a [Duration] to nearest whole second
  */
 val Duration.roundSeconds: Duration
-    get() = (this + 30.milliseconds).inWholeSeconds.seconds
+    get() = (this + .5.seconds).inWholeSeconds.seconds
 
 /**
  * Gets the user's playback position as a [Duration]
