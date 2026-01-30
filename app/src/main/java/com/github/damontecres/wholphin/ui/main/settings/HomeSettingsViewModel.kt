@@ -176,13 +176,15 @@ class HomeSettingsViewModel
         }
 
         fun deleteRow(index: Int) {
-            updateState {
-                val rows = it.rows.toMutableList().apply { removeAt(index) }
-                val rowData = it.rowData.toMutableList().apply { removeAt(index) }
-                it.copy(
-                    rows = rows,
-                    rowData = rowData,
-                )
+            viewModelScope.launchIO {
+                updateState {
+                    val rows = it.rows.toMutableList().apply { removeAt(index) }
+                    val rowData = it.rowData.toMutableList().apply { removeAt(index) }
+                    it.copy(
+                        rows = rows,
+                        rowData = rowData,
+                    )
+                }
             }
         }
 
@@ -341,17 +343,19 @@ class HomeSettingsViewModel
         }
 
         fun updateViewOptionsForAll(viewOptions: HomeRowViewOptions) {
-            updateState {
-                it.copy(
-                    rowData =
-                        it.rowData.toMutableList().map { row ->
-                            if (row is HomeRowLoadingState.Success) {
-                                row.copy(viewOptions = viewOptions)
-                            } else {
-                                row
-                            }
-                        },
-                )
+            viewModelScope.launchIO {
+                updateState {
+                    it.copy(
+                        rowData =
+                            it.rowData.toMutableList().map { row ->
+                                if (row is HomeRowLoadingState.Success) {
+                                    row.copy(viewOptions = viewOptions)
+                                } else {
+                                    row
+                                }
+                            },
+                    )
+                }
             }
         }
 
@@ -456,24 +460,26 @@ class HomeSettingsViewModel
         }
 
         fun resizeCards(relative: Int) {
-            updateState {
-                val newRows =
-                    it.rows.toMutableList().map { row ->
-                        val vo = row.config.viewOptions
-                        val newVo = vo.copy(heightDp = vo.heightDp + (4 * relative))
-                        row.copy(config = row.config.updateViewOptions(newVo))
-                    }
-                it.copy(
-                    rows = newRows,
-                    rowData =
-                        it.rowData.toMutableList().mapIndexed { index, row ->
-                            if (row is HomeRowLoadingState.Success) {
-                                row.copy(viewOptions = newRows[index].config.viewOptions)
-                            } else {
-                                row
-                            }
-                        },
-                )
+            viewModelScope.launchIO {
+                updateState {
+                    val newRows =
+                        it.rows.toMutableList().map { row ->
+                            val vo = row.config.viewOptions
+                            val newVo = vo.copy(heightDp = vo.heightDp + (4 * relative))
+                            row.copy(config = row.config.updateViewOptions(newVo))
+                        }
+                    it.copy(
+                        rows = newRows,
+                        rowData =
+                            it.rowData.toMutableList().mapIndexed { index, row ->
+                                if (row is HomeRowLoadingState.Success) {
+                                    row.copy(viewOptions = newRows[index].config.viewOptions)
+                                } else {
+                                    row
+                                }
+                            },
+                    )
+                }
             }
         }
     }
