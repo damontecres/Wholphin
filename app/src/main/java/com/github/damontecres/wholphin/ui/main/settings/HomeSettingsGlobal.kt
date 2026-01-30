@@ -56,7 +56,7 @@ fun HomeSettingsGlobal(
                     selected = false,
                     headlineContent = {
                         Text(
-                            text = "Increase card sizes",
+                            text = "Increase all card size",
                         )
                     },
                     leadingContent = {
@@ -74,7 +74,7 @@ fun HomeSettingsGlobal(
                     selected = false,
                     headlineContent = {
                         Text(
-                            text = "Decrease card sizes",
+                            text = "Decrease all card size",
                         )
                     },
                     leadingContent = {

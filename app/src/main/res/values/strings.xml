@@ -473,6 +473,7 @@
     <string name="save_to_server">Save to server</string>
     <string name="load_from_web_client">Load from web client</string>
     <string name="use_series">Use series image</string>
+    <string name="add_row_for">Add row for %1$s</string>
 
     <string-array name="theme_song_volume">
         <item>Disabled</item>

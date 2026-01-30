@@ -13,7 +13,6 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.unit.dp
 import androidx.tv.material3.MaterialTheme
-import androidx.tv.material3.Text
 import androidx.tv.material3.surfaceColorAtElevation
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.HomeRowViewOptions
@@ -45,11 +44,7 @@ fun HomeRowSettings(
     val firstFocus = remember { FocusRequester() }
     LaunchedEffect(Unit) { firstFocus.tryRequestFocus() }
     Column(modifier = modifier) {
-        Text(
-            text = title,
-            style = MaterialTheme.typography.titleLarge,
-            color = MaterialTheme.colorScheme.onSurface,
-        )
+        TitleText(title)
         LazyColumn {
             itemsIndexed(options) { index, pref ->
                 pref as AppPreference<HomeRowViewOptions, Any>

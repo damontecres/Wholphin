@@ -29,8 +29,8 @@ fun HomeSettingsFavoriteList(
 ) {
     LaunchedEffect(Unit) { firstFocus.tryRequestFocus() }
     Column(modifier = modifier) {
-        Text(
-            text = "Add favorites row...",
+        TitleText(
+            stringResource(R.string.add_row_for, stringResource(R.string.favorites)),
         )
         LazyColumn(
             contentPadding = PaddingValues(8.dp),

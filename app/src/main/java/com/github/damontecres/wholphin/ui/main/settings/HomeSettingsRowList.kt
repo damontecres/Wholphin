@@ -18,6 +18,7 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.NonRestartableComposable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -72,12 +73,7 @@ fun HomeSettingsRowList(
 
     LaunchedEffect(Unit) { focusRequesters.getOrNull(position)?.tryRequestFocus() }
     Column(modifier = modifier) {
-        Text(
-            text = stringResource(R.string.customize_home),
-            style = MaterialTheme.typography.titleLarge,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.fillMaxWidth(),
-        )
+        TitleText(stringResource(R.string.customize_home))
         LazyColumn(
             state = listState,
             verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -129,12 +125,7 @@ fun HomeSettingsRowList(
                 )
             }
             item {
-                Text(
-                    text = stringResource(R.string.home_rows),
-                    style = MaterialTheme.typography.titleLarge,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth(),
-                )
+                TitleText(stringResource(R.string.home_rows))
                 HorizontalDivider()
             }
             itemsIndexed(state.rows, key = { _, row -> row.id }) { index, row ->
@@ -247,4 +238,18 @@ fun HomeRowConfigContent(
             }
         }
     }
+}
+
+@Composable
+@NonRestartableComposable
+fun TitleText(
+    title: String,
+    modifier: Modifier = Modifier,
+) {
+    Text(
+        text = title,
+        style = MaterialTheme.typography.titleLarge,
+        textAlign = TextAlign.Center,
+        modifier = modifier.fillMaxWidth(),
+    )
 }

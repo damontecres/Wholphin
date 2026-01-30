@@ -32,9 +32,7 @@ fun HomeLibraryRowTypeList(
 ) {
     LaunchedEffect(Unit) { firstFocus.tryRequestFocus() }
     Column(modifier = modifier) {
-        Text(
-            text = "Add row for ${library.name}",
-        )
+        TitleText(stringResource(R.string.add_row_for, library.name))
         LazyColumn(
             contentPadding = PaddingValues(8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
