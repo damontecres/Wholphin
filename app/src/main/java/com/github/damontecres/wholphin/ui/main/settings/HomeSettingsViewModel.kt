@@ -47,6 +47,7 @@ import org.jellyfin.sdk.model.serializer.UUIDSerializer
 import timber.log.Timber
 import java.util.UUID
 import javax.inject.Inject
+import kotlin.properties.Delegates
 
 @HiltViewModel
 class HomeSettingsViewModel
@@ -63,6 +64,8 @@ class HomeSettingsViewModel
     ) : ViewModel() {
         private val _state = MutableStateFlow(HomePageSettingsState.EMPTY)
         val state: StateFlow<HomePageSettingsState> = _state
+
+        private var idCounter by Delegates.notNull<Int>()
 
         val discoverEnabled = seerrServerRepository.active
 
@@ -82,6 +85,7 @@ class HomeSettingsViewModel
                 val currentSettings =
                     homeSettingsService.currentSettings.first { it != HomePageResolvedSettings.EMPTY }
                 Timber.v("currentSettings=%s", currentSettings)
+                idCounter = currentSettings.rows.maxOfOrNull { it.id }?.plus(1) ?: 0
                 _state.update {
                     it.copy(
                         libraries = libraries,
@@ -190,7 +194,7 @@ class HomeSettingsViewModel
 
         fun addRow(type: MetaRowType): Job =
             viewModelScope.launchIO {
-                val id = state.value.rows.size
+                val id = idCounter++
                 val newRow =
                     when (type) {
                         MetaRowType.CONTINUE_WATCHING -> {
@@ -239,7 +243,7 @@ class HomeSettingsViewModel
             rowType: LibraryRowType,
         ): Job =
             viewModelScope.launchIO {
-                val id = state.value.rows.size
+                val id = idCounter++
                 val newRow =
                     when (rowType) {
                         LibraryRowType.RECENTLY_ADDED -> {
@@ -288,7 +292,7 @@ class HomeSettingsViewModel
         fun addFavoriteRow(type: BaseItemKind): Job =
             viewModelScope.launchIO {
                 Timber.v("Adding favorite row for $type")
-                val id = state.value.rows.size
+                val id = idCounter++
                 val newRow =
                     HomeRowConfigDisplay(
                         id = id,

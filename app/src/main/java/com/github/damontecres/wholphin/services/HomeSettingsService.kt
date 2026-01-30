@@ -199,29 +199,33 @@ class HomeSettingsService
             // User local then server/remote otherwise create a default
             val settings =
                 try {
-                    loadFromLocal(userId)
+                    val local = loadFromLocal(userId)
+                    Timber.v("Found local? %s", local != null)
+                    local
                 } catch (ex: Exception) {
                     Timber.w(ex, "Error loading local settings")
                     // TODO show toast?
                     null
                 } ?: try {
-                    loadFromServer(userId)
+                    val remote = loadFromServer(userId)
+                    Timber.v("Found remote? %s", remote != null)
+                    remote
                 } catch (ex: Exception) {
                     Timber.w(ex, "Error loading remote settings")
                     null
                 }
-            val resolvedSettings = parseFromWebConfig(userId)!!
-            if (settings != null) {
-                Timber.v("Found settings")
-                // Resolve
-                val resolvedRows =
-                    settings.rows.mapIndexed { index, config ->
-                        resolve(index, config)
-                    }
-                HomePageResolvedSettings(resolvedRows)
-            } else {
-                createDefault(userId)
-            }
+            val resolvedSettings =
+                if (settings != null) {
+                    Timber.v("Found settings")
+                    // Resolve
+                    val resolvedRows =
+                        settings.rows.mapIndexed { index, config ->
+                            resolve(index, config)
+                        }
+                    HomePageResolvedSettings(resolvedRows)
+                } else {
+                    createDefault(userId)
+                }
 
             currentSettings.update { resolvedSettings }
         }
