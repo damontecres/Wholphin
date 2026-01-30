@@ -5,12 +5,12 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
@@ -41,6 +41,7 @@ import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -102,51 +103,22 @@ class GenreViewModel
                         .execute(api, request)
                         .content.items
                         .map {
-                            Genre(it.id, it.name ?: "", null, Color.Black)
+                            Genre(it.id, it.name ?: "", null)
                         }
                 withContext(Dispatchers.Main) {
                     this@GenreViewModel.genres.value = genres
                     loading.value = LoadingState.Success
                 }
-                val genreToUrl = ConcurrentHashMap<UUID, String?>()
-                val semaphore = Semaphore(4)
-                genres
-                    .map { genre ->
-                        viewModelScope.async(Dispatchers.IO) {
-                            semaphore.withPermit {
-                                val item =
-                                    GetItemsRequestHandler
-                                        .execute(
-                                            api,
-                                            GetItemsRequest(
-                                                parentId = itemId,
-                                                recursive = true,
-                                                limit = 1,
-                                                sortBy = listOf(ItemSortBy.RANDOM),
-                                                fields = listOf(ItemFields.GENRES),
-                                                imageTypes = listOf(ImageType.BACKDROP),
-                                                imageTypeLimit = 1,
-                                                includeItemTypes = includeItemTypes,
-                                                genreIds = listOf(genre.id),
-                                                enableTotalRecordCount = false,
-                                            ),
-                                        ).content.items
-                                        .firstOrNull()
-                                if (item != null) {
-                                    genreToUrl[genre.id] =
-                                        imageUrlService.getItemImageUrl(
-                                            itemId = item.id,
-                                            itemType = item.type,
-                                            seriesId = null,
-                                            useSeriesForPrimary = true,
-                                            imageType = ImageType.BACKDROP,
-                                            imageTags = item.imageTags.orEmpty(),
-                                            fillWidth = cardWidthPx,
-                                        )
-                                }
-                            }
-                        }
-                    }.awaitAll()
+                val genreToUrl =
+                    getGenreImageMap(
+                        api = api,
+                        scope = viewModelScope,
+                        imageUrlService = imageUrlService,
+                        genres = genres.map { it.id },
+                        parentId = itemId,
+                        includeItemTypes = includeItemTypes,
+                        cardWidthPx = cardWidthPx,
+                    )
                 val genresWithImages =
                     genres.map {
                         it.copy(
@@ -171,11 +143,62 @@ class GenreViewModel
             }
     }
 
+suspend fun getGenreImageMap(
+    api: ApiClient,
+    scope: CoroutineScope,
+    imageUrlService: ImageUrlService,
+    genres: List<UUID>,
+    parentId: UUID,
+    includeItemTypes: List<BaseItemKind>?,
+    cardWidthPx: Int?,
+): Map<UUID, String?> {
+    val genreToUrl = ConcurrentHashMap<UUID, String?>()
+    val semaphore = Semaphore(4)
+    genres
+        .map { genreId ->
+            scope.async(Dispatchers.IO) {
+                semaphore.withPermit {
+                    val item =
+                        GetItemsRequestHandler
+                            .execute(
+                                api,
+                                GetItemsRequest(
+                                    parentId = parentId,
+                                    recursive = true,
+                                    limit = 1,
+                                    sortBy = listOf(ItemSortBy.RANDOM),
+                                    fields = listOf(ItemFields.GENRES),
+                                    imageTypes = listOf(ImageType.BACKDROP),
+                                    imageTypeLimit = 1,
+                                    includeItemTypes = includeItemTypes,
+                                    genreIds = listOf(genreId),
+                                    enableTotalRecordCount = false,
+                                ),
+                            ).content.items
+                            .firstOrNull()
+                    if (item != null) {
+                        genreToUrl[genreId] =
+                            imageUrlService.getItemImageUrl(
+                                itemId = item.id,
+                                itemType = item.type,
+                                seriesId = null,
+                                useSeriesForPrimary = true,
+                                imageType = ImageType.BACKDROP,
+                                imageTags = item.imageTags.orEmpty(),
+                                fillWidth = cardWidthPx,
+                            )
+                    }
+                }
+            }
+        }.awaitAll()
+    return genreToUrl
+}
+
+@Stable
 data class Genre(
     val id: UUID,
     val name: String,
     val imageUrl: String?,
-    val color: Color,
 ) : CardGridItem {
     override val gridId: String get() = id.toString()
     override val playable: Boolean = false

@@ -26,6 +26,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.withContext
+import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.ImageType
 import timber.log.Timber
 import javax.inject.Inject
@@ -47,7 +48,12 @@ class BackdropService
 
         suspend fun submit(item: BaseItem) =
             withContext(Dispatchers.IO) {
-                val imageUrl = imageUrlService.getItemImageUrl(item, ImageType.BACKDROP)!!
+                val imageUrl =
+                    if (item.type == BaseItemKind.GENRE) {
+                        item.imageUrlOverride
+                    } else {
+                        imageUrlService.getItemImageUrl(item, ImageType.BACKDROP)!!
+                    }
                 submit(item.id.toString(), imageUrl)
             }
 

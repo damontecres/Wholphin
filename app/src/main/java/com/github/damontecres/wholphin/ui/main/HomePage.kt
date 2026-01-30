@@ -16,10 +16,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
@@ -45,9 +47,9 @@ import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.preferences.UserPreferences
-import com.github.damontecres.wholphin.ui.AspectRatios
 import com.github.damontecres.wholphin.ui.Cards
 import com.github.damontecres.wholphin.ui.cards.BannerCard
+import com.github.damontecres.wholphin.ui.cards.GenreCard
 import com.github.damontecres.wholphin.ui.cards.ItemRow
 import com.github.damontecres.wholphin.ui.components.CircularProgress
 import com.github.damontecres.wholphin.ui.components.DialogParams
@@ -67,6 +69,7 @@ import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.playback.isPlayKeyUp
 import com.github.damontecres.wholphin.ui.playback.playable
+import com.github.damontecres.wholphin.ui.playback.scale
 import com.github.damontecres.wholphin.ui.rememberPosition
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.HomeRowLoadingState
@@ -89,12 +92,10 @@ fun HomePage(
     LaunchedEffect(Unit) {
         viewModel.init()
     }
-    val loading by viewModel.loadingState.observeAsState(LoadingState.Loading)
-    val refreshing by viewModel.refreshState.observeAsState(LoadingState.Loading)
-    val watchingRows by viewModel.watchingRows.observeAsState(listOf())
-    val latestRows by viewModel.latestRows.observeAsState(listOf())
-
-    val homeRows = remember(watchingRows, latestRows) { watchingRows + latestRows }
+    val state by viewModel.state.collectAsState()
+    val loading = state.loadingState
+    val refreshing = state.refreshState
+    val homeRows = state.homeRows
 
     when (val state = loading) {
         is LoadingState.Error -> {
@@ -193,6 +194,8 @@ fun HomePageContent(
     modifier: Modifier = Modifier,
     onFocusPosition: ((RowColumn) -> Unit)? = null,
     loadingState: LoadingState? = null,
+    listState: LazyListState = rememberLazyListState(),
+    takeFocus: Boolean = true,
 ) {
     var position by rememberPosition()
     val focusedItem =
@@ -200,25 +203,26 @@ fun HomePageContent(
             (homeRows.getOrNull(it.row) as? HomeRowLoadingState.Success)?.items?.getOrNull(it.column)
         }
 
-    val listState = rememberLazyListState()
     val rowFocusRequesters = remember(homeRows) { List(homeRows.size) { FocusRequester() } }
     var firstFocused by remember { mutableStateOf(false) }
-    LaunchedEffect(homeRows) {
-        if (!firstFocused && homeRows.isNotEmpty()) {
-            if (position.row >= 0) {
-                val index = position.row.coerceIn(0, rowFocusRequesters.lastIndex)
-                rowFocusRequesters.getOrNull(index)?.tryRequestFocus()
-                firstFocused = true
-            } else {
-                // Waiting for the first home row to load, then focus on it
-                homeRows
-                    .indexOfFirstOrNull { it is HomeRowLoadingState.Success && it.items.isNotEmpty() }
-                    ?.let {
-                        rowFocusRequesters[it].tryRequestFocus()
-                        firstFocused = true
-                        delay(50)
-                        listState.scrollToItem(it)
-                    }
+    if (takeFocus) {
+        LaunchedEffect(homeRows) {
+            if (!firstFocused && homeRows.isNotEmpty()) {
+                if (position.row >= 0) {
+                    val index = position.row.coerceIn(0, rowFocusRequesters.lastIndex)
+                    rowFocusRequesters.getOrNull(index)?.tryRequestFocus()
+                    firstFocused = true
+                } else {
+                    // Waiting for the first home row to load, then focus on it
+                    homeRows
+                        .indexOfFirstOrNull { it is HomeRowLoadingState.Success && it.items.isNotEmpty() }
+                        ?.let {
+                            rowFocusRequesters[it].tryRequestFocus()
+                            firstFocused = true
+                            delay(50)
+                            listState.scrollToItem(it)
+                        }
+                }
             }
         }
     }
@@ -308,6 +312,7 @@ fun HomePageContent(
 
                         is HomeRowLoadingState.Success -> {
                             if (row.items.isNotEmpty()) {
+                                val viewOptions = row.viewOptions
                                 ItemRow(
                                     title = row.title,
                                     items = row.items,
@@ -323,51 +328,69 @@ fun HomePageContent(
                                             .focusGroup()
                                             .focusRequester(rowFocusRequesters[rowIndex])
                                             .animateItem(),
+                                    horizontalPadding = viewOptions.spacing.dp,
                                     cardContent = { index, item, cardModifier, onClick, onLongClick ->
-                                        BannerCard(
-                                            name = item?.data?.seriesName ?: item?.name,
-                                            item = item,
-                                            aspectRatio = AspectRatios.TALL,
-                                            cornerText = item?.ui?.episdodeUnplayedCornerText,
-                                            played = item?.data?.userData?.played ?: false,
-                                            favorite = item?.favorite ?: false,
-                                            playPercent =
-                                                item?.data?.userData?.playedPercentage
-                                                    ?: 0.0,
-                                            onClick = onClick,
-                                            onLongClick = onLongClick,
-                                            modifier =
-                                                cardModifier
-                                                    .onFocusChanged {
-                                                        if (it.isFocused) {
-                                                            position = RowColumn(rowIndex, index)
-//                                                            item?.let(onUpdateBackdrop)
-                                                        }
-                                                        if (it.isFocused && onFocusPosition != null) {
-                                                            val nonEmptyRowBefore =
-                                                                homeRows
-                                                                    .subList(0, rowIndex)
-                                                                    .count {
-                                                                        it is HomeRowLoadingState.Success && it.items.isEmpty()
-                                                                    }
-                                                            onFocusPosition.invoke(
-                                                                RowColumn(
-                                                                    rowIndex - nonEmptyRowBefore,
-                                                                    index,
-                                                                ),
-                                                            )
-                                                        }
-                                                    }.onKeyEvent {
-                                                        if (isPlayKeyUp(it) && item?.type?.playable == true) {
-                                                            Timber.v("Clicked play on ${item.id}")
-                                                            onClickPlay.invoke(position, item)
-                                                            return@onKeyEvent true
-                                                        }
-                                                        return@onKeyEvent false
-                                                    },
-                                            interactionSource = null,
-                                            cardHeight = Cards.height2x3,
-                                        )
+                                        val mod =
+                                            cardModifier
+                                                .onFocusChanged {
+                                                    if (it.isFocused) {
+                                                        position = RowColumn(rowIndex, index)
+                                                    }
+                                                    if (it.isFocused && onFocusPosition != null) {
+                                                        val nonEmptyRowBefore =
+                                                            homeRows
+                                                                .subList(0, rowIndex)
+                                                                .count {
+                                                                    it is HomeRowLoadingState.Success && it.items.isEmpty()
+                                                                }
+                                                        onFocusPosition.invoke(
+                                                            RowColumn(
+                                                                rowIndex - nonEmptyRowBefore,
+                                                                index,
+                                                            ),
+                                                        )
+                                                    }
+                                                }.onKeyEvent {
+                                                    if (isPlayKeyUp(it) && item?.type?.playable == true) {
+                                                        Timber.v("Clicked play on ${item.id}")
+                                                        onClickPlay.invoke(position, item)
+                                                        return@onKeyEvent true
+                                                    }
+                                                    return@onKeyEvent false
+                                                }
+                                        when (item?.type) {
+                                            BaseItemKind.GENRE -> {
+                                                GenreCard(
+                                                    genreId = item.id,
+                                                    name = item.name,
+                                                    imageUrl = item.imageUrlOverride,
+                                                    onClick = onClick,
+                                                    onLongClick = onLongClick,
+                                                    modifier = mod.height(viewOptions.heightDp.dp),
+                                                )
+                                            }
+
+                                            else -> {
+                                                BannerCard(
+                                                    name = item?.data?.seriesName ?: item?.name,
+                                                    item = item,
+                                                    aspectRatio = viewOptions.aspectRatio.ratio,
+                                                    imageType = viewOptions.imageType.imageType,
+                                                    imageContentScale = viewOptions.contentScale.scale,
+                                                    cornerText = item?.ui?.episdodeUnplayedCornerText,
+                                                    played = item?.data?.userData?.played ?: false,
+                                                    favorite = item?.favorite ?: false,
+                                                    playPercent =
+                                                        item?.data?.userData?.playedPercentage
+                                                            ?: 0.0,
+                                                    onClick = onClick,
+                                                    onLongClick = onLongClick,
+                                                    modifier = mod,
+                                                    interactionSource = null,
+                                                    cardHeight = viewOptions.heightDp.dp,
+                                                )
+                                            }
+                                        }
                                     },
                                 )
                             }
@@ -401,19 +424,17 @@ fun HomePageHeader(
     item: BaseItem?,
     modifier: Modifier = Modifier,
 ) {
-    item?.let {
-        val isEpisode = item.type == BaseItemKind.EPISODE
-        val dto = item.data
-        HomePageHeader(
-            title = item.title,
-            subtitle = if (isEpisode) dto.name else null,
-            overview = dto.overview,
-            overviewTwoLines = isEpisode,
-            quickDetails = item.ui.quickDetails,
-            timeRemaining = item.timeRemainingOrRuntime,
-            modifier = modifier,
-        )
-    }
+    val isEpisode = item?.type == BaseItemKind.EPISODE
+    val dto = item?.data
+    HomePageHeader(
+        title = item?.title,
+        subtitle = if (isEpisode) dto?.name else null,
+        overview = dto?.overview,
+        overviewTwoLines = isEpisode,
+        quickDetails = item?.ui?.quickDetails ?: AnnotatedString(""),
+        timeRemaining = item?.timeRemainingOrRuntime,
+        modifier = modifier,
+    )
 }
 
 @Composable
