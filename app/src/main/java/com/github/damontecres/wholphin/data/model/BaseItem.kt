@@ -72,8 +72,7 @@ data class BaseItem(
     @Transient
     val aspectRatio: Float? = data.primaryImageAspectRatio?.toFloat()?.takeIf { it > 0 }
 
-    @Transient
-    val indexNumber = data.indexNumber ?: dateAsIndex()
+    val indexNumber get() = data.indexNumber
 
     val playbackPosition get() = data.userData?.playbackPositionTicks?.ticks ?: Duration.ZERO
 
