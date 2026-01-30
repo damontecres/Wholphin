@@ -410,7 +410,7 @@ fun MovieDetailsContent(
     Box(modifier = modifier) {
         LazyColumn(
             verticalArrangement = Arrangement.spacedBy(16.dp),
-            contentPadding = PaddingValues(horizontal = 32.dp, vertical = 8.dp),
+            contentPadding = PaddingValues(horizontal = 24.dp, vertical = 8.dp),
             modifier = Modifier.fillMaxSize(),
         ) {
             item {
@@ -430,7 +430,7 @@ fun MovieDetailsContent(
                         modifier =
                             Modifier
                                 .fillMaxWidth()
-                                .padding(top = 32.dp, bottom = 16.dp),
+                                .padding(top = 40.dp, bottom = 16.dp),
                     )
                     ExpandablePlayButtons(
                         resumePosition = resumePosition,
