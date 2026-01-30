@@ -81,7 +81,7 @@
     <string name="auto_check_for_updates">Automatisch auf Aktualisierungen prüfen</string>
     <string name="check_for_updates">Auf Aktualisierungen prüfen</string>
     <string name="settings">Einstellungen</string>
-    <string name="choose_stream">Wählen %1$s</string>
+    <string name="choose_stream">%1$s Wählen</string>
     <string name="clear_image_cache">Bilder Cache leeren</string>
     <string name="community_rating">Community Bewertung</string>
     <string name="compose_error_message_title">Es ist ein Fehler aufgetreten! Drücke den Knopf um Logs zu deinem Server zu senden.</string>
@@ -118,7 +118,7 @@
     <string name="next_up">Als nächstes</string>
     <string name="none">Keine</string>
     <string name="play_from_here">Von hier wiedergeben</string>
-    <string name="play">Abspielen</string>
+    <string name="play">Wiedergeben</string>
     <string name="playback_speed">Wiedergabegeschwindigkeit</string>
     <string name="playback">Wiedergabe</string>
     <string name="preview">Vorschau</string>
@@ -369,4 +369,19 @@
     <string name="dolby_digital">DD</string>
     <string name="dolby_digital_plus">DD+</string>
     <string name="trending">Im Trend</string>
+    <string name="voice_error_start_failed">Starten der Spracherkennung fehlgeschlagen</string>
+    <string name="press_back_to_cancel">Zurück wählen um abzubrechen</string>
+    <string name="upgrade_mpv_toast">MPV ist jetzt der Standard-Player, außer für HDR.\nDas kannst du in den Einstellungen ändern.</string>
+    <string name="voice_search">Sprachsuche</string>
+    <string name="voice_search_prompt">Sprechen, um zu suchen</string>
+    <string name="force_dovi_profile_7_summary">Ignoriert geräte kompatibilität</string>
+    <string name="upcoming_movies">kommende Filme</string>
+    <string name="upcoming_tv">kommende Serien</string>
+    <string name="force_dovi_profile_7">Direktes abspielen von Dolby Vision Profil 7</string>
+    <string name="subtitle_delay">Untertitelverzögerung</string>
+    <string name="sort_channels_recently_watched">Sortiere Kanäle nach zuletzt geschaut</string>
+    <string name="favorite_channels_at_beginning">Favoriten als erstes anzeigen</string>
+    <string name="backdrop_display">Hintergrundstil</string>
+    <string name="refresh_rate_switching">Bildwiederholraten-Anpassung</string>
+    <string name="voice_error_speech_timeout">Keine Spracheingabe erkannt</string>
 </resources>
