@@ -90,7 +90,7 @@ fun DiscoverMovieDetails(
     val people by viewModel.people.observeAsState(listOf())
     val trailers by viewModel.trailers.observeAsState(listOf())
     val similar by viewModel.similar.observeAsState(listOf())
-    val recommended by viewModel.similar.observeAsState(listOf())
+    val recommended by viewModel.recommended.observeAsState(listOf())
     val loading by viewModel.loading.observeAsState(LoadingState.Loading)
     val userConfig by viewModel.userConfig.collectAsState(null)
     val request4kEnabled by viewModel.request4kEnabled.collectAsState(false)
@@ -365,7 +365,7 @@ fun DiscoverMovieDetailsContent(
                 item {
                     ItemRow(
                         title = stringResource(R.string.recommended),
-                        items = similar,
+                        items = recommended,
                         onClickItem = { index, item ->
                             position = RECOMMENDED_ROW
                             onClickItem.invoke(index, item)

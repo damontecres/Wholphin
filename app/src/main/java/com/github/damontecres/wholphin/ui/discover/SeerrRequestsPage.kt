@@ -40,6 +40,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
@@ -112,6 +113,9 @@ class SeerrRequestsViewModel
 
                         state.update { it.copy(requests = DataLoadingState.Success(results)) }
                     }
+                }.catch { ex ->
+                    Timber.e(ex, "Error fetching requests")
+                    state.update { it.copy(requests = DataLoadingState.Error(ex)) }
                 }.launchIn(viewModelScope)
         }
 
