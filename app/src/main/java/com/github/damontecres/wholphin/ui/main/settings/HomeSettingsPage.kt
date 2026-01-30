@@ -1,5 +1,6 @@
 package com.github.damontecres.wholphin.ui.main.settings
 
+import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -48,7 +49,7 @@ fun HomeSettingsPage(
     val scope = rememberCoroutineScope()
     val listState = rememberLazyListState()
     val backStack = rememberNavBackStack(HomeSettingsDestination.RowList)
-    var showConfirmDialog by remember { mutableStateOf<(() -> Unit)?>(null) }
+    var showConfirmDialog by remember { mutableStateOf<ShowConfirm?>(null) }
 
     val state by viewModel.state.collectAsState()
     // TODO discover rows
@@ -180,16 +181,22 @@ fun HomeSettingsPage(
                                 HomeSettingsGlobal(
                                     onClickResize = { viewModel.resizeCards(it) },
                                     onClickSave = {
-                                        showConfirmDialog = {
-                                            viewModel.saveToRemote()
-                                        }
+                                        showConfirmDialog =
+                                            ShowConfirm(R.string.overwrite_server_settings) {
+                                                viewModel.saveToRemote()
+                                            }
                                     },
                                     onClickLoad = {
-                                        showConfirmDialog = {
-                                            viewModel.loadFromRemote()
-                                        }
+                                        showConfirmDialog =
+                                            ShowConfirm(R.string.overwrite_local_settings) {
+                                                viewModel.loadFromRemote()
+                                            }
                                     },
                                     onClickLoadWeb = {
+                                        showConfirmDialog =
+                                            ShowConfirm(R.string.overwrite_local_settings) {
+                                                viewModel.loadFromRemoteWeb()
+                                            }
                                     },
                                     modifier = destModifier,
                                 )
@@ -215,10 +222,10 @@ fun HomeSettingsPage(
                     .weight(1f),
         )
     }
-    showConfirmDialog?.let { onConfirm ->
+    showConfirmDialog?.let { (body, onConfirm) ->
         ConfirmDialog(
             title = stringResource(R.string.confirm),
-            body = "Overwrite?",
+            body = stringResource(body),
             onCancel = { showConfirmDialog = null },
             onConfirm = {
                 onConfirm.invoke()
@@ -227,3 +234,8 @@ fun HomeSettingsPage(
         )
     }
 }
+
+data class ShowConfirm(
+    @param:StringRes val body: Int,
+    val onConfirm: () -> Unit,
+)
