@@ -53,7 +53,7 @@
     <string name="search">Buscar</string>
     <string name="searching">Buscando…</string>
     <string name="select_server">Seleccionar servidor</string>
-    <string name="select_user">Seleccionar usuario</string>
+    <string name="select_user">Seleccionar Usuario</string>
     <string name="sort_by_name">Nombre</string>
     <string name="sort_by_random">Aleatorio</string>
     <string name="studios">Estudios</string>
@@ -72,8 +72,8 @@
     <string name="tv_shows">Series</string>
     <string name="ui_interface">Interfaz</string>
     <string name="version">Versión</string>
-    <string name="video">Video</string>
-    <string name="videos">Videos</string>
+    <string name="video">Vídeo</string>
+    <string name="videos">Vídeos</string>
     <string name="years_old">%1$d años</string>
     <string name="play_with_transcoding">Reproducir con transcodificación</string>
     <string name="show_clock">Mostrar reloj</string>
@@ -97,14 +97,14 @@
     <string name="settings">Configuración</string>
     <string name="critic_rating">Calificación de la crítica</string>
     <string name="recap">Resumen</string>
-    <string name="record_program">Grabar programa</string>
+    <string name="record_program">Grabar Programa</string>
     <string name="record_series">Grabar serie</string>
     <string name="remove_favorite">Quitar de favoritos</string>
     <string name="show_debug_info">Mostrar información de depuración</string>
     <string name="show">Mostrar</string>
     <string name="shuffle">Aleatorio</string>
     <string name="skip">Saltar</string>
-    <string name="sort_by_date_episode_added">Ordenar por fecha de añadido del episodio</string>
+    <string name="sort_by_date_episode_added">Ordenar por fecha de inclusión del episodio</string>
     <string name="about">Acerca de</string>
     <string name="active_recordings">Grabaciones activas</string>
     <string name="cancel_recording">Cancelar grabación</string>
@@ -148,8 +148,8 @@
     <string name="recently_recorded">Grabado recientemente</string>
     <string name="recently_released">Lanzado recientemente</string>
     <string name="show_next_up_when">Mostrar “Siguiente”</string>
-    <string name="sort_by_date_added">Fecha de añadido</string>
-    <string name="sort_by_date_played">Ordenar por fecha de reproducción</string>
+    <string name="sort_by_date_added">Fecha de inclusión</string>
+    <string name="sort_by_date_played">Fecha de reproducción</string>
     <string name="sort_by_date_released">Fecha de lanzamiento</string>
     <string name="subtitle_download_too_long">La descarga está tardando demasiado, es posible que debas reiniciar la reproducción</string>
     <string name="top_unwatched">Mejor calificados no vistos</string>
@@ -214,8 +214,8 @@
         <item quantity="other"></item>
     </plurals>
     <plurals name="downloads">
-        <item quantity="one">%s descarga%s descargas</item>
-        <item quantity="many"></item>
+        <item quantity="one">%s descarga</item>
+        <item quantity="many">%s descargas</item>
         <item quantity="other"></item>
     </plurals>
     <plurals name="hours">
@@ -246,9 +246,9 @@
     <string name="ffmpeg_extension_pref">Usar módulo decodificador FFmpeg</string>
     <string name="global_content_scale">Escala de contenido predeterminada</string>
     <string name="install_update">Instalar actualización</string>
-    <string name="max_homepage_items">Máximo de elementos por fila en inicio</string>
+    <string name="max_homepage_items">Elementos máximos en filas de inicio</string>
     <string name="nav_drawer_pins_summary">Elige los elementos predeterminados que se mostrarán; los demás permanecerán ocultos</string>
-    <string name="nav_drawer_pins">Personalizar los elementos del panel de navegación</string>
+    <string name="nav_drawer_pins">Personalizar elementos del panel de navegación</string>
     <string name="nav_drawer_switch_on_focus_summary_off">Clic para cambiar de página</string>
     <string name="nav_drawer_switch_on_focus">Cambiar páginas del menú al enfocar</string>
     <string name="pass_out_protection">Protección contra inactividad</string>
@@ -303,7 +303,7 @@
     <string name="font">Fuente</string>
     <string name="background">Fondo</string>
     <string name="official_rating">Clasificación parental</string>
-    <string name="ends_at">Termina en %1$s</string>
+    <string name="ends_at">Termina a las %1$s</string>
     <string name="enter_server_address">Introduzca la dirección del servidor</string>
     <string name="no_servers_found">No se encontraron servidores</string>
     <string name="media_information">Información multimedia</string>
@@ -385,13 +385,13 @@
     <string name="voice_error_client">Error de reconocimiento de voz</string>
     <string name="voice_error_permissions">Se requiere permiso para el micrófono</string>
     <string name="voice_error_network">Error de red</string>
-    <string name="voice_error_network_timeout">Tiempo de espera agotado de red</string>
+    <string name="voice_error_network_timeout">Tiempo de espera de red agotado</string>
     <string name="voice_error_no_match">No se reconoce el habla</string>
     <string name="voice_error_busy">Reconocimiento de voz ocupado</string>
     <string name="voice_error_server">Error de servidor</string>
     <string name="voice_error_speech_timeout">No se detecta voz</string>
     <string name="voice_error_unknown">Error desconocido</string>
-    <string name="voice_error_start_failed">No se pudo iniciar el reconocimiento de voz</string>
+    <string name="voice_error_start_failed">Error al iniciar el reconocimiento de voz</string>
     <string name="voice_error_timeout">Se agotó el tiempo de espera para el reconocimiento de voz</string>
     <string name="retry">Reintentar</string>
     <string name="resolution_switching">Cambio de resolución</string>
@@ -421,4 +421,5 @@
     <string name="upcoming_tv">Próximos programas de televisión</string>
     <string name="request_4k">Solicitar en 4K</string>
     <string name="software_decoding_av1">Decodificación por software AV1</string>
+    <string name="upgrade_mpv_toast">MPV es ahora el reproductor por defecto para HDR.\nPuedes cambiar esto en los ajustes.</string>
 </resources>
