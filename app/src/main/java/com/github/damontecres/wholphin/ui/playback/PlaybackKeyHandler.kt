@@ -9,6 +9,10 @@ import androidx.media3.common.Player
 import androidx.media3.common.util.Util
 import com.github.damontecres.wholphin.ui.seekBack
 import com.github.damontecres.wholphin.ui.seekForward
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlin.time.Duration
 
 /**
@@ -27,9 +31,103 @@ class PlaybackKeyHandler(
     private val onInteraction: () -> Unit,
     private val onStop: () -> Unit,
     private val onPlaybackDialogTypeClick: (PlaybackDialogType) -> Unit,
+    private val onSeekBarFocusRequest: () -> Unit,
+    private val scope: CoroutineScope,
+    private val isSeekBarFocusPending: () -> Boolean,
+    private val holdToTimelineMs: Long = 3000L,
 ) {
+    private var holdKey: Key? = null
+    private var holdTriggered = false
+    private var holdDownTime = 0L
+    private var holdJob: Job? = null
+
+    private fun isSkipBackKey(key: Key): Boolean =
+        key == Key.DirectionLeft || key == Key.ButtonL1 || key == Key.ButtonL2
+
+    private fun isSkipForwardKey(key: Key): Boolean =
+        key == Key.DirectionRight || key == Key.ButtonR1 || key == Key.ButtonR2
+
+    private fun cancelHoldTimer() {
+        holdJob?.cancel()
+        holdJob = null
+    }
+
+    private fun resetHoldState() {
+        cancelHoldTimer()
+        holdTriggered = false
+        holdKey = null
+        holdDownTime = 0L
+    }
+
+    private fun triggerHold(key: Key) {
+        if (holdTriggered) return
+        holdTriggered = true
+        cancelHoldTimer()
+
+        // Hold should NOT perform a skip. It should only surface controls and move focus to the seek bar.
+        // Request seekbar focus immediately - other buttons will be disabled until focus is acquired
+        controllerViewState.showControls()
+        onSeekBarFocusRequest.invoke()
+    }
+
     fun onKeyEvent(it: KeyEvent): Boolean {
         if (it.type == KeyEventType.KeyUp) onInteraction.invoke()
+
+        // Always clean up hold state on key-up of the held key.
+        // If the hold triggered, consume key-up so we don't also run the tap-skip behaviour.
+        if (it.type == KeyEventType.KeyUp && holdKey == it.key) {
+            val wasHoldTriggered = holdTriggered
+            resetHoldState()
+            if (wasHoldTriggered) return true
+            // If hold did NOT trigger, fall through so a quick tap still performs a skip.
+        }
+
+        // While we are trying to focus the seek bar, swallow left/right so they can't
+        // navigate focus away from the seekbar before it gets focused
+        if (
+            controllerViewState.controlsVisible &&
+                isSeekBarFocusPending.invoke() &&
+                (isSkipBack(it) || isSkipForward(it))
+        ) {
+            return true
+        }
+
+        if (it.type == KeyEventType.KeyDown) {
+            if (
+                controlsEnabled &&
+                    !controllerViewState.controlsVisible &&
+                    skipWithLeftRight &&
+                    (isSkipBack(it) || isSkipForward(it))
+            ) {
+                val nativeEvent = it.nativeKeyEvent
+                val key = it.key
+
+                // Start / refresh the hold timer for this physical key press
+                if (holdKey != key || holdDownTime != nativeEvent.downTime) {
+                    resetHoldState()
+                    holdKey = key
+                    holdDownTime = nativeEvent.downTime
+                    holdJob =
+                        scope.launch {
+                            delay(holdToTimelineMs)
+                            if (!holdTriggered && holdKey == key && holdDownTime == nativeEvent.downTime) {
+                                triggerHold(key)
+                            }
+                        }
+                }
+
+                // If the system is already generating repeat events, trigger as soon as we cross the threshold.
+                val heldMs = nativeEvent.eventTime - nativeEvent.downTime
+                if (nativeEvent.repeatCount > 0 && heldMs >= holdToTimelineMs) {
+                    triggerHold(key)
+                }
+
+                // Consume left/right key-downs ONLY while controls are hidden
+                // Once controls are visible, let the events through so the seekbar can handle them
+                return true
+            }
+            return false
+        }
 
         var result = true
         if (!controlsEnabled) {

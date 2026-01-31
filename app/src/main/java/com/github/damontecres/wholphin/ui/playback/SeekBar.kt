@@ -38,6 +38,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
@@ -46,7 +48,6 @@ import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.unit.dp
 import androidx.tv.material3.MaterialTheme
-import com.github.damontecres.wholphin.ui.handleDPadKeyEvents
 import kotlinx.coroutines.FlowPreview
 import kotlin.time.Duration
 
@@ -59,6 +60,7 @@ fun SteppedSeekBarImpl(
     controllerViewState: ControllerViewState,
     modifier: Modifier = Modifier,
     intervals: Int = 10,
+    focusRequester: FocusRequester? = null,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
     enabled: Boolean = true,
 ) {
@@ -94,6 +96,7 @@ fun SteppedSeekBarImpl(
             seek(seekProgress)
         },
         interactionSource = interactionSource,
+        focusRequester = focusRequester,
         modifier = modifier,
     )
 }
@@ -109,6 +112,7 @@ fun IntervalSeekBarImpl(
     seekBack: Duration,
     seekForward: Duration,
     modifier: Modifier = Modifier,
+    focusRequester: FocusRequester? = null,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
     enabled: Boolean = true,
 ) {
@@ -142,6 +146,7 @@ fun IntervalSeekBarImpl(
             onSeek(seekPositionMs)
         },
         interactionSource = interactionSource,
+        focusRequester = focusRequester,
         modifier = modifier,
     )
 }
@@ -156,6 +161,7 @@ fun SeekBarDisplay(
     interactionSource: MutableInteractionSource,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
+    focusRequester: FocusRequester? = null,
 ) {
     val color = MaterialTheme.colorScheme.border
     val onSurface = MaterialTheme.colorScheme.onSurface
@@ -175,6 +181,12 @@ fun SeekBarDisplay(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
+        val focusModifier =
+            if (focusRequester != null) {
+                Modifier.focusRequester(focusRequester)
+            } else {
+                Modifier
+            }
         Canvas(
             modifier =
                 Modifier
@@ -182,14 +194,21 @@ fun SeekBarDisplay(
                     .height(animatedIndicatorHeight)
                     .padding(horizontal = 4.dp)
                     .onPreviewKeyEvent { event ->
-                        val repeatCount = event.nativeKeyEvent.repeatCount
-                        val trigger = event.type == KeyEventType.KeyUp || repeatCount > 0
+                        // Only handle key events when the SeekBar has focus
+                        // Otherwise let them bubble up to trigger focus requests
+                        if (!isFocused) {
+                            return@onPreviewKeyEvent false
+                        }
 
+                        val repeatCount = event.nativeKeyEvent.repeatCount
                         when (event.nativeKeyEvent.keyCode) {
                             KeyEvent.KEYCODE_DPAD_LEFT, KeyEvent.KEYCODE_SYSTEM_NAVIGATION_LEFT -> {
                                 if (event.type == KeyEventType.KeyUp) {
+                                    if (leftRepeatCount == 0) {
+                                        onLeft.invoke(1)
+                                    }
                                     leftRepeatCount = 0
-                                } else if (trigger) {
+                                } else if (repeatCount > 0) {
                                     leftRepeatCount = repeatCount
                                     val multiplier = calculateMultiplier(repeatCount, durationMinutes)
                                     onLeft.invoke(multiplier)
@@ -199,8 +218,11 @@ fun SeekBarDisplay(
 
                             KeyEvent.KEYCODE_DPAD_RIGHT, KeyEvent.KEYCODE_SYSTEM_NAVIGATION_RIGHT -> {
                                 if (event.type == KeyEventType.KeyUp) {
+                                    if (rightRepeatCount == 0) {
+                                        onRight.invoke(1)
+                                    }
                                     rightRepeatCount = 0
-                                } else if (trigger) {
+                                } else if (repeatCount > 0) {
                                     rightRepeatCount = repeatCount
                                     val multiplier = calculateMultiplier(repeatCount, durationMinutes)
                                     onRight.invoke(multiplier)
@@ -209,7 +231,7 @@ fun SeekBarDisplay(
                             }
                         }
                         false
-                    }.focusable(enabled = enabled, interactionSource = interactionSource),
+                    }.then(focusModifier).focusable(enabled = enabled, interactionSource = interactionSource),
             onDraw = {
                 val yOffset = size.height.div(2)
                 drawLine(

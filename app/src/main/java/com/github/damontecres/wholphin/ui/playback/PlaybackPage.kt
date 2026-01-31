@@ -41,6 +41,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
@@ -210,6 +211,8 @@ fun PlaybackPageContent(
     val scaledModifier =
         Modifier.resizeWithContentScale(contentScale, presentationState.videoSizeDp)
     val focusRequester = remember { FocusRequester() }
+    val seekBarFocusRequester = remember { FocusRequester() }
+    var seekBarFocusOnShow by remember { mutableStateOf(false) }
     val playPauseState = rememberPlayPauseButtonState(player)
     val seekBarState = rememberSeekBarState(player, scope)
 
@@ -248,6 +251,11 @@ fun PlaybackPageContent(
                 viewModel.navigationManager.goBack()
             },
             onPlaybackDialogTypeClick = { playbackDialog = it },
+            onSeekBarFocusRequest = {
+                seekBarFocusOnShow = true
+            },
+            scope = scope,
+            isSeekBarFocusPending = { seekBarFocusOnShow },
         )
 
     val onPlaybackActionClick: (PlaybackAction) -> Unit = {
@@ -318,7 +326,7 @@ fun PlaybackPageContent(
                 Modifier
                     .fillMaxSize(playerSize)
                     .align(Alignment.TopCenter)
-                    .onKeyEvent(keyHandler::onKeyEvent)
+                    .onPreviewKeyEvent(keyHandler::onKeyEvent)
                     .focusRequester(focusRequester)
                     .focusable(),
         ) {
@@ -391,6 +399,11 @@ fun PlaybackPageContent(
                     onPlaybackActionClick = onPlaybackActionClick,
                     onClickPlaybackDialogType = { playbackDialog = it },
                     onSeekBarChange = seekBarState::onValueChange,
+                    seekBarFocusRequester = seekBarFocusRequester,
+                    shouldFocusSeekBar = seekBarFocusOnShow,
+                    onSeekBarFocusConsumed = {
+                        seekBarFocusOnShow = false
+                    },
                     showDebugInfo = showDebugInfo,
                     currentPlayback = currentPlayback,
                     chapters = mediaInfo?.chapters ?: listOf(),

@@ -106,6 +106,9 @@ fun PlaybackOverlay(
     playlist: Playlist = Playlist(listOf(), 0),
     onClickPlaylist: (BaseItem) -> Unit = {},
     seekBarInteractionSource: MutableInteractionSource = remember { MutableInteractionSource() },
+    seekBarFocusRequester: FocusRequester = remember { FocusRequester() },
+    shouldFocusSeekBar: Boolean = false,
+    onSeekBarFocusConsumed: () -> Unit = {},
 ) {
     val seekBarFocused by seekBarInteractionSource.collectIsFocusedAsState()
     // Will be used for preview/trick play images
@@ -144,7 +147,13 @@ fun PlaybackOverlay(
         }
 
     Box(
-        modifier = modifier,
+        modifier =
+            modifier.onPreviewKeyEvent { event ->
+                if (shouldFocusSeekBar && !seekBarFocused && (isSkipBack(event) || isSkipForward(event))) {
+                    return@onPreviewKeyEvent true
+                }
+                false
+            },
         contentAlignment = Alignment.BottomCenter,
     ) {
         AnimatedVisibility(
@@ -203,6 +212,9 @@ fun PlaybackOverlay(
                         seekProgressMs = it
                     },
                     seekBarInteractionSource = seekBarInteractionSource,
+                    seekBarFocusRequester = seekBarFocusRequester,
+                    shouldFocusSeekBar = shouldFocusSeekBar,
+                    onSeekBarFocusConsumed = onSeekBarFocusConsumed,
                     nextState = nextState,
                     onNextStateFocus = {
                         nextState?.let { state = it }
@@ -523,6 +535,9 @@ fun Controller(
     modifier: Modifier = Modifier,
     subtitle: String? = null,
     seekBarInteractionSource: MutableInteractionSource = remember { MutableInteractionSource() },
+    seekBarFocusRequester: FocusRequester = remember { FocusRequester() },
+    shouldFocusSeekBar: Boolean = false,
+    onSeekBarFocusConsumed: () -> Unit = {},
     onNextStateFocus: () -> Unit = {},
 ) {
     Column(
@@ -596,6 +611,9 @@ fun Controller(
             nextEnabled = nextEnabled,
             seekEnabled = seekEnabled,
             seekBarInteractionSource = seekBarInteractionSource,
+            seekBarFocusRequester = seekBarFocusRequester,
+            shouldFocusSeekBar = shouldFocusSeekBar,
+            onSeekBarFocusConsumed = onSeekBarFocusConsumed,
             seekBarIntervals = 16,
             seekBack = seekBack,
             seekForward = seekForward,
