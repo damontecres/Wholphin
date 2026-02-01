@@ -389,4 +389,5 @@
     <string name="request">Minta</string>
     <string name="pending">Tertunda</string>
     <string name="software_decoding_av1">Dekode perangkat lunak AV1</string>
+    <string name="upgrade_mpv_toast">MPV sekarang adalah pemutar bawaan kecuali konten HDR.\nPerubahan dapat dilakukan di menu pengaturan.</string>
 </resources>
