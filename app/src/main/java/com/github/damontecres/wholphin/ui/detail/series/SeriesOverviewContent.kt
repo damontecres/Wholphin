@@ -46,6 +46,7 @@ import androidx.compose.ui.unit.dp
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.ChosenStreams
 import com.github.damontecres.wholphin.data.model.BaseItem
+
 import com.github.damontecres.wholphin.data.model.Person
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.AspectRatios
@@ -266,6 +267,8 @@ fun SeriesOverviewContent(
                                             },
                                     interactionSource = interactionSource,
                                     cardHeight = 120.dp,
+                                    spoilerMode = preferences.appPreferences.interfacePreferences.episodeThumbnailSpoilerMode,
+                                    isTitleHidden = preferences.appPreferences.interfacePreferences.hideUnwatchedEpisodeTitles && episode?.played == false,
                                 )
                             }
                         }

@@ -370,6 +370,14 @@
     <string name="discard_change">Discard changes?</string>
     <string name="subtitle_margin">Margin</string>
     <string name="verbose_logging">Verbose logging</string>
+    <string name="hide_unwatched_movie_overviews">Hide unwatched movie overviews</string>
+    <string name="hide_unwatched_episode_overviews">Hide unwatched episode overviews</string>
+    <string name="hide_unwatched_episode_titles">Hide unwatched episode titles</string>
+    <string name="episode_thumbnail_spoiler_mode">Episode thumbnail protection</string>
+    <string name="spoiler_protection">Spoiler Protection</string>
+    <string name="unwatched_spoiler_hidden">Overview hidden</string>
+    <string name="title_hidden">Title hidden</string>
+    <string name="no_overview">No overview</string>
     <string name="enter_pin">Enter PIN</string>
     <string name="sign_in_auto">Sign in automatically</string>
     <string name="use_server_credentials">Login via server</string>
@@ -561,6 +569,11 @@
         <item>Image with dynamic color</item>
         <item>Image only</item>
         <item>None</item>
+    </string-array>
+    <string-array name="episode_spoiler_options">
+        <item>Show episode thumbnail</item>
+        <item>Blur episode thumbnail</item>
+        <item>Use series thumbnail</item>
     </string-array>
 
 </resources>

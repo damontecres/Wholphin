@@ -22,6 +22,7 @@ import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.ChosenStreams
 import com.github.damontecres.wholphin.data.model.BaseItem
+
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.components.GenreText
 import com.github.damontecres.wholphin.ui.components.OverviewText
@@ -91,11 +92,13 @@ fun MovieDetailsHeader(
 
             // Description
             dto.overview?.let { overview ->
+                val isOverviewHidden = movie.shouldHideOverview(preferences)
                 OverviewText(
                     overview = overview,
                     maxLines = 3,
                     onClick = overviewOnClick,
                     textBoxHeight = Dp.Unspecified,
+                    isHidden = isOverviewHidden,
                     modifier =
                         Modifier.onFocusChanged {
                             if (it.isFocused) {

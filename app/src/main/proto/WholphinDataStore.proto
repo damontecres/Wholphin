@@ -142,6 +142,12 @@ enum BackdropStyle{
   BACKDROP_NONE = 2;
 }
 
+enum EpisodeThumbnailSpoilerMode {
+  SPOILER_SHOW = 0;
+  SPOILER_BLUR = 1;
+  SPOILER_SERIES_THUMBNAIL = 2;
+}
+
 message InterfacePreferences {
   ThemeSongVolume play_theme_songs = 1;
   bool remember_selected_tab = 2;
@@ -152,6 +158,10 @@ message InterfacePreferences {
   SubtitlePreferences subtitles_preferences = 7;
   LiveTvPreferences live_tv_preferences = 8;
   BackdropStyle backdrop_style = 9;
+  bool hide_unwatched_movie_overviews = 10;
+  bool hide_unwatched_episode_overviews = 11;
+  EpisodeThumbnailSpoilerMode episode_thumbnail_spoiler_mode = 12;
+  bool hide_unwatched_episode_titles = 13;
 }
 
 message AdvancedPreferences {

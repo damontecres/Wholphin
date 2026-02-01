@@ -159,7 +159,7 @@ fun RecommendedContent(
                     viewModel.navigationManager.navigateTo(Destination.Playback(item))
                 },
                 onFocusPosition = onFocusPosition,
-                showClock = preferences.appPreferences.interfacePreferences.showClock,
+                preferences = preferences,
                 onUpdateBackdrop = viewModel::updateBackdrop,
                 modifier = modifier,
             )

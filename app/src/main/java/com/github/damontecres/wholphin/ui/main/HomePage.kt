@@ -36,6 +36,7 @@ import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -44,6 +45,7 @@ import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.BaseItem
+
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.AspectRatios
 import com.github.damontecres.wholphin.ui.Cards
@@ -55,6 +57,7 @@ import com.github.damontecres.wholphin.ui.components.DialogPopup
 import com.github.damontecres.wholphin.ui.components.EpisodeName
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.LoadingPage
+import com.github.damontecres.wholphin.ui.components.OverviewText
 import com.github.damontecres.wholphin.ui.components.QuickDetails
 import com.github.damontecres.wholphin.ui.data.AddPlaylistViewModel
 import com.github.damontecres.wholphin.ui.data.RowColumn
@@ -151,7 +154,7 @@ fun HomePage(
                     viewModel.navigationManager.navigateTo(Destination.Playback(item))
                 },
                 loadingState = refreshing,
-                showClock = preferences.appPreferences.interfacePreferences.showClock,
+                preferences = preferences,
                 onUpdateBackdrop = viewModel::updateBackdrop,
                 modifier = modifier,
             )
@@ -188,7 +191,7 @@ fun HomePageContent(
     onClickItem: (RowColumn, BaseItem) -> Unit,
     onLongClickItem: (RowColumn, BaseItem) -> Unit,
     onClickPlay: (RowColumn, BaseItem) -> Unit,
-    showClock: Boolean,
+    preferences: UserPreferences,
     onUpdateBackdrop: (BaseItem) -> Unit,
     modifier: Modifier = Modifier,
     onFocusPosition: ((RowColumn) -> Unit)? = null,
@@ -234,6 +237,7 @@ fun HomePageContent(
         Column(modifier = Modifier.fillMaxSize()) {
             HomePageHeader(
                 item = focusedItem,
+                preferences = preferences,
                 modifier =
                     Modifier
                         .padding(top = 48.dp, bottom = 32.dp, start = 32.dp)
@@ -336,6 +340,7 @@ fun HomePageContent(
                                                     ?: 0.0,
                                             onClick = onClick,
                                             onLongClick = onLongClick,
+                                            isTitleHidden = item?.shouldHideTitle(preferences) ?: false,
                                             modifier =
                                                 cardModifier
                                                     .onFocusChanged {
@@ -367,6 +372,7 @@ fun HomePageContent(
                                                     },
                                             interactionSource = null,
                                             cardHeight = Cards.height2x3,
+                                            spoilerMode = preferences.appPreferences.interfacePreferences.episodeThumbnailSpoilerMode,
                                         )
                                     },
                                 )
@@ -383,7 +389,7 @@ fun HomePageContent(
                 Box(
                     modifier =
                         Modifier
-                            .padding(if (showClock) 40.dp else 20.dp)
+                            .padding(if (preferences.appPreferences.interfacePreferences.showClock) 40.dp else 20.dp)
                             .size(40.dp)
                             .align(Alignment.TopEnd),
                 ) {
@@ -399,16 +405,21 @@ fun HomePageContent(
 @Composable
 fun HomePageHeader(
     item: BaseItem?,
+    preferences: UserPreferences,
     modifier: Modifier = Modifier,
 ) {
     item?.let {
         val isEpisode = item.type == BaseItemKind.EPISODE
         val dto = item.data
+        val isOverviewHidden = item.shouldHideOverview(preferences)
+        val isTitleHidden = item.shouldHideTitle(preferences)
         HomePageHeader(
             title = item.title,
             subtitle = if (isEpisode) dto.name else null,
             overview = dto.overview,
             overviewTwoLines = isEpisode,
+            isOverviewHidden = isOverviewHidden,
+            isTitleHidden = isTitleHidden,
             quickDetails = item.ui.quickDetails,
             timeRemaining = item.timeRemainingOrRuntime,
             modifier = modifier,
@@ -422,6 +433,8 @@ fun HomePageHeader(
     subtitle: String?,
     overview: String?,
     overviewTwoLines: Boolean,
+    isOverviewHidden: Boolean,
+    isTitleHidden: Boolean,
     quickDetails: AnnotatedString,
     timeRemaining: Duration?,
     modifier: Modifier = Modifier,
@@ -448,26 +461,21 @@ fun HomePageHeader(
                     .fillMaxHeight(),
         ) {
             subtitle?.let {
-                EpisodeName(it)
+                EpisodeName(it, isHidden = isTitleHidden)
             }
             QuickDetails(quickDetails, timeRemaining)
             val overviewModifier =
                 Modifier
                     .padding(0.dp)
-                    .height(48.dp + if (!overviewTwoLines) 12.dp else 0.dp)
                     .width(400.dp)
-            if (overview.isNotNullOrBlank()) {
-                Text(
-                    text = overview,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    maxLines = if (overviewTwoLines) 2 else 3,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = overviewModifier,
-                )
-            } else {
-                Spacer(overviewModifier)
-            }
+            OverviewText(
+                overview = overview ?: "",
+                maxLines = if (overviewTwoLines) 2 else 3,
+                textBoxHeight = 48.dp + if (!overviewTwoLines) 12.dp else 0.dp,
+                isHidden = isOverviewHidden,
+                enabled = false,
+                modifier = overviewModifier,
+            )
         }
     }
 }

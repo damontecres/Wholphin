@@ -36,10 +36,12 @@ import androidx.tv.material3.Text
 import coil3.compose.AsyncImage
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.BaseItem
+import com.github.damontecres.wholphin.preferences.EpisodeThumbnailSpoilerMode
 import com.github.damontecres.wholphin.ui.AppColors
 import com.github.damontecres.wholphin.ui.Cards
 import com.github.damontecres.wholphin.ui.FontAwesome
 import com.github.damontecres.wholphin.ui.LocalImageUrlService
+import com.github.damontecres.wholphin.ui.dimAndBlur
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.logCoilError
 import org.jellyfin.sdk.model.api.ImageType
@@ -63,15 +65,32 @@ fun ItemCardImage(
     imageType: ImageType = ImageType.PRIMARY,
     useFallbackText: Boolean = true,
     contentScale: ContentScale = ContentScale.Fit,
+    spoilerMode: EpisodeThumbnailSpoilerMode = EpisodeThumbnailSpoilerMode.SPOILER_SHOW,
 ) {
+    val isEpisode = item?.type == org.jellyfin.sdk.model.api.BaseItemKind.EPISODE
+    val isUnwatched = item?.data?.userData?.played == false
+    val isEpisodeThumbnail =
+        isEpisode &&
+            !item.useSeriesForPrimary &&
+            imageType == ImageType.PRIMARY
+
+    val useSeriesThumbnail =
+        isEpisodeThumbnail && isUnwatched && spoilerMode == EpisodeThumbnailSpoilerMode.SPOILER_SERIES_THUMBNAIL
+    val finalBlur =
+        isEpisodeThumbnail && isUnwatched && spoilerMode == EpisodeThumbnailSpoilerMode.SPOILER_BLUR
+
     val imageUrlService = LocalImageUrlService.current
     var size by remember { mutableStateOf(IntSize.Zero) }
     val imageUrl =
-        remember(size, item) {
+        remember(size, item, useSeriesThumbnail) {
             if (size != IntSize.Zero && item != null) {
                 imageUrlService.getItemImageUrl(
-                    item,
-                    imageType,
+                    itemId = item.id,
+                    itemType = item.type,
+                    seriesId = item.data.seriesId,
+                    useSeriesForPrimary = item.useSeriesForPrimary || useSeriesThumbnail,
+                    imageTags = item.data.imageTags.orEmpty(),
+                    imageType = if (useSeriesThumbnail) ImageType.THUMB else imageType,
                     fillWidth = size.width,
                     fillHeight = size.height,
                 )
@@ -97,6 +116,7 @@ fun ItemCardImage(
             },
         useFallbackText = useFallbackText,
         contentScale = contentScale,
+        blur = finalBlur,
     )
 }
 
@@ -113,6 +133,7 @@ fun ItemCardImage(
     modifier: Modifier = Modifier,
     useFallbackText: Boolean = true,
     contentScale: ContentScale = ContentScale.Fit,
+    blur: Boolean = false,
     fallback: @Composable BoxScope.() -> Unit = {
         ItemCardImageFallback(
             name = name,
@@ -138,7 +159,8 @@ fun ItemCardImage(
                 modifier =
                     Modifier
                         .fillMaxSize()
-                        .align(Alignment.TopCenter),
+                        .align(Alignment.TopCenter)
+                        .dimAndBlur(blur),
             )
         } else {
             fallback.invoke(this)

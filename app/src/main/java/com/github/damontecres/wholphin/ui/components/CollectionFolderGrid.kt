@@ -892,6 +892,7 @@ fun CollectionFolderGridContent(
             AnimatedVisibility(viewOptions.showDetails) {
                 HomePageHeader(
                     item = focusedItem,
+                    preferences = preferences,
                     modifier =
                         Modifier
                             .fillMaxWidth()
@@ -937,6 +938,8 @@ fun CollectionFolderGridContent(
                                 imageAspectRatio = viewOptions.aspectRatio.ratio,
                                 imageType = viewOptions.imageType,
                                 showTitle = viewOptions.showTitles,
+                                spoilerMode = preferences.appPreferences.interfacePreferences.episodeThumbnailSpoilerMode,
+                                isTitleHidden = preferences.appPreferences.interfacePreferences.hideUnwatchedEpisodeTitles && item?.type == BaseItemKind.EPISODE && item?.played == false,
                                 modifier = mod,
                             )
                         },

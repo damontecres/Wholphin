@@ -39,6 +39,7 @@ import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -49,7 +50,10 @@ import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import androidx.tv.material3.surfaceColorAtElevation
 import com.github.damontecres.wholphin.R
+import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.data.model.BaseItem
+
+import org.jellyfin.sdk.model.api.BaseItemKind
 import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.ui.DefaultItemFields
@@ -125,6 +129,7 @@ class PlaylistViewModel
 
 @Composable
 fun PlaylistDetails(
+    preferences: UserPreferences,
     destination: Destination.MediaItem,
     modifier: Modifier = Modifier,
     viewModel: PlaylistViewModel = hiltViewModel(),
@@ -153,6 +158,7 @@ fun PlaylistDetails(
                 val focusRequester = remember { FocusRequester() }
                 LaunchedEffect(Unit) { focusRequester.tryRequestFocus() }
                 PlaylistDetailsContent(
+                    preferences = preferences,
                     playlist = it,
                     items = items,
                     focusRequester = focusRequester,
@@ -218,6 +224,7 @@ fun PlaylistDetails(
 
 @Composable
 fun PlaylistDetailsContent(
+    preferences: UserPreferences,
     playlist: BaseItem,
     items: List<BaseItem?>,
     onClickIndex: (Int, BaseItem) -> Unit,
@@ -256,6 +263,7 @@ fun PlaylistDetailsContent(
                         .fillMaxWidth(),
             ) {
                 PlaylistDetailsHeader(
+                    preferences = preferences,
                     focusedItem = focusedItem,
                     onClickPlay = onClickPlay,
                     playButtonFocusRequester = playButtonFocusRequester,
@@ -296,6 +304,7 @@ fun PlaylistDetailsContent(
                     ) {
                         itemsIndexed(items) { index, item ->
                             PlaylistItem(
+                                preferences = preferences,
                                 item = item,
                                 index = index,
                                 onClick = {
@@ -335,6 +344,7 @@ fun PlaylistDetailsContent(
 
 @Composable
 fun PlaylistDetailsHeader(
+    preferences: UserPreferences,
     focusedItem: BaseItem?,
     onClickPlay: (shuffle: Boolean) -> Unit,
     playButtonFocusRequester: FocusRequester,
@@ -370,17 +380,20 @@ fun PlaylistDetailsHeader(
             color = MaterialTheme.colorScheme.onSurface,
             style = MaterialTheme.typography.headlineSmall,
         )
+        val isOverviewHidden = focusedItem?.shouldHideOverview(preferences) ?: false
         OverviewText(
             overview = focusedItem?.data?.overview ?: "",
             maxLines = 10,
             onClick = {},
             enabled = false,
+            isHidden = isOverviewHidden,
         )
     }
 }
 
 @Composable
 fun PlaylistItem(
+    preferences: UserPreferences,
     item: BaseItem?,
     index: Int,
     onClick: () -> Unit,
@@ -389,6 +402,7 @@ fun PlaylistItem(
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
 ) {
     val focused by interactionSource.collectIsFocusedAsState()
+    val isTitleHidden = item?.shouldHideTitle(preferences) ?: false
     ListItem(
         selected = false,
         onClick = onClick,
@@ -396,8 +410,9 @@ fun PlaylistItem(
         interactionSource = interactionSource,
         headlineContent = {
             Text(
-                text = item?.title ?: "",
+                text = if (isTitleHidden) stringResource(R.string.title_hidden) else (item?.title ?: ""),
                 style = MaterialTheme.typography.titleLarge,
+                fontStyle = if (isTitleHidden) FontStyle.Italic else FontStyle.Normal,
                 modifier = Modifier.enableMarquee(focused),
             )
         },
@@ -445,6 +460,7 @@ fun PlaylistItem(
                     unwatchedCount = item?.data?.userData?.unplayedItemCount ?: -1,
                     watchedPercent = 0.0,
                     numberOfVersions = item?.data?.mediaSourceCount ?: 0,
+                    spoilerMode = preferences.appPreferences.interfacePreferences.episodeThumbnailSpoilerMode,
                     modifier = Modifier.width(160.dp),
                     useFallbackText = false,
                 )

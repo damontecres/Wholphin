@@ -113,6 +113,10 @@ class AppPreferencesSerializer
                                             colorCodePrograms =
                                                 AppPreference.LiveTvColorCodePrograms.defaultValue
                                         }.build()
+                                hideUnwatchedMovieOverviews = AppPreference.HideUnwatchedMovieOverviews.defaultValue
+                                hideUnwatchedEpisodeOverviews = AppPreference.HideUnwatchedEpisodeOverviews.defaultValue
+                                hideUnwatchedEpisodeTitles = AppPreference.HideUnwatchedEpisodeTitles.defaultValue
+                                episodeThumbnailSpoilerMode = AppPreference.EpisodeThumbnailSpoilerModePref.defaultValue
                             }.build()
 
                     advancedPreferences =

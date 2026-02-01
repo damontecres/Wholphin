@@ -27,7 +27,11 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.tv.material3.Card
 import androidx.tv.material3.CardDefaults
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontStyle
 import androidx.tv.material3.Text
+import com.github.damontecres.wholphin.R
+import com.github.damontecres.wholphin.preferences.EpisodeThumbnailSpoilerMode
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.ui.AppColors
 import com.github.damontecres.wholphin.ui.AspectRatios
@@ -44,6 +48,8 @@ fun EpisodeCard(
     imageHeight: Dp = Dp.Unspecified,
     imageWidth: Dp = Dp.Unspecified,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
+    spoilerMode: EpisodeThumbnailSpoilerMode = EpisodeThumbnailSpoilerMode.SPOILER_SHOW,
+    isTitleHidden: Boolean = false,
 ) {
     val dto = item?.data
     val focused by interactionSource.collectIsFocusedAsState()
@@ -99,6 +105,7 @@ fun EpisodeCard(
                     watchedPercent = dto?.userData?.playedPercentage,
                     numberOfVersions = dto?.mediaSourceCount ?: 0,
                     useFallbackText = false,
+                    spoilerMode = spoilerMode,
                     modifier =
                         Modifier
                             .fillMaxSize(),
@@ -137,8 +144,9 @@ fun EpisodeCard(
                         .enableMarquee(focusedAfterDelay),
             )
             Text(
-                text = item?.name ?: "",
+                text = if (isTitleHidden) stringResource(R.string.title_hidden) else (item?.name ?: ""),
                 maxLines = 1,
+                fontStyle = if (isTitleHidden) FontStyle.Italic else FontStyle.Normal,
                 textAlign = TextAlign.Center,
                 modifier =
                     Modifier

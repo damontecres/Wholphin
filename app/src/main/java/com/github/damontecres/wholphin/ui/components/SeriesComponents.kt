@@ -2,6 +2,8 @@ package com.github.damontecres.wholphin.ui.components
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.sp
@@ -29,11 +31,13 @@ fun SeriesName(
 fun EpisodeName(
     episodeName: String?,
     modifier: Modifier = Modifier,
+    isHidden: Boolean = false,
 ) {
     Text(
-        text = episodeName ?: "",
+        text = if (isHidden) stringResource(com.github.damontecres.wholphin.R.string.title_hidden) else (episodeName ?: ""),
         color = MaterialTheme.colorScheme.onSurface,
         style = MaterialTheme.typography.headlineSmall,
+        fontStyle = if (isHidden) FontStyle.Italic else FontStyle.Normal,
         fontSize = 20.sp,
         maxLines = 1,
         overflow = TextOverflow.Ellipsis,
@@ -45,4 +49,5 @@ fun EpisodeName(
 fun EpisodeName(
     episode: BaseItemDto?,
     modifier: Modifier = Modifier,
-) = EpisodeName(episode?.episodeTitle ?: episode?.name, modifier)
+    isHidden: Boolean = false,
+) = EpisodeName(episode?.episodeTitle ?: episode?.name, modifier, isHidden)

@@ -405,6 +405,8 @@ fun SearchPage(
                     },
                     onLongClick = onLongClick,
                     imageHeight = 140.dp,
+                    spoilerMode = userPreferences.appPreferences.interfacePreferences.episodeThumbnailSpoilerMode,
+                    isTitleHidden = userPreferences.appPreferences.interfacePreferences.hideUnwatchedEpisodeTitles && (item?.played == false),
                     modifier = mod.padding(horizontal = 8.dp),
                 )
             },
