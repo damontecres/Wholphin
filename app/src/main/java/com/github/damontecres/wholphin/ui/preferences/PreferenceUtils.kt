@@ -8,9 +8,9 @@ import kotlinx.serialization.Serializable
 /**
  * A group of preferences
  */
-data class PreferenceGroup(
+data class PreferenceGroup<T>(
     @param:StringRes val title: Int,
-    val preferences: List<AppPreference<AppPreferences, out Any?>>,
+    val preferences: List<AppPreference<T, out Any?>>,
     val conditionalPreferences: List<ConditionalPreferences> = listOf(),
 )
 
@@ -34,7 +34,6 @@ sealed interface PreferenceValidation {
 enum class PreferenceScreenOption {
     BASIC,
     ADVANCED,
-    USER_INTERFACE,
     SUBTITLES,
     EXO_PLAYER,
     MPV,

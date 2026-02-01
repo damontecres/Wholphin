@@ -199,4 +199,7 @@ data class HomeRowViewOptions(
     val imageType: ViewOptionImageType = ViewOptionImageType.PRIMARY,
     val showTitles: Boolean = false,
     val useSeries: Boolean = true,
+    val episodeContentScale: PrefContentScale = PrefContentScale.FIT,
+    val episodeAspectRatio: AspectRatio = AspectRatio.TALL,
+    val episodeImageType: ViewOptionImageType = ViewOptionImageType.PRIMARY,
 )

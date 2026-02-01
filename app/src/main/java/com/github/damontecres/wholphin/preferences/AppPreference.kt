@@ -976,8 +976,6 @@ val basicPreferences =
         ),
     )
 
-val uiPreferences = listOf<PreferenceGroup>()
-
 private val ExoPlayerSettings =
     listOf(
         AppPreference.FfmpegPreference,

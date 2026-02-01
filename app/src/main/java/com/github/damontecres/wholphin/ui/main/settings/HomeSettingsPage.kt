@@ -151,8 +151,21 @@ fun HomeSettingsPage(
                                 val row =
                                     state.rows
                                         .first { it.id == dest.rowId }
+                                val preferenceOptions =
+                                    remember(row.config) {
+                                        when (row.config) {
+                                            is HomeRowConfig.ContinueWatching,
+                                            is HomeRowConfig.ContinueWatchingCombined,
+                                            -> Options.OPTIONS_EPISODES
+
+                                            is HomeRowConfig.Genres -> Options.GENRE_OPTIONS
+
+                                            else -> Options.OPTIONS
+                                        }
+                                    }
                                 HomeRowSettings(
                                     title = row.title,
+                                    preferenceOptions = preferenceOptions,
                                     viewOptions = row.config.viewOptions,
                                     onViewOptionsChange = {
                                         viewModel.updateViewOptions(dest.rowId, it)
@@ -160,7 +173,6 @@ fun HomeSettingsPage(
                                     onApplyApplyAll = {
                                         viewModel.updateViewOptionsForAll(row.config.viewOptions)
                                     },
-                                    userGenreSettings = row.config is HomeRowConfig.Genres,
                                     modifier = destModifier,
                                 )
                             }

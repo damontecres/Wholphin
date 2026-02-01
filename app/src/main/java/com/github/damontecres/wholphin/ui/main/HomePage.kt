@@ -371,12 +371,36 @@ fun HomePageContent(
                                             }
 
                                             else -> {
+                                                val imageType =
+                                                    remember(item, viewOptions) {
+                                                        if (item?.type == BaseItemKind.EPISODE) {
+                                                            viewOptions.episodeImageType.imageType
+                                                        } else {
+                                                            viewOptions.imageType.imageType
+                                                        }
+                                                    }
+                                                val ratio =
+                                                    remember(item, viewOptions) {
+                                                        if (item?.type == BaseItemKind.EPISODE) {
+                                                            viewOptions.episodeAspectRatio.ratio
+                                                        } else {
+                                                            viewOptions.aspectRatio.ratio
+                                                        }
+                                                    }
+                                                val scale =
+                                                    remember(item, viewOptions) {
+                                                        if (item?.type == BaseItemKind.EPISODE) {
+                                                            viewOptions.episodeContentScale.scale
+                                                        } else {
+                                                            viewOptions.contentScale.scale
+                                                        }
+                                                    }
                                                 BannerCard(
                                                     name = item?.data?.seriesName ?: item?.name,
                                                     item = item,
-                                                    aspectRatio = viewOptions.aspectRatio.ratio,
-                                                    imageType = viewOptions.imageType.imageType,
-                                                    imageContentScale = viewOptions.contentScale.scale,
+                                                    aspectRatio = ratio,
+                                                    imageType = imageType,
+                                                    imageContentScale = scale,
                                                     cornerText = item?.ui?.episdodeUnplayedCornerText,
                                                     played = item?.data?.userData?.played ?: false,
                                                     favorite = item?.favorite ?: false,

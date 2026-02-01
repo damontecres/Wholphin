@@ -11,6 +11,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.surfaceColorAtElevation
@@ -25,54 +26,60 @@ import com.github.damontecres.wholphin.preferences.PrefContentScale
 import com.github.damontecres.wholphin.ui.AspectRatio
 import com.github.damontecres.wholphin.ui.Cards
 import com.github.damontecres.wholphin.ui.components.ViewOptionImageType
-import com.github.damontecres.wholphin.ui.components.ViewOptions
 import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.preferences.ComposablePreference
+import com.github.damontecres.wholphin.ui.preferences.PreferenceGroup
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 
 @Composable
 fun HomeRowSettings(
     title: String,
+    preferenceOptions: List<PreferenceGroup<HomeRowViewOptions>>,
     viewOptions: HomeRowViewOptions,
     onViewOptionsChange: (HomeRowViewOptions) -> Unit,
     onApplyApplyAll: () -> Unit,
-    userGenreSettings: Boolean,
     modifier: Modifier = Modifier,
     defaultViewOptions: HomeRowViewOptions = HomeRowViewOptions(),
 ) {
-    val options = if (userGenreSettings) Options.GENRE_OPTIONS else Options.OPTIONS
     val firstFocus = remember { FocusRequester() }
     LaunchedEffect(Unit) { firstFocus.tryRequestFocus() }
     Column(modifier = modifier) {
         TitleText(title)
         LazyColumn {
-            itemsIndexed(options) { index, pref ->
-                pref as AppPreference<HomeRowViewOptions, Any>
-                val interactionSource = remember { MutableInteractionSource() }
-                val value = pref.getter.invoke(viewOptions)
-                ComposablePreference(
-                    preference = pref,
-                    value = value,
-                    onNavigate = {},
-                    onValueChange = { newValue ->
-                        onViewOptionsChange.invoke(pref.setter(viewOptions, newValue))
-                    },
-                    interactionSource = interactionSource,
-                    onClickPreference = { pref ->
-                        if (pref == Options.ViewOptionsReset) {
-                            onViewOptionsChange.invoke(defaultViewOptions)
-                        } else if (pref == Options.ViewOptionsApplyAll) {
-                            onApplyApplyAll.invoke()
-                        }
-                    },
-                    modifier =
-                        Modifier
-                            .background(
-                                MaterialTheme.colorScheme.surfaceColorAtElevation(
-                                    5.dp,
-                                ),
-                            ).ifElse(index == 0, Modifier.focusRequester(firstFocus)),
-                )
+            preferenceOptions.forEachIndexed { groupIndex, prefGroup ->
+                if (preferenceOptions.size > 1) {
+                    item {
+                        TitleText(stringResource(prefGroup.title))
+                    }
+                }
+                itemsIndexed(prefGroup.preferences) { index, pref ->
+                    pref as AppPreference<HomeRowViewOptions, Any>
+                    val interactionSource = remember { MutableInteractionSource() }
+                    val value = pref.getter.invoke(viewOptions)
+                    ComposablePreference(
+                        preference = pref,
+                        value = value,
+                        onNavigate = {},
+                        onValueChange = { newValue ->
+                            onViewOptionsChange.invoke(pref.setter(viewOptions, newValue))
+                        },
+                        interactionSource = interactionSource,
+                        onClickPreference = { pref ->
+                            if (pref == Options.ViewOptionsReset) {
+                                onViewOptionsChange.invoke(defaultViewOptions)
+                            } else if (pref == Options.ViewOptionsApplyAll) {
+                                onApplyApplyAll.invoke()
+                            }
+                        },
+                        modifier =
+                            Modifier
+                                .background(
+                                    MaterialTheme.colorScheme.surfaceColorAtElevation(
+                                        5.dp,
+                                    ),
+                                ).ifElse(index == 0, Modifier.focusRequester(firstFocus)),
+                    )
+                }
             }
         }
     }
@@ -157,33 +164,111 @@ internal object Options {
         )
 
     val ViewOptionsApplyAll =
-        AppClickablePreference<ViewOptions>(
+        AppClickablePreference<HomeRowViewOptions>(
             title = R.string.apply_all_rows,
         )
 
     val ViewOptionsReset =
-        AppClickablePreference<ViewOptions>(
+        AppClickablePreference<HomeRowViewOptions>(
             title = R.string.reset,
+        )
+
+    val ViewOptionsEpisodeContentScale =
+        AppChoicePreference<HomeRowViewOptions, PrefContentScale>(
+            title = R.string.global_content_scale,
+            defaultValue = PrefContentScale.FIT,
+            displayValues = R.array.content_scale,
+            getter = { it.contentScale },
+            setter = { viewOptions, value -> viewOptions.copy(episodeContentScale = value) },
+            indexToValue = { PrefContentScale.forNumber(it) },
+            valueToIndex = { it.number },
+        )
+
+    val ViewOptionsEpisodeAspectRatio =
+        AppChoicePreference<HomeRowViewOptions, AspectRatio>(
+            title = R.string.aspect_ratio,
+            defaultValue = AspectRatio.TALL,
+            displayValues = R.array.aspect_ratios,
+            getter = { it.aspectRatio },
+            setter = { viewOptions, value -> viewOptions.copy(episodeAspectRatio = value) },
+            indexToValue = { AspectRatio.entries[it] },
+            valueToIndex = { it.ordinal },
+        )
+
+    val ViewOptionsEpisodeImageType =
+        AppChoicePreference<HomeRowViewOptions, ViewOptionImageType>(
+            title = R.string.image_type,
+            defaultValue = ViewOptionImageType.PRIMARY,
+            displayValues = R.array.image_types,
+            getter = { it.imageType },
+            setter = { viewOptions, value ->
+                val aspectRatio =
+                    when (value) {
+                        ViewOptionImageType.PRIMARY -> AspectRatio.TALL
+                        ViewOptionImageType.THUMB -> AspectRatio.WIDE
+                    }
+                viewOptions.copy(episodeImageType = value, episodeAspectRatio = aspectRatio)
+            },
+            indexToValue = { ViewOptionImageType.entries[it] },
+            valueToIndex = { it.ordinal },
         )
 
     val OPTIONS =
         listOf(
-            ViewOptionsImageType,
-            ViewOptionsAspectRatio,
-            // TODO
+            PreferenceGroup(
+                title = R.string.general,
+                preferences =
+                    listOf(
+                        ViewOptionsImageType,
+                        ViewOptionsAspectRatio,
+                        // TODO
 //                ViewOptionsShowTitles,
-            ViewOptionsUseSeries,
-            ViewOptionsCardHeight,
-            ViewOptionsSpacing,
-            ViewOptionsContentScale,
+                        ViewOptionsUseSeries,
+                        ViewOptionsCardHeight,
+                        ViewOptionsSpacing,
+                        ViewOptionsContentScale,
 //            ViewOptionsApplyAll,
-            ViewOptionsReset,
+                        ViewOptionsReset,
+                    ),
+            ),
+        )
+
+    val OPTIONS_EPISODES =
+        listOf(
+            PreferenceGroup(
+                title = R.string.general,
+                preferences =
+                    listOf(
+                        ViewOptionsCardHeight,
+                        ViewOptionsSpacing,
+                        ViewOptionsImageType,
+                        ViewOptionsAspectRatio,
+                        ViewOptionsUseSeries,
+                        ViewOptionsContentScale,
+                        ViewOptionsReset,
+                    ),
+            ),
+            PreferenceGroup(
+                title = R.string.for_episodes,
+                preferences =
+                    listOf(
+                        ViewOptionsEpisodeImageType,
+                        ViewOptionsEpisodeContentScale,
+                        ViewOptionsEpisodeAspectRatio,
+                    ),
+            ),
         )
 
     val GENRE_OPTIONS =
         listOf(
-            ViewOptionsCardHeight,
-            ViewOptionsSpacing,
-            ViewOptionsReset,
+            PreferenceGroup(
+                title = R.string.general,
+                preferences =
+                    listOf(
+                        ViewOptionsCardHeight,
+                        ViewOptionsSpacing,
+                        ViewOptionsReset,
+                    ),
+            ),
         )
 }
