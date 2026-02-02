@@ -2,6 +2,7 @@ package com.github.damontecres.wholphin.ui.detail
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusGroup
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
@@ -413,7 +414,11 @@ fun PlaylistDetailsContent(
                                             .surfaceColorAtElevation(1.dp)
                                             .copy(alpha = .75f),
                                         shape = RoundedCornerShape(16.dp),
-                                    ).focusRequester(focusRequester)
+                                    ).focusProperties {
+                                        onExit = {
+                                            playButtonFocusRequester.tryRequestFocus()
+                                        }
+                                    }.focusRequester(focusRequester)
                                     .focusGroup()
                                     .focusRestorer(focus),
                         ) {
@@ -451,12 +456,24 @@ fun PlaylistDetailsContent(
                             }
                         }
                     } else {
-                        Text(
-                            text = stringResource(R.string.no_results),
-                            style = MaterialTheme.typography.titleLarge,
-                            textAlign = TextAlign.Center,
+                        Box(
+                            contentAlignment = Alignment.Center,
                             modifier = Modifier.fillMaxWidth(),
-                        )
+                        ) {
+                            Text(
+                                text = stringResource(R.string.no_results),
+                                style = MaterialTheme.typography.titleLarge,
+                                textAlign = TextAlign.Center,
+                                modifier =
+                                    Modifier
+                                        .focusProperties {
+                                            onExit = {
+                                                playButtonFocusRequester.tryRequestFocus()
+                                            }
+                                        }.focusRequester(focusRequester)
+                                        .focusable(),
+                            )
+                        }
                     }
                 }
             }
@@ -498,7 +515,7 @@ fun PlaylistDetailsHeader(
         }
         Row(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.focusRequester(playButtonFocusRequester),
+            modifier = Modifier,
         ) {
             FilterByButton(
                 filterOptions = DefaultPlaylistItemsOptions,
