@@ -22,6 +22,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -52,6 +53,9 @@ import androidx.tv.material3.surfaceColorAtElevation
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.LibraryDisplayInfoDao
 import com.github.damontecres.wholphin.data.ServerRepository
+import com.github.damontecres.wholphin.data.filter.DefaultPlaylistItemsOptions
+import com.github.damontecres.wholphin.data.filter.FilterValueOption
+import com.github.damontecres.wholphin.data.filter.ItemFilterBy
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.GetItemsFilter
 import com.github.damontecres.wholphin.data.model.LibraryDisplayInfo
@@ -66,6 +70,7 @@ import com.github.damontecres.wholphin.ui.components.DialogPopup
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.ExpandableFaButton
 import com.github.damontecres.wholphin.ui.components.ExpandablePlayButton
+import com.github.damontecres.wholphin.ui.components.FilterByButton
 import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.components.OverviewText
 import com.github.damontecres.wholphin.ui.components.SortByButton
@@ -78,10 +83,10 @@ import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.roundMinutes
 import com.github.damontecres.wholphin.ui.setValueOnMain
 import com.github.damontecres.wholphin.ui.tryRequestFocus
+import com.github.damontecres.wholphin.ui.util.FilterUtils
 import com.github.damontecres.wholphin.ui.util.LocalClock
 import com.github.damontecres.wholphin.util.ApiRequestPager
 import com.github.damontecres.wholphin.util.GetItemsRequestHandler
-import com.github.damontecres.wholphin.util.GetPlaylistItemsRequestHandler
 import com.github.damontecres.wholphin.util.LoadingExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -94,7 +99,6 @@ import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.model.api.ItemSortBy
 import org.jellyfin.sdk.model.api.SortOrder
 import org.jellyfin.sdk.model.api.request.GetItemsRequest
-import org.jellyfin.sdk.model.api.request.GetPlaylistItemsRequest
 import org.jellyfin.sdk.model.extensions.ticks
 import java.util.UUID
 import javax.inject.Inject
@@ -112,11 +116,15 @@ class PlaylistViewModel
     ) : ItemViewModel(api) {
         val loading = MutableLiveData<LoadingState>(LoadingState.Pending)
         val items = MutableLiveData<List<BaseItem?>>(listOf())
-        val sortAndDirection =
-            MutableStateFlow<SortAndDirection>(
-                SortAndDirection(
-                    ItemSortBy.DEFAULT,
-                    SortOrder.ASCENDING,
+        val filterAndSort =
+            MutableStateFlow<FilterAndSort>(
+                FilterAndSort(
+                    filter = GetItemsFilter(),
+                    sortAndDirection =
+                        SortAndDirection(
+                            ItemSortBy.DEFAULT,
+                            SortOrder.ASCENDING,
+                        ),
                 ),
             )
 
@@ -131,25 +139,32 @@ class PlaylistViewModel
                     serverRepository.currentUser.value?.let { user ->
                         libraryDisplayInfoDao.getItem(user, itemId)
                     }
+                val filter = libraryDisplayInfo?.filter ?: GetItemsFilter()
                 val sortAndDirection =
                     libraryDisplayInfo?.sortAndDirection ?: SortAndDirection(
                         ItemSortBy.DEFAULT,
                         SortOrder.ASCENDING,
                     )
-                loadItems(sortAndDirection)
+                loadItems(filter, sortAndDirection)
             }
         }
 
-        fun loadItems(sortAndDirection: SortAndDirection) {
+        fun loadItems(
+            filter: GetItemsFilter,
+            sortAndDirection: SortAndDirection,
+        ) {
             viewModelScope.launchIO {
                 loading.setValueOnMain(LoadingState.Loading)
-                this@PlaylistViewModel.sortAndDirection.update { sortAndDirection }
+                this@PlaylistViewModel.filterAndSort.update {
+                    FilterAndSort(filter, sortAndDirection)
+                }
 
                 serverRepository.currentUser.value?.let { user ->
                     val playlistId = item.value!!.id
                     viewModelScope.launchIO {
                         val libraryDisplayInfo =
                             libraryDisplayInfoDao.getItem(user, itemId)?.copy(
+                                filter = filter,
                                 sort = sortAndDirection.sort,
                                 direction = sortAndDirection.direction,
                             )
@@ -158,42 +173,30 @@ class PlaylistViewModel
                                     itemId = itemId,
                                     sort = sortAndDirection.sort,
                                     direction = sortAndDirection.direction,
-                                    filter = GetItemsFilter(),
+                                    filter = filter,
                                     viewOptions = null,
                                 )
                         libraryDisplayInfoDao.saveItem(libraryDisplayInfo)
                     }
-                    val pager =
-                        if (sortAndDirection.sort == ItemSortBy.DEFAULT) {
-                            val request =
-                                GetPlaylistItemsRequest(
-                                    userId = user.id,
-                                    playlistId = playlistId,
-                                    fields = DefaultItemFields,
-                                )
 
-                            ApiRequestPager(
-                                api,
-                                request,
-                                GetPlaylistItemsRequestHandler,
-                                viewModelScope,
-                            ).init()
-                        } else {
-                            val request =
-                                GetItemsRequest(
-                                    parentId = playlistId,
-                                    userId = user.id,
-                                    fields = DefaultItemFields,
-                                    sortBy = listOf(sortAndDirection.sort),
-                                    sortOrder = listOf(sortAndDirection.direction),
-                                )
-                            ApiRequestPager(
-                                api,
-                                request,
-                                GetItemsRequestHandler,
-                                viewModelScope,
-                            ).init()
-                        }
+                    val request =
+                        filter.applyTo(
+                            GetItemsRequest(
+                                parentId = playlistId,
+                                userId = user.id,
+                                fields = DefaultItemFields,
+                                sortBy = listOf(sortAndDirection.sort),
+                                sortOrder = listOf(sortAndDirection.direction),
+                            ),
+                        )
+                    val pager =
+                        ApiRequestPager(
+                            api,
+                            request,
+                            GetItemsRequestHandler,
+                            viewModelScope,
+                        ).init()
+
                     withContext(Dispatchers.Main) {
                         items.value = pager
                         loading.value = LoadingState.Success
@@ -202,12 +205,26 @@ class PlaylistViewModel
             }
         }
 
+        suspend fun getFilterOptionValues(filterOption: ItemFilterBy<*>): List<FilterValueOption> =
+            FilterUtils.getFilterOptionValues(
+                api,
+                serverRepository.currentUser.value?.id,
+                itemUuid,
+                filterOption,
+            )
+
         fun updateBackdrop(item: BaseItem) {
             viewModelScope.launchIO {
                 backdropService.submit(item)
             }
         }
     }
+
+@Immutable
+data class FilterAndSort(
+    val filter: GetItemsFilter,
+    val sortAndDirection: SortAndDirection,
+)
 
 @Composable
 fun PlaylistDetails(
@@ -222,7 +239,9 @@ fun PlaylistDetails(
     val loading by viewModel.loading.observeAsState(LoadingState.Pending)
     val playlist by viewModel.item.observeAsState(null)
     val items by viewModel.items.observeAsState(listOf())
-    val sortAndDirection by viewModel.sortAndDirection.collectAsState()
+    val filterAndSort by viewModel.filterAndSort.collectAsState()
+    val filter = filterAndSort.filter
+    val sortAndDirection = filterAndSort.sortAndDirection
 
     var longClickDialog by remember { mutableStateOf<DialogParams?>(null) }
 
@@ -259,6 +278,8 @@ fun PlaylistDetails(
                                 itemId = it.id,
                                 startIndex = 0,
                                 shuffle = shuffle,
+                                filter = filterAndSort.filter,
+                                sortAndDirection = filterAndSort.sortAndDirection,
                             ),
                         )
                     },
@@ -284,15 +305,17 @@ fun PlaylistDetails(
                                                     itemId = it.id,
                                                     startIndex = index,
                                                     shuffle = false,
-                                                    sortAndDirection = sortAndDirection.takeIf { it.sort != ItemSortBy.DEFAULT },
+                                                    filter = filterAndSort.filter,
+                                                    sortAndDirection = filterAndSort.sortAndDirection,
                                                 ),
                                             )
                                         },
                                     ),
                             )
                     },
-                    sortAndDirection = sortAndDirection,
-                    onSortChange = viewModel::loadItems,
+                    filterAndSort = filterAndSort,
+                    onFilterAndSortChange = viewModel::loadItems,
+                    getPossibleFilterValues = viewModel::getFilterOptionValues,
                     modifier = modifier,
                 )
             }
@@ -314,8 +337,9 @@ fun PlaylistDetailsContent(
     onLongClickIndex: (Int, BaseItem) -> Unit,
     onClickPlay: (shuffle: Boolean) -> Unit,
     onChangeBackdrop: (BaseItem) -> Unit,
-    sortAndDirection: SortAndDirection,
-    onSortChange: (SortAndDirection) -> Unit,
+    filterAndSort: FilterAndSort,
+    onFilterAndSortChange: (GetItemsFilter, SortAndDirection) -> Unit,
+    getPossibleFilterValues: suspend (ItemFilterBy<*>) -> List<FilterValueOption>,
     modifier: Modifier = Modifier,
     focusRequester: FocusRequester = remember { FocusRequester() },
 ) {
@@ -351,8 +375,10 @@ fun PlaylistDetailsContent(
                     focusedItem = focusedItem,
                     onClickPlay = onClickPlay,
                     playButtonFocusRequester = playButtonFocusRequester,
-                    sortAndDirection = sortAndDirection,
-                    onSortChange = onSortChange,
+                    focusRequester = if (items.isEmpty()) focusRequester else remember { FocusRequester() },
+                    filterAndSort = filterAndSort,
+                    onFilterAndSortChange = onFilterAndSortChange,
+                    getPossibleFilterValues = getPossibleFilterValues,
                     modifier =
                         Modifier
                             .padding(start = 16.dp)
@@ -371,55 +397,64 @@ fun PlaylistDetailsContent(
                         textAlign = TextAlign.Center,
                         modifier = Modifier.fillMaxWidth(),
                     )
-                    LazyColumn(
-                        contentPadding = PaddingValues(8.dp),
-                        modifier =
-                            Modifier
-                                .padding(bottom = 32.dp)
-                                .fillMaxHeight()
+                    if (items.isNotEmpty()) {
+                        LazyColumn(
+                            contentPadding = PaddingValues(8.dp),
+                            modifier =
+                                Modifier
+                                    .padding(bottom = 32.dp)
+                                    .fillMaxHeight()
 //                            .fillMaxWidth(.8f)
-                                .weight(1f)
-                                .background(
-                                    MaterialTheme.colorScheme
-                                        .surfaceColorAtElevation(1.dp)
-                                        .copy(alpha = .75f),
-                                    shape = RoundedCornerShape(16.dp),
-                                ).focusRequester(focusRequester)
-                                .focusGroup()
-                                .focusRestorer(focus),
-                    ) {
-                        itemsIndexed(items) { index, item ->
-                            PlaylistItem(
-                                item = item,
-                                index = index,
-                                onClick = {
-                                    savedIndex = index
-                                    item?.let {
-                                        onClickIndex.invoke(index, item)
-                                    }
-                                },
-                                onLongClick = {
-                                    savedIndex = index
-                                    item?.let {
-                                        onLongClickIndex.invoke(index, item)
-                                    }
-                                },
-                                modifier =
-                                    Modifier
-                                        .height(80.dp)
-                                        .ifElse(
-                                            index == savedIndex,
-                                            Modifier.focusRequester(focus),
-                                        ).onFocusChanged {
-                                            if (it.isFocused) {
-                                                focusedIndex = index
-                                            }
-                                        }.focusProperties {
-                                            left = playButtonFocusRequester
-                                            previous = playButtonFocusRequester
-                                        },
-                            )
+                                    .weight(1f)
+                                    .background(
+                                        MaterialTheme.colorScheme
+                                            .surfaceColorAtElevation(1.dp)
+                                            .copy(alpha = .75f),
+                                        shape = RoundedCornerShape(16.dp),
+                                    ).focusRequester(focusRequester)
+                                    .focusGroup()
+                                    .focusRestorer(focus),
+                        ) {
+                            itemsIndexed(items) { index, item ->
+                                PlaylistItem(
+                                    item = item,
+                                    index = index,
+                                    onClick = {
+                                        savedIndex = index
+                                        item?.let {
+                                            onClickIndex.invoke(index, item)
+                                        }
+                                    },
+                                    onLongClick = {
+                                        savedIndex = index
+                                        item?.let {
+                                            onLongClickIndex.invoke(index, item)
+                                        }
+                                    },
+                                    modifier =
+                                        Modifier
+                                            .height(80.dp)
+                                            .ifElse(
+                                                index == savedIndex,
+                                                Modifier.focusRequester(focus),
+                                            ).onFocusChanged {
+                                                if (it.isFocused) {
+                                                    focusedIndex = index
+                                                }
+                                            }.focusProperties {
+                                                left = playButtonFocusRequester
+                                                previous = playButtonFocusRequester
+                                            },
+                                )
+                            }
                         }
+                    } else {
+                        Text(
+                            text = stringResource(R.string.no_results),
+                            style = MaterialTheme.typography.titleLarge,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
                     }
                 }
             }
@@ -432,8 +467,10 @@ fun PlaylistDetailsHeader(
     focusedItem: BaseItem?,
     onClickPlay: (shuffle: Boolean) -> Unit,
     playButtonFocusRequester: FocusRequester,
-    sortAndDirection: SortAndDirection,
-    onSortChange: (SortAndDirection) -> Unit,
+    focusRequester: FocusRequester,
+    filterAndSort: FilterAndSort,
+    onFilterAndSortChange: (GetItemsFilter, SortAndDirection) -> Unit,
+    getPossibleFilterValues: suspend (ItemFilterBy<*>) -> List<FilterValueOption>,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -442,13 +479,14 @@ fun PlaylistDetailsHeader(
     ) {
         Row(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.focusRequester(playButtonFocusRequester),
+            modifier = Modifier,
         ) {
             ExpandablePlayButton(
                 title = R.string.play,
                 resume = Duration.ZERO,
                 icon = Icons.Default.PlayArrow,
                 onClick = { onClickPlay.invoke(false) },
+                modifier = Modifier.focusRequester(playButtonFocusRequester),
             )
             ExpandableFaButton(
                 title = R.string.shuffle,
@@ -456,11 +494,28 @@ fun PlaylistDetailsHeader(
                 onClick = { onClickPlay.invoke(true) },
             )
         }
-        SortByButton(
-            sortOptions = BoxSetSortOptions,
-            current = sortAndDirection,
-            onSortChange = onSortChange,
-        )
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.focusRequester(playButtonFocusRequester),
+        ) {
+            FilterByButton(
+                filterOptions = DefaultPlaylistItemsOptions,
+                current = filterAndSort.filter,
+                onFilterChange = {
+                    onFilterAndSortChange.invoke(
+                        it,
+                        filterAndSort.sortAndDirection,
+                    )
+                },
+                getPossibleValues = getPossibleFilterValues,
+                modifier = Modifier.focusRequester(focusRequester),
+            )
+            SortByButton(
+                sortOptions = BoxSetSortOptions,
+                current = filterAndSort.sortAndDirection,
+                onSortChange = { onFilterAndSortChange.invoke(filterAndSort.filter, it) },
+            )
+        }
         Text(
             text = focusedItem?.title ?: "",
             color = MaterialTheme.colorScheme.onSurface,
