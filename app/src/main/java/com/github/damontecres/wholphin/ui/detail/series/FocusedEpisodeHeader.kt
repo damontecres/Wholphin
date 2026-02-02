@@ -10,6 +10,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.github.damontecres.wholphin.data.ChosenStreams
 import com.github.damontecres.wholphin.data.model.BaseItem
+
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.components.EpisodeName
 import com.github.damontecres.wholphin.ui.components.OverviewText
@@ -27,11 +28,13 @@ fun FocusedEpisodeHeader(
 ) {
     val context = LocalContext.current
     val dto = ep?.data
+    val isOverviewHidden = ep?.shouldHideOverview(preferences) ?: false
+    val isTitleHidden = ep?.shouldHideTitle(preferences) ?: false
     Column(
         verticalArrangement = Arrangement.spacedBy(8.dp),
         modifier = modifier,
     ) {
-        EpisodeName(dto, modifier = Modifier)
+        EpisodeName(dto, isHidden = isTitleHidden, modifier = Modifier)
 
         ep?.ui?.quickDetails?.let {
             QuickDetails(it, ep.timeRemainingOrRuntime)
@@ -48,6 +51,7 @@ fun FocusedEpisodeHeader(
             overview = dto?.overview ?: "",
             maxLines = 3,
             onClick = overviewOnClick,
+            isHidden = isOverviewHidden,
             modifier = Modifier.onFocusChanged(overviewOnFocus),
         )
     }

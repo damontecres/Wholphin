@@ -14,12 +14,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.times
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
+import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.ui.playOnClickSound
 import com.github.damontecres.wholphin.ui.playSoundOnFocus
 
@@ -27,11 +30,12 @@ import com.github.damontecres.wholphin.ui.playSoundOnFocus
 fun OverviewText(
     overview: String,
     maxLines: Int,
-    onClick: () -> Unit,
+    onClick: () -> Unit = {},
     modifier: Modifier = Modifier,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
     textBoxHeight: Dp = maxLines * 20.dp,
     enabled: Boolean = true,
+    isHidden: Boolean = false,
 ) {
     val context = LocalContext.current
     val isFocused = interactionSource.collectIsFocusedAsState().value
@@ -56,8 +60,16 @@ fun OverviewText(
                 },
     ) {
         Text(
-            text = overview,
+            text =
+                if (overview.isBlank()) {
+                    stringResource(R.string.no_overview)
+                } else if (isHidden) {
+                    stringResource(R.string.unwatched_spoiler_hidden)
+                } else {
+                    overview
+                },
             style = MaterialTheme.typography.bodyMedium,
+            fontStyle = if (isHidden || overview.isBlank()) FontStyle.Italic else FontStyle.Normal,
             color = MaterialTheme.colorScheme.onSurface,
             maxLines = maxLines,
             overflow = TextOverflow.Ellipsis,

@@ -136,6 +136,7 @@ fun DestinationContent(
                 BaseItemKind.PLAYLIST -> {
                     LaunchedEffect(Unit) { onClearBackdrop.invoke() }
                     PlaylistDetails(
+                        preferences = preferences,
                         destination = destination,
                         modifier = modifier,
                     )
@@ -220,6 +221,7 @@ fun DestinationContent(
         is Destination.ItemGrid -> {
             LaunchedEffect(Unit) { onClearBackdrop.invoke() }
             ItemGrid(
+                preferences,
                 destination,
                 modifier,
             )

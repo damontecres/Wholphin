@@ -242,6 +242,8 @@ fun SeerrDiscoverPage(
             subtitle = focusedItem?.subtitle,
             overview = focusedItem?.overview,
             overviewTwoLines = true,
+            isOverviewHidden = false,
+            isTitleHidden = false,
             quickDetails = details,
             timeRemaining = null,
             modifier =

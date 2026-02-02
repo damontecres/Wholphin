@@ -24,6 +24,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -36,11 +37,13 @@ import androidx.tv.material3.Text
 import coil3.compose.AsyncImage
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.BaseItem
+import com.github.damontecres.wholphin.preferences.EpisodeThumbnailSpoilerMode
 import com.github.damontecres.wholphin.ui.AppColors
 import com.github.damontecres.wholphin.ui.AspectRatios
 import com.github.damontecres.wholphin.ui.Cards
 import com.github.damontecres.wholphin.ui.FontAwesome
 import com.github.damontecres.wholphin.ui.LocalImageUrlService
+import com.github.damontecres.wholphin.ui.dimAndBlur
 import org.jellyfin.sdk.model.api.ImageType
 
 /**
@@ -60,6 +63,8 @@ fun BannerCard(
     cardHeight: Dp = 120.dp,
     aspectRatio: Float = AspectRatios.WIDE,
     interactionSource: MutableInteractionSource? = null,
+    spoilerMode: EpisodeThumbnailSpoilerMode = EpisodeThumbnailSpoilerMode.SPOILER_SHOW,
+    isTitleHidden: Boolean = false,
 ) {
     val imageUrlService = LocalImageUrlService.current
     val density = LocalDensity.current
@@ -73,12 +78,27 @@ fun BannerCard(
                 null
             }
         }
+    val isEpisode = item?.type == org.jellyfin.sdk.model.api.BaseItemKind.EPISODE
+    val isUnwatched = item?.data?.userData?.played == false
+    val isEpisodeThumbnail =
+        isEpisode &&
+            !item.useSeriesForPrimary
+
+    val useSeriesThumbnail =
+        isEpisodeThumbnail && isUnwatched && spoilerMode == EpisodeThumbnailSpoilerMode.SPOILER_SERIES_THUMBNAIL
+    val finalBlur =
+        isEpisodeThumbnail && isUnwatched && spoilerMode == EpisodeThumbnailSpoilerMode.SPOILER_BLUR
+
     val imageUrl =
-        remember(item, fillHeight) {
+        remember(item, fillHeight, useSeriesThumbnail) {
             if (item != null) {
                 imageUrlService.getItemImageUrl(
-                    item,
-                    ImageType.PRIMARY,
+                    itemId = item.id,
+                    itemType = item.type,
+                    seriesId = item.data.seriesId,
+                    useSeriesForPrimary = item.useSeriesForPrimary || useSeriesThumbnail,
+                    imageTags = item.data.imageTags.orEmpty(),
+                    imageType = if (useSeriesThumbnail) ImageType.THUMB else ImageType.PRIMARY,
                     fillWidth = null,
                     fillHeight = fillHeight,
                 )
@@ -91,10 +111,10 @@ fun BannerCard(
         modifier = modifier.size(cardHeight * aspectRatio, cardHeight),
         onClick = onClick,
         onLongClick = onLongClick,
-        interactionSource = interactionSource,
+        interactionSource = interactionSource ?: remember { MutableInteractionSource() },
         colors =
             CardDefaults.colors(
-//                containerColor = Color.Transparent,
+                containerColor = androidx.compose.ui.graphics.Color.Transparent,
             ),
     ) {
         Box(
@@ -109,13 +129,17 @@ fun BannerCard(
                     contentDescription = null,
                     contentScale = ContentScale.FillBounds,
                     onError = { imageError = true },
-                    modifier = Modifier.fillMaxSize(),
+                    modifier =
+                        Modifier
+                            .fillMaxSize()
+                            .dimAndBlur(finalBlur),
                 )
             } else {
                 Text(
-                    text = name ?: "",
+                    text = if (isTitleHidden) stringResource(R.string.title_hidden) else (name ?: ""),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     style = MaterialTheme.typography.titleLarge,
+                    fontStyle = if (isTitleHidden) FontStyle.Italic else FontStyle.Normal,
                     textAlign = TextAlign.Center,
                     modifier =
                         Modifier

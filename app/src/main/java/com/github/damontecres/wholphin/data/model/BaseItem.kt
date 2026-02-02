@@ -5,6 +5,7 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.Stable
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.buildAnnotatedString
+import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.DateFormatter
 import com.github.damontecres.wholphin.ui.abbreviateNumber
 import com.github.damontecres.wholphin.ui.detail.CardGridItem
@@ -181,6 +182,41 @@ data class BaseItem(
                 }
             }
         return result
+    }
+
+    fun shouldHideOverview(preferences: UserPreferences): Boolean {
+        // If the item has been played, we never hide the description
+        if (played) return false
+
+        val isEpisode = type == BaseItemKind.EPISODE
+
+        // Check if we should hide descriptions for unwatched episodes
+        if (isEpisode && preferences.appPreferences.interfacePreferences.hideUnwatchedEpisodeOverviews) {
+            return true
+        }
+
+        val isMovie = type == BaseItemKind.MOVIE
+
+        // Check if we should hide descriptions for unwatched movies
+        if (isMovie && preferences.appPreferences.interfacePreferences.hideUnwatchedMovieOverviews) {
+            return true
+        }
+
+        return false
+    }
+
+    fun shouldHideTitle(preferences: UserPreferences): Boolean {
+        // If the item has been played, we never hide the title
+        if (played) return false
+
+        val isEpisode = type == BaseItemKind.EPISODE
+
+        // Check if we should hide titles for unwatched episodes
+        if (isEpisode && preferences.appPreferences.interfacePreferences.hideUnwatchedEpisodeTitles) {
+            return true
+        }
+
+        return false
     }
 
     companion object {

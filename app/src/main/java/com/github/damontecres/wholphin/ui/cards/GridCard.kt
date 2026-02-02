@@ -19,10 +19,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextAlign
+import com.github.damontecres.wholphin.R
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.tv.material3.Card
+import com.github.damontecres.wholphin.preferences.EpisodeThumbnailSpoilerMode
 import androidx.tv.material3.CardDefaults
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
@@ -46,6 +50,8 @@ fun GridCard(
     imageContentScale: ContentScale = ContentScale.Fit,
     imageType: ViewOptionImageType = ViewOptionImageType.PRIMARY,
     showTitle: Boolean = true,
+    spoilerMode: EpisodeThumbnailSpoilerMode = EpisodeThumbnailSpoilerMode.SPOILER_SHOW,
+    isTitleHidden: Boolean = false,
 ) {
     val dto = item?.data
     val focused by interactionSource.collectIsFocusedAsState()
@@ -94,6 +100,7 @@ fun GridCard(
                 numberOfVersions = dto?.mediaSourceCount ?: 0,
                 useFallbackText = false,
                 contentScale = imageContentScale,
+                spoilerMode = spoilerMode,
                 modifier =
                     Modifier
                         .fillMaxWidth()
@@ -110,8 +117,9 @@ fun GridCard(
                         .fillMaxWidth(),
             ) {
                 Text(
-                    text = item?.title ?: "",
+                    text = if (isTitleHidden) stringResource(R.string.title_hidden) else (item?.title ?: ""),
                     maxLines = 1,
+                    fontStyle = if (isTitleHidden) FontStyle.Italic else FontStyle.Normal,
                     textAlign = TextAlign.Center,
                     overflow = TextOverflow.Ellipsis,
                     modifier =

@@ -19,7 +19,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
+import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.data.model.BaseItem
+import org.jellyfin.sdk.model.api.BaseItemKind
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.ui.AspectRatios
 import com.github.damontecres.wholphin.ui.cards.GridCard
@@ -84,6 +86,7 @@ class ItemGridViewModel
 
 @Composable
 fun ItemGrid(
+    preferences: UserPreferences,
     destination: Destination.ItemGrid,
     modifier: Modifier = Modifier,
     viewModel: ItemGridViewModel =
@@ -135,6 +138,8 @@ fun ItemGrid(
                             item = item,
                             onClick = onClick,
                             onLongClick = onLongClick,
+                            spoilerMode = preferences.appPreferences.interfacePreferences.episodeThumbnailSpoilerMode,
+                            isTitleHidden = preferences.appPreferences.interfacePreferences.hideUnwatchedEpisodeTitles && item?.type == BaseItemKind.EPISODE && item?.played == false,
                             modifier = mod,
                             imageAspectRatio = AspectRatios.WIDE, // TODO
                         )

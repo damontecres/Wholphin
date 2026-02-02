@@ -645,6 +645,55 @@ sealed interface AppPreference<Pref, T> {
                 setter = { prefs, _ -> prefs },
             )
 
+        val HideUnwatchedMovieOverviews =
+            AppSwitchPreference<AppPreferences>(
+                title = R.string.hide_unwatched_movie_overviews,
+                defaultValue = false,
+                getter = { it.interfacePreferences.hideUnwatchedMovieOverviews },
+                setter = { prefs, value ->
+                    prefs.updateInterfacePreferences { hideUnwatchedMovieOverviews = value }
+                },
+                summaryOn = R.string.enabled,
+                summaryOff = R.string.disabled,
+            )
+
+        val HideUnwatchedEpisodeOverviews =
+            AppSwitchPreference<AppPreferences>(
+                title = R.string.hide_unwatched_episode_overviews,
+                defaultValue = false,
+                getter = { it.interfacePreferences.hideUnwatchedEpisodeOverviews },
+                setter = { prefs, value ->
+                    prefs.updateInterfacePreferences { hideUnwatchedEpisodeOverviews = value }
+                },
+                summaryOn = R.string.enabled,
+                summaryOff = R.string.disabled,
+            )
+
+        val HideUnwatchedEpisodeTitles =
+            AppSwitchPreference<AppPreferences>(
+                title = R.string.hide_unwatched_episode_titles,
+                defaultValue = false,
+                getter = { it.interfacePreferences.hideUnwatchedEpisodeTitles },
+                setter = { prefs, value ->
+                    prefs.updateInterfacePreferences { hideUnwatchedEpisodeTitles = value }
+                },
+                summaryOn = R.string.enabled,
+                summaryOff = R.string.disabled,
+            )
+
+        val EpisodeThumbnailSpoilerModePref =
+            AppChoicePreference<AppPreferences, EpisodeThumbnailSpoilerMode>(
+                title = R.string.episode_thumbnail_spoiler_mode,
+                defaultValue = EpisodeThumbnailSpoilerMode.SPOILER_SHOW,
+                displayValues = R.array.episode_spoiler_options,
+                indexToValue = { index -> EpisodeThumbnailSpoilerMode.forNumber(index) ?: EpisodeThumbnailSpoilerMode.SPOILER_SHOW },
+                valueToIndex = { it.number },
+                getter = { it.interfacePreferences.episodeThumbnailSpoilerMode },
+                setter = { prefs, value ->
+                    prefs.updateInterfacePreferences { episodeThumbnailSpoilerMode = value }
+                },
+            )
+
         val NavDrawerSwitchOnFocus =
             AppSwitchPreference<AppPreferences>(
                 title = R.string.nav_drawer_switch_on_focus,
@@ -903,6 +952,11 @@ sealed interface AppPreference<Pref, T> {
                 getter = { },
                 setter = { prefs, _ -> prefs },
             )
+        val SpoilerSettings =
+            AppDestinationPreference<AppPreferences>(
+                title = R.string.spoiler_protection,
+                destination = Destination.Settings(PreferenceScreenOption.USER_INTERFACE),
+            )
     }
 }
 
@@ -920,6 +974,7 @@ val basicPreferences =
                     AppPreference.RememberSelectedTab,
                     AppPreference.SubtitleStyle,
                     AppPreference.ThemeColors,
+                    AppPreference.SpoilerSettings,
                 ),
         ),
         PreferenceGroup(
@@ -969,7 +1024,21 @@ val basicPreferences =
         ),
     )
 
-val uiPreferences = listOf<PreferenceGroup>()
+val spoilerPreferences =
+    listOf(
+        PreferenceGroup(
+            title = R.string.spoiler_protection,
+            preferences =
+                listOf(
+                    AppPreference.HideUnwatchedMovieOverviews,
+                    AppPreference.HideUnwatchedEpisodeOverviews,
+                    AppPreference.HideUnwatchedEpisodeTitles,
+                    AppPreference.EpisodeThumbnailSpoilerModePref,
+                ),
+        ),
+    )
+
+val uiPreferences = spoilerPreferences
 
 private val ExoPlayerSettings =
     listOf(

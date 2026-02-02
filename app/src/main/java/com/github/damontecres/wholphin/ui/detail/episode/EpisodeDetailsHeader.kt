@@ -47,8 +47,9 @@ fun EpisodeDetailsHeader(
         verticalArrangement = Arrangement.spacedBy(8.dp),
         modifier = modifier,
     ) {
+        val isTitleHidden = ep.shouldHideTitle(preferences)
         SeriesName(dto.seriesName, Modifier.fillMaxWidth(.75f))
-        EpisodeName(dto, Modifier.fillMaxWidth(.75f))
+        EpisodeName(dto, Modifier.fillMaxWidth(.75f), isHidden = isTitleHidden)
 
         Column(
             verticalArrangement = Arrangement.spacedBy(4.dp),
@@ -78,12 +79,14 @@ fun EpisodeDetailsHeader(
                 LaunchedEffect(focused) {
                     if (focused) bringIntoViewRequester.bringIntoView()
                 }
+                val isOverviewHidden = ep.shouldHideOverview(preferences)
                 OverviewText(
                     overview = overview,
                     maxLines = 3,
                     onClick = overviewOnClick,
                     textBoxHeight = Dp.Unspecified,
                     interactionSource = interactionSource,
+                    isHidden = isOverviewHidden,
                 )
             }
             ep.data.people
