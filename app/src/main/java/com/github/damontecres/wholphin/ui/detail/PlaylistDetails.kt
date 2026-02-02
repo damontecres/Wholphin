@@ -23,6 +23,7 @@ import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableIntStateOf
@@ -49,7 +50,11 @@ import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import androidx.tv.material3.surfaceColorAtElevation
 import com.github.damontecres.wholphin.R
+import com.github.damontecres.wholphin.data.LibraryDisplayInfoDao
+import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.BaseItem
+import com.github.damontecres.wholphin.data.model.GetItemsFilter
+import com.github.damontecres.wholphin.data.model.LibraryDisplayInfo
 import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.ui.DefaultItemFields
@@ -63,22 +68,32 @@ import com.github.damontecres.wholphin.ui.components.ExpandableFaButton
 import com.github.damontecres.wholphin.ui.components.ExpandablePlayButton
 import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.components.OverviewText
+import com.github.damontecres.wholphin.ui.components.SortByButton
+import com.github.damontecres.wholphin.ui.data.BoxSetSortOptions
+import com.github.damontecres.wholphin.ui.data.SortAndDirection
 import com.github.damontecres.wholphin.ui.enableMarquee
 import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.roundMinutes
+import com.github.damontecres.wholphin.ui.setValueOnMain
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.ui.util.LocalClock
 import com.github.damontecres.wholphin.util.ApiRequestPager
+import com.github.damontecres.wholphin.util.GetItemsRequestHandler
 import com.github.damontecres.wholphin.util.GetPlaylistItemsRequestHandler
 import com.github.damontecres.wholphin.util.LoadingExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
+import org.jellyfin.sdk.model.api.ItemSortBy
+import org.jellyfin.sdk.model.api.SortOrder
+import org.jellyfin.sdk.model.api.request.GetItemsRequest
 import org.jellyfin.sdk.model.api.request.GetPlaylistItemsRequest
 import org.jellyfin.sdk.model.extensions.ticks
 import java.util.UUID
@@ -92,9 +107,18 @@ class PlaylistViewModel
         api: ApiClient,
         val navigationManager: NavigationManager,
         private val backdropService: BackdropService,
+        private val serverRepository: ServerRepository,
+        private val libraryDisplayInfoDao: LibraryDisplayInfoDao,
     ) : ItemViewModel(api) {
         val loading = MutableLiveData<LoadingState>(LoadingState.Pending)
         val items = MutableLiveData<List<BaseItem?>>(listOf())
+        val sortAndDirection =
+            MutableStateFlow<SortAndDirection>(
+                SortAndDirection(
+                    ItemSortBy.DEFAULT,
+                    SortOrder.ASCENDING,
+                ),
+            )
 
         fun init(playlistId: UUID) {
             loading.value = LoadingState.Loading
@@ -103,15 +127,77 @@ class PlaylistViewModel
                     LoadingExceptionHandler(loading, "Failed to fetch playlist $playlistId"),
             ) {
                 val playlist = fetchItem(playlistId)
-                val request =
-                    GetPlaylistItemsRequest(
-                        playlistId = playlist.id,
-                        fields = DefaultItemFields,
+                val libraryDisplayInfo =
+                    serverRepository.currentUser.value?.let { user ->
+                        libraryDisplayInfoDao.getItem(user, itemId)
+                    }
+                val sortAndDirection =
+                    libraryDisplayInfo?.sortAndDirection ?: SortAndDirection(
+                        ItemSortBy.DEFAULT,
+                        SortOrder.ASCENDING,
                     )
-                val pager = ApiRequestPager(api, request, GetPlaylistItemsRequestHandler, viewModelScope).init()
-                withContext(Dispatchers.Main) {
-                    items.value = pager
-                    loading.value = LoadingState.Success
+                loadItems(sortAndDirection)
+            }
+        }
+
+        fun loadItems(sortAndDirection: SortAndDirection) {
+            viewModelScope.launchIO {
+                loading.setValueOnMain(LoadingState.Loading)
+                this@PlaylistViewModel.sortAndDirection.update { sortAndDirection }
+
+                serverRepository.currentUser.value?.let { user ->
+                    val playlistId = item.value!!.id
+                    viewModelScope.launchIO {
+                        val libraryDisplayInfo =
+                            libraryDisplayInfoDao.getItem(user, itemId)?.copy(
+                                sort = sortAndDirection.sort,
+                                direction = sortAndDirection.direction,
+                            )
+                                ?: LibraryDisplayInfo(
+                                    userId = user.rowId,
+                                    itemId = itemId,
+                                    sort = sortAndDirection.sort,
+                                    direction = sortAndDirection.direction,
+                                    filter = GetItemsFilter(),
+                                    viewOptions = null,
+                                )
+                        libraryDisplayInfoDao.saveItem(libraryDisplayInfo)
+                    }
+                    val pager =
+                        if (sortAndDirection.sort == ItemSortBy.DEFAULT) {
+                            val request =
+                                GetPlaylistItemsRequest(
+                                    userId = user.id,
+                                    playlistId = playlistId,
+                                    fields = DefaultItemFields,
+                                )
+
+                            ApiRequestPager(
+                                api,
+                                request,
+                                GetPlaylistItemsRequestHandler,
+                                viewModelScope,
+                            ).init()
+                        } else {
+                            val request =
+                                GetItemsRequest(
+                                    parentId = playlistId,
+                                    userId = user.id,
+                                    fields = DefaultItemFields,
+                                    sortBy = listOf(sortAndDirection.sort),
+                                    sortOrder = listOf(sortAndDirection.direction),
+                                )
+                            ApiRequestPager(
+                                api,
+                                request,
+                                GetItemsRequestHandler,
+                                viewModelScope,
+                            ).init()
+                        }
+                    withContext(Dispatchers.Main) {
+                        items.value = pager
+                        loading.value = LoadingState.Success
+                    }
                 }
             }
         }
@@ -136,6 +222,7 @@ fun PlaylistDetails(
     val loading by viewModel.loading.observeAsState(LoadingState.Pending)
     val playlist by viewModel.item.observeAsState(null)
     val items by viewModel.items.observeAsState(listOf())
+    val sortAndDirection by viewModel.sortAndDirection.collectAsState()
 
     var longClickDialog by remember { mutableStateOf<DialogParams?>(null) }
 
@@ -197,12 +284,15 @@ fun PlaylistDetails(
                                                     itemId = it.id,
                                                     startIndex = index,
                                                     shuffle = false,
+                                                    sortAndDirection = sortAndDirection.takeIf { it.sort != ItemSortBy.DEFAULT },
                                                 ),
                                             )
                                         },
                                     ),
                             )
                     },
+                    sortAndDirection = sortAndDirection,
+                    onSortChange = viewModel::loadItems,
                     modifier = modifier,
                 )
             }
@@ -224,6 +314,8 @@ fun PlaylistDetailsContent(
     onLongClickIndex: (Int, BaseItem) -> Unit,
     onClickPlay: (shuffle: Boolean) -> Unit,
     onChangeBackdrop: (BaseItem) -> Unit,
+    sortAndDirection: SortAndDirection,
+    onSortChange: (SortAndDirection) -> Unit,
     modifier: Modifier = Modifier,
     focusRequester: FocusRequester = remember { FocusRequester() },
 ) {
@@ -249,16 +341,18 @@ fun PlaylistDetailsContent(
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(32.dp),
+                horizontalArrangement = Arrangement.spacedBy(24.dp),
                 modifier =
                     Modifier
-                        .padding(horizontal = 16.dp)
+                        .padding(horizontal = 8.dp)
                         .fillMaxWidth(),
             ) {
                 PlaylistDetailsHeader(
                     focusedItem = focusedItem,
                     onClickPlay = onClickPlay,
                     playButtonFocusRequester = playButtonFocusRequester,
+                    sortAndDirection = sortAndDirection,
+                    onSortChange = onSortChange,
                     modifier =
                         Modifier
                             .padding(start = 16.dp)
@@ -338,6 +432,8 @@ fun PlaylistDetailsHeader(
     focusedItem: BaseItem?,
     onClickPlay: (shuffle: Boolean) -> Unit,
     playButtonFocusRequester: FocusRequester,
+    sortAndDirection: SortAndDirection,
+    onSortChange: (SortAndDirection) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -360,6 +456,11 @@ fun PlaylistDetailsHeader(
                 onClick = { onClickPlay.invoke(true) },
             )
         }
+        SortByButton(
+            sortOptions = BoxSetSortOptions,
+            current = sortAndDirection,
+            onSortChange = onSortChange,
+        )
         Text(
             text = focusedItem?.title ?: "",
             color = MaterialTheme.colorScheme.onSurface,
