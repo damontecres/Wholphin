@@ -17,7 +17,6 @@ import com.github.damontecres.wholphin.ui.toServerString
 import com.github.damontecres.wholphin.util.ApiRequestPager
 import com.github.damontecres.wholphin.util.GetEpisodesRequestHandler
 import com.github.damontecres.wholphin.util.GetItemsRequestHandler
-import com.github.damontecres.wholphin.util.GetPlaylistItemsRequestHandler
 import com.github.damontecres.wholphin.util.TransformList
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
@@ -34,7 +33,6 @@ import org.jellyfin.sdk.model.api.PlaylistUserPermissions
 import org.jellyfin.sdk.model.api.SortOrder
 import org.jellyfin.sdk.model.api.request.GetEpisodesRequest
 import org.jellyfin.sdk.model.api.request.GetItemsRequest
-import org.jellyfin.sdk.model.api.request.GetPlaylistItemsRequest
 import org.jellyfin.sdk.model.serializer.toUUIDOrNull
 import java.util.UUID
 import javax.inject.Inject
@@ -79,19 +77,22 @@ class PlaylistCreator
         suspend fun createFromPlaylistId(
             playlistId: UUID,
             startIndex: Int?,
-            shuffled: Boolean,
+            sortAndDirection: SortAndDirection,
+            filter: GetItemsFilter,
         ): Playlist {
             val request =
-                GetPlaylistItemsRequest(
-                    playlistId = playlistId,
-                    fields = DefaultItemFields,
-                    startIndex = startIndex,
-                    limit = Playlist.MAX_SIZE,
+                filter.applyTo(
+                    GetItemsRequest(
+                        userId = serverRepository.currentUser.value?.id,
+                        parentId = playlistId,
+                        fields = DefaultItemFields,
+                        startIndex = startIndex,
+                        limit = Playlist.MAX_SIZE,
+                        sortBy = listOf(sortAndDirection.sort),
+                        sortOrder = listOf(sortAndDirection.direction),
+                    ),
                 )
-            var items = GetPlaylistItemsRequestHandler.execute(api, request).content.items
-            if (shuffled) {
-                items = items.shuffled()
-            }
+            val items = GetItemsRequestHandler.execute(api, request).content.items
             return Playlist(items.convertAndAddParts(), 0)
         }
 
@@ -206,9 +207,18 @@ class PlaylistCreator
                 BaseItemKind.PLAYLIST -> {
                     PlaylistCreationResult.Success(
                         createFromPlaylistId(
-                            item.id,
-                            startIndex,
-                            shuffled,
+                            playlistId = item.id,
+                            startIndex = startIndex,
+                            sortAndDirection =
+                                if (shuffled) {
+                                    SortAndDirection(ItemSortBy.RANDOM, SortOrder.ASCENDING)
+                                } else {
+                                    sortAndDirection ?: SortAndDirection(
+                                        ItemSortBy.DEFAULT,
+                                        SortOrder.ASCENDING,
+                                    )
+                                },
+                            filter = filter,
                         ),
                     )
                 }

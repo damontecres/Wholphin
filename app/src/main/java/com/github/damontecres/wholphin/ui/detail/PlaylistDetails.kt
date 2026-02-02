@@ -269,6 +269,8 @@ fun PlaylistDetails(
                                 itemId = it.id,
                                 startIndex = index,
                                 shuffle = false,
+                                filter = filterAndSort.filter,
+                                sortAndDirection = filterAndSort.sortAndDirection,
                             ),
                         )
                     },
