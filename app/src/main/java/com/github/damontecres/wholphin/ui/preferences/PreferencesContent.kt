@@ -1,5 +1,8 @@
 package com.github.damontecres.wholphin.ui.preferences
 
+import android.content.ComponentName
+import android.content.Intent
+import android.content.pm.PackageManager
 import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
@@ -68,6 +71,7 @@ import com.github.damontecres.wholphin.ui.showToast
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import timber.log.Timber
 
@@ -95,6 +99,7 @@ fun PreferencesContent(
     var cacheUsage by remember { mutableStateOf(CacheUsage(0, 0, 0)) }
     val seerrIntegrationEnabled by viewModel.seerrEnabled.collectAsState(false)
     var seerrDialogMode by remember { mutableStateOf<SeerrDialogMode>(SeerrDialogMode.None) }
+    var showRestartDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         viewModel.preferenceDataStore.data.collect {
@@ -449,6 +454,9 @@ fun PreferencesContent(
                                         }
                                     },
                                     interactionSource = interactionSource,
+                                    requestActivityRestart = {
+                                        showRestartDialog = true
+                                    },
                                     modifier =
                                         Modifier
                                             .ifElse(
@@ -510,6 +518,24 @@ fun PreferencesContent(
             }
 
             SeerrDialogMode.None -> {}
+        }
+        if (showRestartDialog) {
+            ConfirmDialog(
+                title = "Restart",
+                body = "Your changes require a restart, restart now?",
+                onCancel = {
+                    showRestartDialog = false
+                },
+                onConfirm = {
+                    showRestartDialog = false
+                    val packageManager: PackageManager = context.packageManager
+                    val intent: Intent = packageManager.getLaunchIntentForPackage(context.packageName)!!
+                    val componentName: ComponentName = intent.component!!
+                    val restartIntent: Intent = Intent.makeRestartActivityTask(componentName)
+                    context.startActivity(restartIntent)
+                    Runtime.getRuntime().exit(0)
+                },
+            )
         }
     }
 }

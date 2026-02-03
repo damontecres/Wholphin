@@ -18,6 +18,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringArrayResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
@@ -27,6 +28,7 @@ import androidx.tv.material3.Icon
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import androidx.tv.material3.surfaceColorAtElevation
+import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.preferences.AppChoicePreference
 import com.github.damontecres.wholphin.preferences.AppClickablePreference
 import com.github.damontecres.wholphin.preferences.AppDestinationPreference
@@ -55,6 +57,7 @@ fun <T> ComposablePreference(
     modifier: Modifier = Modifier,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
     onClickPreference: (AppClickablePreference<*>) -> Unit = {},
+    requestActivityRestart: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -172,16 +175,24 @@ fun <T> ComposablePreference(
         }
 
         is AppChoicePreference -> {
-            val values = stringArrayResource(preference.displayValues).toList()
-            val subtitles =
-                preference.subtitles?.let { stringArrayResource(preference.subtitles).toList() }
-            val summary =
-                preference.summary?.let { stringResource(it) }
-                    ?: preference.summary(context, value)
-                    ?: preference
-                        .valueToIndex(value as T)
-                        .let { values[it] }
-            val selectedIndex = remember(value) { preference.valueToIndex.invoke(value as T) }
+            // This part is correct, it creates the copy with the onSet action for the language pref
+            val finalPreference = if (preference.title == R.string.language) {
+                preference.copy(onSet = { requestActivityRestart() })
+            } else {
+                preference
+            }
+
+            val values = stringArrayResource(finalPreference.displayValues).toList()
+            val subtitles = finalPreference.subtitles?.let { stringArrayResource(it).toList() }
+
+            // Use the preference's own valueToIndex lambda to find the index
+            val selectedIndex = remember(value) { finalPreference.valueToIndex.invoke(value as T) }
+
+            // Use the index to get the summary text safely
+            val summary = finalPreference.summary?.let { stringResource(it) }
+                ?: finalPreference.summary(context, value)
+                ?: values.getOrNull(selectedIndex)
+
             ClickPreference(
                 title = title,
                 summary = summary,
@@ -191,11 +202,9 @@ fun <T> ComposablePreference(
                             title = title,
                             fromLongClick = false,
                             items =
-                                values.mapIndexed { index, it ->
+                                values.mapIndexed { index, itemText ->
                                     DialogItem(
-                                        headlineContent = {
-                                            Text(it)
-                                        },
+                                        headlineContent = { Text(itemText) },
                                         leadingContent = {
                                             if (index == selectedIndex) {
                                                 Icon(
@@ -205,15 +214,17 @@ fun <T> ComposablePreference(
                                             }
                                         },
                                         supportingContent = {
-                                            subtitles?.let {
-                                                val text = subtitles[index]
+                                            subtitles?.let { sub ->
+                                                val text = sub.getOrNull(index)
                                                 if (text.isNotNullOrBlank()) {
-                                                    Text(text)
+                                                    androidx.compose.material3.Text(text)
                                                 }
                                             }
                                         },
                                         onClick = {
-                                            onValueChange(preference.indexToValue(index))
+                                            val newValue = finalPreference.indexToValue(index)
+                                            onValueChange(newValue)
+                                            finalPreference.onSet(newValue)
                                             dialogParams = null
                                         },
                                     )
@@ -225,7 +236,7 @@ fun <T> ComposablePreference(
             )
         }
 
-        is AppMultiChoicePreference<*, *> -> {
+    is AppMultiChoicePreference<*, *> -> {
             val values = stringArrayResource(preference.displayValues).toSortedSet()
             val summary =
                 preference.summary?.let { stringResource(it) }

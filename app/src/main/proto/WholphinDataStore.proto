@@ -102,6 +102,20 @@ enum AppThemeColors {
   OLED_BLACK = 5;
 }
 
+enum AppLanguages {
+  DEFAULT = 0;
+  ENGLISH = 1;
+  INDONESIAN = 2;
+  CZECH = 3;
+  ESTONIAN = 4;
+  SPANISH = 5;
+  FRENCH = 6;
+  ITALIAN = 7;
+  UKRAINIAN = 8;
+  CHINESE_SIMPLIFIED = 9;
+  CHINESE_TRADITIONAL = 10;
+}
+
 enum EdgeStyle{
   EDGE_NONE = 0;
   EDGE_SOLID = 1;
@@ -152,6 +166,7 @@ message InterfacePreferences {
   SubtitlePreferences subtitles_preferences = 7;
   LiveTvPreferences live_tv_preferences = 8;
   BackdropStyle backdrop_style = 9;
+  AppLanguages language = 10;
 }
 
 message AdvancedPreferences {

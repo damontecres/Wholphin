@@ -5,8 +5,10 @@ import android.content.res.Configuration
 import android.os.Bundle
 import android.view.WindowManager
 import androidx.activity.compose.setContent
+import androidx.activity.result.launch
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -23,6 +25,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.unit.dp
+import androidx.core.os.LocaleListCompat
 import androidx.datastore.core.DataStore
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModel
@@ -37,6 +40,7 @@ import androidx.tv.material3.ExperimentalTvMaterial3Api
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Surface
 import com.github.damontecres.wholphin.data.ServerRepository
+import com.github.damontecres.wholphin.preferences.AppLanguages
 import com.github.damontecres.wholphin.preferences.AppPreference
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.UserPreferences
@@ -68,7 +72,12 @@ import com.github.damontecres.wholphin.ui.util.ProvideLocalClock
 import com.github.damontecres.wholphin.util.DebugLogTree
 import dagger.hilt.android.AndroidEntryPoint
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import okhttp3.OkHttpClient
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.serializer.toUUIDOrNull
@@ -126,6 +135,7 @@ class MainActivity : AppCompatActivity() {
     @OptIn(ExperimentalTvMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        applyAppLocale()
         Timber.i("MainActivity.onCreate: savedInstanceState is null=${savedInstanceState == null}")
         lifecycle.addObserver(playbackLifecycleObserver)
         if (savedInstanceState == null) {
@@ -383,6 +393,32 @@ class MainActivity : AppCompatActivity() {
                 null
             }
         }
+
+    private fun applyAppLocale() {
+        val languageEnum = runBlocking {
+            userPreferencesDataStore.data.first().interfacePreferences.language
+        }
+        val languageTag = when (languageEnum) {
+            AppLanguages.ENGLISH -> "en"
+            AppLanguages.INDONESIAN -> "in"
+            AppLanguages.CZECH -> "cs"
+            AppLanguages.ESTONIAN -> "et"
+            AppLanguages.SPANISH -> "es"
+            AppLanguages.FRENCH -> "fr"
+            AppLanguages.ITALIAN -> "it"
+            AppLanguages.UKRAINIAN -> "uk"
+            AppLanguages.CHINESE_SIMPLIFIED -> "zh-Hans"
+            AppLanguages.CHINESE_TRADITIONAL -> "zh-Hant"
+            else -> null
+        }
+
+        val localeList = if (languageTag != null) {
+            LocaleListCompat.forLanguageTags(languageTag)
+        } else {
+            LocaleListCompat.getEmptyLocaleList()
+        }
+        AppCompatDelegate.setApplicationLocales(localeList)
+    }
 
     companion object {
         const val INTENT_ITEM_ID = "itemId"

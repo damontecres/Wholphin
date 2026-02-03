@@ -462,6 +462,28 @@ sealed interface AppPreference<Pref, T> {
                 valueToIndex = { if (it != AppThemeColors.UNRECOGNIZED) it.number else 0 },
             )
 
+        val Languages =
+            AppChoicePreference<AppPreferences, AppLanguages>(
+                title = R.string.language,
+                defaultValue = AppLanguages.DEFAULT,
+                getter = {
+                    when (it.interfacePreferences.language) {
+                        null -> AppLanguages.DEFAULT
+                        else -> it.interfacePreferences.language
+                    }
+                },
+                setter = { prefs, value ->
+                    prefs.updateInterfacePreferences { language = value }
+                },
+                displayValues = R.array.language_options,
+                indexToValue = { index ->
+                    AppLanguages.forNumber(index) ?: AppLanguages.DEFAULT
+                },
+                valueToIndex = { value ->
+                   value.number
+                },
+            )
+
         val InstalledVersion =
             AppClickablePreference<AppPreferences>(
                 title = R.string.installed_version,
@@ -920,6 +942,7 @@ val basicPreferences =
                     AppPreference.RememberSelectedTab,
                     AppPreference.SubtitleStyle,
                     AppPreference.ThemeColors,
+                    AppPreference.Languages,
                 ),
         ),
         PreferenceGroup(
@@ -1151,6 +1174,7 @@ data class AppChoicePreference<Pref, T>(
     override val setter: (prefs: Pref, value: T) -> Pref,
     @param:StringRes val summary: Int? = null,
     @param:ArrayRes val subtitles: Int? = null,
+    val onSet: (newValue: T) -> Unit = {}
 ) : AppPreference<Pref, T>
 
 data class AppMultiChoicePreference<Pref, T>(
@@ -1158,7 +1182,7 @@ data class AppMultiChoicePreference<Pref, T>(
     override val defaultValue: List<T>,
     val allValues: List<T>,
     @param:ArrayRes val displayValues: Int,
-    override val getter: (prefs: Pref) -> List<T>,
+override val getter: (prefs: Pref) -> List<T>,
     override val setter: (prefs: Pref, value: List<T>) -> Pref,
     @param:StringRes val summary: Int? = null,
     val toSharedPrefs: (T) -> String,

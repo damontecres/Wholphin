@@ -462,6 +462,23 @@
     <string name="request_4k">Request in 4K</string>
     <string name="software_decoding_av1">AV1 software decoding</string>
     <string name="upgrade_mpv_toast">MPV is now the default player except for HDR.\nYou can change this in settings.</string>
+    <string name="restart_required">Restart Required</string>
+    <string name="restart_to_apply_changes">Changes will be applied after the app restarts. Restart now?</string>
+    <string name="system_default_language">System Default</string>
+
+    <string-array name="language_options">
+        <item>@string/system_default_language</item>
+        <item>English</item>
+        <item>Bahasa Indonesia</item>
+        <item>Čeština</item>
+        <item>Eesti</item>
+        <item>Español</item>
+        <item>Français</item>
+        <item>Italiano</item>
+        <item>Українська</item>
+        <item>中文 (简体)</item>
+        <item>中文 (繁體)</item>
+    </string-array>
 
     <string-array name="theme_song_volume">
         <item>Disabled</item>
