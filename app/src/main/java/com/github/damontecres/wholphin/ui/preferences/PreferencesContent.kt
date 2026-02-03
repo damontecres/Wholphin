@@ -426,7 +426,11 @@ fun PreferencesContent(
                             AppPreference.QuickConnect -> {
                                 ClickPreference(
                                     title = stringResource(pref.title),
-                                    onClick = { showQuickConnectDialog = true },
+                                    onClick = {
+                                        if (currentUser != null) {
+                                            showQuickConnectDialog = true
+                                        }
+                                    },
                                     modifier = Modifier,
                                     summary = null,
                                     onLongClick = {},
@@ -532,10 +536,23 @@ fun PreferencesContent(
         val quickConnectStatus by viewModel.quickConnectStatus.collectAsState(LoadingState.Pending)
         val successMessage = stringResource(R.string.quick_connect_success)
 
+        LaunchedEffect(Unit) {
+            viewModel.resetQuickConnectStatus()
+        }
+
         LaunchedEffect(quickConnectStatus) {
-            if (quickConnectStatus == LoadingState.Success) {
-                Toast.makeText(context, successMessage, Toast.LENGTH_SHORT).show()
-                showQuickConnectDialog = false
+            when (quickConnectStatus) {
+                LoadingState.Success -> {
+                    Toast.makeText(context, successMessage, Toast.LENGTH_SHORT).show()
+                    showQuickConnectDialog = false
+                }
+                is LoadingState.Error -> {
+                    val errorMessage =
+                        (quickConnectStatus as? LoadingState.Error)?.message
+                            ?: "Authorization failed"
+                    Toast.makeText(context, errorMessage, Toast.LENGTH_SHORT).show()
+                }
+                else -> {}
             }
         }
 
@@ -549,18 +566,18 @@ fun PreferencesContent(
                             keyboardType = KeyboardType.Number,
                             imeAction = ImeAction.Done,
                         ),
-                    onSubmit = { code ->
-                        if (code.length == 6) {
-                            viewModel.authorizeQuickConnect(code)
-                        }
-                    },
+                    onSubmit = {},
                 ),
             onSave = { code ->
-                if (code.length == 6) {
-                    viewModel.authorizeQuickConnect(code)
+                val normalized = code.trim()
+                if (normalized.length == 6 && normalized.all(Char::isDigit)) {
+                    viewModel.authorizeQuickConnect(normalized)
                 }
             },
-            onDismissRequest = { showQuickConnectDialog = false },
+            onDismissRequest = {
+                viewModel.resetQuickConnectStatus()
+                showQuickConnectDialog = false
+            },
         )
     }
 }

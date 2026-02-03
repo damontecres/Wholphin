@@ -129,16 +129,21 @@ class PreferencesViewModel
             }
         }
 
+        fun resetQuickConnectStatus() {
+            _quickConnectStatus.value = LoadingState.Pending
+        }
+
         fun authorizeQuickConnect(code: String) {
-            viewModelScope.launchIO(ExceptionHandler(autoToast = true)) {
+            viewModelScope.launchIO {
                 _quickConnectStatus.value = LoadingState.Loading
                 try {
                     val success = serverRepository.authorizeQuickConnect(code)
-                    if (success) {
-                        _quickConnectStatus.value = LoadingState.Success
-                    } else {
-                        _quickConnectStatus.value = LoadingState.Error("Authorization failed")
-                    }
+                    _quickConnectStatus.value =
+                        if (success) {
+                            LoadingState.Success
+                        } else {
+                            LoadingState.Error("Authorization failed")
+                        }
                 } catch (e: Exception) {
                     _quickConnectStatus.value = LoadingState.Error(e)
                 }

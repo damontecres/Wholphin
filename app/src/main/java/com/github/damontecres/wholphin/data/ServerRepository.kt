@@ -268,8 +268,12 @@ class ServerRepository
 
         suspend fun authorizeQuickConnect(code: String): Boolean =
             withContext(Dispatchers.IO) {
+                val userId = currentUser.value?.id
+                if (userId == null) {
+                    Timber.e("No user logged in for Quick Connect authorization")
+                    throw IllegalStateException("Must be logged in to authorize Quick Connect")
+                }
                 try {
-                    val userId = currentUser.value?.id
                     val response = apiClient.quickConnectApi.authorizeQuickConnect(code, userId)
                     response.content
                 } catch (e: Exception) {
