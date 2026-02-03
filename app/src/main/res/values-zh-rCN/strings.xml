@@ -254,9 +254,9 @@
     <string name="reset">重置</string>
     <string name="bold_font">粗体</string>
     <string name="player_backend">播放后端</string>
-    <string name="mpv_hardware_decoding">MPV：使用硬件解码</string>
+    <string name="mpv_hardware_decoding">mpv：使用硬件解码</string>
     <string name="disable_if_crash">如果遇到崩溃，请禁用</string>
-    <string name="mpv_options">MPV 选项</string>
+    <string name="mpv_options">mpv 选项</string>
     <string name="exoplayer_options">ExoPlayer 选项</string>
     <string name="skip_segment_unknown">跳过片段</string>
     <string name="skip_segment_commercial">跳过广告</string>
@@ -271,7 +271,7 @@
     <string name="remove">移除</string>
     <string name="dolby_vision">杜比视界</string>
     <string name="dolby_atmos">杜比全景声</string>
-    <string name="mpv_use_gpu_next">MPV：使用 gpu-next</string>
+    <string name="mpv_use_gpu_next">mpv：使用 gpu-next</string>
     <string name="mpv_conf">编辑 mpv.conf</string>
     <string name="discard_change">舍弃更改？</string>
     <string name="subtitle_margin">边距</string>
@@ -389,4 +389,5 @@
     <string name="voice_error_timeout">语音识别超时</string>
     <string name="retry">重试</string>
     <string name="software_decoding_av1">AV1 软件解码</string>
+    <string name="upgrade_mpv_toast">除 HDR 视频外，mpv 现在是默认播放器。\n您可以在设置中更改此设置。</string>
 </resources>

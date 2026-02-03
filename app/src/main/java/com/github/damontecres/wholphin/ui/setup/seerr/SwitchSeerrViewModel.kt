@@ -30,6 +30,7 @@ class SwitchSeerrViewModel
         private val serverRepository: ServerRepository,
     ) : ViewModel() {
         val currentUser = serverRepository.currentUser
+        val currentSeerrServer = seerrServerRepository.currentServer
 
         val serverConnectionStatus = MutableStateFlow<LoadingState>(LoadingState.Pending)
 
@@ -61,15 +62,16 @@ class SwitchSeerrViewModel
                                 passwordOrApiKey = passwordOrApiKey,
                             )
                         } catch (ex: ClientException) {
-                            Timber.w(ex, "Error logging in")
+                            Timber.w(ex, "ClientException logging in")
                             if (ex.statusCode == 401 || ex.statusCode == 403) {
                                 showToast(context, "Invalid credentials")
-                                LoadingState.Error("Invalid credentials", ex)
+                                result = LoadingState.Error("Invalid credentials", ex)
                                 break
                             } else {
                                 LoadingState.Error("Could not connect with URL")
                             }
                         } catch (ex: Exception) {
+                            Timber.w(ex, "Exception logging in")
                             LoadingState.Error(ex)
                         }
                     if (result is LoadingState.Success) {

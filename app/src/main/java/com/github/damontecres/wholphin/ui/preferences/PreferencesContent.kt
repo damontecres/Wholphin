@@ -88,6 +88,7 @@ fun PreferencesContent(
     val state = rememberLazyListState()
     var preferences by remember { mutableStateOf(initialPreferences) }
     val currentUser by viewModel.currentUser.observeAsState()
+    val currentServer by seerrVm.currentSeerrServer.collectAsState(null)
     var showPinFlow by remember { mutableStateOf(false) }
 
     val navDrawerPins by viewModel.navDrawerPins.observeAsState(mapOf())
@@ -481,7 +482,7 @@ fun PreferencesContent(
             SeerrDialogMode.Remove -> {
                 ConfirmDialog(
                     title = stringResource(R.string.remove_seerr_server),
-                    body = "",
+                    body = currentServer?.url ?: "",
                     onCancel = { seerrDialogMode = SeerrDialogMode.None },
                     onConfirm = {
                         seerrVm.removeServer()

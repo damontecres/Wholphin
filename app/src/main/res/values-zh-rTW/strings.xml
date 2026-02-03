@@ -388,4 +388,5 @@
     <string name="voice_error_start_failed">無法啟動語音辨識</string>
     <string name="voice_error_timeout">語音辨識逾時</string>
     <string name="retry">重試</string>
+    <string name="software_decoding_av1">AV1 軟體解碼</string>
 </resources>

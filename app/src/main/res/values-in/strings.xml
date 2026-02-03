@@ -388,4 +388,5 @@
     <string name="request_4k">Minta dalam 4K</string>
     <string name="request">Minta</string>
     <string name="pending">Tertunda</string>
+    <string name="software_decoding_av1">Dekode perangkat lunak AV1</string>
 </resources>
