@@ -43,9 +43,10 @@ import androidx.tv.material3.surfaceColorAtElevation
 import coil3.SingletonImageLoader
 import coil3.imageLoader
 import com.github.damontecres.wholphin.R
-import com.github.damontecres.wholphin.data.model.SeerrAuthMethod
 import com.github.damontecres.wholphin.preferences.AppPreference
 import com.github.damontecres.wholphin.preferences.AppPreferences
+import com.github.damontecres.wholphin.preferences.ExoPlayerPreferences
+import com.github.damontecres.wholphin.preferences.MpvPreferences
 import com.github.damontecres.wholphin.preferences.PlayerBackend
 import com.github.damontecres.wholphin.preferences.advancedPreferences
 import com.github.damontecres.wholphin.preferences.basicPreferences
@@ -87,6 +88,7 @@ fun PreferencesContent(
     val state = rememberLazyListState()
     var preferences by remember { mutableStateOf(initialPreferences) }
     val currentUser by viewModel.currentUser.observeAsState()
+    val currentServer by seerrVm.currentSeerrServer.collectAsState(null)
     var showPinFlow by remember { mutableStateOf(false) }
 
     val navDrawerPins by viewModel.navDrawerPins.observeAsState(mapOf())
@@ -125,6 +127,8 @@ fun PreferencesContent(
             PreferenceScreenOption.ADVANCED -> advancedPreferences
             PreferenceScreenOption.USER_INTERFACE -> uiPreferences
             PreferenceScreenOption.SUBTITLES -> SubtitleSettings.preferences
+            PreferenceScreenOption.EXO_PLAYER -> ExoPlayerPreferences
+            PreferenceScreenOption.MPV -> MpvPreferences
         }
     val screenTitle =
         when (preferenceScreenOption) {
@@ -132,6 +136,8 @@ fun PreferencesContent(
             PreferenceScreenOption.ADVANCED -> R.string.advanced_settings
             PreferenceScreenOption.USER_INTERFACE -> R.string.ui_interface
             PreferenceScreenOption.SUBTITLES -> R.string.subtitle_style
+            PreferenceScreenOption.EXO_PLAYER -> R.string.exoplayer_options
+            PreferenceScreenOption.MPV -> R.string.mpv_options
         }
 
     var visible by remember { mutableStateOf(false) }
@@ -476,7 +482,7 @@ fun PreferencesContent(
             SeerrDialogMode.Remove -> {
                 ConfirmDialog(
                     title = stringResource(R.string.remove_seerr_server),
-                    body = "",
+                    body = currentServer?.url ?: "",
                     onCancel = { seerrDialogMode = SeerrDialogMode.None },
                     onConfirm = {
                         seerrVm.removeServer()
@@ -498,13 +504,7 @@ fun PreferencesContent(
                 AddSeerServerDialog(
                     currentUsername = currentUser?.name,
                     status = status,
-                    onSubmit = { url: String, username: String?, passwordOrApiKey: String, method: SeerrAuthMethod ->
-                        if (method == SeerrAuthMethod.API_KEY) {
-                            seerrVm.submitServer(url, passwordOrApiKey)
-                        } else {
-                            seerrVm.submitServer(url, username ?: "", passwordOrApiKey, method)
-                        }
-                    },
+                    onSubmit = seerrVm::submitServer,
                     onDismissRequest = { seerrDialogMode = SeerrDialogMode.None },
                 )
             }
@@ -527,6 +527,8 @@ fun PreferencesPage(
             PreferenceScreenOption.BASIC,
             PreferenceScreenOption.ADVANCED,
             PreferenceScreenOption.USER_INTERFACE,
+            PreferenceScreenOption.EXO_PLAYER,
+            PreferenceScreenOption.MPV,
             -> {
                 PreferencesContent(
                     initialPreferences,

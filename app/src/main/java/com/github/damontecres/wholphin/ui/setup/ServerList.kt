@@ -181,9 +181,10 @@ fun ServerList(
 @Composable
 fun rememberIdColor(
     id: UUID?,
+    alpha: Float = 1f,
     nullColor: Color = MaterialTheme.colorScheme.surfaceVariant,
 ): Color =
-    remember(id) {
+    remember(id, alpha) {
         if (id == null) {
             return@remember nullColor
         }
@@ -212,6 +213,7 @@ fun rememberIdColor(
             red = (r + m).coerceIn(0f, 1f),
             green = (g + m).coerceIn(0f, 1f),
             blue = (b + m).coerceIn(0f, 1f),
+            alpha = alpha,
         )
     }
 

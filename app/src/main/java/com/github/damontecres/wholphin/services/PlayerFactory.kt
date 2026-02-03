@@ -23,6 +23,7 @@ import androidx.media3.extractor.DefaultExtractorsFactory
 import com.github.damontecres.wholphin.preferences.AppPreference
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.MediaExtensionStatus
+import com.github.damontecres.wholphin.preferences.PlaybackPreferences
 import com.github.damontecres.wholphin.preferences.PlayerBackend
 import com.github.damontecres.wholphin.util.mpv.MpvPlayer
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -31,8 +32,8 @@ import io.github.peerless2012.ass.media.factory.AssRenderersFactory
 import io.github.peerless2012.ass.media.kt.withAssMkvSupport
 import io.github.peerless2012.ass.media.parser.AssSubtitleParserFactory
 import io.github.peerless2012.ass.media.type.AssRenderType
-import kotlinx.coroutines.flow.firstOrNull
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import timber.log.Timber
 import java.lang.reflect.Constructor
 import javax.inject.Inject
@@ -52,27 +53,25 @@ class PlayerFactory
         var currentPlayer: Player? = null
             private set
 
-        fun createVideoPlayer(): PlayerCreation {
-            if (currentPlayer?.isReleased == false) {
-                Timber.w("Player was not released before trying to create a new one!")
-                currentPlayer?.release()
+        suspend fun createVideoPlayer(
+            backend: PlayerBackend,
+            prefs: PlaybackPreferences,
+        ): PlayerCreation {
+            withContext(Dispatchers.Main) {
+                if (currentPlayer?.isReleased == false) {
+                    Timber.w("Player was not released before trying to create a new one!")
+                    currentPlayer?.release()
+                }
             }
             var assHandler: AssHandler? = null
-            val prefs = runBlocking { appPreferences.data.firstOrNull()?.playbackPreferences }
-            val backend = prefs?.playerBackend ?: AppPreference.PlayerBackendPref.defaultValue
             val newPlayer =
                 when (backend) {
-                    PlayerBackend.MPV -> {
-                        val enableHardwareDecoding =
-                            prefs?.mpvOptions?.enableHardwareDecoding
-                                ?: AppPreference.MpvHardwareDecoding.defaultValue
-                        val useGpuNext =
-                            prefs?.mpvOptions?.useGpuNext
-                                ?: AppPreference.MpvGpuNext.defaultValue
+                    PlayerBackend.PREFER_MPV,
+                    PlayerBackend.MPV,
+                    -> {
+                        val enableHardwareDecoding = prefs.mpvOptions.enableHardwareDecoding
+                        val useGpuNext = prefs.mpvOptions.useGpuNext
                         MpvPlayer(context, enableHardwareDecoding, useGpuNext)
-                            .apply {
-                                playWhenReady = true
-                            }
                     }
 
                     PlayerBackend.EXO_PLAYER,
@@ -122,7 +121,6 @@ class PlayerFactory
                             .build()
                             .apply {
                                 assHandler?.init(this)
-                                playWhenReady = true
                             }
                     }
                 }

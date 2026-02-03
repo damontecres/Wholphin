@@ -1,6 +1,5 @@
 package com.github.damontecres.wholphin.ui.main
 
-import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.focusable
@@ -25,7 +24,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -49,7 +47,6 @@ import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.AspectRatios
 import com.github.damontecres.wholphin.ui.Cards
-import com.github.damontecres.wholphin.ui.abbreviateNumber
 import com.github.damontecres.wholphin.ui.cards.BannerCard
 import com.github.damontecres.wholphin.ui.cards.ItemRow
 import com.github.damontecres.wholphin.ui.components.CircularProgress
@@ -65,6 +62,7 @@ import com.github.damontecres.wholphin.ui.detail.MoreDialogActions
 import com.github.damontecres.wholphin.ui.detail.PlaylistDialog
 import com.github.damontecres.wholphin.ui.detail.PlaylistLoadingState
 import com.github.damontecres.wholphin.ui.detail.buildMoreDialogItemsForHome
+import com.github.damontecres.wholphin.ui.indexOfFirstOrNull
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.playback.isPlayKeyUp
@@ -88,28 +86,15 @@ fun HomePage(
     playlistViewModel: AddPlaylistViewModel = hiltViewModel(),
 ) {
     val context = LocalContext.current
-    var firstLoad by rememberSaveable { mutableStateOf(true) }
     LaunchedEffect(Unit) {
-        viewModel.init(preferences).join()
-        firstLoad = false
+        viewModel.init()
     }
     val loading by viewModel.loadingState.observeAsState(LoadingState.Loading)
     val refreshing by viewModel.refreshState.observeAsState(LoadingState.Loading)
     val watchingRows by viewModel.watchingRows.observeAsState(listOf())
     val latestRows by viewModel.latestRows.observeAsState(listOf())
-    LaunchedEffect(loading) {
-        val state = loading
-        if (!firstLoad && state is LoadingState.Error) {
-            // After the first load, refreshes occur in the background and an ErrorMessage won't show
-            // So send a Toast on errors instead
-            Toast
-                .makeText(
-                    context,
-                    "Home refresh error: ${state.localizedMessage}",
-                    Toast.LENGTH_LONG,
-                ).show()
-        }
-    }
+
+    val homeRows = remember(watchingRows, latestRows) { watchingRows + latestRows }
 
     when (val state = loading) {
         is LoadingState.Error -> {
@@ -127,7 +112,7 @@ fun HomePage(
             var showPlaylistDialog by remember { mutableStateOf<UUID?>(null) }
             val playlistState by playlistViewModel.playlistState.observeAsState(PlaylistLoadingState.Pending)
             HomePageContent(
-                watchingRows + latestRows,
+                homeRows = homeRows,
                 onClickItem = { position, item ->
                     viewModel.navigationManager.navigateTo(item.destination())
                 },
@@ -219,15 +204,15 @@ fun HomePageContent(
     val rowFocusRequesters = remember(homeRows) { List(homeRows.size) { FocusRequester() } }
     var firstFocused by remember { mutableStateOf(false) }
     LaunchedEffect(homeRows) {
-        if (!firstFocused) {
+        if (!firstFocused && homeRows.isNotEmpty()) {
             if (position.row >= 0) {
-                rowFocusRequesters[position.row].tryRequestFocus()
+                val index = position.row.coerceIn(0, rowFocusRequesters.lastIndex)
+                rowFocusRequesters.getOrNull(index)?.tryRequestFocus()
                 firstFocused = true
             } else {
                 // Waiting for the first home row to load, then focus on it
                 homeRows
-                    .indexOfFirst { it is HomeRowLoadingState.Success && it.items.isNotEmpty() }
-                    .takeIf { it >= 0 }
+                    .indexOfFirstOrNull { it is HomeRowLoadingState.Success && it.items.isNotEmpty() }
                     ?.let {
                         rowFocusRequesters[it].tryRequestFocus()
                         firstFocused = true
@@ -238,7 +223,9 @@ fun HomePageContent(
         }
     }
     LaunchedEffect(position) {
-        listState.animateScrollToItem(position.row)
+        if (position.row >= 0) {
+            listState.animateScrollToItem(position.row)
+        }
     }
     LaunchedEffect(onUpdateBackdrop, focusedItem) {
         focusedItem?.let { onUpdateBackdrop.invoke(it) }
@@ -337,21 +324,11 @@ fun HomePageContent(
                                             .focusRequester(rowFocusRequesters[rowIndex])
                                             .animateItem(),
                                     cardContent = { index, item, cardModifier, onClick, onLongClick ->
-                                        val cornerText =
-                                            remember(item) {
-                                                item?.data?.indexNumber?.let { "E$it" }
-                                                    ?: item
-                                                        ?.data
-                                                        ?.userData
-                                                        ?.unplayedItemCount
-                                                        ?.takeIf { it > 0 }
-                                                        ?.let { abbreviateNumber(it) }
-                                            }
                                         BannerCard(
                                             name = item?.data?.seriesName ?: item?.name,
                                             item = item,
                                             aspectRatio = AspectRatios.TALL,
-                                            cornerText = cornerText,
+                                            cornerText = item?.ui?.episdodeUnplayedCornerText,
                                             played = item?.data?.userData?.played ?: false,
                                             favorite = item?.favorite ?: false,
                                             playPercent =
@@ -424,19 +401,17 @@ fun HomePageHeader(
     item: BaseItem?,
     modifier: Modifier = Modifier,
 ) {
-    item?.let {
-        val isEpisode = item.type == BaseItemKind.EPISODE
-        val dto = item.data
-        HomePageHeader(
-            title = item.title,
-            subtitle = if (isEpisode) dto.name else null,
-            overview = dto.overview,
-            overviewTwoLines = isEpisode,
-            quickDetails = item.ui.quickDetails,
-            timeRemaining = item.timeRemainingOrRuntime,
-            modifier = modifier,
-        )
-    }
+    val isEpisode = item?.type == BaseItemKind.EPISODE
+    val dto = item?.data
+    HomePageHeader(
+        title = item?.title,
+        subtitle = if (isEpisode) dto?.name else null,
+        overview = dto?.overview,
+        overviewTwoLines = isEpisode,
+        quickDetails = item?.ui?.quickDetails,
+        timeRemaining = item?.timeRemainingOrRuntime,
+        modifier = modifier,
+    )
 }
 
 @Composable
@@ -445,7 +420,7 @@ fun HomePageHeader(
     subtitle: String?,
     overview: String?,
     overviewTwoLines: Boolean,
-    quickDetails: AnnotatedString,
+    quickDetails: AnnotatedString?,
     timeRemaining: Duration?,
     modifier: Modifier = Modifier,
 ) {
@@ -473,7 +448,7 @@ fun HomePageHeader(
             subtitle?.let {
                 EpisodeName(it)
             }
-            QuickDetails(quickDetails, timeRemaining)
+            QuickDetails(quickDetails ?: AnnotatedString(""), timeRemaining)
             val overviewModifier =
                 Modifier
                     .padding(0.dp)

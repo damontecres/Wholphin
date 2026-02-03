@@ -42,6 +42,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
+import timber.log.Timber
 
 @HiltViewModel(assistedFactory = DiscoverMovieViewModel.Factory::class)
 class DiscoverMovieViewModel
@@ -67,8 +68,8 @@ class DiscoverMovieViewModel
 
         val trailers = MutableLiveData<List<Trailer>>(listOf())
         val people = MutableLiveData<List<DiscoverItem>>(listOf())
-        val similar = MutableLiveData<List<DiscoverItem>>(listOf())
-        val recommended = MutableLiveData<List<DiscoverItem>>(listOf())
+        val similar = MutableLiveData<List<DiscoverItem>>()
+        val recommended = MutableLiveData<List<DiscoverItem>>()
         val canCancelRequest = MutableStateFlow(false)
 
         val userConfig = seerrServerRepository.current.map { it?.config }
@@ -99,6 +100,7 @@ class DiscoverMovieViewModel
                         "Error fetching movie",
                     ),
             ) {
+                Timber.v("Init for movie %s", item.id)
                 val movie = fetchAndSetItem().await()
                 val discoveredItem = DiscoverItem(movie)
                 backdropService.submit(discoveredItem)
@@ -116,7 +118,7 @@ class DiscoverMovieViewModel
                     viewModelScope.launchIO {
                         val result =
                             seerrService.api.moviesApi
-                                .movieMovieIdSimilarGet(movieId = item.id, page = 2)
+                                .movieMovieIdSimilarGet(movieId = item.id, page = 1)
                                 .results
                                 ?.map(::DiscoverItem)
                                 .orEmpty()
@@ -125,11 +127,11 @@ class DiscoverMovieViewModel
                     viewModelScope.launchIO {
                         val result =
                             seerrService.api.moviesApi
-                                .movieMovieIdRecommendationsGet(movieId = item.id, page = 2)
+                                .movieMovieIdRecommendationsGet(movieId = item.id, page = 1)
                                 .results
                                 ?.map(::DiscoverItem)
                                 .orEmpty()
-                        similar.setValueOnMain(result)
+                        recommended.setValueOnMain(result)
                     }
                 }
                 val people =
@@ -147,7 +149,7 @@ class DiscoverMovieViewModel
                         ?.filter { it.type == RelatedVideo.Type.TRAILER }
                         ?.filter { it.name.isNotNullOrBlank() && it.url.isNotNullOrBlank() }
                         ?.map {
-                            RemoteTrailer(it.name!!, it.url!!, null)
+                            RemoteTrailer(it.name!!, it.url!!, it.site)
                         }.orEmpty()
                 this@DiscoverMovieViewModel.trailers.setValueOnMain(trailers)
             }

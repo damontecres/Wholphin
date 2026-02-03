@@ -197,4 +197,20 @@ suspend fun upgradeApp(
             }
         }
     }
+
+    // TODO temporarily disabled until some MPV bugs are fixed
+//    if (previous.isEqualOrBefore(Version.fromString("0.4.0-1-g0"))) {
+//        appPreferences.updateData {
+//            it.updatePlaybackPreferences { playerBackend = PlayerBackend.PREFER_MPV }
+//        }
+//        showToast(context, context.getString(R.string.upgrade_mpv_toast), Toast.LENGTH_LONG)
+//    }
+
+    if (previous.isEqualOrBefore(Version.fromString("0.4.0-2-g0"))) {
+        appPreferences.updateData {
+            it.updateMpvOptions {
+                useGpuNext = false
+            }
+        }
+    }
 }

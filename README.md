@@ -4,7 +4,7 @@
 
 Wholphin is an open-source Android TV client for Jellyfin. It aims to provide a different app UI that's inspired by Plex for users interested in migrating to Jellyfin.
 
-This is not a fork of the [official client](https://github.com/jellyfin/jellyfin-androidtv). Wholphin's user interface and controls have been written completely from scratch. Wholphin `v0.3.0+` supports playing media using either ExoPlayer/Media3 or MPV (experimental).
+This is not a fork of the [official client](https://github.com/jellyfin/jellyfin-androidtv). Wholphin's user interface and controls have been written completely from scratch. Wholphin supports playing media using either ExoPlayer or MPV.
 
 <p align="center">
 <a href="https://github.com/damontecres/Wholphin/releases">
@@ -31,35 +31,39 @@ This is not a fork of the [official client](https://github.com/jellyfin/jellyfin
 ### User interface
 
 - A navigation drawer for quick access to libraries, favorites, search, and settings from almost anywhere in the app
+- Integration with [Jellyseerr](https://github.com/seerr-team/seerr) to discover new movies and TV shows
 - Option to combine Continue Watching & Next Up rows
 - Show Movie/TV Show titles when browsing libraries
 - Play theme music, if available
+- Customize subtitle style for plain text subtitles
 - Search & download subtitles (requires compatible server plugin such as [OpenSubtitles](https://github.com/jellyfin/jellyfin-plugin-opensubtitles))
 - Customize layout grids for libraries
 - Multiple app color themes
+- Protect user profile switches with PIN code
 
 ### Playback
 
-- Different media playback engines, including:
-  - Default ExoPlayer/Media3
-  - Experimental MPV
-- Plex inspired playback controls, such as:
+- Different media playback engines:
+  - **ExoPlayer** w/ optional extra audio & AV1 software decoding
+  - **MPV** for direct playing anything plus ASS subtitle support
+- Plex inspired playback controls:
   - Using D-Pad left/right for seeking during playback
   - Quickly access video chapters & queue during playback
   - Optionally skip back a few seconds when resuming playback
 - Live TV & DVR support
 - Auto play next episodes with pass out protection
-- Option for automatic refresh rate switching on supported displays
+- Option for automatic refresh rate & resolution switching on supported displays
 - Trickplay support
-- Other (subjective) enhancements:
-  - Subtly show playback position along the bottom of the screen while seeking w/ D-Pad
-  - Force Continue Watching & Next Up TV episodes to use their Series posters
+- Subtly show playback position along the bottom of the screen while seeking w/ D-Pad
+
 
 ### Roadmap
 
 See [here for the roadmap](https://github.com/damontecres/Wholphin/wiki#roadmap)
 
 ## Installation
+
+Using [Google Play](https://play.google.com/store/apps/details?id=com.github.damontecres.wholphin) or [Amazon appstore](https://www.amazon.com/gp/product/B0G8RQQR9T/ref=mas_pm_wholphin) are the fastest way to install. But you can follow these instructions to install without needing an app store
 
 Downloader Code: `8668671`
 
@@ -68,7 +72,7 @@ Downloader Code: `8668671`
     - https://www.xda-developers.com/how-to-sideload-apps-android-tv/
     - https://developer.android.com/distribute/marketing-tools/alternative-distribution#unknown-sources
     - https://www.aftvnews.com/how-to-enable-apps-from-unknown-sources-on-an-amazon-fire-tv-or-fire-tv-stick/
-1. Install the APK on your Android TV device with one of these options:
+2. Install the APK on your Android TV device with one of these options:
     - Install a browser program such as [Downloader](https://www.aftvnews.com/downloader/), use it to get the latest apk with short code `8668671` or URL: http://aftv.news/8668671
     - Download the latest APK release from the [releases page](https://github.com/damontecres/Wholphin/releases/latest) or http://aftv.news/8668671
         - Put the APK on an SD Card/USB stick/network share and use a file manager app from the Google Play Store / Amazon AppStore (e.g. `FX File Explorer`). Android's preinstalled file manager probably will not work!
@@ -81,11 +85,15 @@ After the initial install above, the app will automatically check for updates. T
 
 The first time you attempt an update, the OS should guide you through enabling the required additional permissions for the app to install updates.
 
+Note: if installed via an app store, the app store will handle updates.
+
 ## Compatibility
 
-Requires Android 6+ (or Fire TV OS 6+) and Jellyfin server `10.10.x` or `10.11.x` (tested on primarily `10.11.3`).
+Requires Android 6+ (or Fire TV OS 6+) and Jellyfin server `10.10.x` or `10.11.x` (tested on primarily `10.11`).
 
 The app is tested on a variety of Android TV/Fire TV OS devices, but if you encounter issues, please file an issue!
+
+Jellyseerr integration is tested with `v2.7.3`. Older versions may not work.
 
 ## Contributions
 

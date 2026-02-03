@@ -10,6 +10,7 @@ import androidx.compose.runtime.ExperimentalComposeRuntimeApi
 import androidx.hilt.work.HiltWorkerFactory
 import androidx.work.Configuration
 import dagger.hilt.android.HiltAndroidApp
+import okhttp3.OkHttp
 import org.acra.ACRA
 import org.acra.ReportField
 import org.acra.config.dialog
@@ -63,6 +64,7 @@ class WholphinApplication :
 
     override fun onCreate() {
         super.onCreate()
+        OkHttp.initialize(this)
         initAcra {
             buildConfigClass = BuildConfig::class.java
             reportFormat = StringFormat.JSON
