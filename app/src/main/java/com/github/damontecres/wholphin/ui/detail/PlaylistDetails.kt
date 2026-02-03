@@ -103,6 +103,7 @@ import org.jellyfin.sdk.model.api.ItemSortBy
 import org.jellyfin.sdk.model.api.SortOrder
 import org.jellyfin.sdk.model.api.request.GetItemsRequest
 import org.jellyfin.sdk.model.extensions.ticks
+import timber.log.Timber
 import java.util.UUID
 import javax.inject.Inject
 import kotlin.time.Duration
@@ -193,17 +194,25 @@ class PlaylistViewModel
                                 sortOrder = listOf(sortAndDirection.direction),
                             ),
                         )
-                    val pager =
-                        ApiRequestPager(
-                            api,
-                            request,
-                            GetItemsRequestHandler,
-                            viewModelScope,
-                        ).init()
+                    try {
+                        val pager =
+                            ApiRequestPager(
+                                api,
+                                request,
+                                GetItemsRequestHandler,
+                                viewModelScope,
+                            ).init()
 
-                    withContext(Dispatchers.Main) {
-                        items.value = pager
-                        loading.value = LoadingState.Success
+                        withContext(Dispatchers.Main) {
+                            items.value = pager
+                            loading.value = LoadingState.Success
+                        }
+                    } catch (ex: Exception) {
+                        Timber.e(ex, "Error fetching playlist %s", itemId)
+                        withContext(Dispatchers.Main) {
+                            items.value = listOf()
+                            loading.value = LoadingState.Error(ex)
+                        }
                     }
                 }
             }
@@ -244,89 +253,74 @@ fun PlaylistDetails(
     val playlist by viewModel.item.observeAsState(null)
     val items by viewModel.items.observeAsState(listOf())
     val filterAndSort by viewModel.filterAndSort.collectAsState()
-    val filter = filterAndSort.filter
-    val sortAndDirection = filterAndSort.sortAndDirection
 
     var longClickDialog by remember { mutableStateOf<DialogParams?>(null) }
 
-    when (val st = loading) {
-        is LoadingState.Error -> {
-            ErrorMessage(st, modifier)
-        }
+    val goToString = stringResource(R.string.go_to)
+    val playFromHereString = stringResource(R.string.play_from_here)
 
-        LoadingState.Pending, LoadingState.Loading -> {
-            LoadingPage(modifier)
-        }
-
-        LoadingState.Success -> {
-            playlist?.let {
-                val focusRequester = remember { FocusRequester() }
-                LaunchedEffect(Unit) { focusRequester.tryRequestFocus() }
-                PlaylistDetailsContent(
-                    playlist = it,
-                    items = items,
-                    focusRequester = focusRequester,
-                    onChangeBackdrop = viewModel::updateBackdrop,
-                    onClickIndex = { index, _ ->
-                        viewModel.navigationManager.navigateTo(
-                            Destination.PlaybackList(
-                                itemId = it.id,
-                                startIndex = index,
-                                shuffle = false,
-                                filter = filterAndSort.filter,
-                                sortAndDirection = filterAndSort.sortAndDirection,
-                            ),
-                        )
-                    },
-                    onClickPlay = { shuffle ->
-                        viewModel.navigationManager.navigateTo(
-                            Destination.PlaybackList(
-                                itemId = it.id,
-                                startIndex = 0,
-                                shuffle = shuffle,
-                                filter = filterAndSort.filter,
-                                sortAndDirection = filterAndSort.sortAndDirection,
-                            ),
-                        )
-                    },
-                    onLongClickIndex = { index, item ->
-                        longClickDialog =
-                            DialogParams(
-                                fromLongClick = true,
-                                title = item.name ?: "",
-                                items =
-                                    listOf(
-                                        DialogItem(
-                                            context.getString(R.string.go_to),
-                                            Icons.Default.ArrowForward,
-                                        ) {
-                                            viewModel.navigationManager.navigateTo(item.destination())
-                                        },
-                                        DialogItem(
-                                            context.getString(R.string.play_from_here),
-                                            Icons.Default.PlayArrow,
-                                        ) {
-                                            viewModel.navigationManager.navigateTo(
-                                                Destination.PlaybackList(
-                                                    itemId = it.id,
-                                                    startIndex = index,
-                                                    shuffle = false,
-                                                    filter = filterAndSort.filter,
-                                                    sortAndDirection = filterAndSort.sortAndDirection,
-                                                ),
-                                            )
-                                        },
+    PlaylistDetailsContent(
+        loadingState = loading,
+        playlist = playlist,
+        items = items,
+        onChangeBackdrop = viewModel::updateBackdrop,
+        onClickIndex = { index, _ ->
+            viewModel.navigationManager.navigateTo(
+                Destination.PlaybackList(
+                    itemId = destination.itemId,
+                    startIndex = index,
+                    shuffle = false,
+                    filter = filterAndSort.filter,
+                    sortAndDirection = filterAndSort.sortAndDirection,
+                ),
+            )
+        },
+        onClickPlay = { shuffle ->
+            viewModel.navigationManager.navigateTo(
+                Destination.PlaybackList(
+                    itemId = destination.itemId,
+                    startIndex = 0,
+                    shuffle = shuffle,
+                    filter = filterAndSort.filter,
+                    sortAndDirection = filterAndSort.sortAndDirection,
+                ),
+            )
+        },
+        onLongClickIndex = { index, item ->
+            longClickDialog =
+                DialogParams(
+                    fromLongClick = true,
+                    title = item.name ?: "",
+                    items =
+                        listOf(
+                            DialogItem(
+                                goToString,
+                                Icons.Default.ArrowForward,
+                            ) {
+                                viewModel.navigationManager.navigateTo(item.destination())
+                            },
+                            DialogItem(
+                                playFromHereString,
+                                Icons.Default.PlayArrow,
+                            ) {
+                                viewModel.navigationManager.navigateTo(
+                                    Destination.PlaybackList(
+                                        itemId = destination.itemId,
+                                        startIndex = index,
+                                        shuffle = false,
+                                        filter = filterAndSort.filter,
+                                        sortAndDirection = filterAndSort.sortAndDirection,
                                     ),
-                            )
-                    },
-                    filterAndSort = filterAndSort,
-                    onFilterAndSortChange = viewModel::loadItems,
-                    getPossibleFilterValues = viewModel::getFilterOptionValues,
-                    modifier = modifier,
+                                )
+                            },
+                        ),
                 )
-            }
-        }
-    }
+        },
+        filterAndSort = filterAndSort,
+        onFilterAndSortChange = viewModel::loadItems,
+        getPossibleFilterValues = viewModel::getFilterOptionValues,
+        modifier = modifier,
+    )
     longClickDialog?.let { params ->
         DialogPopup(
             params = params,
@@ -337,7 +331,7 @@ fun PlaylistDetails(
 
 @Composable
 fun PlaylistDetailsContent(
-    playlist: BaseItem,
+    playlist: BaseItem?,
     items: List<BaseItem?>,
     onClickIndex: (Int, BaseItem) -> Unit,
     onLongClickIndex: (Int, BaseItem) -> Unit,
@@ -346,8 +340,8 @@ fun PlaylistDetailsContent(
     filterAndSort: FilterAndSort,
     onFilterAndSortChange: (GetItemsFilter, SortAndDirection) -> Unit,
     getPossibleFilterValues: suspend (ItemFilterBy<*>) -> List<FilterValueOption>,
+    loadingState: LoadingState,
     modifier: Modifier = Modifier,
-    focusRequester: FocusRequester = remember { FocusRequester() },
 ) {
     var savedIndex by rememberSaveable { mutableIntStateOf(0) }
     var focusedIndex by remember { mutableIntStateOf(savedIndex) }
@@ -355,6 +349,12 @@ fun PlaylistDetailsContent(
     val focusedItem = items.getOrNull(focusedIndex)
     LaunchedEffect(focusedItem) {
         focusedItem?.let(onChangeBackdrop)
+    }
+    val focusRequester = remember { FocusRequester() }
+    LaunchedEffect(loadingState) {
+        if (loadingState is LoadingState.Success || loadingState is LoadingState.Error) {
+            focusRequester.tryRequestFocus()
+        }
     }
 
     val playButtonFocusRequester = remember { FocusRequester() }
@@ -389,92 +389,104 @@ fun PlaylistDetailsContent(
                             .padding(start = 16.dp, top = 80.dp)
                             .fillMaxWidth(.25f),
                 )
-                Column(
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp),
-                ) {
-                    Text(
-                        text = playlist.name ?: stringResource(R.string.playlist),
-                        color = MaterialTheme.colorScheme.onSurface,
-                        style = MaterialTheme.typography.displayMedium,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-                    if (items.isNotEmpty()) {
-                        LazyColumn(
-                            contentPadding = PaddingValues(8.dp),
+                when (loadingState) {
+                    is LoadingState.Error -> {
+                        ErrorMessage(loadingState, modifier)
+                    }
+
+                    LoadingState.Pending, LoadingState.Loading -> {
+                        LoadingPage(modifier)
+                    }
+
+                    LoadingState.Success -> {
+                        Column(
                             modifier =
                                 Modifier
-                                    .padding(bottom = 32.dp)
-                                    .fillMaxHeight()
-//                            .fillMaxWidth(.8f)
-                                    .weight(1f)
-                                    .background(
-                                        MaterialTheme.colorScheme
-                                            .surfaceColorAtElevation(1.dp)
-                                            .copy(alpha = .75f),
-                                        shape = RoundedCornerShape(16.dp),
-                                    ).focusProperties {
-                                        onExit = {
-                                            playButtonFocusRequester.tryRequestFocus()
-                                        }
-                                    }.focusRequester(focusRequester)
-                                    .focusGroup()
-                                    .focusRestorer(focus),
-                        ) {
-                            itemsIndexed(items) { index, item ->
-                                PlaylistItem(
-                                    item = item,
-                                    index = index,
-                                    onClick = {
-                                        savedIndex = index
-                                        item?.let {
-                                            onClickIndex.invoke(index, item)
-                                        }
-                                    },
-                                    onLongClick = {
-                                        savedIndex = index
-                                        item?.let {
-                                            onLongClickIndex.invoke(index, item)
-                                        }
-                                    },
-                                    modifier =
-                                        Modifier
-                                            .height(80.dp)
-                                            .ifElse(
-                                                index == savedIndex,
-                                                Modifier.focusRequester(focus),
-                                            ).onFocusChanged {
-                                                if (it.isFocused) {
-                                                    focusedIndex = index
-                                                }
-                                            }.focusProperties {
-                                                left = playButtonFocusRequester
-                                                previous = playButtonFocusRequester
-                                            },
-                                )
-                            }
-                        }
-                    } else {
-                        Box(
-                            contentAlignment = Alignment.Center,
-                            modifier = Modifier.fillMaxWidth(),
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 16.dp),
                         ) {
                             Text(
-                                text = stringResource(R.string.no_results),
-                                style = MaterialTheme.typography.titleLarge,
+                                text = playlist?.name ?: stringResource(R.string.playlist),
+                                color = MaterialTheme.colorScheme.onSurface,
+                                style = MaterialTheme.typography.displayMedium,
                                 textAlign = TextAlign.Center,
-                                modifier =
-                                    Modifier
-                                        .focusProperties {
-                                            onExit = {
-                                                playButtonFocusRequester.tryRequestFocus()
-                                            }
-                                        }.focusRequester(focusRequester)
-                                        .focusable(),
+                                modifier = Modifier.fillMaxWidth(),
                             )
+                            if (items.isNotEmpty()) {
+                                LazyColumn(
+                                    contentPadding = PaddingValues(8.dp),
+                                    modifier =
+                                        Modifier
+                                            .padding(bottom = 32.dp)
+                                            .fillMaxHeight()
+//                            .fillMaxWidth(.8f)
+                                            .weight(1f)
+                                            .background(
+                                                MaterialTheme.colorScheme
+                                                    .surfaceColorAtElevation(1.dp)
+                                                    .copy(alpha = .75f),
+                                                shape = RoundedCornerShape(16.dp),
+                                            ).focusProperties {
+                                                onExit = {
+                                                    playButtonFocusRequester.tryRequestFocus()
+                                                }
+                                            }.focusRequester(focusRequester)
+                                            .focusGroup()
+                                            .focusRestorer(focus),
+                                ) {
+                                    itemsIndexed(items) { index, item ->
+                                        PlaylistItem(
+                                            item = item,
+                                            index = index,
+                                            onClick = {
+                                                savedIndex = index
+                                                item?.let {
+                                                    onClickIndex.invoke(index, item)
+                                                }
+                                            },
+                                            onLongClick = {
+                                                savedIndex = index
+                                                item?.let {
+                                                    onLongClickIndex.invoke(index, item)
+                                                }
+                                            },
+                                            modifier =
+                                                Modifier
+                                                    .height(80.dp)
+                                                    .ifElse(
+                                                        index == savedIndex,
+                                                        Modifier.focusRequester(focus),
+                                                    ).onFocusChanged {
+                                                        if (it.isFocused) {
+                                                            focusedIndex = index
+                                                        }
+                                                    }.focusProperties {
+                                                        left = playButtonFocusRequester
+                                                        previous = playButtonFocusRequester
+                                                    },
+                                        )
+                                    }
+                                }
+                            } else {
+                                Box(
+                                    contentAlignment = Alignment.Center,
+                                    modifier = Modifier.fillMaxWidth(),
+                                ) {
+                                    Text(
+                                        text = stringResource(R.string.no_results),
+                                        style = MaterialTheme.typography.titleLarge,
+                                        textAlign = TextAlign.Center,
+                                        modifier =
+                                            Modifier
+                                                .focusProperties {
+                                                    onExit = {
+                                                        playButtonFocusRequester.tryRequestFocus()
+                                                    }
+                                                }.focusRequester(focusRequester)
+                                                .focusable(),
+                                    )
+                                }
+                            }
                         }
                     }
                 }
