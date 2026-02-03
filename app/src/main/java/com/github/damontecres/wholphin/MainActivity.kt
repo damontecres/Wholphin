@@ -70,11 +70,13 @@ import com.github.damontecres.wholphin.ui.setup.SwitchUserContent
 import com.github.damontecres.wholphin.ui.theme.WholphinTheme
 import com.github.damontecres.wholphin.ui.util.ProvideLocalClock
 import com.github.damontecres.wholphin.util.DebugLogTree
+import com.github.damontecres.wholphin.util.ExceptionHandler
 import dagger.hilt.android.AndroidEntryPoint
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -136,18 +138,11 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         applyAppLocale()
+        instance = this
         Timber.i("MainActivity.onCreate: savedInstanceState is null=${savedInstanceState == null}")
         lifecycle.addObserver(playbackLifecycleObserver)
         if (savedInstanceState == null) {
             appUpgradeHandler.copySubfont(false)
-        }
-        refreshRateService.refreshRateMode.observe(this) { modeId ->
-            // Listen for refresh rate changes
-            val attrs = window.attributes
-            if (attrs.preferredDisplayModeId != modeId) {
-                Timber.d("Switch preferredDisplayModeId to %s", modeId)
-                window.attributes = attrs.apply { preferredDisplayModeId = modeId }
-            }
         }
         viewModel.serverRepository.currentUser.observe(this) { user ->
             if (user?.hasPin == true) {
@@ -420,6 +415,16 @@ class MainActivity : AppCompatActivity() {
         AppCompatDelegate.setApplicationLocales(localeList)
     }
 
+    fun changeDisplayMode(modeId: Int) {
+        lifecycleScope.launch(Dispatchers.Main + ExceptionHandler()) {
+            val attrs = window.attributes
+            if (attrs.preferredDisplayModeId != modeId) {
+                Timber.d("Switch preferredDisplayModeId to %s", modeId)
+                window.attributes = attrs.apply { preferredDisplayModeId = modeId }
+            }
+        }
+    }
+
     companion object {
         const val INTENT_ITEM_ID = "itemId"
         const val INTENT_ITEM_TYPE = "itemType"
@@ -427,6 +432,9 @@ class MainActivity : AppCompatActivity() {
         const val INTENT_EPISODE_NUMBER = "epNum"
         const val INTENT_SEASON_NUMBER = "seaNum"
         const val INTENT_SEASON_ID = "seaId"
+
+        lateinit var instance: MainActivity
+            private set
     }
 }
 
