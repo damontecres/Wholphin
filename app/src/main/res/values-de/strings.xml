@@ -403,4 +403,5 @@
     <string name="ref_frames">Referenzbilder</string>
     <string name="edge_size">Randgröße</string>
     <string name="resolution_switching">Auflösungswechsel</string>
+    <string name="guest_stars">Gaststars</string>
 </resources>
