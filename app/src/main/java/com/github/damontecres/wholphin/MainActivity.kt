@@ -453,6 +453,32 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun applyAppLocale() {
+        val languageEnum = runBlocking {
+            userPreferencesDataStore.data.first().interfacePreferences.language
+        }
+        val languageTag = when (languageEnum) {
+            AppLanguages.ENGLISH -> "en"
+            AppLanguages.INDONESIAN -> "in"
+            AppLanguages.CZECH -> "cs"
+            AppLanguages.ESTONIAN -> "et"
+            AppLanguages.SPANISH -> "es"
+            AppLanguages.FRENCH -> "fr"
+            AppLanguages.ITALIAN -> "it"
+            AppLanguages.UKRAINIAN -> "uk"
+            AppLanguages.CHINESE_SIMPLIFIED -> "zh-Hans"
+            AppLanguages.CHINESE_TRADITIONAL -> "zh-Hant"
+            else -> null
+        }
+
+        val localeList = if (languageTag != null) {
+            LocaleListCompat.forLanguageTags(languageTag)
+        } else {
+            LocaleListCompat.getEmptyLocaleList()
+        }
+        AppCompatDelegate.setApplicationLocales(localeList)
+    }
+
     companion object {
         const val INTENT_ITEM_ID = "itemId"
         const val INTENT_ITEM_TYPE = "itemType"

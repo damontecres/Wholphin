@@ -501,6 +501,23 @@
     <string name="zoom_out">Zoom out</string>
     <string name="slideshow_duration">Slideshow duration</string>
     <string name="play_videos_during_slideshow">Play videos during slideshow</string>
+    <string name="restart_required">Restart Required</string>
+    <string name="restart_to_apply_changes">Changes will be applied after the app restarts. Restart now?</string>
+    <string name="system_default_language">System Default</string>
+
+    <string-array name="language_options">
+        <item>@string/system_default_language</item>
+        <item>English</item>
+        <item>Bahasa Indonesia</item>
+        <item>Čeština</item>
+        <item>Eesti</item>
+        <item>Español</item>
+        <item>Français</item>
+        <item>Italiano</item>
+        <item>Українська</item>
+        <item>中文 (简体)</item>
+        <item>中文 (繁體)</item>
+    </string-array>
 
     <string-array name="theme_song_volume">
         <item>Disabled</item>
