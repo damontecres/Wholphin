@@ -1,5 +1,7 @@
 package com.github.damontecres.wholphin.ui.preferences.subtitle
 
+import android.content.pm.ActivityInfo
+import android.os.Build
 import androidx.annotation.Dimension
 import androidx.annotation.OptIn
 import androidx.compose.foundation.Image
@@ -20,35 +22,58 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.LifecycleStartEffect
 import androidx.media3.common.text.Cue
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.ui.SubtitleView
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.preferences.AppPreferences
-import com.github.damontecres.wholphin.ui.preferences.PreferenceScreenOption
-import com.github.damontecres.wholphin.ui.preferences.PreferencesContent
+import com.github.damontecres.wholphin.preferences.updateInterfacePreferences
+import com.github.damontecres.wholphin.ui.findActivity
+import com.github.damontecres.wholphin.ui.preferences.BasicPreferencesContent
 import com.github.damontecres.wholphin.ui.preferences.PreferencesViewModel
 import com.github.damontecres.wholphin.ui.preferences.subtitle.SubtitleSettings.calculateEdgeSize
 import com.github.damontecres.wholphin.ui.preferences.subtitle.SubtitleSettings.toSubtitleStyle
 import com.github.damontecres.wholphin.util.Media3SubtitleOverride
+import timber.log.Timber
 
 @OptIn(UnstableApi::class)
 @Composable
 fun SubtitleStylePage(
     initialPreferences: AppPreferences,
+    hdr: Boolean,
     modifier: Modifier = Modifier,
     viewModel: PreferencesViewModel = hiltViewModel(),
 ) {
+    val context = LocalContext.current
     val density = LocalDensity.current
     var preferences by remember { mutableStateOf(initialPreferences) }
     LaunchedEffect(Unit) {
         viewModel.preferenceDataStore.data.collect {
             preferences = it
+        }
+    }
+    val display = LocalView.current.display
+
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        LifecycleStartEffect(Unit) {
+            if (hdr) {
+                val window = context.findActivity()?.window
+                Timber.v("window=$window")
+                context.findActivity()?.window?.colorMode = ActivityInfo.COLOR_MODE_HDR
+            }
+
+            onStopOrDispose {
+                context.findActivity()?.window?.colorMode = ActivityInfo.COLOR_MODE_DEFAULT
+            }
         }
     }
     val prefs = preferences.interfacePreferences.subtitlesPreferences
@@ -131,11 +156,35 @@ fun SubtitleStylePage(
                 )
             }
         }
-        PreferencesContent(
-            initialPreferences = preferences,
-            preferenceScreenOption = PreferenceScreenOption.SUBTITLES,
+        val prefList =
+            remember(hdr) {
+                if (hdr) {
+                    SubtitleSettings.hdrPreferences
+                } else {
+                    SubtitleSettings.preferences
+                }
+            }
+        BasicPreferencesContent(
+            title = stringResource(R.string.subtitle_style),
+            preferences =
+                if (hdr) {
+                    preferences.interfacePreferences.hdrSubtitlesPreferences
+                } else {
+                    preferences.interfacePreferences.subtitlesPreferences
+                },
+            prefList = prefList,
+            onPreferenceChange = { newSubtitlePrefs ->
+                viewModel.preferenceDataStore.updateData {
+                    it.updateInterfacePreferences {
+                        if (hdr) {
+                            hdrSubtitlesPreferences = newSubtitlePrefs
+                        } else {
+                            subtitlesPreferences = newSubtitlePrefs
+                        }
+                    }
+                }
+            },
             onFocus = { groupIndex, prefIndex ->
-
                 focusedOnMargin =
                     SubtitleSettings.preferences.getOrNull(groupIndex)?.preferences?.getOrNull(
                         prefIndex,

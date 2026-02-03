@@ -33,7 +33,6 @@ sealed interface PreferenceValidation {
 enum class PreferenceScreenOption {
     BASIC,
     ADVANCED,
-    SUBTITLES,
     EXO_PLAYER,
     MPV,
     ;

@@ -213,4 +213,13 @@ suspend fun upgradeApp(
             }
         }
     }
+
+    if (previous.isEqualOrBefore(Version.fromString("0.4.1-2-g0"))) {
+        appPreferences.updateData {
+            it.updateInterfacePreferences {
+                // Copy current subtitle prefs as HDR ones
+                hdrSubtitlesPreferences = subtitlesPreferences.toBuilder().build()
+            }
+        }
+    }
 }

@@ -46,7 +46,7 @@ fun <T> BasicPreferencesContent(
     title: String,
     preferences: T,
     prefList: List<PreferenceGroup<T>>,
-    onPreferenceChange: (T) -> Unit,
+    onPreferenceChange: suspend (T) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: PreferencesViewModel = hiltViewModel(),
     onFocus: (Int, Int) -> Unit = { _, _ -> },

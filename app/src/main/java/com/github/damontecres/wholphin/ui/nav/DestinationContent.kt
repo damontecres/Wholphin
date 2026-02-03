@@ -34,6 +34,7 @@ import com.github.damontecres.wholphin.ui.main.HomePage
 import com.github.damontecres.wholphin.ui.main.SearchPage
 import com.github.damontecres.wholphin.ui.playback.PlaybackPage
 import com.github.damontecres.wholphin.ui.preferences.PreferencesPage
+import com.github.damontecres.wholphin.ui.preferences.subtitle.SubtitleStylePage
 import com.github.damontecres.wholphin.ui.setup.InstallUpdatePage
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.CollectionType
@@ -74,6 +75,14 @@ fun DestinationContent(
             PreferencesPage(
                 preferences.appPreferences,
                 destination.screen,
+                modifier,
+            )
+        }
+
+        is Destination.SubtitleSettings -> {
+            SubtitleStylePage(
+                preferences.appPreferences,
+                destination.hdr,
                 modifier,
             )
         }

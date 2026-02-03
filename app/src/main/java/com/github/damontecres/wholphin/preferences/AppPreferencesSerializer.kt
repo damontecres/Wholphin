@@ -100,6 +100,12 @@ class AppPreferencesSerializer
                                         .apply {
                                             resetSubtitles()
                                         }.build()
+                                hdrSubtitlesPreferences =
+                                    SubtitlePreferences
+                                        .newBuilder()
+                                        .apply {
+                                            resetSubtitles()
+                                        }.build()
 
                                 liveTvPreferences =
                                     LiveTvPreferences

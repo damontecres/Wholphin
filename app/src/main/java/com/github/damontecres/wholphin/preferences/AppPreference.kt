@@ -710,7 +710,7 @@ sealed interface AppPreference<Pref, T> {
         val SubtitleStyle =
             AppDestinationPreference<AppPreferences>(
                 title = R.string.subtitle_style,
-                destination = Destination.Settings(PreferenceScreenOption.SUBTITLES),
+                destination = Destination.SubtitleSettings(false),
             )
 
         val RefreshRateSwitching =
