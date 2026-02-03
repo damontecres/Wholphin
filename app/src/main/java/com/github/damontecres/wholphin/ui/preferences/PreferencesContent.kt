@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -34,6 +35,8 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -95,6 +98,7 @@ fun PreferencesContent(
     var cacheUsage by remember { mutableStateOf(CacheUsage(0, 0, 0)) }
     val seerrIntegrationEnabled by viewModel.seerrEnabled.collectAsState(false)
     var seerrDialogMode by remember { mutableStateOf<SeerrDialogMode>(SeerrDialogMode.None) }
+    var showQuickConnectDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         viewModel.preferenceDataStore.data.collect {
@@ -419,6 +423,17 @@ fun PreferencesContent(
                                 )
                             }
 
+                            AppPreference.QuickConnect -> {
+                                ClickPreference(
+                                    title = stringResource(pref.title),
+                                    onClick = { showQuickConnectDialog = true },
+                                    modifier = Modifier,
+                                    summary = null,
+                                    onLongClick = {},
+                                    interactionSource = interactionSource,
+                                )
+                            }
+
                             else -> {
                                 val value = pref.getter.invoke(preferences)
                                 ComposablePreference(
@@ -511,6 +526,42 @@ fun PreferencesContent(
 
             SeerrDialogMode.None -> {}
         }
+    }
+
+    if (showQuickConnectDialog) {
+        val quickConnectStatus by viewModel.quickConnectStatus.collectAsState(LoadingState.Pending)
+        val successMessage = stringResource(R.string.quick_connect_success)
+
+        LaunchedEffect(quickConnectStatus) {
+            if (quickConnectStatus == LoadingState.Success) {
+                Toast.makeText(context, successMessage, Toast.LENGTH_SHORT).show()
+                showQuickConnectDialog = false
+            }
+        }
+
+        StringInputDialog(
+            input =
+                StringInput(
+                    title = stringResource(R.string.quick_connect_code),
+                    value = "",
+                    keyboardOptions =
+                        KeyboardOptions(
+                            keyboardType = KeyboardType.Number,
+                            imeAction = ImeAction.Done,
+                        ),
+                    onSubmit = { code ->
+                        if (code.length == 6) {
+                            viewModel.authorizeQuickConnect(code)
+                        }
+                    },
+                ),
+            onSave = { code ->
+                if (code.length == 6) {
+                    viewModel.authorizeQuickConnect(code)
+                }
+            },
+            onDismissRequest = { showQuickConnectDialog = false },
+        )
     }
 }
 

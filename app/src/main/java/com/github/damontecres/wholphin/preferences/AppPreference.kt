@@ -903,6 +903,13 @@ sealed interface AppPreference<Pref, T> {
                 getter = { },
                 setter = { prefs, _ -> prefs },
             )
+
+        val QuickConnect =
+            AppClickablePreference<AppPreferences>(
+                title = R.string.quick_connect,
+                getter = { },
+                setter = { prefs, _ -> prefs },
+            )
     }
 }
 
@@ -964,6 +971,7 @@ val basicPreferences =
             preferences =
                 listOf(
                     AppPreference.SeerrIntegration,
+                    AppPreference.QuickConnect,
                     AppPreference.AdvancedSettings,
                 ),
         ),

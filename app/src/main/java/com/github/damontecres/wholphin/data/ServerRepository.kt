@@ -18,6 +18,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import org.jellyfin.sdk.Jellyfin
 import org.jellyfin.sdk.api.client.ApiClient
+import org.jellyfin.sdk.api.client.extensions.quickConnectApi
 import org.jellyfin.sdk.api.client.extensions.systemApi
 import org.jellyfin.sdk.api.client.extensions.userApi
 import org.jellyfin.sdk.model.api.AuthenticationResult
@@ -264,6 +265,18 @@ class ServerRepository
                 }
             }
         }
+
+        suspend fun authorizeQuickConnect(code: String): Boolean =
+            withContext(Dispatchers.IO) {
+                try {
+                    val userId = currentUser.value?.id
+                    val response = apiClient.quickConnectApi.authorizeQuickConnect(code, userId)
+                    response.content
+                } catch (e: Exception) {
+                    Timber.e(e, "Failed to authorize Quick Connect")
+                    throw e
+                }
+            }
 
         companion object {
             fun getServerSharedPreferences(context: Context): SharedPreferences =

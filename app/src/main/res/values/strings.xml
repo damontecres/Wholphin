@@ -453,6 +453,9 @@
     <string name="seerr_integration">Seerr integration</string>
     <string name="remove_seerr_server">Remove Seerr Server</string>
     <string name="seerr_server_added">Seerr server added</string>
+    <string name="quick_connect">Quick Connect</string>
+    <string name="quick_connect_code">Enter 6-digit code</string>
+    <string name="quick_connect_success">Device authorized successfully</string>
     <string name="password">Password</string>
     <string name="username">Username</string>
     <string name="url">URL</string>
