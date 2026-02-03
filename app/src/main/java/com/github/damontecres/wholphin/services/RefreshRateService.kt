@@ -29,7 +29,7 @@ class RefreshRateService
         @param:ApplicationContext private val context: Context,
     ) {
         private val displayManager = context.getSystemService(Context.DISPLAY_SERVICE) as DisplayManager
-        private val display = displayManager.getDisplay(Display.DEFAULT_DISPLAY)
+        private val display get() = displayManager.getDisplay(Display.DEFAULT_DISPLAY)
 
         val supportedDisplayModes get() = display.supportedModes.orEmpty()
 
