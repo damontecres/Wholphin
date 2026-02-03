@@ -78,6 +78,7 @@ import com.github.damontecres.wholphin.ui.components.SortByButton
 import com.github.damontecres.wholphin.ui.data.BoxSetSortOptions
 import com.github.damontecres.wholphin.ui.data.SortAndDirection
 import com.github.damontecres.wholphin.ui.enableMarquee
+import com.github.damontecres.wholphin.ui.formatDateTime
 import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.nav.Destination
@@ -97,6 +98,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
+import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.ItemSortBy
 import org.jellyfin.sdk.model.api.SortOrder
 import org.jellyfin.sdk.model.api.request.GetItemsRequest
@@ -155,6 +157,7 @@ class PlaylistViewModel
             sortAndDirection: SortAndDirection,
         ) {
             viewModelScope.launchIO {
+                backdropService.clearBackdrop()
                 loading.setValueOnMain(LoadingState.Loading)
                 this@PlaylistViewModel.filterAndSort.update {
                     FilterAndSort(filter, sortAndDirection)
@@ -367,7 +370,6 @@ fun PlaylistDetailsContent(
                     .fillMaxSize(),
         ) {
             Row(
-                verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(24.dp),
                 modifier =
                     Modifier
@@ -384,7 +386,7 @@ fun PlaylistDetailsContent(
                     getPossibleFilterValues = getPossibleFilterValues,
                     modifier =
                         Modifier
-                            .padding(start = 16.dp)
+                            .padding(start = 16.dp, top = 80.dp)
                             .fillMaxWidth(.25f),
                 )
                 Column(
@@ -538,13 +540,20 @@ fun PlaylistDetailsHeader(
         Text(
             text = focusedItem?.title ?: "",
             color = MaterialTheme.colorScheme.onSurface,
-            style = MaterialTheme.typography.headlineLarge,
+            style = MaterialTheme.typography.headlineSmall,
         )
         Text(
             text = focusedItem?.subtitle ?: "",
             color = MaterialTheme.colorScheme.onSurface,
-            style = MaterialTheme.typography.headlineSmall,
+            style = MaterialTheme.typography.titleMedium,
         )
+        if (focusedItem?.type == BaseItemKind.EPISODE && focusedItem.data.premiereDate != null) {
+            Text(
+                text = formatDateTime(focusedItem.data.premiereDate!!),
+                color = MaterialTheme.colorScheme.onSurface,
+                style = MaterialTheme.typography.titleSmall,
+            )
+        }
         OverviewText(
             overview = focusedItem?.data?.overview ?: "",
             maxLines = 10,
