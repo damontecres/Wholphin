@@ -428,6 +428,7 @@ fun PreferencesContent(
                                     title = stringResource(pref.title),
                                     onClick = {
                                         if (currentUser != null) {
+                                            viewModel.resetQuickConnectStatus()
                                             showQuickConnectDialog = true
                                         }
                                     },
@@ -535,10 +536,6 @@ fun PreferencesContent(
     if (showQuickConnectDialog) {
         val quickConnectStatus by viewModel.quickConnectStatus.collectAsState(LoadingState.Pending)
         val successMessage = stringResource(R.string.quick_connect_success)
-
-        LaunchedEffect(Unit) {
-            viewModel.resetQuickConnectStatus()
-        }
 
         LaunchedEffect(quickConnectStatus) {
             when (quickConnectStatus) {
