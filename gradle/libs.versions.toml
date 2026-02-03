@@ -42,6 +42,7 @@ tvprovider = "1.1.0"
 workRuntimeKtx = "2.11.1"
 paletteKtx = "1.0.0"
 openapi-generator = "7.19.0"
+assMedia = "0.4.0-beta01"
 
 [libraries]
 aboutlibraries-core = { module = "com.mikepenz:aboutlibraries-core", version.ref = "aboutLibraries" }
@@ -123,6 +124,8 @@ timber = { module = "com.jakewharton.timber:timber", version.ref = "timber" }
 androidx-preference-ktx = { group = "androidx.preference", name = "preference-ktx", version.ref = "preferenceKtx" }
 androidx-room-testing = { group = "androidx.room", name = "room-testing", version.ref = "room" }
 androidx-palette-ktx = { group = "androidx.palette", name = "palette-ktx", version.ref = "paletteKtx" }
+
+ass-media = { group = "io.github.peerless2012", name = "ass-media", version.ref = "assMedia" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

@@ -71,6 +71,7 @@ import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import io.github.peerless2012.ass.media.AssHandler
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -211,7 +212,8 @@ class PlaybackViewModel
             isHdr: Boolean,
             is4k: Boolean,
         ) {
-            val softwareDecoding = !preferences.appPreferences.playbackPreferences.mpvOptions.enableHardwareDecoding
+            val softwareDecoding =
+                !preferences.appPreferences.playbackPreferences.mpvOptions.enableHardwareDecoding
             val playerBackend =
                 when (preferences.appPreferences.playbackPreferences.playerBackend) {
                     PlayerBackend.UNRECOGNIZED,
@@ -230,13 +232,14 @@ class PlaybackViewModel
                     disconnectPlayer()
                 }
 
-                player =
+                val playerCreation =
                     playerFactory.createVideoPlayer(
                         playerBackend,
                         preferences.appPreferences.playbackPreferences,
                     )
+                this.player = playerCreation.player
                 currentPlayer.update {
-                    PlayerState(player, playerBackend)
+                    PlayerState(playerCreation.player, playerBackend, playerCreation.assHandler)
                 }
                 configurePlayer()
             }
@@ -1378,4 +1381,5 @@ class PlaybackViewModel
 data class PlayerState(
     val player: Player,
     val backend: PlayerBackend,
+    val assHandler: AssHandler?,
 )
