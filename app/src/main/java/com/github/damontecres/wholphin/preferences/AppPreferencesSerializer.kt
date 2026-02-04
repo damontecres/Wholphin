@@ -100,6 +100,12 @@ class AppPreferencesSerializer
                                         .apply {
                                             resetSubtitles()
                                         }.build()
+                                hdrSubtitlesPreferences =
+                                    SubtitlePreferences
+                                        .newBuilder()
+                                        .apply {
+                                            resetSubtitles()
+                                        }.build()
 
                                 liveTvPreferences =
                                     LiveTvPreferences
@@ -193,4 +199,5 @@ fun SubtitlePreferences.Builder.resetSubtitles() {
     backgroundStyle = SubtitleSettings.BackgroundStylePref.defaultValue
     margin = SubtitleSettings.Margin.defaultValue.toInt()
     edgeThickness = SubtitleSettings.EdgeThickness.defaultValue.toInt()
+    imageSubtitleOpacity = SubtitleSettings.ImageOpacity.defaultValue.toInt()
 }

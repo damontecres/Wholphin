@@ -34,6 +34,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -70,6 +71,7 @@ import com.github.damontecres.wholphin.ui.LocalImageUrlService
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.components.TextButton
+import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.preferences.subtitle.SubtitleSettings.applyToMpv
 import com.github.damontecres.wholphin.ui.preferences.subtitle.SubtitleSettings.calculateEdgeSize
@@ -85,6 +87,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.jellyfin.sdk.model.extensions.ticks
+import timber.log.Timber
 import java.util.UUID
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
@@ -176,6 +179,7 @@ fun PlaybackPageContent(
     LaunchedEffect(player) {
         if (playerBackend == PlayerBackend.MPV) {
             scope.launch(Dispatchers.IO + ExceptionHandler()) {
+                // MPV can't play HDR, so always use regular settings
                 preferences.appPreferences.interfacePreferences.subtitlesPreferences.applyToMpv(
                     configuration,
                     density,
@@ -401,13 +405,26 @@ fun PlaybackPageContent(
                 )
             }
 
+            val subtitleSettings =
+                remember(mediaInfo) {
+                    Timber.v("subtitle choice: ${mediaInfo?.videoStream?.hdr}")
+                    if (mediaInfo?.videoStream?.hdr == true) {
+                        preferences.appPreferences.interfacePreferences.hdrSubtitlesPreferences
+                    } else {
+                        preferences.appPreferences.interfacePreferences.subtitlesPreferences
+                    }
+                }
+            val subtitleImageOpacity =
+                remember(subtitleSettings) { subtitleSettings.imageSubtitleOpacity / 100f }
+
             // Subtitles
             if (skipIndicatorDuration == 0L && currentItemPlayback.subtitleIndexEnabled) {
                 val maxSize by animateFloatAsState(if (controllerViewState.controlsVisible) .7f else 1f)
+                val isImageSubtitles = remember(cues) { cues.firstOrNull()?.bitmap != null }
                 AndroidView(
                     factory = { context ->
                         SubtitleView(context).apply {
-                            preferences.appPreferences.interfacePreferences.subtitlesPreferences.let {
+                            subtitleSettings.let {
                                 setStyle(it.toSubtitleStyle())
                                 setFixedTextSize(Dimension.SP, it.fontSize.toFloat())
                                 setBottomPaddingFraction(it.margin.toFloat() / 100f)
@@ -416,10 +433,8 @@ fun PlaybackPageContent(
                     },
                     update = {
                         it.setCues(cues)
-                        Media3SubtitleOverride(
-                            preferences.appPreferences.interfacePreferences.subtitlesPreferences
-                                .calculateEdgeSize(density),
-                        ).apply(it)
+                        Media3SubtitleOverride(subtitleSettings.calculateEdgeSize(density))
+                            .apply(it)
                     },
                     onReset = {
                         it.setCues(null)
@@ -428,7 +443,8 @@ fun PlaybackPageContent(
                         Modifier
                             .fillMaxSize(maxSize)
                             .align(Alignment.TopCenter)
-                            .background(Color.Transparent),
+                            .background(Color.Transparent)
+                            .ifElse(isImageSubtitles, Modifier.alpha(subtitleImageOpacity)),
                 )
             }
         }

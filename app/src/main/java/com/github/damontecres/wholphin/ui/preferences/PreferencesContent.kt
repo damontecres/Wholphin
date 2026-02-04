@@ -50,7 +50,6 @@ import com.github.damontecres.wholphin.preferences.MpvPreferences
 import com.github.damontecres.wholphin.preferences.PlayerBackend
 import com.github.damontecres.wholphin.preferences.advancedPreferences
 import com.github.damontecres.wholphin.preferences.basicPreferences
-import com.github.damontecres.wholphin.preferences.uiPreferences
 import com.github.damontecres.wholphin.preferences.updatePlaybackPreferences
 import com.github.damontecres.wholphin.services.UpdateChecker
 import com.github.damontecres.wholphin.ui.components.ConfirmDialog
@@ -60,7 +59,6 @@ import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.playOnClickSound
 import com.github.damontecres.wholphin.ui.playSoundOnFocus
 import com.github.damontecres.wholphin.ui.preferences.subtitle.SubtitleSettings
-import com.github.damontecres.wholphin.ui.preferences.subtitle.SubtitleStylePage
 import com.github.damontecres.wholphin.ui.setup.UpdateViewModel
 import com.github.damontecres.wholphin.ui.setup.seerr.AddSeerServerDialog
 import com.github.damontecres.wholphin.ui.setup.seerr.SwitchSeerrViewModel
@@ -125,8 +123,6 @@ fun PreferencesContent(
         when (preferenceScreenOption) {
             PreferenceScreenOption.BASIC -> basicPreferences
             PreferenceScreenOption.ADVANCED -> advancedPreferences
-            PreferenceScreenOption.USER_INTERFACE -> uiPreferences
-            PreferenceScreenOption.SUBTITLES -> SubtitleSettings.preferences
             PreferenceScreenOption.EXO_PLAYER -> ExoPlayerPreferences
             PreferenceScreenOption.MPV -> MpvPreferences
         }
@@ -134,8 +130,6 @@ fun PreferencesContent(
         when (preferenceScreenOption) {
             PreferenceScreenOption.BASIC -> R.string.settings
             PreferenceScreenOption.ADVANCED -> R.string.advanced_settings
-            PreferenceScreenOption.USER_INTERFACE -> R.string.ui_interface
-            PreferenceScreenOption.SUBTITLES -> R.string.subtitle_style
             PreferenceScreenOption.EXO_PLAYER -> R.string.exoplayer_options
             PreferenceScreenOption.MPV -> R.string.mpv_options
         }
@@ -526,7 +520,6 @@ fun PreferencesPage(
         when (preferenceScreenOption) {
             PreferenceScreenOption.BASIC,
             PreferenceScreenOption.ADVANCED,
-            PreferenceScreenOption.USER_INTERFACE,
             PreferenceScreenOption.EXO_PLAYER,
             PreferenceScreenOption.MPV,
             -> {
@@ -537,12 +530,6 @@ fun PreferencesPage(
                         .fillMaxWidth(.4f)
                         .fillMaxHeight()
                         .align(Alignment.TopEnd),
-                )
-            }
-
-            PreferenceScreenOption.SUBTITLES -> {
-                SubtitleStylePage(
-                    initialPreferences,
                 )
             }
         }
