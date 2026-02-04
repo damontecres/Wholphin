@@ -422,4 +422,6 @@
     <string name="voice_error_timeout">Riconoscimento vocale scaduto</string>
     <string name="software_decoding_av1">Decodifica software AV1</string>
     <string name="upgrade_mpv_toast">MPV è ora il lettore predefinito, eccetto per i contenuti HDR.\nPuoi modificarlo nelle impostazioni.</string>
+    <string name="hdr_subtitle_style">Stile sottotitoli HDR</string>
+    <string name="image_subtitle_opacity">Opacità sottotitoli immagine</string>
 </resources>
