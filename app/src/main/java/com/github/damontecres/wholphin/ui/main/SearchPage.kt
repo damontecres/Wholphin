@@ -4,7 +4,6 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -71,9 +70,7 @@ import com.github.damontecres.wholphin.ui.onMain
 import com.github.damontecres.wholphin.ui.rememberPosition
 import com.github.damontecres.wholphin.ui.setValueOnMain
 import com.github.damontecres.wholphin.ui.tryRequestFocus
-import com.github.damontecres.wholphin.util.ApiRequestPager
 import com.github.damontecres.wholphin.util.ExceptionHandler
-import com.github.damontecres.wholphin.util.GetItemsRequestHandler
 import com.github.damontecres.wholphin.util.SearchRelevance
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
@@ -110,7 +107,7 @@ class SearchViewModel
         val combinedResults = MutableLiveData<SearchResult>(SearchResult.NoQuery)
 
         private var currentQuery: String? = null
-        private var combinedMode: Boolean = false
+        private var combinedMode = false
 
         fun search(
             query: String?,
@@ -159,13 +156,20 @@ class SearchViewModel
                             recursive = true,
                             includeItemTypes = listOf(type),
                             fields = SlimItemFields,
-                            limit = 25,
+                            limit = 50,
                         )
-                    val pager =
-                        ApiRequestPager(api, request, GetItemsRequestHandler, viewModelScope)
-                    pager.init()
+                    val result = api.itemsApi.getItems(request).content
+                    val items =
+                        (result.items ?: emptyList()).map {
+                            BaseItem.from(it, api, false)
+                        }
+                    val sorted =
+                        items.sortedWith(
+                            compareBy<BaseItem> { SearchRelevance.score(it, query) }
+                                .thenBy { it.name ?: "" },
+                        )
                     withContext(Dispatchers.Main) {
-                        target.value = SearchResult.Success(pager)
+                        target.value = SearchResult.Success(sorted)
                     }
                 } catch (ex: Exception) {
                     Timber.e(ex, "Exception searching for $type")
@@ -187,6 +191,7 @@ class SearchViewModel
                                 listOf(
                                     BaseItemKind.MOVIE,
                                     BaseItemKind.SERIES,
+                                    BaseItemKind.BOX_SET,
                                 ),
                             fields = SlimItemFields,
                             limit = 50,
@@ -197,7 +202,11 @@ class SearchViewModel
                         (result.items ?: emptyList()).map {
                             BaseItem.from(it, api, false)
                         }
-                    val sorted = items.sortedWith(compareBy { SearchRelevance.score(it, query) })
+                    val sorted =
+                        items.sortedWith(
+                            compareBy<BaseItem> { SearchRelevance.score(it, query) }
+                                .thenBy { it.name ?: "" },
+                        )
 
                     withContext(Dispatchers.Main) {
                         combinedResults.value = SearchResult.Success(sorted)
@@ -289,7 +298,6 @@ fun SearchPage(
 
     val seerrActive by viewModel.seerrActive.collectAsState(initial = false)
     var selectedTab by rememberSaveable { mutableIntStateOf(0) }
-
     var position by rememberPosition(0, 0)
     var searchClicked by rememberSaveable { mutableStateOf(false) }
     var immediateSearchQuery by rememberSaveable { mutableStateOf<String?>(null) }
@@ -324,7 +332,6 @@ fun SearchPage(
     val onClickItem = { index: Int, item: BaseItem ->
         viewModel.navigationManager.navigateTo(item.destination())
     }
-
     LaunchedEffect(
         searchClicked,
         movies,
@@ -375,7 +382,6 @@ fun SearchPage(
             }
         }
     }
-
     LazyColumn(
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 44.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
