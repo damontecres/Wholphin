@@ -88,12 +88,22 @@ class SuggestionsWorker
                                         else -> return@mapNotNull null
                                     }
                                 async(Dispatchers.IO) {
-                                    ensureActive()
                                     runCatching {
+                                        Timber.v("Fetching suggestions for view %s", view.id)
                                         val suggestions = fetchSuggestions(view.id, userId, itemKind, itemsPerRow)
-                                        cache.put(userId, view.id, itemKind, suggestions.map { it.id.toString() })
+                                        ensureActive()
+                                        cache.put(
+                                            userId,
+                                            view.id,
+                                            itemKind,
+                                            suggestions.map { it.id },
+                                        )
                                     }.onFailure { e ->
-                                        Timber.e(e, "Failed to fetch suggestions for view ${view.id}")
+                                        Timber.e(
+                                            e,
+                                            "Failed to fetch suggestions for view %s",
+                                            view.id,
+                                        )
                                     }
                                 }
                             }.awaitAll()
@@ -107,7 +117,8 @@ class SuggestionsWorker
                 }
                 Timber.d("Completed with $successCount successes and $failureCount failures")
                 return Result.success()
-            } catch (_: ApiClientException) {
+            } catch (ex: ApiClientException) {
+                Timber.w(ex, "SuggestionsWorker ApiClientException, will retry")
                 return Result.retry()
             } catch (e: Exception) {
                 Timber.e(e, "SuggestionsWorker failed")

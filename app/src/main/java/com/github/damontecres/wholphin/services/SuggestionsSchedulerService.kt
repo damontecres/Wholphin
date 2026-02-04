@@ -40,23 +40,15 @@ class SuggestionsSchedulerService
                     "SuggestionsSchedulerService requires an AppCompatActivity context, but received: ${context::class.java.name}",
                 )
 
+        // Exposed for testing
         internal var dispatcher: CoroutineDispatcher = Dispatchers.IO
-
-        private var scheduledUserId: UUID? = null
-        private var scheduledServerId: UUID? = null
 
         init {
             serverRepository.current.observe(activity) { user ->
+                Timber.v("New user %s", user?.user?.id)
                 if (user == null) {
-                    if (scheduledUserId != null) {
-                        workManager.cancelUniqueWork(SuggestionsWorker.WORK_NAME)
-                        scheduledUserId = null
-                        scheduledServerId = null
-                    }
-                } else if (user.user.id != scheduledUserId || user.server.id != scheduledServerId) {
                     workManager.cancelUniqueWork(SuggestionsWorker.WORK_NAME)
-                    scheduledUserId = user.user.id
-                    scheduledServerId = user.server.id
+                } else {
                     activity.lifecycleScope.launch(dispatcher + ExceptionHandler()) {
                         scheduleWork(user.user.id, user.server.id)
                     }

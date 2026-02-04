@@ -85,6 +85,6 @@ class SuggestionsSchedulerServiceTest {
             advanceUntilIdle()
             currentLiveData.value = null
             advanceUntilIdle()
-            verify(atLeast = 2) { mockWorkManager.cancelUniqueWork(SuggestionsWorker.WORK_NAME) }
+            verify { mockWorkManager.cancelUniqueWork(SuggestionsWorker.WORK_NAME) }
         }
 }

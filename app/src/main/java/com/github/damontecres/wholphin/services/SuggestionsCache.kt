@@ -1,6 +1,9 @@
+@file:UseSerializers(UUIDSerializer::class)
+
 package com.github.damontecres.wholphin.services
 
 import android.content.Context
+import com.github.damontecres.wholphin.ui.toServerString
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -10,9 +13,14 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.UseSerializers
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.decodeFromStream
+import kotlinx.serialization.json.encodeToStream
 import org.jellyfin.sdk.model.api.BaseItemKind
+import org.jellyfin.sdk.model.serializer.UUIDSerializer
 import timber.log.Timber
 import java.io.File
 import java.util.UUID
@@ -21,14 +29,14 @@ import javax.inject.Singleton
 
 @Serializable
 data class CachedSuggestions(
-    val ids: List<String>,
+    val ids: List<UUID>,
 )
 
 @Singleton
 class SuggestionsCache
     @Inject
     constructor(
-        @ApplicationContext private val context: Context,
+        @param:ApplicationContext private val context: Context,
     ) {
         private val json = Json { ignoreUnknownKeys = true }
         private val _cacheVersion = MutableStateFlow(0L)
@@ -38,17 +46,20 @@ class SuggestionsCache
             LinkedHashMap(MAX_MEMORY_CACHE_SIZE, 0.75f, true)
 
         @Volatile
-        private var diskCacheLoaded = false
+        private var diskCacheLoadedUserId: UUID? = null
         private val dirtyKeys: MutableSet<String> = mutableSetOf()
         private val mutex = Mutex()
 
+        @OptIn(ExperimentalSerializationApi::class)
         private fun writeEntryToDisk(
             key: String,
             cached: CachedSuggestions,
         ) {
             runCatching {
                 val suggestionsDir = cacheDir.apply { mkdirs() }
-                File(suggestionsDir, "$key.json").writeText(json.encodeToString(cached))
+                File(suggestionsDir, "$key.json")
+                    .outputStream()
+                    .use { json.encodeToStream(cached, it) }
             }.onFailure { Timber.w(it, "Failed to write evicted cache: $key") }
         }
 
@@ -65,48 +76,59 @@ class SuggestionsCache
             userId: UUID,
             libraryId: UUID,
             itemKind: BaseItemKind,
-        ) = "${userId}_${libraryId}_${itemKind.serialName}"
+        ) = "${userId.toServerString()}_${libraryId.toServerString()}_${itemKind.serialName}"
 
         private val cacheDir: File
             get() = File(context.cacheDir, "suggestions")
 
-        private suspend fun loadFromDisk() {
-            if (diskCacheLoaded) return
+        @OptIn(ExperimentalSerializationApi::class)
+        private suspend fun loadFromDisk(userId: UUID) {
+            if (diskCacheLoadedUserId == userId) return
             mutex.withLock {
-                if (diskCacheLoaded) return@withLock
+                if (diskCacheLoadedUserId == userId) return@withLock
                 withContext(Dispatchers.IO) {
                     val suggestionsDir = cacheDir
                     if (!suggestionsDir.exists()) {
-                        diskCacheLoaded = true
+                        diskCacheLoadedUserId = userId
                         return@withContext
                     }
-                    suggestionsDir.listFiles()?.forEach { file ->
-                        runCatching {
-                            val key = file.nameWithoutExtension
-                            val cached = json.decodeFromString<CachedSuggestions>(file.readText())
-                            memoryCache[key] = cached
-                        }.onFailure { Timber.w(it, "Failed to read cache file: ${file.name}") }
-                    }
-                    diskCacheLoaded = true
+                    suggestionsDir
+                        .listFiles {
+                            it.name.startsWith(userId.toServerString())
+                        }.orEmpty()
+                        .take(MAX_MEMORY_CACHE_SIZE)
+                        .forEach { file ->
+                            runCatching {
+                                val key = file.nameWithoutExtension
+                                val cached =
+                                    file
+                                        .inputStream()
+                                        .use { json.decodeFromStream<CachedSuggestions>(it) }
+                                memoryCache[key] = cached
+                            }.onFailure { Timber.w(it, "Failed to read cache file: ${file.name}") }
+                        }
+                    diskCacheLoadedUserId = userId
                 }
             }
         }
 
+        @OptIn(ExperimentalSerializationApi::class)
         suspend fun get(
             userId: UUID,
             libraryId: UUID,
             itemKind: BaseItemKind,
         ): CachedSuggestions? {
-            loadFromDisk()
+            loadFromDisk(userId)
             val key = cacheKey(userId, libraryId, itemKind)
             memoryCache[key]?.let { return it }
             return withContext(Dispatchers.IO) {
                 runCatching {
                     File(cacheDir, "$key.json")
                         .takeIf { it.exists() }
-                        ?.readText()
-                        ?.let { json.decodeFromString<CachedSuggestions>(it) }
-                        ?.also { memoryCache[key] = it }
+                        ?.inputStream()
+                        ?.use {
+                            json.decodeFromStream<CachedSuggestions>(it)
+                        }?.also { memoryCache[key] = it }
                 }.onFailure { Timber.w(it, "Failed to read cache: $key") }
                     .getOrNull()
             }
@@ -116,7 +138,7 @@ class SuggestionsCache
             userId: UUID,
             libraryId: UUID,
             itemKind: BaseItemKind,
-            ids: List<String>,
+            ids: List<UUID>,
         ) {
             val key = cacheKey(userId, libraryId, itemKind)
             val cached = CachedSuggestions(ids)
@@ -146,6 +168,7 @@ class SuggestionsCache
                 }
             }
 
+        @OptIn(ExperimentalSerializationApi::class)
         suspend fun save() {
             val entriesToSave =
                 mutex.withLock {
@@ -165,7 +188,9 @@ class SuggestionsCache
                     }
                 entriesToSave.forEach { (key, value) ->
                     runCatching {
-                        File(suggestionsDir, "$key.json").writeText(json.encodeToString(value))
+                        File(suggestionsDir, "$key.json")
+                            .outputStream()
+                            .use { json.encodeToStream(value, it) }
                     }.onFailure { Timber.w(it, "Failed to write cache: $key") }
                 }
             }
@@ -176,7 +201,7 @@ class SuggestionsCache
                 memoryCache.clear()
                 dirtyKeys.clear()
                 _cacheVersion.update { it + 1 }
-                diskCacheLoaded = false
+                diskCacheLoadedUserId = null
             }
             withContext(Dispatchers.IO) {
                 runCatching { cacheDir.deleteRecursively() }

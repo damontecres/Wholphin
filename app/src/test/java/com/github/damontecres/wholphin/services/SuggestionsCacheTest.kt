@@ -105,8 +105,8 @@ class SuggestionsCacheTest {
             val movieLibraryId = UUID.randomUUID()
             val tvLibraryId = UUID.randomUUID()
 
-            val movieIds = listOf("movie-1", "movie-2")
-            val tvIds = listOf("tv-1", "tv-2", "tv-3")
+            val movieIds = List(2) { UUID.randomUUID() }
+            val tvIds = List(3) { UUID.randomUUID() }
 
             cache.put(userId, movieLibraryId, BaseItemKind.MOVIE, movieIds)
             cache.put(userId, tvLibraryId, BaseItemKind.MOVIE, tvIds)
@@ -118,8 +118,8 @@ class SuggestionsCacheTest {
             assertNotNull(loadedTv)
             assertEquals(2, loadedMovies!!.ids.size)
             assertEquals(3, loadedTv!!.ids.size)
-            assertEquals("movie-1", loadedMovies.ids[0])
-            assertEquals("tv-1", loadedTv.ids[0])
+            assertEquals(movieIds[0], loadedMovies.ids[0])
+            assertEquals(tvIds[0], loadedTv.ids[0])
         }
 
     @Test
@@ -129,8 +129,8 @@ class SuggestionsCacheTest {
             val userId = UUID.randomUUID()
             val libraryId = UUID.randomUUID()
 
-            val movieIds = listOf("movie-a")
-            val seriesIds = listOf("series-b", "series-c")
+            val movieIds = listOf(UUID.randomUUID())
+            val seriesIds = List(2) { UUID.randomUUID() }
 
             cache.put(userId, libraryId, BaseItemKind.MOVIE, movieIds)
             cache.put(userId, libraryId, BaseItemKind.SERIES, seriesIds)
@@ -142,8 +142,8 @@ class SuggestionsCacheTest {
             assertNotNull(loadedSeries)
             assertEquals(1, loadedMovies!!.ids.size)
             assertEquals(2, loadedSeries!!.ids.size)
-            assertEquals("movie-a", loadedMovies.ids[0])
-            assertEquals("series-b", loadedSeries.ids[0])
+            assertEquals(movieIds[0], loadedMovies.ids[0])
+            assertEquals(seriesIds[0], loadedSeries.ids[0])
         }
 
     @Test
@@ -155,27 +155,27 @@ class SuggestionsCacheTest {
             val lib2 = UUID.randomUUID()
             val lib3 = UUID.randomUUID()
 
-            val ids1 = listOf("lib1-item")
-            val ids2 = listOf("lib2-item")
-            val ids3 = listOf("lib3-item")
+            val ids1 = listOf(UUID.randomUUID())
+            val ids2 = listOf(UUID.randomUUID())
+            val ids3 = listOf(UUID.randomUUID())
 
             // Simulate rapid switching: put -> get -> put -> get pattern
             cache.put(userId, lib1, BaseItemKind.MOVIE, ids1)
-            assertEquals("lib1-item", cache.get(userId, lib1, BaseItemKind.MOVIE)?.ids?.firstOrNull())
+            assertEquals(ids1[0], cache.get(userId, lib1, BaseItemKind.MOVIE)?.ids?.firstOrNull())
 
             cache.put(userId, lib2, BaseItemKind.MOVIE, ids2)
-            assertEquals("lib2-item", cache.get(userId, lib2, BaseItemKind.MOVIE)?.ids?.firstOrNull())
+            assertEquals(ids2[0], cache.get(userId, lib2, BaseItemKind.MOVIE)?.ids?.firstOrNull())
 
             // Switch back to lib1 - should still have correct data
-            assertEquals("lib1-item", cache.get(userId, lib1, BaseItemKind.MOVIE)?.ids?.firstOrNull())
+            assertEquals(ids1[0], cache.get(userId, lib1, BaseItemKind.MOVIE)?.ids?.firstOrNull())
 
             cache.put(userId, lib3, BaseItemKind.MOVIE, ids3)
-            assertEquals("lib3-item", cache.get(userId, lib3, BaseItemKind.MOVIE)?.ids?.firstOrNull())
+            assertEquals(ids3[0], cache.get(userId, lib3, BaseItemKind.MOVIE)?.ids?.firstOrNull())
 
             // Verify all libraries still have correct data after rapid switching
-            assertEquals("lib1-item", cache.get(userId, lib1, BaseItemKind.MOVIE)?.ids?.firstOrNull())
-            assertEquals("lib2-item", cache.get(userId, lib2, BaseItemKind.MOVIE)?.ids?.firstOrNull())
-            assertEquals("lib3-item", cache.get(userId, lib3, BaseItemKind.MOVIE)?.ids?.firstOrNull())
+            assertEquals(ids1[0], cache.get(userId, lib1, BaseItemKind.MOVIE)?.ids?.firstOrNull())
+            assertEquals(ids2[0], cache.get(userId, lib2, BaseItemKind.MOVIE)?.ids?.firstOrNull())
+            assertEquals(ids3[0], cache.get(userId, lib3, BaseItemKind.MOVIE)?.ids?.firstOrNull())
         }
 
     @Test
@@ -185,8 +185,8 @@ class SuggestionsCacheTest {
             val lib1 = UUID.randomUUID()
             val lib2 = UUID.randomUUID()
 
-            val ids1 = listOf("lib1-content")
-            val ids2 = listOf("lib2-content")
+            val ids1 = listOf(UUID.randomUUID())
+            val ids2 = listOf(UUID.randomUUID())
 
             // Write with first cache instance
             val cache1 = testCacheWithTempDir()
@@ -203,8 +203,8 @@ class SuggestionsCacheTest {
 
             assertNotNull(loaded1)
             assertNotNull(loaded2)
-            assertEquals("lib1-content", loaded1!!.ids[0])
-            assertEquals("lib2-content", loaded2!!.ids[0])
+            assertEquals(ids1[0], loaded1!!.ids[0])
+            assertEquals(ids2[0], loaded2!!.ids[0])
         }
 
     @Test
@@ -215,8 +215,8 @@ class SuggestionsCacheTest {
             val user2 = UUID.randomUUID()
             val libraryId = UUID.randomUUID()
 
-            val user1Ids = listOf("user1-item")
-            val user2Ids = listOf("user2-item-a", "user2-item-b")
+            val user1Ids = listOf(UUID.randomUUID())
+            val user2Ids = List(2) { UUID.randomUUID() }
 
             cache.put(user1, libraryId, BaseItemKind.MOVIE, user1Ids)
             cache.put(user2, libraryId, BaseItemKind.MOVIE, user2Ids)
@@ -228,7 +228,7 @@ class SuggestionsCacheTest {
             assertNotNull(loadedUser2)
             assertEquals(1, loadedUser1!!.ids.size)
             assertEquals(2, loadedUser2!!.ids.size)
-            assertEquals("user1-item", loadedUser1.ids[0])
-            assertEquals("user2-item-a", loadedUser2.ids[0])
+            assertEquals(user1Ids[0], loadedUser1.ids[0])
+            assertEquals(user2Ids[0], loadedUser2.ids[0])
         }
 }

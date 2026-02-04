@@ -168,13 +168,25 @@ class SuggestionServiceTest {
             every { mockWorkManager.getWorkInfosForUniqueWorkFlow(any()) } returns flowOf(emptyList())
 
             coEvery { mockCache.get(userId, libraryId, BaseItemKind.MOVIE) } returns null
-            coEvery { mockCache.get(userId, otherLibraryId, BaseItemKind.MOVIE) } returns CachedSuggestions(listOf("item-1"))
+            coEvery {
+                mockCache.get(
+                    userId,
+                    otherLibraryId,
+                    BaseItemKind.MOVIE,
+                )
+            } returns CachedSuggestions(listOf(UUID.randomUUID()))
 
             val service = createService()
             assertEquals(SuggestionsResource.Empty, service.getSuggestionsFlow(libraryId, BaseItemKind.MOVIE).first())
 
             coEvery { mockCache.get(userId, libraryId, BaseItemKind.MOVIE) } returns null
-            coEvery { mockCache.get(userId, libraryId, BaseItemKind.SERIES) } returns CachedSuggestions(listOf("series-1"))
+            coEvery {
+                mockCache.get(
+                    userId,
+                    libraryId,
+                    BaseItemKind.SERIES,
+                )
+            } returns CachedSuggestions(listOf(UUID.randomUUID()))
 
             assertEquals(SuggestionsResource.Empty, service.getSuggestionsFlow(libraryId, BaseItemKind.MOVIE).first())
         }
@@ -190,7 +202,13 @@ class SuggestionServiceTest {
             every { mockCache.cacheVersion } returns MutableStateFlow(0L)
 
             val cachedId = UUID.randomUUID()
-            coEvery { mockCache.get(userId, parentId, BaseItemKind.MOVIE) } returns CachedSuggestions(listOf(cachedId.toString()))
+            coEvery {
+                mockCache.get(
+                    userId,
+                    parentId,
+                    BaseItemKind.MOVIE,
+                )
+            } returns CachedSuggestions(listOf(cachedId))
 
             val dto =
                 mockk<BaseItemDto>(relaxed = true) {
@@ -222,7 +240,13 @@ class SuggestionServiceTest {
             every { mockCache.cacheVersion } returns MutableStateFlow(0L)
 
             val cachedId = UUID.randomUUID()
-            coEvery { mockCache.get(userId, parentId, BaseItemKind.MOVIE) } returns CachedSuggestions(listOf(cachedId.toString()))
+            coEvery {
+                mockCache.get(
+                    userId,
+                    parentId,
+                    BaseItemKind.MOVIE,
+                )
+            } returns CachedSuggestions(listOf(cachedId))
 
             io.mockk.mockkObject(GetItemsRequestHandler)
             coEvery { GetItemsRequestHandler.execute(mockApi, any()) } throws RuntimeException("Network error")

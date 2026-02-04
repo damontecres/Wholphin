@@ -6,6 +6,7 @@ import androidx.work.WorkManager
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.util.GetItemsRequestHandler
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
@@ -21,14 +22,14 @@ import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 
-sealed class SuggestionsResource {
-    data object Loading : SuggestionsResource()
+sealed interface SuggestionsResource {
+    data object Loading : SuggestionsResource
 
     data class Success(
         val items: List<BaseItem>,
-    ) : SuggestionsResource()
+    ) : SuggestionsResource
 
-    data object Empty : SuggestionsResource()
+    data object Empty : SuggestionsResource
 }
 
 @Singleton
@@ -40,6 +41,7 @@ class SuggestionService
         private val cache: SuggestionsCache,
         private val workManager: WorkManager,
     ) {
+        @OptIn(ExperimentalCoroutinesApi::class)
         fun getSuggestionsFlow(
             parentId: UUID,
             itemKind: BaseItemKind,
@@ -78,20 +80,18 @@ class SuggestionService
         }
 
         private suspend fun fetchItemsByIds(
-            ids: List<String>,
+            ids: List<UUID>,
             itemKind: BaseItemKind,
         ): List<BaseItem> {
             val isSeries = itemKind == BaseItemKind.SERIES
-            val uuids = ids.mapNotNull { runCatching { UUID.fromString(it) }.getOrNull() }
             val request =
                 GetItemsRequest(
-                    ids = uuids,
+                    ids = ids,
                     fields = listOf(ItemFields.PRIMARY_IMAGE_ASPECT_RATIO, ItemFields.OVERVIEW),
                 )
             return GetItemsRequestHandler
                 .execute(api, request)
                 .content.items
-                .orEmpty()
                 .map { BaseItem.from(it, api, isSeries) }
         }
     }
