@@ -141,6 +141,7 @@ message SubtitlePreferences{
   bool font_italic = 10;
   int32 margin = 11;
   int32 edge_thickness = 12;
+  int32 image_subtitle_opacity = 13;
 }
 
 message LiveTvPreferences {
@@ -166,7 +167,8 @@ message InterfacePreferences {
   SubtitlePreferences subtitles_preferences = 7;
   LiveTvPreferences live_tv_preferences = 8;
   BackdropStyle backdrop_style = 9;
-  AppLanguages language = 10;
+  SubtitlePreferences hdr_subtitles_preferences = 10;
+  AppLanguages language = 11;
 }
 
 message AdvancedPreferences {
