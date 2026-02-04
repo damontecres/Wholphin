@@ -1,15 +1,22 @@
 package com.github.damontecres.wholphin.ui.main
 
+import android.view.Gravity
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.background
 import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -36,28 +43,41 @@ import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
+import androidx.compose.ui.window.DialogWindowProvider
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.viewModelScope
+import androidx.tv.material3.ListItem
 import androidx.tv.material3.MaterialTheme
+import androidx.tv.material3.Switch
 import androidx.tv.material3.Text
+import androidx.tv.material3.surfaceColorAtElevation
+import androidx.datastore.core.DataStore
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.DiscoverItem
 import com.github.damontecres.wholphin.data.model.SeerrItemType
+import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.UserPreferences
+import com.github.damontecres.wholphin.preferences.updateInterfacePreferences
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.SeerrService
 import com.github.damontecres.wholphin.ui.Cards
+import com.github.damontecres.wholphin.ui.RequestOrRestoreFocus
 import com.github.damontecres.wholphin.ui.SlimItemFields
 import com.github.damontecres.wholphin.ui.cards.DiscoverItemCard
 import com.github.damontecres.wholphin.ui.cards.EpisodeCard
+import com.github.damontecres.wholphin.ui.cards.GridCard
 import com.github.damontecres.wholphin.ui.cards.ItemRow
 import com.github.damontecres.wholphin.ui.cards.SeasonCard
+import com.github.damontecres.wholphin.ui.components.ExpandableFaButton
 import com.github.damontecres.wholphin.ui.components.SearchEditTextBox
 import com.github.damontecres.wholphin.ui.components.TabRow
 import com.github.damontecres.wholphin.ui.components.VoiceInputManager
@@ -67,15 +87,21 @@ import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.onMain
+import com.github.damontecres.wholphin.ui.preferences.SwitchColors
 import com.github.damontecres.wholphin.ui.rememberPosition
 import com.github.damontecres.wholphin.ui.setValueOnMain
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.SearchRelevance
+import com.github.damontecres.wholphin.ui.detail.CardGrid
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
@@ -91,6 +117,7 @@ class SearchViewModel
     constructor(
         val api: ApiClient,
         val navigationManager: NavigationManager,
+        private val appPreferences: DataStore<AppPreferences>,
         private val seerrService: SeerrService,
         val voiceInputManager: VoiceInputManager,
     ) : ViewModel() {
@@ -98,6 +125,10 @@ class SearchViewModel
         val soundLevel = voiceInputManager.soundLevel
         val partialResult = voiceInputManager.partialResult
         val seerrActive = seerrService.active
+
+        val combinedModeFlow: StateFlow<Boolean> = appPreferences.data
+            .map { it.interfacePreferences.combinedSearchResults }
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
         val movies = MutableLiveData<SearchResult>(SearchResult.NoQuery)
         val series = MutableLiveData<SearchResult>(SearchResult.NoQuery)
@@ -220,6 +251,16 @@ class SearchViewModel
             }
         }
 
+        fun setCombinedResults(enabled: Boolean) {
+            viewModelScope.launchIO {
+                appPreferences.updateData {
+                    it.updateInterfacePreferences {
+                        combinedSearchResults = enabled
+                    }
+                }
+            }
+        }
+
         private fun searchSeerr(query: String) {
             viewModelScope.launchIO {
                 if (seerrService.active.first()) {
@@ -289,7 +330,7 @@ fun SearchPage(
     val episodes by viewModel.episodes.observeAsState(SearchResult.NoQuery)
     val seerrResults by viewModel.seerrResults.observeAsState(SearchResult.NoQuery)
     val combinedResults by viewModel.combinedResults.observeAsState(SearchResult.NoQuery)
-    val combinedMode = userPreferences.appPreferences.interfacePreferences.combinedSearchResults
+    val combinedMode by viewModel.combinedModeFlow.collectAsState()
 
 //    val query = rememberTextFieldState()
     var query by rememberSaveable { mutableStateOf("") }
@@ -298,6 +339,8 @@ fun SearchPage(
 
     val seerrActive by viewModel.seerrActive.collectAsState(initial = false)
     var selectedTab by rememberSaveable { mutableIntStateOf(0) }
+    var showViewOptions by rememberSaveable { mutableStateOf(false) }
+
     var position by rememberPosition(0, 0)
     var searchClicked by rememberSaveable { mutableStateOf(false) }
     var immediateSearchQuery by rememberSaveable { mutableStateOf<String?>(null) }
@@ -332,6 +375,19 @@ fun SearchPage(
     val onClickItem = { index: Int, item: BaseItem ->
         viewModel.navigationManager.navigateTo(item.destination())
     }
+    val onPlayItem = { _: Int, item: BaseItem ->
+        viewModel.navigationManager.navigateTo(Destination.Playback(item))
+    }
+
+    val showTabs = seerrActive && query.isNotBlank()
+    val isLibraryTab = selectedTab == 0 || !showTabs
+
+    LaunchedEffect(seerrActive, query) {
+        if (!seerrActive || query.isBlank()) {
+            selectedTab = 0
+        }
+    }
+
     LaunchedEffect(
         searchClicked,
         movies,
@@ -348,8 +404,6 @@ fun SearchPage(
 
         withContext(Dispatchers.IO) {
             // Want to focus on the first successful row after all of the ones before it are finished searching
-            // Only consider visible rows based on tab selection
-            val isLibraryTab = selectedTab == 0 || !seerrActive || query.isBlank()
             val results =
                 if (isLibraryTab) {
                     if (combinedMode) {
@@ -382,187 +436,363 @@ fun SearchPage(
             }
         }
     }
-    LazyColumn(
-        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 44.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
-        modifier = modifier.focusGroup(),
+    Column(
+        modifier = modifier.fillMaxSize(),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        item {
-            Box(
-                contentAlignment = Alignment.Center,
-                modifier = Modifier.fillMaxWidth(),
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            var isSearchActive by remember { mutableStateOf(false) }
+            var isTextFieldFocused by remember { mutableStateOf(false) }
+            val textFieldFocusRequester = remember { FocusRequester() }
+
+            BackHandler(isTextFieldFocused) {
+                when {
+                    isSearchActive -> {
+                        isSearchActive = false
+                        keyboardController?.hide()
+                    }
+
+                    else -> {
+                        focusManager.moveFocus(FocusDirection.Next)
+                    }
+                }
+            }
+
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                modifier =
+                    Modifier
+                        .padding(start = 16.dp, end = 16.dp, top = 16.dp)
+                        .focusGroup()
+                        .focusRestorer(textFieldFocusRequester)
+                        .focusRequester(focusRequesters[SEARCH_ROW]),
             ) {
-                var isSearchActive by remember { mutableStateOf(false) }
-                var isTextFieldFocused by remember { mutableStateOf(false) }
-                val textFieldFocusRequester = remember { FocusRequester() }
+                VoiceSearchButton(
+                    onSpeechResult = { spokenText ->
+                        query = spokenText
+                        triggerImmediateSearch(spokenText)
+                    },
+                    voiceInputManager = viewModel.voiceInputManager,
+                )
 
-                BackHandler(isTextFieldFocused) {
-                    when {
-                        isSearchActive -> {
-                            isSearchActive = false
-                            keyboardController?.hide()
-                        }
+                SearchEditTextBox(
+                    value = query,
+                    onValueChange = {
+                        isSearchActive = true
+                        query = it
+                    },
+                    onSearchClick = { triggerImmediateSearch(query) },
+                    readOnly = !isSearchActive,
+                    modifier =
+                        Modifier
+                            .focusRequester(textFieldFocusRequester)
+                            .onFocusChanged { state ->
+                                isTextFieldFocused = state.isFocused
+                                if (!state.isFocused) isSearchActive = false
+                            }.onPreviewKeyEvent { event ->
+                                val isActivationKey =
+                                    event.key in listOf(Key.DirectionCenter, Key.Enter)
+                                if (event.type == KeyEventType.KeyUp && isActivationKey && !isSearchActive) {
+                                    isSearchActive = true
+                                    keyboardController?.show()
+                                    true
+                                } else {
+                                    false
+                                }
+                            },
+                )
 
-                        else -> {
-                            focusManager.moveFocus(FocusDirection.Next)
-                        }
+                ExpandableFaButton(
+                    title = R.string.view_options,
+                    iconStringRes = R.string.fa_sliders,
+                    onClick = { showViewOptions = true },
+                )
+            }
+        }
+        if (showTabs) {
+            TabRow(
+                selectedTabIndex = selectedTab,
+                tabs =
+                    listOf(
+                        context.getString(R.string.library),
+                        context.getString(R.string.discover),
+                    ),
+                focusRequesters = tabFocusRequesters,
+                onClick = { selectedTab = it },
+                modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp),
+            )
+        }
+        Box(
+            modifier = Modifier.weight(1f).fillMaxWidth(),
+        ) {
+            when {
+                isLibraryTab && combinedMode -> {
+                    SearchCombinedResults(
+                        result = combinedResults,
+                        focusRequester = focusRequesters[COMBINED_ROW],
+                        onClickItem = onClickItem,
+                        onPlayItem = onPlayItem,
+                        onClickPosition = { position = it },
+                        modifier = Modifier.fillMaxSize(),
+                    )
+                }
+
+                isLibraryTab -> {
+                    LazyColumn(
+                        contentPadding =
+                            PaddingValues(
+                                start = 16.dp,
+                                end = 16.dp,
+                                top = 8.dp,
+                                bottom = 44.dp,
+                            ),
+                        verticalArrangement = Arrangement.spacedBy(16.dp),
+                        modifier = Modifier.focusGroup(),
+                    ) {
+                        searchResultRow(
+                            title = context.getString(R.string.movies),
+                            result = movies,
+                            rowIndex = MOVIE_ROW,
+                            position = position,
+                            focusRequester = focusRequesters[MOVIE_ROW],
+                            onClickItem = onClickItem,
+                            onClickPosition = { position = it },
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                        searchResultRow(
+                            title = context.getString(R.string.tv_shows),
+                            result = series,
+                            rowIndex = SERIES_ROW,
+                            position = position,
+                            focusRequester = focusRequesters[SERIES_ROW],
+                            onClickItem = onClickItem,
+                            onClickPosition = { position = it },
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                        searchResultRow(
+                            title = context.getString(R.string.episodes),
+                            result = episodes,
+                            rowIndex = EPISODE_ROW,
+                            position = position,
+                            focusRequester = focusRequesters[EPISODE_ROW],
+                            onClickItem = onClickItem,
+                            onClickPosition = { position = it },
+                            modifier = Modifier.fillMaxWidth(),
+                            cardContent = @Composable { index, item, mod, onClick, onLongClick ->
+                                EpisodeCard(
+                                    item = item,
+                                    onClick = {
+                                        position = RowColumn(EPISODE_ROW, index)
+                                        onClick.invoke()
+                                    },
+                                    onLongClick = onLongClick,
+                                    imageHeight = 140.dp,
+                                    modifier = mod.padding(horizontal = 8.dp),
+                                )
+                            },
+                        )
+                        searchResultRow(
+                            title = context.getString(R.string.collections),
+                            result = collections,
+                            rowIndex = COLLECTION_ROW,
+                            position = position,
+                            focusRequester = focusRequesters[COLLECTION_ROW],
+                            onClickItem = onClickItem,
+                            onClickPosition = { position = it },
+                            modifier = Modifier.fillMaxWidth(),
+                        )
                     }
                 }
 
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier =
-                        Modifier
-                            .focusGroup()
-                            .focusRestorer(textFieldFocusRequester)
-                            .focusRequester(focusRequesters[SEARCH_ROW]),
-                ) {
-                    VoiceSearchButton(
-                        onSpeechResult = { spokenText ->
-                            query = spokenText
-                            triggerImmediateSearch(spokenText)
-                        },
-                        voiceInputManager = viewModel.voiceInputManager,
-                    )
-
-                    SearchEditTextBox(
-                        value = query,
-                        onValueChange = {
-                            isSearchActive = true
-                            query = it
-                        },
-                        onSearchClick = { triggerImmediateSearch(query) },
-                        readOnly = !isSearchActive,
-                        modifier =
-                            Modifier
-                                .focusRequester(textFieldFocusRequester)
-                                .onFocusChanged { state ->
-                                    isTextFieldFocused = state.isFocused
-                                    if (!state.isFocused) isSearchActive = false
-                                }.onPreviewKeyEvent { event ->
-                                    val isActivationKey =
-                                        event.key in listOf(Key.DirectionCenter, Key.Enter)
-                                    if (event.type == KeyEventType.KeyUp && isActivationKey && !isSearchActive) {
-                                        isSearchActive = true
-                                        keyboardController?.show()
-                                        true
+                else -> {
+                    LazyColumn(
+                        contentPadding =
+                            PaddingValues(
+                                start = 16.dp,
+                                end = 16.dp,
+                                top = 8.dp,
+                                bottom = 44.dp,
+                            ),
+                        verticalArrangement = Arrangement.spacedBy(16.dp),
+                        modifier = Modifier.focusGroup(),
+                    ) {
+                        searchResultRow(
+                            title = context.getString(R.string.discover),
+                            result = seerrResults,
+                            rowIndex = SEERR_ROW,
+                            position = position,
+                            focusRequester = focusRequesters[SEERR_ROW],
+                            onClickItem = { _, _ ->
+                                // no-op
+                            },
+                            onClickDiscover = { _, item ->
+                                val dest =
+                                    if (item.jellyfinItemId != null && item.type.baseItemKind != null) {
+                                        Destination.MediaItem(
+                                            itemId = item.jellyfinItemId,
+                                            type = item.type.baseItemKind,
+                                        )
                                     } else {
-                                        false
+                                        Destination.DiscoveredItem(item)
                                     }
-                                },
+                                viewModel.navigationManager.navigateTo(dest)
+                            },
+                            onClickPosition = { position = it },
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    if (showViewOptions) {
+        SearchViewOptionsDialog(
+            combinedResults = combinedMode,
+            onCombinedResultsChange = viewModel::setCombinedResults,
+            onDismissRequest = { showViewOptions = false },
+        )
+    }
+}
+
+@Composable
+fun SearchViewOptionsDialog(
+    combinedResults: Boolean,
+    onCombinedResultsChange: (Boolean) -> Unit,
+    onDismissRequest: () -> Unit,
+) {
+    Dialog(
+        onDismissRequest = onDismissRequest,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        val dialogWindowProvider = LocalView.current.parent as? DialogWindowProvider
+        dialogWindowProvider?.window?.setGravity(Gravity.CENTER)
+        
+        Box(
+            modifier = Modifier
+                .width(400.dp)
+                .background(
+                    MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp),
+                    RoundedCornerShape(28.dp)
+                )
+                .padding(24.dp)
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                Text(
+                    text = stringResource(R.string.view_options),
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                
+                ListItem(
+                    selected = false,
+                    headlineContent = { 
+                        Text(stringResource(R.string.combined_search_results)) 
+                    },
+                    supportingContent = { 
+                        Text(
+                            if (combinedResults) 
+                                stringResource(R.string.combined_search_results_on)
+                            else 
+                                stringResource(R.string.combined_search_results_off)
+                        ) 
+                    },
+                    trailingContent = {
+                        Switch(
+                            checked = combinedResults,
+                            onCheckedChange = onCombinedResultsChange,
+                            colors = SwitchColors(),
+                        )
+                    },
+                    onClick = { onCombinedResultsChange(!combinedResults) },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun SearchCombinedResults(
+    result: SearchResult,
+    focusRequester: FocusRequester,
+    onClickItem: (Int, BaseItem) -> Unit,
+    onPlayItem: (Int, BaseItem) -> Unit,
+    onClickPosition: (RowColumn) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    when (val r = result) {
+        SearchResult.NoQuery -> Unit
+        SearchResult.Searching -> {
+            SearchResultPlaceholder(
+                title = stringResource(R.string.results),
+                message = stringResource(R.string.searching),
+                modifier = modifier.padding(16.dp),
+            )
+        }
+
+        is SearchResult.Error -> {
+            SearchResultPlaceholder(
+                title = stringResource(R.string.results),
+                message = r.ex.localizedMessage ?: "Error occurred during search",
+                messageColor = MaterialTheme.colorScheme.error,
+                modifier = modifier.padding(16.dp),
+            )
+        }
+
+        is SearchResult.Success -> {
+            if (r.items.isEmpty()) {
+                SearchResultPlaceholder(
+                    title = stringResource(R.string.results),
+                    message = stringResource(R.string.no_results),
+                    modifier = modifier.padding(16.dp),
+                )
+            } else {
+                RequestOrRestoreFocus(focusRequester)
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    modifier = modifier.fillMaxSize(),
+                ) {
+                    Text(
+                        text = stringResource(R.string.results),
+                        style = MaterialTheme.typography.titleLarge,
+                        color = MaterialTheme.colorScheme.onBackground,
+                        modifier = Modifier.padding(horizontal = 16.dp),
+                    )
+                    CardGrid(
+                        pager = r.items,
+                        onClickItem = { index, item ->
+                            onClickPosition.invoke(RowColumn(COMBINED_ROW, index))
+                            onClickItem.invoke(index, item)
+                        },
+                        onLongClickItem = { _, _ -> },
+                        onClickPlay = { index, item ->
+                            onClickPosition.invoke(RowColumn(COMBINED_ROW, index))
+                            onPlayItem.invoke(index, item)
+                        },
+                        letterPosition = { -1 },
+                        gridFocusRequester = focusRequester,
+                        showJumpButtons = false,
+                        showLetterButtons = false,
+                        modifier = Modifier.weight(1f).fillMaxWidth(),
+                        cardContent = { item, onClick, onLongClick, mod ->
+                            GridCard(
+                                item = item,
+                                onClick = onClick,
+                                onLongClick = onLongClick,
+                                modifier = mod,
+                            )
+                        },
                     )
                 }
             }
         }
-        if (seerrActive && query.isNotBlank()) {
-            item {
-                TabRow(
-                    selectedTabIndex = selectedTab,
-                    tabs =
-                        listOf(
-                            context.getString(R.string.library),
-                            context.getString(R.string.discover),
-                        ),
-                    focusRequesters = tabFocusRequesters,
-                    onClick = { selectedTab = it },
-                    modifier = Modifier.fillMaxWidth(),
-                )
-            }
-        }
-        if (selectedTab == 0 || !seerrActive || query.isBlank()) {
-            if (combinedMode) {
-                searchResultRow(
-                    title = context.getString(R.string.results),
-                    result = combinedResults,
-                    rowIndex = COMBINED_ROW,
-                    position = position,
-                    focusRequester = focusRequesters[COMBINED_ROW],
-                    onClickItem = onClickItem,
-                    onClickPosition = { position = it },
-                    modifier = Modifier.fillMaxWidth(),
-                )
-            } else {
-                searchResultRow(
-                    title = context.getString(R.string.movies),
-                    result = movies,
-                    rowIndex = MOVIE_ROW,
-                    position = position,
-                    focusRequester = focusRequesters[MOVIE_ROW],
-                    onClickItem = onClickItem,
-                    onClickPosition = { position = it },
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                searchResultRow(
-                    title = context.getString(R.string.tv_shows),
-                    result = series,
-                    rowIndex = SERIES_ROW,
-                    position = position,
-                    focusRequester = focusRequesters[SERIES_ROW],
-                    onClickItem = onClickItem,
-                    onClickPosition = { position = it },
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                searchResultRow(
-                    title = context.getString(R.string.episodes),
-                    result = episodes,
-                    rowIndex = EPISODE_ROW,
-                    position = position,
-                    focusRequester = focusRequesters[EPISODE_ROW],
-                    onClickItem = onClickItem,
-                    onClickPosition = { position = it },
-                    modifier = Modifier.fillMaxWidth(),
-                    cardContent = @Composable { index, item, mod, onClick, onLongClick ->
-                        EpisodeCard(
-                            item = item,
-                            onClick = {
-                                position = RowColumn(EPISODE_ROW, index)
-                                onClick.invoke()
-                            },
-                            onLongClick = onLongClick,
-                            imageHeight = 140.dp,
-                            modifier = mod.padding(horizontal = 8.dp),
-                        )
-                    },
-                )
-                searchResultRow(
-                    title = context.getString(R.string.collections),
-                    result = collections,
-                    rowIndex = COLLECTION_ROW,
-                    position = position,
-                    focusRequester = focusRequesters[COLLECTION_ROW],
-                    onClickItem = onClickItem,
-                    onClickPosition = { position = it },
-                    modifier = Modifier.fillMaxWidth(),
-                )
-            }
-        }
-        if (selectedTab == 1 && seerrActive && query.isNotBlank()) {
-            searchResultRow(
-                title = context.getString(R.string.discover),
-                result = seerrResults,
-                rowIndex = SEERR_ROW,
-                position = position,
-                focusRequester = focusRequesters[SEERR_ROW],
-                onClickItem = { _, _ ->
-                    // no-op
-                },
-                onClickDiscover = { _, item ->
-                    val dest =
-                        if (item.jellyfinItemId != null && item.type.baseItemKind != null) {
-                            Destination.MediaItem(
-                                itemId = item.jellyfinItemId,
-                                type = item.type.baseItemKind,
-                            )
-                        } else {
-                            Destination.DiscoveredItem(item)
-                        }
-                    viewModel.navigationManager.navigateTo(dest)
-                },
-                onClickPosition = { position = it },
-                modifier = Modifier.fillMaxWidth(),
-            )
-        }
+
+        is SearchResult.SuccessSeerr -> Unit
     }
 }
 
