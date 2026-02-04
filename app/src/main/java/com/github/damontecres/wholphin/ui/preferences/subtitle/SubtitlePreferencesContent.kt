@@ -1,4 +1,4 @@
-package com.github.damontecres.wholphin.ui.preferences
+package com.github.damontecres.wholphin.ui.preferences.subtitle
 
 import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
@@ -36,17 +36,24 @@ import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import androidx.tv.material3.surfaceColorAtElevation
 import com.github.damontecres.wholphin.preferences.AppPreference
+import com.github.damontecres.wholphin.preferences.SubtitlePreferences
+import com.github.damontecres.wholphin.preferences.resetSubtitles
 import com.github.damontecres.wholphin.ui.ifElse
+import com.github.damontecres.wholphin.ui.preferences.ClickPreference
+import com.github.damontecres.wholphin.ui.preferences.ComposablePreference
+import com.github.damontecres.wholphin.ui.preferences.PreferenceGroup
+import com.github.damontecres.wholphin.ui.preferences.PreferenceValidation
+import com.github.damontecres.wholphin.ui.preferences.PreferencesViewModel
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import kotlinx.coroutines.launch
 
 @Composable
-fun <T> BasicPreferencesContent(
+fun SubtitlePreferencesContent(
     title: String,
-    preferences: T,
-    prefList: List<PreferenceGroup<T>>,
-    onPreferenceChange: suspend (T) -> Unit,
+    preferences: SubtitlePreferences,
+    prefList: List<PreferenceGroup<SubtitlePreferences>>,
+    onPreferenceChange: suspend (SubtitlePreferences) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: PreferencesViewModel = hiltViewModel(),
     onFocus: (Int, Int) -> Unit = { _, _ -> },
@@ -111,7 +118,7 @@ fun <T> BasicPreferencesContent(
                             .map { it.preferences }
                             .flatten()
                 groupPreferences.forEachIndexed { prefIndex, pref ->
-                    pref as AppPreference<T, Any>
+                    pref as AppPreference<SubtitlePreferences, Any>
                     item {
                         val interactionSource = remember { MutableInteractionSource() }
                         val focused = interactionSource.collectIsFocusedAsState().value
@@ -121,39 +128,65 @@ fun <T> BasicPreferencesContent(
                                 onFocus.invoke(groupIndex, prefIndex)
                             }
                         }
-                        val value = pref.getter.invoke(preferences)
-                        ComposablePreference(
-                            preference = pref,
-                            value = value,
-                            onNavigate = viewModel.navigationManager::navigateTo,
-                            onValueChange = { newValue ->
-                                val validation = pref.validate(newValue)
-                                when (validation) {
-                                    is PreferenceValidation.Invalid -> {
-                                        // TODO?
-                                        Toast
-                                            .makeText(
-                                                context,
-                                                validation.message,
-                                                Toast.LENGTH_SHORT,
-                                            ).show()
-                                    }
-
-                                    PreferenceValidation.Valid -> {
+                        when (pref) {
+                            SubtitleSettings.Reset -> {
+                                ClickPreference(
+                                    title = stringResource(pref.title),
+                                    onClick = {
                                         scope.launch(ExceptionHandler()) {
-                                            onPreferenceChange.invoke(pref.setter(preferences, newValue))
+                                            val newValue =
+                                                SubtitlePreferences
+                                                    .newBuilder()
+                                                    .apply { resetSubtitles() }
+                                                    .build()
+                                            onPreferenceChange.invoke(newValue)
                                         }
-                                    }
-                                }
-                            },
-                            interactionSource = interactionSource,
-                            modifier =
-                                Modifier
-                                    .ifElse(
-                                        groupIndex == focusedIndex.first && prefIndex == focusedIndex.second,
-                                        Modifier.focusRequester(focusRequester),
-                                    ),
-                        )
+                                    },
+                                    interactionSource = interactionSource,
+                                )
+                            }
+
+                            else -> {
+                                val value = pref.getter.invoke(preferences)
+                                ComposablePreference(
+                                    preference = pref,
+                                    value = value,
+                                    onNavigate = viewModel.navigationManager::navigateTo,
+                                    onValueChange = { newValue ->
+                                        val validation = pref.validate(newValue)
+                                        when (validation) {
+                                            is PreferenceValidation.Invalid -> {
+                                                // TODO?
+                                                Toast
+                                                    .makeText(
+                                                        context,
+                                                        validation.message,
+                                                        Toast.LENGTH_SHORT,
+                                                    ).show()
+                                            }
+
+                                            PreferenceValidation.Valid -> {
+                                                scope.launch(ExceptionHandler()) {
+                                                    onPreferenceChange.invoke(
+                                                        pref.setter(
+                                                            preferences,
+                                                            newValue,
+                                                        ),
+                                                    )
+                                                }
+                                            }
+                                        }
+                                    },
+                                    interactionSource = interactionSource,
+                                    modifier =
+                                        Modifier
+                                            .ifElse(
+                                                groupIndex == focusedIndex.first && prefIndex == focusedIndex.second,
+                                                Modifier.focusRequester(focusRequester),
+                                            ),
+                                )
+                            }
+                        }
                     }
                 }
             }

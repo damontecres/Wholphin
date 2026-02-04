@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -30,7 +31,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.lifecycle.compose.LifecycleStartEffect
 import androidx.media3.common.text.Cue
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.ui.SubtitleView
@@ -38,7 +38,6 @@ import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.updateInterfacePreferences
 import com.github.damontecres.wholphin.ui.findActivity
-import com.github.damontecres.wholphin.ui.preferences.BasicPreferencesContent
 import com.github.damontecres.wholphin.ui.preferences.PreferencesViewModel
 import com.github.damontecres.wholphin.ui.preferences.subtitle.SubtitleSettings.calculateEdgeSize
 import com.github.damontecres.wholphin.ui.preferences.subtitle.SubtitleSettings.toSubtitleStyle
@@ -64,19 +63,22 @@ fun SubtitleStylePage(
     val display = LocalView.current.display
 
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-        LifecycleStartEffect(Unit) {
+        DisposableEffect(context) {
             if (hdr) {
-                val window = context.findActivity()?.window
-                Timber.v("window=$window")
+                Timber.v("Switching color mode to HDR")
                 context.findActivity()?.window?.colorMode = ActivityInfo.COLOR_MODE_HDR
             }
-
-            onStopOrDispose {
+            onDispose {
                 context.findActivity()?.window?.colorMode = ActivityInfo.COLOR_MODE_DEFAULT
             }
         }
     }
-    val prefs = preferences.interfacePreferences.subtitlesPreferences
+    val prefs =
+        if (hdr) {
+            preferences.interfacePreferences.hdrSubtitlesPreferences
+        } else {
+            preferences.interfacePreferences.subtitlesPreferences
+        }
     var focusedOnMargin by remember { mutableStateOf(false) }
 
     Row(
@@ -156,23 +158,25 @@ fun SubtitleStylePage(
                 )
             }
         }
-        val prefList =
-            remember(hdr) {
+        SubtitlePreferencesContent(
+            title =
                 if (hdr) {
-                    SubtitleSettings.hdrPreferences
+                    stringResource(R.string.hdr_subtitle_style)
                 } else {
-                    SubtitleSettings.preferences
-                }
-            }
-        BasicPreferencesContent(
-            title = stringResource(R.string.subtitle_style),
+                    stringResource(R.string.subtitle_style)
+                },
             preferences =
                 if (hdr) {
                     preferences.interfacePreferences.hdrSubtitlesPreferences
                 } else {
                     preferences.interfacePreferences.subtitlesPreferences
                 },
-            prefList = prefList,
+            prefList =
+                if (hdr) {
+                    SubtitleSettings.hdrPreferences
+                } else {
+                    SubtitleSettings.preferences
+                },
             onPreferenceChange = { newSubtitlePrefs ->
                 viewModel.preferenceDataStore.updateData {
                     it.updateInterfacePreferences {
