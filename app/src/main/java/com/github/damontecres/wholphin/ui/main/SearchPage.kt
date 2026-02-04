@@ -49,6 +49,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.window.DialogWindowProvider
+import androidx.datastore.core.DataStore
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -59,7 +60,6 @@ import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Switch
 import androidx.tv.material3.Text
 import androidx.tv.material3.surfaceColorAtElevation
-import androidx.datastore.core.DataStore
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.DiscoverItem
@@ -83,6 +83,7 @@ import com.github.damontecres.wholphin.ui.components.TabRow
 import com.github.damontecres.wholphin.ui.components.VoiceInputManager
 import com.github.damontecres.wholphin.ui.components.VoiceSearchButton
 import com.github.damontecres.wholphin.ui.data.RowColumn
+import com.github.damontecres.wholphin.ui.detail.CardGrid
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.nav.Destination
@@ -93,7 +94,6 @@ import com.github.damontecres.wholphin.ui.setValueOnMain
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.SearchRelevance
-import com.github.damontecres.wholphin.ui.detail.CardGrid
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -126,9 +126,10 @@ class SearchViewModel
         val partialResult = voiceInputManager.partialResult
         val seerrActive = seerrService.active
 
-        val combinedModeFlow: StateFlow<Boolean> = appPreferences.data
-            .map { it.interfacePreferences.combinedSearchResults }
-            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+        val combinedModeFlow: StateFlow<Boolean> =
+            appPreferences.data
+                .map { it.interfacePreferences.combinedSearchResults }
+                .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
         val movies = MutableLiveData<SearchResult>(SearchResult.NoQuery)
         val series = MutableLiveData<SearchResult>(SearchResult.NoQuery)
@@ -667,39 +668,40 @@ fun SearchViewOptionsDialog(
 ) {
     Dialog(
         onDismissRequest = onDismissRequest,
-        properties = DialogProperties(usePlatformDefaultWidth = false)
+        properties = DialogProperties(usePlatformDefaultWidth = false),
     ) {
         val dialogWindowProvider = LocalView.current.parent as? DialogWindowProvider
         dialogWindowProvider?.window?.setGravity(Gravity.CENTER)
-        
+
         Box(
-            modifier = Modifier
-                .width(400.dp)
-                .background(
-                    MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp),
-                    RoundedCornerShape(28.dp)
-                )
-                .padding(24.dp)
+            modifier =
+                Modifier
+                    .width(400.dp)
+                    .background(
+                        MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp),
+                        RoundedCornerShape(28.dp),
+                    ).padding(24.dp),
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 Text(
                     text = stringResource(R.string.view_options),
                     style = MaterialTheme.typography.headlineSmall,
-                    color = MaterialTheme.colorScheme.onSurface
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
-                
+
                 ListItem(
                     selected = false,
-                    headlineContent = { 
-                        Text(stringResource(R.string.combined_search_results)) 
+                    headlineContent = {
+                        Text(stringResource(R.string.combined_search_results))
                     },
-                    supportingContent = { 
+                    supportingContent = {
                         Text(
-                            if (combinedResults) 
+                            if (combinedResults) {
                                 stringResource(R.string.combined_search_results_on)
-                            else 
+                            } else {
                                 stringResource(R.string.combined_search_results_off)
-                        ) 
+                            },
+                        )
                     },
                     trailingContent = {
                         Switch(
@@ -709,7 +711,7 @@ fun SearchViewOptionsDialog(
                         )
                     },
                     onClick = { onCombinedResultsChange(!combinedResults) },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
                 )
             }
         }
@@ -726,7 +728,10 @@ fun SearchCombinedResults(
     modifier: Modifier = Modifier,
 ) {
     when (val r = result) {
-        SearchResult.NoQuery -> Unit
+        SearchResult.NoQuery -> {
+            Unit
+        }
+
         SearchResult.Searching -> {
             SearchResultPlaceholder(
                 title = stringResource(R.string.results),
@@ -792,7 +797,9 @@ fun SearchCombinedResults(
             }
         }
 
-        is SearchResult.SuccessSeerr -> Unit
+        is SearchResult.SuccessSeerr -> {
+            Unit
+        }
     }
 }
 
