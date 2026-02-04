@@ -710,7 +710,7 @@ sealed interface AppPreference<Pref, T> {
         val SubtitleStyle =
             AppDestinationPreference<AppPreferences>(
                 title = R.string.subtitle_style,
-                destination = Destination.Settings(PreferenceScreenOption.SUBTITLES),
+                destination = Destination.SubtitleSettings(false),
             )
 
         val RefreshRateSwitching =
@@ -746,7 +746,7 @@ sealed interface AppPreference<Pref, T> {
         val PlayerBackendPref =
             AppChoicePreference<AppPreferences, PlayerBackend>(
                 title = R.string.player_backend,
-                defaultValue = PlayerBackend.PREFER_MPV,
+                defaultValue = PlayerBackend.EXO_PLAYER,
                 getter = { it.playbackPreferences.playerBackend },
                 setter = { prefs, value ->
                     prefs.updatePlaybackPreferences { playerBackend = value }
@@ -783,7 +783,7 @@ sealed interface AppPreference<Pref, T> {
         val MpvGpuNext =
             AppSwitchPreference<AppPreferences>(
                 title = R.string.mpv_use_gpu_next,
-                defaultValue = true,
+                defaultValue = false,
                 getter = { it.playbackPreferences.mpvOptions.useGpuNext },
                 setter = { prefs, value ->
                     prefs.updateMpvOptions { useGpuNext = value }
@@ -1008,8 +1008,6 @@ val basicPreferences =
                 ),
         ),
     )
-
-val uiPreferences = listOf<PreferenceGroup>()
 
 private val ExoPlayerSettings =
     listOf(

@@ -207,7 +207,11 @@ class PlaybackViewModel
             jobs.forEach { it.cancel() }
         }
 
-        private suspend fun createPlayer(isHdr: Boolean) {
+        private suspend fun createPlayer(
+            isHdr: Boolean,
+            is4k: Boolean,
+        ) {
+            val softwareDecoding = !preferences.appPreferences.playbackPreferences.mpvOptions.enableHardwareDecoding
             val playerBackend =
                 when (preferences.appPreferences.playbackPreferences.playerBackend) {
                     PlayerBackend.UNRECOGNIZED,
@@ -216,21 +220,25 @@ class PlaybackViewModel
 
                     PlayerBackend.MPV -> PlayerBackend.MPV
 
-                    PlayerBackend.PREFER_MPV -> if (isHdr) PlayerBackend.EXO_PLAYER else PlayerBackend.MPV
+                    PlayerBackend.PREFER_MPV -> if (isHdr || (is4k && softwareDecoding)) PlayerBackend.EXO_PLAYER else PlayerBackend.MPV
                 }
 
-            Timber.i("Selected backend: %s", playerBackend)
-            withContext(Dispatchers.Main) {
-                disconnectPlayer()
-            }
+            Timber.d("Selected backend: %s", playerBackend)
+            if (currentPlayer.value?.backend != playerBackend) {
+                Timber.i("Switching player backend to %s", playerBackend)
+                withContext(Dispatchers.Main) {
+                    disconnectPlayer()
+                }
 
-            player =
-                playerFactory.createVideoPlayer(
-                    playerBackend,
-                    preferences.appPreferences.playbackPreferences,
-                )
-            currentPlayer.update {
-                PlayerState(player, playerBackend)
+                player =
+                    playerFactory.createVideoPlayer(
+                        playerBackend,
+                        preferences.appPreferences.playbackPreferences,
+                    )
+                currentPlayer.update {
+                    PlayerState(player, playerBackend)
+                }
+                configurePlayer()
             }
         }
 
@@ -424,12 +432,13 @@ class PlaybackViewModel
                             val isHdr =
                                 it.videoRange == VideoRange.HDR ||
                                     (it.videoRangeType != VideoRangeType.SDR && it.videoRangeType != VideoRangeType.UNKNOWN)
-                            SimpleVideoStream(it.index, isHdr)
+                            // Often times 4k movies have a wider aspect ratio so the height is lower even though the width is still 3840
+                            val is4k = (it.width ?: 0) > 2560 || (it.height ?: 0) > 1440
+                            SimpleVideoStream(it.index, isHdr, is4k)
                         }
 
                 // Create the correct player for the media
-                createPlayer(videoStream?.hdr == true)
-                configurePlayer()
+                createPlayer(videoStream?.hdr == true, videoStream?.is4k == true)
 
                 val subtitleStreams =
                     mediaSource.mediaStreams

@@ -4,7 +4,7 @@
 
 Wholphin is an open-source Android TV client for Jellyfin. It aims to provide a different app UI that's inspired by Plex for users interested in migrating to Jellyfin.
 
-This is not a fork of the [official client](https://github.com/jellyfin/jellyfin-androidtv). Wholphin's user interface and controls have been written completely from scratch. Wholphin `v0.3.0+` supports playing media using either ExoPlayer/Media3 or MPV (experimental).
+This is not a fork of the [official client](https://github.com/jellyfin/jellyfin-androidtv). Wholphin's user interface and controls have been written completely from scratch. Wholphin supports playing media using either ExoPlayer or MPV.
 
 <p align="center">
 <a href="https://github.com/damontecres/Wholphin/releases">
@@ -31,7 +31,7 @@ This is not a fork of the [official client](https://github.com/jellyfin/jellyfin
 ### User interface
 
 - A navigation drawer for quick access to libraries, favorites, search, and settings from almost anywhere in the app
-- Integration with [Seerr](https://github.com/seerr-team/seerr) to discover new movies and TV shows
+- Integration with [Jellyseerr](https://github.com/seerr-team/seerr) to discover new movies and TV shows
 - Option to combine Continue Watching & Next Up rows
 - Show Movie/TV Show titles when browsing libraries
 - Play theme music, if available
@@ -92,6 +92,8 @@ Note: if installed via an app store, the app store will handle updates.
 Requires Android 6+ (or Fire TV OS 6+) and Jellyfin server `10.10.x` or `10.11.x` (tested on primarily `10.11`).
 
 The app is tested on a variety of Android TV/Fire TV OS devices, but if you encounter issues, please file an issue!
+
+Jellyseerr integration is tested with `v2.7.3`. Older versions may not work.
 
 ## Contributions
 

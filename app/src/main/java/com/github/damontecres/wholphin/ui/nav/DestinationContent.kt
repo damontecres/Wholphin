@@ -35,6 +35,7 @@ import com.github.damontecres.wholphin.ui.main.HomePage
 import com.github.damontecres.wholphin.ui.main.SearchPage
 import com.github.damontecres.wholphin.ui.playback.PlaybackPage
 import com.github.damontecres.wholphin.ui.preferences.PreferencesPage
+import com.github.damontecres.wholphin.ui.preferences.subtitle.SubtitleStylePage
 import com.github.damontecres.wholphin.ui.setup.InstallUpdatePage
 import com.github.damontecres.wholphin.ui.slideshow.SlideshowPage
 import org.jellyfin.sdk.model.api.BaseItemKind
@@ -76,6 +77,14 @@ fun DestinationContent(
             PreferencesPage(
                 preferences.appPreferences,
                 destination.screen,
+                modifier,
+            )
+        }
+
+        is Destination.SubtitleSettings -> {
+            SubtitleStylePage(
+                preferences.appPreferences,
+                destination.hdr,
                 modifier,
             )
         }
@@ -297,6 +306,7 @@ fun DestinationContent(
                 }
 
                 SeerrItemType.PERSON -> {
+                    LaunchedEffect(Unit) { onClearBackdrop.invoke() }
                     DiscoverPersonPage(
                         person = destination.item,
                         modifier = modifier,

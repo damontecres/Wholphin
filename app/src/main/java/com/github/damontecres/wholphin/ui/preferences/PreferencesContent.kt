@@ -43,7 +43,6 @@ import androidx.tv.material3.surfaceColorAtElevation
 import coil3.SingletonImageLoader
 import coil3.imageLoader
 import com.github.damontecres.wholphin.R
-import com.github.damontecres.wholphin.data.model.SeerrAuthMethod
 import com.github.damontecres.wholphin.preferences.AppPreference
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.ExoPlayerPreferences
@@ -51,7 +50,6 @@ import com.github.damontecres.wholphin.preferences.MpvPreferences
 import com.github.damontecres.wholphin.preferences.PlayerBackend
 import com.github.damontecres.wholphin.preferences.advancedPreferences
 import com.github.damontecres.wholphin.preferences.basicPreferences
-import com.github.damontecres.wholphin.preferences.uiPreferences
 import com.github.damontecres.wholphin.preferences.updatePlaybackPreferences
 import com.github.damontecres.wholphin.services.UpdateChecker
 import com.github.damontecres.wholphin.ui.components.ConfirmDialog
@@ -61,7 +59,6 @@ import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.playOnClickSound
 import com.github.damontecres.wholphin.ui.playSoundOnFocus
 import com.github.damontecres.wholphin.ui.preferences.subtitle.SubtitleSettings
-import com.github.damontecres.wholphin.ui.preferences.subtitle.SubtitleStylePage
 import com.github.damontecres.wholphin.ui.setup.UpdateViewModel
 import com.github.damontecres.wholphin.ui.setup.seerr.AddSeerServerDialog
 import com.github.damontecres.wholphin.ui.setup.seerr.SwitchSeerrViewModel
@@ -89,6 +86,7 @@ fun PreferencesContent(
     val state = rememberLazyListState()
     var preferences by remember { mutableStateOf(initialPreferences) }
     val currentUser by viewModel.currentUser.observeAsState()
+    val currentServer by seerrVm.currentSeerrServer.collectAsState(null)
     var showPinFlow by remember { mutableStateOf(false) }
 
     val navDrawerPins by viewModel.navDrawerPins.observeAsState(mapOf())
@@ -125,8 +123,6 @@ fun PreferencesContent(
         when (preferenceScreenOption) {
             PreferenceScreenOption.BASIC -> basicPreferences
             PreferenceScreenOption.ADVANCED -> advancedPreferences
-            PreferenceScreenOption.USER_INTERFACE -> uiPreferences
-            PreferenceScreenOption.SUBTITLES -> SubtitleSettings.preferences
             PreferenceScreenOption.EXO_PLAYER -> ExoPlayerPreferences
             PreferenceScreenOption.MPV -> MpvPreferences
         }
@@ -134,8 +130,6 @@ fun PreferencesContent(
         when (preferenceScreenOption) {
             PreferenceScreenOption.BASIC -> R.string.settings
             PreferenceScreenOption.ADVANCED -> R.string.advanced_settings
-            PreferenceScreenOption.USER_INTERFACE -> R.string.ui_interface
-            PreferenceScreenOption.SUBTITLES -> R.string.subtitle_style
             PreferenceScreenOption.EXO_PLAYER -> R.string.exoplayer_options
             PreferenceScreenOption.MPV -> R.string.mpv_options
         }
@@ -482,7 +476,7 @@ fun PreferencesContent(
             SeerrDialogMode.Remove -> {
                 ConfirmDialog(
                     title = stringResource(R.string.remove_seerr_server),
-                    body = "",
+                    body = currentServer?.url ?: "",
                     onCancel = { seerrDialogMode = SeerrDialogMode.None },
                     onConfirm = {
                         seerrVm.removeServer()
@@ -504,13 +498,7 @@ fun PreferencesContent(
                 AddSeerServerDialog(
                     currentUsername = currentUser?.name,
                     status = status,
-                    onSubmit = { url: String, username: String?, passwordOrApiKey: String, method: SeerrAuthMethod ->
-                        if (method == SeerrAuthMethod.API_KEY) {
-                            seerrVm.submitServer(url, passwordOrApiKey)
-                        } else {
-                            seerrVm.submitServer(url, username ?: "", passwordOrApiKey, method)
-                        }
-                    },
+                    onSubmit = seerrVm::submitServer,
                     onDismissRequest = { seerrDialogMode = SeerrDialogMode.None },
                 )
             }
@@ -532,7 +520,6 @@ fun PreferencesPage(
         when (preferenceScreenOption) {
             PreferenceScreenOption.BASIC,
             PreferenceScreenOption.ADVANCED,
-            PreferenceScreenOption.USER_INTERFACE,
             PreferenceScreenOption.EXO_PLAYER,
             PreferenceScreenOption.MPV,
             -> {
@@ -543,12 +530,6 @@ fun PreferencesPage(
                         .fillMaxWidth(.4f)
                         .fillMaxHeight()
                         .align(Alignment.TopEnd),
-                )
-            }
-
-            PreferenceScreenOption.SUBTITLES -> {
-                SubtitleStylePage(
-                    initialPreferences,
                 )
             }
         }

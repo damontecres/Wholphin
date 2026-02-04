@@ -17,7 +17,7 @@ import com.github.damontecres.wholphin.util.LoadingState
 fun AddSeerServerDialog(
     currentUsername: String?,
     status: LoadingState,
-    onSubmit: (url: String, username: String?, passwordOrApiKey: String, method: SeerrAuthMethod) -> Unit,
+    onSubmit: (url: String, username: String, passwordOrApiKey: String, method: SeerrAuthMethod) -> Unit,
     onDismissRequest: () -> Unit,
 ) {
     var authMethod by remember { mutableStateOf<SeerrAuthMethod?>(null) }
@@ -49,7 +49,7 @@ fun AddSeerServerDialog(
             ) {
                 AddSeerrServerApiKey(
                     onSubmit = { url, apiKey ->
-                        onSubmit.invoke(url, null, apiKey, SeerrAuthMethod.API_KEY)
+                        onSubmit.invoke(url, "", apiKey, SeerrAuthMethod.API_KEY)
                     },
                     status = status,
                 )

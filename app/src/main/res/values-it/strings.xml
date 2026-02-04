@@ -420,4 +420,6 @@
     <string name="voice_error_start_failed">Impossibile avviare il riconoscimento vocale</string>
     <string name="retry">Riprova</string>
     <string name="voice_error_timeout">Riconoscimento vocale scaduto</string>
+    <string name="software_decoding_av1">Decodifica software AV1</string>
+    <string name="upgrade_mpv_toast">MPV è ora il lettore predefinito, eccetto per i contenuti HDR.\nPuoi modificarlo nelle impostazioni.</string>
 </resources>

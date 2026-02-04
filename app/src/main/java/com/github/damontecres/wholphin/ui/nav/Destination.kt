@@ -39,6 +39,11 @@ sealed class Destination(
     ) : Destination(true)
 
     @Serializable
+    data class SubtitleSettings(
+        val hdr: Boolean,
+    ) : Destination(true)
+
+    @Serializable
     data object Search : Destination()
 
     @Serializable

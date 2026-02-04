@@ -421,4 +421,5 @@
     <string name="voice_error_timeout">Tempo limite do reconhecimento de voz expirado</string>
     <string name="retry">Tentar novamente</string>
     <string name="software_decoding_av1">Decodificação de AV1 por software</string>
+    <string name="upgrade_mpv_toast">O MPV é agora o reprodutor padrão, exceto para HDR.\nPode alterar esta configuração nas definições.</string>
 </resources>

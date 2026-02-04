@@ -6,10 +6,12 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -30,6 +32,7 @@ import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.ui.PreviewTvSpec
+import com.github.damontecres.wholphin.ui.components.Button
 import com.github.damontecres.wholphin.ui.components.EditTextBox
 import com.github.damontecres.wholphin.ui.components.TextButton
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
@@ -240,7 +243,7 @@ fun AddSeerrServerUsername(
                         },
                     ),
                 isInputValid = { true },
-                modifier = Modifier.focusRequester(focusRequester),
+                modifier = Modifier.focusRequester(usernameFocusRequester),
             )
         }
         Row(
@@ -283,12 +286,23 @@ fun AddSeerrServerUsername(
                 style = MaterialTheme.typography.titleLarge,
             )
         }
-        TextButton(
-            stringRes = R.string.submit,
+        Button(
             onClick = { onSubmit.invoke(url, username, password) },
-            enabled = error.isNullOrBlank() && url.isNotNullOrBlank() && username.isNotNullOrBlank() && password.isNotNullOrBlank(),
+            enabled =
+                error.isNullOrBlank() && url.isNotNullOrBlank() && username.isNotNullOrBlank() &&
+                    status != LoadingState.Loading,
             modifier = Modifier.align(Alignment.CenterHorizontally),
-        )
+        ) {
+            if (status != LoadingState.Loading) {
+                Text(text = stringResource(R.string.submit))
+            } else {
+                CircularProgressIndicator(
+                    color = MaterialTheme.colorScheme.border,
+                    modifier =
+                        Modifier.size(24.dp),
+                )
+            }
+        }
     }
 }
 

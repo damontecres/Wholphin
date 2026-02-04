@@ -6,6 +6,7 @@ import androidx.compose.runtime.Stable
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.buildAnnotatedString
 import com.github.damontecres.wholphin.ui.DateFormatter
+import com.github.damontecres.wholphin.ui.abbreviateNumber
 import com.github.damontecres.wholphin.ui.detail.CardGridItem
 import com.github.damontecres.wholphin.ui.detail.series.SeasonEpisodeIds
 import com.github.damontecres.wholphin.ui.dot
@@ -71,8 +72,7 @@ data class BaseItem(
     @Transient
     val aspectRatio: Float? = data.primaryImageAspectRatio?.toFloat()?.takeIf { it > 0 }
 
-    @Transient
-    val indexNumber = data.indexNumber ?: dateAsIndex()
+    val indexNumber get() = data.indexNumber
 
     val playbackPosition get() = data.userData?.playbackPositionTicks?.ticks ?: Duration.ZERO
 
@@ -88,6 +88,15 @@ data class BaseItem(
     @Transient
     val ui =
         BaseItemUi(
+            episodeCornerText =
+                data.indexNumber?.let { "E$it" }
+                    ?: data.premiereDate?.let(::formatDateTime),
+            episdodeUnplayedCornerText =
+                data.indexNumber?.let { "E$it" }
+                    ?: data.userData
+                        ?.unplayedItemCount
+                        ?.takeIf { it > 0 }
+                        ?.let { abbreviateNumber(it) },
             quickDetails =
                 buildAnnotatedString {
                     val details =
@@ -197,5 +206,7 @@ val BaseItemDto.aspectRatioFloat: Float? get() = width?.let { w -> height?.let {
 
 @Immutable
 data class BaseItemUi(
+    val episodeCornerText: String?,
+    val episdodeUnplayedCornerText: String?,
     val quickDetails: AnnotatedString,
 )

@@ -299,15 +299,15 @@
     </plurals>
     <plurals name="samples">
         <item quantity="one">Отрывки</item>
-        <item quantity="few"></item>
-        <item quantity="many"></item>
-        <item quantity="other"></item>
+        <item quantity="few"/>
+        <item quantity="many"/>
+        <item quantity="other"/>
     </plurals>
     <plurals name="featurettes">
         <item quantity="one">Дополнительные материалы</item>
-        <item quantity="few"></item>
-        <item quantity="many"></item>
-        <item quantity="other"></item>
+        <item quantity="few"/>
+        <item quantity="many"/>
+        <item quantity="other"/>
     </plurals>
     <string name="player_backend">Выбор плеера</string>
     <string name="edge_size">Толщина обводки</string>
@@ -316,15 +316,15 @@
     <string name="forced_track">Форсированные</string>
     <plurals name="theme_songs">
         <item quantity="one">Саундтреки</item>
-        <item quantity="few"></item>
-        <item quantity="many"></item>
-        <item quantity="other"></item>
+        <item quantity="few"/>
+        <item quantity="many"/>
+        <item quantity="other"/>
     </plurals>
     <plurals name="theme_videos">
         <item quantity="one">Видеоролики</item>
-        <item quantity="few"></item>
-        <item quantity="many"></item>
-        <item quantity="other"></item>
+        <item quantity="few"/>
+        <item quantity="many"/>
+        <item quantity="other"/>
     </plurals>
     <string name="nav_drawer_pins">Настроить элементы боковой панели</string>
     <string name="nav_drawer_pins_summary">Выберите элементы для показа на панели, остальные элементы будут скрыты</string>
@@ -339,8 +339,58 @@
     <string name="pass_out_protection">Остановка воспроизведения при бездействии</string>
     <plurals name="shorts">
         <item quantity="one">Короткометражки</item>
-        <item quantity="few"></item>
-        <item quantity="many"></item>
-        <item quantity="other"></item>
+        <item quantity="few"/>
+        <item quantity="many"/>
+        <item quantity="other"/>
     </plurals>
+    <string name="ends_at">Конец в %1$s</string>
+    <string name="enter_server_address">Введите адрес сервера</string>
+    <string name="no_servers_found">Серверы не найдены</string>
+    <string name="only_forced_subtitles">Только форсированные субтитры</string>
+    <string name="voice_search">Голосовой поиск</string>
+    <string name="voice_starting">Запуск</string>
+    <string name="voice_search_prompt">Говорите для поиска</string>
+    <string name="processing">Обработка</string>
+    <string name="press_back_to_cancel">Нажмите назад для отмены</string>
+    <string name="voice_error_audio">Ошибка записи звука</string>
+    <string name="voice_error_client">Ошибка распознавания голоса</string>
+    <string name="voice_error_permissions">Требуется разрешение на использование микрофона</string>
+    <string name="voice_error_network">Сетевая ошибка</string>
+    <string name="voice_error_network_timeout">Сетевой таймаут</string>
+    <string name="voice_error_no_match">Речь не распознана</string>
+    <string name="voice_error_busy">Голосовое распознавание занято</string>
+    <string name="voice_error_server">Ошибка сервера</string>
+    <string name="voice_error_speech_timeout">Речь не обнаружена</string>
+    <string name="voice_error_unknown">Неизвестная ошибка</string>
+    <string name="voice_error_start_failed">Не удалось запустить распознавание голоса</string>
+    <string name="voice_error_timeout">Время ожидания распознавания голоса истекло</string>
+    <string name="retry">Повторить</string>
+    <string name="media_information">О медиаданных</string>
+    <string name="refresh_rate_switching">Переключение частоты обновления</string>
+    <string name="automatic">Автоматически</string>
+    <string name="username_or_password">Исп. имя пользователя/пароль</string>
+    <string name="login">Логин</string>
+    <string name="password">Пароль</string>
+    <string name="username">Имя пользователя</string>
+    <string name="language">Язык</string>
+    <string name="general">Основное</string>
+    <string name="container">Контейнер</string>
+    <string name="title">Заголовок</string>
+    <string name="codec">Кодек</string>
+    <string name="profile">Профиль</string>
+    <string name="level">Уровень</string>
+    <string name="resolution">Разрешение</string>
+    <string name="anamorphic">Анаморфность</string>
+    <string name="interlaced">Чересстрочность</string>
+    <string name="framerate">Ч-та кадров</string>
+    <string name="bit_depth">Разрядность</string>
+    <string name="video_range">Диапазон видео</string>
+    <string name="video_range_type">Тип диапазона видео</string>
+    <string name="color_space">Цветовое пространство</string>
+    <string name="color_transfer">Передача цвета</string>
+    <string name="color_primaries">Основные цвета</string>
+    <string name="pixel_format">Формат пикселей</string>
+    <string name="ref_frames">Опорные кадры</string>
+    <string name="yes">Да</string>
+    <string name="no">Нет</string>
 </resources>
