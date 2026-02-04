@@ -87,12 +87,12 @@ class SuggestionsCache
             mutex.withLock {
                 if (diskCacheLoadedUserId == userId) return@withLock
                 withContext(Dispatchers.IO) {
-                    memoryCache.clear()
                     val suggestionsDir = cacheDir
                     if (!suggestionsDir.exists()) {
                         diskCacheLoadedUserId = userId
                         return@withContext
                     }
+                    memoryCache.clear()
                     suggestionsDir
                         .listFiles {
                             it.name.startsWith(userId.toServerString())
