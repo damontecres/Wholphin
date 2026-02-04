@@ -463,6 +463,7 @@
     <string name="software_decoding_av1">AV1 software decoding</string>
     <string name="upgrade_mpv_toast">MPV is now the default player except for HDR.\nYou can change this in settings.</string>
     <string name="hdr_subtitle_style">HDR subtitle style</string>
+    <string name="image_subtitle_opacity">Image subtitle opacity</string>
 
     <string-array name="theme_song_volume">
         <item>Disabled</item>

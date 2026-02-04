@@ -127,6 +127,7 @@ message SubtitlePreferences{
   bool font_italic = 10;
   int32 margin = 11;
   int32 edge_thickness = 12;
+  int32 image_subtitle_opacity = 13;
 }
 
 message LiveTvPreferences {

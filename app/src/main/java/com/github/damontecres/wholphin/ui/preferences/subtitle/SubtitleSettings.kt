@@ -222,6 +222,22 @@ object SubtitleSettings {
             summarizer = { value -> value?.let { "$it%" } },
         )
 
+    val ImageOpacity =
+        AppSliderPreference<SubtitlePreferences>(
+            title = R.string.image_subtitle_opacity,
+            defaultValue = 100,
+            min = 10,
+            max = 100,
+            interval = 5,
+            getter = {
+                it.imageSubtitleOpacity.toLong()
+            },
+            setter = { prefs, value ->
+                prefs.update { imageSubtitleOpacity = value.toInt() }
+            },
+            summarizer = { value -> value?.let { "$it%" } },
+        )
+
     val Reset =
         AppClickablePreference<SubtitlePreferences>(
             title = R.string.reset,
@@ -271,6 +287,7 @@ object SubtitleSettings {
                 preferences =
                     listOf(
                         Margin,
+                        ImageOpacity,
                         Reset,
                     ),
             ),

@@ -34,6 +34,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -70,6 +71,7 @@ import com.github.damontecres.wholphin.ui.LocalImageUrlService
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.components.TextButton
+import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.preferences.subtitle.SubtitleSettings.applyToMpv
 import com.github.damontecres.wholphin.ui.preferences.subtitle.SubtitleSettings.calculateEdgeSize
@@ -412,10 +414,13 @@ fun PlaybackPageContent(
                         preferences.appPreferences.interfacePreferences.subtitlesPreferences
                     }
                 }
+            val subtitleImageOpacity =
+                remember(subtitleSettings) { subtitleSettings.imageSubtitleOpacity / 100f }
 
             // Subtitles
             if (skipIndicatorDuration == 0L && currentItemPlayback.subtitleIndexEnabled) {
                 val maxSize by animateFloatAsState(if (controllerViewState.controlsVisible) .7f else 1f)
+                val isImageSubtitles = remember(cues) { cues.firstOrNull()?.bitmap != null }
                 AndroidView(
                     factory = { context ->
                         SubtitleView(context).apply {
@@ -438,7 +443,8 @@ fun PlaybackPageContent(
                         Modifier
                             .fillMaxSize(maxSize)
                             .align(Alignment.TopCenter)
-                            .background(Color.Transparent),
+                            .background(Color.Transparent)
+                            .ifElse(isImageSubtitles, Modifier.alpha(subtitleImageOpacity)),
                 )
             }
         }

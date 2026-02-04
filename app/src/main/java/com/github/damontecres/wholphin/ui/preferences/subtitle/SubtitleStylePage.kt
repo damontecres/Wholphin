@@ -22,6 +22,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -36,6 +37,8 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.ui.SubtitleView
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.preferences.AppPreferences
+import com.github.damontecres.wholphin.preferences.SubtitlePreferences
+import com.github.damontecres.wholphin.preferences.resetSubtitles
 import com.github.damontecres.wholphin.preferences.updateInterfacePreferences
 import com.github.damontecres.wholphin.ui.findActivity
 import com.github.damontecres.wholphin.ui.preferences.PreferencesViewModel
@@ -80,6 +83,7 @@ fun SubtitleStylePage(
             preferences.interfacePreferences.subtitlesPreferences
         }
     var focusedOnMargin by remember { mutableStateOf(false) }
+    var focusedOnImageOpacity by remember { mutableStateOf(false) }
 
     Row(
         modifier = modifier,
@@ -99,7 +103,7 @@ fun SubtitleStylePage(
                     Modifier
                         .fillMaxSize(),
             )
-            if (!focusedOnMargin) {
+            if (!focusedOnMargin && !focusedOnImageOpacity) {
                 Column(
                     verticalArrangement = Arrangement.SpaceBetween,
                     modifier =
@@ -136,7 +140,7 @@ fun SubtitleStylePage(
                         )
                     }
                 }
-            } else {
+            } else if (focusedOnMargin) {
                 // Margin
                 AndroidView(
                     factory = { context ->
@@ -155,6 +159,34 @@ fun SubtitleStylePage(
                     modifier =
                         Modifier
                             .fillMaxSize(),
+                )
+            } else if (focusedOnImageOpacity) {
+                AndroidView(
+                    factory = { context ->
+                        SubtitleView(context)
+                    },
+                    update = {
+                        it.setStyle(
+                            SubtitlePreferences
+                                .newBuilder()
+                                .apply {
+                                    resetSubtitles()
+                                }.build()
+                                .toSubtitleStyle(),
+                        )
+                        it.setCues(
+                            listOf(
+                                Cue
+                                    .Builder()
+                                    .setText("ExoPlayer only:\nImage based subtitles can be dimmed.")
+                                    .build(),
+                            ),
+                        )
+                    },
+                    modifier =
+                        Modifier
+                            .fillMaxSize()
+                            .alpha(prefs.imageSubtitleOpacity / 100f),
                 )
             }
         }
@@ -194,10 +226,13 @@ fun SubtitleStylePage(
                 }
             },
             onFocus = { groupIndex, prefIndex ->
-                focusedOnMargin =
-                    SubtitleSettings.preferences.getOrNull(groupIndex)?.preferences?.getOrNull(
-                        prefIndex,
-                    ) == SubtitleSettings.Margin
+                val focusedPref =
+                    SubtitleSettings.preferences
+                        .getOrNull(groupIndex)
+                        ?.preferences
+                        ?.getOrNull(prefIndex)
+                focusedOnMargin = focusedPref == SubtitleSettings.Margin
+                focusedOnImageOpacity = focusedPref == SubtitleSettings.ImageOpacity
             },
             modifier =
                 Modifier
