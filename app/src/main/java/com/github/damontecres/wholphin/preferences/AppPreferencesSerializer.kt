@@ -114,8 +114,7 @@ class AppPreferencesSerializer
                                                 AppPreference.LiveTvColorCodePrograms.defaultValue
                                         }.build()
 
-                                combinedSearchResults =
-                                    AppPreference.CombinedSearchResults.defaultValue
+                                combinedSearchResults = false
                             }.build()
 
                     advancedPreferences =
