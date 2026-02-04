@@ -85,6 +85,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.jellyfin.sdk.model.extensions.ticks
+import timber.log.Timber
 import java.util.UUID
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
@@ -176,6 +177,7 @@ fun PlaybackPageContent(
     LaunchedEffect(player) {
         if (playerBackend == PlayerBackend.MPV) {
             scope.launch(Dispatchers.IO + ExceptionHandler()) {
+                // MPV can't play HDR, so always use regular settings
                 preferences.appPreferences.interfacePreferences.subtitlesPreferences.applyToMpv(
                     configuration,
                     density,
@@ -401,13 +403,23 @@ fun PlaybackPageContent(
                 )
             }
 
+            val subtitleSettings =
+                remember(mediaInfo) {
+                    Timber.v("subtitle choice: ${mediaInfo?.videoStream?.hdr}")
+                    if (mediaInfo?.videoStream?.hdr == true) {
+                        preferences.appPreferences.interfacePreferences.hdrSubtitlesPreferences
+                    } else {
+                        preferences.appPreferences.interfacePreferences.subtitlesPreferences
+                    }
+                }
+
             // Subtitles
             if (skipIndicatorDuration == 0L && currentItemPlayback.subtitleIndexEnabled) {
                 val maxSize by animateFloatAsState(if (controllerViewState.controlsVisible) .7f else 1f)
                 AndroidView(
                     factory = { context ->
                         SubtitleView(context).apply {
-                            preferences.appPreferences.interfacePreferences.subtitlesPreferences.let {
+                            subtitleSettings.let {
                                 setStyle(it.toSubtitleStyle())
                                 setFixedTextSize(Dimension.SP, it.fontSize.toFloat())
                                 setBottomPaddingFraction(it.margin.toFloat() / 100f)
@@ -416,10 +428,8 @@ fun PlaybackPageContent(
                     },
                     update = {
                         it.setCues(cues)
-                        Media3SubtitleOverride(
-                            preferences.appPreferences.interfacePreferences.subtitlesPreferences
-                                .calculateEdgeSize(density),
-                        ).apply(it)
+                        Media3SubtitleOverride(subtitleSettings.calculateEdgeSize(density))
+                            .apply(it)
                     },
                     onReset = {
                         it.setCues(null)

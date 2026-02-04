@@ -3,6 +3,7 @@ package com.github.damontecres.wholphin.ui.preferences.subtitle
 import android.content.res.Configuration
 import android.graphics.Typeface
 import android.os.Build
+import android.view.Display
 import androidx.annotation.OptIn
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
@@ -228,13 +229,13 @@ object SubtitleSettings {
             setter = { prefs, _ -> prefs },
         )
 
-    val hdrSettings =
+    val HdrSettings =
         AppDestinationPreference<SubtitlePreferences>(
             title = R.string.hdr_subtitle_style,
             destination = Destination.SubtitleSettings(true),
         )
 
-    val hdrPreferences =
+    val preferences =
         listOf(
             PreferenceGroup(
                 title = R.string.font,
@@ -275,21 +276,18 @@ object SubtitleSettings {
             ),
         )
 
-    val preferences by lazy {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            hdrPreferences
-                .toMutableList()
-                .apply {
-                    val new =
-                        get(lastIndex).copy(
-                            preferences = listOf(Margin, Reset, hdrSettings),
-                        )
-                    set(lastIndex, new)
-                }
-        } else {
-            hdrPreferences
-        }
-    }
+    val hdrPreferenceGroup =
+        listOf(
+            PreferenceGroup(
+                title = R.string.hdr,
+                preferences =
+                    listOf(
+                        HdrSettings,
+                    ),
+            ),
+        )
+
+    fun shouldShowHdr(display: Display): Boolean = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && display.isHdr
 
     private fun combine(
         color: Int,
