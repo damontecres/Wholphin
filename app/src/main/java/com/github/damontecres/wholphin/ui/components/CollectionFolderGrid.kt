@@ -47,18 +47,9 @@ import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.LibraryDisplayInfoDao
 import com.github.damontecres.wholphin.data.ServerRepository
-import com.github.damontecres.wholphin.data.filter.CommunityRatingFilter
-import com.github.damontecres.wholphin.data.filter.DecadeFilter
 import com.github.damontecres.wholphin.data.filter.DefaultFilterOptions
-import com.github.damontecres.wholphin.data.filter.FavoriteFilter
 import com.github.damontecres.wholphin.data.filter.FilterValueOption
-import com.github.damontecres.wholphin.data.filter.FilterVideoType
-import com.github.damontecres.wholphin.data.filter.GenreFilter
 import com.github.damontecres.wholphin.data.filter.ItemFilterBy
-import com.github.damontecres.wholphin.data.filter.OfficialRatingFilter
-import com.github.damontecres.wholphin.data.filter.PlayedFilter
-import com.github.damontecres.wholphin.data.filter.VideoTypeFilter
-import com.github.damontecres.wholphin.data.filter.YearFilter
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.CollectionFolderFilter
 import com.github.damontecres.wholphin.data.model.GetItemsFilter
@@ -88,6 +79,7 @@ import com.github.damontecres.wholphin.ui.rememberInt
 import com.github.damontecres.wholphin.ui.setValueOnMain
 import com.github.damontecres.wholphin.ui.toServerString
 import com.github.damontecres.wholphin.ui.tryRequestFocus
+import com.github.damontecres.wholphin.ui.util.FilterUtils
 import com.github.damontecres.wholphin.util.ApiRequestPager
 import com.github.damontecres.wholphin.util.DataLoadingState
 import com.github.damontecres.wholphin.util.ExceptionHandler
@@ -103,9 +95,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
-import org.jellyfin.sdk.api.client.extensions.genresApi
-import org.jellyfin.sdk.api.client.extensions.localizationApi
-import org.jellyfin.sdk.api.client.extensions.yearsApi
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.CollectionType
 import org.jellyfin.sdk.model.api.ImageType
@@ -116,7 +105,6 @@ import org.jellyfin.sdk.model.api.request.GetItemsRequest
 import org.jellyfin.sdk.model.api.request.GetPersonsRequest
 import org.jellyfin.sdk.model.serializer.toUUIDOrNull
 import timber.log.Timber
-import java.util.TreeSet
 import java.util.UUID
 import kotlin.time.Duration
 
@@ -391,79 +379,12 @@ class CollectionFolderViewModel
         }
 
         suspend fun getFilterOptionValues(filterOption: ItemFilterBy<*>): List<FilterValueOption> =
-            try {
-                when (filterOption) {
-                    GenreFilter -> {
-                        api.genresApi
-                            .getGenres(
-                                parentId = itemUuid,
-                                userId = serverRepository.currentUser.value?.id,
-                            ).content.items
-                            .map { FilterValueOption(it.name ?: "", it.id) }
-                    }
-
-                    FavoriteFilter,
-                    PlayedFilter,
-                    -> {
-                        listOf(
-                            FilterValueOption("True", null),
-                            FilterValueOption("False", null),
-                        )
-                    }
-
-                    OfficialRatingFilter -> {
-                        api.localizationApi.getParentalRatings().content.map {
-                            FilterValueOption(it.name ?: "", it.value)
-                        }
-                    }
-
-                    VideoTypeFilter -> {
-                        FilterVideoType.entries.map {
-                            FilterValueOption(it.readable, it)
-                        }
-                    }
-
-                    YearFilter -> {
-                        api.yearsApi
-                            .getYears(
-                                parentId = itemUuid,
-                                userId = serverRepository.currentUser.value?.id,
-                                sortBy = listOf(ItemSortBy.SORT_NAME),
-                                sortOrder = listOf(SortOrder.ASCENDING),
-                            ).content.items
-                            .mapNotNull {
-                                it.name?.toIntOrNull()?.let { FilterValueOption(it.toString(), it) }
-                            }
-                    }
-
-                    DecadeFilter -> {
-                        val items = TreeSet<Int>()
-                        api.yearsApi
-                            .getYears(
-                                parentId = itemUuid,
-                                userId = serverRepository.currentUser.value?.id,
-                                sortBy = listOf(ItemSortBy.SORT_NAME),
-                                sortOrder = listOf(SortOrder.ASCENDING),
-                            ).content.items
-                            .mapNotNullTo(items) {
-                                it.name
-                                    ?.toIntOrNull()
-                                    ?.div(10)
-                                    ?.times(10)
-                            }
-                        items.toList().sorted().map { FilterValueOption("$it's", it) }
-                    }
-
-                    CommunityRatingFilter -> {
-                        (1..10).map {
-                            FilterValueOption("$it", it)
-                        }
-                    }
-                }
-            } catch (ex: Exception) {
-                Timber.e(ex, "Exception get filter value options for $filterOption")
-                listOf()
-            }
+            FilterUtils.getFilterOptionValues(
+                api,
+                serverRepository.currentUser.value?.id,
+                itemUuid,
+                filterOption,
+            )
 
         suspend fun positionOfLetter(letter: Char): Int? =
             withContext(Dispatchers.IO) {

@@ -248,7 +248,7 @@ fun HomePageContent(
                 verticalArrangement = Arrangement.spacedBy(8.dp),
                 contentPadding =
                     PaddingValues(
-                        start = 16.dp,
+                        start = 24.dp,
                         end = 16.dp,
                         top = 0.dp,
                         bottom = Cards.height2x3,
@@ -467,7 +467,7 @@ fun HomePageHeader(
     subtitle: String?,
     overview: String?,
     overviewTwoLines: Boolean,
-    quickDetails: AnnotatedString,
+    quickDetails: AnnotatedString?,
     timeRemaining: Duration?,
     modifier: Modifier = Modifier,
 ) {
@@ -495,7 +495,7 @@ fun HomePageHeader(
             subtitle?.let {
                 EpisodeName(it)
             }
-            QuickDetails(quickDetails, timeRemaining)
+            QuickDetails(quickDetails ?: AnnotatedString(""), timeRemaining)
             val overviewModifier =
                 Modifier
                     .padding(0.dp)

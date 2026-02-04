@@ -31,6 +31,7 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -332,12 +333,12 @@ fun SeriesDetailsContent(
         Column(
             modifier =
                 Modifier
-                    .padding(16.dp)
+                    .padding(horizontal = 24.dp, vertical = 16.dp)
                     .fillMaxSize(),
         ) {
             LazyColumn(
                 contentPadding = PaddingValues(bottom = 80.dp),
-                verticalArrangement = Arrangement.spacedBy(0.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
                 modifier = Modifier,
             ) {
                 item {
@@ -354,7 +355,7 @@ fun SeriesDetailsContent(
                         horizontalArrangement = Arrangement.spacedBy(16.dp),
                         modifier =
                             Modifier
-                                .padding(start = 16.dp)
+                                .padding(start = 8.dp)
                                 .focusRequester(focusRequesters[HEADER_ROW])
                                 .focusRestorer(playFocusRequester)
                                 .focusGroup()
@@ -599,23 +600,27 @@ fun SeriesDetailsHeader(
     val scope = rememberCoroutineScope()
     val dto = series.data
     Column(
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
         modifier = modifier,
     ) {
         Text(
             text = series.name ?: stringResource(R.string.unknown),
-            style = MaterialTheme.typography.displaySmall,
-            maxLines = 2,
+            color = MaterialTheme.colorScheme.onBackground,
+            style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.SemiBold),
+            maxLines = 1,
             overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.fillMaxWidth(.75f),
+            modifier =
+                Modifier
+                    .fillMaxWidth(.75f)
+                    .padding(start = 8.dp),
         )
         Column(
             verticalArrangement = Arrangement.spacedBy(4.dp),
             modifier = Modifier.fillMaxWidth(.60f),
         ) {
-            QuickDetails(series.ui.quickDetails, null)
+            QuickDetails(series.ui.quickDetails, null, Modifier.padding(start = 8.dp))
             dto.genres?.letNotEmpty {
-                GenreText(it)
+                GenreText(it, Modifier.padding(start = 8.dp, bottom = 12.dp))
             }
             dto.overview?.let { overview ->
                 OverviewText(
