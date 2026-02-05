@@ -25,7 +25,7 @@
     <string name="confirm">Confirm</string>
     <string name="continue_watching">Continue watching</string>
     <string name="critic_rating">Critic Rating</string>
-    <string name="decimal_seconds">%.1f seconds</string>
+    <string name="decimal_seconds">%.2f seconds</string>
     <string name="default_track">Default</string>
     <string name="delete">Delete</string>
     <string name="died">Died</string>
@@ -465,6 +465,28 @@
     <string name="request_4k">Request in 4K</string>
     <string name="software_decoding_av1">AV1 software decoding</string>
     <string name="upgrade_mpv_toast">MPV is now the default player except for HDR.\nYou can change this in settings.</string>
+    <string name="hdr_subtitle_style">HDR subtitle style</string>
+    <string name="image_subtitle_opacity">Image subtitle opacity</string>
+
+    <string name="brightness">Brightness</string>
+    <string name="contrast">Constrast</string>
+    <string name="saturation">Saturation</string>
+    <string name="hue">Hue</string>
+    <string name="red">Red</string>
+    <string name="green">Green</string>
+    <string name="blue">Blue</string>
+    <string name="blur">Blur</string>
+    <string name="save_for_album">Save for album</string>
+    <string name="play_slideshow">Play slideshow</string>
+    <string name="stop_slideshow">Stop slideshow</string>
+    <string name="slideshow_at_beginning">At beginning</string>
+    <string name="no_more_images">No more photos</string>
+    <string name="rotate_left">Rotate left</string>
+    <string name="rotate_right">Rotate right</string>
+    <string name="zoom_in">Zoom in</string>
+    <string name="zoom_out">Zoom out</string>
+    <string name="slideshow_duration">Slideshow duration</string>
+    <string name="play_videos_during_slideshow">Play videos during slideshow</string>
 
     <string-array name="theme_song_volume">
         <item>Disabled</item>

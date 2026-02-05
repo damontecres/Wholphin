@@ -127,6 +127,7 @@ message SubtitlePreferences{
   bool font_italic = 10;
   int32 margin = 11;
   int32 edge_thickness = 12;
+  int32 image_subtitle_opacity = 13;
 }
 
 message LiveTvPreferences {
@@ -152,10 +153,16 @@ message InterfacePreferences {
   SubtitlePreferences subtitles_preferences = 7;
   LiveTvPreferences live_tv_preferences = 8;
   BackdropStyle backdrop_style = 9;
+  SubtitlePreferences hdr_subtitles_preferences = 10;
 }
 
 message AdvancedPreferences {
   int64 image_disk_cache_size_bytes = 1;
+}
+
+message PhotoPreferences{
+  int64 slideshow_duration = 1;
+  bool slideshow_play_videos = 2;
 }
 
 message AppPreferences {
@@ -173,4 +180,5 @@ message AppPreferences {
   bool debug_logging = 9;
   AdvancedPreferences advanced_preferences = 10;
   bool sign_in_automatically = 11;
+  PhotoPreferences photo_preferences = 12;
 }

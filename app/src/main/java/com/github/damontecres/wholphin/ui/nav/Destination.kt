@@ -39,6 +39,11 @@ sealed class Destination(
     ) : Destination(true)
 
     @Serializable
+    data class SubtitleSettings(
+        val hdr: Boolean,
+    ) : Destination(true)
+
+    @Serializable
     data object Search : Destination()
 
     @Serializable
@@ -99,6 +104,16 @@ sealed class Destination(
         @param:StringRes val titleRes: Int?,
         val itemIds: List<UUID>,
     ) : Destination(false)
+
+    @Serializable
+    data class Slideshow(
+        val parentId: UUID,
+        val index: Int,
+        val filter: CollectionFolderFilter,
+        val sortAndDirection: SortAndDirection,
+        val recursive: Boolean,
+        val startSlideshow: Boolean,
+    ) : Destination(true)
 
     @Serializable
     data object Favorites : Destination(false)

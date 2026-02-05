@@ -40,7 +40,7 @@ fun SliderBar(
     modifier: Modifier = Modifier,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
     interval: Int = 1,
-    color: Color = MaterialTheme.colorScheme.border,
+    colors: SliderColors = SliderColors.default(),
 ) {
     val isFocused by interactionSource.collectIsFocusedAsState()
     val animatedIndicatorHeight by animateDpAsState(
@@ -48,9 +48,6 @@ fun SliderBar(
     )
     var currentValue by remember(value) { mutableLongStateOf(value) }
     val percent = (currentValue - min).toFloat() / (max - min)
-
-    val activeColor = SliderActiveColor(isFocused)
-    val inactiveColor = SliderInactiveColor(isFocused)
 
     val handleSeekEventModifier =
         Modifier.handleDPadKeyEvents(
@@ -91,14 +88,14 @@ fun SliderBar(
             onDraw = {
                 val yOffset = size.height.div(2)
                 drawLine(
-                    color = inactiveColor,
+                    color = if (isFocused) colors.inactiveFocused else colors.inactiveUnfocused,
                     start = Offset(x = 0f, y = yOffset),
                     end = Offset(x = size.width, y = yOffset),
                     strokeWidth = size.height,
                     cap = StrokeCap.Round,
                 )
                 drawLine(
-                    color = activeColor,
+                    color = if (isFocused) colors.activeFocused else colors.activeUnfocused,
                     start = Offset(x = 0f, y = yOffset),
                     end =
                         Offset(
@@ -116,6 +113,24 @@ fun SliderBar(
                 )
             },
         )
+    }
+}
+
+data class SliderColors(
+    val activeFocused: Color,
+    val activeUnfocused: Color,
+    val inactiveFocused: Color,
+    val inactiveUnfocused: Color,
+) {
+    companion object {
+        @Composable
+        fun default() =
+            SliderColors(
+                activeFocused = SliderActiveColor(true),
+                activeUnfocused = SliderActiveColor(false),
+                inactiveFocused = SliderInactiveColor(true),
+                inactiveUnfocused = SliderInactiveColor(false),
+            )
     }
 }
 

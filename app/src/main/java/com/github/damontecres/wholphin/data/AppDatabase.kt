@@ -14,6 +14,7 @@ import com.github.damontecres.wholphin.data.model.JellyfinServer
 import com.github.damontecres.wholphin.data.model.JellyfinUser
 import com.github.damontecres.wholphin.data.model.LibraryDisplayInfo
 import com.github.damontecres.wholphin.data.model.NavDrawerPinnedItem
+import com.github.damontecres.wholphin.data.model.PlaybackEffect
 import com.github.damontecres.wholphin.data.model.PlaybackLanguageChoice
 import com.github.damontecres.wholphin.data.model.SeerrServer
 import com.github.damontecres.wholphin.data.model.SeerrUser
@@ -32,12 +33,14 @@ import java.util.UUID
         ItemPlayback::class,
         NavDrawerPinnedItem::class,
         LibraryDisplayInfo::class,
+        PlaybackEffect::class,
         PlaybackLanguageChoice::class,
         ItemTrackModification::class,
         SeerrServer::class,
         SeerrUser::class,
+
     ],
-    version = 20,
+    version = 30,
     exportSchema = true,
     autoMigrations = [
         AutoMigration(3, 4),
@@ -50,6 +53,7 @@ import java.util.UUID
         AutoMigration(10, 11),
         AutoMigration(11, 12),
         AutoMigration(12, 20),
+        AutoMigration(20, 30),
     ],
 )
 @TypeConverters(Converters::class)
@@ -65,6 +69,8 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun playbackLanguageChoiceDao(): PlaybackLanguageChoiceDao
 
     abstract fun seerrServerDao(): SeerrServerDao
+
+    abstract fun playbackEffectDao(): PlaybackEffectDao
 }
 
 class Converters {

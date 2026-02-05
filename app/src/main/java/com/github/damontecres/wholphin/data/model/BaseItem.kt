@@ -106,6 +106,12 @@ data class BaseItem(
                                 data.premiereDate?.let { add(DateFormatter.format(it)) }
                             } else if (type == BaseItemKind.SERIES) {
                                 data.seriesProductionYears?.let(::add)
+                            } else if (type == BaseItemKind.PHOTO) {
+                                if (data.productionYear != null) {
+                                    add(data.productionYear!!.toString())
+                                } else if (data.premiereDate != null) {
+                                    add(data.premiereDate!!.toLocalDate().toString())
+                                }
                             } else {
                                 data.productionYear?.let { add(it.toString()) }
                             }
@@ -154,7 +160,7 @@ data class BaseItem(
                     it.dayOfMonth.toString().padStart(2, '0')
             }?.toIntOrNull()
 
-    fun destination(): Destination {
+    fun destination(index: Int? = null): Destination {
         val result =
             // Redirect episodes & seasons to their series if possible
             when (type) {

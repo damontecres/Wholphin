@@ -15,6 +15,7 @@ import com.github.damontecres.wholphin.ui.detail.CollectionFolderBoxSet
 import com.github.damontecres.wholphin.ui.detail.CollectionFolderGeneric
 import com.github.damontecres.wholphin.ui.detail.CollectionFolderLiveTv
 import com.github.damontecres.wholphin.ui.detail.CollectionFolderMovie
+import com.github.damontecres.wholphin.ui.detail.CollectionFolderPhotoAlbum
 import com.github.damontecres.wholphin.ui.detail.CollectionFolderPlaylist
 import com.github.damontecres.wholphin.ui.detail.CollectionFolderRecordings
 import com.github.damontecres.wholphin.ui.detail.CollectionFolderTv
@@ -34,7 +35,9 @@ import com.github.damontecres.wholphin.ui.main.HomePage
 import com.github.damontecres.wholphin.ui.main.SearchPage
 import com.github.damontecres.wholphin.ui.playback.PlaybackPage
 import com.github.damontecres.wholphin.ui.preferences.PreferencesPage
+import com.github.damontecres.wholphin.ui.preferences.subtitle.SubtitleStylePage
 import com.github.damontecres.wholphin.ui.setup.InstallUpdatePage
+import com.github.damontecres.wholphin.ui.slideshow.SlideshowPage
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.CollectionType
 import timber.log.Timber
@@ -74,6 +77,14 @@ fun DestinationContent(
             PreferencesPage(
                 preferences.appPreferences,
                 destination.screen,
+                modifier,
+            )
+        }
+
+        is Destination.SubtitleSettings -> {
+            SubtitleStylePage(
+                preferences.appPreferences,
+                destination.hdr,
                 modifier,
             )
         }
@@ -186,6 +197,16 @@ fun DestinationContent(
                     )
                 }
 
+                BaseItemKind.PHOTO_ALBUM -> {
+                    LaunchedEffect(Unit) { onClearBackdrop.invoke() }
+                    CollectionFolderPhotoAlbum(
+                        preferences = preferences,
+                        itemId = destination.itemId,
+                        recursive = true,
+                        modifier = modifier,
+                    )
+                }
+
                 else -> {
                     Timber.w("Unsupported item type: ${destination.type}")
                     Text("Unsupported item type: ${destination.type}")
@@ -222,6 +243,12 @@ fun DestinationContent(
             ItemGrid(
                 destination,
                 modifier,
+            )
+        }
+
+        is Destination.Slideshow -> {
+            SlideshowPage(
+                slideshow = destination,
             )
         }
 
