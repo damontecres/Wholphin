@@ -45,8 +45,6 @@ class SuggestionsCache
         private val memoryCache: MutableMap<String, CachedSuggestions> =
             LinkedHashMap(MAX_MEMORY_CACHE_SIZE, 0.75f, true)
 
-        @Volatile
-        private var diskCacheLoadedUserId: UUID? = null
         private val dirtyKeys: MutableSet<String> = mutableSetOf()
         private val mutex = Mutex()
 
@@ -82,44 +80,11 @@ class SuggestionsCache
             get() = File(context.cacheDir, "suggestions")
 
         @OptIn(ExperimentalSerializationApi::class)
-        private suspend fun loadFromDisk(userId: UUID) {
-            if (diskCacheLoadedUserId == userId) return
-            mutex.withLock {
-                if (diskCacheLoadedUserId == userId) return@withLock
-                withContext(Dispatchers.IO) {
-                    val suggestionsDir = cacheDir
-                    if (!suggestionsDir.exists()) {
-                        diskCacheLoadedUserId = userId
-                        return@withContext
-                    }
-                    memoryCache.clear()
-                    suggestionsDir
-                        .listFiles {
-                            it.name.startsWith(userId.toServerString())
-                        }.orEmpty()
-                        .take(MAX_MEMORY_CACHE_SIZE)
-                        .forEach { file ->
-                            runCatching {
-                                val key = file.nameWithoutExtension
-                                val cached =
-                                    file
-                                        .inputStream()
-                                        .use { json.decodeFromStream<CachedSuggestions>(it) }
-                                memoryCache[key] = cached
-                            }.onFailure { Timber.w(it, "Failed to read cache file: ${file.name}") }
-                        }
-                    diskCacheLoadedUserId = userId
-                }
-            }
-        }
-
-        @OptIn(ExperimentalSerializationApi::class)
         suspend fun get(
             userId: UUID,
             libraryId: UUID,
             itemKind: BaseItemKind,
         ): CachedSuggestions? {
-            loadFromDisk(userId)
             val key = cacheKey(userId, libraryId, itemKind)
             memoryCache[key]?.let { return it }
             return withContext(Dispatchers.IO) {
@@ -202,7 +167,6 @@ class SuggestionsCache
                 memoryCache.clear()
                 dirtyKeys.clear()
                 _cacheVersion.update { it + 1 }
-                diskCacheLoadedUserId = null
             }
             withContext(Dispatchers.IO) {
                 runCatching { cacheDir.deleteRecursively() }
