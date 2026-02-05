@@ -74,6 +74,7 @@ class TestHomeRowSamples {
                 HomeRowConfig.Favorite(kind = BaseItemKind.SERIES),
                 HomeRowConfig.Recordings(),
                 HomeRowConfig.TvPrograms(),
+                HomeRowConfig.Suggestions(parentId = UUID.randomUUID()),
             )
     }
 
@@ -94,6 +95,7 @@ class TestHomeRowSamples {
                 is HomeRowConfig.Favorite -> foundTypes.add(it::class)
                 is HomeRowConfig.Recordings -> foundTypes.add(it::class)
                 is HomeRowConfig.TvPrograms -> foundTypes.add(it::class)
+                is HomeRowConfig.Suggestions -> foundTypes.add(it::class)
             }
         }
         Assert.assertEquals(HomeRowConfig::class.sealedSubclasses.size, foundTypes.size)
@@ -123,6 +125,7 @@ class TestHomeRowSamples {
                 navDrawerItemRepository = mockk(),
                 latestNextUpService = mockk(),
                 imageUrlService = mockk(),
+                suggestionService = mockk(),
             )
 
         val str = """{
