@@ -256,6 +256,7 @@ fun HomeSettingsPage(
             onUpdateBackdrop = viewModel::updateBackdrop,
             listState = listState,
             takeFocus = false,
+            showEmptyRows = true,
             modifier =
                 Modifier
                     .fillMaxHeight()

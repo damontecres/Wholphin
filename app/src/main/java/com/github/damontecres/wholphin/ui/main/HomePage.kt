@@ -1,8 +1,6 @@
 package com.github.damontecres.wholphin.ui.main
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.focusGroup
-import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -33,7 +31,6 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.focus.onFocusChanged
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -58,6 +55,7 @@ import com.github.damontecres.wholphin.ui.components.DialogParams
 import com.github.damontecres.wholphin.ui.components.DialogPopup
 import com.github.damontecres.wholphin.ui.components.EpisodeName
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
+import com.github.damontecres.wholphin.ui.components.FocusableItemRow
 import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.components.QuickDetails
 import com.github.damontecres.wholphin.ui.data.AddPlaylistViewModel
@@ -198,6 +196,7 @@ fun HomePageContent(
     loadingState: LoadingState? = null,
     listState: LazyListState = rememberLazyListState(),
     takeFocus: Boolean = true,
+    showEmptyRows: Boolean = false,
 ) {
     var position by rememberPosition()
     val focusedItem =
@@ -264,52 +263,20 @@ fun HomePageContent(
                         is HomeRowLoadingState.Loading,
                         is HomeRowLoadingState.Pending,
                         -> {
-                            Column(
-                                verticalArrangement = Arrangement.spacedBy(8.dp),
+                            FocusableItemRow(
+                                title = r.title,
+                                subtitle = stringResource(R.string.loading),
                                 modifier = Modifier.animateItem(),
-                            ) {
-                                Text(
-                                    text = r.title,
-                                    style = MaterialTheme.typography.titleLarge,
-                                    color = MaterialTheme.colorScheme.onBackground,
-                                )
-                                Text(
-                                    text = stringResource(R.string.loading),
-                                    style = MaterialTheme.typography.titleMedium,
-                                    color = MaterialTheme.colorScheme.onBackground,
-                                )
-                            }
+                            )
                         }
 
                         is HomeRowLoadingState.Error -> {
-                            var focused by remember { mutableStateOf(false) }
-                            Column(
-                                verticalArrangement = Arrangement.spacedBy(8.dp),
-                                modifier =
-                                    Modifier
-                                        .onFocusChanged {
-                                            focused = it.isFocused
-                                        }.focusable()
-                                        .background(
-                                            if (focused) {
-                                                // Just so the user can tell it has focus
-                                                MaterialTheme.colorScheme.border.copy(alpha = .25f)
-                                            } else {
-                                                Color.Unspecified
-                                            },
-                                        ).animateItem(),
-                            ) {
-                                Text(
-                                    text = r.title,
-                                    style = MaterialTheme.typography.titleLarge,
-                                    color = MaterialTheme.colorScheme.onBackground,
-                                )
-                                Text(
-                                    text = r.localizedMessage,
-                                    style = MaterialTheme.typography.titleMedium,
-                                    color = MaterialTheme.colorScheme.error,
-                                )
-                            }
+                            FocusableItemRow(
+                                title = r.title,
+                                subtitle = r.localizedMessage,
+                                isError = true,
+                                modifier = Modifier.animateItem(),
+                            )
                         }
 
                         is HomeRowLoadingState.Success -> {
@@ -368,6 +335,12 @@ fun HomePageContent(
                                                     },
                                         )
                                     },
+                                )
+                            } else if (showEmptyRows) {
+                                FocusableItemRow(
+                                    title = r.title,
+                                    subtitle = stringResource(R.string.no_results),
+                                    modifier = Modifier.animateItem(),
                                 )
                             }
                         }
