@@ -66,8 +66,8 @@
     <string name="trailer">Tráiler</string>
     <plurals name="trailers">
         <item quantity="one">TráilerTráilers</item>
-        <item quantity="many"></item>
-        <item quantity="other"></item>
+        <item quantity="many"/>
+        <item quantity="other"/>
     </plurals>
     <string name="tv_shows">Series</string>
     <string name="ui_interface">Interfaz</string>
@@ -86,8 +86,8 @@
     <string name="extras">Extras</string>
     <plurals name="other_extras">
         <item quantity="one">OtroOtros</item>
-        <item quantity="many"></item>
-        <item quantity="other"></item>
+        <item quantity="many"/>
+        <item quantity="other"/>
     </plurals>
     <string name="advanced_settings">Configuración avanzada</string>
     <string name="advanced_ui">Interfaz avanzada</string>
@@ -165,13 +165,13 @@
     <string name="italic_font">Cursiva</string>
     <plurals name="behind_the_scenes">
         <item quantity="one">Detrás de cámarasDetrás de cámaras</item>
-        <item quantity="many"></item>
-        <item quantity="other"></item>
+        <item quantity="many"/>
+        <item quantity="other"/>
     </plurals>
     <plurals name="theme_songs">
         <item quantity="one">Canción principalCanciones principales</item>
-        <item quantity="many"></item>
-        <item quantity="other"></item>
+        <item quantity="many"/>
+        <item quantity="other"/>
     </plurals>
     <plurals name="theme_videos">
         <item quantity="one">Vídeos temáticos</item>
@@ -180,28 +180,28 @@
     </plurals>
     <plurals name="clips">
         <item quantity="one">ClipClips</item>
-        <item quantity="many"></item>
-        <item quantity="other"></item>
+        <item quantity="many"/>
+        <item quantity="other"/>
     </plurals>
     <plurals name="deleted_scenes">
         <item quantity="one">Escena eliminadaEscenas eliminadas</item>
-        <item quantity="many"></item>
-        <item quantity="other"></item>
+        <item quantity="many"/>
+        <item quantity="other"/>
     </plurals>
     <plurals name="interviews">
         <item quantity="one">EntrevistaEntrevistas</item>
-        <item quantity="many"></item>
-        <item quantity="other"></item>
+        <item quantity="many"/>
+        <item quantity="other"/>
     </plurals>
     <plurals name="scenes">
         <item quantity="one">EscenaEscenas</item>
-        <item quantity="many"></item>
-        <item quantity="other"></item>
+        <item quantity="many"/>
+        <item quantity="other"/>
     </plurals>
     <plurals name="samples">
         <item quantity="one">MuestraMuestras</item>
-        <item quantity="many"></item>
-        <item quantity="other"></item>
+        <item quantity="many"/>
+        <item quantity="other"/>
     </plurals>
     <plurals name="featurettes">
         <item quantity="one">Mini-documentales</item>
@@ -210,13 +210,13 @@
     </plurals>
     <plurals name="shorts">
         <item quantity="one">CortoCortos</item>
-        <item quantity="many"></item>
-        <item quantity="other"></item>
+        <item quantity="many"/>
+        <item quantity="other"/>
     </plurals>
     <plurals name="downloads">
         <item quantity="one">%s descarga</item>
         <item quantity="many">%s descargas</item>
-        <item quantity="other"></item>
+        <item quantity="other"/>
     </plurals>
     <plurals name="hours">
         <item quantity="one">%d hora</item>
