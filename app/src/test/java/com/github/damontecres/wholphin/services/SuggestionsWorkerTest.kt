@@ -142,6 +142,85 @@ class SuggestionsWorkerTest {
         }
 
     @Test
+    fun fetches_contextual_suggestions_when_genres_available() =
+        runTest {
+            val viewId = UUID.randomUUID()
+            val view =
+                mockk<BaseItemDto>(relaxed = true) {
+                    every { id } returns viewId
+                    every { this@mockk.collectionType } returns CollectionType.MOVIES
+                }
+            every { mockPreferences.data } returns flowOf(mockPrefs())
+            coEvery { mockUserViewsApi.getUserViews(userId = testUserId) } returns mockQueryResult(listOf(view))
+            mockkObject(GetItemsRequestHandler)
+
+            val genreId = UUID.randomUUID()
+            val historyItem =
+                mockk<BaseItemDto>(relaxed = true) {
+                    every { id } returns UUID.randomUUID()
+                    every { genreItems } returns listOf(mockk { every { id } returns genreId })
+                }
+            val contextualItem = mockk<BaseItemDto>(relaxed = true) { every { id } returns UUID.randomUUID() }
+            val randomItem = mockk<BaseItemDto>(relaxed = true) { every { id } returns UUID.randomUUID() }
+            val freshItem = mockk<BaseItemDto>(relaxed = true) { every { id } returns UUID.randomUUID() }
+
+            var callCount = 0
+            coEvery { GetItemsRequestHandler.execute(mockApi, any()) } answers {
+                callCount++
+                when (callCount) {
+                    1 -> mockQueryResult(listOf(historyItem))
+                    2 -> mockQueryResult(listOf(contextualItem))
+                    3 -> mockQueryResult(listOf(randomItem))
+                    4 -> mockQueryResult(listOf(freshItem))
+                    else -> mockQueryResult(emptyList())
+                }
+            }
+
+            val result = createWorker().doWork()
+
+            assertEquals(ListenableWorker.Result.success(), result)
+            coVerify { mockCache.put(testUserId, viewId, BaseItemKind.MOVIE, any()) }
+        }
+
+    @Test
+    fun skips_contextual_suggestions_when_no_genres_available() =
+        runTest {
+            val viewId = UUID.randomUUID()
+            val view =
+                mockk<BaseItemDto>(relaxed = true) {
+                    every { id } returns viewId
+                    every { this@mockk.collectionType } returns CollectionType.MOVIES
+                }
+            every { mockPreferences.data } returns flowOf(mockPrefs())
+            coEvery { mockUserViewsApi.getUserViews(userId = testUserId) } returns mockQueryResult(listOf(view))
+            mockkObject(GetItemsRequestHandler)
+
+            val historyItem =
+                mockk<BaseItemDto>(relaxed = true) {
+                    every { id } returns UUID.randomUUID()
+                    every { genreItems } returns emptyList()
+                }
+            val randomItem = mockk<BaseItemDto>(relaxed = true) { every { id } returns UUID.randomUUID() }
+            val freshItem = mockk<BaseItemDto>(relaxed = true) { every { id } returns UUID.randomUUID() }
+
+            var callCount = 0
+            coEvery { GetItemsRequestHandler.execute(mockApi, any()) } answers {
+                callCount++
+                when (callCount) {
+                    1 -> mockQueryResult(listOf(historyItem))
+                    2 -> mockQueryResult(listOf(randomItem))
+                    3 -> mockQueryResult(listOf(freshItem))
+                    else -> mockQueryResult(emptyList())
+                }
+            }
+
+            val result = createWorker().doWork()
+
+            assertEquals(ListenableWorker.Result.success(), result)
+            coVerify { mockCache.put(testUserId, viewId, BaseItemKind.MOVIE, any()) }
+        }
+
+    @Test
     fun returns_retry_on_network_error() =
         runTest {
             every { mockPreferences.data } returns flowOf(mockPrefs())
