@@ -238,11 +238,10 @@ internal object Options {
                     listOf(
                         ViewOptionsCardHeight,
                         ViewOptionsSpacing,
+                        ViewOptionsShowTitles,
                         ViewOptionsImageType,
                         ViewOptionsAspectRatio,
                         ViewOptionsContentScale,
-                        // TODO
-//                ViewOptionsShowTitles,
                         ViewOptionsUseSeries,
                     ),
             ),
@@ -265,6 +264,7 @@ internal object Options {
                     listOf(
                         ViewOptionsCardHeight,
                         ViewOptionsSpacing,
+                        ViewOptionsShowTitles,
                         ViewOptionsImageType,
                         ViewOptionsAspectRatio,
                         ViewOptionsContentScale,

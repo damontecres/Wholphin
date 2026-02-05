@@ -46,9 +46,11 @@ import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.BaseItem
+import com.github.damontecres.wholphin.data.model.HomeRowViewOptions
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.Cards
 import com.github.damontecres.wholphin.ui.cards.BannerCard
+import com.github.damontecres.wholphin.ui.cards.BannerCardWithTitle
 import com.github.damontecres.wholphin.ui.cards.GenreCard
 import com.github.damontecres.wholphin.ui.cards.ItemRow
 import com.github.damontecres.wholphin.ui.components.CircularProgress
@@ -330,91 +332,41 @@ fun HomePageContent(
                                             .animateItem(),
                                     horizontalPadding = viewOptions.spacing.dp,
                                     cardContent = { index, item, cardModifier, onClick, onLongClick ->
-                                        val mod =
-                                            cardModifier
-                                                .onFocusChanged {
-                                                    if (it.isFocused) {
-                                                        position = RowColumn(rowIndex, index)
-                                                    }
-                                                    if (it.isFocused && onFocusPosition != null) {
-                                                        val nonEmptyRowBefore =
-                                                            homeRows
-                                                                .subList(0, rowIndex)
-                                                                .count {
-                                                                    it is HomeRowLoadingState.Success && it.items.isEmpty()
-                                                                }
-                                                        onFocusPosition.invoke(
-                                                            RowColumn(
-                                                                rowIndex - nonEmptyRowBefore,
-                                                                index,
-                                                            ),
-                                                        )
-                                                    }
-                                                }.onKeyEvent {
-                                                    if (isPlayKeyUp(it) && item?.type?.playable == true) {
-                                                        Timber.v("Clicked play on ${item.id}")
-                                                        onClickPlay.invoke(position, item)
-                                                        return@onKeyEvent true
-                                                    }
-                                                    return@onKeyEvent false
-                                                }
-                                        when (item?.type) {
-                                            BaseItemKind.GENRE -> {
-                                                GenreCard(
-                                                    genreId = item.id,
-                                                    name = item.name,
-                                                    imageUrl = item.imageUrlOverride,
-                                                    onClick = onClick,
-                                                    onLongClick = onLongClick,
-                                                    modifier = mod.height(viewOptions.heightDp.dp),
-                                                )
-                                            }
-
-                                            else -> {
-                                                val imageType =
-                                                    remember(item, viewOptions) {
-                                                        if (item?.type == BaseItemKind.EPISODE) {
-                                                            viewOptions.episodeImageType.imageType
-                                                        } else {
-                                                            viewOptions.imageType.imageType
+                                        HomePageCardContent(
+                                            index = index,
+                                            item = item,
+                                            onClick = onClick,
+                                            onLongClick = onLongClick,
+                                            viewOptions = viewOptions,
+                                            modifier =
+                                                cardModifier
+                                                    .onFocusChanged {
+                                                        if (it.isFocused) {
+                                                            position = RowColumn(rowIndex, index)
                                                         }
-                                                    }
-                                                val ratio =
-                                                    remember(item, viewOptions) {
-                                                        if (item?.type == BaseItemKind.EPISODE) {
-                                                            viewOptions.episodeAspectRatio.ratio
-                                                        } else {
-                                                            viewOptions.aspectRatio.ratio
+                                                        if (it.isFocused && onFocusPosition != null) {
+                                                            val nonEmptyRowBefore =
+                                                                homeRows
+                                                                    .subList(0, rowIndex)
+                                                                    .count {
+                                                                        it is HomeRowLoadingState.Success && it.items.isEmpty()
+                                                                    }
+                                                            onFocusPosition.invoke(
+                                                                RowColumn(
+                                                                    rowIndex - nonEmptyRowBefore,
+                                                                    index,
+                                                                ),
+                                                            )
                                                         }
-                                                    }
-                                                val scale =
-                                                    remember(item, viewOptions) {
-                                                        if (item?.type == BaseItemKind.EPISODE) {
-                                                            viewOptions.episodeContentScale.scale
-                                                        } else {
-                                                            viewOptions.contentScale.scale
+                                                    }.onKeyEvent {
+                                                        if (isPlayKeyUp(it) && item?.type?.playable == true) {
+                                                            Timber.v("Clicked play on ${item.id}")
+                                                            onClickPlay.invoke(position, item)
+                                                            return@onKeyEvent true
                                                         }
-                                                    }
-                                                BannerCard(
-                                                    name = item?.data?.seriesName ?: item?.name,
-                                                    item = item,
-                                                    aspectRatio = ratio,
-                                                    imageType = imageType,
-                                                    imageContentScale = scale,
-                                                    cornerText = item?.ui?.episdodeUnplayedCornerText,
-                                                    played = item?.data?.userData?.played ?: false,
-                                                    favorite = item?.favorite ?: false,
-                                                    playPercent =
-                                                        item?.data?.userData?.playedPercentage
-                                                            ?: 0.0,
-                                                    onClick = onClick,
-                                                    onLongClick = onLongClick,
-                                                    modifier = mod,
-                                                    interactionSource = null,
-                                                    cardHeight = viewOptions.heightDp.dp,
-                                                )
-                                            }
-                                        }
+                                                        return@onKeyEvent false
+                                                    },
+                                        )
                                     },
                                 )
                             }
@@ -512,6 +464,95 @@ fun HomePageHeader(
                 )
             } else {
                 Spacer(overviewModifier)
+            }
+        }
+    }
+}
+
+@Composable
+fun HomePageCardContent(
+    index: Int,
+    item: BaseItem?,
+    onClick: () -> Unit,
+    onLongClick: () -> Unit,
+    viewOptions: HomeRowViewOptions,
+    modifier: Modifier,
+) {
+    when (item?.type) {
+        BaseItemKind.GENRE -> {
+            GenreCard(
+                genreId = item.id,
+                name = item.name,
+                imageUrl = item.imageUrlOverride,
+                onClick = onClick,
+                onLongClick = onLongClick,
+                modifier = modifier.height(viewOptions.heightDp.dp),
+            )
+        }
+
+        else -> {
+            val imageType =
+                remember(item, viewOptions) {
+                    if (item?.type == BaseItemKind.EPISODE) {
+                        viewOptions.episodeImageType.imageType
+                    } else {
+                        viewOptions.imageType.imageType
+                    }
+                }
+            val ratio =
+                remember(item, viewOptions) {
+                    if (item?.type == BaseItemKind.EPISODE) {
+                        viewOptions.episodeAspectRatio.ratio
+                    } else {
+                        viewOptions.aspectRatio.ratio
+                    }
+                }
+            val scale =
+                remember(item, viewOptions) {
+                    if (item?.type == BaseItemKind.EPISODE) {
+                        viewOptions.episodeContentScale.scale
+                    } else {
+                        viewOptions.contentScale.scale
+                    }
+                }
+            if (viewOptions.showTitles) {
+                BannerCardWithTitle(
+                    title = item?.title,
+                    subtitle = item?.subtitle,
+                    item = item,
+                    aspectRatio = ratio,
+                    imageType = imageType,
+                    imageContentScale = scale,
+                    cornerText = item?.ui?.episdodeUnplayedCornerText,
+                    played = item?.data?.userData?.played ?: false,
+                    favorite = item?.favorite ?: false,
+                    playPercent =
+                        item?.data?.userData?.playedPercentage
+                            ?: 0.0,
+                    onClick = onClick,
+                    onLongClick = onLongClick,
+                    modifier = modifier,
+                    cardHeight = viewOptions.heightDp.dp,
+                )
+            } else {
+                BannerCard(
+                    name = item?.data?.seriesName ?: item?.name,
+                    item = item,
+                    aspectRatio = ratio,
+                    imageType = imageType,
+                    imageContentScale = scale,
+                    cornerText = item?.ui?.episdodeUnplayedCornerText,
+                    played = item?.data?.userData?.played ?: false,
+                    favorite = item?.favorite ?: false,
+                    playPercent =
+                        item?.data?.userData?.playedPercentage
+                            ?: 0.0,
+                    onClick = onClick,
+                    onLongClick = onLongClick,
+                    modifier = modifier,
+                    interactionSource = null,
+                    cardHeight = viewOptions.heightDp.dp,
+                )
             }
         }
     }
