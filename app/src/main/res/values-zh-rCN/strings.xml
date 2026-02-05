@@ -390,4 +390,6 @@
     <string name="retry">重试</string>
     <string name="software_decoding_av1">AV1 软件解码</string>
     <string name="upgrade_mpv_toast">除 HDR 视频外，mpv 现在是默认播放器。\n您可以在设置中更改此设置。</string>
+    <string name="hdr_subtitle_style">HDR 字幕样式</string>
+    <string name="image_subtitle_opacity">图像字幕不透明度</string>
 </resources>
