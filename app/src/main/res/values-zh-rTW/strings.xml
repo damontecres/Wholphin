@@ -160,7 +160,7 @@
     <string name="confirm">確認</string>
     <string name="continue_watching">繼續觀看</string>
     <string name="critic_rating">影評人評分</string>
-    <string name="decimal_seconds">%.1f 秒</string>
+    <string name="decimal_seconds">%.2f 秒</string>
     <string name="default_track">預設</string>
     <string name="delete">刪除</string>
     <string name="died">去世</string>
@@ -390,4 +390,5 @@
     <string name="retry">重試</string>
     <string name="software_decoding_av1">AV1 軟體解碼</string>
     <string name="upgrade_mpv_toast">除了 HDR 影片外，MPV 已成為預設播放器。 \n您可以在設定中變更此設定。</string>
+    <string name="hdr_subtitle_style">HDR 字幕樣式</string>
 </resources>
