@@ -226,7 +226,7 @@ class HomeSettingsService
                         }
                     HomePageResolvedSettings(resolvedRows)
                 } else {
-                    createDefault(userId)
+                    createDefault()
                 }
 
             currentSettings.update { resolvedSettings }
@@ -235,7 +235,7 @@ class HomeSettingsService
         /**
          * Create a default [HomePageResolvedSettings] using the available libraries
          */
-        private suspend fun createDefault(userId: UUID): HomePageResolvedSettings {
+        suspend fun createDefault(): HomePageResolvedSettings {
             Timber.v("Creating default settings")
             val navDrawerItems = navDrawerItemRepository.getNavDrawerItems()
             val libraries =

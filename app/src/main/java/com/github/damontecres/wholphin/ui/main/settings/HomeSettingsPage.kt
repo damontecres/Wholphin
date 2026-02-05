@@ -210,6 +210,12 @@ fun HomeSettingsPage(
                                                 viewModel.loadFromRemoteWeb()
                                             }
                                     },
+                                    onClickReset = {
+                                        showConfirmDialog =
+                                            ShowConfirm(R.string.overwrite_local_settings) {
+                                                viewModel.resetToDefault()
+                                            }
+                                    },
                                     modifier = destModifier,
                                 )
                             }

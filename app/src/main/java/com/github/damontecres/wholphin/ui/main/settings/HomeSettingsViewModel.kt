@@ -500,6 +500,17 @@ class HomeSettingsViewModel
                 }
             }
         }
+
+        fun resetToDefault() {
+            viewModelScope.launchIO {
+                _state.update { it.copy(loading = LoadingState.Loading) }
+                val result = homeSettingsService.createDefault()
+                _state.update {
+                    it.copy(rows = result.rows)
+                }
+                fetchRowData()
+            }
+        }
     }
 
 data class HomePageSettingsState(

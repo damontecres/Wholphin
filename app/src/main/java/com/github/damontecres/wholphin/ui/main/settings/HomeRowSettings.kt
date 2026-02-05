@@ -72,13 +72,15 @@ fun HomeRowSettings(
 
                                 Options.ViewOptionsUseThumb -> {
                                     onViewOptionsChange.invoke(
-                                        HomeRowViewOptions(
+                                        viewOptions.copy(
                                             heightDp = Cards.HEIGHT_EPISODE,
                                             spacing = 20,
                                             imageType = ViewOptionImageType.THUMB,
                                             aspectRatio = AspectRatio.WIDE,
+                                            contentScale = PrefContentScale.FIT,
                                             episodeImageType = ViewOptionImageType.THUMB,
                                             episodeAspectRatio = AspectRatio.WIDE,
+                                            episodeContentScale = PrefContentScale.FIT,
                                         ),
                                     )
                                 }

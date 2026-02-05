@@ -32,6 +32,7 @@ fun HomeSettingsGlobal(
     onClickSave: () -> Unit,
     onClickLoad: () -> Unit,
     onClickLoadWeb: () -> Unit,
+    onClickReset: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val firstFocus: FocusRequester = remember { FocusRequester() }
@@ -119,6 +120,20 @@ fun HomeSettingsGlobal(
                         )
                     },
                     onClick = onClickLoadWeb,
+                    modifier = Modifier,
+                )
+            }
+            item {
+                HomeSettingsListItem(
+                    selected = false,
+                    headlineText = stringResource(R.string.reset),
+                    leadingContent = {
+                        Text(
+                            text = stringResource(R.string.fa_arrows_rotate),
+                            fontFamily = FontAwesome,
+                        )
+                    },
+                    onClick = onClickReset,
                     modifier = Modifier,
                 )
             }
