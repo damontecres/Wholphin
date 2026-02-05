@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.github.damontecres.wholphin.data.NavDrawerItemRepository
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.BaseItem
+import com.github.damontecres.wholphin.data.model.HomeRowConfig
 import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.DatePlayedService
 import com.github.damontecres.wholphin.services.FavoriteWatchManager
@@ -56,7 +57,7 @@ class HomeViewModel
 
         init {
             datePlayedService.invalidateAll()
-            init()
+//            init()
         }
 
         fun init() {
@@ -86,45 +87,54 @@ class HomeViewModel
                             state.loadingState == LoadingState.Success && state.settings == settings
 
                         val semaphore = Semaphore(4)
-                        val loadingRows =
-                            if (refresh) {
-                                state.homeRows
-                            } else {
-                                mutableListOf()
-                            }
-                        val deferred =
-                            settings.rows.mapIndexed { index, row ->
-                                if (refresh) {
-                                    (loadingRows as MutableList).add(HomeRowLoadingState.Loading(row.title))
-                                }
 
-                                viewModelScope.async(Dispatchers.IO) {
-                                    semaphore.withPermit {
-                                        Timber.v("Fetching row: %s", row)
-                                        try {
-                                            homeSettingsService.fetchDataForRow(
-                                                row = row.config,
-                                                scope = viewModelScope,
-                                                prefs = prefs,
-                                                userDto = userDto,
-                                                libraries = libraries,
-                                                limit = prefs.maxItemsPerRow,
-                                            )
-                                        } catch (ex: Exception) {
-                                            Timber.e(ex, "Error on row %s", row)
-                                            HomeRowLoadingState.Error(row.title, exception = ex)
+                        val watchingRowIndexes =
+                            settings.rows
+                                .mapIndexedNotNull { index, row ->
+                                    if (isWatchingRow(row.config)) index else null
+                                }
+                        val deferred =
+                            settings.rows
+                                // Load the watching rows first
+                                .sortedByDescending { isWatchingRow(it.config) }
+                                .map { row ->
+                                    viewModelScope.async(Dispatchers.IO) {
+                                        semaphore.withPermit {
+                                            Timber.v("Fetching row: %s", row)
+                                            try {
+                                                homeSettingsService.fetchDataForRow(
+                                                    row = row.config,
+                                                    scope = viewModelScope,
+                                                    prefs = prefs,
+                                                    userDto = userDto,
+                                                    libraries = libraries,
+                                                    limit = prefs.maxItemsPerRow,
+                                                )
+                                            } catch (ex: Exception) {
+                                                Timber.e(ex, "Error on row %s", row)
+                                                HomeRowLoadingState.Error(row.title, exception = ex)
+                                            }
                                         }
                                     }
                                 }
-                            }
-                        if (refresh) {
-                            deferred.firstOrNull()?.await()?.let {
-                                (loadingRows as MutableList)[0] = it
-                            }
+
+                        if (refresh && state.homeRows.isNotEmpty() && watchingRowIndexes.isNotEmpty()) {
+                            // Replace watching rows first
+                            Timber.v("Refreshing rows: %s", watchingRowIndexes)
+                            val rows =
+                                deferred
+                                    .filterIndexed { index, _ -> index in watchingRowIndexes }
+                                    .awaitAll()
                             _state.update {
+                                val newRows =
+                                    it.homeRows.toMutableList().apply {
+                                        rows.forEachIndexed { index, row ->
+                                            set(watchingRowIndexes[index], row)
+                                        }
+                                    }
                                 it.copy(
                                     loadingState = LoadingState.Success,
-                                    homeRows = loadingRows,
+                                    homeRows = newRows,
                                 )
                             }
                         }
@@ -194,3 +204,11 @@ data class HomeState(
             )
     }
 }
+
+/**
+ * Whether a row is a "is watching" type
+ */
+private fun isWatchingRow(row: HomeRowConfig) =
+    row is HomeRowConfig.ContinueWatching ||
+        row is HomeRowConfig.NextUp ||
+        row is HomeRowConfig.ContinueWatchingCombined
