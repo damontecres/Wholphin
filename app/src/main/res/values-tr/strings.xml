@@ -66,7 +66,7 @@
     <string name="more">Diğer</string>
     <plurals name="movies">
         <item quantity="one">Filmler</item>
-        <item quantity="other"></item>
+        <item quantity="other"/>
     </plurals>
     <string name="name">Ad</string>
     <string name="next_up">Sıradaki bölümler</string>
@@ -81,7 +81,7 @@
     <string name="path">Yol</string>
     <plurals name="people">
         <item quantity="one">Kişiler</item>
-        <item quantity="other"></item>
+        <item quantity="other"/>
     </plurals>
     <string name="play_count">Oynatma Sayısı</string>
     <string name="play_from_here">Buradan oynat</string>
@@ -152,7 +152,7 @@
     <string name="trailer">Fragman</string>
     <plurals name="trailers">
         <item quantity="one">Fragmanlar</item>
-        <item quantity="other"></item>
+        <item quantity="other"/>
     </plurals>
     <string name="tv_dvr_schedule">Kayıt Takvimi</string>
     <string name="tv_guide">Rehber</string>
@@ -160,7 +160,7 @@
     <string name="tv_seasons">Sezonlar</string>
     <plurals name="tv_shows">
         <item quantity="one">Diziler</item>
-        <item quantity="other"></item>
+        <item quantity="other"/>
     </plurals>
     <string name="ui_interface">Arayüz</string>
     <string name="unknown">Bilinmiyor</string>
@@ -188,47 +188,47 @@
     <string name="extras">Ekstralar</string>
     <plurals name="other_extras">
         <item quantity="one">Diğer Ekstralar</item>
-        <item quantity="other"></item>
+        <item quantity="other"/>
     </plurals>
     <plurals name="behind_the_scenes">
         <item quantity="one">Sahne Arkası</item>
-        <item quantity="other"></item>
+        <item quantity="other"/>
     </plurals>
     <plurals name="theme_songs">
         <item quantity="one">Tema şarkıları</item>
-        <item quantity="other"></item>
+        <item quantity="other"/>
     </plurals>
     <plurals name="theme_videos">
         <item quantity="one">Tema Videoları</item>
-        <item quantity="other"></item>
+        <item quantity="other"/>
     </plurals>
     <plurals name="clips">
         <item quantity="one">Klipler</item>
-        <item quantity="other"></item>
+        <item quantity="other"/>
     </plurals>
     <plurals name="deleted_scenes">
         <item quantity="one">Silinmiş Sahneler</item>
-        <item quantity="other"></item>
+        <item quantity="other"/>
     </plurals>
     <plurals name="interviews">
         <item quantity="one">Röportajlar</item>
-        <item quantity="other"></item>
+        <item quantity="other"/>
     </plurals>
     <plurals name="scenes">
         <item quantity="one">Sahneler</item>
-        <item quantity="other"></item>
+        <item quantity="other"/>
     </plurals>
     <plurals name="samples">
         <item quantity="one">Örnekler</item>
-        <item quantity="other"></item>
+        <item quantity="other"/>
     </plurals>
     <plurals name="featurettes">
         <item quantity="one">Tanıtımlar</item>
-        <item quantity="other"></item>
+        <item quantity="other"/>
     </plurals>
     <plurals name="shorts">
         <item quantity="one">Kısa Videolar</item>
-        <item quantity="other"></item>
+        <item quantity="other"/>
     </plurals>
     <plurals name="downloads">
         <item quantity="one">%s indirme</item>
