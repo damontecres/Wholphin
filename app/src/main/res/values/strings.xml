@@ -500,6 +500,7 @@
     <string name="overwrite_server_settings">Overwrite settings on server?</string>
     <string name="overwrite_local_settings">Overwrite local settings?</string>
     <string name="for_episodes">For episodes</string>
+    <string name="suggestions_for">Suggestions for %1$s</string>
 
     <string-array name="theme_song_volume">
         <item>Disabled</item>

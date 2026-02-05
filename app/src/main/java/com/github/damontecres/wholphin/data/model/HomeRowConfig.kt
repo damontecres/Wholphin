@@ -137,6 +137,18 @@ sealed interface HomeRowConfig {
     }
 
     /**
+     * Fetch suggestions from [com.github.damontecres.wholphin.services.SuggestionService] for the given parent ID
+     */
+    @Serializable
+    @SerialName("Suggestions")
+    data class Suggestions(
+        val parentId: UUID,
+        override val viewOptions: HomeRowViewOptions = HomeRowViewOptions(),
+    ) : HomeRowConfig {
+        override fun updateViewOptions(viewOptions: HomeRowViewOptions): Suggestions = this.copy(viewOptions = viewOptions)
+    }
+
+    /**
      * Fetch by parent ID such as a library, collection, or playlist with optional simple sorting
      */
     @Serializable

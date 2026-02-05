@@ -13,7 +13,11 @@ import com.github.damontecres.wholphin.data.model.HomePageSettings
 import com.github.damontecres.wholphin.data.model.HomeRowConfig
 import com.github.damontecres.wholphin.data.model.HomeRowConfig.ContinueWatching
 import com.github.damontecres.wholphin.data.model.HomeRowConfig.ContinueWatchingCombined
+import com.github.damontecres.wholphin.data.model.HomeRowConfig.Genres
 import com.github.damontecres.wholphin.data.model.HomeRowConfig.NextUp
+import com.github.damontecres.wholphin.data.model.HomeRowConfig.RecentlyAdded
+import com.github.damontecres.wholphin.data.model.HomeRowConfig.RecentlyReleased
+import com.github.damontecres.wholphin.data.model.HomeRowConfig.Suggestions
 import com.github.damontecres.wholphin.data.model.HomeRowViewOptions
 import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.HomePageResolvedSettings
@@ -252,7 +256,7 @@ class HomeSettingsViewModel
                             HomeRowConfigDisplay(
                                 id = id,
                                 title = title,
-                                config = HomeRowConfig.RecentlyAdded(library.itemId),
+                                config = RecentlyAdded(library.itemId),
                             )
                         }
 
@@ -267,7 +271,7 @@ class HomeSettingsViewModel
                             HomeRowConfigDisplay(
                                 id = id,
                                 title = title,
-                                config = HomeRowConfig.RecentlyReleased(library.itemId),
+                                config = RecentlyReleased(library.itemId),
                             )
                         }
 
@@ -276,7 +280,17 @@ class HomeSettingsViewModel
                             HomeRowConfigDisplay(
                                 id = id,
                                 title = title,
-                                config = HomeRowConfig.Genres(library.itemId),
+                                config = Genres(library.itemId),
+                            )
+                        }
+
+                        LibraryRowType.SUGGESTIONS -> {
+                            val title =
+                                library.name.let { context.getString(R.string.suggestions_for, it) }
+                            HomeRowConfigDisplay(
+                                id = id,
+                                title = title,
+                                config = Suggestions(library.itemId),
                             )
                         }
                     }

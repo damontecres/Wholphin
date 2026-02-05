@@ -20,6 +20,7 @@ import androidx.compose.ui.unit.dp
 import androidx.tv.material3.ListItem
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.R
+import com.github.damontecres.wholphin.services.SuggestionsWorker
 import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 
@@ -30,6 +31,7 @@ fun HomeLibraryRowTypeList(
     modifier: Modifier,
     firstFocus: FocusRequester = remember { FocusRequester() },
 ) {
+    val items = remember(library) { getSupportedRowTypes(library) }
     LaunchedEffect(Unit) { firstFocus.tryRequestFocus() }
     Column(modifier = modifier) {
         TitleText(stringResource(R.string.add_row_for, library.name))
@@ -41,7 +43,7 @@ fun HomeLibraryRowTypeList(
                     .fillMaxHeight()
                     .focusRestorer(firstFocus),
         ) {
-            itemsIndexed(LibraryRowType.entries) { index, rowType ->
+            itemsIndexed(items) { index, rowType ->
                 ListItem(
                     selected = false,
                     headlineContent = {
@@ -60,10 +62,20 @@ fun HomeLibraryRowTypeList(
     }
 }
 
+fun getSupportedRowTypes(library: Library): List<LibraryRowType> {
+    val itemKind = SuggestionsWorker.getTypeForCollection(library.collectionType)
+    return if (itemKind != null) {
+        LibraryRowType.entries
+    } else {
+        LibraryRowType.entries.toMutableList().apply { remove(LibraryRowType.SUGGESTIONS) }
+    }
+}
+
 enum class LibraryRowType(
     @param:StringRes val stringId: Int,
 ) {
     RECENTLY_ADDED(R.string.recently_added),
     RECENTLY_RELEASED(R.string.recently_released),
+    SUGGESTIONS(R.string.suggestions),
     GENRES(R.string.genres),
 }

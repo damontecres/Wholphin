@@ -23,6 +23,7 @@ import com.github.damontecres.wholphin.util.supportedHomeCollectionTypes
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.update
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
@@ -64,6 +65,7 @@ class HomeSettingsService
         private val navDrawerItemRepository: NavDrawerItemRepository,
         private val latestNextUpService: LatestNextUpService,
         private val imageUrlService: ImageUrlService,
+        private val suggestionService: SuggestionService,
     ) {
         @OptIn(ExperimentalSerializationApi::class)
         val jsonParser =
@@ -504,6 +506,18 @@ class HomeSettingsService
                         config,
                     )
                 }
+
+                is HomeRowConfig.Suggestions -> {
+                    val name =
+                        api.userLibraryApi
+                            .getItem(itemId = config.parentId)
+                            .content.name ?: ""
+                    HomeRowConfigDisplay(
+                        id = id,
+                        title = context.getString(R.string.suggestions_for, name),
+                        config,
+                    )
+                }
             }
 
         /**
@@ -828,6 +842,39 @@ class HomeSettingsService
                                 row.viewOptions,
                             )
                         }
+                }
+
+                is HomeRowConfig.Suggestions -> {
+                    val library =
+                        api.userLibraryApi
+                            .getItem(itemId = row.parentId)
+                            .content
+                    val title = context.getString(R.string.suggestions_for, library.name ?: "")
+                    val itemKind = SuggestionsWorker.getTypeForCollection(library.collectionType)
+                    val suggestions =
+                        itemKind?.let {
+                            suggestionService
+                                .getSuggestionsFlow(row.parentId, itemKind)
+                                .firstOrNull()
+                        }
+                    if (suggestions != null && suggestions is SuggestionsResource.Success) {
+                        Success(
+                            title,
+                            suggestions.items,
+                            row.viewOptions,
+                        )
+                    } else if (suggestions is SuggestionsResource.Empty) {
+                        Success(
+                            title,
+                            listOf(),
+                            row.viewOptions,
+                        )
+                    } else {
+                        HomeRowLoadingState.Error(
+                            title,
+                            message = "Unsupported type ${library.collectionType}",
+                        )
+                    }
                 }
             }
 
