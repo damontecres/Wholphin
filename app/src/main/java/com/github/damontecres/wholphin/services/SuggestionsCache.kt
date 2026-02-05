@@ -5,6 +5,7 @@ package com.github.damontecres.wholphin.services
 import android.content.Context
 import com.github.damontecres.wholphin.ui.toServerString
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -48,6 +49,9 @@ class SuggestionsCache
         private val dirtyKeys: MutableSet<String> = mutableSetOf()
         private val mutex = Mutex()
 
+        // Limited parallelism dispatcher to avoid IO contention during startup
+        private val diskDispatcher: CoroutineDispatcher = Dispatchers.IO.limitedParallelism(2)
+
         @OptIn(ExperimentalSerializationApi::class)
         private fun writeEntryToDisk(
             key: String,
@@ -87,7 +91,7 @@ class SuggestionsCache
         ): CachedSuggestions? {
             val key = cacheKey(userId, libraryId, itemKind)
             memoryCache[key]?.let { return it }
-            return withContext(Dispatchers.IO) {
+            return withContext(diskDispatcher) {
                 runCatching {
                     File(cacheDir, "$key.json")
                         .takeIf { it.exists() }
@@ -117,7 +121,7 @@ class SuggestionsCache
                     evicted
                 }
             evictedEntry?.let { (evictedKey, evictedValue) ->
-                withContext(Dispatchers.IO) {
+                withContext(diskDispatcher) {
                     writeEntryToDisk(evictedKey, evictedValue)
                 }
             }
@@ -128,7 +132,7 @@ class SuggestionsCache
                 if (memoryCache.isNotEmpty() || dirtyKeys.isNotEmpty()) {
                     return@withLock false
                 }
-                withContext(Dispatchers.IO) {
+                withContext(diskDispatcher) {
                     val files = cacheDir.listFiles()
                     files == null || files.isEmpty()
                 }
@@ -147,7 +151,7 @@ class SuggestionsCache
                     entries
                 }
 
-            withContext(Dispatchers.IO) {
+            withContext(diskDispatcher) {
                 val suggestionsDir =
                     cacheDir.apply {
                         if (!mkdirs() && !exists()) Timber.w("Failed to create suggestions cache directory")
@@ -168,7 +172,7 @@ class SuggestionsCache
                 dirtyKeys.clear()
                 _cacheVersion.update { it + 1 }
             }
-            withContext(Dispatchers.IO) {
+            withContext(diskDispatcher) {
                 runCatching { cacheDir.deleteRecursively() }
                     .onFailure { Timber.w(it, "Failed to clear suggestions cache") }
             }
