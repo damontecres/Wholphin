@@ -24,9 +24,12 @@ import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.nav.NavDrawerItem
 import com.github.damontecres.wholphin.ui.setValueOnMain
 import com.github.damontecres.wholphin.util.ExceptionHandler
+import com.github.damontecres.wholphin.util.LoadingState
 import com.github.damontecres.wholphin.util.RememberTabManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.model.ClientInfo
@@ -60,6 +63,9 @@ class PreferencesViewModel
             seerrServerRepository.currentUser.combine(currentUser.asFlow()) { seerrUser, jellyfinUser ->
                 seerrUser != null && jellyfinUser != null && seerrUser.jellyfinUserRowId == jellyfinUser.rowId
             }
+
+        private val _quickConnectStatus = MutableStateFlow<LoadingState>(LoadingState.Pending)
+        val quickConnectStatus: StateFlow<LoadingState> = _quickConnectStatus
 
         init {
             viewModelScope.launchIO {
@@ -120,6 +126,27 @@ class PreferencesViewModel
         ) {
             viewModelScope.launchIO(ExceptionHandler(autoToast = true)) {
                 serverRepository.setUserPin(user, pin)
+            }
+        }
+
+        fun resetQuickConnectStatus() {
+            _quickConnectStatus.value = LoadingState.Pending
+        }
+
+        fun authorizeQuickConnect(code: String) {
+            viewModelScope.launchIO {
+                _quickConnectStatus.value = LoadingState.Loading
+                try {
+                    val success = serverRepository.authorizeQuickConnect(code)
+                    _quickConnectStatus.value =
+                        if (success) {
+                            LoadingState.Success
+                        } else {
+                            LoadingState.Error("Authorization failed")
+                        }
+                } catch (e: Exception) {
+                    _quickConnectStatus.value = LoadingState.Error(e)
+                }
             }
         }
 
