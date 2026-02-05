@@ -501,6 +501,8 @@
     <string name="overwrite_local_settings">Overwrite local settings?</string>
     <string name="for_episodes">For episodes</string>
     <string name="suggestions_for">Suggestions for %1$s</string>
+    <string name="increase_all_cards_size">Increase all cards size</string>
+    <string name="decrease_all_cards_size">Decrease all cards size</string>
 
     <string-array name="theme_song_volume">
         <item>Disabled</item>

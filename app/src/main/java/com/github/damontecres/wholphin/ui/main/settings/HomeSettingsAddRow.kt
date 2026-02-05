@@ -16,7 +16,6 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.ui.ifElse
 
@@ -49,9 +48,7 @@ fun HomeSettingsAddRow(
             ) { index, type ->
                 HomeSettingsListItem(
                     selected = false,
-                    headlineContent = {
-                        Text(stringResource(type.stringId))
-                    },
+                    headlineText = stringResource(type.stringId),
                     onClick = { onClickMeta.invoke(type) },
                     modifier = Modifier.ifElse(index == 0, Modifier.focusRequester(firstFocus)),
                 )
@@ -63,9 +60,7 @@ fun HomeSettingsAddRow(
             itemsIndexed(libraries) { index, library ->
                 HomeSettingsListItem(
                     selected = false,
-                    headlineContent = {
-                        Text(library.name)
-                    },
+                    headlineText = library.name,
                     onClick = { onClick.invoke(library) },
                     modifier = Modifier, // .ifElse(index == 0, Modifier.focusRequester(firstFocus)),
                 )
@@ -77,9 +72,7 @@ fun HomeSettingsAddRow(
             item {
                 HomeSettingsListItem(
                     selected = false,
-                    headlineContent = {
-                        Text(stringResource(MetaRowType.FAVORITES.stringId))
-                    },
+                    headlineText = stringResource(MetaRowType.FAVORITES.stringId),
                     onClick = { onClickMeta.invoke(MetaRowType.FAVORITES) },
                     modifier = Modifier,
                 )
@@ -88,9 +81,7 @@ fun HomeSettingsAddRow(
                 item {
                     HomeSettingsListItem(
                         selected = false,
-                        headlineContent = {
-                            Text(stringResource(MetaRowType.DISCOVER.stringId))
-                        },
+                        headlineText = stringResource(MetaRowType.DISCOVER.stringId),
                         onClick = { onClickMeta.invoke(MetaRowType.DISCOVER) },
                         modifier = Modifier,
                     )

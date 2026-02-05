@@ -54,11 +54,7 @@ fun HomeSettingsGlobal(
             item {
                 HomeSettingsListItem(
                     selected = false,
-                    headlineContent = {
-                        Text(
-                            text = "Increase all card size",
-                        )
-                    },
+                    headlineText = stringResource(R.string.increase_all_cards_size),
                     leadingContent = {
                         Icon(
                             imageVector = Icons.Default.KeyboardArrowUp,
@@ -72,11 +68,7 @@ fun HomeSettingsGlobal(
             item {
                 HomeSettingsListItem(
                     selected = false,
-                    headlineContent = {
-                        Text(
-                            text = "Decrease all card size",
-                        )
-                    },
+                    headlineText = stringResource(R.string.decrease_all_cards_size),
                     leadingContent = {
                         Icon(
                             imageVector = Icons.Default.KeyboardArrowDown,
@@ -91,11 +83,7 @@ fun HomeSettingsGlobal(
             item {
                 HomeSettingsListItem(
                     selected = false,
-                    headlineContent = {
-                        Text(
-                            text = stringResource(R.string.save_to_server),
-                        )
-                    },
+                    headlineText = stringResource(R.string.save_to_server),
                     leadingContent = {
                         Text(
                             text = stringResource(R.string.fa_cloud_arrow_up),
@@ -109,11 +97,7 @@ fun HomeSettingsGlobal(
             item {
                 HomeSettingsListItem(
                     selected = false,
-                    headlineContent = {
-                        Text(
-                            text = stringResource(R.string.load_from_server),
-                        )
-                    },
+                    headlineText = stringResource(R.string.load_from_server),
                     leadingContent = {
                         Text(
                             text = stringResource(R.string.fa_cloud_arrow_down),
@@ -127,11 +111,7 @@ fun HomeSettingsGlobal(
             item {
                 HomeSettingsListItem(
                     selected = false,
-                    headlineContent = {
-                        Text(
-                            text = stringResource(R.string.load_from_web_client),
-                        )
-                    },
+                    headlineText = stringResource(R.string.load_from_web_client),
                     leadingContent = {
                         Text(
                             text = stringResource(R.string.fa_download),

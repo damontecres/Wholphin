@@ -14,13 +14,14 @@ import androidx.tv.material3.ListItemDefaults
 import androidx.tv.material3.ListItemGlow
 import androidx.tv.material3.ListItemScale
 import androidx.tv.material3.ListItemShape
+import com.github.damontecres.wholphin.ui.preferences.PreferenceTitle
 
 @Composable
 @NonRestartableComposable
 fun HomeSettingsListItem(
     selected: Boolean,
     onClick: () -> Unit,
-    headlineContent: @Composable () -> Unit,
+    headlineText: String,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     onLongClick: (() -> Unit)? = null,
@@ -38,7 +39,9 @@ fun HomeSettingsListItem(
 ) = ListItem(
     selected = selected,
     onClick = onClick,
-    headlineContent = headlineContent,
+    headlineContent = {
+        PreferenceTitle(headlineText)
+    },
     modifier = modifier,
     enabled = enabled,
     onLongClick = onLongClick,

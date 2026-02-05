@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -32,7 +33,6 @@ import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.tv.material3.Icon
 import androidx.tv.material3.MaterialTheme
@@ -59,7 +59,6 @@ fun HomeSettingsRowList(
     onClickMove: (MoveDirection, Int) -> Unit,
     onClickDelete: (Int) -> Unit,
     modifier: Modifier,
-    firstFocus: FocusRequester = remember { FocusRequester() },
 ) {
     val focusManager = LocalFocusManager.current
     val scope = rememberCoroutineScope()
@@ -71,7 +70,9 @@ fun HomeSettingsRowList(
 
     var position by rememberInt(0)
 
-    LaunchedEffect(Unit) { focusRequesters.getOrNull(position)?.tryRequestFocus() }
+    LaunchedEffect(Unit) {
+        focusRequesters.getOrNull(position)?.tryRequestFocus()
+    }
     Column(modifier = modifier) {
         TitleText(stringResource(R.string.customize_home))
         LazyColumn(
@@ -80,16 +81,12 @@ fun HomeSettingsRowList(
             modifier =
                 modifier
                     .fillMaxHeight()
-                    .focusRestorer(firstFocus),
+                    .focusRestorer(focusRequesters[0]),
         ) {
             item {
                 HomeSettingsListItem(
                     selected = false,
-                    headlineContent = {
-                        Text(
-                            text = stringResource(R.string.add_row),
-                        )
-                    },
+                    headlineText = stringResource(R.string.add_row),
                     leadingContent = {
                         Icon(
                             imageVector = Icons.Default.Add,
@@ -106,11 +103,7 @@ fun HomeSettingsRowList(
             item {
                 HomeSettingsListItem(
                     selected = false,
-                    headlineContent = {
-                        Text(
-                            text = stringResource(R.string.settings),
-                        )
-                    },
+                    headlineText = stringResource(R.string.settings),
                     leadingContent = {
                         Icon(
                             imageVector = Icons.Default.Settings,
@@ -193,13 +186,7 @@ fun HomeRowConfigContent(
         ) {
             HomeSettingsListItem(
                 selected = false,
-                headlineContent = {
-                    Text(
-                        text = config.title,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier,
-                    )
-                },
+                headlineText = config.title,
                 onClick = onClick,
                 modifier = Modifier.weight(1f),
             )
@@ -248,8 +235,12 @@ fun TitleText(
 ) {
     Text(
         text = title,
-        style = MaterialTheme.typography.titleLarge,
-        textAlign = TextAlign.Center,
-        modifier = modifier.fillMaxWidth(),
+        style = MaterialTheme.typography.titleMedium,
+        color = MaterialTheme.colorScheme.onSurface,
+        textAlign = TextAlign.Start,
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .padding(top = 8.dp, bottom = 4.dp),
     )
 }

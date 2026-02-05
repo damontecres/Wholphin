@@ -39,7 +39,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import timber.log.Timber
 
-val settingsWidth = 300.dp
+val settingsWidth = 360.dp
 
 @Composable
 fun HomeSettingsPage(
@@ -90,7 +90,7 @@ fun HomeSettingsPage(
                         val destModifier =
                             Modifier
                                 .fillMaxSize()
-                                .padding(4.dp)
+                                .padding(8.dp)
                         when (dest) {
                             HomeSettingsDestination.RowList -> {
                                 HomeSettingsRowList(

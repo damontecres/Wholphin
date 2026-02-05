@@ -1,6 +1,5 @@
 package com.github.damontecres.wholphin.ui.main.settings
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.lazy.LazyColumn
@@ -12,9 +11,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
-import androidx.tv.material3.MaterialTheme
-import androidx.tv.material3.surfaceColorAtElevation
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.HomeRowViewOptions
 import com.github.damontecres.wholphin.preferences.AppChoicePreference
@@ -73,11 +69,10 @@ fun HomeRowSettings(
                         },
                         modifier =
                             Modifier
-                                .background(
-                                    MaterialTheme.colorScheme.surfaceColorAtElevation(
-                                        5.dp,
-                                    ),
-                                ).ifElse(index == 0, Modifier.focusRequester(firstFocus)),
+                                .ifElse(
+                                    groupIndex == 0 && index == 0,
+                                    Modifier.focusRequester(firstFocus),
+                                ),
                     )
                 }
             }
@@ -243,18 +238,24 @@ internal object Options {
                         ViewOptionsSpacing,
                         ViewOptionsImageType,
                         ViewOptionsAspectRatio,
-                        ViewOptionsUseSeries,
                         ViewOptionsContentScale,
-                        ViewOptionsReset,
                     ),
             ),
             PreferenceGroup(
                 title = R.string.for_episodes,
                 preferences =
                     listOf(
+                        ViewOptionsUseSeries,
                         ViewOptionsEpisodeImageType,
-                        ViewOptionsEpisodeContentScale,
                         ViewOptionsEpisodeAspectRatio,
+                        ViewOptionsEpisodeContentScale,
+                    ),
+            ),
+            PreferenceGroup(
+                title = R.string.more,
+                preferences =
+                    listOf(
+                        ViewOptionsReset,
                     ),
             ),
         )

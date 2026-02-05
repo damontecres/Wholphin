@@ -15,7 +15,6 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.tryRequestFocus
@@ -43,11 +42,7 @@ fun HomeSettingsFavoriteList(
             itemsIndexed(favoriteOptionsList) { index, type ->
                 HomeSettingsListItem(
                     selected = false,
-                    headlineContent = {
-                        Text(
-                            text = stringResource(favoriteOptions[type]!!),
-                        )
-                    },
+                    headlineText = stringResource(favoriteOptions[type]!!),
                     onClick = { onClick.invoke(type) },
                     modifier = Modifier.ifElse(index == 0, Modifier.focusRequester(firstFocus)),
                 )
