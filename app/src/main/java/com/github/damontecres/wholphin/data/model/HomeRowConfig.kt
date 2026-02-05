@@ -85,11 +85,7 @@ sealed interface HomeRowConfig {
     @SerialName("Genres")
     data class Genres(
         val parentId: UUID,
-        override val viewOptions: HomeRowViewOptions =
-            HomeRowViewOptions(
-                heightDp = Cards.HEIGHT_EPISODE,
-                aspectRatio = AspectRatio.WIDE,
-            ),
+        override val viewOptions: HomeRowViewOptions = HomeRowViewOptions.genreDefault,
     ) : HomeRowConfig {
         override fun updateViewOptions(viewOptions: HomeRowViewOptions): Genres = this.copy(viewOptions = viewOptions)
     }
@@ -214,4 +210,12 @@ data class HomeRowViewOptions(
     val episodeContentScale: PrefContentScale = PrefContentScale.FIT,
     val episodeAspectRatio: AspectRatio = AspectRatio.TALL,
     val episodeImageType: ViewOptionImageType = ViewOptionImageType.PRIMARY,
-)
+) {
+    companion object {
+        val genreDefault =
+            HomeRowViewOptions(
+                heightDp = Cards.HEIGHT_EPISODE,
+                aspectRatio = AspectRatio.WIDE,
+            )
+    }
+}

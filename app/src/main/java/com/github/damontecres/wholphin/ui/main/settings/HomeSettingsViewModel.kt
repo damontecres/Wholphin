@@ -3,6 +3,7 @@ package com.github.damontecres.wholphin.ui.main.settings
 import android.content.Context
 import android.widget.Toast
 import androidx.compose.runtime.Immutable
+import androidx.datastore.core.DataStore
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.github.damontecres.wholphin.R
@@ -19,6 +20,7 @@ import com.github.damontecres.wholphin.data.model.HomeRowConfig.RecentlyAdded
 import com.github.damontecres.wholphin.data.model.HomeRowConfig.RecentlyReleased
 import com.github.damontecres.wholphin.data.model.HomeRowConfig.Suggestions
 import com.github.damontecres.wholphin.data.model.HomeRowViewOptions
+import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.HomePageResolvedSettings
 import com.github.damontecres.wholphin.services.HomeRowConfigDisplay
@@ -64,6 +66,7 @@ class HomeSettingsViewModel
         private val navDrawerItemRepository: NavDrawerItemRepository,
         private val backdropService: BackdropService,
         private val seerrServerRepository: SeerrServerRepository,
+        val preferencesDataStore: DataStore<AppPreferences>,
         @param:IoCoroutineScope private val ioScope: CoroutineScope,
     ) : ViewModel() {
         private val _state = MutableStateFlow(HomePageSettingsState.EMPTY)

@@ -23,11 +23,16 @@ import androidx.tv.material3.Icon
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.R
+import com.github.damontecres.wholphin.preferences.AppPreference
+import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.ui.FontAwesome
+import com.github.damontecres.wholphin.ui.preferences.ComposablePreference
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 
 @Composable
 fun HomeSettingsGlobal(
+    preferences: AppPreferences,
+    onPreferenceChange: (AppPreferences) -> Unit,
     onClickResize: (Int) -> Unit,
     onClickSave: () -> Unit,
     onClickLoad: () -> Unit,
@@ -53,6 +58,31 @@ fun HomeSettingsGlobal(
                     .focusRestorer(firstFocus),
         ) {
             item {
+                ComposablePreference(
+                    preference = AppPreference.HomePageItems,
+                    value = AppPreference.HomePageItems.getter.invoke(preferences),
+                    onValueChange = {
+                        val newPrefs = AppPreference.HomePageItems.setter.invoke(preferences, it)
+                        onPreferenceChange.invoke(newPrefs)
+                    },
+                    onNavigate = {},
+                    modifier = Modifier.focusRequester(firstFocus),
+                )
+            }
+            item {
+                ComposablePreference(
+                    preference = AppPreference.RewatchNextUp,
+                    value = AppPreference.RewatchNextUp.getter.invoke(preferences),
+                    onValueChange = {
+                        val newPrefs = AppPreference.RewatchNextUp.setter.invoke(preferences, it)
+                        onPreferenceChange.invoke(newPrefs)
+                    },
+                    onNavigate = {},
+                    modifier = Modifier,
+                )
+            }
+            item { HorizontalDivider() }
+            item {
                 HomeSettingsListItem(
                     selected = false,
                     headlineText = stringResource(R.string.increase_all_cards_size),
@@ -63,7 +93,7 @@ fun HomeSettingsGlobal(
                         )
                     },
                     onClick = { onClickResize.invoke(1) },
-                    modifier = Modifier.focusRequester(firstFocus),
+                    modifier = Modifier,
                 )
             }
             item {

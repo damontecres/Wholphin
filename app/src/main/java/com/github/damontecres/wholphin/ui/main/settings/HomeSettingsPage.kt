@@ -30,7 +30,10 @@ import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.surfaceColorAtElevation
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.HomeRowConfig
+import com.github.damontecres.wholphin.data.model.HomeRowViewOptions
+import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.ui.components.ConfirmDialog
+import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.main.HomePageContent
 import com.github.damontecres.wholphin.ui.main.settings.HomeSettingsDestination.ChooseRowType
 import com.github.damontecres.wholphin.ui.main.settings.HomeSettingsDestination.RowSettings
@@ -163,10 +166,18 @@ fun HomeSettingsPage(
                                             else -> Options.OPTIONS
                                         }
                                     }
+                                val defaultViewOptions =
+                                    remember(row.config) {
+                                        when (row.config) {
+                                            is HomeRowConfig.Genres -> HomeRowViewOptions.genreDefault
+                                            else -> HomeRowViewOptions()
+                                        }
+                                    }
                                 HomeRowSettings(
                                     title = row.title,
                                     preferenceOptions = preferenceOptions,
                                     viewOptions = row.config.viewOptions,
+                                    defaultViewOptions = defaultViewOptions,
                                     onViewOptionsChange = {
                                         viewModel.updateViewOptions(dest.rowId, it)
                                     },
@@ -190,7 +201,18 @@ fun HomeSettingsPage(
                             }
 
                             HomeSettingsDestination.GlobalSettings -> {
+                                val preferences by
+                                    viewModel.preferencesDataStore.data.collectAsState(
+                                        AppPreferences.getDefaultInstance(),
+                                    )
+
                                 HomeSettingsGlobal(
+                                    preferences = preferences,
+                                    onPreferenceChange = { newPrefs ->
+                                        scope.launchIO {
+                                            viewModel.preferencesDataStore.updateData { newPrefs }
+                                        }
+                                    },
                                     onClickResize = { viewModel.resizeCards(it) },
                                     onClickSave = {
                                         showConfirmDialog =
