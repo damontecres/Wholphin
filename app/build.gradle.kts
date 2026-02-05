@@ -223,6 +223,7 @@ dependencies {
     implementation(libs.androidx.tv.foundation)
     implementation(libs.androidx.tv.material)
     implementation(libs.androidx.lifecycle.runtime.ktx)
+    implementation(libs.androidx.lifecycle.livedata.ktx)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.datastore)
     implementation(libs.protobuf.kotlin.lite)
@@ -265,6 +266,7 @@ dependencies {
     implementation(libs.androidx.preference.ktx)
     implementation(libs.androidx.room.testing)
     implementation(libs.androidx.palette.ktx)
+    implementation(libs.androidx.media3.effect)
     ksp(libs.androidx.room.compiler)
     ksp(libs.hilt.android.compiler)
     ksp(libs.androidx.hilt.compiler)
@@ -298,5 +300,7 @@ dependencies {
 
     testImplementation(libs.mockk.android)
     testImplementation(libs.mockk.agent)
+    testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.androidx.core.testing)
     testImplementation(libs.robolectric)
 }

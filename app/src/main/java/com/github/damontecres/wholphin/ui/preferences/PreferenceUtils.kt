@@ -2,7 +2,6 @@ package com.github.damontecres.wholphin.ui.preferences
 
 import androidx.annotation.StringRes
 import com.github.damontecres.wholphin.preferences.AppPreference
-import com.github.damontecres.wholphin.preferences.AppPreferences
 import kotlinx.serialization.Serializable
 
 /**
@@ -11,12 +10,12 @@ import kotlinx.serialization.Serializable
 data class PreferenceGroup<T>(
     @param:StringRes val title: Int,
     val preferences: List<AppPreference<T, out Any?>>,
-    val conditionalPreferences: List<ConditionalPreferences> = listOf(),
+    val conditionalPreferences: List<ConditionalPreferences<T>> = listOf(),
 )
 
-data class ConditionalPreferences(
-    val condition: (AppPreferences) -> Boolean,
-    val preferences: List<AppPreference<AppPreferences, out Any?>>,
+data class ConditionalPreferences<T>(
+    val condition: (T) -> Boolean,
+    val preferences: List<AppPreference<T, out Any?>>,
 )
 
 /**
@@ -34,7 +33,6 @@ sealed interface PreferenceValidation {
 enum class PreferenceScreenOption {
     BASIC,
     ADVANCED,
-    SUBTITLES,
     EXO_PLAYER,
     MPV,
     ;

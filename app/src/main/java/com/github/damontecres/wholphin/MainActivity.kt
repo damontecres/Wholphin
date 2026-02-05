@@ -21,6 +21,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.unit.dp
 import androidx.datastore.core.DataStore
@@ -51,12 +52,14 @@ import com.github.damontecres.wholphin.services.RefreshRateService
 import com.github.damontecres.wholphin.services.ServerEventListener
 import com.github.damontecres.wholphin.services.SetupDestination
 import com.github.damontecres.wholphin.services.SetupNavigationManager
+import com.github.damontecres.wholphin.services.SuggestionsSchedulerService
 import com.github.damontecres.wholphin.services.UpdateChecker
 import com.github.damontecres.wholphin.services.UserSwitchListener
 import com.github.damontecres.wholphin.services.hilt.AuthOkHttpClient
 import com.github.damontecres.wholphin.services.tvprovider.TvProviderSchedulerService
 import com.github.damontecres.wholphin.ui.CoilConfig
 import com.github.damontecres.wholphin.ui.LocalImageUrlService
+import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.detail.series.SeasonEpisodeIds
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.nav.ApplicationContent
@@ -70,6 +73,7 @@ import com.github.damontecres.wholphin.util.ExceptionHandler
 import dagger.hilt.android.AndroidEntryPoint
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import okhttp3.OkHttpClient
@@ -116,6 +120,9 @@ class MainActivity : AppCompatActivity() {
     @Inject
     lateinit var tvProviderSchedulerService: TvProviderSchedulerService
 
+    @Inject
+    lateinit var suggestionsSchedulerService: SuggestionsSchedulerService
+
     // Note: unused but injected to ensure it is created
     @Inject
     lateinit var serverEventListener: ServerEventListener
@@ -133,7 +140,9 @@ class MainActivity : AppCompatActivity() {
         Timber.i("MainActivity.onCreate: savedInstanceState is null=${savedInstanceState == null}")
         lifecycle.addObserver(playbackLifecycleObserver)
         if (savedInstanceState == null) {
-            appUpgradeHandler.copySubfont(false)
+            lifecycleScope.launchIO {
+                appUpgradeHandler.copySubfont(false)
+            }
         }
         viewModel.serverRepository.currentUser.observe(this) { user ->
             if (user?.hasPin == true) {
@@ -148,6 +157,25 @@ class MainActivity : AppCompatActivity() {
         viewModel.appStart()
         setContent {
             val appPreferences by userPreferencesDataStore.data.collectAsState(null)
+            if (appPreferences == null) {
+                // Show loading page if it is taking a while to get app preferences
+                var showLoading by remember { mutableStateOf(false) }
+                LaunchedEffect(Unit) {
+                    delay(500)
+                    Timber.i("Showing loading page")
+                    showLoading = true
+                }
+                if (showLoading) {
+                    Box(
+                        modifier =
+                            Modifier
+                                .fillMaxSize()
+                                .background(Color.Black),
+                    ) {
+                        LoadingPage()
+                    }
+                }
+            }
             appPreferences?.let { appPreferences ->
                 LaunchedEffect(appPreferences.signInAutomatically) {
                     signInAuto = appPreferences.signInAutomatically

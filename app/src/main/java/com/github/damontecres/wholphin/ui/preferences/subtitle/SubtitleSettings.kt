@@ -2,6 +2,8 @@ package com.github.damontecres.wholphin.ui.preferences.subtitle
 
 import android.content.res.Configuration
 import android.graphics.Typeface
+import android.os.Build
+import android.view.Display
 import androidx.annotation.OptIn
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
@@ -13,14 +15,14 @@ import androidx.media3.ui.CaptionStyleCompat
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.preferences.AppChoicePreference
 import com.github.damontecres.wholphin.preferences.AppClickablePreference
-import com.github.damontecres.wholphin.preferences.AppPreferences
+import com.github.damontecres.wholphin.preferences.AppDestinationPreference
 import com.github.damontecres.wholphin.preferences.AppSliderPreference
 import com.github.damontecres.wholphin.preferences.AppSwitchPreference
 import com.github.damontecres.wholphin.preferences.BackgroundStyle
 import com.github.damontecres.wholphin.preferences.EdgeStyle
 import com.github.damontecres.wholphin.preferences.SubtitlePreferences
-import com.github.damontecres.wholphin.preferences.updateSubtitlePreferences
 import com.github.damontecres.wholphin.ui.indexOfFirstOrNull
+import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.preferences.PreferenceGroup
 import com.github.damontecres.wholphin.util.mpv.MPVLib
 import com.github.damontecres.wholphin.util.mpv.setPropertyColor
@@ -28,18 +30,17 @@ import timber.log.Timber
 
 object SubtitleSettings {
     val FontSize =
-        AppSliderPreference<AppPreferences>(
+        AppSliderPreference<SubtitlePreferences>(
             title = R.string.font_size,
             defaultValue = 24,
             min = 8,
             max = 70,
             interval = 2,
             getter = {
-                it.interfacePreferences.subtitlesPreferences.fontSize
-                    .toLong()
+                it.fontSize.toLong()
             },
             setter = { prefs, value ->
-                prefs.updateSubtitlePreferences { fontSize = value.toInt() }
+                prefs.update { fontSize = value.toInt() }
             },
             summarizer = { value -> value?.toString() },
         )
@@ -59,12 +60,12 @@ object SubtitleSettings {
         )
 
     val FontColor =
-        AppChoicePreference<AppPreferences, Color>(
+        AppChoicePreference<SubtitlePreferences, Color>(
             title = R.string.font_color,
             defaultValue = Color.White,
-            getter = { Color(it.interfacePreferences.subtitlesPreferences.fontColor) },
+            getter = { Color(it.fontColor) },
             setter = { prefs, value ->
-                prefs.updateSubtitlePreferences { fontColor = value.toArgb().and(0x00FFFFFF) }
+                prefs.update { fontColor = value.toArgb().and(0x00FFFFFF) }
             },
             displayValues = R.array.font_colors,
             indexToValue = { colorList.getOrNull(it) ?: Color.White },
@@ -75,49 +76,49 @@ object SubtitleSettings {
         )
 
     val FontBold =
-        AppSwitchPreference<AppPreferences>(
+        AppSwitchPreference<SubtitlePreferences>(
             title = R.string.bold_font,
             defaultValue = false,
-            getter = { it.interfacePreferences.subtitlesPreferences.fontBold },
+            getter = { it.fontBold },
             setter = { prefs, value ->
-                prefs.updateSubtitlePreferences { fontBold = value }
+                prefs.update { fontBold = value }
             },
         )
     val FontItalic =
-        AppSwitchPreference<AppPreferences>(
+        AppSwitchPreference<SubtitlePreferences>(
             title = R.string.italic_font,
             defaultValue = false,
-            getter = { it.interfacePreferences.subtitlesPreferences.fontItalic },
+            getter = { it.fontItalic },
             setter = { prefs, value ->
-                prefs.updateSubtitlePreferences { fontItalic = value }
+                prefs.update { fontItalic = value }
             },
         )
 
     val FontOpacity =
-        AppSliderPreference<AppPreferences>(
+        AppSliderPreference<SubtitlePreferences>(
             title = R.string.font_opacity,
             defaultValue = 100,
             min = 10,
             max = 100,
             interval = 10,
             getter = {
-                it.interfacePreferences.subtitlesPreferences.fontOpacity
+                it.fontOpacity
                     .toLong()
             },
             setter = { prefs, value ->
-                prefs.updateSubtitlePreferences { fontOpacity = value.toInt() }
+                prefs.update { fontOpacity = value.toInt() }
             },
             summarizer = { value -> value?.let { "$it%" } },
         )
 
     val EdgeStylePref =
-        AppChoicePreference<AppPreferences, EdgeStyle>(
+        AppChoicePreference<SubtitlePreferences, EdgeStyle>(
             title =
                 R.string.edge_style,
             defaultValue = EdgeStyle.EDGE_SOLID,
-            getter = { it.interfacePreferences.subtitlesPreferences.edgeStyle },
+            getter = { it.edgeStyle },
             setter = { prefs, value ->
-                prefs.updateSubtitlePreferences { edgeStyle = value }
+                prefs.update { edgeStyle = value }
             },
             displayValues = R.array.subtitle_edge,
             indexToValue = { EdgeStyle.forNumber(it) },
@@ -125,12 +126,12 @@ object SubtitleSettings {
         )
 
     val EdgeColor =
-        AppChoicePreference<AppPreferences, Color>(
+        AppChoicePreference<SubtitlePreferences, Color>(
             title = R.string.edge_color,
             defaultValue = Color.Black,
-            getter = { Color(it.interfacePreferences.subtitlesPreferences.edgeColor) },
+            getter = { Color(it.edgeColor) },
             setter = { prefs, value ->
-                prefs.updateSubtitlePreferences { edgeColor = value.toArgb().and(0x00FFFFFF) }
+                prefs.update { edgeColor = value.toArgb().and(0x00FFFFFF) }
             },
             displayValues = R.array.font_colors,
             indexToValue = { colorList.getOrNull(it) ?: Color.White },
@@ -141,29 +142,29 @@ object SubtitleSettings {
         )
 
     val EdgeThickness =
-        AppSliderPreference<AppPreferences>(
+        AppSliderPreference<SubtitlePreferences>(
             title = R.string.edge_size,
             defaultValue = 4,
             min = 1,
             max = 32,
             interval = 1,
             getter = {
-                it.interfacePreferences.subtitlesPreferences.edgeThickness
+                it.edgeThickness
                     .toLong()
             },
             setter = { prefs, value ->
-                prefs.updateSubtitlePreferences { edgeThickness = value.toInt() }
+                prefs.update { edgeThickness = value.toInt() }
             },
             summarizer = { value -> value?.let { "${it / 2.0}" } },
         )
 
     val BackgroundColor =
-        AppChoicePreference<AppPreferences, Color>(
+        AppChoicePreference<SubtitlePreferences, Color>(
             title = R.string.background_color,
             defaultValue = Color.Transparent,
-            getter = { Color(it.interfacePreferences.subtitlesPreferences.backgroundColor) },
+            getter = { Color(it.backgroundColor) },
             setter = { prefs, value ->
-                prefs.updateSubtitlePreferences { backgroundColor = value.toArgb().and(0x00FFFFFF) }
+                prefs.update { backgroundColor = value.toArgb().and(0x00FFFFFF) }
             },
             displayValues = R.array.font_colors,
             indexToValue = { colorList.getOrNull(it) ?: Color.White },
@@ -174,30 +175,30 @@ object SubtitleSettings {
         )
 
     val BackgroundOpacity =
-        AppSliderPreference<AppPreferences>(
+        AppSliderPreference<SubtitlePreferences>(
             title = R.string.background_opacity,
             defaultValue = 50,
             min = 10,
             max = 100,
             interval = 10,
             getter = {
-                it.interfacePreferences.subtitlesPreferences.backgroundOpacity
+                it.backgroundOpacity
                     .toLong()
             },
             setter = { prefs, value ->
-                prefs.updateSubtitlePreferences { backgroundOpacity = value.toInt() }
+                prefs.update { backgroundOpacity = value.toInt() }
             },
             summarizer = { value -> value?.let { "$it%" } },
         )
 
     val BackgroundStylePref =
-        AppChoicePreference<AppPreferences, BackgroundStyle>(
+        AppChoicePreference<SubtitlePreferences, BackgroundStyle>(
             title =
                 R.string.background_style,
             defaultValue = BackgroundStyle.BG_NONE,
-            getter = { it.interfacePreferences.subtitlesPreferences.backgroundStyle },
+            getter = { it.backgroundStyle },
             setter = { prefs, value ->
-                prefs.updateSubtitlePreferences { backgroundStyle = value }
+                prefs.update { backgroundStyle = value }
             },
             displayValues = R.array.background_style,
             indexToValue = { BackgroundStyle.forNumber(it) },
@@ -205,27 +206,49 @@ object SubtitleSettings {
         )
 
     val Margin =
-        AppSliderPreference<AppPreferences>(
+        AppSliderPreference<SubtitlePreferences>(
             title = R.string.subtitle_margin,
             defaultValue = 8,
             min = 0,
             max = 100,
             interval = 1,
             getter = {
-                it.interfacePreferences.subtitlesPreferences.margin
+                it.margin
                     .toLong()
             },
             setter = { prefs, value ->
-                prefs.updateSubtitlePreferences { margin = value.toInt() }
+                prefs.update { margin = value.toInt() }
+            },
+            summarizer = { value -> value?.let { "$it%" } },
+        )
+
+    val ImageOpacity =
+        AppSliderPreference<SubtitlePreferences>(
+            title = R.string.image_subtitle_opacity,
+            defaultValue = 100,
+            min = 10,
+            max = 100,
+            interval = 5,
+            getter = {
+                it.imageSubtitleOpacity.toLong()
+            },
+            setter = { prefs, value ->
+                prefs.update { imageSubtitleOpacity = value.toInt() }
             },
             summarizer = { value -> value?.let { "$it%" } },
         )
 
     val Reset =
-        AppClickablePreference<AppPreferences>(
+        AppClickablePreference<SubtitlePreferences>(
             title = R.string.reset,
             getter = { },
             setter = { prefs, _ -> prefs },
+        )
+
+    val HdrSettings =
+        AppDestinationPreference<SubtitlePreferences>(
+            title = R.string.hdr_subtitle_style,
+            destination = Destination.SubtitleSettings(true),
         )
 
     val preferences =
@@ -264,10 +287,24 @@ object SubtitleSettings {
                 preferences =
                     listOf(
                         Margin,
+                        ImageOpacity,
                         Reset,
                     ),
             ),
         )
+
+    val hdrPreferenceGroup =
+        listOf(
+            PreferenceGroup(
+                title = R.string.hdr,
+                preferences =
+                    listOf(
+                        HdrSettings,
+                    ),
+            ),
+        )
+
+    fun shouldShowHdr(display: Display): Boolean = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && display.isHdr
 
     private fun combine(
         color: Int,
@@ -361,3 +398,5 @@ object SubtitleSettings {
         MPVLib.setPropertyString("sub-border-style", borderStyle)
     }
 }
+
+inline fun SubtitlePreferences.update(block: SubtitlePreferences.Builder.() -> Unit): SubtitlePreferences = toBuilder().apply(block).build()

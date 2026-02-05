@@ -100,6 +100,12 @@ class AppPreferencesSerializer
                                         .apply {
                                             resetSubtitles()
                                         }.build()
+                                hdrSubtitlesPreferences =
+                                    SubtitlePreferences
+                                        .newBuilder()
+                                        .apply {
+                                            resetSubtitles()
+                                        }.build()
 
                                 liveTvPreferences =
                                     LiveTvPreferences
@@ -121,6 +127,14 @@ class AppPreferencesSerializer
                             .apply {
                                 imageDiskCacheSizeBytes =
                                     AppPreference.ImageDiskCacheSize.defaultValue * AppPreference.MEGA_BIT
+                            }.build()
+
+                    photoPreferences =
+                        PhotoPreferences
+                            .newBuilder()
+                            .apply {
+                                slideshowDuration = AppPreference.SlideshowDuration.defaultValue
+                                slideshowPlayVideos = AppPreference.SlideshowPlayVideos.defaultValue
                             }.build()
                 }.build()
 
@@ -180,6 +194,11 @@ inline fun AppPreferences.updateAdvancedPreferences(block: AdvancedPreferences.B
         advancedPreferences = advancedPreferences.toBuilder().apply(block).build()
     }
 
+inline fun AppPreferences.updatePhotoPreferences(block: PhotoPreferences.Builder.() -> Unit): AppPreferences =
+    update {
+        photoPreferences = photoPreferences.toBuilder().apply(block).build()
+    }
+
 fun SubtitlePreferences.Builder.resetSubtitles() {
     fontSize = SubtitleSettings.FontSize.defaultValue.toInt()
     fontColor = SubtitleSettings.FontColor.defaultValue.toArgb()
@@ -193,4 +212,5 @@ fun SubtitlePreferences.Builder.resetSubtitles() {
     backgroundStyle = SubtitleSettings.BackgroundStylePref.defaultValue
     margin = SubtitleSettings.Margin.defaultValue.toInt()
     edgeThickness = SubtitleSettings.EdgeThickness.defaultValue.toInt()
+    imageSubtitleOpacity = SubtitleSettings.ImageOpacity.defaultValue.toInt()
 }

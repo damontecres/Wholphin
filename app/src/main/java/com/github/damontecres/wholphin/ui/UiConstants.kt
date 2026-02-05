@@ -57,6 +57,7 @@ val DefaultItemFields =
         ItemFields.CHAPTERS,
         ItemFields.MEDIA_SOURCES,
         ItemFields.MEDIA_SOURCE_COUNT,
+        ItemFields.PARENT_ID,
     )
 
 /**
@@ -70,7 +71,15 @@ val SlimItemFields =
         ItemFields.OVERVIEW,
         ItemFields.SORT_NAME,
         ItemFields.MEDIA_SOURCE_COUNT,
+        ItemFields.PARENT_ID,
     )
+
+val PhotoItemFields =
+    DefaultItemFields +
+        listOf(
+            ItemFields.WIDTH,
+            ItemFields.HEIGHT,
+        )
 
 object Cards {
     const val HEIGHT_2X3_DP = 172
