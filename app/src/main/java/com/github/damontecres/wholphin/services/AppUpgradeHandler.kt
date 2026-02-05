@@ -13,6 +13,7 @@ import com.github.damontecres.wholphin.preferences.updateAdvancedPreferences
 import com.github.damontecres.wholphin.preferences.updateInterfacePreferences
 import com.github.damontecres.wholphin.preferences.updateLiveTvPreferences
 import com.github.damontecres.wholphin.preferences.updateMpvOptions
+import com.github.damontecres.wholphin.preferences.updatePhotoPreferences
 import com.github.damontecres.wholphin.preferences.updatePlaybackOverrides
 import com.github.damontecres.wholphin.preferences.updateSubtitlePreferences
 import com.github.damontecres.wholphin.ui.preferences.PreferencesViewModel
@@ -225,6 +226,14 @@ suspend fun upgradeApp(
                         }.build()
                 // Copy current subtitle prefs as HDR ones
                 hdrSubtitlesPreferences = subtitlesPreferences.toBuilder().build()
+            }
+        }
+    }
+
+    if (previous.isEqualOrBefore(Version.fromString("0.4.1-7-g0"))) {
+        appPreferences.updateData {
+            it.updatePhotoPreferences {
+                slideshowDuration = AppPreference.SlideshowDuration.defaultValue
             }
         }
     }

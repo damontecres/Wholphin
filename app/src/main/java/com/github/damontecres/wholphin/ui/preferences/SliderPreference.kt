@@ -77,7 +77,6 @@ fun SliderPreference(
                 max = preference.max,
                 interval = preference.interval,
                 onChange = onChange,
-                color = MaterialTheme.colorScheme.border,
                 enableWrapAround = false,
                 interactionSource = interactionSource,
                 modifier = Modifier.weight(1f),
