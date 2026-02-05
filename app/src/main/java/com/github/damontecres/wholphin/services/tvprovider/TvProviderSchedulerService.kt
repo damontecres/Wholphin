@@ -29,9 +29,9 @@ class TvProviderSchedulerService
     constructor(
         @param:ActivityContext private val context: Context,
         private val serverRepository: ServerRepository,
+        private val workManager: WorkManager,
     ) {
         private val activity = (context as AppCompatActivity)
-        private val workManager = WorkManager.getInstance(context)
 
         private val supportsTvProvider =
             // TODO <=25 has limited support
