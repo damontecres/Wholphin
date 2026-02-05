@@ -1,7 +1,6 @@
 package com.github.damontecres.wholphin.ui.slideshow
 
 import android.annotation.SuppressLint
-import android.util.Log
 import android.widget.Toast
 import androidx.annotation.OptIn
 import androidx.compose.animation.AnimatedVisibility
@@ -11,8 +10,6 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
-import androidx.compose.foundation.gestures.rememberTransformableState
-import androidx.compose.foundation.gestures.transformable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -67,7 +64,6 @@ import com.github.damontecres.wholphin.ui.AppColors
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.findActivity
-import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.keepScreenOn
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.playback.isDirectionalDpad
@@ -75,6 +71,7 @@ import com.github.damontecres.wholphin.ui.playback.isDpad
 import com.github.damontecres.wholphin.ui.playback.isEnterKey
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import org.jellyfin.sdk.model.api.MediaType
+import timber.log.Timber
 import kotlin.math.abs
 
 private const val TAG = "ImagePage"
@@ -138,14 +135,6 @@ fun SlideshowPage(
         label = "image_panY",
     )
 
-    val state =
-        rememberTransformableState { zoomChange, offsetChange, rotationChange ->
-            zoomFactor *= zoomChange
-            rotation += rotationChange
-            panX += offsetChange.x
-            panY += offsetChange.y
-        }
-
     val slideshowState by viewModel.slideshow.collectAsState()
     val slideshowActive by viewModel.slideshowActive.collectAsState(false)
 
@@ -188,8 +177,7 @@ fun SlideshowPage(
             val panXDiff = abs(panX * diffFactor)
             val panYDiff = abs(panY * diffFactor)
             if (DEBUG) {
-                Log.d(
-                    TAG,
+                Timber.d(
                     "zoomFactor=$zoomFactor, factor=$factor, panX=$panX, panY=$panY, panXDiff=$panXDiff, panYDiff=$panYDiff",
                 )
             }
@@ -230,7 +218,6 @@ fun SlideshowPage(
 
     var longPressing by remember { mutableStateOf(false) }
 
-    // TODO move content into a function
     val contentModifier =
         Modifier
             .clickable(
@@ -239,16 +226,6 @@ fun SlideshowPage(
                 onClick = {
                     showOverlay = !showOverlay
                 },
-            ).ifElse(
-                condition = isZoomed || showOverlay,
-                Modifier
-                    .transformable(
-                        state = state,
-                        enabled = !showOverlay,
-                        lockRotationOnZoomPan = true,
-                    ),
-                Modifier
-                    .transformable(state, lockRotationOnZoomPan = true),
             )
 
     Box(
@@ -422,8 +399,7 @@ fun SlideshowPage(
                                         val yTransform =
                                             (screenHeight - panYAnimation) / (screenHeight * 2)
                                         if (DEBUG) {
-                                            Log.d(
-                                                TAG,
+                                            Timber.d(
                                                 "graphicsLayer: xTransform=$xTransform, yTransform=$yTransform",
                                             )
                                         }
@@ -465,10 +441,9 @@ fun SlideshowPage(
                                 viewModel.pulseSlideshow()
                             },
                             onError = {
-                                Log.e(
-                                    TAG,
-                                    "Error loading image ${imageState.id}",
+                                Timber.e(
                                     it.result.throwable,
+                                    "Error loading image ${imageState.id}",
                                 )
                                 Toast
                                     .makeText(

@@ -15,6 +15,7 @@ import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.PlaybackEffect
 import com.github.damontecres.wholphin.data.model.VideoFilter
+import com.github.damontecres.wholphin.preferences.AppPreference
 import com.github.damontecres.wholphin.services.ImageUrlService
 import com.github.damontecres.wholphin.services.PlayerFactory
 import com.github.damontecres.wholphin.services.UserPreferencesService
@@ -115,7 +116,9 @@ class SlideshowViewModel
             player.addListener(this@SlideshowViewModel)
             viewModelScope.launchIO {
                 val photoPrefs = userPreferencesService.getCurrent().appPreferences.photoPreferences
-                slideshowDelay = photoPrefs.slideshowDuration
+                slideshowDelay =
+                    photoPrefs.slideshowDuration.takeIf { it >= AppPreference.SlideshowDuration.min }
+                        ?: AppPreference.SlideshowDuration.defaultValue
 //                val album =
 //                    api.userLibraryApi
 //                        .getItem(

@@ -230,7 +230,7 @@ suspend fun upgradeApp(
         }
     }
 
-    if (previous.isEqualOrBefore(Version.fromString("0.4.0-2-g0"))) {
+    if (previous.isEqualOrBefore(Version.fromString("0.4.1-7-g0"))) {
         appPreferences.updateData {
             it.updatePhotoPreferences {
                 slideshowDuration = AppPreference.SlideshowDuration.defaultValue
