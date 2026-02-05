@@ -61,10 +61,27 @@ fun HomeRowSettings(
                         },
                         interactionSource = interactionSource,
                         onClickPreference = { pref ->
-                            if (pref == Options.ViewOptionsReset) {
-                                onViewOptionsChange.invoke(defaultViewOptions)
-                            } else if (pref == Options.ViewOptionsApplyAll) {
-                                onApplyApplyAll.invoke()
+                            when (pref) {
+                                Options.ViewOptionsReset -> {
+                                    onViewOptionsChange.invoke(defaultViewOptions)
+                                }
+
+                                Options.ViewOptionsApplyAll -> {
+                                    onApplyApplyAll.invoke()
+                                }
+
+                                Options.ViewOptionsUseThumb -> {
+                                    onViewOptionsChange.invoke(
+                                        HomeRowViewOptions(
+                                            heightDp = Cards.HEIGHT_EPISODE,
+                                            spacing = 20,
+                                            imageType = ViewOptionImageType.THUMB,
+                                            aspectRatio = AspectRatio.WIDE,
+                                            episodeImageType = ViewOptionImageType.THUMB,
+                                            episodeAspectRatio = AspectRatio.WIDE,
+                                        ),
+                                    )
+                                }
                             }
                         },
                         modifier =
@@ -168,6 +185,11 @@ internal object Options {
             title = R.string.reset,
         )
 
+    val ViewOptionsUseThumb =
+        AppClickablePreference<HomeRowViewOptions>(
+            title = R.string.use_thumb_images,
+        )
+
     val ViewOptionsEpisodeContentScale =
         AppChoicePreference<HomeRowViewOptions, PrefContentScale>(
             title = R.string.global_content_scale,
@@ -184,7 +206,7 @@ internal object Options {
             title = R.string.aspect_ratio,
             defaultValue = AspectRatio.TALL,
             displayValues = R.array.aspect_ratios,
-            getter = { it.aspectRatio },
+            getter = { it.episodeAspectRatio },
             setter = { viewOptions, value -> viewOptions.copy(episodeAspectRatio = value) },
             indexToValue = { AspectRatio.entries[it] },
             valueToIndex = { it.ordinal },
@@ -214,15 +236,22 @@ internal object Options {
                 title = R.string.general,
                 preferences =
                     listOf(
+                        ViewOptionsCardHeight,
+                        ViewOptionsSpacing,
                         ViewOptionsImageType,
                         ViewOptionsAspectRatio,
+                        ViewOptionsContentScale,
                         // TODO
 //                ViewOptionsShowTitles,
                         ViewOptionsUseSeries,
-                        ViewOptionsCardHeight,
-                        ViewOptionsSpacing,
-                        ViewOptionsContentScale,
-//            ViewOptionsApplyAll,
+                    ),
+            ),
+            PreferenceGroup(
+                title = R.string.more,
+                preferences =
+                    listOf(
+//                      ViewOptionsApplyAll,
+                        ViewOptionsUseThumb,
                         ViewOptionsReset,
                     ),
             ),
@@ -255,6 +284,7 @@ internal object Options {
                 title = R.string.more,
                 preferences =
                     listOf(
+                        ViewOptionsUseThumb,
                         ViewOptionsReset,
                     ),
             ),
