@@ -82,11 +82,8 @@ class SuggestionsWorker
                         views
                             .mapNotNull { view ->
                                 val itemKind =
-                                    when (view.collectionType) {
-                                        CollectionType.MOVIES -> BaseItemKind.MOVIE
-                                        CollectionType.TVSHOWS -> BaseItemKind.SERIES
-                                        else -> return@mapNotNull null
-                                    }
+                                    getTypeForCollection(view.collectionType)
+                                        ?: return@mapNotNull null
                                 async(Dispatchers.IO) {
                                     runCatching {
                                         Timber.v("Fetching suggestions for view %s", view.id)
@@ -226,5 +223,12 @@ class SuggestionsWorker
             const val PARAM_USER_ID = "userId"
             const val PARAM_SERVER_ID = "serverId"
             private const val FRESH_CONTENT_RATIO = 0.4
+
+            fun getTypeForCollection(collectionType: CollectionType?): BaseItemKind? =
+                when (collectionType) {
+                    CollectionType.MOVIES -> BaseItemKind.MOVIE
+                    CollectionType.TVSHOWS -> BaseItemKind.SERIES
+                    else -> null
+                }
         }
     }

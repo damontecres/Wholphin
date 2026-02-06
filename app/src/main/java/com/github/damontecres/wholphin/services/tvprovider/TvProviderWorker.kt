@@ -80,7 +80,6 @@ class TvProviderWorker
                     getPotentialItems(
                         userId,
                         prefs.homePagePreferences.enableRewatchingNextUp,
-                        prefs.homePagePreferences.combineContinueNext,
                     )
                 val potentialItemsToAddIds = potentialItemsToAdd.map { it.id.toString() }
 
@@ -144,7 +143,6 @@ class TvProviderWorker
         private suspend fun getPotentialItems(
             userId: UUID,
             enableRewatching: Boolean,
-            combineContinueNext: Boolean,
         ): List<BaseItem> {
             val resumeItems = latestNextUpService.getResume(userId, 10, true)
             val seriesIds = resumeItems.mapNotNull { it.data.seriesId }
@@ -152,11 +150,7 @@ class TvProviderWorker
                 latestNextUpService
                     .getNextUp(userId, 10, enableRewatching, false)
                     .filter { it.data.seriesId != null && it.data.seriesId !in seriesIds }
-            return if (combineContinueNext) {
-                latestNextUpService.buildCombined(resumeItems, nextUpItems)
-            } else {
-                resumeItems + nextUpItems
-            }
+            return latestNextUpService.buildCombined(resumeItems, nextUpItems)
         }
 
         private suspend fun getCurrentTvChannelNextUp(): List<WatchNextProgram> =

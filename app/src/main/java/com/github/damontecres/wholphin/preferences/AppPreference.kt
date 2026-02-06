@@ -617,6 +617,12 @@ sealed interface AppPreference<Pref, T> {
                 setter = { prefs, _ -> prefs },
             )
 
+        val CustomizeHome =
+            AppDestinationPreference<AppPreferences>(
+                title = R.string.customize_home,
+                destination = Destination.HomeSettings,
+            )
+
         val SendCrashReports =
             AppSwitchPreference<AppPreferences>(
                 title = R.string.send_crash_reports,
@@ -953,9 +959,6 @@ val basicPreferences =
             preferences =
                 listOf(
                     AppPreference.SignInAuto,
-                    AppPreference.HomePageItems,
-                    AppPreference.CombineContinueNext,
-                    AppPreference.RewatchNextUp,
                     AppPreference.PlayThemeMusic,
                     AppPreference.RememberSelectedTab,
                     AppPreference.SubtitleStyle,
@@ -986,6 +989,7 @@ val basicPreferences =
             preferences =
                 listOf(
                     AppPreference.RequireProfilePin,
+                    AppPreference.CustomizeHome,
                     AppPreference.UserPinnedNavDrawerItems,
                 ),
         ),
@@ -1051,6 +1055,7 @@ val advancedPreferences =
                 preferences =
                     listOf(
                         AppPreference.ShowClock,
+                        AppPreference.CombineContinueNext,
                         // Temporarily disabled, see https://github.com/damontecres/Wholphin/pull/127#issuecomment-3478058418
 //                    AppPreference.NavDrawerSwitchOnFocus,
                         AppPreference.ControllerTimeout,

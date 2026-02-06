@@ -1,15 +1,19 @@
 package com.github.damontecres.wholphin.ui.cards
 
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -24,6 +28,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -41,6 +46,7 @@ import com.github.damontecres.wholphin.ui.AspectRatios
 import com.github.damontecres.wholphin.ui.Cards
 import com.github.damontecres.wholphin.ui.FontAwesome
 import com.github.damontecres.wholphin.ui.LocalImageUrlService
+import com.github.damontecres.wholphin.ui.enableMarquee
 import org.jellyfin.sdk.model.api.ImageType
 
 /**
@@ -60,6 +66,8 @@ fun BannerCard(
     cardHeight: Dp = 120.dp,
     aspectRatio: Float = AspectRatios.WIDE,
     interactionSource: MutableInteractionSource? = null,
+    imageType: ImageType = ImageType.PRIMARY,
+    imageContentScale: ContentScale = ContentScale.FillBounds,
 ) {
     val imageUrlService = LocalImageUrlService.current
     val density = LocalDensity.current
@@ -74,14 +82,15 @@ fun BannerCard(
             }
         }
     val imageUrl =
-        remember(item, fillHeight) {
+        remember(item, fillHeight, imageType) {
             if (item != null) {
-                imageUrlService.getItemImageUrl(
-                    item,
-                    ImageType.PRIMARY,
-                    fillWidth = null,
-                    fillHeight = fillHeight,
-                )
+                item.imageUrlOverride
+                    ?: imageUrlService.getItemImageUrl(
+                        item,
+                        imageType,
+                        fillWidth = null,
+                        fillHeight = fillHeight,
+                    )
             } else {
                 null
             }
@@ -107,7 +116,7 @@ fun BannerCard(
                 AsyncImage(
                     model = imageUrl,
                     contentDescription = null,
-                    contentScale = ContentScale.FillBounds,
+                    contentScale = imageContentScale,
                     onError = { imageError = true },
                     modifier = Modifier.fillMaxSize(),
                 )
@@ -178,6 +187,85 @@ fun BannerCard(
                             .fillMaxWidth((playPercent / 100).toFloat()),
                 )
             }
+        }
+    }
+}
+
+@Composable
+fun BannerCardWithTitle(
+    title: String?,
+    subtitle: String?,
+    item: BaseItem?,
+    onClick: () -> Unit,
+    onLongClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    cornerText: String? = null,
+    played: Boolean = false,
+    favorite: Boolean = false,
+    playPercent: Double = 0.0,
+    cardHeight: Dp = 120.dp,
+    aspectRatio: Float = AspectRatios.WIDE,
+    interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
+    imageType: ImageType = ImageType.PRIMARY,
+    imageContentScale: ContentScale = ContentScale.FillBounds,
+) {
+    val focused by interactionSource.collectIsFocusedAsState()
+    val spaceBetween by animateDpAsState(if (focused) 12.dp else 4.dp)
+    val spaceBelow by animateDpAsState(if (focused) 4.dp else 12.dp)
+    val focusedAfterDelay by rememberFocusedAfterDelay(interactionSource)
+    val aspectRationToUse = aspectRatio.coerceAtLeast(AspectRatios.MIN)
+    val width = cardHeight * aspectRationToUse
+    Column(
+        verticalArrangement = Arrangement.spacedBy(spaceBetween),
+        modifier = modifier.width(width),
+    ) {
+        BannerCard(
+            name = null,
+            item = item,
+            onClick = onClick,
+            onLongClick = onLongClick,
+            modifier = Modifier,
+            cornerText = cornerText,
+            played = played,
+            favorite = favorite,
+            playPercent = playPercent,
+            cardHeight = cardHeight,
+            aspectRatio = aspectRatio,
+            interactionSource = interactionSource,
+            imageType = imageType,
+            imageContentScale = imageContentScale,
+        )
+        Column(
+            verticalArrangement = Arrangement.spacedBy(0.dp),
+            modifier =
+                Modifier
+                    .padding(bottom = spaceBelow)
+                    .fillMaxWidth(),
+        ) {
+            Text(
+                text = title ?: "",
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 1,
+                textAlign = TextAlign.Center,
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 4.dp)
+                        .enableMarquee(focusedAfterDelay),
+            )
+            Text(
+                text = subtitle ?: "",
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Normal,
+                maxLines = 1,
+                textAlign = TextAlign.Center,
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 4.dp)
+                        .enableMarquee(focusedAfterDelay),
+            )
         }
     }
 }
