@@ -32,6 +32,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -142,8 +143,9 @@ internal class NavigationDrawerScopeImpl(
 ) : NavigationDrawerScope
 
 internal val CollapsedDrawerItemWidth = 64.dp
-internal val ExpandedDrawerItemWidth = 256.dp
-internal val DrawerIconSize = ListItemDefaults.IconSize
+internal val ExpandedDrawerItemWidth = 224.dp
+internal val DrawerIconSize = 24.dp
+internal val DrawerIconPadding = (ListItemDefaults.IconSize - DrawerIconSize) / 2
 internal val DrawerAnimationStiffness = Spring.StiffnessMedium
 
 @Composable
@@ -183,7 +185,11 @@ internal fun NavigationDrawerScope.NavigationDrawerItem(
         onClick = onClick,
         headlineContent = content,
         leadingContent = {
-            Box(Modifier.size(DrawerIconSize)) { leadingContent() }
+            Box(
+                Modifier
+                    .padding(horizontal = DrawerIconPadding)
+                    .size(DrawerIconSize),
+            ) { leadingContent() }
         },
         trailingContent = trailingContent,
         supportingContent = supportingContent,
