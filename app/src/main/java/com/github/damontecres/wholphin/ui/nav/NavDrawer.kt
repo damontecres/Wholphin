@@ -2,8 +2,6 @@ package com.github.damontecres.wholphin.ui.nav
 
 import android.content.Context
 import androidx.activity.compose.BackHandler
-import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.VisibilityThreshold
 import androidx.compose.animation.core.animateIntOffsetAsState
 import androidx.compose.animation.core.spring
@@ -36,11 +34,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalConfiguration
@@ -319,23 +317,22 @@ fun NavDrawer(
             ),
         animationSpec =
             spring(
-                stiffness = Spring.StiffnessMedium,
+                stiffness = DrawerAnimationStiffness,
                 visibilityThreshold = IntOffset.VisibilityThreshold,
             ),
     )
-    val drawerBackground by animateColorAsState(
-        if (drawerState.isOpen) {
-            MaterialTheme.colorScheme.surface
-        } else {
-            Color.Transparent
-        },
-    )
     val config = LocalConfiguration.current
     val heightInPx = remember { with(density) { config.screenHeightDp.dp.roundToPx() } }
+    val widthPx = remember { with(density) { openDrawerWidth.toPx() / 2 / config.screenWidthDp } }
 
     ModalNavigationDrawer(
         modifier = modifier,
         drawerState = drawerState,
+        scrimBrush =
+            Brush.horizontalGradient(
+                0f to Color.Transparent,
+                widthPx to MaterialTheme.colorScheme.surface.copy(alpha = .66f),
+            ),
         drawerContent = { drawerValue ->
             val isOpen = drawerValue.isOpen
             val spacedBy = 4.dp
@@ -365,12 +362,7 @@ fun NavDrawer(
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(spacedBy),
-                    modifier =
-                        Modifier
-                            .fillMaxHeight()
-                            .drawBehind {
-                                drawRect(drawerBackground)
-                            },
+                    modifier = Modifier.fillMaxHeight(),
                 ) {
                     // Even though some must be clicked, focusing on it should clear other focused items
                     val interactionSource = remember { MutableInteractionSource() }
