@@ -5,7 +5,9 @@ import androidx.annotation.Dimension
 import androidx.annotation.OptIn
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusable
@@ -301,12 +303,15 @@ fun PlaybackPageContent(
         }
     }
 
-    val showSegment =
-        !segmentCancelled && currentSegment != null &&
-            nextUp == null && !controllerViewState.controlsVisible && skipIndicatorDuration == 0L
-    BackHandler(showSegment) {
-        segmentCancelled = true
-    }
+            val showSegment =
+                !segmentCancelled && currentSegment != null &&
+                    nextUp == null && !controllerViewState.controlsVisible && skipIndicatorDuration == 0L
+            BackHandler(showSegment) {
+                segmentCancelled = true
+            }
+            BackHandler(controllerViewState.controlsVisible) {
+                controllerViewState.hideControls()
+            }
 
     Box(
         modifier
@@ -333,7 +338,113 @@ fun PlaybackPageContent(
                         .matchParentSize()
                         .background(Color.Black),
                 ) {
-                    LoadingPage(focusEnabled = false)
+                    PlayerSurface(
+                        player = player,
+                        surfaceType = SURFACE_TYPE_SURFACE_VIEW,
+                        modifier = scaledModifier,
+                    )
+                    if (presentationState.coverSurface) {
+                        Box(
+                            Modifier
+                                .matchParentSize()
+                                .background(Color.Black),
+                        ) {
+                            LoadingPage(focusEnabled = false)
+                        }
+                    }
+
+                    // If D-pad skipping, show the amount skipped in an animation
+                    if (!controllerViewState.controlsVisible && skipIndicatorDuration != 0L) {
+                        SkipIndicator(
+                            durationMs = skipIndicatorDuration,
+                            onFinish = {
+                                skipIndicatorDuration = 0L
+                            },
+                            modifier =
+                                Modifier
+                                    .align(Alignment.BottomCenter)
+                                    .padding(bottom = 70.dp),
+                        )
+                        // Show a small progress bar along the bottom of the screen
+                        val showSkipProgress = true // TODO get from preferences
+                        if (showSkipProgress) {
+                            val percent = skipPosition.toFloat() / player.duration.toFloat()
+                            Box(
+                                modifier =
+                                    Modifier
+                                        .align(Alignment.BottomStart)
+                                        .background(MaterialTheme.colorScheme.border)
+                                        .clip(RectangleShape)
+                                        .height(3.dp)
+                                        .fillMaxWidth(percent),
+                            )
+                        }
+                    }
+
+                    // Playback overlay: parent enter is near-instant so children’s slides show;
+                    // parent exit is a no-op that holds content so top (up) and bottom (down) can slide out.
+                        PlaybackOverlay(
+                            modifier =
+                                Modifier
+                                    .padding(WindowInsets.systemBars.asPaddingValues())
+                                    .fillMaxSize()
+                                    .background(Color.Transparent),
+                            item = currentPlayback?.item,
+                            playerControls = player,
+                            controllerViewState = controllerViewState,
+                            showPlay = playPauseState.showPlay,
+                            previousEnabled = true,
+                            nextEnabled = playlist.hasNext(),
+                            seekEnabled = true,
+                            seekForward = preferences.appPreferences.playbackPreferences.skipForwardMs.milliseconds,
+                            seekBack = preferences.appPreferences.playbackPreferences.skipBackMs.milliseconds,
+                            skipBackOnResume = preferences.appPreferences.playbackPreferences.skipBackOnResume,
+                            onPlaybackActionClick = onPlaybackActionClick,
+                            onClickPlaybackDialogType = { playbackDialog = it },
+                            onSeekBarChange = seekBarState::onValueChange,
+                            showDebugInfo = showDebugInfo,
+                            currentPlayback = currentPlayback,
+                            chapters = mediaInfo?.chapters ?: listOf(),
+                            trickplayInfo = mediaInfo?.trickPlayInfo,
+                            trickplayUrlFor = viewModel::getTrickplayUrl,
+                            playlist = playlist,
+                            onClickPlaylist = {
+                                viewModel.playItemInPlaylist(it)
+                            },
+                            currentSegment = currentSegment,
+                            showClock = preferences.appPreferences.interfacePreferences.showClock,
+                        )
+
+                    // Subtitles
+                    if (skipIndicatorDuration == 0L && currentItemPlayback.subtitleIndexEnabled) {
+                        val maxSize by animateFloatAsState(if (controllerViewState.controlsVisible) .7f else 1f)
+                        AndroidView(
+                            factory = { context ->
+                                SubtitleView(context).apply {
+                                    preferences.appPreferences.interfacePreferences.subtitlesPreferences.let {
+                                        setStyle(it.toSubtitleStyle())
+                                        setFixedTextSize(Dimension.SP, it.fontSize.toFloat())
+                                        setBottomPaddingFraction(it.margin.toFloat() / 100f)
+                                    }
+                                }
+                            },
+                            update = {
+                                it.setCues(cues)
+                                Media3SubtitleOverride(
+                                    preferences.appPreferences.interfacePreferences.subtitlesPreferences
+                                        .calculateEdgeSize(density),
+                                ).apply(it)
+                            },
+                            onReset = {
+                                it.setCues(null)
+                            },
+                            modifier =
+                                Modifier
+                                    .fillMaxSize(maxSize)
+                                    .align(Alignment.TopCenter)
+                                    .background(Color.Transparent),
+                        )
+                    }
                 }
             }
 
