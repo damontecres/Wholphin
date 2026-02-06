@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -311,7 +312,7 @@ fun NavDrawer(
             IntOffset(
                 x =
                     with(density) {
-                        if (drawerState.isOpen) openDrawerWidth.roundToPx() else closedDrawerWidth.roundToPx()
+                        if (drawerState.isOpen) (openDrawerWidth - closedDrawerWidth).roundToPx() else 0
                     },
                 y = 0,
             ),
@@ -517,10 +518,7 @@ fun NavDrawer(
         },
     ) {
         Box(
-            modifier =
-                Modifier
-//                    .padding(start = closedDrawerWidth)
-                    .fillMaxSize(),
+            modifier = Modifier.fillMaxSize(),
         ) {
             // Drawer content
             DestinationContent(
@@ -532,7 +530,7 @@ fun NavDrawer(
                         .fillMaxSize()
                         .offset {
                             offset
-                        },
+                        }.padding(start = closedDrawerWidth + 8.dp, end = 16.dp),
             )
             if (preferences.appPreferences.interfacePreferences.showClock) {
                 TimeDisplay()

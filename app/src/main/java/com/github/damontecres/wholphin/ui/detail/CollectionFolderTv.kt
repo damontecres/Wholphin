@@ -87,7 +87,7 @@ fun CollectionFolderTv(
                 selectedTabIndex = selectedTabIndex,
                 modifier =
                     Modifier
-                        .padding(start = 32.dp, top = 16.dp, bottom = 16.dp)
+                        .padding(vertical = 16.dp)
                         .focusRequester(firstTabFocusRequester),
                 tabs = tabs,
                 onClick = { selectedTabIndex = it },
@@ -105,7 +105,6 @@ fun CollectionFolderTv(
                     },
                     modifier =
                         Modifier
-                            .padding(start = 16.dp)
                             .fillMaxSize()
                             .focusRequester(focusRequester),
                 )
@@ -129,7 +128,6 @@ fun CollectionFolderTv(
                     defaultViewOptions = ViewOptionsPoster,
                     modifier =
                         Modifier
-                            .padding(start = 16.dp)
                             .fillMaxSize()
                             .focusRequester(focusRequester),
                     positionCallback = { columns, position ->
@@ -150,7 +148,6 @@ fun CollectionFolderTv(
                     includeItemTypes = listOf(BaseItemKind.SERIES),
                     modifier =
                         Modifier
-                            .padding(start = 16.dp)
                             .fillMaxSize()
                             .focusRequester(focusRequester),
                 )
