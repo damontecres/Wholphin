@@ -108,6 +108,7 @@ fun DiscoverMovieDetails(
             onClickWatch = { itemId, watched -> },
             onClickFavorite = { itemId, favorite -> },
             onClickAddPlaylist = { itemId -> },
+            onSendMediaInfo = {},
         )
 
     when (val state = loading) {

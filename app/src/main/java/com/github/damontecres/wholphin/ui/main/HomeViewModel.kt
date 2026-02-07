@@ -13,6 +13,7 @@ import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.DatePlayedService
 import com.github.damontecres.wholphin.services.FavoriteWatchManager
 import com.github.damontecres.wholphin.services.LatestNextUpService
+import com.github.damontecres.wholphin.services.MediaReportService
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.UserPreferencesService
 import com.github.damontecres.wholphin.ui.launchIO
@@ -44,6 +45,7 @@ class HomeViewModel
         val navigationManager: NavigationManager,
         val serverRepository: ServerRepository,
         val navDrawerItemRepository: NavDrawerItemRepository,
+        val mediaReportService: MediaReportService,
         private val favoriteWatchManager: FavoriteWatchManager,
         private val datePlayedService: DatePlayedService,
         private val latestNextUpService: LatestNextUpService,

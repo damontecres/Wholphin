@@ -22,6 +22,7 @@ import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.FavoriteWatchManager
+import com.github.damontecres.wholphin.services.MediaReportService
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.ui.OneTimeLaunchedEffect
 import com.github.damontecres.wholphin.ui.data.AddPlaylistViewModel
@@ -46,6 +47,7 @@ abstract class RecommendedViewModel(
     val context: Context,
     val navigationManager: NavigationManager,
     val favoriteWatchManager: FavoriteWatchManager,
+    val mediaReportService: MediaReportService,
     private val backdropService: BackdropService,
 ) : ViewModel() {
     abstract fun init()
@@ -190,6 +192,7 @@ fun RecommendedContent(
                                 playlistViewModel.loadPlaylists(MediaType.VIDEO)
                                 showPlaylistDialog.makePresent(it)
                             },
+                            onSendMediaInfo = viewModel.mediaReportService::sendReportFor,
                         ),
                 ),
             onDismissRequest = { moreDialog.makeAbsent() },

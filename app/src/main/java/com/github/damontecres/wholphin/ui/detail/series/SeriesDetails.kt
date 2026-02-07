@@ -230,6 +230,7 @@ fun SeriesDetails(
                                 playlistViewModel.loadPlaylists(MediaType.VIDEO)
                                 showPlaylistDialog.makePresent(itemId)
                             },
+                            onSendMediaInfo = viewModel.mediaReportService::sendReportFor,
                         ),
                 )
                 if (showWatchConfirmation) {

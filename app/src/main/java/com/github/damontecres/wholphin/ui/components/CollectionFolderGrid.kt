@@ -58,6 +58,7 @@ import com.github.damontecres.wholphin.data.model.LibraryDisplayInfo
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.FavoriteWatchManager
+import com.github.damontecres.wholphin.services.MediaReportService
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.ui.AspectRatios
 import com.github.damontecres.wholphin.ui.RequestOrRestoreFocus
@@ -120,6 +121,7 @@ class CollectionFolderViewModel
         private val favoriteWatchManager: FavoriteWatchManager,
         private val backdropService: BackdropService,
         val navigationManager: NavigationManager,
+        val mediaReportService: MediaReportService,
         @Assisted itemId: String,
         @Assisted initialSortAndDirection: SortAndDirection?,
         @Assisted("recursive") private val recursive: Boolean,
@@ -664,6 +666,7 @@ fun CollectionFolderGrid(
                                 playlistViewModel.loadPlaylists(MediaType.VIDEO)
                                 showPlaylistDialog.makePresent(it)
                             },
+                            onSendMediaInfo = viewModel.mediaReportService::sendReportFor,
                         ),
                 ),
             onDismissRequest = { moreDialog.makeAbsent() },
