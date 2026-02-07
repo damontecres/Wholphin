@@ -22,7 +22,7 @@
     <string name="confirm">Potvrdit</string>
     <string name="continue_watching">Pokračovat ve sledování</string>
     <string name="critic_rating">Hodnocení kritiků</string>
-    <string name="decimal_seconds">%.1f sekund</string>
+    <string name="decimal_seconds">%.2f sekund</string>
     <string name="default_track">Výchozí</string>
     <string name="delete">Smazat</string>
     <string name="died">Zemřel</string>
@@ -453,4 +453,25 @@
     <string name="interlaced">Prokládané</string>
     <string name="color_code_programs">Color code programs</string>
     <string name="upgrade_mpv_toast">MPV je nyní výchozím přehrávačem mimo HDR.\nToto můžete změnit v nastavení.</string>
+    <string name="hdr_subtitle_style">Styl HDR titulků</string>
+    <string name="image_subtitle_opacity">Průhlednost obrázku titulků</string>
+    <string name="brightness">Jas</string>
+    <string name="contrast">Kontrast</string>
+    <string name="saturation">Sytost</string>
+    <string name="hue">Odstín</string>
+    <string name="red">Červená</string>
+    <string name="green">Zelená</string>
+    <string name="blue">Modrá</string>
+    <string name="blur">Rozostření</string>
+    <string name="save_for_album">Uložit do alba</string>
+    <string name="play_slideshow">Přehrát prezentaci</string>
+    <string name="stop_slideshow">Zastavit prezentaci</string>
+    <string name="slideshow_at_beginning">Na začátek</string>
+    <string name="no_more_images">Žádné další fotky</string>
+    <string name="rotate_left">Otočit vlevo</string>
+    <string name="rotate_right">Otočit vpravo</string>
+    <string name="zoom_in">Přiblížit</string>
+    <string name="zoom_out">Oddálit</string>
+    <string name="slideshow_duration">Trvání prezentace</string>
+    <string name="play_videos_during_slideshow">Přehrávat videa během prezentace</string>
 </resources>
