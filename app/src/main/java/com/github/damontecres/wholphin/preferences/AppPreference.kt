@@ -1011,7 +1011,6 @@ val basicPreferences =
             preferences =
                 listOf(
                     AppPreference.SeerrIntegration,
-                    AppPreference.QuickConnect,
                     AppPreference.AdvancedSettings,
                 ),
         ),
@@ -1136,6 +1135,7 @@ val advancedPreferences =
                 title = R.string.more,
                 preferences =
                     listOf(
+                        AppPreference.QuickConnect,
                         AppPreference.SendAppLogs,
                         AppPreference.SendCrashReports,
                         AppPreference.DebugLogging,
