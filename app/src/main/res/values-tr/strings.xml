@@ -23,7 +23,7 @@
     <string name="confirm">Onayla</string>
     <string name="continue_watching">İzlemeye devam et</string>
     <string name="critic_rating">Eleştirmen puanı</string>
-    <string name="decimal_seconds">%.1f saniye</string>
+    <string name="decimal_seconds">%.2f saniye</string>
     <string name="default_track">Varsayılan</string>
     <string name="delete">Sil</string>
     <string name="died">Ölüm Tarihi</string>
@@ -34,7 +34,7 @@
     <string name="download_and_update"><![CDATA[İndir ve Güncelle]]></string>
     <string name="downloading">İndiriliyor…</string>
     <string name="enabled">Etkin</string>
-    <string name="ends_at">Bitiş zamanı %1$s</string>
+    <string name="ends_at">Bitiş saati %1$s</string>
     <string name="enter_server_url">Sunucu IP adresini veya URL\'sini girin</string>
     <string name="enter_server_address">Sunucu adresini girin</string>
     <string name="episodes">Bölümler</string>
@@ -415,4 +415,25 @@
     <string name="request_4k">4K olarak iste</string>
     <string name="software_decoding_av1">AV1 yazılımsal kod çözme</string>
     <string name="upgrade_mpv_toast">HDR içerikler hariç varsayılan oynatıcı artık MPV. \nBu ayarı ayarlar bölümünden değiştirebilirsiniz.</string>
+    <string name="hdr_subtitle_style">HDR Altyazı Stili</string>
+    <string name="image_subtitle_opacity">Altyazı Arka Plan Matlığı</string>
+    <string name="brightness">Parlaklık</string>
+    <string name="contrast">Kontrast</string>
+    <string name="saturation">Doygunluk</string>
+    <string name="hue">Ton</string>
+    <string name="red">Kırmızı</string>
+    <string name="green">Yeşil</string>
+    <string name="blue">Mavi</string>
+    <string name="blur">Bulanıklık</string>
+    <string name="save_for_album">Albüme Kaydet</string>
+    <string name="play_slideshow">Slayt Gösterisini Oynat</string>
+    <string name="stop_slideshow">Slayt Gösterisini Durdur</string>
+    <string name="slideshow_at_beginning">En baştan</string>
+    <string name="no_more_images">Daha fazla fotoğraf yok</string>
+    <string name="rotate_left">Sola döndür</string>
+    <string name="rotate_right">Sağa döndür</string>
+    <string name="zoom_in">Yakınlaştır</string>
+    <string name="zoom_out">Uzaklaştır</string>
+    <string name="slideshow_duration">Slayt Gösterisi Süresi</string>
+    <string name="play_videos_during_slideshow">Slayt gösterisi sırasında videoları oynat</string>
 </resources>
