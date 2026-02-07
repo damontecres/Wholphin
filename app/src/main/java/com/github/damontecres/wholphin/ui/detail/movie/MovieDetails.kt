@@ -125,6 +125,7 @@ fun MovieDetails(
                 playlistViewModel.loadPlaylists(MediaType.VIDEO)
                 showPlaylistDialog.makePresent(itemId)
             },
+            onSendMediaInfo = viewModel.mediaReportService::sendReportFor,
         )
 
     when (val state = loading) {

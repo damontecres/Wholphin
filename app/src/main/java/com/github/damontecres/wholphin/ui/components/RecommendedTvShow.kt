@@ -14,6 +14,7 @@ import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.FavoriteWatchManager
 import com.github.damontecres.wholphin.services.LatestNextUpService
+import com.github.damontecres.wholphin.services.MediaReportService
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.SuggestionService
 import com.github.damontecres.wholphin.services.SuggestionsResource
@@ -62,8 +63,15 @@ class RecommendedTvShowViewModel
         @Assisted val parentId: UUID,
         navigationManager: NavigationManager,
         favoriteWatchManager: FavoriteWatchManager,
+        mediaReportService: MediaReportService,
         backdropService: BackdropService,
-    ) : RecommendedViewModel(context, navigationManager, favoriteWatchManager, backdropService) {
+    ) : RecommendedViewModel(
+            context,
+            navigationManager,
+            favoriteWatchManager,
+            mediaReportService,
+            backdropService,
+        ) {
         @AssistedFactory
         interface Factory {
             fun create(parentId: UUID): RecommendedTvShowViewModel
