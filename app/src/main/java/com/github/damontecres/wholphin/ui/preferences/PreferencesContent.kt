@@ -17,7 +17,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -35,8 +34,6 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -532,16 +529,14 @@ fun PreferencesContent(
         val successMessage = stringResource(R.string.quick_connect_success)
 
         LaunchedEffect(quickConnectStatus) {
-            when (quickConnectStatus) {
+            when (val status = quickConnectStatus) {
                 LoadingState.Success -> {
                     Toast.makeText(context, successMessage, Toast.LENGTH_SHORT).show()
                     showQuickConnectDialog = false
                 }
 
                 is LoadingState.Error -> {
-                    val errorMessage =
-                        (quickConnectStatus as? LoadingState.Error)?.message
-                            ?: "Authorization failed"
+                    val errorMessage = status.message ?: "Authorization failed"
                     Toast.makeText(context, errorMessage, Toast.LENGTH_SHORT).show()
                 }
 
@@ -549,23 +544,9 @@ fun PreferencesContent(
             }
         }
 
-        StringInputDialog(
-            input =
-                StringInput(
-                    title = stringResource(R.string.quick_connect_code),
-                    value = "",
-                    keyboardOptions =
-                        KeyboardOptions(
-                            keyboardType = KeyboardType.Number,
-                            imeAction = ImeAction.Done,
-                        ),
-                    onSubmit = {},
-                ),
-            onSave = { code ->
-                val normalized = code.trim()
-                if (normalized.length == 6 && normalized.all(Char::isDigit)) {
-                    viewModel.authorizeQuickConnect(normalized)
-                }
+        QuickConnectDialog(
+            onSubmit = { code ->
+                viewModel.authorizeQuickConnect(code)
             },
             onDismissRequest = {
                 viewModel.resetQuickConnectStatus()

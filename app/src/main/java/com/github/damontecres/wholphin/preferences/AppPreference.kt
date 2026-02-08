@@ -907,6 +907,7 @@ sealed interface AppPreference<Pref, T> {
         val QuickConnect =
             AppClickablePreference<AppPreferences>(
                 title = R.string.quick_connect,
+                summary = R.string.quick_connect_summary,
                 getter = { },
                 setter = { prefs, _ -> prefs },
             )

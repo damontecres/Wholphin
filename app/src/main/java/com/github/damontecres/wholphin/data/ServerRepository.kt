@@ -273,13 +273,8 @@ class ServerRepository
                     Timber.e("No user logged in for Quick Connect authorization")
                     throw IllegalStateException("Must be logged in to authorize Quick Connect")
                 }
-                try {
-                    val response = apiClient.quickConnectApi.authorizeQuickConnect(code, userId)
-                    response.content
-                } catch (e: Exception) {
-                    Timber.e(e, "Failed to authorize Quick Connect")
-                    throw e
-                }
+                val response = apiClient.quickConnectApi.authorizeQuickConnect(code, userId)
+                response.content
             }
 
         companion object {
