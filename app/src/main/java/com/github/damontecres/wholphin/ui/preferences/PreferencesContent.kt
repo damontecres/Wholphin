@@ -537,12 +537,14 @@ fun PreferencesContent(
                     Toast.makeText(context, successMessage, Toast.LENGTH_SHORT).show()
                     showQuickConnectDialog = false
                 }
+
                 is LoadingState.Error -> {
                     val errorMessage =
                         (quickConnectStatus as? LoadingState.Error)?.message
                             ?: "Authorization failed"
                     Toast.makeText(context, errorMessage, Toast.LENGTH_SHORT).show()
                 }
+
                 else -> {}
             }
         }
