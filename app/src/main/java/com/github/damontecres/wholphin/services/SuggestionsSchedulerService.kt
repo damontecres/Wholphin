@@ -7,7 +7,6 @@ import androidx.work.BackoffPolicy
 import androidx.work.Constraints
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.NetworkType
-import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.workDataOf
@@ -23,6 +22,7 @@ import java.util.UUID
 import javax.inject.Inject
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.minutes
+import kotlin.time.Duration.Companion.seconds
 import kotlin.time.toJavaDuration
 
 @ActivityScoped
@@ -72,29 +72,26 @@ class SuggestionsSchedulerService
                     SuggestionsWorker.PARAM_SERVER_ID to serverId.toString(),
                 )
 
+            val periodicWorkRequestBuilder =
+                PeriodicWorkRequestBuilder<SuggestionsWorker>(
+                    repeatInterval = 12.hours.toJavaDuration(),
+                ).setConstraints(constraints)
+                    .setBackoffCriteria(
+                        BackoffPolicy.EXPONENTIAL,
+                        15.minutes.toJavaDuration(),
+                    ).setInputData(inputData)
+
             if (cache.isEmpty()) {
-                Timber.i("Suggestions cache empty, scheduling immediate fetch")
-                workManager.enqueue(
-                    OneTimeWorkRequestBuilder<SuggestionsWorker>()
-                        .setConstraints(constraints)
-                        .setInputData(inputData)
-                        .build(),
-                )
+                Timber.i("Suggestions cache empty, scheduling periodic fetch with 30s delay")
+                periodicWorkRequestBuilder.setInitialDelay(30.seconds.toJavaDuration())
+            } else {
+                Timber.i("Scheduling periodic SuggestionsWorker")
             }
 
-            Timber.i("Scheduling periodic SuggestionsWorker")
             workManager.enqueueUniquePeriodicWork(
                 uniqueWorkName = SuggestionsWorker.WORK_NAME,
                 existingPeriodicWorkPolicy = ExistingPeriodicWorkPolicy.UPDATE,
-                request =
-                    PeriodicWorkRequestBuilder<SuggestionsWorker>(
-                        repeatInterval = 12.hours.toJavaDuration(),
-                    ).setConstraints(constraints)
-                        .setBackoffCriteria(
-                            BackoffPolicy.EXPONENTIAL,
-                            15.minutes.toJavaDuration(),
-                        ).setInputData(inputData)
-                        .build(),
+                request = periodicWorkRequestBuilder.build(),
             )
         }
     }

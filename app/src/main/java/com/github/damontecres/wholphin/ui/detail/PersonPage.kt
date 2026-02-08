@@ -298,9 +298,7 @@ fun PersonPageContent(
     LazyColumn(
         verticalArrangement = Arrangement.spacedBy(16.dp),
         userScrollEnabled = !focusedOnHeader,
-        modifier =
-            modifier
-                .padding(start = 16.dp),
+        modifier = modifier,
     ) {
         item {
             PersonHeader(

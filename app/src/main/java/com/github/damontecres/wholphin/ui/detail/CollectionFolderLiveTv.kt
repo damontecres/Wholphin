@@ -134,7 +134,7 @@ fun CollectionFolderLiveTv(
                 selectedTabIndex = selectedTabIndex,
                 modifier =
                     Modifier
-                        .padding(start = 32.dp, top = 16.dp, bottom = 16.dp)
+                        .padding(vertical = 16.dp)
                         .focusRequester(firstTabFocusRequester),
                 tabs = tabs.map { it.title },
                 onClick = { selectedTabIndex = it },
@@ -176,9 +176,7 @@ fun CollectionFolderLiveTv(
                         showTitle = false,
                         recursive = false,
                         sortOptions = VideoSortOptions,
-                        modifier =
-                            Modifier
-                                .padding(start = 16.dp),
+                        modifier = Modifier,
                         positionCallback = { columns, position ->
                             showHeader = position < columns
                         },

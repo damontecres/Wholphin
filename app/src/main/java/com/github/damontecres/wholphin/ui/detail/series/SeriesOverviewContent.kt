@@ -127,7 +127,7 @@ fun SeriesOverviewContent(
             modifier =
                 Modifier
                     .fillMaxSize()
-                    .padding(16.dp)
+                    .padding(vertical = 16.dp)
                     .focusGroup()
                     .nestedScroll(scrollConnection)
                     .verticalScroll(scrollState)
@@ -142,9 +142,9 @@ fun SeriesOverviewContent(
             ) {
                 val paddingValues =
                     if (preferences.appPreferences.interfacePreferences.showClock) {
-                        PaddingValues(start = 16.dp, end = 100.dp)
+                        PaddingValues(start = 0.dp, end = 184.dp)
                     } else {
-                        PaddingValues(start = 16.dp, end = 16.dp)
+                        PaddingValues(start = 0.dp, end = 16.dp)
                     }
                 TabRow(
                     selectedTabIndex = selectedTabIndex,

@@ -303,7 +303,7 @@ fun EpisodeDetailsContent(
     Box(modifier = modifier) {
         LazyColumn(
             verticalArrangement = Arrangement.spacedBy(16.dp),
-            contentPadding = PaddingValues(horizontal = 32.dp, vertical = 8.dp),
+            contentPadding = PaddingValues(vertical = 8.dp),
             modifier = Modifier.fillMaxSize(),
         ) {
             item {
