@@ -26,12 +26,10 @@ import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.VisibilityThreshold
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.spring
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
@@ -46,18 +44,14 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.FocusState
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.zIndex
 import androidx.tv.material3.DrawerState
 import androidx.tv.material3.DrawerValue
 import androidx.tv.material3.ListItem
 import androidx.tv.material3.ListItemDefaults
-import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.NavigationDrawerItemColors
 import androidx.tv.material3.NavigationDrawerItemDefaults
 import androidx.tv.material3.NavigationDrawerScope
@@ -68,25 +62,18 @@ fun ModalNavigationDrawer(
     drawerContent: @Composable NavigationDrawerScope.(DrawerValue) -> Unit,
     modifier: Modifier = Modifier,
     drawerState: DrawerState = rememberDrawerState(DrawerValue.Closed),
-    scrimBrush: Brush = SolidColor(MaterialTheme.colorScheme.scrim.copy(alpha = 0.5f)),
     content: @Composable () -> Unit,
 ) {
     Box(modifier = modifier) {
         DrawerSheet(
             modifier =
                 Modifier
-                    .zIndex(Float.MAX_VALUE)
                     .align(Alignment.CenterStart),
             drawerState = drawerState,
             content = drawerContent,
         )
 
         content()
-
-        if (drawerState.currentValue == DrawerValue.Open) {
-            // Scrim
-            Canvas(Modifier.fillMaxSize()) { drawRect(scrimBrush) }
-        }
     }
 }
 
@@ -94,7 +81,6 @@ fun ModalNavigationDrawer(
 private fun DrawerSheet(
     modifier: Modifier = Modifier,
     drawerState: DrawerState = remember { DrawerState() },
-    sizeAnimationFinishedListener: ((initialValue: IntSize, targetValue: IntSize) -> Unit)? = null,
     content: @Composable NavigationDrawerScope.(DrawerValue) -> Unit,
 ) {
     // indicates that the drawer has been set to its initial state and has grabbed focus if
