@@ -555,16 +555,19 @@ fun Controller(
                     )
                 }
                 if (showClock) {
-                    var remaining by remember { mutableStateOf((playerControls.duration - playerControls.currentPosition).milliseconds) }
+                    var endTimeStr by remember { mutableStateOf("...") }
                     LaunchedEffect(playerControls) {
                         while (isActive) {
-                            remaining =
-                                (playerControls.duration - playerControls.currentPosition).milliseconds
+                            val remaining =
+                                (playerControls.duration - playerControls.currentPosition)
+                                    .div(playerControls.playbackParameters.speed)
+                                    .toLong()
+                                    .milliseconds
+                            val endTime = LocalTime.now().plusSeconds(remaining.inWholeSeconds)
+                            endTimeStr = TimeFormatter.format(endTime)
                             delay(1.seconds)
                         }
                     }
-                    val endTime = LocalTime.now().plusSeconds(remaining.inWholeSeconds)
-                    val endTimeStr = TimeFormatter.format(endTime)
                     Text(
                         text = "Ends $endTimeStr",
                         color = MaterialTheme.colorScheme.onSurface,

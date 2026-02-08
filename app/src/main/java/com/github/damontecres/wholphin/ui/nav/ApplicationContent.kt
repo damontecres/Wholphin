@@ -11,13 +11,15 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.saveable.rememberSerializable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.CompositingStrategy
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -32,7 +34,9 @@ import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.runtime.serialization.NavBackStackSerializer
 import androidx.navigation3.runtime.serialization.NavKeySerializer
 import androidx.navigation3.ui.NavDisplay
+import androidx.tv.material3.DrawerValue
 import androidx.tv.material3.MaterialTheme
+import androidx.tv.material3.rememberDrawerState
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.request.transitionFactory
@@ -91,6 +95,7 @@ fun ApplicationContent(
     navigationManager.backStack = backStack
     val backdrop by viewModel.backdropService.backdropFlow.collectAsStateWithLifecycle()
     val backdropStyle = preferences.appPreferences.interfacePreferences.backdropStyle
+    val drawerState = rememberDrawerState(DrawerValue.Closed)
     Box(
         modifier = modifier,
     ) {
@@ -181,9 +186,15 @@ fun ApplicationContent(
                             .align(Alignment.TopEnd)
                             .fillMaxHeight(.7f)
                             .fillMaxWidth(.7f)
-                            .alpha(.95f)
+                            .graphicsLayer(compositingStrategy = CompositingStrategy.Offscreen)
                             .drawWithContent {
                                 drawContent()
+                                if (drawerState.isOpen) {
+                                    drawRect(
+                                        brush = SolidColor(Color.Black),
+                                        alpha = .75f,
+                                    )
+                                }
                                 // Subtle top scrim for system UI readability (clock, tabs)
                                 if (enableTopScrim) {
                                     drawRect(
@@ -245,6 +256,7 @@ fun ApplicationContent(
                             preferences = preferences,
                             user = user,
                             server = server,
+                            drawerState = drawerState,
                             onClearBackdrop = viewModel::clearBackdrop,
                             modifier = Modifier.fillMaxSize(),
                         )
