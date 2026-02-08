@@ -65,7 +65,6 @@ import androidx.tv.material3.NavigationDrawerItemDefaults
 import androidx.tv.material3.NavigationDrawerScope
 import androidx.tv.material3.ProvideTextStyle
 import androidx.tv.material3.Text
-import androidx.tv.material3.rememberDrawerState
 import androidx.tv.material3.surfaceColorAtElevation
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.NavDrawerItemRepository
@@ -272,6 +271,7 @@ fun NavDrawer(
     preferences: UserPreferences,
     user: JellyfinUser,
     server: JellyfinServer,
+    drawerState: DrawerState,
     onClearBackdrop: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: NavDrawerViewModel =
@@ -280,7 +280,6 @@ fun NavDrawer(
             key = "${server.id}_${user.id}", // Keyed to the server & user to ensure its reset when switching either
         ),
 ) {
-    val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
     val density = LocalDensity.current
