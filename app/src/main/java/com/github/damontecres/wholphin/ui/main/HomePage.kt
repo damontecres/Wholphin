@@ -139,6 +139,7 @@ fun HomePage(
                                         playlistViewModel.loadPlaylists(MediaType.VIDEO)
                                         showPlaylistDialog = itemId
                                     },
+                                    onSendMediaInfo = viewModel.mediaReportService::sendReportFor,
                                 ),
                         )
                     dialog =

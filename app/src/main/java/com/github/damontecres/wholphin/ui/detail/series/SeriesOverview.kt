@@ -215,6 +215,7 @@ fun SeriesOverview(
                                             playlistViewModel.loadPlaylists(MediaType.VIDEO)
                                             showPlaylistDialog = it
                                         },
+                                        onSendMediaInfo = viewModel.mediaReportService::sendReportFor,
                                     ),
                                 onChooseVersion = {
                                     chooseVersion =

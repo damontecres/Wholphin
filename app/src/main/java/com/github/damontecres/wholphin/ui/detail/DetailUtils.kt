@@ -25,9 +25,10 @@ import kotlin.time.Duration.Companion.seconds
 
 data class MoreDialogActions(
     val navigateTo: (Destination) -> Unit,
-    var onClickWatch: (UUID, Boolean) -> Unit,
-    var onClickFavorite: (UUID, Boolean) -> Unit,
-    var onClickAddPlaylist: (UUID) -> Unit,
+    val onClickWatch: (UUID, Boolean) -> Unit,
+    val onClickFavorite: (UUID, Boolean) -> Unit,
+    val onClickAddPlaylist: (UUID) -> Unit,
+    val onSendMediaInfo: (UUID) -> Unit,
 )
 
 enum class ClearChosenStreams {
@@ -205,6 +206,14 @@ fun buildMoreDialogItems(
                 )
             },
         )
+        add(
+            DialogItem(
+                text = R.string.send_media_info_log_to_server,
+                iconStringRes = R.string.fa_file_video,
+            ) {
+                actions.onSendMediaInfo.invoke(item.id)
+            },
+        )
     }
 
 fun buildMoreDialogItemsForHome(
@@ -314,6 +323,14 @@ fun buildMoreDialogItemsForHome(
                 },
             )
         }
+        add(
+            DialogItem(
+                text = R.string.send_media_info_log_to_server,
+                iconStringRes = R.string.fa_file_video,
+            ) {
+                actions.onSendMediaInfo.invoke(itemId)
+            },
+        )
     }
 
 fun buildMoreDialogItemsForPerson(

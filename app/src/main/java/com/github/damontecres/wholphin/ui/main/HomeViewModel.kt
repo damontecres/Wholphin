@@ -12,6 +12,7 @@ import com.github.damontecres.wholphin.services.DatePlayedService
 import com.github.damontecres.wholphin.services.FavoriteWatchManager
 import com.github.damontecres.wholphin.services.HomePageResolvedSettings
 import com.github.damontecres.wholphin.services.HomeSettingsService
+import com.github.damontecres.wholphin.services.MediaReportService
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.UserPreferencesService
 import com.github.damontecres.wholphin.ui.launchIO
@@ -43,14 +44,15 @@ class HomeViewModel
     @Inject
     constructor(
         @param:ApplicationContext private val context: Context,
-        private val serverRepository: ServerRepository,
-        private val navDrawerItemRepository: NavDrawerItemRepository,
+        val navigationManager: NavigationManager,
+        val serverRepository: ServerRepository,
+        val navDrawerItemRepository: NavDrawerItemRepository,
+        val mediaReportService: MediaReportService,
         private val homeSettingsService: HomeSettingsService,
         private val favoriteWatchManager: FavoriteWatchManager,
         private val datePlayedService: DatePlayedService,
         private val backdropService: BackdropService,
         private val userPreferencesService: UserPreferencesService,
-        val navigationManager: NavigationManager,
     ) : ViewModel() {
         private val _state = MutableStateFlow(HomeState.EMPTY)
         val state: StateFlow<HomeState> = _state

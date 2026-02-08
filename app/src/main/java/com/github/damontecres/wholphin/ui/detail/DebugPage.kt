@@ -49,6 +49,7 @@ import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.clientLogApi
 import org.jellyfin.sdk.model.ClientInfo
 import org.jellyfin.sdk.model.DeviceInfo
+import timber.log.Timber
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import javax.inject.Inject
@@ -137,9 +138,13 @@ class DebugViewModel
                         Send App Logs
                         clientInfo=$clientInfo
                         deviceInfo=$deviceInfo
+                        manufacturer=${Build.MANUFACTURER}
+                        model=${Build.MODEL}
+                        apiLevel=${Build.VERSION.SDK_INT}
 
-                        """.trimIndent() + logcat
-                    val response by api.clientLogApi.logFile(body)
+                        """.trimIndent()
+                    Timber.w(body)
+                    val response by api.clientLogApi.logFile(body + logcat)
                     showToast(context, "Sent! Filename=${response.fileName}")
                 }
             }
@@ -253,6 +258,7 @@ fun DebugPage(
                     "DeviceInfo:  ${viewModel.deviceInfo}",
                     "Manufacturer: ${Build.MANUFACTURER}",
                     "Model: ${Build.MODEL}",
+                    "API Level: ${Build.VERSION.SDK_INT}",
                     "Display Modes:",
                     *viewModel.refreshRateService.supportedDisplayModes,
                 ).forEach {
