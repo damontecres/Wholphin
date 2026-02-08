@@ -236,7 +236,7 @@ fun HomePageContent(
                 item = focusedItem,
                 modifier =
                     Modifier
-                        .padding(top = 48.dp, bottom = 32.dp, start = 32.dp)
+                        .padding(top = 48.dp, bottom = 32.dp, start = 8.dp)
                         .fillMaxHeight(.33f),
             )
             LazyColumn(
@@ -244,9 +244,6 @@ fun HomePageContent(
                 verticalArrangement = Arrangement.spacedBy(8.dp),
                 contentPadding =
                     PaddingValues(
-                        start = 24.dp,
-                        end = 16.dp,
-                        top = 0.dp,
                         bottom = Cards.height2x3,
                     ),
                 modifier =

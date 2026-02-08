@@ -274,7 +274,7 @@ fun <T : CardGridItem> CardGrid(
                     horizontalArrangement = Arrangement.spacedBy(spacing),
                     verticalArrangement = Arrangement.spacedBy(spacing),
                     state = gridState,
-                    contentPadding = PaddingValues(16.dp),
+                    contentPadding = PaddingValues(vertical = 16.dp),
                     modifier =
                         Modifier
                             .fillMaxSize()
@@ -394,7 +394,7 @@ fun <T : CardGridItem> CardGrid(
                     modifier =
                         Modifier
                             .align(Alignment.CenterVertically)
-                            .padding(end = 16.dp),
+                            .padding(start = 16.dp),
                     // Add end padding to push away from edge
                     letterClicked = { letter ->
                         scope.launch(ExceptionHandler()) {

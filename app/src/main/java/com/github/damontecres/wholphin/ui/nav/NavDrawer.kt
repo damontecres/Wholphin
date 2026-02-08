@@ -2,7 +2,9 @@ package com.github.damontecres.wholphin.ui.nav
 
 import android.content.Context
 import androidx.activity.compose.BackHandler
-import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.VisibilityThreshold
+import androidx.compose.animation.core.animateIntOffsetAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
@@ -12,7 +14,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -24,13 +28,13 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusProperties
@@ -44,6 +48,7 @@ import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -56,13 +61,10 @@ import androidx.tv.material3.DrawerValue
 import androidx.tv.material3.Icon
 import androidx.tv.material3.LocalContentColor
 import androidx.tv.material3.MaterialTheme
-import androidx.tv.material3.ModalNavigationDrawer
-import androidx.tv.material3.NavigationDrawerItem
 import androidx.tv.material3.NavigationDrawerItemDefaults
 import androidx.tv.material3.NavigationDrawerScope
 import androidx.tv.material3.ProvideTextStyle
 import androidx.tv.material3.Text
-import androidx.tv.material3.rememberDrawerState
 import androidx.tv.material3.surfaceColorAtElevation
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.NavDrawerItemRepository
@@ -269,6 +271,7 @@ fun NavDrawer(
     preferences: UserPreferences,
     user: JellyfinUser,
     server: JellyfinServer,
+    drawerState: DrawerState,
     onClearBackdrop: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: NavDrawerViewModel =
@@ -277,13 +280,11 @@ fun NavDrawer(
             key = "${server.id}_${user.id}", // Keyed to the server & user to ensure its reset when switching either
         ),
 ) {
-    val drawerState = rememberDrawerState(DrawerValue.Closed)
-    val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
+    val density = LocalDensity.current
 
     val focusRequester = remember { FocusRequester() }
-    val searchFocusRequester = remember { FocusRequester() }
 
     // If the user presses back while on the home page, open the nav drawer, another back press will quit the app
     BackHandler(enabled = (drawerState.currentValue == DrawerValue.Closed && destination is Destination.Home)) {
@@ -302,51 +303,59 @@ fun NavDrawer(
         viewModel.setShowMore(false)
     }
 
-    val closedDrawerWidth = NavigationDrawerItemDefaults.CollapsedDrawerItemWidth
-    val drawerBackground by animateColorAsState(
-        if (drawerState.isOpen) {
-            MaterialTheme.colorScheme.surface
-        } else {
-            Color.Transparent
-        },
+    val closedDrawerWidth = CollapsedDrawerItemWidth
+    val openDrawerWidth = ExpandedDrawerItemWidth
+    val offset by animateIntOffsetAsState(
+        targetValue =
+            IntOffset(
+                x =
+                    with(density) {
+                        if (drawerState.isOpen) (openDrawerWidth - closedDrawerWidth).roundToPx() else 0
+                    },
+                y = 0,
+            ),
+        animationSpec =
+            spring(
+                stiffness = DrawerAnimationStiffness,
+                visibilityThreshold = IntOffset.VisibilityThreshold,
+            ),
     )
-    val spacedBy = 4.dp
     val config = LocalConfiguration.current
-    val density = LocalDensity.current
     val heightInPx = remember { with(density) { config.screenHeightDp.dp.roundToPx() } }
-
-    suspend fun scrollToSelected() {
-        val target = selectedIndex + 2
-        try {
-            if (target !in
-                listState.firstVisibleItemIndex..<listState.layoutInfo.visibleItemsInfo.lastIndex
-            ) {
-                val mult = if ((target - 2) < listState.layoutInfo.totalItemsCount / 2) -1 else 1
-                listState.animateScrollToItem(selectedIndex + 2, mult * (heightInPx / 2))
-            }
-        } catch (ex: Exception) {
-            Timber.w(ex, "Error scrolling to %s", target)
-        }
-    }
-
-    LaunchedEffect(selectedIndex) {
-        scrollToSelected()
-    }
 
     ModalNavigationDrawer(
         modifier = modifier,
         drawerState = drawerState,
-        drawerContent = {
+        drawerContent = { drawerValue ->
+            val isOpen = drawerValue.isOpen
+            val spacedBy = 4.dp
+            val listState = rememberLazyListState()
+            val searchFocusRequester = remember { FocusRequester() }
+
+            suspend fun scrollToSelected() {
+                val target = selectedIndex + 2
+                try {
+                    if (target !in
+                        listState.firstVisibleItemIndex..<listState.layoutInfo.visibleItemsInfo.lastIndex
+                    ) {
+                        val mult =
+                            if ((target - 2) < listState.layoutInfo.totalItemsCount / 2) -1 else 1
+                        listState.animateScrollToItem(selectedIndex + 2, mult * (heightInPx / 2))
+                    }
+                } catch (ex: Exception) {
+                    Timber.w(ex, "Error scrolling to %s", target)
+                }
+            }
+
+            LaunchedEffect(selectedIndex) {
+                scrollToSelected()
+            }
+
             ProvideTextStyle(MaterialTheme.typography.labelMedium) {
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(spacedBy),
-                    modifier =
-                        Modifier
-                            .fillMaxHeight()
-                            .drawBehind {
-                                drawRect(drawerBackground)
-                            },
+                    modifier = Modifier.fillMaxHeight(),
                 ) {
                     // Even though some must be clicked, focusing on it should clear other focused items
                     val interactionSource = remember { MutableInteractionSource() }
@@ -355,7 +364,7 @@ fun NavDrawer(
                         user = user,
                         imageUrl = userImageUrl,
                         serverName = server.name ?: server.url,
-                        drawerOpen = drawerState.isOpen,
+                        drawerOpen = isOpen,
                         interactionSource = interactionSource,
                         onClick = {
                             viewModel.setupNavigationManager.navigateTo(
@@ -393,7 +402,7 @@ fun NavDrawer(
                                 text = stringResource(R.string.search),
                                 icon = Icons.Default.Search,
                                 selected = selectedIndex == -2,
-                                drawerOpen = drawerState.isOpen,
+                                drawerOpen = isOpen,
                                 interactionSource = interactionSource,
                                 onClick = {
                                     viewModel.setIndex(-2)
@@ -414,7 +423,7 @@ fun NavDrawer(
                                 text = stringResource(R.string.home),
                                 icon = Icons.Default.Home,
                                 selected = selectedIndex == -1,
-                                drawerOpen = drawerState.isOpen,
+                                drawerOpen = isOpen,
                                 interactionSource = interactionSource,
                                 onClick = {
                                     viewModel.setIndex(-1)
@@ -438,7 +447,7 @@ fun NavDrawer(
                                 library = it,
                                 selected = selectedIndex == index,
                                 moreExpanded = showMore,
-                                drawerOpen = drawerState.isOpen,
+                                drawerOpen = isOpen,
                                 interactionSource = interactionSource,
                                 onClick = {
                                     viewModel.onClickDrawerItem(index, it)
@@ -459,10 +468,10 @@ fun NavDrawer(
                                     library = it,
                                     selected = selectedIndex == adjustedIndex,
                                     moreExpanded = showMore,
-                                    drawerOpen = drawerState.isOpen,
+                                    drawerOpen = isOpen,
                                     onClick = { viewModel.onClickDrawerItem(adjustedIndex, it) },
                                     containerColor =
-                                        if (drawerState.isOpen) {
+                                        if (isOpen) {
                                             MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp)
                                         } else {
                                             Color.Unspecified
@@ -483,7 +492,7 @@ fun NavDrawer(
                                 text = stringResource(R.string.settings),
                                 icon = Icons.Default.Settings,
                                 selected = false,
-                                drawerOpen = drawerState.isOpen,
+                                drawerOpen = isOpen,
                                 interactionSource = interactionSource,
                                 onClick = {
                                     viewModel.navigationManager.navigateTo(
@@ -501,10 +510,7 @@ fun NavDrawer(
         },
     ) {
         Box(
-            modifier =
-                Modifier
-                    .padding(start = closedDrawerWidth)
-                    .fillMaxSize(),
+            modifier = Modifier.fillMaxSize(),
         ) {
             // Drawer content
             DestinationContent(
@@ -513,7 +519,10 @@ fun NavDrawer(
                 onClearBackdrop = onClearBackdrop,
                 modifier =
                     Modifier
-                        .fillMaxSize(),
+                        .fillMaxSize()
+                        .offset {
+                            offset
+                        }.padding(start = closedDrawerWidth + 8.dp, end = 16.dp),
             )
             if (preferences.appPreferences.interfacePreferences.showClock) {
                 TimeDisplay()
@@ -542,7 +551,7 @@ fun NavigationDrawerScope.ProfileIcon(
                 name = user.name,
                 imageUrl = imageUrl,
                 alpha = if (drawerOpen) 1f else .5f,
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier.size(DrawerIconSize),
             )
         },
         supportingContent = {
@@ -583,7 +592,7 @@ fun NavigationDrawerScope.IconNavItem(
                 icon,
                 contentDescription = null,
                 tint = color,
-                modifier = Modifier,
+                modifier = Modifier.size(DrawerIconSize),
             )
         },
         supportingContent =
@@ -673,7 +682,7 @@ fun NavigationDrawerScope.NavItem(
                         painter = painterResource(icon),
                         contentDescription = null,
                         tint = color,
-                        modifier = Modifier,
+                        modifier = Modifier.size(DrawerIconSize),
                     )
                 }
             }
@@ -700,6 +709,7 @@ fun NavigationDrawerScope.NavItem(
 }
 
 @Composable
+@ReadOnlyComposable
 fun navItemColor(
     selected: Boolean,
     focused: Boolean,
@@ -753,4 +763,6 @@ fun navItemColor(
     }
 }
 
-val DrawerState.isOpen: Boolean get() = this.currentValue == DrawerValue.Open
+val DrawerState.isOpen: Boolean get() = this.currentValue.isOpen
+
+val DrawerValue.isOpen: Boolean get() = this == DrawerValue.Open
