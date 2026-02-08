@@ -22,7 +22,7 @@
     <string name="confirm">Kinnita</string>
     <string name="continue_watching">Jätka vaatamist</string>
     <string name="critic_rating">Kriitikute hinnang</string>
-    <string name="decimal_seconds">%.1f sekundit</string>
+    <string name="decimal_seconds">%.2f sekundit</string>
     <string name="default_track">Vaikimisi</string>
     <string name="delete">Kustuta</string>
     <string name="died">Surmaaeg</string>
@@ -406,4 +406,25 @@
     <string name="retry">Proovi uuesti</string>
     <string name="software_decoding_av1">AV1 tarkvaraline dekodeerimine</string>
     <string name="upgrade_mpv_toast">MPV on nüüd vaikimisi meediaesitaja kõige v.a. HDR-i jaoks.\nSeda saad muuta seadistustest.</string>
+    <string name="hdr_subtitle_style">HDR-i tiitrite stiil</string>
+    <string name="image_subtitle_opacity">Pildiliste tiitrite läbipaistvus</string>
+    <string name="brightness">Eredus</string>
+    <string name="contrast">Kontrastsus</string>
+    <string name="saturation">Küllastus</string>
+    <string name="hue">Värvitoon</string>
+    <string name="red">Punane</string>
+    <string name="green">Roheline</string>
+    <string name="blue">Sinine</string>
+    <string name="blur">Hägustamine</string>
+    <string name="save_for_album">Salvesta albumi jaoks</string>
+    <string name="play_slideshow">Näita slaidiesitlust</string>
+    <string name="stop_slideshow">Peata slaidiesitlus</string>
+    <string name="slideshow_at_beginning">Alguses</string>
+    <string name="no_more_images">Rohkem fotosid pole</string>
+    <string name="rotate_left">Pööra vasakule</string>
+    <string name="rotate_right">Pööra paremale</string>
+    <string name="zoom_in">Suumi sisse</string>
+    <string name="zoom_out">Suumi välja</string>
+    <string name="slideshow_duration">Slaidiesitluse kestus</string>
+    <string name="play_videos_during_slideshow">Slaidiesitluse ajal esita ka videoid</string>
 </resources>
