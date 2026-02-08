@@ -235,28 +235,39 @@ fun PlaybackPageContent(
         skipPosition = player.currentPosition
     }
     val keyHandler =
-        PlaybackKeyHandler(
-            player = player,
-            controlsEnabled = nextUp == null,
-            skipWithLeftRight = true,
-            seekForward = preferences.appPreferences.playbackPreferences.skipForwardMs.milliseconds,
-            seekBack = preferences.appPreferences.playbackPreferences.skipBackMs.milliseconds,
-            controllerViewState = controllerViewState,
-            updateSkipIndicator = updateSkipIndicator,
-            skipBackOnResume = preferences.appPreferences.playbackPreferences.skipBackOnResume,
-            onInteraction = viewModel::reportInteraction,
-            oneClickPause = preferences.appPreferences.playbackPreferences.oneClickPause,
-            onStop = {
-                player.stop()
-                viewModel.navigationManager.goBack()
-            },
-            onPlaybackDialogTypeClick = { playbackDialog = it },
-            onSeekBarFocusRequest = {
-                seekBarFocusOnShow = true
-            },
-            scope = scope,
-            isSeekBarFocusPending = { seekBarFocusOnShow },
-        )
+        remember(
+            player,
+            nextUp,
+            controllerViewState,
+            preferences.appPreferences.playbackPreferences.skipForwardMs,
+            preferences.appPreferences.playbackPreferences.skipBackMs,
+            preferences.appPreferences.playbackPreferences.skipBackOnResume,
+            preferences.appPreferences.playbackPreferences.oneClickPause,
+            scope,
+        ) {
+            PlaybackKeyHandler(
+                player = player,
+                controlsEnabled = nextUp == null,
+                skipWithLeftRight = true,
+                seekForward = preferences.appPreferences.playbackPreferences.skipForwardMs.milliseconds,
+                seekBack = preferences.appPreferences.playbackPreferences.skipBackMs.milliseconds,
+                controllerViewState = controllerViewState,
+                updateSkipIndicator = updateSkipIndicator,
+                skipBackOnResume = preferences.appPreferences.playbackPreferences.skipBackOnResume,
+                onInteraction = viewModel::reportInteraction,
+                oneClickPause = preferences.appPreferences.playbackPreferences.oneClickPause,
+                onStop = {
+                    player.stop()
+                    viewModel.navigationManager.goBack()
+                },
+                onPlaybackDialogTypeClick = { playbackDialog = it },
+                onSeekBarFocusRequest = {
+                    seekBarFocusOnShow = true
+                },
+                scope = scope,
+                isSeekBarFocusPending = { seekBarFocusOnShow },
+            )
+        }
 
     val onPlaybackActionClick: (PlaybackAction) -> Unit = {
         when (it) {

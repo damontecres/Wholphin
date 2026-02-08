@@ -46,6 +46,7 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
@@ -153,35 +154,28 @@ fun PlaybackControls(
         controllerViewState.pulseControls()
     }
     val seekBarFocused by seekBarInteractionSource.collectIsFocusedAsState()
-
-    // Track whether we're actively trying to force focus to seekbar
-    var forcingSeekBarFocus by remember { mutableStateOf(false) }
+    val focusManager = LocalFocusManager.current
 
     LaunchedEffect(controllerViewState.controlsVisible, shouldFocusSeekBar) {
         if (controllerViewState.controlsVisible) {
             if (shouldFocusSeekBar) {
-                // Disable focus on other elements while we force focus to seekbar
-                forcingSeekBarFocus = true
+                // Force clear any existing focus first to prevent buttons from holding onto it
+                focusManager.clearFocus(force = true)
 
                 // Aggressively request seekbar focus
                 repeat(100) {
                     if (seekBarFocused) {
                         onSeekBarFocusConsumed.invoke()
-                        forcingSeekBarFocus = false
                         return@LaunchedEffect
                     }
-                    seekBarFocusRequester.tryRequestFocus()
+                    seekBarFocusRequester.requestFocus()
                     delay(16L)
                 }
                 // If focus could not be acquired, give up and re-enable button focus
                 onSeekBarFocusConsumed.invoke()
-                forcingSeekBarFocus = false
             } else {
-                forcingSeekBarFocus = false
                 initialFocusRequester.tryRequestFocus()
             }
-        } else {
-            forcingSeekBarFocus = false
         }
     }
     Column(
@@ -222,7 +216,7 @@ fun PlaybackControls(
                 seekBarFocusRequester = seekBarFocusRequester,
                 onControllerInteraction = onControllerInteraction,
                 onClickPlaybackDialogType = onClickPlaybackDialogType,
-                buttonsEnabled = !forcingSeekBarFocus,
+                buttonsEnabled = !shouldFocusSeekBar,
                 modifier = Modifier.align(Alignment.CenterStart),
             )
             PlaybackButtons(
@@ -240,7 +234,7 @@ fun PlaybackControls(
                 onInitialFocusChanged = { focused ->
                     initialButtonFocused = focused
                 },
-                buttonsEnabled = !forcingSeekBarFocus,
+                buttonsEnabled = !shouldFocusSeekBar,
                 modifier = Modifier.align(Alignment.Center),
             )
             Row(
@@ -265,7 +259,7 @@ fun PlaybackControls(
                     seekBarFocusRequester = seekBarFocusRequester,
                     onControllerInteraction = onControllerInteraction,
                     onClickPlaybackDialogType = onClickPlaybackDialogType,
-                    buttonsEnabled = !forcingSeekBarFocus,
+                    buttonsEnabled = !shouldFocusSeekBar,
                     modifier = Modifier,
                 )
             }

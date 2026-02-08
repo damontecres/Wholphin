@@ -38,14 +38,7 @@ class PlaybackKeyHandler(
 ) {
     private var holdKey: Key? = null
     private var holdTriggered = false
-    private var holdDownTime = 0L
     private var holdJob: Job? = null
-
-    private fun isSkipBackKey(key: Key): Boolean =
-        key == Key.DirectionLeft || key == Key.ButtonL1 || key == Key.ButtonL2
-
-    private fun isSkipForwardKey(key: Key): Boolean =
-        key == Key.DirectionRight || key == Key.ButtonR1 || key == Key.ButtonR2
 
     private fun cancelHoldTimer() {
         holdJob?.cancel()
@@ -56,7 +49,6 @@ class PlaybackKeyHandler(
         cancelHoldTimer()
         holdTriggered = false
         holdKey = null
-        holdDownTime = 0L
     }
 
     private fun triggerHold(key: Key) {
@@ -95,22 +87,21 @@ class PlaybackKeyHandler(
         if (it.type == KeyEventType.KeyDown) {
             if (
                 controlsEnabled &&
-                    !controllerViewState.controlsVisible &&
                     skipWithLeftRight &&
-                    (isSkipBack(it) || isSkipForward(it))
+                    (isSkipBack(it) || isSkipForward(it)) &&
+                    (!controllerViewState.controlsVisible || isSeekBarFocusPending())
             ) {
                 val nativeEvent = it.nativeKeyEvent
                 val key = it.key
 
-                // Start / refresh the hold timer for this physical key press
-                if (holdKey != key || holdDownTime != nativeEvent.downTime) {
+                // Start hold tracking once for this held key; repeat events should not reset it.
+                if (holdKey != key) {
                     resetHoldState()
                     holdKey = key
-                    holdDownTime = nativeEvent.downTime
                     holdJob =
                         scope.launch {
                             delay(holdToTimelineMs)
-                            if (!holdTriggered && holdKey == key && holdDownTime == nativeEvent.downTime) {
+                            if (!holdTriggered && holdKey == key) {
                                 triggerHold(key)
                             }
                         }
@@ -122,8 +113,8 @@ class PlaybackKeyHandler(
                     triggerHold(key)
                 }
 
-                // Consume left/right key-downs ONLY while controls are hidden
-                // Once controls are visible, let the events through so the seekbar can handle them
+                // Consume left/right key-downs while controls are hidden OR while we're waiting for seekbar focus
+                // Once seekbar has focus, let the events through so it can handle scrubbing
                 return true
             }
             return false
