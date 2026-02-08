@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.saveable.rememberSerializable
@@ -231,6 +232,7 @@ fun ApplicationContent(
                 )
             }
         }
+        val navDrawerListState = rememberLazyListState()
         NavDisplay(
             backStack = navigationManager.backStack,
             onBack = { navigationManager.goBack() },
@@ -257,6 +259,7 @@ fun ApplicationContent(
                             user = user,
                             server = server,
                             drawerState = drawerState,
+                            navDrawerListState = navDrawerListState,
                             onClearBackdrop = viewModel::clearBackdrop,
                             modifier = Modifier.fillMaxSize(),
                         )
