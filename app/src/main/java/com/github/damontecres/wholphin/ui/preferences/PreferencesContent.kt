@@ -424,7 +424,7 @@ fun PreferencesContent(
                                         }
                                     },
                                     modifier = Modifier,
-                                    summary = null,
+                                    summary = pref.summary(context, null),
                                     onLongClick = {},
                                     interactionSource = interactionSource,
                                 )
