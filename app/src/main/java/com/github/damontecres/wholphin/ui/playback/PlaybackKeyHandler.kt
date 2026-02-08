@@ -34,7 +34,7 @@ class PlaybackKeyHandler(
     private val onSeekBarFocusRequest: () -> Unit,
     private val scope: CoroutineScope,
     private val isSeekBarFocusPending: () -> Boolean,
-    private val holdToTimelineMs: Long = 3000L,
+    private val holdToTimelineMs: Long = 2000L,
 ) {
     private var holdKey: Key? = null
     private var holdTriggered = false

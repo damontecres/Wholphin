@@ -173,6 +173,16 @@ fun SeekBarDisplay(
 
     var leftRepeatCount by remember { mutableStateOf(0) }
     var rightRepeatCount by remember { mutableStateOf(0) }
+    var baselineRepeatCount by remember { mutableStateOf(0) }
+
+    // Reset baseline when seekbar gains focus (e.g., from hold-to-timeline)
+    LaunchedEffect(isFocused) {
+        if (isFocused) {
+            baselineRepeatCount = 0
+            leftRepeatCount = 0
+            rightRepeatCount = 0
+        }
+    }
 
     // Duration-based scaling factors
     val durationMinutes = durationMs / 60000
@@ -200,7 +210,7 @@ fun SeekBarDisplay(
                             return@onPreviewKeyEvent false
                         }
 
-                        val repeatCount = event.nativeKeyEvent.repeatCount
+                        val systemRepeatCount = event.nativeKeyEvent.repeatCount
                         when (event.nativeKeyEvent.keyCode) {
                             KeyEvent.KEYCODE_DPAD_LEFT, KeyEvent.KEYCODE_SYSTEM_NAVIGATION_LEFT -> {
                                 if (event.type == KeyEventType.KeyUp) {
@@ -208,9 +218,16 @@ fun SeekBarDisplay(
                                         onLeft.invoke(1)
                                     }
                                     leftRepeatCount = 0
-                                } else if (repeatCount > 0) {
-                                    leftRepeatCount = repeatCount
-                                    val multiplier = calculateMultiplier(repeatCount, durationMinutes)
+                                    baselineRepeatCount = 0
+                                } else if (systemRepeatCount > 0) {
+                                    // First repeat event after gaining focus - set baseline
+                                    if (baselineRepeatCount == 0) {
+                                        baselineRepeatCount = systemRepeatCount
+                                    }
+                                    // Calculate relative repeat count from baseline
+                                    val relativeRepeatCount = systemRepeatCount - baselineRepeatCount
+                                    leftRepeatCount = relativeRepeatCount
+                                    val multiplier = calculateMultiplier(relativeRepeatCount, durationMinutes)
                                     onLeft.invoke(multiplier)
                                 }
                                 return@onPreviewKeyEvent true
@@ -222,9 +239,16 @@ fun SeekBarDisplay(
                                         onRight.invoke(1)
                                     }
                                     rightRepeatCount = 0
-                                } else if (repeatCount > 0) {
-                                    rightRepeatCount = repeatCount
-                                    val multiplier = calculateMultiplier(repeatCount, durationMinutes)
+                                    baselineRepeatCount = 0
+                                } else if (systemRepeatCount > 0) {
+                                    // First repeat event after gaining focus - set baseline
+                                    if (baselineRepeatCount == 0) {
+                                        baselineRepeatCount = systemRepeatCount
+                                    }
+                                    // Calculate relative repeat count from baseline
+                                    val relativeRepeatCount = systemRepeatCount - baselineRepeatCount
+                                    rightRepeatCount = relativeRepeatCount
+                                    val multiplier = calculateMultiplier(relativeRepeatCount, durationMinutes)
                                     onRight.invoke(multiplier)
                                 }
                                 return@onPreviewKeyEvent true

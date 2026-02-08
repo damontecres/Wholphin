@@ -157,26 +157,24 @@ fun PlaybackControls(
     val focusManager = LocalFocusManager.current
 
     LaunchedEffect(controllerViewState.controlsVisible, shouldFocusSeekBar) {
-        if (controllerViewState.controlsVisible) {
-            if (shouldFocusSeekBar) {
-                // Force clear any existing focus first to prevent buttons from holding onto it
-                focusManager.clearFocus(force = true)
+        if (controllerViewState.controlsVisible && shouldFocusSeekBar) {
+            // Force clear any existing focus first to prevent buttons from holding onto it
+            focusManager.clearFocus(force = true)
 
-                // Aggressively request seekbar focus
-                repeat(100) {
-                    if (seekBarFocused) {
-                        onSeekBarFocusConsumed.invoke()
-                        return@LaunchedEffect
-                    }
-                    seekBarFocusRequester.requestFocus()
-                    delay(16L)
+            // Aggressively request seekbar focus
+            repeat(100) {
+                if (seekBarFocused) {
+                    onSeekBarFocusConsumed.invoke()
+                    return@LaunchedEffect
                 }
-                // If focus could not be acquired, give up and re-enable button focus
-                onSeekBarFocusConsumed.invoke()
-            } else {
-                initialFocusRequester.tryRequestFocus()
+                seekBarFocusRequester.requestFocus()
+                delay(16L)
             }
+            // If focus could not be acquired, give up and re-enable button focus
+            onSeekBarFocusConsumed.invoke()
         }
+        // Don't explicitly request initial focus - let Compose handle default focus
+        // This prevents stealing focus from seekbar after it was just successfully focused
     }
     Column(
         modifier = modifier.bringIntoViewRequester(bringIntoViewRequester),
