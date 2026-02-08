@@ -136,6 +136,10 @@ class SuggestionsWorker
                 val isSeries = itemKind == BaseItemKind.SERIES
                 val historyItemType = if (isSeries) BaseItemKind.EPISODE else itemKind
 
+                val contextualLimit = (itemsPerRow * 0.4).toInt().coerceAtLeast(1)
+                val randomLimit = (itemsPerRow * 0.3).toInt().coerceAtLeast(1)
+                val freshLimit = (itemsPerRow * 0.3).toInt().coerceAtLeast(1)
+
                 val historyDeferred =
                     async(Dispatchers.IO) {
                         fetchItems(
@@ -144,9 +148,36 @@ class SuggestionsWorker
                             itemKind = historyItemType,
                             sortBy = ItemSortBy.DATE_PLAYED,
                             isPlayed = true,
-                            limit = 10,
+                            limit = 20,
                             extraFields = listOf(ItemFields.GENRES),
                         ).distinctBy { it.relevantId }.take(3)
+                    }
+
+                val seedItems = historyDeferred.await()
+
+                val allGenreIds =
+                    seedItems
+                        .flatMap { it.genreItems?.mapNotNull { g -> g.id } ?: emptyList() }
+                        .distinct()
+
+                val excludeIds = seedItems.mapTo(HashSet()) { it.relevantId }
+
+                val contextualDeferred =
+                    async(Dispatchers.IO) {
+                        if (allGenreIds.isEmpty()) {
+                            emptyList()
+                        } else {
+                            fetchItems(
+                                parentId = parentId,
+                                userId = userId,
+                                itemKind = itemKind,
+                                sortBy = ItemSortBy.RANDOM,
+                                isPlayed = false,
+                                limit = contextualLimit,
+                                genreIds = allGenreIds,
+                                excludeItemIds = excludeIds.toList(),
+                            )
+                        }
                     }
 
                 val randomDeferred =
@@ -157,7 +188,7 @@ class SuggestionsWorker
                             itemKind = itemKind,
                             sortBy = ItemSortBy.RANDOM,
                             isPlayed = false,
-                            limit = itemsPerRow,
+                            limit = randomLimit,
                         )
                     }
 
@@ -170,17 +201,15 @@ class SuggestionsWorker
                             sortBy = ItemSortBy.DATE_CREATED,
                             sortOrder = SortOrder.DESCENDING,
                             isPlayed = false,
-                            limit = (itemsPerRow * FRESH_CONTENT_RATIO).toInt().coerceAtLeast(1),
+                            limit = freshLimit,
                         )
                     }
 
-                val seedItems = historyDeferred.await()
+                val contextual = contextualDeferred.await()
                 val random = randomDeferred.await()
                 val fresh = freshDeferred.await()
 
-                val excludeIds = seedItems.mapTo(HashSet()) { it.relevantId }
-
-                (fresh + random)
+                (contextual + fresh + random)
                     .asSequence()
                     .distinctBy { it.id }
                     .filterNot { excludeIds.contains(it.relevantId) }
@@ -198,6 +227,7 @@ class SuggestionsWorker
             limit: Int,
             sortOrder: SortOrder? = null,
             genreIds: List<UUID>? = null,
+            excludeItemIds: List<UUID>? = null,
             extraFields: List<ItemFields> = emptyList(),
         ): List<BaseItemDto> {
             val request =
@@ -209,6 +239,7 @@ class SuggestionsWorker
                     genreIds = genreIds,
                     recursive = true,
                     isPlayed = isPlayed,
+                    excludeItemIds = excludeItemIds,
                     sortBy = listOf(sortBy),
                     sortOrder = sortOrder?.let { listOf(it) },
                     limit = limit,
@@ -225,6 +256,5 @@ class SuggestionsWorker
             const val WORK_NAME = "com.github.damontecres.wholphin.services.SuggestionsWorker"
             const val PARAM_USER_ID = "userId"
             const val PARAM_SERVER_ID = "serverId"
-            private const val FRESH_CONTENT_RATIO = 0.4
         }
     }
