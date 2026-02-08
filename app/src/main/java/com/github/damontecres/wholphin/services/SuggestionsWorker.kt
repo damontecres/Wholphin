@@ -245,7 +245,7 @@ class SuggestionsWorker
                 GetItemsRequest(
                     parentId = parentId,
                     userId = userId,
-                    fields = listOf(ItemFields.PRIMARY_IMAGE_ASPECT_RATIO, ItemFields.OVERVIEW) + extraFields,
+                    fields = extraFields,
                     includeItemTypes = listOf(itemKind),
                     genreIds = genreIds,
                     recursive = true,
@@ -255,7 +255,7 @@ class SuggestionsWorker
                     sortOrder = sortOrder?.let { listOf(it) },
                     limit = limit,
                     enableTotalRecordCount = false,
-                    imageTypeLimit = 1,
+                    imageTypeLimit = 0,
                 )
             return GetItemsRequestHandler
                 .execute(api, request)
