@@ -426,5 +426,5 @@
     <string name="zoom_in">Suumi sisse</string>
     <string name="zoom_out">Suumi välja</string>
     <string name="slideshow_duration">Slaidiesitluse kestus</string>
-    <string name="play_videos_during_slideshow">Slaidiesitluse ajal esita ka videoid</string>
+    <string name="play_videos_during_slideshow">Slaidiesitluse ajal esita videoid</string>
 </resources>
