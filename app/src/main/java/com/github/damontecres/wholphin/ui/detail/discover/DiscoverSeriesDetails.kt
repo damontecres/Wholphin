@@ -463,7 +463,7 @@ fun DiscoverSeriesDetailsHeader(
         ) {
             val padding = 4.dp
             val details =
-                remember(series) {
+                remember(series, rating) {
                     buildList {
                         series.firstAirDate?.let(::add)
                         series.episodeRunTime
