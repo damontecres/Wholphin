@@ -186,7 +186,7 @@ sealed interface AppPreference<Pref, T> {
                 summarizer = { value -> value?.toString() },
             )
 
-        private val MaxDaysNextUpOptions = listOf(7, 14, 30, 60, 90, 180, 365)
+        val MaxDaysNextUpOptions = listOf(7, 14, 30, 60, 90, 180, 365)
         val MaxDaysNextUp =
             AppSliderPreference<AppPreferences>(
                 title = R.string.max_days_next_up,
