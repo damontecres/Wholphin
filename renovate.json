@@ -31,12 +31,6 @@
     {
       "groupName": "Github Actions",
       "matchManagers": ["github-actions"]
-    },
-    {
-      "groupName": "Dependencies",
-      "matchPackageNames": [
-        "*"
-      ]
     }
   ]
 }
