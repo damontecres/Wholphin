@@ -35,7 +35,7 @@
     {
       "groupName": "Dependencies",
       "matchPackagePatterns": [
-        ".*"
+        "*"
       ]
     }
   ]
