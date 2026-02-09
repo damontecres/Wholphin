@@ -2,5 +2,41 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
     "config:recommended"
+  ],
+  "packageRules": [
+    {
+      "groupName": "Kotlin",
+      "matchPackagePrefixes": [
+        "org.jetbrains.kotlin"
+      ]
+    },
+    {
+      "groupName": "Androidx Media3",
+      "matchPackagePrefixes": [
+        "androidx.media3"
+      ]
+    },
+    {
+      "groupName": "Jellyfin SDK",
+      "matchPackagePrefixes": [
+        "org.jellyfin.sdk"
+      ]
+    },
+    {
+      "groupName": "AGP",
+      "matchPackagePrefixes": [
+        "com.android.application"
+      ]
+    },
+    {
+      "groupName": "Github Actions",
+      "matchManagers": ["github-actions"]
+    },
+    {
+      "groupName": "Github Actions",
+      "matchPackagePrefixes": [
+        "*"
+      ]
+    }
   ]
 }
