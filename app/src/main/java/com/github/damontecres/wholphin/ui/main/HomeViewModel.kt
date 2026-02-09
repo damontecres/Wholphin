@@ -98,6 +98,7 @@ class HomeViewModel
                                 limit,
                                 prefs.enableRewatchingNextUp,
                                 false,
+                                prefs.maxDaysNextUp,
                             )
                         val watching =
                             buildList {
