@@ -21,7 +21,7 @@ jobs:
       contents: write
     steps:
       - name: Checkout the code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0 # Need the tags to build
       - name: Setup
