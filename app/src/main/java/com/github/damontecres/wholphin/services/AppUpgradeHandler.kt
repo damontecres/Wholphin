@@ -10,6 +10,7 @@ import com.github.damontecres.wholphin.preferences.AppPreference
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.update
 import com.github.damontecres.wholphin.preferences.updateAdvancedPreferences
+import com.github.damontecres.wholphin.preferences.updateHomePagePreferences
 import com.github.damontecres.wholphin.preferences.updateInterfacePreferences
 import com.github.damontecres.wholphin.preferences.updateLiveTvPreferences
 import com.github.damontecres.wholphin.preferences.updateMpvOptions
@@ -234,6 +235,14 @@ suspend fun upgradeApp(
         appPreferences.updateData {
             it.updatePhotoPreferences {
                 slideshowDuration = AppPreference.SlideshowDuration.defaultValue
+            }
+        }
+    }
+
+    if (previous.isEqualOrBefore(Version.fromString("0.4.1-14-g0"))) {
+        appPreferences.updateData {
+            it.updateHomePagePreferences {
+                maxDaysNextUp = AppPreference.MaxDaysNextUp.defaultValue.toInt()
             }
         }
     }

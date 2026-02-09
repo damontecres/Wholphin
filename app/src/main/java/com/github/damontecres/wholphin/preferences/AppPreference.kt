@@ -190,7 +190,7 @@ sealed interface AppPreference<Pref, T> {
         val MaxDaysNextUp =
             AppSliderPreference<AppPreferences>(
                 title = R.string.max_days_next_up,
-                defaultValue = MaxDaysNextUpOptions.lastIndex + 1L,
+                defaultValue = -1,
                 min = 0,
                 // Max is "no limit" stored as -1
                 max = MaxDaysNextUpOptions.lastIndex + 1L,
