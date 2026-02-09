@@ -5,32 +5,37 @@
   ],
   "packageRules": [
     {
-      "groupName": "Kotlin",
-      "matchPackageNames": [
-        "org.jetbrains.kotlin"
-      ]
+      "groupName": "Dependencies",
+      "matchDepTypes": ["dependencies"],
+      "separateMultipleMajor": true
+    },
+    {
+      "groupName": "Github Actions",
+      "matchManagers": ["github-actions"]
     },
     {
       "groupName": "Androidx Media3",
       "matchPackageNames": [
-        "androidx.media3"
+        "androidx.media3:**"
       ]
     },
     {
       "groupName": "Jellyfin SDK",
       "matchPackageNames": [
-        "org.jellyfin.sdk"
+        "org.jellyfin.sdk:**"
       ]
     },
     {
       "groupName": "AGP",
       "matchPackageNames": [
-        "com.android.application"
+        "com.android.application:**"
       ]
     },
     {
-      "groupName": "Github Actions",
-      "matchManagers": ["github-actions"]
+      "groupName": "Kotlin",
+      "matchPackageNames": [
+        "org.jetbrains.kotlin**"
+      ]
     }
   ]
 }
