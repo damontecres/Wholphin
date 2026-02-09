@@ -8,7 +8,6 @@ import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.util.GetItemsRequestHandler
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
@@ -50,32 +49,31 @@ class SuggestionService
                 .asFlow()
                 .flatMapLatest { user ->
                     val userId = user?.id ?: return@flatMapLatest flowOf(SuggestionsResource.Empty)
-
-                    cache.cacheVersion
-                        .map { cache.get(userId, parentId, itemKind)?.ids.orEmpty() }
-                        .distinctUntilChanged()
-                        .flatMapLatest { cachedIds ->
-                            if (cachedIds.isNotEmpty()) {
-                                flow {
-                                    try {
-                                        emit(SuggestionsResource.Success(fetchItemsByIds(cachedIds, itemKind)))
-                                    } catch (e: Exception) {
-                                        Timber.e(e, "Failed to fetch items")
-                                        emit(SuggestionsResource.Empty)
-                                    }
-                                }
-                            } else {
-                                workManager
-                                    .getWorkInfosForUniqueWorkFlow(SuggestionsWorker.WORK_NAME)
-                                    .map { workInfos ->
-                                        val isActive =
-                                            workInfos.any {
-                                                it.state == WorkInfo.State.RUNNING || it.state == WorkInfo.State.ENQUEUED
-                                            }
-                                        if (isActive) SuggestionsResource.Loading else SuggestionsResource.Empty
-                                    }
+                    val cachedIds = cache.get(userId, parentId, itemKind)?.ids.orEmpty()
+                    if (cachedIds.isNotEmpty()) {
+                        flow {
+                            try {
+                                emit(
+                                    SuggestionsResource.Success(
+                                        fetchItemsByIds(cachedIds, itemKind),
+                                    ),
+                                )
+                            } catch (e: Exception) {
+                                Timber.e(e, "Failed to fetch items")
+                                emit(SuggestionsResource.Empty)
                             }
                         }
+                    } else {
+                        workManager
+                            .getWorkInfosForUniqueWorkFlow(SuggestionsWorker.WORK_NAME)
+                            .map { workInfos ->
+                                val isActive =
+                                    workInfos.any {
+                                        it.state == WorkInfo.State.RUNNING || it.state == WorkInfo.State.ENQUEUED
+                                    }
+                                if (isActive) SuggestionsResource.Loading else SuggestionsResource.Empty
+                            }
+                    }
                 }
         }
 
