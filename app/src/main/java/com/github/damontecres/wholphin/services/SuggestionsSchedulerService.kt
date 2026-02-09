@@ -80,13 +80,7 @@ class SuggestionsSchedulerService
                         BackoffPolicy.EXPONENTIAL,
                         15.minutes.toJavaDuration(),
                     ).setInputData(inputData)
-
-            if (cache.isEmpty()) {
-                Timber.i("Suggestions cache empty, scheduling periodic fetch with 30s delay")
-                periodicWorkRequestBuilder.setInitialDelay(30.seconds.toJavaDuration())
-            } else {
-                Timber.i("Scheduling periodic SuggestionsWorker")
-            }
+                    .setInitialDelay(60.seconds.toJavaDuration())
 
             workManager.enqueueUniquePeriodicWork(
                 uniqueWorkName = SuggestionsWorker.WORK_NAME,

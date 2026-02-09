@@ -12,7 +12,6 @@ import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -86,7 +85,6 @@ class SuggestionServiceTest {
         runTest {
             val currentUser = MutableLiveData<JellyfinUser?>(null)
             every { mockServerRepository.currentUser } returns currentUser
-            every { mockCache.cacheVersion } returns MutableStateFlow(0L)
             every { mockWorkManager.getWorkInfosForUniqueWorkFlow(any()) } returns flowOf(emptyList())
 
             val service = createService()
@@ -104,7 +102,6 @@ class SuggestionServiceTest {
                 val currentUser = MutableLiveData<JellyfinUser?>(mockUser(userId))
 
                 every { mockServerRepository.currentUser } returns currentUser
-                every { mockCache.cacheVersion } returns MutableStateFlow(0L)
                 coEvery { mockCache.get(userId, parentId, BaseItemKind.MOVIE) } returns null
                 every { mockWorkManager.getWorkInfosForUniqueWorkFlow(any()) } returns
                     flowOf(listOf(mockWorkInfo(state)))
@@ -125,7 +122,6 @@ class SuggestionServiceTest {
                 val currentUser = MutableLiveData<JellyfinUser?>(mockUser(userId))
 
                 every { mockServerRepository.currentUser } returns currentUser
-                every { mockCache.cacheVersion } returns MutableStateFlow(0L)
                 coEvery { mockCache.get(userId, parentId, BaseItemKind.MOVIE) } returns null
                 every { mockWorkManager.getWorkInfosForUniqueWorkFlow(any()) } returns
                     flowOf(listOf(mockWorkInfo(state)))
@@ -145,7 +141,6 @@ class SuggestionServiceTest {
             val currentUser = MutableLiveData<JellyfinUser?>(mockUser(userId))
 
             every { mockServerRepository.currentUser } returns currentUser
-            every { mockCache.cacheVersion } returns MutableStateFlow(0L)
             coEvery { mockCache.get(userId, parentId, BaseItemKind.MOVIE) } returns null
             every { mockWorkManager.getWorkInfosForUniqueWorkFlow(any()) } returns flowOf(emptyList())
 
@@ -164,7 +159,6 @@ class SuggestionServiceTest {
             val currentUser = MutableLiveData<JellyfinUser?>(mockUser(userId))
 
             every { mockServerRepository.currentUser } returns currentUser
-            every { mockCache.cacheVersion } returns MutableStateFlow(0L)
             every { mockWorkManager.getWorkInfosForUniqueWorkFlow(any()) } returns flowOf(emptyList())
 
             coEvery { mockCache.get(userId, libraryId, BaseItemKind.MOVIE) } returns null
@@ -199,7 +193,6 @@ class SuggestionServiceTest {
             val currentUser = MutableLiveData<JellyfinUser?>(mockUser(userId))
 
             every { mockServerRepository.currentUser } returns currentUser
-            every { mockCache.cacheVersion } returns MutableStateFlow(0L)
 
             val cachedId = UUID.randomUUID()
             coEvery {
@@ -237,7 +230,6 @@ class SuggestionServiceTest {
             val currentUser = MutableLiveData<JellyfinUser?>(mockUser(userId))
 
             every { mockServerRepository.currentUser } returns currentUser
-            every { mockCache.cacheVersion } returns MutableStateFlow(0L)
 
             val cachedId = UUID.randomUUID()
             coEvery {

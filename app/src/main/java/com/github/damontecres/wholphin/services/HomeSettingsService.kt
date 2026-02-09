@@ -555,6 +555,7 @@ class HomeSettingsService
                             limit,
                             prefs.enableRewatchingNextUp,
                             false,
+                            prefs.maxDaysNextUp,
                             row.viewOptions.useSeries,
                         )
 
@@ -579,6 +580,7 @@ class HomeSettingsService
                             limit,
                             prefs.enableRewatchingNextUp,
                             false,
+                            prefs.maxDaysNextUp,
                             row.viewOptions.useSeries,
                         )
 

@@ -18,8 +18,8 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Home
@@ -41,7 +41,6 @@ import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
@@ -88,12 +87,10 @@ import com.github.damontecres.wholphin.ui.spacedByWithFooter
 import com.github.damontecres.wholphin.ui.theme.LocalTheme
 import com.github.damontecres.wholphin.ui.toServerString
 import com.github.damontecres.wholphin.ui.tryRequestFocus
-import com.github.damontecres.wholphin.util.ExceptionHandler
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.imageApi
@@ -272,6 +269,7 @@ fun NavDrawer(
     user: JellyfinUser,
     server: JellyfinServer,
     drawerState: DrawerState,
+    navDrawerListState: LazyListState,
     onClearBackdrop: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: NavDrawerViewModel =
@@ -320,8 +318,6 @@ fun NavDrawer(
                 visibilityThreshold = IntOffset.VisibilityThreshold,
             ),
     )
-    val config = LocalConfiguration.current
-    val heightInPx = remember { with(density) { config.screenHeightDp.dp.roundToPx() } }
 
     ModalNavigationDrawer(
         modifier = modifier,
@@ -329,27 +325,7 @@ fun NavDrawer(
         drawerContent = { drawerValue ->
             val isOpen = drawerValue.isOpen
             val spacedBy = 4.dp
-            val listState = rememberLazyListState()
             val searchFocusRequester = remember { FocusRequester() }
-
-            suspend fun scrollToSelected() {
-                val target = selectedIndex + 2
-                try {
-                    if (target !in
-                        listState.firstVisibleItemIndex..<listState.layoutInfo.visibleItemsInfo.lastIndex
-                    ) {
-                        val mult =
-                            if ((target - 2) < listState.layoutInfo.totalItemsCount / 2) -1 else 1
-                        listState.animateScrollToItem(selectedIndex + 2, mult * (heightInPx / 2))
-                    }
-                } catch (ex: Exception) {
-                    Timber.w(ex, "Error scrolling to %s", target)
-                }
-            }
-
-            LaunchedEffect(selectedIndex) {
-                scrollToSelected()
-            }
 
             ProvideTextStyle(MaterialTheme.typography.labelMedium) {
                 Column(
@@ -374,7 +350,7 @@ fun NavDrawer(
                         modifier = Modifier,
                     )
                     LazyColumn(
-                        state = listState,
+                        state = navDrawerListState,
                         contentPadding = PaddingValues(0.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedByWithFooter(spacedBy),
@@ -387,11 +363,6 @@ fun NavDrawer(
                                             searchFocusRequester.tryRequestFocus()
                                         } else {
                                             focusRequester.tryRequestFocus()
-                                        }
-                                    }
-                                    onExit = {
-                                        scope.launch(ExceptionHandler()) {
-                                            scrollToSelected()
                                         }
                                     }
                                 }.fillMaxHeight(),

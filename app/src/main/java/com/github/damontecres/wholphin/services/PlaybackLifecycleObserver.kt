@@ -4,9 +4,6 @@ import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import com.github.damontecres.wholphin.ui.nav.Destination
 import dagger.hilt.android.scopes.ActivityRetainedScoped
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 /**
@@ -19,7 +16,6 @@ class PlaybackLifecycleObserver
         private val navigationManager: NavigationManager,
         private val playerFactory: PlayerFactory,
         private val themeSongPlayer: ThemeSongPlayer,
-        private val suggestionsCache: SuggestionsCache,
     ) : DefaultLifecycleObserver {
         private var wasPlaying: Boolean? = null
 
@@ -52,6 +48,5 @@ class PlaybackLifecycleObserver
 
         override fun onStop(owner: LifecycleOwner) {
             themeSongPlayer.stop()
-            CoroutineScope(Dispatchers.Main).launch { suggestionsCache.save() }
         }
     }

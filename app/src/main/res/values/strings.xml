@@ -260,6 +260,11 @@
         <item quantity="one">%d hour</item>
         <item quantity="other">%d hours</item>
     </plurals>
+    <plurals name="days">
+        <item quantity="zero">%s days</item>
+        <item quantity="one">%s day</item>
+        <item quantity="other">%s days</item>
+    </plurals>
     <plurals name="items">
         <item quantity="zero">%d items</item>
         <item quantity="one">%d item</item>
@@ -485,6 +490,8 @@
     <string name="slideshow_duration">Slideshow duration</string>
     <string name="play_videos_during_slideshow">Play videos during slideshow</string>
     <string name="send_media_info_log_to_server">Send media info log to server</string>
+    <string name="no_limit">No limit</string>
+    <string name="max_days_next_up">Max days in Next Up</string>
 
     <string name="add_row">Add row</string>
     <string name="genres_in">Genres in %1$s</string>

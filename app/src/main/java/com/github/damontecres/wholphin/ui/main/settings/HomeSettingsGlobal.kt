@@ -81,6 +81,18 @@ fun HomeSettingsGlobal(
                     modifier = Modifier,
                 )
             }
+            item {
+                ComposablePreference(
+                    preference = AppPreference.MaxDaysNextUp,
+                    value = AppPreference.MaxDaysNextUp.getter.invoke(preferences),
+                    onValueChange = {
+                        val newPrefs = AppPreference.MaxDaysNextUp.setter.invoke(preferences, it)
+                        onPreferenceChange.invoke(newPrefs)
+                    },
+                    onNavigate = {},
+                    modifier = Modifier,
+                )
+            }
             item { HorizontalDivider() }
             item {
                 HomeSettingsListItem(

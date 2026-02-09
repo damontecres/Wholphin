@@ -21,6 +21,7 @@ import timber.log.Timber
 import javax.inject.Inject
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.minutes
+import kotlin.time.Duration.Companion.seconds
 import kotlin.time.toJavaDuration
 
 @ActivityScoped
@@ -60,7 +61,8 @@ class TvProviderSchedulerService
                                                 TvProviderWorker.PARAM_USER_ID to user.user.id.toString(),
                                                 TvProviderWorker.PARAM_SERVER_ID to user.server.id.toString(),
                                             ),
-                                        ).build(),
+                                        ).setInitialDelay(60.seconds.toJavaDuration())
+                                            .build(),
                                 ).await()
                         }
                     }

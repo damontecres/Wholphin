@@ -18,6 +18,7 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.supervisorScope
+import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.exception.ApiClientException
 import org.jellyfin.sdk.api.client.extensions.userViewsApi
@@ -31,6 +32,7 @@ import org.jellyfin.sdk.model.api.request.GetItemsRequest
 import org.jellyfin.sdk.model.serializer.toUUIDOrNull
 import timber.log.Timber
 import java.util.UUID
+import kotlin.coroutines.CoroutineContext
 
 private val BaseItemDto.relevantId: UUID get() = seriesId ?: id
 
@@ -79,6 +81,7 @@ class SuggestionsWorker
                 }
                 val results =
                     supervisorScope {
+                        val context = Dispatchers.IO.limitedParallelism(2, "fetchSuggestions")
                         views
                             .mapNotNull { view ->
                                 val itemKind =
@@ -87,7 +90,14 @@ class SuggestionsWorker
                                 async(Dispatchers.IO) {
                                     runCatching {
                                         Timber.v("Fetching suggestions for view %s", view.id)
-                                        val suggestions = fetchSuggestions(view.id, userId, itemKind, itemsPerRow)
+                                        val suggestions =
+                                            fetchSuggestions(
+                                                context,
+                                                view.id,
+                                                userId,
+                                                itemKind,
+                                                itemsPerRow,
+                                            )
                                         ensureActive()
                                         cache.put(
                                             userId,
@@ -107,7 +117,6 @@ class SuggestionsWorker
                     }
                 val successCount = results.count { it.isSuccess }
                 val failureCount = results.count { it.isFailure }
-                cache.save()
                 if (failureCount > 0 && successCount == 0) {
                     Timber.w("All attempts failed ($failureCount views), scheduling retry")
                     return Result.retry()
@@ -124,6 +133,7 @@ class SuggestionsWorker
         }
 
         private suspend fun fetchSuggestions(
+            coroutineContext: CoroutineContext,
             parentId: UUID,
             userId: UUID,
             itemKind: BaseItemKind,
@@ -138,7 +148,7 @@ class SuggestionsWorker
                 val freshLimit = (itemsPerRow * 0.3).toInt().coerceAtLeast(1)
 
                 val historyDeferred =
-                    async(Dispatchers.IO) {
+                    async(coroutineContext) {
                         fetchItems(
                             parentId = parentId,
                             userId = userId,
@@ -160,7 +170,7 @@ class SuggestionsWorker
                 val excludeIds = seedItems.mapTo(HashSet()) { it.relevantId }
 
                 val contextualDeferred =
-                    async(Dispatchers.IO) {
+                    async(coroutineContext) {
                         if (allGenreIds.isEmpty()) {
                             emptyList()
                         } else {
@@ -178,7 +188,7 @@ class SuggestionsWorker
                     }
 
                 val randomDeferred =
-                    async(Dispatchers.IO) {
+                    async(coroutineContext) {
                         fetchItems(
                             parentId = parentId,
                             userId = userId,
@@ -190,7 +200,7 @@ class SuggestionsWorker
                     }
 
                 val freshDeferred =
-                    async(Dispatchers.IO) {
+                    async(coroutineContext) {
                         fetchItems(
                             parentId = parentId,
                             userId = userId,
@@ -201,18 +211,19 @@ class SuggestionsWorker
                             limit = freshLimit,
                         )
                     }
+                withContext(Dispatchers.Default) {
+                    val contextual = contextualDeferred.await()
+                    val random = randomDeferred.await()
+                    val fresh = freshDeferred.await()
 
-                val contextual = contextualDeferred.await()
-                val random = randomDeferred.await()
-                val fresh = freshDeferred.await()
-
-                (contextual + fresh + random)
-                    .asSequence()
-                    .distinctBy { it.id }
-                    .filterNot { excludeIds.contains(it.relevantId) }
-                    .toList()
-                    .shuffled()
-                    .take(itemsPerRow)
+                    (contextual + fresh + random)
+                        .asSequence()
+                        .distinctBy { it.id }
+                        .filterNot { excludeIds.contains(it.relevantId) }
+                        .toList()
+                        .shuffled()
+                        .take(itemsPerRow)
+                }
             }
 
         private suspend fun fetchItems(

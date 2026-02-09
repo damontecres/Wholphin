@@ -8,9 +8,10 @@ desugar_jdk_libs = "2.1.5"
 hiltCompiler = "1.3.0"
 hiltNavigationCompose = "1.3.0"
 hiltWork = "1.3.0"
+kache = "2.1.1"
 kotlin = "2.3.0"
 kotlinxCoroutinesCore = "1.10.2"
-ksp = "2.3.0"
+ksp = "2.3.5"
 coreKtx = "1.17.0"
 appcompat = "1.7.1"
 composeBom = "2026.01.01"
@@ -25,7 +26,7 @@ tvFoundation = "1.0.0-alpha12"
 tvMaterial = "1.0.1"
 lifecycleRuntimeKtx = "2.10.0"
 activityCompose = "1.12.3"
-androidx-media3 = "1.9.1"
+androidx-media3 = "1.9.2"
 coil = "3.3.0"
 jellyfin-sdk = "1.7.1"
 nav3Core = "1.0.0"
@@ -80,6 +81,8 @@ auto-service-ksp = { module = "dev.zacsweers.autoservice:auto-service-ksp", vers
 desugar_jdk_libs = { module = "com.android.tools:desugar_jdk_libs", version.ref = "desugar_jdk_libs" }
 hilt-android = { module = "com.google.dagger:hilt-android", version.ref = "hilt" }
 hilt-android-compiler = { module = "com.google.dagger:hilt-android-compiler", version.ref = "hilt" }
+kache = { module = "com.mayakapps.kache:kache", version.ref = "kache" }
+kache-file = { module = "com.mayakapps.kache:file-kache", version.ref = "kache" }
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinxCoroutinesCore" }
 mockk-agent = { module = "io.mockk:mockk-agent", version.ref = "mockk" }
 mockk-android = { module = "io.mockk:mockk-android", version.ref = "mockk" }

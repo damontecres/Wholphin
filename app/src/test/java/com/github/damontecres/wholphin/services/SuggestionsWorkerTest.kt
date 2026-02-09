@@ -78,11 +78,6 @@ class SuggestionsWorkerTest {
             every { homePagePreferences } returns mockk { every { maxItemsPerRow } returns 25 }
         }
 
-    private fun mockQueryResult(items: List<BaseItemDto> = emptyList()) =
-        mockk<org.jellyfin.sdk.api.client.Response<BaseItemDtoQueryResult>>(relaxed = true) {
-            every { content } returns mockk { every { this@mockk.items } returns items }
-        }
-
     @Test
     fun returns_failure_on_invalid_input() =
         runTest {
@@ -137,7 +132,6 @@ class SuggestionsWorkerTest {
 
                 assertEquals(ListenableWorker.Result.success(), result)
                 coVerify { mockCache.put(testUserId, viewId, itemKind, any()) }
-                coVerify { mockCache.save() }
             }
         }
 
@@ -231,3 +225,8 @@ class SuggestionsWorkerTest {
             assertEquals(ListenableWorker.Result.retry(), result)
         }
 }
+
+fun mockQueryResult(items: List<BaseItemDto> = emptyList()) =
+    mockk<org.jellyfin.sdk.api.client.Response<BaseItemDtoQueryResult>>(relaxed = true) {
+        every { content } returns mockk { every { this@mockk.items } returns items }
+    }

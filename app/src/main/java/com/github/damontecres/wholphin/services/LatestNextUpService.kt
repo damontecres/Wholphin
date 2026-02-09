@@ -75,8 +75,11 @@ class LatestNextUpService
             limit: Int,
             enableRewatching: Boolean,
             enableResumable: Boolean,
+            maxDays: Int,
             useSeriesForPrimary: Boolean = true,
         ): List<BaseItem> {
+            val nextUpDateCutoff =
+                maxDays.takeIf { it > 0 }?.let { LocalDateTime.now().minusDays(it.toLong()) }
             val request =
                 GetNextUpRequest(
                     userId = userId,
@@ -87,6 +90,7 @@ class LatestNextUpService
                     enableResumable = enableResumable,
                     enableUserData = true,
                     enableRewatching = enableRewatching,
+                    nextUpDateCutoff = nextUpDateCutoff,
                 )
             val nextUp =
                 api.tvShowsApi
