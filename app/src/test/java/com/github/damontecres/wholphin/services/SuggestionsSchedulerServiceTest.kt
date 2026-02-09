@@ -109,11 +109,11 @@ class SuggestionsSchedulerServiceTest {
             advanceUntilIdle()
 
             verify { mockWorkManager.enqueueUniquePeriodicWork(SuggestionsWorker.WORK_NAME, any(), any()) }
-            assertEquals(30000L, workRequestSlot.captured.workSpec.initialDelay)
+            assertEquals(60000L, workRequestSlot.captured.workSpec.initialDelay)
         }
 
     @Test
-    fun schedules_periodic_work_without_delay_when_cache_not_empty() =
+    fun schedules_periodic_work_with_delay_when_cache_not_empty() =
         runTest {
             val workRequestSlot = slot<PeriodicWorkRequest>()
             every {
@@ -133,6 +133,6 @@ class SuggestionsSchedulerServiceTest {
             advanceUntilIdle()
 
             verify { mockWorkManager.enqueueUniquePeriodicWork(SuggestionsWorker.WORK_NAME, any(), any()) }
-            assertEquals(0L, workRequestSlot.captured.workSpec.initialDelay)
+            assertEquals(60000L, workRequestSlot.captured.workSpec.initialDelay)
         }
 }
