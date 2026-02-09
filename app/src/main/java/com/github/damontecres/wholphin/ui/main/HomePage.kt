@@ -326,7 +326,7 @@ fun HomePageContent(
                                             name = item?.data?.seriesName ?: item?.name,
                                             item = item,
                                             aspectRatio = AspectRatios.TALL,
-                                            cornerText = item?.ui?.episdodeUnplayedCornerText,
+                                            cornerText = item?.ui?.episodeUnplayedCornerText,
                                             played = item?.data?.userData?.played ?: false,
                                             favorite = item?.favorite ?: false,
                                             playPercent =
