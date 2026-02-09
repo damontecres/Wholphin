@@ -404,4 +404,17 @@
     <string name="edge_size">Randgröße</string>
     <string name="resolution_switching">Auflösungswechsel</string>
     <string name="guest_stars">Gaststars</string>
+    <string name="slideshow_at_beginning">Ab Anfang</string>
+    <string name="no_more_images">keine Fotos</string>
+    <string name="rotate_left">Links Rotieren</string>
+    <string name="rotate_right">Rechts Rotieren</string>
+    <string name="red">Rot</string>
+    <string name="green">Grün</string>
+    <string name="blue">Blau</string>
+    <string name="blur">Verschwommen</string>
+    <string name="save_for_album">Speichern für Album</string>
+    <string name="play_slideshow">Diashow abspielen</string>
+    <string name="stop_slideshow">Diashow anhalten</string>
+    <string name="brightness">Helligkeit</string>
+    <string name="contrast">Kontrast</string>
 </resources>
