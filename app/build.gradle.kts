@@ -285,6 +285,8 @@ dependencies {
     ksp(libs.auto.service.ksp)
     implementation(platform(libs.okhttp.bom))
     implementation(libs.okhttp)
+    implementation(libs.kache)
+    implementation(libs.kache.file)
 
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)

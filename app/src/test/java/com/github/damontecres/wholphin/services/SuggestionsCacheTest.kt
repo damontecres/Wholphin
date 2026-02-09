@@ -1,6 +1,7 @@
 package com.github.damontecres.wholphin.services
 
 import android.content.Context
+import com.mayakapps.kache.ObjectKache
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
@@ -28,11 +29,11 @@ class SuggestionsCacheTest {
         return SuggestionsCache(mockContext)
     }
 
-    private fun memoryCacheOf(cache: SuggestionsCache): MutableMap<String, CachedSuggestions> {
+    private fun memoryCacheOf(cache: SuggestionsCache): ObjectKache<String, CachedSuggestions> {
         val field = SuggestionsCache::class.java.getDeclaredField("memoryCache")
         field.isAccessible = true
         @Suppress("UNCHECKED_CAST")
-        return field.get(cache) as MutableMap<String, CachedSuggestions>
+        return field.get(cache) as ObjectKache<String, CachedSuggestions>
     }
 
     @Test
@@ -57,7 +58,6 @@ class SuggestionsCacheTest {
             val libId = UUID.randomUUID()
 
             cache1.put(userId, libId, BaseItemKind.MOVIE, emptyList())
-            cache1.save()
 
             // Create a fresh instance which won't have the memory entry
             val cache2 = testCacheWithTempDir()
@@ -192,7 +192,6 @@ class SuggestionsCacheTest {
             val cache1 = testCacheWithTempDir()
             cache1.put(userId, lib1, BaseItemKind.MOVIE, ids1)
             cache1.put(userId, lib2, BaseItemKind.SERIES, ids2)
-            cache1.save()
 
             // Read with fresh cache instance (empty memory cache, reads from disk)
             val cache2 = testCacheWithTempDir()

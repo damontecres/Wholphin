@@ -132,7 +132,6 @@ class SuggestionsWorkerTest {
 
                 assertEquals(ListenableWorker.Result.success(), result)
                 coVerify { mockCache.put(testUserId, viewId, itemKind, any()) }
-                coVerify { mockCache.save() }
             }
         }
 

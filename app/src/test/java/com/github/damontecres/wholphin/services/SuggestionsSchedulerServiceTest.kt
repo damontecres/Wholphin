@@ -12,7 +12,6 @@ import com.github.damontecres.wholphin.data.CurrentUser
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.JellyfinServer
 import com.github.damontecres.wholphin.data.model.JellyfinUser
-import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
@@ -30,7 +29,6 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import java.util.UUID
-import java.util.concurrent.TimeUnit
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class SuggestionsSchedulerServiceTest {
@@ -65,7 +63,6 @@ class SuggestionsSchedulerServiceTest {
     @Test
     fun schedules_periodic_work_when_user_present() =
         runTest {
-            coEvery { mockCache.isEmpty() } returns false
             createService()
             currentLiveData.value =
                 CurrentUser(
@@ -79,7 +76,6 @@ class SuggestionsSchedulerServiceTest {
     @Test
     fun cancels_work_when_user_null() =
         runTest {
-            coEvery { mockCache.isEmpty() } returns false
             createService()
             currentLiveData.value =
                 CurrentUser(
@@ -95,7 +91,6 @@ class SuggestionsSchedulerServiceTest {
     @Test
     fun schedules_periodic_work_with_delay_when_cache_empty() =
         runTest {
-            coEvery { mockCache.isEmpty() } returns true
             val workRequestSlot = slot<PeriodicWorkRequest>()
             every {
                 mockWorkManager.enqueueUniquePeriodicWork(
@@ -114,13 +109,12 @@ class SuggestionsSchedulerServiceTest {
             advanceUntilIdle()
 
             verify { mockWorkManager.enqueueUniquePeriodicWork(SuggestionsWorker.WORK_NAME, any(), any()) }
-            assertEquals(30000L, workRequestSlot.captured.workSpec.initialDelay)
+            assertEquals(60000L, workRequestSlot.captured.workSpec.initialDelay)
         }
 
     @Test
-    fun schedules_periodic_work_without_delay_when_cache_not_empty() =
+    fun schedules_periodic_work_with_delay_when_cache_not_empty() =
         runTest {
-            coEvery { mockCache.isEmpty() } returns false
             val workRequestSlot = slot<PeriodicWorkRequest>()
             every {
                 mockWorkManager.enqueueUniquePeriodicWork(
@@ -139,6 +133,6 @@ class SuggestionsSchedulerServiceTest {
             advanceUntilIdle()
 
             verify { mockWorkManager.enqueueUniquePeriodicWork(SuggestionsWorker.WORK_NAME, any(), any()) }
-            assertEquals(0L, workRequestSlot.captured.workSpec.initialDelay)
+            assertEquals(60000L, workRequestSlot.captured.workSpec.initialDelay)
         }
 }
