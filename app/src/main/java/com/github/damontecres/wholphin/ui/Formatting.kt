@@ -167,19 +167,19 @@ fun listToDotString(
         strings.forEachIndexed { index, string ->
             append(string)
             if (index != strings.lastIndex) dot()
-            communityRating?.let {
-                dot()
-                append(String.format(Locale.getDefault(), "%.1f", it))
-                appendInlineContent(id = "star")
-            }
-            criticRating?.let {
-                dot()
-                append("${it.toInt()}%")
-                if (it >= 60f) {
-                    appendInlineContent(id = "fresh")
-                } else {
-                    appendInlineContent(id = "rotten")
-                }
+        }
+        communityRating?.let {
+            dot()
+            append(String.format(Locale.getDefault(), "%.1f", it))
+            appendInlineContent(id = "star")
+        }
+        criticRating?.let {
+            dot()
+            append("${it.toInt()}%")
+            if (it >= 60f) {
+                appendInlineContent(id = "fresh")
+            } else {
+                appendInlineContent(id = "rotten")
             }
         }
     }
