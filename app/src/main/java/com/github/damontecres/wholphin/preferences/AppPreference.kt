@@ -186,6 +186,45 @@ sealed interface AppPreference<Pref, T> {
                 summarizer = { value -> value?.toString() },
             )
 
+        private val MaxDaysNextUpOptions = listOf(7, 14, 30, 60, 90, 180, 365)
+        val MaxDaysNextUp =
+            AppSliderPreference<AppPreferences>(
+                title = R.string.max_days_next_up,
+                defaultValue = MaxDaysNextUpOptions.lastIndex + 1L,
+                min = 0,
+                // Max is "no limit" stored as -1
+                max = MaxDaysNextUpOptions.lastIndex + 1L,
+                interval = 1,
+                getter = {
+                    MaxDaysNextUpOptions
+                        .indexOf(it.homePagePreferences.maxDaysNextUp)
+                        .takeIf { it in MaxDaysNextUpOptions.indices }
+                        ?.toLong()
+                        ?: MaxDaysNextUpOptions.size.toLong()
+                },
+                setter = { prefs, index ->
+                    prefs.updateHomePagePreferences {
+                        maxDaysNextUp = MaxDaysNextUpOptions.getOrNull(index.toInt()) ?: -1
+                    }
+                },
+                summarizer = { value ->
+                    if (value != null) {
+                        val v = MaxDaysNextUpOptions.getOrNull(value.toInt()) ?: -1
+                        if (v == -1) {
+                            WholphinApplication.instance.getString(R.string.no_limit)
+                        } else {
+                            WholphinApplication.instance.resources.getQuantityString(
+                                R.plurals.days,
+                                v,
+                                v.toString(),
+                            )
+                        }
+                    } else {
+                        null
+                    }
+                },
+            )
+
         val CombineContinueNext =
             AppSwitchPreference<AppPreferences>(
                 title = R.string.combine_continue_next,
@@ -956,6 +995,7 @@ val basicPreferences =
                     AppPreference.HomePageItems,
                     AppPreference.CombineContinueNext,
                     AppPreference.RewatchNextUp,
+                    AppPreference.MaxDaysNextUp,
                     AppPreference.PlayThemeMusic,
                     AppPreference.RememberSelectedTab,
                     AppPreference.SubtitleStyle,
