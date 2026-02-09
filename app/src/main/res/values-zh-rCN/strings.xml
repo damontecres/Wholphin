@@ -231,10 +231,10 @@
     <string name="send_crash_reports_summary">将尝试发送到最后连接的服务器</string>
     <string name="send_crash_reports">发送崩溃报告</string>
     <string name="settings">设置</string>
-    <string name="skip_back_on_resume_preference">恢复播放时快退</string>
-    <string name="skip_back_preference">快退</string>
+    <string name="skip_back_on_resume_preference">恢复播放时自动向后跳过</string>
+    <string name="skip_back_preference">向后跳过</string>
     <string name="skip_commercials_behavior">跳过广告方式</string>
-    <string name="skip_forward_preference">快进</string>
+    <string name="skip_forward_preference">向前跳过</string>
     <string name="skip_intro_behavior">跳过片头方式</string>
     <string name="skip_outro_behavior">跳过片尾方式</string>
     <string name="skip_previews_behavior">跳过预览方式</string>
@@ -411,4 +411,5 @@
     <string name="zoom_out">缩小</string>
     <string name="slideshow_duration">幻灯片时长</string>
     <string name="play_videos_during_slideshow">幻灯片播放期间播放视频</string>
+    <string name="send_media_info_log_to_server">将媒体信息日志发送到服务器</string>
 </resources>
