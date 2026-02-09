@@ -148,6 +148,7 @@ class PlaybackKeyHandler(
                 }
             } else {
                 // When controller is visible, its buttons will handle pulsing
+                result = false
             }
         } else if (isMedia(it)) {
             when (it.key) {
