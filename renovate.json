@@ -6,26 +6,26 @@
   "packageRules": [
     {
       "groupName": "Kotlin",
-      "matchPackagePatterns": [
-        "org.jetbrains.kotlin.*"
+      "matchPackageNames": [
+        "org.jetbrains.kotlin"
       ]
     },
     {
       "groupName": "Androidx Media3",
-      "matchPackagePatterns": [
-        "androidx.media3.*"
+      "matchPackageNames": [
+        "androidx.media3"
       ]
     },
     {
       "groupName": "Jellyfin SDK",
-      "matchPackagePatterns": [
-        "org.jellyfin.sdk.*"
+      "matchPackageNames": [
+        "org.jellyfin.sdk"
       ]
     },
     {
       "groupName": "AGP",
-      "matchPackagePatterns": [
-        "com.android.application.*"
+      "matchPackageNames": [
+        "com.android.application"
       ]
     },
     {
@@ -34,7 +34,7 @@
     },
     {
       "groupName": "Dependencies",
-      "matchPackagePatterns": [
+      "matchPackageNames": [
         "*"
       ]
     }
