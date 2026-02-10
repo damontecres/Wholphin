@@ -26,6 +26,7 @@ import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.toJavaDuration
+import kotlin.random.Random
 
 @ActivityScoped
 class SuggestionsSchedulerService
@@ -43,6 +44,7 @@ class SuggestionsSchedulerService
 
         // Exposed for testing
         internal var dispatcher: CoroutineDispatcher = Dispatchers.IO
+        internal var initialDelaySecondsProvider: () -> Long = { 60L + Random.nextLong(0L, 121L) }
 
         init {
             serverRepository.current.observe(activity) { user ->
@@ -105,9 +107,11 @@ class SuggestionsSchedulerService
                         15.minutes.toJavaDuration(),
                     ).setInputData(inputData)
                     .addTag("user:$userId")
-                    .setInitialDelay(60.seconds.toJavaDuration())
 
-            Timber.i("Scheduling periodic SuggestionsWorker with 60s delay")
+            val initialDelaySeconds = initialDelaySecondsProvider().coerceIn(60L, 180L)
+            periodicWorkRequestBuilder.setInitialDelay(initialDelaySeconds.seconds.toJavaDuration())
+
+            Timber.i("Scheduling periodic SuggestionsWorker with ${initialDelaySeconds}s delay")
 
             workManager.enqueueUniquePeriodicWork(
                 uniqueWorkName = SuggestionsWorker.WORK_NAME,

@@ -57,7 +57,10 @@ class SuggestionsSchedulerServiceTest {
             context = mockActivity,
             serverRepository = mockServerRepository,
             workManager = mockWorkManager,
-        ).also { it.dispatcher = testDispatcher }
+        ).also {
+            it.dispatcher = testDispatcher
+            it.initialDelaySecondsProvider = { 60L }
+        }
 
     private fun mockWorkInfos(infos: List<androidx.work.WorkInfo>) {
         @Suppress("UNCHECKED_CAST")
