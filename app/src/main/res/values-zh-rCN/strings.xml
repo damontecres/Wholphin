@@ -412,4 +412,9 @@
     <string name="slideshow_duration">幻灯片时长</string>
     <string name="play_videos_during_slideshow">幻灯片播放期间播放视频</string>
     <string name="send_media_info_log_to_server">将媒体信息日志发送到服务器</string>
+    <plurals name="days">
+        <item quantity="other">%s 天</item>
+    </plurals>
+    <string name="no_limit">无限制</string>
+    <string name="max_days_next_up">即将播放中的最大天数</string>
 </resources>
