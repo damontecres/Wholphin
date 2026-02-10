@@ -436,4 +436,11 @@
     <string name="zoom_out">Uzaklaştır</string>
     <string name="slideshow_duration">Slayt Gösterisi Süresi</string>
     <string name="play_videos_during_slideshow">Slayt gösterisi sırasında videoları oynat</string>
+    <plurals name="days">
+        <item quantity="one">%s gün</item>
+        <item quantity="other">%s günler</item>
+    </plurals>
+    <string name="send_media_info_log_to_server">Medya bilgisini sunucuya gönder</string>
+    <string name="no_limit">Sınırsız</string>
+    <string name="max_days_next_up">Sıradaki bölümlerde kalacağı gün sayısı</string>
 </resources>
