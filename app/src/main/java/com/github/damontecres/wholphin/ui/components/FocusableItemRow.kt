@@ -1,8 +1,6 @@
 package com.github.damontecres.wholphin.ui.components
 
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -16,7 +14,6 @@ import androidx.compose.runtime.NonRestartableComposable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.tv.material3.MaterialTheme
@@ -59,8 +56,6 @@ fun FocusableItemRow(
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val focused by interactionSource.collectIsFocusedAsState()
-    val padding by animateDpAsState(if (focused) 8.dp else 0.dp)
-    val scale by animateFloatAsState(if (focused) 1.1f else 1f)
     val background by animateColorAsState(
         if (focused) {
             MaterialTheme.colorScheme.border.copy(alpha = .25f)
@@ -74,9 +69,8 @@ fun FocusableItemRow(
             modifier
                 .padding(start = 8.dp)
                 .focusable(interactionSource = interactionSource)
-                .scale(scale)
                 .background(background, shape = RoundedCornerShape(8.dp))
-                .padding(padding),
+                .padding(8.dp),
     ) {
         titleContent.invoke()
         subtitleContent.invoke()

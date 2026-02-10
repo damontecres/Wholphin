@@ -392,6 +392,7 @@ class HomeSettingsViewModel
                     try {
                         Timber.d("saveToRemote")
                         homeSettingsService.saveToServer(user.id, settings)
+                        showSaveToast()
                     } catch (ex: Exception) {
                         Timber.e(ex)
                         showToast(context, "Error saving: ${ex.localizedMessage}")
@@ -471,12 +472,12 @@ class HomeSettingsViewModel
                         // Only save if there are changes
                         if (local != settings) {
                             homeSettingsService.saveToLocal(user.id, settings)
-                            showToast(context, context.getString(R.string.save), Toast.LENGTH_SHORT)
+                            showSaveToast()
                         }
                     } catch (ex: UnsupportedHomeSettingsVersionException) {
                         Timber.w(ex, "Overwriting local settings")
                         homeSettingsService.saveToLocal(user.id, settings)
-                        showToast(context, context.getString(R.string.save), Toast.LENGTH_SHORT)
+                        showSaveToast()
                     } catch (ex: Exception) {
                         Timber.e(ex)
                         showToast(context, "Error saving: ${ex.localizedMessage}")
@@ -526,6 +527,13 @@ class HomeSettingsViewModel
                 fetchRowData()
             }
         }
+
+        private suspend fun showSaveToast() =
+            showToast(
+                context,
+                context.getString(R.string.settings_saved),
+                Toast.LENGTH_SHORT,
+            )
     }
 
 data class HomePageSettingsState(

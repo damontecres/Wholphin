@@ -512,6 +512,7 @@
     <string name="increase_all_cards_size">Increase size for all cards</string>
     <string name="decrease_all_cards_size">Decrease size for all cards</string>
     <string name="use_thumb_images">Use thumb images</string>
+    <string name="settings_saved">Settings saved</string>
 
     <string-array name="theme_song_volume">
         <item>Disabled</item>
