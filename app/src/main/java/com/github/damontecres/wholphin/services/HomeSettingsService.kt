@@ -6,6 +6,7 @@ import com.github.damontecres.wholphin.data.NavDrawerItemRepository
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.HomePageSettings
 import com.github.damontecres.wholphin.data.model.HomeRowConfig
+import com.github.damontecres.wholphin.data.model.SUPPORTED_HOME_PAGE_SETTINGS_VERSION
 import com.github.damontecres.wholphin.preferences.DefaultUserConfiguration
 import com.github.damontecres.wholphin.preferences.HomePagePreferences
 import com.github.damontecres.wholphin.ui.DefaultItemFields
@@ -30,8 +31,10 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.decodeFromJsonElement
 import kotlinx.serialization.json.encodeToStream
+import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.displayPreferencesApi
 import org.jellyfin.sdk.api.client.extensions.liveTvApi
@@ -174,6 +177,10 @@ class HomeSettingsService
          * This is public only for testing
          */
         fun decode(element: JsonElement): HomePageSettings {
+            val version = element.jsonObject["version"]?.jsonPrimitive?.intOrNull
+            if (version == null || version > SUPPORTED_HOME_PAGE_SETTINGS_VERSION) {
+                throw UnsupportedHomeSettingsVersionException(version)
+            }
             val rowsElement = element.jsonObject["rows"]?.jsonArray
             val rows =
                 rowsElement
@@ -186,7 +193,7 @@ class HomeSettingsService
                             null
                         }
                     }.orEmpty()
-            return HomePageSettings(rows)
+            return HomePageSettings(rows, version)
         }
 
         /**
@@ -928,3 +935,8 @@ enum class HomeSectionType(
         fun fromString(homeKey: String?) = homeKey?.let { entries.firstOrNull { it.serialName == homeKey } }
     }
 }
+
+class UnsupportedHomeSettingsVersionException(
+    val unsupportedVersion: Int?,
+    val maxSupportedVersion: Int = SUPPORTED_HOME_PAGE_SETTINGS_VERSION,
+) : Exception("Unsupported version $unsupportedVersion, max supported is $maxSupportedVersion")

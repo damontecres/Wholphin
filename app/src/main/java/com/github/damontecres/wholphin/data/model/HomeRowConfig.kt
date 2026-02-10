@@ -181,10 +181,10 @@ sealed interface HomeRowConfig {
 @SerialName("HomePageSettings")
 data class HomePageSettings(
     val rows: List<HomeRowConfig>,
-    val version: Int = SUPPORTED_HOME_PAGE_SETTINGS_VERSION,
+    val version: Int,
 ) {
     companion object {
-        val EMPTY = HomePageSettings(listOf())
+        val EMPTY = HomePageSettings(listOf(), SUPPORTED_HOME_PAGE_SETTINGS_VERSION)
     }
 }
 

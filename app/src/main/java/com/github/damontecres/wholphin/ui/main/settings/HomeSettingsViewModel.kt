@@ -20,12 +20,14 @@ import com.github.damontecres.wholphin.data.model.HomeRowConfig.RecentlyAdded
 import com.github.damontecres.wholphin.data.model.HomeRowConfig.RecentlyReleased
 import com.github.damontecres.wholphin.data.model.HomeRowConfig.Suggestions
 import com.github.damontecres.wholphin.data.model.HomeRowViewOptions
+import com.github.damontecres.wholphin.data.model.SUPPORTED_HOME_PAGE_SETTINGS_VERSION
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.HomePageResolvedSettings
 import com.github.damontecres.wholphin.services.HomeRowConfigDisplay
 import com.github.damontecres.wholphin.services.HomeSettingsService
 import com.github.damontecres.wholphin.services.SeerrServerRepository
+import com.github.damontecres.wholphin.services.UnsupportedHomeSettingsVersionException
 import com.github.damontecres.wholphin.services.UserPreferencesService
 import com.github.damontecres.wholphin.services.hilt.IoCoroutineScope
 import com.github.damontecres.wholphin.ui.launchIO
@@ -385,7 +387,8 @@ class HomeSettingsViewModel
                 serverRepository.currentUser.value?.let { user ->
                     Timber.d("Saving home settings to remote")
                     val rows = state.value.rows.map { it.config }
-                    val settings = HomePageSettings(rows = rows)
+                    val settings =
+                        HomePageSettings(rows = rows, SUPPORTED_HOME_PAGE_SETTINGS_VERSION)
                     try {
                         Timber.d("saveToRemote")
                         homeSettingsService.saveToServer(user.id, settings)
@@ -418,6 +421,10 @@ class HomeSettingsViewModel
                             showToast(context, "No server-side settings found")
                         }
                         fetchRowData()
+                    } catch (ex: UnsupportedHomeSettingsVersionException) {
+                        // TODO
+                        Timber.w(ex)
+                        showToast(context, "Error: ${ex.localizedMessage}")
                     } catch (ex: Exception) {
                         Timber.e(ex)
                         showToast(context, "Error: ${ex.localizedMessage}")
@@ -456,7 +463,8 @@ class HomeSettingsViewModel
             ioScope.launchIO {
                 serverRepository.currentUser.value?.let { user ->
                     val rows = state.value.rows.map { it.config }
-                    val settings = HomePageSettings(rows = rows)
+                    val settings =
+                        HomePageSettings(rows = rows, SUPPORTED_HOME_PAGE_SETTINGS_VERSION)
                     try {
                         Timber.d("saveToLocal")
                         val local = homeSettingsService.loadFromLocal(user.id)
@@ -465,6 +473,10 @@ class HomeSettingsViewModel
                             homeSettingsService.saveToLocal(user.id, settings)
                             showToast(context, context.getString(R.string.save), Toast.LENGTH_SHORT)
                         }
+                    } catch (ex: UnsupportedHomeSettingsVersionException) {
+                        Timber.w(ex, "Overwriting local settings")
+                        homeSettingsService.saveToLocal(user.id, settings)
+                        showToast(context, context.getString(R.string.save), Toast.LENGTH_SHORT)
                     } catch (ex: Exception) {
                         Timber.e(ex)
                         showToast(context, "Error saving: ${ex.localizedMessage}")
