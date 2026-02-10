@@ -104,9 +104,9 @@ class SuggestionsSchedulerService
                         15.minutes.toJavaDuration(),
                     ).setInputData(inputData)
                     .addTag("user:$userId")
-                    .setInitialDelay(30.seconds.toJavaDuration())
+                    .setInitialDelay(60.seconds.toJavaDuration())
 
-            Timber.i("Scheduling periodic SuggestionsWorker with 30s delay")
+            Timber.i("Scheduling periodic SuggestionsWorker with 60s delay")
 
             workManager.enqueueUniquePeriodicWork(
                 uniqueWorkName = SuggestionsWorker.WORK_NAME,

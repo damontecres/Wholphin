@@ -118,7 +118,7 @@ class SuggestionsSchedulerServiceTest {
             advanceUntilIdle()
 
             verify { mockWorkManager.enqueueUniquePeriodicWork(SuggestionsWorker.WORK_NAME, any(), any()) }
-            assertEquals(30000L, workRequestSlot.captured.workSpec.initialDelay)
+            assertEquals(60000L, workRequestSlot.captured.workSpec.initialDelay)
         }
 
     @Test
@@ -143,7 +143,7 @@ class SuggestionsSchedulerServiceTest {
             advanceUntilIdle()
 
             verify { mockWorkManager.enqueueUniquePeriodicWork(SuggestionsWorker.WORK_NAME, any(), any()) }
-            assertEquals(30000L, workRequestSlot.captured.workSpec.initialDelay)
+            assertEquals(60000L, workRequestSlot.captured.workSpec.initialDelay)
         }
 
     @Test
