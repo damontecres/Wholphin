@@ -102,11 +102,17 @@ class SuggestionsWorker
                                                 itemsPerRow,
                                             )
                                         ensureActive()
+                                        val newIds = suggestions.map { it.id }
+                                        val cachedIds = cache.get(userId, view.id, itemKind)?.ids
+                                        if (cachedIds == newIds) {
+                                            Timber.v("Suggestions unchanged for view %s, skipping cache write", view.id)
+                                            return@runCatching
+                                        }
                                         cache.put(
                                             userId,
                                             view.id,
                                             itemKind,
-                                            suggestions.map { it.id },
+                                            newIds,
                                         )
                                     }.onFailure { e ->
                                         Timber.e(
