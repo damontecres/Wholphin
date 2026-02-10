@@ -28,7 +28,7 @@
     {
       "groupName": "AGP",
       "matchPackageNames": [
-        "com.android.application:**"
+        "com.android.application**"
       ]
     },
     {
