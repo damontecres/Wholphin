@@ -23,7 +23,7 @@
     <string name="confirm">确认</string>
     <string name="continue_watching">继续观看</string>
     <string name="critic_rating">影评人评分</string>
-    <string name="decimal_seconds">%.1f 秒</string>
+    <string name="decimal_seconds">%.2f 秒</string>
     <string name="default_track">默认</string>
     <string name="delete">删除</string>
     <string name="died">去世</string>
@@ -231,10 +231,10 @@
     <string name="send_crash_reports_summary">将尝试发送到最后连接的服务器</string>
     <string name="send_crash_reports">发送崩溃报告</string>
     <string name="settings">设置</string>
-    <string name="skip_back_on_resume_preference">恢复播放时快退</string>
-    <string name="skip_back_preference">快退</string>
+    <string name="skip_back_on_resume_preference">恢复播放时自动向后跳过</string>
+    <string name="skip_back_preference">向后跳过</string>
     <string name="skip_commercials_behavior">跳过广告方式</string>
-    <string name="skip_forward_preference">快进</string>
+    <string name="skip_forward_preference">向前跳过</string>
     <string name="skip_intro_behavior">跳过片头方式</string>
     <string name="skip_outro_behavior">跳过片尾方式</string>
     <string name="skip_previews_behavior">跳过预览方式</string>
@@ -390,4 +390,31 @@
     <string name="retry">重试</string>
     <string name="software_decoding_av1">AV1 软件解码</string>
     <string name="upgrade_mpv_toast">除 HDR 视频外，mpv 现在是默认播放器。\n您可以在设置中更改此设置。</string>
+    <string name="hdr_subtitle_style">HDR 字幕样式</string>
+    <string name="image_subtitle_opacity">图像字幕不透明度</string>
+    <string name="brightness">亮度</string>
+    <string name="contrast">对比度</string>
+    <string name="saturation">饱和度</string>
+    <string name="hue">色调</string>
+    <string name="red">红色</string>
+    <string name="green">绿色</string>
+    <string name="blue">蓝色</string>
+    <string name="blur">模糊</string>
+    <string name="save_for_album">保存到相册</string>
+    <string name="play_slideshow">播放幻灯片</string>
+    <string name="stop_slideshow">停止幻灯片</string>
+    <string name="slideshow_at_beginning">回到开头</string>
+    <string name="no_more_images">没有更多照片</string>
+    <string name="rotate_left">向左旋转</string>
+    <string name="rotate_right">向右旋转</string>
+    <string name="zoom_in">放大</string>
+    <string name="zoom_out">缩小</string>
+    <string name="slideshow_duration">幻灯片时长</string>
+    <string name="play_videos_during_slideshow">幻灯片播放期间播放视频</string>
+    <string name="send_media_info_log_to_server">将媒体信息日志发送到服务器</string>
+    <plurals name="days">
+        <item quantity="other">%s 天</item>
+    </plurals>
+    <string name="no_limit">无限制</string>
+    <string name="max_days_next_up">即将播放中的最大天数</string>
 </resources>

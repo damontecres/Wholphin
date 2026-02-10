@@ -104,7 +104,7 @@
     <string name="tv_guide">Guida TV</string>
     <string name="show">Mostra</string>
     <string name="searching">Ricerca in corso…</string>
-    <string name="decimal_seconds">%.1f secondi</string>
+    <string name="decimal_seconds">%.2f secondi</string>
     <string name="commercial">Commerciale</string>
     <string name="community_rating">Valutazione community</string>
     <string name="critic_rating">Valutazione della critica</string>
@@ -422,4 +422,26 @@
     <string name="voice_error_timeout">Riconoscimento vocale scaduto</string>
     <string name="software_decoding_av1">Decodifica software AV1</string>
     <string name="upgrade_mpv_toast">MPV è ora il lettore predefinito, eccetto per i contenuti HDR.\nPuoi modificarlo nelle impostazioni.</string>
+    <string name="hdr_subtitle_style">Stile sottotitoli HDR</string>
+    <string name="image_subtitle_opacity">Opacità sottotitoli immagine</string>
+    <string name="brightness">Luminosità</string>
+    <string name="contrast">Contrasto</string>
+    <string name="saturation">Saturazione</string>
+    <string name="hue">Tinta</string>
+    <string name="red">Rosso</string>
+    <string name="green">Verde</string>
+    <string name="blue">Blu</string>
+    <string name="blur">Sfocatura</string>
+    <string name="save_for_album">Salva per l\'album</string>
+    <string name="play_slideshow">Riproduci slideshow</string>
+    <string name="stop_slideshow">Ferma slideshow</string>
+    <string name="slideshow_at_beginning">Dall\'inizio</string>
+    <string name="no_more_images">Nessun\'altra foto</string>
+    <string name="rotate_left">Ruota a sinistra</string>
+    <string name="rotate_right">Ruota a destra</string>
+    <string name="zoom_in">Ingrandisci</string>
+    <string name="zoom_out">Rimpicciolisci</string>
+    <string name="slideshow_duration">Durata slideshow</string>
+    <string name="play_videos_during_slideshow">Riproduci video durante lo slideshow</string>
+    <string name="send_media_info_log_to_server">Invia log informazioni media al server</string>
 </resources>

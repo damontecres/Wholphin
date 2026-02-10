@@ -23,7 +23,7 @@
     <string name="confirm">Підтвердити</string>
     <string name="continue_watching">Продовжити перегляд</string>
     <string name="critic_rating">Оцінка критиків</string>
-    <string name="decimal_seconds">%.1fсекунд</string>
+    <string name="decimal_seconds">%.1f секунд</string>
     <string name="default_track">За замовчуванням</string>
     <string name="delete">Видалити</string>
     <string name="died">Помер</string>
@@ -453,4 +453,25 @@
     <string name="request_4k">Запит в 4К</string>
     <string name="software_decoding_av1">Програмне декодування AV1</string>
     <string name="upgrade_mpv_toast">MPV тепер є плеєром за замовчуванням, за винятком для HDR.\nВи можете змінити це в налаштуваннях.</string>
+    <string name="hdr_subtitle_style">HDR субтитри</string>
+    <string name="image_subtitle_opacity">Прозорість зображення заголовку</string>
+    <string name="brightness">Яскравість</string>
+    <string name="contrast">Контрастність</string>
+    <string name="saturation">Насичення</string>
+    <string name="hue">Відтінок</string>
+    <string name="red">Червоний</string>
+    <string name="green">Зелений</string>
+    <string name="blue">Синій</string>
+    <string name="blur">Розмиття</string>
+    <string name="save_for_album">Зберегти до альбому</string>
+    <string name="play_slideshow">Відтворити слайд-шоу</string>
+    <string name="stop_slideshow">Зупинити слайд-шоу</string>
+    <string name="slideshow_at_beginning">На початок</string>
+    <string name="no_more_images">Фото більше немає</string>
+    <string name="rotate_left">Повернути ліворуч</string>
+    <string name="rotate_right">Повернути праворуч</string>
+    <string name="zoom_in">Збільшити</string>
+    <string name="zoom_out">Зменшити</string>
+    <string name="slideshow_duration">Тривалість слайд-шоу</string>
+    <string name="play_videos_during_slideshow">Відтворення відео під час слайд-шоу</string>
 </resources>
