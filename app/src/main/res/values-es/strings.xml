@@ -65,8 +65,8 @@
     <string name="switch_user">Cambiar</string>
     <string name="trailer">Tráiler</string>
     <plurals name="trailers">
-        <item quantity="one">TráilerTráilers</item>
-        <item quantity="many"/>
+        <item quantity="one">Tráiler</item>
+        <item quantity="many">Tráilers</item>
         <item quantity="other"/>
     </plurals>
     <string name="tv_shows">Series</string>
@@ -85,8 +85,8 @@
     <string name="runtime_sort">Duración</string>
     <string name="extras">Extras</string>
     <plurals name="other_extras">
-        <item quantity="one">OtroOtros</item>
-        <item quantity="many"/>
+        <item quantity="one">Otro</item>
+        <item quantity="many">Otros</item>
         <item quantity="other"/>
     </plurals>
     <string name="advanced_settings">Configuración avanzada</string>
@@ -164,13 +164,13 @@
     <string name="aired_episode_order">Orden de emisión</string>
     <string name="italic_font">Cursiva</string>
     <plurals name="behind_the_scenes">
-        <item quantity="one">Detrás de cámarasDetrás de cámaras</item>
+        <item quantity="one">Detrás de cámaras</item>
         <item quantity="many"/>
         <item quantity="other"/>
     </plurals>
     <plurals name="theme_songs">
-        <item quantity="one">Canción principalCanciones principales</item>
-        <item quantity="many"/>
+        <item quantity="one">Canción principal</item>
+        <item quantity="many">Canciones principales</item>
         <item quantity="other"/>
     </plurals>
     <plurals name="theme_videos">
@@ -179,28 +179,28 @@
         <item quantity="other"/>
     </plurals>
     <plurals name="clips">
-        <item quantity="one">ClipClips</item>
-        <item quantity="many"/>
+        <item quantity="one">Clip</item>
+        <item quantity="many">Clips</item>
         <item quantity="other"/>
     </plurals>
     <plurals name="deleted_scenes">
-        <item quantity="one">Escena eliminadaEscenas eliminadas</item>
-        <item quantity="many"/>
+        <item quantity="one">Escena eliminada</item>
+        <item quantity="many">Escenas eliminadas</item>
         <item quantity="other"/>
     </plurals>
     <plurals name="interviews">
-        <item quantity="one">EntrevistaEntrevistas</item>
-        <item quantity="many"/>
+        <item quantity="one">Entrevista</item>
+        <item quantity="many">Entrevistas</item>
         <item quantity="other"/>
     </plurals>
     <plurals name="scenes">
-        <item quantity="one">EscenaEscenas</item>
-        <item quantity="many"/>
+        <item quantity="one">Escena</item>
+        <item quantity="many">Escenas</item>
         <item quantity="other"/>
     </plurals>
     <plurals name="samples">
-        <item quantity="one">MuestraMuestras</item>
-        <item quantity="many"/>
+        <item quantity="one">Muestra</item>
+        <item quantity="many">Muestras</item>
         <item quantity="other"/>
     </plurals>
     <plurals name="featurettes">
