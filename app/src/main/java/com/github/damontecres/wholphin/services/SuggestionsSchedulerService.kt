@@ -98,6 +98,7 @@ class SuggestionsSchedulerService
             val periodicWorkRequestBuilder =
                 PeriodicWorkRequestBuilder<SuggestionsWorker>(
                     repeatInterval = 12.hours.toJavaDuration(),
+                    flexTimeInterval = 1.hours.toJavaDuration(),
                 ).setConstraints(constraints)
                     .setBackoffCriteria(
                         BackoffPolicy.EXPONENTIAL,
