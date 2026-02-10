@@ -92,12 +92,16 @@ data class BaseItem(
             episodeCornerText =
                 data.indexNumber?.let { "E$it" }
                     ?: data.premiereDate?.let(::formatDateTime),
-            episdodeUnplayedCornerText =
-                data.indexNumber?.let { "E$it" }
-                    ?: data.userData
-                        ?.unplayedItemCount
-                        ?.takeIf { it > 0 }
-                        ?.let { abbreviateNumber(it) },
+            episodeUnplayedCornerText =
+                if (type == BaseItemKind.SERIES || type == BaseItemKind.SEASON || type == BaseItemKind.BOX_SET) {
+                    data.indexNumber?.let { "E$it" }
+                        ?: data.userData
+                            ?.unplayedItemCount
+                            ?.takeIf { it > 0 }
+                            ?.let { abbreviateNumber(it) }
+                } else {
+                    null
+                },
             quickDetails =
                 buildAnnotatedString {
                     val details =
@@ -208,6 +212,6 @@ val BaseItemDto.aspectRatioFloat: Float? get() = width?.let { w -> height?.let {
 @Immutable
 data class BaseItemUi(
     val episodeCornerText: String?,
-    val episdodeUnplayedCornerText: String?,
+    val episodeUnplayedCornerText: String?,
     val quickDetails: AnnotatedString,
 )

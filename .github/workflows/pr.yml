@@ -16,13 +16,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout the code
-      uses: actions/checkout@v5
+      uses: actions/checkout@v6
       with:
         fetch-depth: 0 # Need the tags to build
     - name: Setup Python
       uses: actions/setup-python@v6
       with:
-        python-version: '3.12'
+        python-version: '3.14'
     - name: Run pre-commit
       uses: pre-commit/action@v3.0.1
 
@@ -31,7 +31,7 @@ jobs:
     needs: pre-commit
     steps:
       - name: Checkout the code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0 # Need the tags to build
       - name: Setup
@@ -49,13 +49,13 @@ jobs:
       - name: Tar build dirs
         run: |
           tar -czf build.tgz ./app/.
-      - uses: actions/upload-artifact@v5
+      - uses: actions/upload-artifact@v6
         id: upload-build-dirs
         with:
           name: "${{ env.BUILD_DIRS_ARTIFACT }}"
           path: build.tgz
           if-no-files-found: error
-      - uses: actions/upload-artifact@v5
+      - uses: actions/upload-artifact@v6
         with:
           name: APKs
           path: "${{ steps.buildapp.outputs.apks }}"

@@ -65,7 +65,7 @@ fun DiscoverMovieDetailsHeader(
         ) {
             val padding = 4.dp
             val details =
-                remember(movie) {
+                remember(movie, rating) {
                     buildList {
                         movie.releaseDate?.let(::add)
                         movie.runtime
@@ -89,6 +89,7 @@ fun DiscoverMovieDetailsHeader(
                             ?.releaseDates
                             ?.firstOrNull()
                             ?.certification
+                            ?.takeIf { it.isNotNullOrBlank() }
                             ?.let(::add)
                     }.let {
                         listToDotString(
