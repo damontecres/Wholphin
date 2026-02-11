@@ -19,6 +19,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -29,6 +30,7 @@ import androidx.compose.ui.focus.FocusState
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
@@ -59,6 +61,7 @@ import com.github.damontecres.wholphin.ui.components.OverviewText
 import com.github.damontecres.wholphin.ui.components.QuickDetails
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.letNotEmpty
+import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.util.ApiRequestPager
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.GetItemsRequestHandler
@@ -68,6 +71,7 @@ import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -165,6 +169,17 @@ class AlbumViewModel
             }
         }
 
+        fun setFavorite(favorite: Boolean) =
+            viewModelScope.launch(ExceptionHandler() + Dispatchers.IO) {
+                favoriteWatchManager.setFavorite(itemId, favorite)
+                val album =
+                    api.userLibraryApi
+                        .getItem(itemId = itemId)
+                        .content
+                        .let { BaseItem(it, false) }
+                _state.update { it.copy(album = album) }
+            }
+
         fun play(
             shuffled: Boolean,
             startIndex: Int = 0,
@@ -178,6 +193,14 @@ class AlbumViewModel
                             songs.getBlocking(idx)
                         }
                 musicService.setQueue(songsToAdd, shuffled)
+            }
+        }
+
+        fun startInstantMix() {
+            viewModelScope.launchIO {
+                Timber.v("Starting instant mix for %s", itemId)
+                musicService.startInstantMix(itemId)
+                navigationManager.navigateTo(Destination.NowPlaying)
             }
         }
     }
@@ -194,7 +217,7 @@ data class AlbumState(
 }
 
 @Composable
-fun AlbumDetails(
+fun AlbumDetailsPage(
     itemId: UUID,
     modifier: Modifier = Modifier,
     viewModel: AlbumViewModel =
@@ -217,6 +240,9 @@ fun AlbumDetails(
         }
 
         LoadingState.Success -> {
+            val album = state.album!!
+            val focusRequester = remember { FocusRequester() }
+            LaunchedEffect(Unit) { focusRequester.requestFocus() }
             val bringIntoViewRequester = remember { BringIntoViewRequester() }
             Box(modifier = modifier) {
                 LazyColumn(
@@ -233,24 +259,37 @@ fun AlbumDetails(
                                     .padding(bottom = 32.dp),
                         ) {
                             AlbumHeader(
-                                album = state.album!!,
+                                album = album,
                                 imageUrl = state.imageUrl,
                                 overviewOnClick = {},
                                 bringIntoViewRequester = bringIntoViewRequester,
                                 modifier = Modifier.fillMaxWidth(),
                             )
-                            AlbumButtons(
-                                onClickPlay = { viewModel.play(it, 0) },
-                                onClickAddToPlaylist = {},
-                                onClickGoToArtist = {},
-                                onClickMore = { },
-                                buttonOnFocusChanged = {},
-                                modifier =
-                                    Modifier.onFocusChanged {
-                                        if (it.hasFocus) scope.launch { bringIntoViewRequester.bringIntoView() }
+                            MusicExpandableButtons(
+                                actions =
+                                    remember {
+                                        MusicButtonActions(
+                                            onClickPlay = { viewModel.play(it, 0) },
+                                            onClickInstantMix = viewModel::startInstantMix,
+                                            onClickFavorite = { viewModel.setFavorite(!album.favorite) },
+                                            onClickMore = {
+                                                // TODO
+                                            },
+                                        )
                                     },
+                                favorite = album.favorite,
+                                modifier =
+                                    Modifier
+                                        .onFocusChanged {
+                                            if (it.hasFocus) scope.launch { bringIntoViewRequester.bringIntoView() }
+                                        }.focusRequester(focusRequester),
                             )
                         }
+                    }
+                    item {
+                        Text(
+                            text = stringResource(R.string.songs),
+                        )
                     }
                     itemsIndexed(state.songs) { index, song ->
                         SongListItem(

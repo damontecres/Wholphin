@@ -497,6 +497,7 @@
     <string name="songs">Songs</string>
     <string name="go_to_artist">Go to artist</string>
     <string name="now_playing">Now playing</string>
+    <string name="instant_mix">Instant mix</string>
 
     <string-array name="theme_song_volume">
         <item>Disabled</item>

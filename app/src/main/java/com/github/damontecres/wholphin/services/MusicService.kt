@@ -4,13 +4,16 @@ import android.content.Context
 import androidx.annotation.OptIn
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
+import androidx.media3.common.Timeline
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.okhttp.OkHttpDataSource
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
+import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.AudioItem
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.services.hilt.AuthOkHttpClient
+import com.github.damontecres.wholphin.ui.DefaultItemFields
 import com.github.damontecres.wholphin.ui.toServerString
 import com.github.damontecres.wholphin.util.profile.Codec
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -21,9 +24,11 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import org.jellyfin.sdk.api.client.ApiClient
+import org.jellyfin.sdk.api.client.extensions.instantMixApi
 import org.jellyfin.sdk.api.client.extensions.universalAudioApi
 import org.jellyfin.sdk.model.api.BaseItemKind
 import timber.log.Timber
+import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -35,6 +40,7 @@ class MusicService
         @param:ApplicationContext private val context: Context,
         @param:AuthOkHttpClient private val authOkHttpClient: OkHttpClient,
         private val api: ApiClient,
+        private val serverRepository: ServerRepository,
     ) {
         private val _state = MutableStateFlow(MusicServiceState.EMPTY)
         val state: StateFlow<MusicServiceState> = _state
@@ -51,6 +57,22 @@ class MusicService
                     it.addListener(MusicPlayerListener(it, _state))
                     it.prepare()
                 }
+        }
+
+        /**
+         * Fetches instant mix items, replaces the queue, and begins playback
+         */
+        suspend fun startInstantMix(itemId: UUID) {
+            val items =
+                api.instantMixApi
+                    .getInstantMixFromItem(
+                        userId = serverRepository.currentUser.value?.id,
+                        itemId = itemId,
+                        limit = 200,
+                        fields = DefaultItemFields,
+                    ).content.items
+                    .map { BaseItem(it, false) }
+            setQueue(items, false)
         }
 
         suspend fun setQueue(
@@ -138,8 +160,6 @@ private class MusicPlayerListener(
         Timber.v("MusicPlayerListener onIsPlayingChanged")
         state.update {
             it.copy(
-                // TODO this is hack to force the UI to update, but is very inefficient
-                queue = PlayerMediaItemList(player),
                 isPlaying = isPlaying,
             )
         }
@@ -152,9 +172,23 @@ private class MusicPlayerListener(
         Timber.v("MusicPlayerListener onMediaItemTransition")
         state.update {
             it.copy(
-                queue = PlayerMediaItemList(player),
                 currentIndex = player.currentMediaItemIndex,
             )
+        }
+    }
+
+    override fun onTimelineChanged(
+        timeline: Timeline,
+        reason: Int,
+    ) {
+        Timber.v("MusicPlayerListener onTimelineChanged")
+        if (reason == Player.TIMELINE_CHANGE_REASON_PLAYLIST_CHANGED) {
+            state.update {
+                it.copy(
+                    queue = PlayerMediaItemList(player),
+                    currentIndex = player.currentMediaItemIndex,
+                )
+            }
         }
     }
 }
@@ -163,13 +197,13 @@ private class PlayerMediaItemList(
     private val player: Player,
 ) : AbstractList<AudioItem>() {
     override fun get(index: Int): AudioItem {
-        Timber.v("get %s", index)
+//        Timber.v("get %s", index)
         return player.getMediaItemAt(index).localConfiguration?.tag as AudioItem
     }
 
     override val size: Int
         get() {
-            Timber.v("size %s", player.mediaItemCount)
+//            Timber.v("size %s", player.mediaItemCount)
             return player.mediaItemCount
         }
 }
