@@ -113,8 +113,7 @@ fun NowPlayingPage(
                         onClick = {
                             player.seekTo(index, 0L)
                         },
-                        onClickAddToQueue = {},
-                        onClickAddToPlaylist = {},
+                        onLongClick = {},
                         modifier = Modifier,
                     )
                 }

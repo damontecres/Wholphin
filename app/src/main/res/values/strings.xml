@@ -498,6 +498,8 @@
     <string name="go_to_artist">Go to artist</string>
     <string name="now_playing">Now playing</string>
     <string name="instant_mix">Instant mix</string>
+    <string name="go_to_album">Go to album</string>
+    <string name="add_to_queue">Add to queue</string>
 
     <string-array name="theme_song_volume">
         <item>Disabled</item>

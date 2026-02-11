@@ -1,22 +1,27 @@
 package com.github.damontecres.wholphin.ui.detail.music
 
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.tv.material3.Button
-import androidx.tv.material3.ButtonDefaults
+import androidx.tv.material3.Icon
 import androidx.tv.material3.ListItem
 import androidx.tv.material3.ListItemDefaults
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.ui.PreviewTvSpec
+import com.github.damontecres.wholphin.ui.enableMarquee
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.letNotEmpty
 import com.github.damontecres.wholphin.ui.roundMinutes
@@ -31,8 +36,7 @@ fun SongListDisplay(
     songs: List<BaseItem?>,
     showArtist: Boolean,
     onClick: (Int, BaseItem) -> Unit,
-    onClickAddToQueue: (Int, BaseItem) -> Unit,
-    onClickAddToPlaylist: (Int, BaseItem) -> Unit,
+    onLongClick: (Int, BaseItem) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     LazyColumn(
@@ -43,8 +47,7 @@ fun SongListDisplay(
             SongListItem(
                 song = song,
                 onClick = { song?.let { onClick.invoke(index, song) } },
-                onClickAddToQueue = { song?.let { onClick.invoke(index, song) } },
-                onClickAddToPlaylist = { song?.let { onClick.invoke(index, song) } },
+                onLongClick = { song?.let { onLongClick.invoke(index, song) } },
                 showArtist = showArtist,
                 modifier = Modifier,
             )
@@ -56,10 +59,10 @@ fun SongListDisplay(
 fun SongListItem(
     song: BaseItem?,
     onClick: () -> Unit,
-    onClickAddToQueue: () -> Unit,
-    onClickAddToPlaylist: () -> Unit,
+    onLongClick: () -> Unit,
     modifier: Modifier = Modifier,
     showArtist: Boolean = false,
+    isPlaying: Boolean = false,
 ) = SongListItem(
     title = song?.title,
     artist = if (showArtist) song?.data?.albumArtist else null,
@@ -71,10 +74,10 @@ fun SongListItem(
             ?.ticks
             ?.roundMinutes,
     onClick = onClick,
-    onClickAddToQueue = onClickAddToQueue,
-    onClickAddToPlaylist = onClickAddToPlaylist,
+    onLongClick = onLongClick,
     modifier = modifier,
     showArtist = showArtist,
+    isPlaying = isPlaying,
 )
 
 @Composable
@@ -84,27 +87,42 @@ fun SongListItem(
     indexNumber: Int?,
     runtime: Duration?,
     onClick: () -> Unit,
-    onClickAddToQueue: () -> Unit,
-    onClickAddToPlaylist: () -> Unit,
+    onLongClick: () -> Unit,
     modifier: Modifier = Modifier,
     showArtist: Boolean = false,
     isPlaying: Boolean = false,
+    interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier,
     ) {
+        val focused by interactionSource.collectIsFocusedAsState()
         ListItem(
             selected = isPlaying,
             onClick = onClick,
+            onLongClick = onLongClick,
+            interactionSource = interactionSource,
             leadingContent = {
-                Text(
-                    text = indexNumber?.toString() ?: "",
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = indexNumber?.toString() ?: "",
+                    )
+                    if (isPlaying) {
+                        Icon(
+                            imageVector = Icons.Default.PlayArrow,
+                            contentDescription = null,
+                        )
+                    }
+                }
             },
             headlineContent = {
                 Text(
                     text = title ?: "",
+                    maxLines = 1,
+                    modifier = Modifier.enableMarquee(focused),
                 )
             },
             supportingContent =
@@ -125,14 +143,6 @@ fun SongListItem(
             scale = ListItemDefaults.scale(1f, 1f, .95f),
             modifier = Modifier.weight(1f),
         )
-        Button(
-            onClick = onClickAddToQueue,
-            shape = ButtonDefaults.shape(shape = RoundedCornerShape(8.dp)),
-        ) {
-            Text(
-                text = "Add to queue",
-            )
-        }
     }
 }
 
@@ -149,21 +159,20 @@ fun SongListItemPreview() {
                 indexNumber = 1,
                 runtime = 2.minutes + 30.seconds,
                 onClick = {},
-                onClickAddToQueue = { },
-                onClickAddToPlaylist = {},
+                onLongClick = { },
                 modifier = Modifier,
                 showArtist = false,
             )
             SongListItem(
                 title = "Song title",
                 artist = "Artists",
-                indexNumber = 1,
+                indexNumber = 2,
                 runtime = 2.minutes + 30.seconds,
                 onClick = {},
-                onClickAddToQueue = { },
-                onClickAddToPlaylist = {},
+                onLongClick = { },
                 modifier = Modifier,
                 showArtist = true,
+                isPlaying = true,
             )
         }
     }

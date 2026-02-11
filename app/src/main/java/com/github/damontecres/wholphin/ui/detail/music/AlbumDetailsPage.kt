@@ -1,35 +1,30 @@
 package com.github.damontecres.wholphin.ui.detail.music
 
 import android.content.Context
-import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.relocation.bringIntoViewRequester
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccountCircle
-import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.FocusState
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -52,9 +47,9 @@ import com.github.damontecres.wholphin.services.MusicService
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.UserPreferencesService
 import com.github.damontecres.wholphin.ui.DefaultItemFields
+import com.github.damontecres.wholphin.ui.components.DialogParams
+import com.github.damontecres.wholphin.ui.components.DialogPopup
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
-import com.github.damontecres.wholphin.ui.components.ExpandableFaButton
-import com.github.damontecres.wholphin.ui.components.ExpandablePlayButton
 import com.github.damontecres.wholphin.ui.components.GenreText
 import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.components.OverviewText
@@ -85,7 +80,6 @@ import org.jellyfin.sdk.model.api.ItemSortBy
 import org.jellyfin.sdk.model.api.request.GetItemsRequest
 import timber.log.Timber
 import java.util.UUID
-import kotlin.time.Duration
 
 @HiltViewModel(assistedFactory = AlbumViewModel.Factory::class)
 class AlbumViewModel
@@ -93,7 +87,7 @@ class AlbumViewModel
     constructor(
         private val api: ApiClient,
         @param:ApplicationContext private val context: Context,
-        private val navigationManager: NavigationManager,
+        val navigationManager: NavigationManager,
         val serverRepository: ServerRepository,
         val mediaReportService: MediaReportService,
         private val favoriteWatchManager: FavoriteWatchManager,
@@ -110,6 +104,8 @@ class AlbumViewModel
 
         private val _state = MutableStateFlow(AlbumState.EMPTY)
         val state: StateFlow<AlbumState> = _state
+
+        val currentMusic = musicService.state
 
         init {
             viewModelScope.launchIO {
@@ -169,16 +165,18 @@ class AlbumViewModel
             }
         }
 
-        fun setFavorite(favorite: Boolean) =
-            viewModelScope.launch(ExceptionHandler() + Dispatchers.IO) {
-                favoriteWatchManager.setFavorite(itemId, favorite)
-                val album =
-                    api.userLibraryApi
-                        .getItem(itemId = itemId)
-                        .content
-                        .let { BaseItem(it, false) }
-                _state.update { it.copy(album = album) }
-            }
+        fun setFavorite(
+            itemId: UUID,
+            favorite: Boolean,
+        ) = viewModelScope.launch(ExceptionHandler() + Dispatchers.IO) {
+            favoriteWatchManager.setFavorite(itemId, favorite)
+            val album =
+                api.userLibraryApi
+                    .getItem(itemId = itemId)
+                    .content
+                    .let { BaseItem(it, false) }
+            _state.update { it.copy(album = album) }
+        }
 
         fun play(
             shuffled: Boolean,
@@ -187,12 +185,27 @@ class AlbumViewModel
             viewModelScope.launchIO {
                 Timber.v("Playing album %s from %s", itemId, startIndex)
                 val songs = state.value.songs as ApiRequestPager<*>
-                val songsToAdd =
-                    (startIndex..songs.lastIndex)
-                        .mapNotNull { idx ->
-                            songs.getBlocking(idx)
+                musicService.setQueue(songs, startIndex, shuffled)
+            }
+        }
+
+        fun addToQueue(
+            itemId: UUID,
+            index: Int,
+        ) {
+            viewModelScope.launchIO {
+                val songs = state.value.songs as ApiRequestPager<*>
+                if (itemId == this@AlbumViewModel.itemId) {
+                    songs.indices.forEach {
+                        songs.getBlocking(it)?.let {
+                            musicService.addToQueue(it)
                         }
-                musicService.setQueue(songsToAdd, shuffled)
+                    }
+                } else {
+                    songs.getBlocking(index)?.let {
+                        musicService.addToQueue(it)
+                    }
+                }
             }
         }
 
@@ -225,8 +238,22 @@ fun AlbumDetailsPage(
             creationCallback = { it.create(itemId) },
         ),
 ) {
+    val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val state by viewModel.state.collectAsState()
+    val currentMusic by viewModel.currentMusic.collectAsState()
+
+    var moreDialog by remember { mutableStateOf<DialogParams?>(null) }
+    val moreDialogActions =
+        remember {
+            MusicMoreDialogActions(
+                onNavigate = { viewModel.navigationManager.navigateTo(it) },
+                onClickPlay = { index, _ -> viewModel.play(false, index) },
+                onClickAddToQueue = { index, itemId -> viewModel.addToQueue(itemId, index) },
+                onClickFavorite = { itemId, favorite -> viewModel.setFavorite(itemId, favorite) },
+                onClickAddPlaylist = {},
+            )
+        }
 
     when (val loading = state.loading) {
         is LoadingState.Error -> {
@@ -271,9 +298,25 @@ fun AlbumDetailsPage(
                                         MusicButtonActions(
                                             onClickPlay = { viewModel.play(it, 0) },
                                             onClickInstantMix = viewModel::startInstantMix,
-                                            onClickFavorite = { viewModel.setFavorite(!album.favorite) },
+                                            onClickFavorite = {
+                                                viewModel.setFavorite(
+                                                    album.id,
+                                                    !album.favorite,
+                                                )
+                                            },
                                             onClickMore = {
-                                                // TODO
+                                                moreDialog =
+                                                    DialogParams(
+                                                        fromLongClick = false,
+                                                        title = album.name + " (${album.data.productionYear ?: ""})",
+                                                        items =
+                                                            buildMoreDialogForMusic(
+                                                                context = context,
+                                                                actions = moreDialogActions,
+                                                                item = album,
+                                                                index = 0,
+                                                            ),
+                                                    )
                                             },
                                         )
                                     },
@@ -295,15 +338,40 @@ fun AlbumDetailsPage(
                         SongListItem(
                             song = song,
                             onClick = { viewModel.play(false, index) },
-                            onClickAddToQueue = {},
-                            onClickAddToPlaylist = {},
+                            onLongClick = {
+                                if (song != null) {
+                                    moreDialog =
+                                        DialogParams(
+                                            fromLongClick = true,
+                                            title = song.name ?: "",
+                                            items =
+                                                buildMoreDialogForMusic(
+                                                    context = context,
+                                                    actions = moreDialogActions,
+                                                    item = song,
+                                                    index = index,
+                                                ),
+                                        )
+                                }
+                            },
                             modifier = Modifier.padding(horizontal = 16.dp),
                             showArtist = false,
+                            isPlaying = song != null && currentMusic.currentItemId == song.id,
                         )
                     }
                 }
             }
         }
+    }
+    moreDialog?.let { params ->
+        DialogPopup(
+            showDialog = true,
+            title = params.title,
+            dialogItems = params.items,
+            onDismissRequest = { moreDialog = null },
+            dismissOnClick = true,
+            waitToLoad = params.fromLongClick,
+        )
     }
 }
 
@@ -385,60 +453,6 @@ fun AlbumHeader(
                     )
                 }
             }
-        }
-    }
-}
-
-@Composable
-fun AlbumButtons(
-    onClickPlay: (Boolean) -> Unit,
-    onClickAddToPlaylist: () -> Unit,
-    onClickGoToArtist: () -> Unit,
-    onClickMore: () -> Unit,
-    buttonOnFocusChanged: (FocusState) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val firstFocus = remember { FocusRequester() }
-    LazyRow(
-        horizontalArrangement = Arrangement.spacedBy(16.dp),
-        contentPadding = PaddingValues(8.dp),
-        modifier =
-            modifier
-                .focusGroup()
-                .focusRestorer(firstFocus),
-    ) {
-        item {
-            ExpandablePlayButton(
-                title = R.string.play,
-                resume = Duration.ZERO,
-                icon = Icons.Default.PlayArrow,
-                onClick = { onClickPlay.invoke(false) },
-                modifier =
-                    Modifier
-                        .onFocusChanged(buttonOnFocusChanged)
-                        .focusRequester(firstFocus),
-            )
-        }
-        item {
-            ExpandableFaButton(
-                title = R.string.shuffle,
-                iconStringRes = R.string.fa_shuffle,
-                onClick = { onClickPlay.invoke(true) },
-                modifier =
-                    Modifier
-                        .onFocusChanged(buttonOnFocusChanged),
-            )
-        }
-        item {
-            ExpandablePlayButton(
-                title = R.string.go_to_artist,
-                resume = Duration.ZERO,
-                icon = Icons.Default.AccountCircle,
-                onClick = { onClickGoToArtist.invoke() },
-                modifier =
-                    Modifier
-                        .onFocusChanged(buttonOnFocusChanged),
-            )
         }
     }
 }

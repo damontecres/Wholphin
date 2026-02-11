@@ -15,6 +15,7 @@ import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.services.hilt.AuthOkHttpClient
 import com.github.damontecres.wholphin.ui.DefaultItemFields
 import com.github.damontecres.wholphin.ui.toServerString
+import com.github.damontecres.wholphin.util.BlockingList
 import com.github.damontecres.wholphin.util.profile.Codec
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -73,6 +74,33 @@ class MusicService
                     ).content.items
                     .map { BaseItem(it, false) }
             setQueue(items, false)
+        }
+
+        /**
+         * Replace the queue with the given list and starting playing the song as startIndex as soon as its ready
+         *
+         * Fetches each item in a blocking way and adds to the queue
+         */
+        suspend fun setQueue(
+            items: BlockingList<BaseItem?>,
+            startIndex: Int,
+            shuffled: Boolean,
+        ) = withContext(Dispatchers.IO) {
+            Timber.d("setQueue: %s items, startIndex=%s, shuffled=%s", items.size, startIndex, shuffled)
+            withContext(Dispatchers.Main) {
+                player.setMediaItems(emptyList())
+                player.shuffleModeEnabled = shuffled
+                player.play()
+            }
+            (startIndex..items.lastIndex).forEach {
+                val item = items.getBlocking(it)
+                if (item != null && item.type == BaseItemKind.AUDIO) {
+                    val mediaItem = convert(item)
+                    withContext(Dispatchers.Main) {
+                        player.addMediaItem(mediaItem)
+                    }
+                }
+            }
         }
 
         suspend fun setQueue(
@@ -136,6 +164,8 @@ data class MusicServiceState(
     companion object {
         val EMPTY = MusicServiceState(emptyList(), 0, false)
     }
+
+    val currentItemId: UUID? get() = if (isPlaying) queue.getOrNull(currentIndex)?.id else null
 }
 
 /**
