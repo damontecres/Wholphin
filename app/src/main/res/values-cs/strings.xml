@@ -475,4 +475,12 @@
     <string name="slideshow_duration">Trvání prezentace</string>
     <string name="play_videos_during_slideshow">Přehrávat videa během prezentace</string>
     <string name="send_media_info_log_to_server">Odesílat protokol informací o médiích serveru</string>
+    <plurals name="days">
+        <item quantity="one">%s den</item>
+        <item quantity="few">%s dny</item>
+        <item quantity="many">%s dní</item>
+        <item quantity="other">%s dní</item>
+    </plurals>
+    <string name="no_limit">Bez omezení</string>
+    <string name="max_days_next_up">Max. počet dnů v Dalších v pořadí</string>
 </resources>
