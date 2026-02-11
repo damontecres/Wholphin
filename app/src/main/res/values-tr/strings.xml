@@ -66,7 +66,7 @@
     <string name="more">Diğer</string>
     <plurals name="movies">
         <item quantity="one">Filmler</item>
-        <item quantity="other"/>
+        <item quantity="other">Filmler</item>
     </plurals>
     <string name="name">Ad</string>
     <string name="next_up">Sıradaki bölümler</string>
@@ -81,7 +81,7 @@
     <string name="path">Yol</string>
     <plurals name="people">
         <item quantity="one">Kişiler</item>
-        <item quantity="other"/>
+        <item quantity="other">Kişiler</item>
     </plurals>
     <string name="play_count">Oynatma Sayısı</string>
     <string name="play_from_here">Buradan oynat</string>
@@ -152,7 +152,7 @@
     <string name="trailer">Fragman</string>
     <plurals name="trailers">
         <item quantity="one">Fragmanlar</item>
-        <item quantity="other"/>
+        <item quantity="other">Fragmanlar</item>
     </plurals>
     <string name="tv_dvr_schedule">Kayıt Takvimi</string>
     <string name="tv_guide">Rehber</string>
@@ -160,7 +160,7 @@
     <string name="tv_seasons">Sezonlar</string>
     <plurals name="tv_shows">
         <item quantity="one">Diziler</item>
-        <item quantity="other"/>
+        <item quantity="other">Diziler</item>
     </plurals>
     <string name="ui_interface">Arayüz</string>
     <string name="unknown">Bilinmiyor</string>
