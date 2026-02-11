@@ -1,8 +1,10 @@
 package com.github.damontecres.wholphin.ui.main
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.focusable
+import androidx.compose.foundation.gestures.LocalBringIntoViewSpec
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,6 +21,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
@@ -34,6 +37,7 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -69,6 +73,7 @@ import com.github.damontecres.wholphin.ui.playback.isPlayKeyUp
 import com.github.damontecres.wholphin.ui.playback.playable
 import com.github.damontecres.wholphin.ui.rememberPosition
 import com.github.damontecres.wholphin.ui.tryRequestFocus
+import com.github.damontecres.wholphin.ui.util.ScrollToTopBringIntoViewSpec
 import com.github.damontecres.wholphin.util.HomeRowLoadingState
 import com.github.damontecres.wholphin.util.LoadingState
 import kotlinx.coroutines.delay
@@ -183,6 +188,7 @@ fun HomePage(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun HomePageContent(
     homeRows: List<HomeRowLoadingState>,
@@ -223,14 +229,15 @@ fun HomePageContent(
             }
         }
     }
-    LaunchedEffect(position) {
-        if (position.row >= 0) {
-            listState.animateScrollToItem(position.row)
-        }
-    }
     LaunchedEffect(onUpdateBackdrop, focusedItem) {
         focusedItem?.let { onUpdateBackdrop.invoke(it) }
     }
+    val density = LocalDensity.current
+    val spaceAbovePx =
+        with(density) {
+            // The size of the row titles & spacing
+            50.dp.toPx()
+        }
     Box(modifier = modifier) {
         Column(modifier = Modifier.fillMaxSize()) {
             HomePageHeader(
@@ -240,134 +247,148 @@ fun HomePageContent(
                         .padding(top = 48.dp, bottom = 32.dp, start = 8.dp)
                         .fillMaxHeight(.33f),
             )
-            LazyColumn(
-                state = listState,
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                contentPadding =
-                    PaddingValues(
-                        bottom = Cards.height2x3,
-                    ),
-                modifier =
-                    Modifier
-                        .focusRestorer(),
+            val defaultBringIntoViewSpec = LocalBringIntoViewSpec.current
+            CompositionLocalProvider(
+                LocalBringIntoViewSpec provides ScrollToTopBringIntoViewSpec(spaceAbovePx),
             ) {
-                itemsIndexed(homeRows) { rowIndex, row ->
-                    when (val r = row) {
-                        is HomeRowLoadingState.Loading,
-                        is HomeRowLoadingState.Pending,
-                        -> {
-                            Column(
-                                verticalArrangement = Arrangement.spacedBy(8.dp),
-                                modifier = Modifier.animateItem(),
-                            ) {
-                                Text(
-                                    text = r.title,
-                                    style = MaterialTheme.typography.titleLarge,
-                                    color = MaterialTheme.colorScheme.onBackground,
-                                )
-                                Text(
-                                    text = stringResource(R.string.loading),
-                                    style = MaterialTheme.typography.titleMedium,
-                                    color = MaterialTheme.colorScheme.onBackground,
-                                )
-                            }
-                        }
-
-                        is HomeRowLoadingState.Error -> {
-                            var focused by remember { mutableStateOf(false) }
-                            Column(
-                                verticalArrangement = Arrangement.spacedBy(8.dp),
-                                modifier =
-                                    Modifier
-                                        .onFocusChanged {
-                                            focused = it.isFocused
-                                        }.focusable()
-                                        .background(
-                                            if (focused) {
-                                                // Just so the user can tell it has focus
-                                                MaterialTheme.colorScheme.border.copy(alpha = .25f)
-                                            } else {
-                                                Color.Unspecified
-                                            },
-                                        ).animateItem(),
-                            ) {
-                                Text(
-                                    text = r.title,
-                                    style = MaterialTheme.typography.titleLarge,
-                                    color = MaterialTheme.colorScheme.onBackground,
-                                )
-                                Text(
-                                    text = r.localizedMessage,
-                                    style = MaterialTheme.typography.titleMedium,
-                                    color = MaterialTheme.colorScheme.error,
-                                )
-                            }
-                        }
-
-                        is HomeRowLoadingState.Success -> {
-                            if (row.items.isNotEmpty()) {
-                                ItemRow(
-                                    title = row.title,
-                                    items = row.items,
-                                    onClickItem = { index, item ->
-                                        onClickItem.invoke(RowColumn(rowIndex, index), item)
-                                    },
-                                    onLongClickItem = { index, item ->
-                                        onLongClickItem.invoke(RowColumn(rowIndex, index), item)
-                                    },
-                                    modifier =
-                                        Modifier
-                                            .fillMaxWidth()
-                                            .focusGroup()
-                                            .focusRequester(rowFocusRequesters[rowIndex])
-                                            .animateItem(),
-                                    cardContent = { index, item, cardModifier, onClick, onLongClick ->
-                                        BannerCard(
-                                            name = item?.data?.seriesName ?: item?.name,
-                                            item = item,
-                                            aspectRatio = AspectRatios.TALL,
-                                            cornerText = item?.ui?.episodeUnplayedCornerText,
-                                            played = item?.data?.userData?.played ?: false,
-                                            favorite = item?.favorite ?: false,
-                                            playPercent =
-                                                item?.data?.userData?.playedPercentage
-                                                    ?: 0.0,
-                                            onClick = onClick,
-                                            onLongClick = onLongClick,
-                                            modifier =
-                                                cardModifier
-                                                    .onFocusChanged {
-                                                        if (it.isFocused) {
-                                                            position = RowColumn(rowIndex, index)
-//                                                            item?.let(onUpdateBackdrop)
-                                                        }
-                                                        if (it.isFocused && onFocusPosition != null) {
-                                                            val nonEmptyRowBefore =
-                                                                homeRows
-                                                                    .subList(0, rowIndex)
-                                                                    .count {
-                                                                        it is HomeRowLoadingState.Success && it.items.isEmpty()
-                                                                    }
-                                                            onFocusPosition.invoke(
-                                                                RowColumn(
-                                                                    rowIndex - nonEmptyRowBefore,
-                                                                    index,
-                                                                ),
-                                                            )
-                                                        }
-                                                    }.onKeyEvent {
-                                                        if (isPlayKeyUp(it) && item?.type?.playable == true) {
-                                                            Timber.v("Clicked play on ${item.id}")
-                                                            onClickPlay.invoke(position, item)
-                                                            return@onKeyEvent true
-                                                        }
-                                                        return@onKeyEvent false
-                                                    },
-                                            interactionSource = null,
-                                            cardHeight = Cards.height2x3,
+                LazyColumn(
+                    state = listState,
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    contentPadding =
+                        PaddingValues(
+                            bottom = Cards.height2x3,
+                        ),
+                    modifier =
+                        Modifier
+                            .focusRestorer(),
+                ) {
+                    itemsIndexed(homeRows) { rowIndex, row ->
+                        CompositionLocalProvider(LocalBringIntoViewSpec provides defaultBringIntoViewSpec) {
+                            when (val r = row) {
+                                is HomeRowLoadingState.Loading,
+                                is HomeRowLoadingState.Pending,
+                                -> {
+                                    Column(
+                                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                                        modifier = Modifier.animateItem(),
+                                    ) {
+                                        Text(
+                                            text = r.title,
+                                            style = MaterialTheme.typography.titleLarge,
+                                            color = MaterialTheme.colorScheme.onBackground,
                                         )
-                                    },
-                                )
+                                        Text(
+                                            text = stringResource(R.string.loading),
+                                            style = MaterialTheme.typography.titleMedium,
+                                            color = MaterialTheme.colorScheme.onBackground,
+                                        )
+                                    }
+                                }
+
+                                is HomeRowLoadingState.Error -> {
+                                    var focused by remember { mutableStateOf(false) }
+                                    Column(
+                                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                                        modifier =
+                                            Modifier
+                                                .onFocusChanged {
+                                                    focused = it.isFocused
+                                                }.focusable()
+                                                .background(
+                                                    if (focused) {
+                                                        // Just so the user can tell it has focus
+                                                        MaterialTheme.colorScheme.border.copy(alpha = .25f)
+                                                    } else {
+                                                        Color.Unspecified
+                                                    },
+                                                ).animateItem(),
+                                    ) {
+                                        Text(
+                                            text = r.title,
+                                            style = MaterialTheme.typography.titleLarge,
+                                            color = MaterialTheme.colorScheme.onBackground,
+                                        )
+                                        Text(
+                                            text = r.localizedMessage,
+                                            style = MaterialTheme.typography.titleMedium,
+                                            color = MaterialTheme.colorScheme.error,
+                                        )
+                                    }
+                                }
+
+                                is HomeRowLoadingState.Success -> {
+                                    if (row.items.isNotEmpty()) {
+                                        ItemRow(
+                                            title = row.title,
+                                            items = row.items,
+                                            onClickItem = { index, item ->
+                                                onClickItem.invoke(RowColumn(rowIndex, index), item)
+                                            },
+                                            onLongClickItem = { index, item ->
+                                                onLongClickItem.invoke(
+                                                    RowColumn(rowIndex, index),
+                                                    item,
+                                                )
+                                            },
+                                            modifier =
+                                                Modifier
+                                                    .fillMaxWidth()
+                                                    .focusGroup()
+                                                    .focusRequester(rowFocusRequesters[rowIndex])
+                                                    .animateItem(),
+                                            cardContent = { index, item, cardModifier, onClick, onLongClick ->
+                                                BannerCard(
+                                                    name = item?.data?.seriesName ?: item?.name,
+                                                    item = item,
+                                                    aspectRatio = AspectRatios.TALL,
+                                                    cornerText = item?.ui?.episodeUnplayedCornerText,
+                                                    played = item?.data?.userData?.played ?: false,
+                                                    favorite = item?.favorite ?: false,
+                                                    playPercent =
+                                                        item?.data?.userData?.playedPercentage
+                                                            ?: 0.0,
+                                                    onClick = onClick,
+                                                    onLongClick = onLongClick,
+                                                    modifier =
+                                                        cardModifier
+                                                            .onFocusChanged {
+                                                                if (it.isFocused) {
+                                                                    position =
+                                                                        RowColumn(rowIndex, index)
+//                                                            item?.let(onUpdateBackdrop)
+                                                                }
+                                                                if (it.isFocused && onFocusPosition != null) {
+                                                                    val nonEmptyRowBefore =
+                                                                        homeRows
+                                                                            .subList(0, rowIndex)
+                                                                            .count {
+                                                                                it is HomeRowLoadingState.Success && it.items.isEmpty()
+                                                                            }
+                                                                    onFocusPosition.invoke(
+                                                                        RowColumn(
+                                                                            rowIndex - nonEmptyRowBefore,
+                                                                            index,
+                                                                        ),
+                                                                    )
+                                                                }
+                                                            }.onKeyEvent {
+                                                                if (isPlayKeyUp(it) && item?.type?.playable == true) {
+                                                                    Timber.v("Clicked play on ${item.id}")
+                                                                    onClickPlay.invoke(
+                                                                        position,
+                                                                        item,
+                                                                    )
+                                                                    return@onKeyEvent true
+                                                                }
+                                                                return@onKeyEvent false
+                                                            },
+                                                    interactionSource = null,
+                                                    cardHeight = Cards.height2x3,
+                                                )
+                                            },
+                                        )
+                                    }
+                                }
                             }
                         }
                     }
