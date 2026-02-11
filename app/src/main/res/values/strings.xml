@@ -492,6 +492,10 @@
     <string name="send_media_info_log_to_server">Send media info log to server</string>
     <string name="no_limit">No limit</string>
     <string name="max_days_next_up">Max days in Next Up</string>
+    <string name="albums">Albums</string>
+    <string name="artists">Artists</string>
+    <string name="songs">Songs</string>
+    <string name="go_to_artist">Go to artist</string>
 
     <string-array name="theme_song_volume">
         <item>Disabled</item>

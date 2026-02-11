@@ -34,6 +34,7 @@ import com.github.damontecres.wholphin.ui.detail.buildMoreDialogItemsForHome
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.main.HomePageContent
 import com.github.damontecres.wholphin.ui.nav.Destination
+import com.github.damontecres.wholphin.ui.setValueOnMain
 import com.github.damontecres.wholphin.util.ApiRequestPager
 import com.github.damontecres.wholphin.util.HomeRowLoadingState
 import com.github.damontecres.wholphin.util.LoadingState
@@ -114,6 +115,8 @@ abstract class RecommendedViewModel(
                     HomeRowLoadingState.Error(titleStr, null, ex)
                 }
             update(title, row)
+            // TODO
+            loading.setValueOnMain(LoadingState.Success)
         }
     }
 }

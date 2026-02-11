@@ -15,6 +15,7 @@ import com.github.damontecres.wholphin.ui.detail.CollectionFolderBoxSet
 import com.github.damontecres.wholphin.ui.detail.CollectionFolderGeneric
 import com.github.damontecres.wholphin.ui.detail.CollectionFolderLiveTv
 import com.github.damontecres.wholphin.ui.detail.CollectionFolderMovie
+import com.github.damontecres.wholphin.ui.detail.CollectionFolderMusic
 import com.github.damontecres.wholphin.ui.detail.CollectionFolderPhotoAlbum
 import com.github.damontecres.wholphin.ui.detail.CollectionFolderPlaylist
 import com.github.damontecres.wholphin.ui.detail.CollectionFolderRecordings
@@ -28,6 +29,7 @@ import com.github.damontecres.wholphin.ui.detail.discover.DiscoverPersonPage
 import com.github.damontecres.wholphin.ui.detail.discover.DiscoverSeriesDetails
 import com.github.damontecres.wholphin.ui.detail.episode.EpisodeDetails
 import com.github.damontecres.wholphin.ui.detail.movie.MovieDetails
+import com.github.damontecres.wholphin.ui.detail.music.AlbumDetails
 import com.github.damontecres.wholphin.ui.detail.series.SeriesDetails
 import com.github.damontecres.wholphin.ui.detail.series.SeriesOverview
 import com.github.damontecres.wholphin.ui.discover.DiscoverPage
@@ -207,6 +209,14 @@ fun DestinationContent(
                     )
                 }
 
+                BaseItemKind.MUSIC_ALBUM -> {
+                    LaunchedEffect(Unit) { onClearBackdrop.invoke() }
+                    AlbumDetails(
+                        itemId = destination.itemId,
+                        modifier = modifier,
+                    )
+                }
+
                 else -> {
                     Timber.w("Unsupported item type: ${destination.type}")
                     Text("Unsupported item type: ${destination.type}")
@@ -379,9 +389,16 @@ fun CollectionFolder(
             )
         }
 
+        CollectionType.MUSIC -> {
+            CollectionFolderMusic(
+                preferences,
+                destination,
+                modifier,
+            )
+        }
+
         CollectionType.HOMEVIDEOS,
         CollectionType.MUSICVIDEOS,
-        CollectionType.MUSIC,
         CollectionType.BOOKS,
         CollectionType.PHOTOS,
         -> {
