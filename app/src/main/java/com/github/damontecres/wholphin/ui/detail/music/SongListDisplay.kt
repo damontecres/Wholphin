@@ -62,7 +62,7 @@ fun SongListItem(
     showArtist: Boolean = false,
 ) = SongListItem(
     title = song?.title,
-    artist = if (showArtist) song?.artistsString else null,
+    artist = if (showArtist) song?.data?.albumArtist else null,
     indexNumber = song?.data?.indexNumber,
     runtime =
         song
@@ -88,13 +88,14 @@ fun SongListItem(
     onClickAddToPlaylist: () -> Unit,
     modifier: Modifier = Modifier,
     showArtist: Boolean = false,
+    isPlaying: Boolean = false,
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier,
     ) {
         ListItem(
-            selected = false,
+            selected = isPlaying,
             onClick = onClick,
             leadingContent = {
                 Text(
@@ -121,7 +122,7 @@ fun SongListItem(
                     text = runtime.toString(),
                 )
             },
-            scale = ListItemDefaults.scale(1f, 1f),
+            scale = ListItemDefaults.scale(1f, 1f, .95f),
             modifier = Modifier.weight(1f),
         )
         Button(

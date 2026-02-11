@@ -51,9 +51,13 @@ class NavDrawerItemRepository
 
             val builtins =
                 if (seerrServerRepository.active.first()) {
-                    listOf(NavDrawerItem.Favorites, NavDrawerItem.Discover)
+                    listOf(
+                        NavDrawerItem.Favorites,
+                        NavDrawerItem.Discover,
+                        NavDrawerItem.NowPlaying,
+                    )
                 } else {
-                    listOf(NavDrawerItem.Favorites)
+                    listOf(NavDrawerItem.Favorites, NavDrawerItem.NowPlaying)
                 }
 
             val libraries =

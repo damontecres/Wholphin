@@ -207,6 +207,11 @@ class NavDrawerViewModel
                     setIndex(index)
                     navigationManager.navigateToFromDrawer(item.destination)
                 }
+
+                NavDrawerItem.NowPlaying -> {
+                    setIndex(index)
+                    navigationManager.navigateToFromDrawer(Destination.NowPlaying)
+                }
             }
         }
 
@@ -245,6 +250,13 @@ sealed interface NavDrawerItem {
             get() = "a_discover"
 
         override fun name(context: Context): String = context.getString(R.string.discover)
+    }
+
+    object NowPlaying : NavDrawerItem {
+        override val id: String
+            get() = "a_nowplaying"
+
+        override fun name(context: Context): String = context.getString(R.string.now_playing)
     }
 }
 
@@ -624,6 +636,10 @@ fun NavigationDrawerScope.NavItem(
                         CollectionType.PLAYLISTS -> R.string.fa_list_ul
                         else -> R.string.fa_film
                     }
+                }
+
+                NavDrawerItem.NowPlaying -> {
+                    R.string.fa_circle_play
                 }
             }
         }

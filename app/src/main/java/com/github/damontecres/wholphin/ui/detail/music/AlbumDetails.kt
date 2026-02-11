@@ -40,19 +40,14 @@ import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import coil3.compose.AsyncImage
 import com.github.damontecres.wholphin.R
-import com.github.damontecres.wholphin.data.ItemPlaybackRepository
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.services.BackdropService
-import com.github.damontecres.wholphin.services.ExtrasService
 import com.github.damontecres.wholphin.services.FavoriteWatchManager
 import com.github.damontecres.wholphin.services.ImageUrlService
 import com.github.damontecres.wholphin.services.MediaReportService
+import com.github.damontecres.wholphin.services.MusicService
 import com.github.damontecres.wholphin.services.NavigationManager
-import com.github.damontecres.wholphin.services.PeopleFavorites
-import com.github.damontecres.wholphin.services.StreamChoiceService
-import com.github.damontecres.wholphin.services.ThemeSongPlayer
-import com.github.damontecres.wholphin.services.TrailerService
 import com.github.damontecres.wholphin.services.UserPreferencesService
 import com.github.damontecres.wholphin.ui.DefaultItemFields
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
@@ -79,10 +74,12 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.jellyfin.sdk.api.client.ApiClient
+import org.jellyfin.sdk.api.client.extensions.itemsApi
 import org.jellyfin.sdk.api.client.extensions.userLibraryApi
 import org.jellyfin.sdk.model.api.ImageType
 import org.jellyfin.sdk.model.api.ItemSortBy
 import org.jellyfin.sdk.model.api.request.GetItemsRequest
+import timber.log.Timber
 import java.util.UUID
 import kotlin.time.Duration
 
@@ -94,17 +91,12 @@ class AlbumViewModel
         @param:ApplicationContext private val context: Context,
         private val navigationManager: NavigationManager,
         val serverRepository: ServerRepository,
-        val itemPlaybackRepository: ItemPlaybackRepository,
-        val streamChoiceService: StreamChoiceService,
         val mediaReportService: MediaReportService,
-        private val themeSongPlayer: ThemeSongPlayer,
         private val favoriteWatchManager: FavoriteWatchManager,
-        private val peopleFavorites: PeopleFavorites,
-        private val trailerService: TrailerService,
-        private val extrasService: ExtrasService,
         private val userPreferencesService: UserPreferencesService,
         private val backdropService: BackdropService,
         private val imageUrlService: ImageUrlService,
+        private val musicService: MusicService,
         @Assisted val itemId: UUID,
     ) : ViewModel() {
         @AssistedFactory
@@ -151,9 +143,41 @@ class AlbumViewModel
                             loading = LoadingState.Success,
                         )
                     }
+                    if (album.data.imageTags?.contains(ImageType.BACKDROP) == true) {
+                        backdropService.submit(album)
+                    } else {
+                        val artistIds =
+                            album.data.albumArtists
+                                ?.shuffled()
+                                ?.take(50)
+                                ?.map { it.id }
+                        api.itemsApi
+                            .getItems(
+                                ids = artistIds,
+                                imageTypes = listOf(ImageType.BACKDROP),
+                            ).content.items
+                            .firstOrNull()
+                            ?.let { backdropService.submit(BaseItem(it, false)) }
+                    }
                 } catch (ex: Exception) {
                     _state.update { it.copy(loading = LoadingState.Error(ex)) }
                 }
+            }
+        }
+
+        fun play(
+            shuffled: Boolean,
+            startIndex: Int = 0,
+        ) {
+            viewModelScope.launchIO {
+                Timber.v("Playing album %s from %s", itemId, startIndex)
+                val songs = state.value.songs as ApiRequestPager<*>
+                val songsToAdd =
+                    (startIndex..songs.lastIndex)
+                        .mapNotNull { idx ->
+                            songs.getBlocking(idx)
+                        }
+                musicService.setQueue(songsToAdd, shuffled)
             }
         }
     }
@@ -178,6 +202,7 @@ fun AlbumDetails(
             creationCallback = { it.create(itemId) },
         ),
 ) {
+    val scope = rememberCoroutineScope()
     val state by viewModel.state.collectAsState()
 
     when (val loading = state.loading) {
@@ -215,19 +240,22 @@ fun AlbumDetails(
                                 modifier = Modifier.fillMaxWidth(),
                             )
                             AlbumButtons(
-                                onClickPlay = {},
+                                onClickPlay = { viewModel.play(it, 0) },
                                 onClickAddToPlaylist = {},
                                 onClickGoToArtist = {},
                                 onClickMore = { },
                                 buttonOnFocusChanged = {},
-                                modifier = Modifier,
+                                modifier =
+                                    Modifier.onFocusChanged {
+                                        if (it.hasFocus) scope.launch { bringIntoViewRequester.bringIntoView() }
+                                    },
                             )
                         }
                     }
                     itemsIndexed(state.songs) { index, song ->
                         SongListItem(
                             song = song,
-                            onClick = {},
+                            onClick = { viewModel.play(false, index) },
                             onClickAddToQueue = {},
                             onClickAddToPlaylist = {},
                             modifier = Modifier.padding(horizontal = 16.dp),
