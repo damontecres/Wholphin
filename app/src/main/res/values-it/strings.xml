@@ -444,4 +444,10 @@
     <string name="slideshow_duration">Durata slideshow</string>
     <string name="play_videos_during_slideshow">Riproduci video durante lo slideshow</string>
     <string name="send_media_info_log_to_server">Invia log informazioni media al server</string>
+    <plurals name="days">
+        <item quantity="one">%s giorno</item>
+        <item quantity="many">%s giorni</item>
+        <item quantity="other">%s giorni</item>
+    </plurals>
+    <string name="no_limit">Nessun limite</string>
 </resources>
