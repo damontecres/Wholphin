@@ -37,9 +37,10 @@ import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.util.ApiRequestPager
 import com.github.damontecres.wholphin.util.HomeRowLoadingState
 import com.github.damontecres.wholphin.util.LoadingState
+import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.launch
 import org.jellyfin.sdk.model.api.MediaType
 import java.util.UUID
 
@@ -99,13 +100,13 @@ abstract class RecommendedViewModel(
     abstract fun update(
         @StringRes title: Int,
         row: HomeRowLoadingState,
-    )
+    ): HomeRowLoadingState
 
     fun update(
         @StringRes title: Int,
         block: suspend () -> List<BaseItem>,
-    ) {
-        viewModelScope.launch(Dispatchers.IO) {
+    ): Deferred<HomeRowLoadingState> =
+        viewModelScope.async(Dispatchers.IO) {
             val titleStr = context.getString(title)
             val row =
                 try {
@@ -115,7 +116,6 @@ abstract class RecommendedViewModel(
                 }
             update(title, row)
         }
-    }
 }
 
 @Composable
