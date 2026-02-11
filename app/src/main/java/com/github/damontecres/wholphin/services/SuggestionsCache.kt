@@ -59,6 +59,7 @@ class SuggestionsCache
             itemKind: BaseItemKind,
         ): CachedSuggestions? {
             val key = cacheKey(userId, libraryId, itemKind)
+            memoryCache.get(key)?.let { return it }
             val cacheFile = File(cacheDir, "$key.json")
             if (!cacheFile.exists()) {
                 return null
