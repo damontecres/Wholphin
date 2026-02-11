@@ -411,4 +411,10 @@
     <string name="play_videos_during_slideshow">幻燈片播放時播放影片</string>
     <string name="image_subtitle_opacity">圖形字幕不透明度</string>
     <string name="brightness">亮度</string>
+    <plurals name="days">
+        <item quantity="other">%s 天</item>
+    </plurals>
+    <string name="send_media_info_log_to_server">將媒體訊息日誌傳送到伺服器</string>
+    <string name="no_limit">無限制</string>
+    <string name="max_days_next_up">接下來播放的保留天數</string>
 </resources>
