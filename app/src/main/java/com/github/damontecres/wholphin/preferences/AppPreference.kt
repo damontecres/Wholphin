@@ -943,6 +943,14 @@ sealed interface AppPreference<Pref, T> {
                 setter = { prefs, _ -> prefs },
             )
 
+        val QuickConnect =
+            AppClickablePreference<AppPreferences>(
+                title = R.string.quick_connect,
+                summary = R.string.quick_connect_summary,
+                getter = { },
+                setter = { prefs, _ -> prefs },
+            )
+
         val SlideshowDuration =
             AppSliderPreference<AppPreferences>(
                 title = R.string.slideshow_duration,
@@ -1168,6 +1176,7 @@ val advancedPreferences =
                 title = R.string.more,
                 preferences =
                     listOf(
+                        AppPreference.QuickConnect,
                         AppPreference.SendAppLogs,
                         AppPreference.SendCrashReports,
                         AppPreference.DebugLogging,
