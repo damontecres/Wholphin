@@ -49,6 +49,9 @@ sealed interface RowLoadingState {
 sealed interface HomeRowLoadingState {
     val title: String
 
+    val completed: Boolean
+        get() = this is Success || this is Error
+
     data class Pending(
         override val title: String,
     ) : HomeRowLoadingState

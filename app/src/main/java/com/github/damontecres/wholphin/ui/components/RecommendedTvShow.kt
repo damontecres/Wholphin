@@ -33,6 +33,7 @@ import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -170,6 +171,8 @@ class RecommendedTvShowViewModel
                     }
                 }
 
+                val jobs = mutableListOf<Deferred<HomeRowLoadingState>>()
+
                 update(R.string.recently_released) {
                     val request =
                         GetItemsRequest(
@@ -185,7 +188,7 @@ class RecommendedTvShowViewModel
                             enableTotalRecordCount = false,
                         )
                     GetItemsRequestHandler.execute(api, request).toBaseItems(api, true)
-                }
+                }.also(jobs::add)
 
                 update(R.string.recently_added) {
                     val request =
@@ -202,7 +205,7 @@ class RecommendedTvShowViewModel
                             enableTotalRecordCount = false,
                         )
                     GetItemsRequestHandler.execute(api, request).toBaseItems(api, true)
-                }
+                }.also(jobs::add)
 
                 update(R.string.top_unwatched) {
                     val request =
@@ -220,7 +223,7 @@ class RecommendedTvShowViewModel
                             enableTotalRecordCount = false,
                         )
                     GetItemsRequestHandler.execute(api, request).toBaseItems(api, true)
-                }
+                }.also(jobs::add)
 
                 viewModelScope.launch(Dispatchers.IO) {
                     try {
@@ -264,7 +267,14 @@ class RecommendedTvShowViewModel
                 }
 
                 if (loading.value == LoadingState.Loading || loading.value == LoadingState.Pending) {
-                    loading.setValueOnMain(LoadingState.Success)
+                    for (i in 0..<jobs.size) {
+                        val result = jobs[i].await()
+                        if (result is HomeRowLoadingState.Success) {
+                            Timber.v("First success")
+                            loading.setValueOnMain(LoadingState.Success)
+                        }
+                        break
+                    }
                 }
             }
         }
@@ -272,10 +282,11 @@ class RecommendedTvShowViewModel
         override fun update(
             @StringRes title: Int,
             row: HomeRowLoadingState,
-        ) {
+        ): HomeRowLoadingState {
             rows.update { current ->
                 current.toMutableList().apply { set(rowTitles[title]!!, row) }
             }
+            return row
         }
 
         companion object {
