@@ -59,7 +59,6 @@ class SuggestionsCache
             itemKind: BaseItemKind,
         ): CachedSuggestions? {
             val key = cacheKey(userId, libraryId, itemKind)
-            memoryCache.get(key)?.let { return it }
             return memoryCache.getOrPut(key) {
                 mutex.withLock {
                     val cacheFile = File(cacheDir, "$key.json")
