@@ -93,6 +93,7 @@ fun PreferencesContent(
     var cacheUsage by remember { mutableStateOf(CacheUsage(0, 0, 0)) }
     val seerrIntegrationEnabled by viewModel.seerrEnabled.collectAsState(false)
     var seerrDialogMode by remember { mutableStateOf<SeerrDialogMode>(SeerrDialogMode.None) }
+    var showQuickConnectDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         viewModel.preferenceDataStore.data.collect {
@@ -413,6 +414,22 @@ fun PreferencesContent(
                                 )
                             }
 
+                            AppPreference.QuickConnect -> {
+                                ClickPreference(
+                                    title = stringResource(pref.title),
+                                    onClick = {
+                                        if (currentUser != null) {
+                                            viewModel.resetQuickConnectStatus()
+                                            showQuickConnectDialog = true
+                                        }
+                                    },
+                                    modifier = Modifier,
+                                    summary = pref.summary(context, null),
+                                    onLongClick = {},
+                                    interactionSource = interactionSource,
+                                )
+                            }
+
                             else -> {
                                 val value = pref.getter.invoke(preferences)
                                 ComposablePreference(
@@ -505,6 +522,37 @@ fun PreferencesContent(
 
             SeerrDialogMode.None -> {}
         }
+    }
+
+    if (showQuickConnectDialog) {
+        val quickConnectStatus by viewModel.quickConnectStatus.collectAsState(LoadingState.Pending)
+        val successMessage = stringResource(R.string.quick_connect_success)
+
+        LaunchedEffect(quickConnectStatus) {
+            when (val status = quickConnectStatus) {
+                LoadingState.Success -> {
+                    Toast.makeText(context, successMessage, Toast.LENGTH_SHORT).show()
+                    showQuickConnectDialog = false
+                }
+
+                is LoadingState.Error -> {
+                    val errorMessage = status.message ?: "Authorization failed"
+                    Toast.makeText(context, errorMessage, Toast.LENGTH_SHORT).show()
+                }
+
+                else -> {}
+            }
+        }
+
+        QuickConnectDialog(
+            onSubmit = { code ->
+                viewModel.authorizeQuickConnect(code)
+            },
+            onDismissRequest = {
+                viewModel.resetQuickConnectStatus()
+                showQuickConnectDialog = false
+            },
+        )
     }
 }
 
