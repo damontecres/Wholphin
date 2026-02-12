@@ -4,9 +4,9 @@ import android.content.Context
 import androidx.lifecycle.asFlow
 import com.github.damontecres.wholphin.data.ServerPreferencesDao
 import com.github.damontecres.wholphin.data.ServerRepository
-import com.github.damontecres.wholphin.data.isPinned
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.JellyfinUser
+import com.github.damontecres.wholphin.data.model.NavPinType
 import com.github.damontecres.wholphin.services.hilt.DefaultCoroutineScope
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.nav.NavDrawerItem
@@ -107,11 +107,26 @@ class NavDrawerService
                     }
             val allItems = builtins + libraries
 
-            val navDrawerPins = serverPreferencesDao.getNavDrawerPinnedItems(user)
-            Timber.d("navDrawerPins=%s", navDrawerPins)
-            val filtered = allItems.groupBy { navDrawerPins.isPinned(it.id) }
-            val items = filtered[true].orEmpty()
-            val moreItems = filtered[false].orEmpty()
+            val navDrawerPins =
+                serverPreferencesDao.getNavDrawerPinnedItems(user).associateBy { it.itemId }
+
+            val items = mutableListOf<NavDrawerItem>()
+            val moreItems = mutableListOf<NavDrawerItem>()
+            allItems
+                // Sort by order if non-default, existing items before customize will have -1 value
+                // New items from the server will get Int.MAX_VALUE
+                // Items the user doesn't have access to anymore will be skipped
+                .sortedBy { navDrawerPins[it.id]?.order?.takeIf { it >= 0 } ?: Int.MAX_VALUE }
+                .forEach {
+                    // Assume pinned if unknown
+                    val pinned = navDrawerPins[it.id]?.type ?: NavPinType.PINNED
+                    if (pinned == NavPinType.PINNED) {
+                        items.add(it)
+                    } else {
+                        moreItems.add(it)
+                    }
+                }
+
             _state.update {
                 it.copy(
                     items = items,

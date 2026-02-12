@@ -2,14 +2,12 @@ package com.github.damontecres.wholphin.ui.preferences
 
 import android.content.Context
 import androidx.datastore.core.DataStore
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.asFlow
 import androidx.lifecycle.viewModelScope
 import com.github.damontecres.wholphin.data.NavDrawerItemRepository
 import com.github.damontecres.wholphin.data.ServerPreferencesDao
 import com.github.damontecres.wholphin.data.ServerRepository
-import com.github.damontecres.wholphin.data.isPinned
 import com.github.damontecres.wholphin.data.model.JellyfinUser
 import com.github.damontecres.wholphin.data.model.NavDrawerPinnedItem
 import com.github.damontecres.wholphin.data.model.NavPinType
@@ -23,18 +21,22 @@ import com.github.damontecres.wholphin.services.SeerrServerRepository
 import com.github.damontecres.wholphin.ui.detail.DebugViewModel.Companion.sendAppLogs
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.nav.NavDrawerItem
-import com.github.damontecres.wholphin.ui.setValueOnMain
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
 import com.github.damontecres.wholphin.util.RememberTabManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.model.ClientInfo
 import org.jellyfin.sdk.model.DeviceInfo
+import timber.log.Timber
 import javax.inject.Inject
 
 @HiltViewModel
@@ -57,7 +59,46 @@ class PreferencesViewModel
     ) : ViewModel(),
         RememberTabManager by rememberTabManager {
         private lateinit var allNavDrawerItems: List<NavDrawerItem>
-        val navDrawerPins = MutableLiveData<Map<NavDrawerItem, Boolean>>(mapOf())
+//        val navDrawerPins = MutableLiveData<List<NavDrawerPin>>(emptyList())
+
+        val navDrawerPins =
+            navDrawerService.state
+                .combine(
+                    serverRepository.currentUser.asFlow(),
+                ) { state, user ->
+                    Pair(state, user)
+                }.combine(seerrServerRepository.active) { (state, user), seerr ->
+                    Triple(state, user, seerr)
+                }.map { (state, user, seerr) ->
+                    withContext(Dispatchers.IO) {
+                        val navDrawerPins =
+                            serverPreferencesDao
+                                .getNavDrawerPinnedItems(user!!)
+                                .associateBy { it.itemId }
+
+                        val allItems = state.let { it.items + it.moreItems }
+                        val pins =
+                            allItems
+                                .sortedBy {
+                                    navDrawerPins[it.id]?.order?.takeIf { it >= 0 } ?: Int.MAX_VALUE
+                                }.mapNotNull {
+                                    if (!seerr && it is NavDrawerItem.Discover) {
+                                        null
+                                    } else {
+                                        // Assume pinned if unknown
+                                        val pinned = navDrawerPins[it.id]?.type ?: NavPinType.PINNED
+                                        NavDrawerPin(
+                                            it.id,
+                                            it.name(context),
+                                            pinned == NavPinType.PINNED,
+                                            it,
+                                        )
+                                    }
+                                }
+
+                        pins
+                    }
+                }
 
         val currentUser get() = serverRepository.currentUser
 
@@ -72,34 +113,48 @@ class PreferencesViewModel
         init {
             viewModelScope.launchIO {
                 serverRepository.currentUser.value?.let { user ->
-                    allNavDrawerItems = navDrawerItemRepository.getNavDrawerItems()
-                    val pins = serverPreferencesDao.getNavDrawerPinnedItems(user)
-                    val navDrawerPins = allNavDrawerItems.associateWith { pins.isPinned(it.id) }
-                    this@PreferencesViewModel.navDrawerPins.setValueOnMain(navDrawerPins)
+//                    fetchNavDrawerPins(user)
                 }
             }
         }
 
-        fun updatePins(newSelectedItems: List<NavDrawerItem>) {
+        private suspend fun fetchNavDrawerPins(user: JellyfinUser) {
+            navDrawerService.state.map {
+                val navDrawerPins =
+                    serverPreferencesDao.getNavDrawerPinnedItems(user).associateBy { it.itemId }
+
+                val allItems = navDrawerService.state.first().let { it.items + it.moreItems }
+                val pins =
+                    allItems
+                        .sortedBy { navDrawerPins[it.id]?.order?.takeIf { it >= 0 } ?: Int.MAX_VALUE }
+                        .map {
+                            // Assume pinned if unknown
+                            val pinned = navDrawerPins[it.id]?.type ?: NavPinType.PINNED
+                            NavDrawerPin(it.id, it.name(context), pinned == NavPinType.PINNED, it)
+                        }
+                pins
+            }
+        }
+
+        fun updatePins(items: List<NavDrawerPin>) {
             viewModelScope.launchIO(ExceptionHandler(true)) {
                 serverRepository.currentUser.value?.let { user ->
-                    val selectedIds = newSelectedItems.map { it.id }.toSet()
-                    val toSave =
-                        allNavDrawerItems.mapIndexed { index, item ->
-                            NavDrawerPinnedItem(
-                                user.rowId,
-                                item.id,
-                                if (item.id in selectedIds) NavPinType.PINNED else NavPinType.UNPINNED,
-                                index,
-                            )
-                        }
-                    serverPreferencesDao.saveNavDrawerPinnedItems(*toSave.toTypedArray())
-                    val pins = serverPreferencesDao.getNavDrawerPinnedItems(user)
-                    val navDrawerPins = allNavDrawerItems.associateWith { pins.isPinned(it.id) }
-                    this@PreferencesViewModel.navDrawerPins.setValueOnMain(navDrawerPins)
                     serverRepository.currentUserDto.value?.let { userDto ->
                         if (user.id == userDto.id) {
+                            Timber.v("Updating pins")
+                            val toSave =
+                                items.mapIndexed { index, item ->
+                                    NavDrawerPinnedItem(
+                                        user.rowId,
+                                        item.id,
+                                        if (item.pinned) NavPinType.PINNED else NavPinType.UNPINNED,
+                                        index,
+                                    )
+                                }
+                            serverPreferencesDao.saveNavDrawerPinnedItems(*toSave.toTypedArray())
                             navDrawerService.updateNavDrawer(user, userDto)
+                        } else {
+                            throw IllegalStateException("User IDs do not match")
                         }
                     }
                 }
