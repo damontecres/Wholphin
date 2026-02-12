@@ -33,6 +33,7 @@ import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.firstOrNull
@@ -124,6 +125,8 @@ class RecommendedMovieViewModel
                     }
                 }
 
+                val jobs = mutableListOf<Deferred<HomeRowLoadingState>>()
+
                 update(R.string.recently_released) {
                     val request =
                         GetItemsRequest(
@@ -139,7 +142,7 @@ class RecommendedMovieViewModel
                             enableTotalRecordCount = false,
                         )
                     GetItemsRequestHandler.execute(api, request).toBaseItems(api, false)
-                }
+                }.also(jobs::add)
 
                 update(R.string.recently_added) {
                     val request =
@@ -156,7 +159,7 @@ class RecommendedMovieViewModel
                             enableTotalRecordCount = false,
                         )
                     GetItemsRequestHandler.execute(api, request).toBaseItems(api, false)
-                }
+                }.also(jobs::add)
 
                 update(R.string.top_unwatched) {
                     val request =
@@ -174,7 +177,7 @@ class RecommendedMovieViewModel
                             enableTotalRecordCount = false,
                         )
                     GetItemsRequestHandler.execute(api, request).toBaseItems(api, false)
-                }
+                }.also(jobs::add)
 
                 viewModelScope.launch(Dispatchers.IO) {
                     try {
@@ -219,8 +222,17 @@ class RecommendedMovieViewModel
                     }
                 }
 
+                // If the continue watching row is empty, then wait until the first successful row
+                // is loaded before telling the UI that the page is loaded
                 if (loading.value == LoadingState.Loading || loading.value == LoadingState.Pending) {
-                    loading.setValueOnMain(LoadingState.Success)
+                    for (i in 0..<jobs.size) {
+                        val result = jobs[i].await()
+                        if (result.completed) {
+                            Timber.v("First success")
+                            loading.setValueOnMain(LoadingState.Success)
+                        }
+                        break
+                    }
                 }
             }
         }
@@ -228,10 +240,11 @@ class RecommendedMovieViewModel
         override fun update(
             @StringRes title: Int,
             row: HomeRowLoadingState,
-        ) {
+        ): HomeRowLoadingState {
             rows.update { current ->
                 current.toMutableList().apply { set(rowTitles[title]!!, row) }
             }
+            return row
         }
 
         companion object {
