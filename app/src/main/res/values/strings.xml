@@ -513,6 +513,8 @@
     <string name="decrease_all_cards_size">Decrease size for all cards</string>
     <string name="use_thumb_images">Use thumb images</string>
     <string name="settings_saved">Settings saved</string>
+    <string name="display_presets">Display presets</string>
+    <string name="display_presets_description">Built-in presets to quickly style all rows</string>
 
     <string-array name="theme_song_volume">
         <item>Disabled</item>

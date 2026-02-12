@@ -56,6 +56,7 @@ fun HomeSettingsRowList(
     onClick: (Int, HomeRowConfigDisplay) -> Unit,
     onClickAdd: () -> Unit,
     onClickSettings: () -> Unit,
+    onClickPresets: () -> Unit,
     onClickMove: (MoveDirection, Int) -> Unit,
     onClickDelete: (Int) -> Unit,
     modifier: Modifier,
@@ -64,7 +65,7 @@ fun HomeSettingsRowList(
     val scope = rememberCoroutineScope()
     val listState = rememberLazyListState()
 
-    val itemsBeforeRows = 3
+    val itemsBeforeRows = 4
     val focusRequesters =
         remember(state.rows.size) { List(itemsBeforeRows + state.rows.size) { FocusRequester() } }
 
@@ -113,6 +114,28 @@ fun HomeSettingsRowList(
                     onClick = {
                         position = 1
                         onClickSettings.invoke()
+                    },
+                    modifier = Modifier.focusRequester(focusRequesters[1]),
+                )
+            }
+            item {
+                HomeSettingsListItem(
+                    selected = false,
+                    headlineText = stringResource(R.string.display_presets),
+                    supportingContent = {
+                        Text(
+                            text = stringResource(R.string.display_presets_description),
+                        )
+                    },
+                    leadingContent = {
+                        Text(
+                            text = stringResource(R.string.fa_sliders),
+                            fontFamily = FontAwesome,
+                        )
+                    },
+                    onClick = {
+                        position = 2
+                        onClickPresets.invoke()
                     },
                     modifier = Modifier.focusRequester(focusRequesters[1]),
                 )

@@ -49,6 +49,8 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
 import kotlinx.serialization.Serializable
+import org.jellyfin.sdk.api.client.ApiClient
+import org.jellyfin.sdk.api.client.extensions.userLibraryApi
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.CollectionType
 import org.jellyfin.sdk.model.serializer.UUIDSerializer
@@ -62,6 +64,7 @@ class HomeSettingsViewModel
     @Inject
     constructor(
         @param:ApplicationContext private val context: Context,
+        private val api: ApiClient,
         private val homeSettingsService: HomeSettingsService,
         private val serverRepository: ServerRepository,
         private val userPreferencesService: UserPreferencesService,
@@ -534,6 +537,108 @@ class HomeSettingsViewModel
                 context.getString(R.string.settings_saved),
                 Toast.LENGTH_SHORT,
             )
+
+        fun applyPreset(preset: HomeRowPresets) {
+            _state.update { it.copy(loading = LoadingState.Loading) }
+            viewModelScope.launchIO {
+                val state = state.value
+
+                val typeCache = mutableMapOf<UUID, CollectionType?>()
+
+                suspend fun getCollectionType(itemId: UUID): CollectionType =
+                    typeCache.getOrPut(itemId) {
+                        state.libraries
+                            .firstOrNull { it.itemId == itemId }
+                            ?.collectionType
+                            ?: api.userLibraryApi
+                                .getItem(itemId)
+                                .content.collectionType ?: CollectionType.UNKNOWN
+                    } ?: CollectionType.UNKNOWN
+
+                val newRows =
+                    state.rows.map {
+                        val newConfig =
+                            when (it.config) {
+                                is ContinueWatching,
+                                is NextUp,
+                                is ContinueWatchingCombined,
+                                -> {
+                                    it.config.updateViewOptions(preset.continueWatching)
+                                }
+
+                                is HomeRowConfig.ByParent -> {
+                                    val collectionType = getCollectionType(it.config.parentId)
+                                    val viewOptions = preset.getByCollectionType(collectionType)
+                                    it.config.updateViewOptions(viewOptions)
+                                }
+
+                                is HomeRowConfig.Favorite -> {
+                                    val viewOptions =
+                                        when (it.config.kind) {
+                                            BaseItemKind.MOVIE -> preset.movieLibrary
+                                            BaseItemKind.SERIES -> preset.tvLibrary
+                                            BaseItemKind.EPISODE -> preset.continueWatching
+                                            BaseItemKind.VIDEO -> preset.videoLibrary
+                                            BaseItemKind.PLAYLIST -> preset.playlist
+                                            BaseItemKind.PERSON -> preset.movieLibrary
+                                            else -> preset.movieLibrary
+                                        }
+                                    it.config.updateViewOptions(viewOptions)
+                                }
+
+                                is Genres -> {
+                                    it.config.updateViewOptions(it.config.viewOptions.copy(heightDp = preset.genreSize))
+                                }
+
+                                is HomeRowConfig.GetItems -> {
+                                    it.config
+                                }
+
+                                is RecentlyAdded -> {
+                                    val collectionType = getCollectionType(it.config.parentId)
+                                    val viewOptions = preset.getByCollectionType(collectionType)
+                                    it.config.updateViewOptions(viewOptions)
+                                }
+
+                                is RecentlyReleased -> {
+                                    val collectionType = getCollectionType(it.config.parentId)
+                                    val viewOptions = preset.getByCollectionType(collectionType)
+                                    it.config.updateViewOptions(viewOptions)
+                                }
+
+                                is HomeRowConfig.Recordings -> {
+                                    it.config.updateViewOptions(preset.tvLibrary)
+                                }
+
+                                is Suggestions -> {
+                                    val collectionType = getCollectionType(it.config.parentId)
+                                    val viewOptions = preset.getByCollectionType(collectionType)
+                                    it.config.updateViewOptions(viewOptions)
+                                }
+
+                                is HomeRowConfig.TvPrograms -> {
+                                    it.config.updateViewOptions(preset.tvLibrary)
+                                }
+                            }
+                        it.copy(config = newConfig)
+                    }
+
+                _state.update {
+                    it.copy(
+                        loading = LoadingState.Success,
+                        rows = newRows,
+                        rowData =
+                            it.rowData.toMutableList().mapIndexed { index, row ->
+                                if (row is HomeRowLoadingState.Success) {
+                                    row.copy(viewOptions = newRows[index].config.viewOptions)
+                                } else {
+                                    row
+                                }
+                            },
+                    )
+                }
+            }
+        }
     }
 
 data class HomePageSettingsState(

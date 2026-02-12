@@ -32,4 +32,7 @@ sealed interface HomeSettingsDestination : NavKey {
 
     @Serializable
     data object GlobalSettings : HomeSettingsDestination
+
+    @Serializable
+    data object Presets : HomeSettingsDestination
 }

@@ -100,6 +100,7 @@ fun HomeSettingsPage(
                                     state = state,
                                     onClickAdd = { backStack.add(HomeSettingsDestination.AddRow) },
                                     onClickSettings = { backStack.add(HomeSettingsDestination.GlobalSettings) },
+                                    onClickPresets = { backStack.add(HomeSettingsDestination.Presets) },
                                     onClickMove = viewModel::moveRow,
                                     onClickDelete = viewModel::deleteRow,
                                     onClick = { index, row ->
@@ -238,6 +239,13 @@ fun HomeSettingsPage(
                                                 viewModel.resetToDefault()
                                             }
                                     },
+                                    modifier = destModifier,
+                                )
+                            }
+
+                            HomeSettingsDestination.Presets -> {
+                                HomeRowPresetsContent(
+                                    onApply = viewModel::applyPreset,
                                     modifier = destModifier,
                                 )
                             }
