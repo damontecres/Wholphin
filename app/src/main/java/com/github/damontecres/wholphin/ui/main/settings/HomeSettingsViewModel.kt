@@ -475,7 +475,10 @@ class HomeSettingsViewModel
                         // Only save if there are changes
                         if (local != settings) {
                             homeSettingsService.saveToLocal(user.id, settings)
+                            homeSettingsService.updateCurrent(settings)
                             showSaveToast()
+                        } else {
+                            Timber.d("No changes")
                         }
                     } catch (ex: UnsupportedHomeSettingsVersionException) {
                         Timber.w(ex, "Overwriting local settings")

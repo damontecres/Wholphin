@@ -239,6 +239,15 @@ class HomeSettingsService
             currentSettings.update { resolvedSettings }
         }
 
+        suspend fun updateCurrent(settings: HomePageSettings) {
+            val resolvedRows =
+                settings.rows.mapIndexed { index, config ->
+                    resolve(index, config)
+                }
+            val resolvedSettings = HomePageResolvedSettings(resolvedRows)
+            currentSettings.update { resolvedSettings }
+        }
+
         /**
          * Create a default [HomePageResolvedSettings] using the available libraries
          */
