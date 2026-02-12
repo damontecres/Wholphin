@@ -60,20 +60,20 @@ class SuggestionsCache
         ): CachedSuggestions? {
             val key = cacheKey(userId, libraryId, itemKind)
             memoryCache.get(key)?.let { return it }
-            val cacheFile = File(cacheDir, "$key.json")
-            if (!cacheFile.exists()) {
-                return null
-            }
             return memoryCache.getOrPut(key) {
-                try {
-                    mutex.withLock {
+                mutex.withLock {
+                    val cacheFile = File(cacheDir, "$key.json")
+                    if (!cacheFile.exists()) {
+                        return@withLock null
+                    }
+                    try {
                         cacheFile.inputStream().use {
                             json.decodeFromStream<CachedSuggestions>(it)
                         }
+                    } catch (ex: Exception) {
+                        Timber.e(ex, "Exception reading from disk cache")
+                        null
                     }
-                } catch (ex: Exception) {
-                    Timber.e(ex, "Exception reading from disk cache")
-                    null
                 }
             }
         }
