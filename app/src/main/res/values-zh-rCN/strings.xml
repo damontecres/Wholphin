@@ -417,4 +417,9 @@
     </plurals>
     <string name="no_limit">无限制</string>
     <string name="max_days_next_up">即将播放中的最大天数</string>
+    <string name="quick_connect">快速连接</string>
+    <string name="quick_connect_summary">授权其他设备登录您的账号</string>
+    <string name="quick_connect_code">输入快速连接代码</string>
+    <string name="quick_connect_code_error">代码必须为六位数字</string>
+    <string name="quick_connect_success">设备授权成功</string>
 </resources>
