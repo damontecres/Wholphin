@@ -61,11 +61,12 @@ class SuggestionsCache
             val key = cacheKey(userId, libraryId, itemKind)
             return memoryCache.getOrPut(key) {
                 mutex.withLock {
-                    val cacheFile = File(cacheDir, "$key.json")
-                    if (!cacheFile.exists()) {
-                        return@withLock null
-                    }
                     try {
+                        val cacheFile = File(cacheDir, "$key.json")
+                        if (!cacheFile.exists()) {
+                            return@withLock null
+                        }
+
                         cacheFile.inputStream().use {
                             json.decodeFromStream<CachedSuggestions>(it)
                         }
