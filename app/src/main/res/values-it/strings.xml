@@ -450,4 +450,5 @@
         <item quantity="other">%s giorni</item>
     </plurals>
     <string name="no_limit">Nessun limite</string>
+    <string name="max_days_next_up">Giorni massimi in Prossimo</string>
 </resources>
