@@ -10,6 +10,7 @@ import com.github.damontecres.wholphin.util.GetItemsRequestHandler
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.verify
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
@@ -148,6 +149,44 @@ class SuggestionServiceTest {
             val result = service.getSuggestionsFlow(parentId, BaseItemKind.MOVIE).first()
 
             assertEquals(SuggestionsResource.Empty, result)
+        }
+
+    @Test
+    fun getSuggestionsFlow_returnsEmpty_whenCachedIdsEmpty_evenIfWorkIsEnqueued() =
+        runTest {
+            val userId = UUID.randomUUID()
+            val parentId = UUID.randomUUID()
+            val currentUser = MutableLiveData<JellyfinUser?>(mockUser(userId))
+
+            every { mockServerRepository.currentUser } returns currentUser
+            coEvery { mockCache.get(userId, parentId, BaseItemKind.MOVIE) } returns CachedSuggestions(emptyList())
+            every { mockWorkManager.getWorkInfosForUniqueWorkFlow(any()) } returns
+                flowOf(listOf(mockWorkInfo(WorkInfo.State.ENQUEUED)))
+
+            val service = createService()
+            val result = service.getSuggestionsFlow(parentId, BaseItemKind.MOVIE).first()
+
+            assertEquals(SuggestionsResource.Empty, result)
+            verify(exactly = 0) { mockWorkManager.getWorkInfosForUniqueWorkFlow(any()) }
+        }
+
+    @Test
+    fun getSuggestionsFlow_returnsLoading_whenCacheMissing_andWorkIsEnqueued() =
+        runTest {
+            val userId = UUID.randomUUID()
+            val parentId = UUID.randomUUID()
+            val currentUser = MutableLiveData<JellyfinUser?>(mockUser(userId))
+
+            every { mockServerRepository.currentUser } returns currentUser
+            coEvery { mockCache.get(userId, parentId, BaseItemKind.MOVIE) } returns null
+            every { mockWorkManager.getWorkInfosForUniqueWorkFlow(any()) } returns
+                flowOf(listOf(mockWorkInfo(WorkInfo.State.ENQUEUED)))
+
+            val service = createService()
+            val result = service.getSuggestionsFlow(parentId, BaseItemKind.MOVIE).first()
+
+            assertEquals(SuggestionsResource.Loading, result)
+            verify(exactly = 1) { mockWorkManager.getWorkInfosForUniqueWorkFlow(any()) }
         }
 
     @Test

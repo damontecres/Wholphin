@@ -33,6 +33,7 @@ import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
@@ -254,6 +255,8 @@ class RecommendedTvShowViewModel
                                     }
                                 update(R.string.suggestions, state)
                             }
+                    } catch (ex: CancellationException) {
+                        throw ex
                     } catch (ex: Exception) {
                         Timber.e(ex, "Failed to fetch suggestions")
                         update(
