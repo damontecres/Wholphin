@@ -451,4 +451,9 @@
     </plurals>
     <string name="no_limit">Nessun limite</string>
     <string name="max_days_next_up">Giorni massimi in Prossimo</string>
+    <string name="quick_connect">Connessione rapida</string>
+    <string name="quick_connect_summary">Autorizza un altro dispositivo per accedere al tuo account</string>
+    <string name="quick_connect_code">Inserisci il codice di Connessione rapida</string>
+    <string name="quick_connect_code_error">Il codice deve essere di 6 cifre</string>
+    <string name="quick_connect_success">Dispositivo autorizzato con successo</string>
 </resources>
