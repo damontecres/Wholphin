@@ -17,6 +17,7 @@ import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.resetSubtitles
 import com.github.damontecres.wholphin.preferences.updateSubtitlePreferences
 import com.github.damontecres.wholphin.services.BackdropService
+import com.github.damontecres.wholphin.services.NavDrawerService
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.SeerrServerRepository
 import com.github.damontecres.wholphin.ui.detail.DebugViewModel.Companion.sendAppLogs
@@ -48,6 +49,7 @@ class PreferencesViewModel
         private val rememberTabManager: RememberTabManager,
         private val serverRepository: ServerRepository,
         private val navDrawerItemRepository: NavDrawerItemRepository,
+        private val navDrawerService: NavDrawerService,
         private val serverPreferencesDao: ServerPreferencesDao,
         private val seerrServerRepository: SeerrServerRepository,
         private val deviceInfo: DeviceInfo,
@@ -81,31 +83,25 @@ class PreferencesViewModel
         fun updatePins(newSelectedItems: List<NavDrawerItem>) {
             viewModelScope.launchIO(ExceptionHandler(true)) {
                 serverRepository.currentUser.value?.let { user ->
-                    val disabledItems =
-                        mutableListOf<NavDrawerItem>().apply {
-                            addAll(allNavDrawerItems)
-                            removeAll(newSelectedItems)
-                        }
-                    val enabledItems = newSelectedItems.toSet()
+                    val selectedIds = newSelectedItems.map { it.id }.toSet()
                     val toSave =
-                        disabledItems.map {
+                        allNavDrawerItems.mapIndexed { index, item ->
                             NavDrawerPinnedItem(
                                 user.rowId,
-                                it.id,
-                                NavPinType.UNPINNED,
+                                item.id,
+                                if (item.id in selectedIds) NavPinType.PINNED else NavPinType.UNPINNED,
+                                index,
                             )
-                        } +
-                            enabledItems.map {
-                                NavDrawerPinnedItem(
-                                    user.rowId,
-                                    it.id,
-                                    NavPinType.PINNED,
-                                )
-                            }
+                        }
                     serverPreferencesDao.saveNavDrawerPinnedItems(*toSave.toTypedArray())
                     val pins = serverPreferencesDao.getNavDrawerPinnedItems(user)
                     val navDrawerPins = allNavDrawerItems.associateWith { pins.isPinned(it.id) }
                     this@PreferencesViewModel.navDrawerPins.setValueOnMain(navDrawerPins)
+                    serverRepository.currentUserDto.value?.let { userDto ->
+                        if (user.id == userDto.id) {
+                            navDrawerService.updateNavDrawer(user, userDto)
+                        }
+                    }
                 }
             }
         }

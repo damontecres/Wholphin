@@ -66,7 +66,7 @@ class NavDrawerService
                 }.launchIn(coroutineScope)
         }
 
-        private suspend fun updateNavDrawer(
+        suspend fun updateNavDrawer(
             user: JellyfinUser,
             userDto: UserDto,
         ) {
@@ -108,6 +108,7 @@ class NavDrawerService
             val allItems = builtins + libraries
 
             val navDrawerPins = serverPreferencesDao.getNavDrawerPinnedItems(user)
+            Timber.d("navDrawerPins=%s", navDrawerPins)
             val filtered = allItems.groupBy { navDrawerPins.isPinned(it.id) }
             val items = filtered[true].orEmpty()
             val moreItems = filtered[false].orEmpty()

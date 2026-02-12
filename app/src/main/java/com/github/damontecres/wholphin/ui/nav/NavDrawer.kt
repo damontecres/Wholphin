@@ -360,6 +360,28 @@ fun NavDrawer(
                                 )
                             }
                         }
+                        if (state.moreItems.isNotEmpty()) {
+                            item {
+                                val index = state.items.size
+                                val interactionSource = remember { MutableInteractionSource() }
+                                NavItem(
+                                    library = NavDrawerItem.More,
+                                    selected = selectedIndex == index,
+                                    moreExpanded = moreExpanded,
+                                    drawerOpen = isOpen,
+                                    interactionSource = interactionSource,
+                                    onClick = {
+                                        viewModel.onClickDrawerItem(index, NavDrawerItem.More)
+                                    },
+                                    modifier =
+                                        Modifier
+                                            .ifElse(
+                                                selectedIndex == index,
+                                                Modifier.focusRequester(focusRequester),
+                                            ),
+                                )
+                            }
+                        }
                         if (moreExpanded) {
                             itemsIndexed(state.moreItems) { index, it ->
                                 val adjustedIndex =
