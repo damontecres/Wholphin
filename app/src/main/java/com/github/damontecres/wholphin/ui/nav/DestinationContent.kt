@@ -214,7 +214,7 @@ fun DestinationContent(
 
                 else -> {
                     Timber.w("Unsupported item type: ${destination.type}")
-                    Text("Unsupported item type: ${destination.type}")
+                    Text("Unsupported item type: ${destination.type}", modifier)
                 }
             }
         }

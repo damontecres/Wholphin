@@ -4,7 +4,6 @@ import android.content.Context
 import androidx.lifecycle.asFlow
 import com.github.damontecres.wholphin.data.ServerPreferencesDao
 import com.github.damontecres.wholphin.data.ServerRepository
-import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.JellyfinUser
 import com.github.damontecres.wholphin.data.model.NavPinType
 import com.github.damontecres.wholphin.services.hilt.DefaultCoroutineScope
@@ -68,25 +67,49 @@ class NavDrawerService
                 }.launchIn(coroutineScope)
         }
 
-        suspend fun getAllUserLibraries(userId: UUID): List<Library> {
+        suspend fun getAllUserLibraries(
+            userId: UUID,
+            tvAccess: Boolean,
+        ): List<Library> {
             val userViews =
                 api.userViewsApi
                     .getUserViews(userId = userId)
                     .content.items
+            val recordingFolders =
+                if (tvAccess) {
+                    api.liveTvApi
+                        .getRecordingFolders(userId = userId)
+                        .content.items
+                        .map { it.id }
+                        .toSet()
+                } else {
+                    setOf()
+                }
             val libraries =
                 userViews
-                    .filter { it.collectionType in supportedCollectionTypes }
-                    .map { Library(it.id, it.name ?: "", it.collectionType ?: CollectionType.UNKNOWN) }
+                    .filter { it.collectionType in supportedCollectionTypes || it.id in recordingFolders }
+                    .map {
+                        Library(
+                            itemId = it.id,
+                            name = it.name ?: "",
+                            type = it.type,
+                            collectionType = it.collectionType ?: CollectionType.UNKNOWN,
+                            isRecordingFolder = it.id in recordingFolders,
+                        )
+                    }
             return libraries
         }
 
-        suspend fun getFilteredUserLibraries(user: JellyfinUser): List<Library> {
+        suspend fun getFilteredUserLibraries(
+            user: JellyfinUser,
+            tvAccess: Boolean,
+        ): List<Library> {
             val pins =
                 serverPreferencesDao
                     .getNavDrawerPinnedItems(user)
                     .associateBy { it.itemId }
             val libraries =
-                getAllUserLibraries(user.id)
+                getAllUserLibraries(user.id, tvAccess)
                     .filterNot { pins[ServerNavDrawerItem.getId(it.itemId)]?.type == NavPinType.UNPINNED }
             return libraries
         }
@@ -95,39 +118,26 @@ class NavDrawerService
             user: JellyfinUser,
             userDto: UserDto,
         ) {
-            val tvAccess = userDto.policy?.enableLiveTvAccess ?: false
-            val userViews =
-                api.userViewsApi
-                    .getUserViews(userId = user.id)
-                    .content.items
-            val recordingFolders =
-                if (tvAccess) {
-                    api.liveTvApi
-                        .getRecordingFolders(userId = user.id)
-                        .content.items
-                        .map { it.id }
-                        .toSet()
-                } else {
-                    setOf()
-                }
-
             val builtins = listOf(NavDrawerItem.Favorites, NavDrawerItem.Discover)
-
+            val allLibraries = getAllUserLibraries(user.id, userDto.tvAccess)
             val libraries =
-                userViews
-                    .filter { it.collectionType in supportedCollectionTypes || it.id in recordingFolders }
+                allLibraries
                     .map {
                         val destination =
-                            if (it.id in recordingFolders) {
-                                Destination.Recordings(it.id)
+                            if (it.isRecordingFolder) {
+                                Destination.Recordings(it.itemId)
                             } else {
-                                BaseItem.from(it, api).destination()
+                                Destination.MediaItem(
+                                    it.itemId,
+                                    it.type,
+                                    it.collectionType,
+                                )
                             }
                         ServerNavDrawerItem(
-                            itemId = it.id,
-                            name = it.name ?: it.id.toString(),
+                            itemId = it.itemId,
+                            name = it.name,
                             destination = destination,
-                            type = it.collectionType ?: CollectionType.UNKNOWN,
+                            type = it.collectionType,
                         )
                     }
             val allItems = builtins + libraries
@@ -170,3 +180,5 @@ data class NavDrawerItemState(
         val EMPTY = NavDrawerItemState(emptyList(), emptyList(), false)
     }
 }
+
+val UserDto.tvAccess: Boolean get() = policy?.enableLiveTvAccess == true

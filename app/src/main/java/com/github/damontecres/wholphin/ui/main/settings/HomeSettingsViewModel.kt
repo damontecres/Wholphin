@@ -30,6 +30,7 @@ import com.github.damontecres.wholphin.services.SeerrServerRepository
 import com.github.damontecres.wholphin.services.UnsupportedHomeSettingsVersionException
 import com.github.damontecres.wholphin.services.UserPreferencesService
 import com.github.damontecres.wholphin.services.hilt.IoCoroutineScope
+import com.github.damontecres.wholphin.services.tvAccess
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.showToast
 import com.github.damontecres.wholphin.util.HomeRowLoadingState
@@ -83,8 +84,8 @@ class HomeSettingsViewModel
         init {
             addCloseable { saveToLocal() }
             viewModelScope.launchIO {
-                val userId = serverRepository.currentUser.value?.id ?: return@launchIO
-                val libraries = navDrawerService.getAllUserLibraries(userId)
+                val userDto = serverRepository.currentUserDto.value ?: return@launchIO
+                val libraries = navDrawerService.getAllUserLibraries(userDto.id, userDto.tvAccess)
                 val currentSettings =
                     homeSettingsService.currentSettings.first { it != HomePageResolvedSettings.EMPTY }
                 Timber.v("currentSettings=%s", currentSettings)
@@ -658,5 +659,7 @@ data class HomePageSettingsState(
 data class Library(
     @Serializable(UUIDSerializer::class) val itemId: UUID,
     val name: String,
+    val type: BaseItemKind,
     val collectionType: CollectionType,
+    val isRecordingFolder: Boolean,
 )

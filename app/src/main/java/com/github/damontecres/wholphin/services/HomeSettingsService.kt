@@ -255,11 +255,12 @@ class HomeSettingsService
         suspend fun createDefault(userId: UUID): HomePageResolvedSettings {
             Timber.v("Creating default settings")
             val user = serverRepository.currentUser.value?.takeIf { it.id == userId }
+            val userDto = serverRepository.currentUserDto.value?.takeIf { it.id == userId }
             val libraries =
                 if (user != null) {
-                    navDrawerService.getFilteredUserLibraries(user)
+                    navDrawerService.getFilteredUserLibraries(user, userDto?.tvAccess ?: false)
                 } else {
-                    navDrawerService.getAllUserLibraries(userId)
+                    navDrawerService.getAllUserLibraries(userId, userDto?.tvAccess ?: false)
                 }
 
             val prefs =
