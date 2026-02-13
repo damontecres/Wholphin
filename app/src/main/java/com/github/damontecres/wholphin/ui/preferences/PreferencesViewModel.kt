@@ -5,7 +5,6 @@ import androidx.datastore.core.DataStore
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.asFlow
 import androidx.lifecycle.viewModelScope
-import com.github.damontecres.wholphin.data.NavDrawerItemRepository
 import com.github.damontecres.wholphin.data.ServerPreferencesDao
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.JellyfinUser
@@ -50,7 +49,6 @@ class PreferencesViewModel
         val backdropService: BackdropService,
         private val rememberTabManager: RememberTabManager,
         private val serverRepository: ServerRepository,
-        private val navDrawerItemRepository: NavDrawerItemRepository,
         private val navDrawerService: NavDrawerService,
         private val serverPreferencesDao: ServerPreferencesDao,
         private val seerrServerRepository: SeerrServerRepository,
@@ -58,9 +56,6 @@ class PreferencesViewModel
         private val clientInfo: ClientInfo,
     ) : ViewModel(),
         RememberTabManager by rememberTabManager {
-        private lateinit var allNavDrawerItems: List<NavDrawerItem>
-//        val navDrawerPins = MutableLiveData<List<NavDrawerPin>>(emptyList())
-
         val navDrawerPins =
             navDrawerService.state
                 .combine(

@@ -7,7 +7,6 @@ import androidx.datastore.core.DataStore
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.github.damontecres.wholphin.R
-import com.github.damontecres.wholphin.data.NavDrawerItemRepository
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.HomePageSettings
@@ -26,12 +25,12 @@ import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.HomePageResolvedSettings
 import com.github.damontecres.wholphin.services.HomeRowConfigDisplay
 import com.github.damontecres.wholphin.services.HomeSettingsService
+import com.github.damontecres.wholphin.services.NavDrawerService
 import com.github.damontecres.wholphin.services.SeerrServerRepository
 import com.github.damontecres.wholphin.services.UnsupportedHomeSettingsVersionException
 import com.github.damontecres.wholphin.services.UserPreferencesService
 import com.github.damontecres.wholphin.services.hilt.IoCoroutineScope
 import com.github.damontecres.wholphin.ui.launchIO
-import com.github.damontecres.wholphin.ui.nav.ServerNavDrawerItem
 import com.github.damontecres.wholphin.ui.showToast
 import com.github.damontecres.wholphin.util.HomeRowLoadingState
 import com.github.damontecres.wholphin.util.LoadingState
@@ -68,7 +67,7 @@ class HomeSettingsViewModel
         private val homeSettingsService: HomeSettingsService,
         private val serverRepository: ServerRepository,
         private val userPreferencesService: UserPreferencesService,
-        private val navDrawerItemRepository: NavDrawerItemRepository,
+        private val navDrawerService: NavDrawerService,
         private val backdropService: BackdropService,
         private val seerrServerRepository: SeerrServerRepository,
         val preferencesDataStore: DataStore<AppPreferences>,
@@ -84,16 +83,8 @@ class HomeSettingsViewModel
         init {
             addCloseable { saveToLocal() }
             viewModelScope.launchIO {
-                val navDrawerItems =
-                    navDrawerItemRepository
-                        .getNavDrawerItems()
-                val libraries =
-                    navDrawerItems
-                        .filter { it is ServerNavDrawerItem }
-                        .map {
-                            it as ServerNavDrawerItem
-                            Library(it.itemId, it.name, it.type)
-                        }
+                val userId = serverRepository.currentUser.value?.id ?: return@launchIO
+                val libraries = navDrawerService.getAllUserLibraries(userId)
                 val currentSettings =
                     homeSettingsService.currentSettings.first { it != HomePageResolvedSettings.EMPTY }
                 Timber.v("currentSettings=%s", currentSettings)
@@ -525,8 +516,9 @@ class HomeSettingsViewModel
 
         fun resetToDefault() {
             viewModelScope.launchIO {
+                val userId = serverRepository.currentUser.value?.id ?: return@launchIO
                 _state.update { it.copy(loading = LoadingState.Loading) }
-                val result = homeSettingsService.createDefault()
+                val result = homeSettingsService.createDefault(userId)
                 _state.update {
                     it.copy(rows = result.rows)
                 }

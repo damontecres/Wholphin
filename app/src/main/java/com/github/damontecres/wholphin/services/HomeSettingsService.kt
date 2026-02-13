@@ -2,7 +2,7 @@ package com.github.damontecres.wholphin.services
 
 import android.content.Context
 import com.github.damontecres.wholphin.R
-import com.github.damontecres.wholphin.data.NavDrawerItemRepository
+import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.HomePageSettings
 import com.github.damontecres.wholphin.data.model.HomeRowConfig
@@ -12,8 +12,8 @@ import com.github.damontecres.wholphin.preferences.HomePagePreferences
 import com.github.damontecres.wholphin.ui.DefaultItemFields
 import com.github.damontecres.wholphin.ui.SlimItemFields
 import com.github.damontecres.wholphin.ui.components.getGenreImageMap
+import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.main.settings.Library
-import com.github.damontecres.wholphin.ui.nav.ServerNavDrawerItem
 import com.github.damontecres.wholphin.ui.toServerString
 import com.github.damontecres.wholphin.util.GetGenresRequestHandler
 import com.github.damontecres.wholphin.util.GetItemsRequestHandler
@@ -64,8 +64,9 @@ class HomeSettingsService
     constructor(
         @param:ApplicationContext private val context: Context,
         private val api: ApiClient,
+        private val serverRepository: ServerRepository,
         private val userPreferencesService: UserPreferencesService,
-        private val navDrawerItemRepository: NavDrawerItemRepository,
+        private val navDrawerService: NavDrawerService,
         private val latestNextUpService: LatestNextUpService,
         private val imageUrlService: ImageUrlService,
         private val suggestionService: SuggestionService,
@@ -233,7 +234,7 @@ class HomeSettingsService
                         }
                     HomePageResolvedSettings(resolvedRows)
                 } else {
-                    createDefault()
+                    createDefault(userId)
                 }
 
             currentSettings.update { resolvedSettings }
@@ -251,25 +252,24 @@ class HomeSettingsService
         /**
          * Create a default [HomePageResolvedSettings] using the available libraries
          */
-        suspend fun createDefault(): HomePageResolvedSettings {
+        suspend fun createDefault(userId: UUID): HomePageResolvedSettings {
             Timber.v("Creating default settings")
-            val navDrawerItems = navDrawerItemRepository.getNavDrawerItems()
+            val user = serverRepository.currentUser.value?.takeIf { it.id == userId }
             val libraries =
-                navDrawerItems
-                    .filter { it is ServerNavDrawerItem }
-                    .map {
-                        it as ServerNavDrawerItem
-                        Library(it.itemId, it.name, it.type)
-                    }
+                if (user != null) {
+                    navDrawerService.getFilteredUserLibraries(user)
+                } else {
+                    navDrawerService.getAllUserLibraries(userId)
+                }
+
             val prefs =
                 userPreferencesService.getCurrent().appPreferences.homePagePreferences
+
             val includedIds =
-                navDrawerItemRepository
-                    .getFilteredNavDrawerItems(navDrawerItems)
-                    .filter { it is ServerNavDrawerItem }
+                libraries
                     .mapIndexed { index, it ->
-                        val parentId = (it as ServerNavDrawerItem).itemId
-                        val name = libraries.firstOrNull { it.itemId == parentId }?.name
+                        val parentId = it.itemId
+                        val name = it.name.takeIf { it.isNotNullOrBlank() }
                         val title =
                             name?.let { context.getString(R.string.recently_added_in, it) }
                                 ?: context.getString(R.string.recently_added)

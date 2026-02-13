@@ -121,8 +121,9 @@ class TestHomeRowSamples {
             HomeSettingsService(
                 context = mockk(),
                 api = mockk(),
+                serverRepository = mockk(),
                 userPreferencesService = mockk(),
-                navDrawerItemRepository = mockk(),
+                navDrawerService = mockk(),
                 latestNextUpService = mockk(),
                 imageUrlService = mockk(),
                 suggestionService = mockk(),

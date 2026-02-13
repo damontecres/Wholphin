@@ -3,7 +3,6 @@ package com.github.damontecres.wholphin.ui.main
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.github.damontecres.wholphin.data.NavDrawerItemRepository
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.HomeRowConfig
@@ -13,11 +12,10 @@ import com.github.damontecres.wholphin.services.FavoriteWatchManager
 import com.github.damontecres.wholphin.services.HomePageResolvedSettings
 import com.github.damontecres.wholphin.services.HomeSettingsService
 import com.github.damontecres.wholphin.services.MediaReportService
+import com.github.damontecres.wholphin.services.NavDrawerService
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.UserPreferencesService
 import com.github.damontecres.wholphin.ui.launchIO
-import com.github.damontecres.wholphin.ui.main.settings.Library
-import com.github.damontecres.wholphin.ui.nav.ServerNavDrawerItem
 import com.github.damontecres.wholphin.ui.showToast
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.HomeRowLoadingState
@@ -46,8 +44,8 @@ class HomeViewModel
         @param:ApplicationContext private val context: Context,
         val navigationManager: NavigationManager,
         val serverRepository: ServerRepository,
-        val navDrawerItemRepository: NavDrawerItemRepository,
         val mediaReportService: MediaReportService,
+        private val navDrawerService: NavDrawerService,
         private val homeSettingsService: HomeSettingsService,
         private val favoriteWatchManager: FavoriteWatchManager,
         private val datePlayedService: DatePlayedService,
@@ -69,17 +67,8 @@ class HomeViewModel
                     val preferences = userPreferencesService.getCurrent()
                     val prefs = preferences.appPreferences.homePagePreferences
 
-                    val navDrawerItems =
-                        navDrawerItemRepository
-                            .getNavDrawerItems()
-                    val libraries =
-                        navDrawerItems
-                            .filter { it is ServerNavDrawerItem }
-                            .map {
-                                it as ServerNavDrawerItem
-                                Library(it.itemId, it.name, it.type)
-                            }
                     serverRepository.currentUserDto.value?.let { userDto ->
+                        val libraries = navDrawerService.getAllUserLibraries(userDto.id)
                         val settings =
                             homeSettingsService.currentSettings.first { it != HomePageResolvedSettings.EMPTY }
                         val state = state.value
