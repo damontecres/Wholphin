@@ -422,4 +422,10 @@
     <string name="quick_connect_code">輸入快速連線驗證碼</string>
     <string name="quick_connect_code_error">驗證碼必須為6位數</string>
     <string name="quick_connect_success">裝置授權成功</string>
+    <string name="genres_in">%1$s 類型</string>
+    <string name="recently_released_in">最近發行於 %1$s</string>
+    <string name="suggestions_for">推薦的 %1$s</string>
+    <string name="increase_all_cards_size">放大海報尺寸</string>
+    <string name="decrease_all_cards_size">縮小海報尺寸</string>
+    <string name="use_thumb_images">使用橫向縮圖</string>
 </resources>
