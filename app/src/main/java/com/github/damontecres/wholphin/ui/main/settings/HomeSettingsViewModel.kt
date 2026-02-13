@@ -293,6 +293,36 @@ class HomeSettingsViewModel
                                 config = Suggestions(library.itemId),
                             )
                         }
+
+                        LibraryRowType.TV_CHANNELS -> {
+                            val title = context.getString(R.string.channels)
+                            HomeRowConfigDisplay(
+                                id = id,
+                                title = title,
+                                config =
+                                    HomeRowConfig.TvChannels(
+                                        viewOptions = HomeRowViewOptions.channelsDefault,
+                                    ),
+                            )
+                        }
+
+                        LibraryRowType.TV_PROGRAMS -> {
+                            val title = context.getString(R.string.watch_live)
+                            HomeRowConfigDisplay(
+                                id = id,
+                                title = title,
+                                config = HomeRowConfig.TvPrograms(),
+                            )
+                        }
+
+                        LibraryRowType.RECENTLY_RECORDED -> {
+                            val title = context.getString(R.string.recently_recorded)
+                            HomeRowConfigDisplay(
+                                id = id,
+                                title = title,
+                                config = RecentlyAdded(library.itemId),
+                            )
+                        }
                     }
                 updateState {
                     it.copy(
@@ -614,6 +644,10 @@ class HomeSettingsViewModel
 
                                 is HomeRowConfig.TvPrograms -> {
                                     it.config.updateViewOptions(preset.tvLibrary)
+                                }
+
+                                is HomeRowConfig.TvChannels -> {
+                                    it.config
                                 }
                             }
                         it.copy(config = newConfig)

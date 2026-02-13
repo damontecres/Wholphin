@@ -14,11 +14,13 @@ import com.github.damontecres.wholphin.ui.SlimItemFields
 import com.github.damontecres.wholphin.ui.components.getGenreImageMap
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.main.settings.Library
+import com.github.damontecres.wholphin.ui.toBaseItems
 import com.github.damontecres.wholphin.ui.toServerString
 import com.github.damontecres.wholphin.util.GetGenresRequestHandler
 import com.github.damontecres.wholphin.util.GetItemsRequestHandler
 import com.github.damontecres.wholphin.util.GetPersonsHandler
 import com.github.damontecres.wholphin.util.HomeRowLoadingState
+import com.github.damontecres.wholphin.util.HomeRowLoadingState.Error
 import com.github.damontecres.wholphin.util.HomeRowLoadingState.Success
 import com.github.damontecres.wholphin.util.supportedHomeCollectionTypes
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -524,6 +526,14 @@ class HomeSettingsService
                     )
                 }
 
+                is HomeRowConfig.TvChannels -> {
+                    HomeRowConfigDisplay(
+                        id = id,
+                        title = context.getString(R.string.channels),
+                        config,
+                    )
+                }
+
                 is HomeRowConfig.Suggestions -> {
                     val name =
                         api.userLibraryApi
@@ -863,6 +873,23 @@ class HomeSettingsService
                         }
                 }
 
+                is HomeRowConfig.TvChannels -> {
+                    api.liveTvApi
+                        .getLiveTvChannels(
+                            userId = userDto.id,
+                            fields = DefaultItemFields,
+                            limit = limit,
+                            enableImages = true,
+                        ).toBaseItems(api, row.viewOptions.useSeries)
+                        .let {
+                            Success(
+                                context.getString(R.string.channels),
+                                it,
+                                row.viewOptions,
+                            )
+                        }
+                }
+
                 is HomeRowConfig.Suggestions -> {
                     val library =
                         api.userLibraryApi
@@ -889,7 +916,7 @@ class HomeSettingsService
                             row.viewOptions,
                         )
                     } else {
-                        HomeRowLoadingState.Error(
+                        Error(
                             title,
                             message = "Unsupported type ${library.collectionType}",
                         )
