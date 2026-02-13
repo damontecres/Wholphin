@@ -65,7 +65,6 @@ import androidx.tv.material3.ProvideTextStyle
 import androidx.tv.material3.Text
 import androidx.tv.material3.surfaceColorAtElevation
 import com.github.damontecres.wholphin.R
-import com.github.damontecres.wholphin.data.NavDrawerItemRepository
 import com.github.damontecres.wholphin.data.model.JellyfinServer
 import com.github.damontecres.wholphin.data.model.JellyfinUser
 import com.github.damontecres.wholphin.preferences.AppThemeColors
@@ -73,7 +72,6 @@ import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.NavDrawerService
 import com.github.damontecres.wholphin.services.NavigationManager
-import com.github.damontecres.wholphin.services.SeerrServerRepository
 import com.github.damontecres.wholphin.services.SetupDestination
 import com.github.damontecres.wholphin.services.SetupNavigationManager
 import com.github.damontecres.wholphin.ui.FontAwesome
@@ -98,11 +96,9 @@ class NavDrawerViewModel
     constructor(
         private val api: ApiClient,
         private val navDrawerService: NavDrawerService,
-        private val navDrawerItemRepository: NavDrawerItemRepository,
         val navigationManager: NavigationManager,
         val setupNavigationManager: SetupNavigationManager,
         val backdropService: BackdropService,
-        private val seerrServerRepository: SeerrServerRepository,
     ) : ViewModel() {
         val state = navDrawerService.state
 
@@ -184,9 +180,13 @@ data class ServerNavDrawerItem(
     val destination: Destination,
     val type: CollectionType,
 ) : NavDrawerItem {
-    override val id: String = "s_" + itemId.toServerString()
+    override val id: String = getId(itemId)
 
     override fun name(context: Context): String = name
+
+    companion object {
+        fun getId(itemId: UUID) = "s_" + itemId.toServerString()
+    }
 }
 
 /**

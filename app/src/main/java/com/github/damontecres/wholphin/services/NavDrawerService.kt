@@ -8,6 +8,7 @@ import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.JellyfinUser
 import com.github.damontecres.wholphin.data.model.NavPinType
 import com.github.damontecres.wholphin.services.hilt.DefaultCoroutineScope
+import com.github.damontecres.wholphin.ui.main.settings.Library
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.nav.NavDrawerItem
 import com.github.damontecres.wholphin.ui.nav.ServerNavDrawerItem
@@ -26,6 +27,7 @@ import org.jellyfin.sdk.api.client.extensions.userViewsApi
 import org.jellyfin.sdk.model.api.CollectionType
 import org.jellyfin.sdk.model.api.UserDto
 import timber.log.Timber
+import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -64,6 +66,29 @@ class NavDrawerService
                 .onEach { discoverActive ->
                     _state.update { it.copy(discoverEnabled = discoverActive) }
                 }.launchIn(coroutineScope)
+        }
+
+        suspend fun getAllUserLibraries(userId: UUID): List<Library> {
+            val userViews =
+                api.userViewsApi
+                    .getUserViews(userId = userId)
+                    .content.items
+            val libraries =
+                userViews
+                    .filter { it.collectionType in supportedCollectionTypes }
+                    .map { Library(it.id, it.name ?: "", it.collectionType ?: CollectionType.UNKNOWN) }
+            return libraries
+        }
+
+        suspend fun getFilteredUserLibraries(user: JellyfinUser): List<Library> {
+            val pins =
+                serverPreferencesDao
+                    .getNavDrawerPinnedItems(user)
+                    .associateBy { it.itemId }
+            val libraries =
+                getAllUserLibraries(user.id)
+                    .filterNot { pins[ServerNavDrawerItem.getId(it.itemId)]?.type == NavPinType.UNPINNED }
+            return libraries
         }
 
         suspend fun updateNavDrawer(
