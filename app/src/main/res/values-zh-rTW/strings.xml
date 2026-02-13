@@ -417,4 +417,9 @@
     <string name="send_media_info_log_to_server">將媒體訊息日誌傳送到伺服器</string>
     <string name="no_limit">無限制</string>
     <string name="max_days_next_up">接下來播放的保留天數</string>
+    <string name="quick_connect">快速連線</string>
+    <string name="quick_connect_summary">授權其他裝置登入您的帳號</string>
+    <string name="quick_connect_code">輸入快速連線驗證碼</string>
+    <string name="quick_connect_code_error">驗證碼必須為6位數</string>
+    <string name="quick_connect_success">裝置授權成功</string>
 </resources>
