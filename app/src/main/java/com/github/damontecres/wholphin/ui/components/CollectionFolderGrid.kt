@@ -531,7 +531,7 @@ fun CollectionFolderGrid(
         DataLoadingState.Loading,
         DataLoadingState.Pending,
         -> {
-            LoadingPage()
+            LoadingPage(modifier)
         }
 
         is DataLoadingState.Error,
