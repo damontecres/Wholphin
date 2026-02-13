@@ -81,6 +81,9 @@ class HomeSettingsViewModel
 
         val discoverEnabled = seerrServerRepository.active
 
+        private var originalLocalSettings: HomePageSettings? = null
+        private var originalRemoteSettings: HomePageSettings? = null
+
         init {
             addCloseable { saveToLocal() }
             viewModelScope.launchIO {
@@ -88,6 +91,8 @@ class HomeSettingsViewModel
                 val libraries = navDrawerService.getAllUserLibraries(userDto.id, userDto.tvAccess)
                 val currentSettings =
                     homeSettingsService.currentSettings.first { it != HomePageResolvedSettings.EMPTY }
+                originalLocalSettings = homeSettingsService.loadFromLocal(userDto.id)
+                originalRemoteSettings = homeSettingsService.loadFromServer(userDto.id)
                 Timber.v("currentSettings=%s", currentSettings)
                 idCounter = currentSettings.rows.maxOfOrNull { it.id }?.plus(1) ?: 0
                 _state.update {
@@ -493,9 +498,16 @@ class HomeSettingsViewModel
                         HomePageSettings(rows = rows, SUPPORTED_HOME_PAGE_SETTINGS_VERSION)
                     try {
                         Timber.d("saveToLocal")
-                        val local = homeSettingsService.loadFromLocal(user.id)
-                        // Only save if there are changes
-                        if (local != settings) {
+                        // Only save if there are changes based on original source
+                        val shouldSave =
+                            if (originalLocalSettings != null) {
+                                originalLocalSettings != settings
+                            } else if (originalRemoteSettings != null) {
+                                originalRemoteSettings != settings
+                            } else {
+                                true
+                            }
+                        if (shouldSave) {
                             homeSettingsService.saveToLocal(user.id, settings)
                             homeSettingsService.updateCurrent(settings)
                             showSaveToast()

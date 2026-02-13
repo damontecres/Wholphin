@@ -131,7 +131,14 @@ class HomeViewModel
                                 )
                             }
                         }
-                        val rows = deferred.awaitAll()
+                        val rows =
+                            deferred
+                                .awaitAll()
+                                .filter {
+                                    // Include only errors & non-empty successes
+                                    it is HomeRowLoadingState.Error ||
+                                        (it is HomeRowLoadingState.Success && it.items.isNotEmpty())
+                                }
                         Timber.v("Got all rows")
                         _state.update {
                             it.copy(

@@ -33,11 +33,14 @@ import com.github.damontecres.wholphin.data.model.HomeRowConfig
 import com.github.damontecres.wholphin.data.model.HomeRowViewOptions
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.ui.components.ConfirmDialog
+import com.github.damontecres.wholphin.ui.data.RowColumn
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.main.HomePageContent
 import com.github.damontecres.wholphin.ui.main.settings.HomeSettingsDestination.ChooseRowType
 import com.github.damontecres.wholphin.ui.main.settings.HomeSettingsDestination.RowSettings
+import com.github.damontecres.wholphin.ui.rememberPosition
 import com.github.damontecres.wholphin.util.ExceptionHandler
+import com.github.damontecres.wholphin.util.HomeRowLoadingState
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import timber.log.Timber
@@ -55,6 +58,7 @@ fun HomeSettingsPage(
     var showConfirmDialog by remember { mutableStateOf<ShowConfirm?>(null) }
 
     val state by viewModel.state.collectAsState()
+    var position by rememberPosition(0, 0)
     // TODO discover rows
     val discoverEnabled = false // by viewModel.discoverEnabled.collectAsState(false)
 
@@ -109,7 +113,15 @@ fun HomeSettingsPage(
                                         backStack.add(RowSettings(row.id))
                                         scope.launch(ExceptionHandler()) {
                                             Timber.v("Scroll to $index")
-                                            listState.scrollToItem(index)
+                                            listState.animateScrollToItem(index)
+                                            // Update backdrop to first item in the row
+                                            (state.rowData.getOrNull(index) as? HomeRowLoadingState.Success)
+                                                ?.items
+                                                ?.firstOrNull()
+                                                ?.let {
+                                                    viewModel.updateBackdrop(it)
+                                                }
+                                            position = RowColumn(index, 0)
                                         }
                                     },
                                     modifier = destModifier,
@@ -259,6 +271,8 @@ fun HomeSettingsPage(
         HomePageContent(
             loadingState = state.loading,
             homeRows = state.rowData,
+            position = position,
+            onFocusPosition = { position = it },
             onClickItem = { _, _ -> },
             onLongClickItem = { _, _ -> },
             onClickPlay = { _, _ -> },
