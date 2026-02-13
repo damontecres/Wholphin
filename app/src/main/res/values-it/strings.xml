@@ -456,4 +456,26 @@
     <string name="quick_connect_code">Inserisci il codice di Connessione rapida</string>
     <string name="quick_connect_code_error">Il codice deve essere di 6 cifre</string>
     <string name="quick_connect_success">Dispositivo autorizzato con successo</string>
+    <string name="add_row">Aggiungi riga</string>
+    <string name="genres_in">Generi in %1$s</string>
+    <string name="recently_released_in">Recentemente rilasciato in %1$s</string>
+    <string name="height">Altezza</string>
+    <string name="apply_all_rows">Applica a tutte le righe</string>
+    <string name="load_from_server">Carica dal server</string>
+    <string name="add_row_for">Aggiungi riga per %1$s</string>
+    <string name="overwrite_server_settings">Sovrascrivere le impostazioni sul server?</string>
+    <string name="overwrite_local_settings">Sovrascrivere le impostazioni locali?</string>
+    <string name="suggestions_for">Suggerimenti per %1$s</string>
+    <string name="increase_all_cards_size">Aumenta dimensione di tutte le card</string>
+    <string name="decrease_all_cards_size">Riduci dimensione di tutte le card</string>
+    <string name="use_thumb_images">Usa immagini thumbnail</string>
+    <string name="settings_saved">Impostazioni salvate</string>
+    <string name="display_presets">Mostra preset</string>
+    <string name="display_presets_description">Preset integrati per stilizzare rapidamente tutte le righe</string>
+    <string name="home_rows">Righe home</string>
+    <string name="for_episodes">Per gli episodi</string>
+    <string name="customize_home">Personalizza home page</string>
+    <string name="save_to_server">Salva sul server</string>
+    <string name="load_from_web_client">Carica dal client web</string>
+    <string name="use_series">Usa immagine delle serie</string>
 </resources>
