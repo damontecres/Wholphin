@@ -89,7 +89,7 @@ fun PreferencesContent(
     val currentServer by seerrVm.currentSeerrServer.collectAsState(null)
     var showPinFlow by remember { mutableStateOf(false) }
 
-    val navDrawerPins by viewModel.navDrawerPins.observeAsState(mapOf())
+    val navDrawerPins by viewModel.navDrawerPins.collectAsState(emptyList())
     var cacheUsage by remember { mutableStateOf(CacheUsage(0, 0, 0)) }
     val seerrIntegrationEnabled by viewModel.seerrEnabled.collectAsState(false)
     var seerrDialogMode by remember { mutableStateOf<SeerrDialogMode>(SeerrDialogMode.None) }
@@ -335,21 +335,16 @@ fun PreferencesContent(
                             }
 
                             AppPreference.UserPinnedNavDrawerItems -> {
-                                val selectedItems =
-                                    navDrawerPins.keys.mapNotNull {
-                                        if (navDrawerPins[it] ?: false) it else null
-                                    }
-                                MultiChoicePreference(
+                                NavDrawerPreference(
                                     title = stringResource(pref.title),
                                     summary = pref.summary(context, null),
-                                    possibleValues = navDrawerPins.keys,
-                                    selectedValues = selectedItems.toSet(),
-                                    onValueChange = { newSelectedItems ->
-                                        viewModel.updatePins(newSelectedItems)
+                                    items = navDrawerPins,
+                                    onSave = {
+                                        viewModel.updatePins(it)
                                     },
-                                ) {
-                                    Text(it.name(context))
-                                }
+                                    modifier = Modifier,
+                                    interactionSource = interactionSource,
+                                )
                             }
 
                             AppPreference.SendAppLogs -> {

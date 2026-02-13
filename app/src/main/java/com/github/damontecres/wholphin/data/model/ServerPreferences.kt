@@ -1,5 +1,6 @@
 package com.github.damontecres.wholphin.data.model
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.ForeignKey
 
@@ -24,4 +25,5 @@ data class NavDrawerPinnedItem(
     val userId: Int,
     val itemId: String,
     val type: NavPinType,
+    @ColumnInfo(defaultValue = "-1") val order: Int,
 )
