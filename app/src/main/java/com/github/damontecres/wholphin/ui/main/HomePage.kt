@@ -117,12 +117,17 @@ fun HomePage(
             var dialog by remember { mutableStateOf<DialogParams?>(null) }
             var showPlaylistDialog by remember { mutableStateOf<UUID?>(null) }
             val playlistState by playlistViewModel.playlistState.observeAsState(PlaylistLoadingState.Pending)
+            var position by rememberPosition()
             HomePageContent(
                 homeRows = homeRows,
-                onClickItem = { position, item ->
+                position = position,
+                onFocusPosition = { position = it },
+                onClickItem = { clickedPosition, item ->
+                    position = clickedPosition
                     viewModel.navigationManager.navigateTo(item.destination())
                 },
-                onLongClickItem = { position, item ->
+                onLongClickItem = { clickedPosition, item ->
+                    position = clickedPosition
                     val dialogItems =
                         buildMoreDialogItemsForHome(
                             context = context,
@@ -193,19 +198,19 @@ fun HomePage(
 @Composable
 fun HomePageContent(
     homeRows: List<HomeRowLoadingState>,
+    position: RowColumn,
+    onFocusPosition: (RowColumn) -> Unit,
     onClickItem: (RowColumn, BaseItem) -> Unit,
     onLongClickItem: (RowColumn, BaseItem) -> Unit,
     onClickPlay: (RowColumn, BaseItem) -> Unit,
     showClock: Boolean,
     onUpdateBackdrop: (BaseItem) -> Unit,
     modifier: Modifier = Modifier,
-    onFocusPosition: ((RowColumn) -> Unit)? = null,
     loadingState: LoadingState? = null,
     listState: LazyListState = rememberLazyListState(),
     takeFocus: Boolean = true,
     showEmptyRows: Boolean = false,
 ) {
-    var position by rememberPosition()
     val focusedItem =
         position.let {
             (homeRows.getOrNull(it.row) as? HomeRowLoadingState.Success)?.items?.getOrNull(it.column)
@@ -329,21 +334,8 @@ fun HomePageContent(
                                                         cardModifier
                                                             .onFocusChanged {
                                                                 if (it.isFocused) {
-                                                                    position =
-                                                                        RowColumn(rowIndex, index)
-                                                                }
-                                                                if (it.isFocused && onFocusPosition != null) {
-                                                                    val nonEmptyRowBefore =
-                                                                        homeRows
-                                                                            .subList(0, rowIndex)
-                                                                            .count {
-                                                                                it is HomeRowLoadingState.Success && it.items.isEmpty()
-                                                                            }
-                                                                    onFocusPosition.invoke(
-                                                                        RowColumn(
-                                                                            rowIndex - nonEmptyRowBefore,
-                                                                            index,
-                                                                        ),
+                                                                    onFocusPosition?.invoke(
+                                                                        RowColumn(rowIndex, index),
                                                                     )
                                                                 }
                                                             }.onKeyEvent {

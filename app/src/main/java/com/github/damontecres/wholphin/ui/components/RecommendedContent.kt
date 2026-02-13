@@ -34,6 +34,7 @@ import com.github.damontecres.wholphin.ui.detail.buildMoreDialogItemsForHome
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.main.HomePageContent
 import com.github.damontecres.wholphin.ui.nav.Destination
+import com.github.damontecres.wholphin.ui.rememberPosition
 import com.github.damontecres.wholphin.util.ApiRequestPager
 import com.github.damontecres.wholphin.util.HomeRowLoadingState
 import com.github.damontecres.wholphin.util.LoadingState
@@ -149,8 +150,10 @@ fun RecommendedContent(
         }
 
         LoadingState.Success -> {
+            var position by rememberPosition()
             HomePageContent(
                 homeRows = rows,
+                position = position,
                 onClickItem = { _, item ->
                     viewModel.navigationManager.navigateTo(item.destination())
                 },
@@ -160,7 +163,21 @@ fun RecommendedContent(
                 onClickPlay = { _, item ->
                     viewModel.navigationManager.navigateTo(Destination.Playback(item))
                 },
-                onFocusPosition = onFocusPosition,
+                onFocusPosition = {
+                    position = it
+                    val nonEmptyRowBefore =
+                        rows
+                            .subList(0, it.row)
+                            .count {
+                                it is HomeRowLoadingState.Success && it.items.isEmpty()
+                            }
+                    onFocusPosition?.invoke(
+                        RowColumn(
+                            it.row - nonEmptyRowBefore,
+                            it.column,
+                        ),
+                    )
+                },
                 showClock = preferences.appPreferences.interfacePreferences.showClock,
                 onUpdateBackdrop = viewModel::updateBackdrop,
                 modifier = modifier,
