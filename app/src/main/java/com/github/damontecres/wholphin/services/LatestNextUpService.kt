@@ -4,8 +4,6 @@ import android.content.Context
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.ui.SlimItemFields
-import com.github.damontecres.wholphin.ui.main.LatestData
-import com.github.damontecres.wholphin.ui.main.supportedLatestCollectionTypes
 import com.github.damontecres.wholphin.util.HomeRowLoadingState
 import com.github.damontecres.wholphin.util.supportItemKinds
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -21,6 +19,7 @@ import org.jellyfin.sdk.api.client.extensions.tvShowsApi
 import org.jellyfin.sdk.api.client.extensions.userLibraryApi
 import org.jellyfin.sdk.api.client.extensions.userViewsApi
 import org.jellyfin.sdk.model.api.BaseItemKind
+import org.jellyfin.sdk.model.api.CollectionType
 import org.jellyfin.sdk.model.api.UserDto
 import org.jellyfin.sdk.model.api.request.GetLatestMediaRequest
 import org.jellyfin.sdk.model.api.request.GetNextUpRequest
@@ -44,6 +43,7 @@ class LatestNextUpService
             userId: UUID,
             limit: Int,
             includeEpisodes: Boolean,
+            useSeriesForPrimary: Boolean = true,
         ): List<BaseItem> {
             val request =
                 GetResumeItemsRequest(
@@ -66,7 +66,7 @@ class LatestNextUpService
                     .getResumeItems(request)
                     .content
                     .items
-                    .map { BaseItem.from(it, api, true) }
+                    .map { BaseItem.from(it, api, useSeriesForPrimary) }
             return items
         }
 
@@ -76,6 +76,7 @@ class LatestNextUpService
             enableRewatching: Boolean,
             enableResumable: Boolean,
             maxDays: Int,
+            useSeriesForPrimary: Boolean = true,
         ): List<BaseItem> {
             val nextUpDateCutoff =
                 maxDays.takeIf { it > 0 }?.let { LocalDateTime.now().minusDays(it.toLong()) }
@@ -96,7 +97,7 @@ class LatestNextUpService
                     .getNextUp(request)
                     .content
                     .items
-                    .map { BaseItem.from(it, api, true) }
+                    .map { BaseItem.from(it, api, useSeriesForPrimary) }
             return nextUp
         }
 
@@ -192,3 +193,17 @@ class LatestNextUpService
                 return@withContext result
             }
     }
+
+val supportedLatestCollectionTypes =
+    setOf(
+        CollectionType.MOVIES,
+        CollectionType.TVSHOWS,
+        CollectionType.HOMEVIDEOS,
+        // Exclude Live TV because a recording folder view will be used instead
+        null, // Recordings & mixed collection types
+    )
+
+data class LatestData(
+    val title: String,
+    val request: GetLatestMediaRequest,
+)

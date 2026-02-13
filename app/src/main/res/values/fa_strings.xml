@@ -51,4 +51,6 @@
     <string name="fa_clock" translatable="false">&#xf017;</string>
     <string name="fa_bell" translatable="false">&#xf0f3;</string>
     <string name="fa_check" translatable="false">&#xf00c;</string>
+    <string name="fa_cloud_arrow_up" translatable="false">&#xf0ee;</string>
+    <string name="fa_cloud_arrow_down" translatable="false">&#xf0ed;</string>
 </resources>

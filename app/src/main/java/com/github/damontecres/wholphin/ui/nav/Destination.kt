@@ -34,6 +34,9 @@ sealed class Destination(
     ) : Destination()
 
     @Serializable
+    data object HomeSettings : Destination(true)
+
+    @Serializable
     data class Settings(
         val screen: PreferenceScreenOption,
     ) : Destination(true)

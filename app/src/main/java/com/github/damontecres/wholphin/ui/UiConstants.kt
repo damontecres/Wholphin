@@ -82,8 +82,10 @@ val PhotoItemFields =
         )
 
 object Cards {
-    val height2x3 = 172.dp
-    val heightEpisode = height2x3 * .75f
+    const val HEIGHT_2X3_DP = 172
+    val height2x3 = HEIGHT_2X3_DP.dp
+    val HEIGHT_EPISODE = (HEIGHT_2X3_DP * .75f).toInt().let { it - it % 4 }
+    val heightEpisode = HEIGHT_EPISODE.dp
     val playedPercentHeight = 6.dp
     val serverUserCircle = height2x3 * .75f
 }
