@@ -660,6 +660,7 @@ sealed interface AppPreference<Pref, T> {
             AppDestinationPreference<AppPreferences>(
                 title = R.string.customize_home,
                 destination = Destination.HomeSettings,
+                summary = R.string.customize_home_summary,
             )
 
         val SendCrashReports =

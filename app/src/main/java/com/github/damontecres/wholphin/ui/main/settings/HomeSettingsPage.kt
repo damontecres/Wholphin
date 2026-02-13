@@ -61,7 +61,9 @@ fun HomeSettingsPage(
     // Adds a row, waits until its done loading, then scrolls to the new row
     fun addRow(func: () -> Job) {
         scope.launch(ExceptionHandler(autoToast = true)) {
-            backStack.add(HomeSettingsDestination.RowList)
+            while (backStack.size > 1) {
+                backStack.removeAt(backStack.lastIndex)
+            }
             func.invoke().join()
             listState.animateScrollToItem(state.rows.lastIndex)
         }
