@@ -74,6 +74,7 @@ class TestHomeRowSamples {
                 HomeRowConfig.Favorite(kind = BaseItemKind.SERIES),
                 HomeRowConfig.Recordings(),
                 HomeRowConfig.TvPrograms(),
+                HomeRowConfig.TvChannels(),
                 HomeRowConfig.Suggestions(parentId = UUID.randomUUID()),
             )
     }
@@ -96,6 +97,7 @@ class TestHomeRowSamples {
                 is HomeRowConfig.Recordings -> foundTypes.add(it::class)
                 is HomeRowConfig.TvPrograms -> foundTypes.add(it::class)
                 is HomeRowConfig.Suggestions -> foundTypes.add(it::class)
+                is HomeRowConfig.TvChannels -> foundTypes.add(it::class)
             }
         }
         Assert.assertEquals(HomeRowConfig::class.sealedSubclasses.size, foundTypes.size)
