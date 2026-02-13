@@ -7,7 +7,6 @@ import java.util.Properties
 
 plugins {
     alias(libs.plugins.android.application)
-    alias(libs.plugins.kotlin.android)
     alias(libs.plugins.ksp)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.hilt)
@@ -70,6 +69,7 @@ android {
     }
     kotlin {
         compilerOptions {
+            languageVersion = org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_2_3
             jvmTarget = JvmTarget.JVM_11
             javaParameters = true
         }
@@ -150,7 +150,7 @@ android {
 
     sourceSets {
         getByName("main") {
-            kotlin.srcDirs("$buildDir/generated/seerr_api/src/main/kotlin")
+            kotlin.directories += "$buildDir/generated/seerr_api/src/main/kotlin"
         }
     }
 }
