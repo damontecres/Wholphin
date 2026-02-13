@@ -15,6 +15,7 @@ import com.github.damontecres.wholphin.services.MediaReportService
 import com.github.damontecres.wholphin.services.NavDrawerService
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.UserPreferencesService
+import com.github.damontecres.wholphin.services.tvAccess
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.showToast
 import com.github.damontecres.wholphin.util.ExceptionHandler
@@ -68,7 +69,8 @@ class HomeViewModel
                     val prefs = preferences.appPreferences.homePagePreferences
 
                     serverRepository.currentUserDto.value?.let { userDto ->
-                        val libraries = navDrawerService.getAllUserLibraries(userDto.id)
+                        val libraries =
+                            navDrawerService.getAllUserLibraries(userDto.id, userDto.tvAccess)
                         val settings =
                             homeSettingsService.currentSettings.first { it != HomePageResolvedSettings.EMPTY }
                         val state = state.value

@@ -187,6 +187,25 @@ data class BaseItem(
                     )
                 }
 
+                BaseItemKind.TV_CHANNEL -> {
+                    Destination.Playback(
+                        itemId = id,
+                        positionMs = 0L,
+                    )
+                }
+
+                BaseItemKind.PROGRAM -> {
+                    val channelId = data.channelId
+                    if (channelId != null) {
+                        Destination.Playback(
+                            itemId = channelId,
+                            positionMs = 0L,
+                        )
+                    } else {
+                        Destination.MediaItem(this)
+                    }
+                }
+
                 else -> {
                     Destination.MediaItem(this)
                 }

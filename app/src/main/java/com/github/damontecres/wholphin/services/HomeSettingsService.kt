@@ -12,13 +12,14 @@ import com.github.damontecres.wholphin.preferences.HomePagePreferences
 import com.github.damontecres.wholphin.ui.DefaultItemFields
 import com.github.damontecres.wholphin.ui.SlimItemFields
 import com.github.damontecres.wholphin.ui.components.getGenreImageMap
-import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.main.settings.Library
+import com.github.damontecres.wholphin.ui.toBaseItems
 import com.github.damontecres.wholphin.ui.toServerString
 import com.github.damontecres.wholphin.util.GetGenresRequestHandler
 import com.github.damontecres.wholphin.util.GetItemsRequestHandler
 import com.github.damontecres.wholphin.util.GetPersonsHandler
 import com.github.damontecres.wholphin.util.HomeRowLoadingState
+import com.github.damontecres.wholphin.util.HomeRowLoadingState.Error
 import com.github.damontecres.wholphin.util.HomeRowLoadingState.Success
 import com.github.damontecres.wholphin.util.supportedHomeCollectionTypes
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -43,6 +44,7 @@ import org.jellyfin.sdk.api.client.extensions.userLibraryApi
 import org.jellyfin.sdk.api.client.extensions.userViewsApi
 import org.jellyfin.sdk.model.UUID
 import org.jellyfin.sdk.model.api.BaseItemKind
+import org.jellyfin.sdk.model.api.CollectionType
 import org.jellyfin.sdk.model.api.ImageType
 import org.jellyfin.sdk.model.api.ItemSortBy
 import org.jellyfin.sdk.model.api.SortOrder
@@ -255,11 +257,12 @@ class HomeSettingsService
         suspend fun createDefault(userId: UUID): HomePageResolvedSettings {
             Timber.v("Creating default settings")
             val user = serverRepository.currentUser.value?.takeIf { it.id == userId }
+            val userDto = serverRepository.currentUserDto.value?.takeIf { it.id == userId }
             val libraries =
                 if (user != null) {
-                    navDrawerService.getFilteredUserLibraries(user)
+                    navDrawerService.getFilteredUserLibraries(user, userDto?.tvAccess ?: false)
                 } else {
-                    navDrawerService.getAllUserLibraries(userId)
+                    navDrawerService.getAllUserLibraries(userId, userDto?.tvAccess ?: false)
                 }
 
             val prefs =
@@ -269,18 +272,23 @@ class HomeSettingsService
                 libraries
                     .mapIndexed { index, it ->
                         val parentId = it.itemId
-                        val name = it.name.takeIf { it.isNotNullOrBlank() }
-                        val title =
-                            name?.let { context.getString(R.string.recently_added_in, it) }
-                                ?: context.getString(R.string.recently_added)
-                        HomeRowConfigDisplay(
-                            id = index,
-                            title = title,
-                            config = HomeRowConfig.RecentlyAdded(parentId),
-                        )
+                        val title = getRecentlyAddedTitle(context, it)
+                        if (it.collectionType == CollectionType.LIVETV) {
+                            HomeRowConfigDisplay(
+                                id = index,
+                                title = context.getString(R.string.live_tv),
+                                config = HomeRowConfig.TvPrograms(),
+                            )
+                        } else {
+                            HomeRowConfigDisplay(
+                                id = index,
+                                title = title,
+                                config = HomeRowConfig.RecentlyAdded(parentId),
+                            )
+                        }
                     }
             val continueWatchingRows =
-                if (prefs.combineContinueNext) { // TODO
+                if (prefs.combineContinueNext) {
                     listOf(
                         HomeRowConfigDisplay(
                             id = includedIds.size + 1,
@@ -363,7 +371,7 @@ class HomeSettingsService
                                     }
 
                                     HomeSectionType.LIVE_TV -> {
-                                        if (userDto.policy?.enableLiveTvAccess == true) {
+                                        if (userDto.tvAccess) {
                                             HomeRowConfigDisplay(
                                                 id = id++,
                                                 title = context.getString(R.string.live_tv),
@@ -523,6 +531,14 @@ class HomeSettingsService
                     )
                 }
 
+                is HomeRowConfig.TvChannels -> {
+                    HomeRowConfigDisplay(
+                        id = id,
+                        title = context.getString(R.string.channels),
+                        config,
+                    )
+                }
+
                 is HomeRowConfig.Suggestions -> {
                     val name =
                         api.userLibraryApi
@@ -654,13 +670,10 @@ class HomeSettingsService
                 }
 
                 is HomeRowConfig.RecentlyAdded -> {
-                    val name =
+                    val library =
                         libraries
                             .firstOrNull { it.itemId == row.parentId }
-                            ?.name
-                    val title =
-                        name?.let { context.getString(R.string.recently_added_in, it) }
-                            ?: context.getString(R.string.recently_added)
+                    val title = getRecentlyAddedTitle(context, library)
                     val request =
                         GetLatestMediaRequest(
                             fields = SlimItemFields,
@@ -862,6 +875,23 @@ class HomeSettingsService
                         }
                 }
 
+                is HomeRowConfig.TvChannels -> {
+                    api.liveTvApi
+                        .getLiveTvChannels(
+                            userId = userDto.id,
+                            fields = DefaultItemFields,
+                            limit = limit,
+                            enableImages = true,
+                        ).toBaseItems(api, row.viewOptions.useSeries)
+                        .let {
+                            Success(
+                                context.getString(R.string.channels),
+                                it,
+                                row.viewOptions,
+                            )
+                        }
+                }
+
                 is HomeRowConfig.Suggestions -> {
                     val library =
                         api.userLibraryApi
@@ -888,7 +918,7 @@ class HomeSettingsService
                             row.viewOptions,
                         )
                     } else {
-                        HomeRowLoadingState.Error(
+                        Error(
                             title,
                             message = "Unsupported type ${library.collectionType}",
                         )
@@ -949,3 +979,14 @@ class UnsupportedHomeSettingsVersionException(
     val unsupportedVersion: Int?,
     val maxSupportedVersion: Int = SUPPORTED_HOME_PAGE_SETTINGS_VERSION,
 ) : Exception("Unsupported version $unsupportedVersion, max supported is $maxSupportedVersion")
+
+fun getRecentlyAddedTitle(
+    context: Context,
+    library: Library?,
+): String =
+    if (library?.isRecordingFolder == true) {
+        context.getString(R.string.recently_recorded)
+    } else {
+        library?.name?.let { context.getString(R.string.recently_added_in, it) }
+            ?: context.getString(R.string.recently_added)
+    }

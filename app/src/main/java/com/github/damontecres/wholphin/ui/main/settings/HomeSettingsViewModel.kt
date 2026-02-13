@@ -30,6 +30,7 @@ import com.github.damontecres.wholphin.services.SeerrServerRepository
 import com.github.damontecres.wholphin.services.UnsupportedHomeSettingsVersionException
 import com.github.damontecres.wholphin.services.UserPreferencesService
 import com.github.damontecres.wholphin.services.hilt.IoCoroutineScope
+import com.github.damontecres.wholphin.services.tvAccess
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.showToast
 import com.github.damontecres.wholphin.util.HomeRowLoadingState
@@ -83,8 +84,8 @@ class HomeSettingsViewModel
         init {
             addCloseable { saveToLocal() }
             viewModelScope.launchIO {
-                val userId = serverRepository.currentUser.value?.id ?: return@launchIO
-                val libraries = navDrawerService.getAllUserLibraries(userId)
+                val userDto = serverRepository.currentUserDto.value ?: return@launchIO
+                val libraries = navDrawerService.getAllUserLibraries(userDto.id, userDto.tvAccess)
                 val currentSettings =
                     homeSettingsService.currentSettings.first { it != HomePageResolvedSettings.EMPTY }
                 Timber.v("currentSettings=%s", currentSettings)
@@ -290,6 +291,36 @@ class HomeSettingsViewModel
                                 id = id,
                                 title = title,
                                 config = Suggestions(library.itemId),
+                            )
+                        }
+
+                        LibraryRowType.TV_CHANNELS -> {
+                            val title = context.getString(R.string.channels)
+                            HomeRowConfigDisplay(
+                                id = id,
+                                title = title,
+                                config =
+                                    HomeRowConfig.TvChannels(
+                                        viewOptions = HomeRowViewOptions.channelsDefault,
+                                    ),
+                            )
+                        }
+
+                        LibraryRowType.TV_PROGRAMS -> {
+                            val title = context.getString(R.string.watch_live)
+                            HomeRowConfigDisplay(
+                                id = id,
+                                title = title,
+                                config = HomeRowConfig.TvPrograms(),
+                            )
+                        }
+
+                        LibraryRowType.RECENTLY_RECORDED -> {
+                            val title = context.getString(R.string.recently_recorded)
+                            HomeRowConfigDisplay(
+                                id = id,
+                                title = title,
+                                config = RecentlyAdded(library.itemId),
                             )
                         }
                     }
@@ -614,6 +645,10 @@ class HomeSettingsViewModel
                                 is HomeRowConfig.TvPrograms -> {
                                     it.config.updateViewOptions(preset.tvLibrary)
                                 }
+
+                                is HomeRowConfig.TvChannels -> {
+                                    it.config
+                                }
                             }
                         it.copy(config = newConfig)
                     }
@@ -658,5 +693,7 @@ data class HomePageSettingsState(
 data class Library(
     @Serializable(UUIDSerializer::class) val itemId: UUID,
     val name: String,
+    val type: BaseItemKind,
     val collectionType: CollectionType,
+    val isRecordingFolder: Boolean,
 )

@@ -111,7 +111,7 @@ sealed interface HomeRowConfig {
     }
 
     /**
-     *
+     * Currently recording
      */
     @Serializable
     @SerialName("Recordings")
@@ -122,7 +122,7 @@ sealed interface HomeRowConfig {
     }
 
     /**
-     *
+     * Programs on now/recommended
      */
     @Serializable
     @SerialName("TvPrograms")
@@ -130,6 +130,17 @@ sealed interface HomeRowConfig {
         override val viewOptions: HomeRowViewOptions = HomeRowViewOptions(),
     ) : HomeRowConfig {
         override fun updateViewOptions(viewOptions: HomeRowViewOptions): TvPrograms = this.copy(viewOptions = viewOptions)
+    }
+
+    /**
+     * Live TV channels
+     */
+    @Serializable
+    @SerialName("TvChannels")
+    data class TvChannels(
+        override val viewOptions: HomeRowViewOptions = HomeRowViewOptions(),
+    ) : HomeRowConfig {
+        override fun updateViewOptions(viewOptions: HomeRowViewOptions): TvChannels = this.copy(viewOptions = viewOptions)
     }
 
     /**
@@ -215,6 +226,12 @@ data class HomeRowViewOptions(
         val genreDefault =
             HomeRowViewOptions(
                 heightDp = Cards.HEIGHT_EPISODE,
+                aspectRatio = AspectRatio.WIDE,
+            )
+
+        val channelsDefault =
+            HomeRowViewOptions(
+                heightDp = 96,
                 aspectRatio = AspectRatio.WIDE,
             )
     }

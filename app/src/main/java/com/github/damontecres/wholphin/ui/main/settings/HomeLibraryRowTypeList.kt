@@ -23,6 +23,7 @@ import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.services.SuggestionsWorker
 import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.tryRequestFocus
+import org.jellyfin.sdk.model.api.CollectionType
 
 @Composable
 fun HomeLibraryRowTypeList(
@@ -63,11 +64,38 @@ fun HomeLibraryRowTypeList(
 }
 
 fun getSupportedRowTypes(library: Library): List<LibraryRowType> {
-    val itemKind = SuggestionsWorker.getTypeForCollection(library.collectionType)
-    return if (itemKind != null) {
-        LibraryRowType.entries
-    } else {
-        LibraryRowType.entries.toMutableList().apply { remove(LibraryRowType.SUGGESTIONS) }
+    val supportsSuggestions = SuggestionsWorker.getTypeForCollection(library.collectionType) != null
+    return when {
+        library.isRecordingFolder -> {
+            listOf(
+                LibraryRowType.RECENTLY_RECORDED,
+                LibraryRowType.GENRES,
+            )
+        }
+
+        library.collectionType == CollectionType.LIVETV -> {
+            listOf(
+                LibraryRowType.TV_CHANNELS,
+                LibraryRowType.TV_PROGRAMS,
+            )
+        }
+
+        supportsSuggestions -> {
+            listOf(
+                LibraryRowType.RECENTLY_ADDED,
+                LibraryRowType.RECENTLY_RELEASED,
+                LibraryRowType.SUGGESTIONS,
+                LibraryRowType.GENRES,
+            )
+        }
+
+        else -> {
+            listOf(
+                LibraryRowType.RECENTLY_ADDED,
+                LibraryRowType.RECENTLY_RELEASED,
+                LibraryRowType.GENRES,
+            )
+        }
     }
 }
 
@@ -78,4 +106,7 @@ enum class LibraryRowType(
     RECENTLY_RELEASED(R.string.recently_released),
     SUGGESTIONS(R.string.suggestions),
     GENRES(R.string.genres),
+    TV_CHANNELS(R.string.channels),
+    TV_PROGRAMS(R.string.live_tv),
+    RECENTLY_RECORDED(R.string.recently_recorded),
 }
