@@ -117,7 +117,7 @@
     <string name="subtitle_download_too_long">下载时间过长，可能需要重新开始播放</string>
     <string name="subtitle">字幕</string>
     <string name="subtitles">字幕</string>
-    <string name="suggestions">建议</string>
+    <string name="suggestions">推荐</string>
     <string name="switch_servers">切换服务器</string>
     <string name="switch_user">切换</string>
     <string name="top_unwatched">高分未看</string>
@@ -215,7 +215,7 @@
     <string name="global_content_scale">默认内容比例</string>
     <string name="install_update">安装更新</string>
     <string name="installed_version">安装版本</string>
-    <string name="max_homepage_items">首页每行最大项目数</string>
+    <string name="max_homepage_items">首页行最大项目数</string>
     <string name="nav_drawer_pins_summary">选择默认显示的项目，其他项目将隐藏</string>
     <string name="nav_drawer_pins">自定义抽屉式导航栏项目</string>
     <string name="nav_drawer_switch_on_focus_summary_off">点击切换页面</string>
@@ -422,4 +422,26 @@
     <string name="quick_connect_code">输入快速连接代码</string>
     <string name="quick_connect_code_error">代码必须为六位数字</string>
     <string name="quick_connect_success">设备授权成功</string>
+    <string name="add_row">添加行</string>
+    <string name="genres_in">%1$s 中的类型</string>
+    <string name="recently_released_in">%1$s 最近发行</string>
+    <string name="height">高度</string>
+    <string name="apply_all_rows">应用到所有行</string>
+    <string name="customize_home">自定义首页</string>
+    <string name="home_rows">首页行</string>
+    <string name="load_from_server">从服务器加载</string>
+    <string name="save_to_server">保存到服务器</string>
+    <string name="load_from_web_client">从网络客户端加载</string>
+    <string name="use_series">使用剧集图片</string>
+    <string name="add_row_for">为 %1$s 添加行</string>
+    <string name="overwrite_server_settings">覆盖服务器上的设置？</string>
+    <string name="overwrite_local_settings">覆盖本地设置？</string>
+    <string name="for_episodes">针对剧集</string>
+    <string name="suggestions_for">%1$s 推荐内容</string>
+    <string name="increase_all_cards_size">增大所有卡片的尺寸</string>
+    <string name="decrease_all_cards_size">减小所有卡片的尺寸</string>
+    <string name="use_thumb_images">使用缩略图</string>
+    <string name="settings_saved">设置已保存</string>
+    <string name="display_presets">显示预设</string>
+    <string name="display_presets_description">可快速设置所有行样式的内置预设</string>
 </resources>
