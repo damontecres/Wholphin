@@ -165,7 +165,6 @@ class PlaybackViewModel
         val currentPlayback = MutableStateFlow<CurrentPlayback?>(null)
         val currentItemPlayback = MutableLiveData<ItemPlayback>()
         val currentSegment = MutableStateFlow<MediaSegmentState?>(null)
-        private val autoSkippedSegments = mutableSetOf<UUID>()
 
         val subtitleCues = MutableLiveData<List<Cue>>(listOf())
 
@@ -957,7 +956,10 @@ class PlaybackViewModel
             }
         }
 
+        // Variables for tracking segment state
         private var segmentJob: Job? = null
+        private val autoSkippedSegments = mutableSetOf<UUID>()
+        private val outroShownSegments = mutableSetOf<UUID>()
 
         /**
          * Cancels listening for segments and clears current segment state
@@ -965,6 +967,7 @@ class PlaybackViewModel
         private fun resetSegmentState() {
             segmentJob?.cancel()
             autoSkippedSegments.clear()
+            outroShownSegments.clear()
             currentSegment.value = null
         }
 
@@ -1007,7 +1010,8 @@ class PlaybackViewModel
 
                                 if (currentSegment.type == MediaSegmentType.OUTRO &&
                                     prefs.showNextUpWhen == ShowNextUpWhen.DURING_CREDITS &&
-                                    playlist != null && playlist.hasNext()
+                                    playlist != null && playlist.hasNext() &&
+                                    outroShownSegments.add(currentSegment.id)
                                 ) {
                                     val nextItem = playlist.peek()
                                     Timber.v("Setting next up during outro to ${nextItem?.id}")
