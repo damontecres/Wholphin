@@ -161,7 +161,7 @@ fun SeriesOverviewContent(
                             .padding(paddingValues)
                             .fillMaxWidth(),
                 )
-                SeriesName(series.name, Modifier)
+                SeriesName(series.name, Modifier.padding(start = 8.dp))
                 FocusedEpisodeHeader(
                     preferences = preferences,
                     ep = focusedEpisode,
