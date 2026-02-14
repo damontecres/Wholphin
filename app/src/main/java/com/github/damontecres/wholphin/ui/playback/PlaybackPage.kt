@@ -236,7 +236,7 @@ fun PlaybackPageContent(
             skipWithLeftRight = true,
             seekForward = preferences.appPreferences.playbackPreferences.skipForwardMs.milliseconds,
             seekBack = preferences.appPreferences.playbackPreferences.skipBackMs.milliseconds,
-            getDurationMs = { player.duration },
+            getDurationMs = { player.duration.takeIf { it > 0L } ?: 0L },
             controllerViewState = controllerViewState,
             updateSkipIndicator = updateSkipIndicator,
             skipBackOnResume = preferences.appPreferences.playbackPreferences.skipBackOnResume,

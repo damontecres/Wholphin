@@ -82,13 +82,15 @@ fun SteppedSeekBarImpl(
         durationMs = durationMs,
         onLeft = { multiplier ->
             controllerViewState.pulseControls()
-            seekProgress = (seekProgress - offset * multiplier).coerceAtLeast(0f)
+            val baseProgress = if (hasSeeked) seekProgress else progressToUse
+            seekProgress = (baseProgress - offset * multiplier).coerceAtLeast(0f)
             hasSeeked = true
             seek(seekProgress)
         },
         onRight = { multiplier ->
             controllerViewState.pulseControls()
-            seekProgress = (seekProgress + offset * multiplier).coerceAtMost(1f)
+            val baseProgress = if (hasSeeked) seekProgress else progressToUse
+            seekProgress = (baseProgress + offset * multiplier).coerceAtMost(1f)
             hasSeeked = true
             seek(seekProgress)
         },
@@ -129,14 +131,18 @@ fun IntervalSeekBarImpl(
         durationMs = durationMs,
         onLeft = { multiplier ->
             controllerViewState.pulseControls()
-            seekPositionMs = (seekPositionMs - seekBack.inWholeMilliseconds * multiplier).coerceAtLeast(0L)
+            val basePositionMs = if (hasSeeked) seekPositionMs else progressToUse
+            seekPositionMs =
+                (basePositionMs - seekBack.inWholeMilliseconds * multiplier).coerceAtLeast(0L)
             hasSeeked = true
             onSeek(seekPositionMs)
         },
         onRight = { multiplier ->
             controllerViewState.pulseControls()
+            val basePositionMs = if (hasSeeked) seekPositionMs else progressToUse
             seekPositionMs =
-                (seekPositionMs + seekForward.inWholeMilliseconds * multiplier).coerceAtMost(durationMs)
+                (basePositionMs + seekForward.inWholeMilliseconds * multiplier)
+                    .coerceAtMost(durationMs)
             hasSeeked = true
             onSeek(seekPositionMs)
         },
@@ -160,6 +166,8 @@ fun SeekBarDisplay(
     val onSurface = MaterialTheme.colorScheme.onSurface
 
     val isFocused by interactionSource.collectIsFocusedAsState()
+    var leftHandledByRepeat by remember { mutableStateOf(false) }
+    var rightHandledByRepeat by remember { mutableStateOf(false) }
     val animatedIndicatorHeight by animateDpAsState(
         targetValue = 6.dp.times((if (isFocused) 2f else 1f)),
     )
@@ -176,16 +184,24 @@ fun SeekBarDisplay(
                             KeyEvent.KEYCODE_DPAD_LEFT, KeyEvent.KEYCODE_SYSTEM_NAVIGATION_LEFT -> {
                                 when (event.type) {
                                     KeyEventType.KeyDown -> {
-                                        onLeft.invoke(
-                                            calculateSeekAccelerationMultiplier(
-                                                repeatCount = event.nativeKeyEvent.repeatCount,
-                                                durationMs = durationMs,
-                                            ),
-                                        )
+                                        if (event.nativeKeyEvent.repeatCount > 0) {
+                                            leftHandledByRepeat = true
+                                            onLeft.invoke(
+                                                calculateSeekAccelerationMultiplier(
+                                                    repeatCount = event.nativeKeyEvent.repeatCount,
+                                                    durationMs = durationMs,
+                                                ),
+                                            )
+                                        } else {
+                                            leftHandledByRepeat = false
+                                        }
                                     }
 
                                     KeyEventType.KeyUp -> {
-                                        // Consume so key-up does not trigger an additional seek.
+                                        if (!leftHandledByRepeat) {
+                                            onLeft.invoke(1)
+                                        }
+                                        leftHandledByRepeat = false
                                     }
 
                                     else -> {
@@ -198,16 +214,24 @@ fun SeekBarDisplay(
                             KeyEvent.KEYCODE_DPAD_RIGHT, KeyEvent.KEYCODE_SYSTEM_NAVIGATION_RIGHT -> {
                                 when (event.type) {
                                     KeyEventType.KeyDown -> {
-                                        onRight.invoke(
-                                            calculateSeekAccelerationMultiplier(
-                                                repeatCount = event.nativeKeyEvent.repeatCount,
-                                                durationMs = durationMs,
-                                            ),
-                                        )
+                                        if (event.nativeKeyEvent.repeatCount > 0) {
+                                            rightHandledByRepeat = true
+                                            onRight.invoke(
+                                                calculateSeekAccelerationMultiplier(
+                                                    repeatCount = event.nativeKeyEvent.repeatCount,
+                                                    durationMs = durationMs,
+                                                ),
+                                            )
+                                        } else {
+                                            rightHandledByRepeat = false
+                                        }
                                     }
 
                                     KeyEventType.KeyUp -> {
-                                        // Consume so key-up does not trigger an additional seek.
+                                        if (!rightHandledByRepeat) {
+                                            onRight.invoke(1)
+                                        }
+                                        rightHandledByRepeat = false
                                     }
 
                                     else -> {

@@ -29,6 +29,9 @@ class PlaybackKeyHandler(
     private val onStop: () -> Unit,
     private val onPlaybackDialogTypeClick: (PlaybackDialogType) -> Unit,
 ) {
+    private var leftHandledByRepeat = false
+    private var rightHandledByRepeat = false
+
     fun onKeyEvent(it: KeyEvent): Boolean {
         if (it.type == KeyEventType.KeyUp) onInteraction.invoke()
 
@@ -126,26 +129,28 @@ class PlaybackKeyHandler(
             return false
         }
 
+        val isBack = isSkipBack(event)
         return when (event.type) {
             KeyEventType.KeyDown -> {
-                val multiplier =
-                    calculateSeekAccelerationMultiplier(
-                        repeatCount = event.nativeKeyEvent.repeatCount,
-                        durationMs = getDurationMs(),
-                    )
-                if (isSkipBack(event)) {
-                    val skipDuration = seekBack * multiplier
-                    player.seekBack(skipDuration)
-                    updateSkipIndicator(-skipDuration.inWholeMilliseconds)
+                if (event.nativeKeyEvent.repeatCount > 0) {
+                    val multiplier =
+                        calculateSeekAccelerationMultiplier(
+                            repeatCount = event.nativeKeyEvent.repeatCount,
+                            durationMs = normalizedDurationMs(),
+                        )
+                    setHandledByRepeat(isBack = isBack, handled = true)
+                    seekWithMultiplier(isBack = isBack, multiplier = multiplier)
                 } else {
-                    val skipDuration = seekForward * multiplier
-                    player.seekForward(skipDuration)
-                    updateSkipIndicator(skipDuration.inWholeMilliseconds)
+                    setHandledByRepeat(isBack = isBack, handled = false)
                 }
                 true
             }
 
             KeyEventType.KeyUp -> {
+                if (!handledByRepeat(isBack = isBack)) {
+                    seekWithMultiplier(isBack = isBack, multiplier = 1)
+                }
+                setHandledByRepeat(isBack = isBack, handled = false)
                 true
             }
 
@@ -154,4 +159,39 @@ class PlaybackKeyHandler(
             }
         }
     }
+
+    private fun seekWithMultiplier(
+        isBack: Boolean,
+        multiplier: Int,
+    ) {
+        if (isBack) {
+            val skipDuration = seekBack * multiplier
+            player.seekBack(skipDuration)
+            updateSkipIndicator(-skipDuration.inWholeMilliseconds)
+        } else {
+            val skipDuration = seekForward * multiplier
+            player.seekForward(skipDuration)
+            updateSkipIndicator(skipDuration.inWholeMilliseconds)
+        }
+    }
+
+    private fun setHandledByRepeat(
+        isBack: Boolean,
+        handled: Boolean,
+    ) {
+        if (isBack) {
+            leftHandledByRepeat = handled
+        } else {
+            rightHandledByRepeat = handled
+        }
+    }
+
+    private fun handledByRepeat(isBack: Boolean): Boolean =
+        if (isBack) {
+            leftHandledByRepeat
+        } else {
+            rightHandledByRepeat
+        }
+
+    private fun normalizedDurationMs(): Long = getDurationMs().takeIf { it > 0L } ?: 0L
 }
