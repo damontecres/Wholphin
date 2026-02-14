@@ -510,4 +510,5 @@
     <string name="settings_saved">Nastavení uložena</string>
     <string name="display_presets">Zobrazit předvolby</string>
     <string name="display_presets_description">Vestavěné předvolby pro rychlou úpravu všech řádků</string>
+    <string name="customize_home_summary">Vyberte řádky a obrázky na domovské stránce</string>
 </resources>
