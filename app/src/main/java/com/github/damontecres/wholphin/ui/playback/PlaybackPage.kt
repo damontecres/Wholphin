@@ -41,6 +41,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
@@ -208,6 +209,8 @@ fun PlaybackPageContent(
     val scaledModifier =
         Modifier.resizeWithContentScale(contentScale, presentationState.videoSizeDp)
     val focusRequester = remember { FocusRequester() }
+    val seekBarFocusRequester = remember { FocusRequester() }
+    var seekBarFocusOnShow by remember { mutableStateOf(false) }
     val playPauseState = rememberPlayPauseButtonState(player)
     val seekBarState = rememberSeekBarState(player, scope)
 
@@ -220,6 +223,9 @@ fun PlaybackPageContent(
     LaunchedEffect(controllerViewState.controlsVisible) {
         // If controller shows/hides, immediately cancel the skip indicator
         skipIndicatorDuration = 0L
+        if (!controllerViewState.controlsVisible) {
+            seekBarFocusOnShow = false
+        }
     }
     var skipPosition by remember { mutableLongStateOf(0L) }
     val updateSkipIndicator = { delta: Long ->
@@ -230,23 +236,39 @@ fun PlaybackPageContent(
         skipPosition = player.currentPosition
     }
     val keyHandler =
-        PlaybackKeyHandler(
-            player = player,
-            controlsEnabled = nextUp == null,
-            skipWithLeftRight = true,
-            seekForward = preferences.appPreferences.playbackPreferences.skipForwardMs.milliseconds,
-            seekBack = preferences.appPreferences.playbackPreferences.skipBackMs.milliseconds,
-            controllerViewState = controllerViewState,
-            updateSkipIndicator = updateSkipIndicator,
-            skipBackOnResume = preferences.appPreferences.playbackPreferences.skipBackOnResume,
-            onInteraction = viewModel::reportInteraction,
-            oneClickPause = preferences.appPreferences.playbackPreferences.oneClickPause,
-            onStop = {
-                player.stop()
-                viewModel.navigationManager.goBack()
-            },
-            onPlaybackDialogTypeClick = { playbackDialog = it },
-        )
+        remember(
+            player,
+            nextUp,
+            controllerViewState,
+            preferences.appPreferences.playbackPreferences.skipForwardMs,
+            preferences.appPreferences.playbackPreferences.skipBackMs,
+            preferences.appPreferences.playbackPreferences.skipBackOnResume,
+            preferences.appPreferences.playbackPreferences.oneClickPause,
+            scope,
+        ) {
+            PlaybackKeyHandler(
+                player = player,
+                controlsEnabled = nextUp == null,
+                skipWithLeftRight = true,
+                seekForward = preferences.appPreferences.playbackPreferences.skipForwardMs.milliseconds,
+                seekBack = preferences.appPreferences.playbackPreferences.skipBackMs.milliseconds,
+                controllerViewState = controllerViewState,
+                updateSkipIndicator = updateSkipIndicator,
+                skipBackOnResume = preferences.appPreferences.playbackPreferences.skipBackOnResume,
+                onInteraction = viewModel::reportInteraction,
+                oneClickPause = preferences.appPreferences.playbackPreferences.oneClickPause,
+                onStop = {
+                    player.stop()
+                    viewModel.navigationManager.goBack()
+                },
+                onPlaybackDialogTypeClick = { playbackDialog = it },
+                onSeekBarFocusRequest = {
+                    seekBarFocusOnShow = true
+                },
+                scope = scope,
+                isSeekBarFocusPending = { seekBarFocusOnShow },
+            )
+        }
 
     val onPlaybackActionClick: (PlaybackAction) -> Unit = {
         when (it) {
@@ -316,7 +338,7 @@ fun PlaybackPageContent(
                 Modifier
                     .fillMaxSize(playerSize)
                     .align(Alignment.TopCenter)
-                    .onKeyEvent(keyHandler::onKeyEvent)
+                    .onPreviewKeyEvent(keyHandler::onKeyEvent)
                     .focusRequester(focusRequester)
                     .focusable(),
         ) {
@@ -389,6 +411,11 @@ fun PlaybackPageContent(
                     onPlaybackActionClick = onPlaybackActionClick,
                     onClickPlaybackDialogType = { playbackDialog = it },
                     onSeekBarChange = seekBarState::onValueChange,
+                    seekBarFocusRequester = seekBarFocusRequester,
+                    shouldFocusSeekBar = seekBarFocusOnShow,
+                    onSeekBarFocusConsumed = {
+                        seekBarFocusOnShow = false
+                    },
                     showDebugInfo = showDebugInfo,
                     currentPlayback = currentPlayback,
                     chapters = mediaInfo?.chapters ?: listOf(),
