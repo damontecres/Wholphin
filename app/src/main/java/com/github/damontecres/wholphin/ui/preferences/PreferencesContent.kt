@@ -89,7 +89,6 @@ fun PreferencesContent(
     val currentServer by seerrVm.currentSeerrServer.collectAsState(null)
     var showPinFlow by remember { mutableStateOf(false) }
 
-    val navDrawerPins by viewModel.navDrawerPins.collectAsState(emptyList())
     var cacheUsage by remember { mutableStateOf(CacheUsage(0, 0, 0)) }
     val seerrIntegrationEnabled by viewModel.seerrEnabled.collectAsState(false)
     var seerrDialogMode by remember { mutableStateOf<SeerrDialogMode>(SeerrDialogMode.None) }
@@ -338,10 +337,6 @@ fun PreferencesContent(
                                 NavDrawerPreference(
                                     title = stringResource(pref.title),
                                     summary = pref.summary(context, null),
-                                    items = navDrawerPins,
-                                    onSave = {
-                                        viewModel.updatePins(it)
-                                    },
                                     modifier = Modifier,
                                     interactionSource = interactionSource,
                                 )
