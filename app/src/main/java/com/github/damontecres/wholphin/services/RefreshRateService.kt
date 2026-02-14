@@ -28,21 +28,6 @@ class RefreshRateService
     constructor(
         @param:ApplicationContext private val context: Context,
     ) {
-        private val displayManager = context.getSystemService(Context.DISPLAY_SERVICE) as DisplayManager
-        private val display get() = displayManager.getDisplay(Display.DEFAULT_DISPLAY)
-
-        val supportedDisplayModes get() = display.supportedModes.orEmpty()
-
-        private val displayModes: List<DisplayMode> by lazy {
-            display.supportedModes
-                .orEmpty()
-                .map { DisplayMode(it) }
-                .sortedWith(
-                    compareByDescending<DisplayMode>({ it.physicalWidth * it.physicalHeight })
-                        .thenBy { it.refreshRateRounded },
-                )
-        }
-
         /**
          * Find the best display mode for the given stream and signal to change to it
          */
@@ -55,6 +40,18 @@ class RefreshRateService
                 Timber.v("Not switching either refresh rate nor resolution")
                 return@withContext
             }
+            val displayManager =
+                MainActivity.instance.getSystemService(Context.DISPLAY_SERVICE) as DisplayManager
+            val display = displayManager.getDisplay(Display.DEFAULT_DISPLAY)
+            val displayModes =
+                display.supportedModes
+                    .orEmpty()
+                    .map { DisplayMode(it) }
+                    .sortedWith(
+                        compareByDescending<DisplayMode>({ it.physicalWidth * it.physicalHeight })
+                            .thenBy { it.refreshRateRounded },
+                    )
+
             val currentDisplayMode = display.mode
             require(stream.type == MediaStreamType.VIDEO) { "Stream is not video" }
             val width = stream.width
