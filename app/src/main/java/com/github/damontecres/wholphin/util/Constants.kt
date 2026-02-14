@@ -34,6 +34,14 @@ val supportedCollectionTypes =
         null, // Mixed
     )
 
+val supportedHomeCollectionTypes =
+    setOf(
+        CollectionType.MOVIES,
+        CollectionType.TVSHOWS,
+        CollectionType.HOMEVIDEOS,
+        null, // Mixed
+    )
+
 val supportedPlayableTypes =
     setOf(
         BaseItemKind.MOVIE,

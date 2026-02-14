@@ -6,6 +6,7 @@ import androidx.work.WorkManager
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.util.GetItemsRequestHandler
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flatMapLatest
@@ -49,21 +50,8 @@ class SuggestionService
                 .asFlow()
                 .flatMapLatest { user ->
                     val userId = user?.id ?: return@flatMapLatest flowOf(SuggestionsResource.Empty)
-                    val cachedIds = cache.get(userId, parentId, itemKind)?.ids.orEmpty()
-                    if (cachedIds.isNotEmpty()) {
-                        flow {
-                            try {
-                                emit(
-                                    SuggestionsResource.Success(
-                                        fetchItemsByIds(cachedIds, itemKind),
-                                    ),
-                                )
-                            } catch (e: Exception) {
-                                Timber.e(e, "Failed to fetch items")
-                                emit(SuggestionsResource.Empty)
-                            }
-                        }
-                    } else {
+                    val cachedSuggestions = cache.get(userId, parentId, itemKind)
+                    if (cachedSuggestions == null) {
                         workManager
                             .getWorkInfosForUniqueWorkFlow(SuggestionsWorker.WORK_NAME)
                             .map { workInfos ->
@@ -73,6 +61,23 @@ class SuggestionService
                                     }
                                 if (isActive) SuggestionsResource.Loading else SuggestionsResource.Empty
                             }
+                    } else if (cachedSuggestions.ids.isEmpty()) {
+                        flowOf(SuggestionsResource.Empty)
+                    } else {
+                        flow {
+                            try {
+                                emit(
+                                    SuggestionsResource.Success(
+                                        fetchItemsByIds(cachedSuggestions.ids, itemKind),
+                                    ),
+                                )
+                            } catch (e: CancellationException) {
+                                throw e
+                            } catch (e: Exception) {
+                                Timber.e(e, "Failed to fetch items")
+                                emit(SuggestionsResource.Empty)
+                            }
+                        }
                     }
                 }
         }

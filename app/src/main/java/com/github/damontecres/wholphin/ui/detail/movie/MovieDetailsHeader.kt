@@ -113,6 +113,7 @@ fun MovieDetailsHeader(
                     movie.data.people
                         ?.filter { it.type == PersonKind.DIRECTOR && it.name.isNotNullOrBlank() }
                         ?.joinToString(", ") { it.name!! }
+                        ?.takeIf { it.isNotNullOrBlank() }
                 }
 
             directorName

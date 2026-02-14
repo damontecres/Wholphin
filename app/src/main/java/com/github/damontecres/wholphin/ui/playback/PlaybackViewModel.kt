@@ -49,6 +49,7 @@ import com.github.damontecres.wholphin.services.RefreshRateService
 import com.github.damontecres.wholphin.services.StreamChoiceService
 import com.github.damontecres.wholphin.services.UserPreferencesService
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
+import com.github.damontecres.wholphin.ui.launchDefault
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.onMain
@@ -57,7 +58,6 @@ import com.github.damontecres.wholphin.ui.seekForward
 import com.github.damontecres.wholphin.ui.setValueOnMain
 import com.github.damontecres.wholphin.ui.showToast
 import com.github.damontecres.wholphin.ui.toServerString
-import com.github.damontecres.wholphin.util.EqualityMutableLiveData
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
 import com.github.damontecres.wholphin.util.TrackActivityPlaybackListener
@@ -164,7 +164,7 @@ class PlaybackViewModel
         val currentMediaInfo = MutableLiveData<CurrentMediaInfo>(CurrentMediaInfo.EMPTY)
         val currentPlayback = MutableStateFlow<CurrentPlayback?>(null)
         val currentItemPlayback = MutableLiveData<ItemPlayback>()
-        val currentSegment = EqualityMutableLiveData<MediaSegmentDto?>(null)
+        val currentSegment = MutableStateFlow<MediaSegmentState?>(null)
         private val autoSkippedSegments = mutableSetOf<UUID>()
 
         val subtitleCues = MutableLiveData<List<Cue>>(listOf())
@@ -962,10 +962,10 @@ class PlaybackViewModel
         /**
          * Cancels listening for segments and clears current segment state
          */
-        private suspend fun resetSegmentState() {
+        private fun resetSegmentState() {
             segmentJob?.cancel()
             autoSkippedSegments.clear()
-            currentSegment.setValueOnMain(null)
+            currentSegment.value = null
         }
 
         /**
@@ -988,15 +988,21 @@ class PlaybackViewModel
                                         it.type != MediaSegmentType.UNKNOWN && currentTicks >= it.startTicks && currentTicks < it.endTicks
                                     }
                             if (currentSegment != null &&
-                                currentSegment.itemId == this@PlaybackViewModel.itemId &&
-                                autoSkippedSegments.add(currentSegment.id)
+                                currentSegment.itemId == this@PlaybackViewModel.itemId
                             ) {
-                                Timber.d(
-                                    "Found media segment for %s: %s, %s",
-                                    currentSegment.itemId,
-                                    currentSegment.id,
-                                    currentSegment.type,
-                                )
+                                if (currentSegment.id !=
+                                    this@PlaybackViewModel
+                                        .currentSegment.value
+                                        ?.segment
+                                        ?.id
+                                ) {
+                                    Timber.d(
+                                        "Found media segment for %s: %s, %s",
+                                        currentSegment.itemId,
+                                        currentSegment.id,
+                                        currentSegment.type,
+                                    )
+                                }
                                 val playlist = this@PlaybackViewModel.playlist.value
 
                                 if (currentSegment.type == MediaSegmentType.OUTRO &&
@@ -1021,13 +1027,21 @@ class PlaybackViewModel
                                     withContext(Dispatchers.Main) {
                                         when (behavior) {
                                             SkipSegmentBehavior.AUTO_SKIP -> {
-                                                this@PlaybackViewModel.currentSegment.value = null
-                                                player.seekTo(currentSegment.endTicks.ticks.inWholeMilliseconds + 1)
+                                                if (autoSkippedSegments.add(currentSegment.id)) {
+                                                    onMain { player.seekTo(currentSegment.endTicks.ticks.inWholeMilliseconds + 1) }
+                                                }
+                                                this@PlaybackViewModel.currentSegment.update {
+                                                    MediaSegmentState(currentSegment, true)
+                                                }
                                             }
 
                                             SkipSegmentBehavior.ASK_TO_SKIP -> {
-                                                this@PlaybackViewModel.currentSegment.value =
-                                                    currentSegment
+                                                this@PlaybackViewModel.currentSegment.update {
+                                                    MediaSegmentState(
+                                                        currentSegment,
+                                                        autoSkippedSegments.contains(currentSegment.id),
+                                                    )
+                                                }
                                             }
 
                                             else -> {
@@ -1044,6 +1058,28 @@ class PlaybackViewModel
                         }
                     }
                 }
+        }
+
+        fun updateSegment(
+            segmentId: UUID?,
+            dismissed: Boolean,
+        ) {
+            viewModelScope.launchDefault {
+                val segment = currentSegment.value?.segment
+                if (segment != null && segment.id == segmentId) {
+                    autoSkippedSegments.add(segment.id)
+                    if (dismissed) {
+                        currentSegment.update {
+                            it?.copy(interacted = true)
+                        }
+                    } else {
+                        currentSegment.update {
+                            null
+                        }
+                        onMain { player.seekTo(segment.endTicks.ticks.inWholeMilliseconds + 1) }
+                    }
+                }
+            }
         }
 
         private fun listenForTranscodeReason(): Job =
@@ -1378,4 +1414,9 @@ class PlaybackViewModel
 data class PlayerState(
     val player: Player,
     val backend: PlayerBackend,
+)
+
+data class MediaSegmentState(
+    val segment: MediaSegmentDto,
+    val interacted: Boolean,
 )

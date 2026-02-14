@@ -458,6 +458,11 @@
     <string name="seerr_integration">Seerr integration</string>
     <string name="remove_seerr_server">Remove Seerr Server</string>
     <string name="seerr_server_added">Seerr server added</string>
+    <string name="quick_connect">Quick Connect</string>
+    <string name="quick_connect_summary">Authorize another device to log in to your account</string>
+    <string name="quick_connect_code">Enter Quick Connect code</string>
+    <string name="quick_connect_code_error">Code must be 6 digits</string>
+    <string name="quick_connect_success">Device authorized successfully</string>
     <string name="password">Password</string>
     <string name="username">Username</string>
     <string name="url">URL</string>
@@ -492,6 +497,30 @@
     <string name="send_media_info_log_to_server">Send media info log to server</string>
     <string name="no_limit">No limit</string>
     <string name="max_days_next_up">Max days in Next Up</string>
+
+    <string name="add_row">Add row</string>
+    <string name="genres_in">Genres in %1$s</string>
+    <string name="recently_released_in">Recently released in %1$s</string>
+    <string name="height">Height</string>
+    <string name="apply_all_rows">Apply to all rows</string>
+    <string name="customize_home">Customize home page</string>
+    <string name="home_rows">Home rows</string>
+    <string name="load_from_server">Load from server</string>
+    <string name="save_to_server">Save to server</string>
+    <string name="load_from_web_client">Load from web client</string>
+    <string name="use_series">Use series image</string>
+    <string name="add_row_for">Add row for %1$s</string>
+    <string name="overwrite_server_settings">Overwrite settings on server?</string>
+    <string name="overwrite_local_settings">Overwrite local settings?</string>
+    <string name="for_episodes">For episodes</string>
+    <string name="suggestions_for">Suggestions for %1$s</string>
+    <string name="increase_all_cards_size">Increase size for all cards</string>
+    <string name="decrease_all_cards_size">Decrease size for all cards</string>
+    <string name="use_thumb_images">Use thumb images</string>
+    <string name="settings_saved">Settings saved</string>
+    <string name="display_presets">Display presets</string>
+    <string name="display_presets_description">Built-in presets to quickly style all rows</string>
+    <string name="customize_home_summary">Choose rows and images on the home page</string>
 
     <string-array name="theme_song_volume">
         <item>Disabled</item>

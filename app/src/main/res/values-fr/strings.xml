@@ -422,4 +422,25 @@
     <string name="request_4k">Demande en 4K</string>
     <string name="software_decoding_av1">Décodage logiciel AV1</string>
     <string name="upgrade_mpv_toast">MPV est désormais le lecteur par défaut, sauf pour HDR.\nVous pouvez modifier cela dans les paramètres.</string>
+    <string name="hdr_subtitle_style">Style de sous-titres HDR</string>
+    <string name="image_subtitle_opacity">opacité du sous-titre de l\'image</string>
+    <string name="brightness">Luminosité</string>
+    <string name="contrast">Contraste</string>
+    <string name="saturation">Saturation</string>
+    <string name="hue">Teinte</string>
+    <string name="red">Rouge</string>
+    <string name="green">Vert</string>
+    <string name="blue">Bleu</string>
+    <string name="blur">Flou</string>
+    <string name="save_for_album">Enregistrer pour l\'album</string>
+    <string name="play_slideshow">Lire le diaporama</string>
+    <string name="stop_slideshow">Arrêter le diaporama</string>
+    <string name="slideshow_at_beginning">Au début</string>
+    <string name="no_more_images">Plus de photos</string>
+    <string name="rotate_left">Faire pivoter à gauche</string>
+    <string name="rotate_right">Faire pivoter à droite</string>
+    <string name="zoom_in">Zoomer</string>
+    <string name="zoom_out">Dézoomer</string>
+    <string name="slideshow_duration">Durée du diaporama</string>
+    <string name="play_videos_during_slideshow">Diffuser des vidéos pendant le diaporama</string>
 </resources>

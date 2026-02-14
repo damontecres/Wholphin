@@ -314,11 +314,11 @@ fun SlideshowPage(
     ) {
         when (loadingState) {
             ImageLoadingState.Error -> {
-                ErrorMessage("Error loading image", null)
+                ErrorMessage("Error loading image", null, modifier)
             }
 
             ImageLoadingState.Loading -> {
-                LoadingPage()
+                LoadingPage(modifier)
             }
 
             is ImageLoadingState.Success -> {

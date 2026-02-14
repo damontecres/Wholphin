@@ -89,10 +89,11 @@ fun PreferencesContent(
     val currentServer by seerrVm.currentSeerrServer.collectAsState(null)
     var showPinFlow by remember { mutableStateOf(false) }
 
-    val navDrawerPins by viewModel.navDrawerPins.observeAsState(mapOf())
+    val navDrawerPins by viewModel.navDrawerPins.collectAsState(emptyList())
     var cacheUsage by remember { mutableStateOf(CacheUsage(0, 0, 0)) }
     val seerrIntegrationEnabled by viewModel.seerrEnabled.collectAsState(false)
     var seerrDialogMode by remember { mutableStateOf<SeerrDialogMode>(SeerrDialogMode.None) }
+    var showQuickConnectDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         viewModel.preferenceDataStore.data.collect {
@@ -334,21 +335,16 @@ fun PreferencesContent(
                             }
 
                             AppPreference.UserPinnedNavDrawerItems -> {
-                                val selectedItems =
-                                    navDrawerPins.keys.mapNotNull {
-                                        if (navDrawerPins[it] ?: false) it else null
-                                    }
-                                MultiChoicePreference(
+                                NavDrawerPreference(
                                     title = stringResource(pref.title),
                                     summary = pref.summary(context, null),
-                                    possibleValues = navDrawerPins.keys,
-                                    selectedValues = selectedItems.toSet(),
-                                    onValueChange = { newSelectedItems ->
-                                        viewModel.updatePins(newSelectedItems)
+                                    items = navDrawerPins,
+                                    onSave = {
+                                        viewModel.updatePins(it)
                                     },
-                                ) {
-                                    Text(it.name(context))
-                                }
+                                    modifier = Modifier,
+                                    interactionSource = interactionSource,
+                                )
                             }
 
                             AppPreference.SendAppLogs -> {
@@ -408,6 +404,22 @@ fun PreferencesContent(
                                         } else {
                                             null
                                         },
+                                    onLongClick = {},
+                                    interactionSource = interactionSource,
+                                )
+                            }
+
+                            AppPreference.QuickConnect -> {
+                                ClickPreference(
+                                    title = stringResource(pref.title),
+                                    onClick = {
+                                        if (currentUser != null) {
+                                            viewModel.resetQuickConnectStatus()
+                                            showQuickConnectDialog = true
+                                        }
+                                    },
+                                    modifier = Modifier,
+                                    summary = pref.summary(context, null),
                                     onLongClick = {},
                                     interactionSource = interactionSource,
                                 )
@@ -505,6 +517,37 @@ fun PreferencesContent(
 
             SeerrDialogMode.None -> {}
         }
+    }
+
+    if (showQuickConnectDialog) {
+        val quickConnectStatus by viewModel.quickConnectStatus.collectAsState(LoadingState.Pending)
+        val successMessage = stringResource(R.string.quick_connect_success)
+
+        LaunchedEffect(quickConnectStatus) {
+            when (val status = quickConnectStatus) {
+                LoadingState.Success -> {
+                    Toast.makeText(context, successMessage, Toast.LENGTH_SHORT).show()
+                    showQuickConnectDialog = false
+                }
+
+                is LoadingState.Error -> {
+                    val errorMessage = status.message ?: "Authorization failed"
+                    Toast.makeText(context, errorMessage, Toast.LENGTH_SHORT).show()
+                }
+
+                else -> {}
+            }
+        }
+
+        QuickConnectDialog(
+            onSubmit = { code ->
+                viewModel.authorizeQuickConnect(code)
+            },
+            onDismissRequest = {
+                viewModel.resetQuickConnectStatus()
+                showQuickConnectDialog = false
+            },
+        )
     }
 }
 

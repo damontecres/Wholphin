@@ -656,6 +656,13 @@ sealed interface AppPreference<Pref, T> {
                 setter = { prefs, _ -> prefs },
             )
 
+        val CustomizeHome =
+            AppDestinationPreference<AppPreferences>(
+                title = R.string.customize_home,
+                destination = Destination.HomeSettings,
+                summary = R.string.customize_home_summary,
+            )
+
         val SendCrashReports =
             AppSwitchPreference<AppPreferences>(
                 title = R.string.send_crash_reports,
@@ -943,6 +950,14 @@ sealed interface AppPreference<Pref, T> {
                 setter = { prefs, _ -> prefs },
             )
 
+        val QuickConnect =
+            AppClickablePreference<AppPreferences>(
+                title = R.string.quick_connect,
+                summary = R.string.quick_connect_summary,
+                getter = { },
+                setter = { prefs, _ -> prefs },
+            )
+
         val SlideshowDuration =
             AppSliderPreference<AppPreferences>(
                 title = R.string.slideshow_duration,
@@ -992,10 +1007,6 @@ val basicPreferences =
             preferences =
                 listOf(
                     AppPreference.SignInAuto,
-                    AppPreference.HomePageItems,
-                    AppPreference.CombineContinueNext,
-                    AppPreference.RewatchNextUp,
-                    AppPreference.MaxDaysNextUp,
                     AppPreference.PlayThemeMusic,
                     AppPreference.RememberSelectedTab,
                     AppPreference.SubtitleStyle,
@@ -1026,6 +1037,7 @@ val basicPreferences =
             preferences =
                 listOf(
                     AppPreference.RequireProfilePin,
+                    AppPreference.CustomizeHome,
                     AppPreference.UserPinnedNavDrawerItems,
                 ),
         ),
@@ -1091,6 +1103,7 @@ val advancedPreferences =
                 preferences =
                     listOf(
                         AppPreference.ShowClock,
+                        AppPreference.CombineContinueNext,
                         // Temporarily disabled, see https://github.com/damontecres/Wholphin/pull/127#issuecomment-3478058418
 //                    AppPreference.NavDrawerSwitchOnFocus,
                         AppPreference.ControllerTimeout,
@@ -1168,6 +1181,7 @@ val advancedPreferences =
                 title = R.string.more,
                 preferences =
                     listOf(
+                        AppPreference.QuickConnect,
                         AppPreference.SendAppLogs,
                         AppPreference.SendCrashReports,
                         AppPreference.DebugLogging,

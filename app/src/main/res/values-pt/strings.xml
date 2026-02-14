@@ -13,7 +13,7 @@
     <string name="collection">Colecção</string>
     <string name="collections">Colecções</string>
     <string name="confirm">Confirmar</string>
-    <string name="decimal_seconds">%.1f segundos</string>
+    <string name="decimal_seconds">%.2f segundos</string>
     <string name="default_track">Padrão</string>
     <string name="delete">Eliminar</string>
     <string name="directed_by">Realizado por %1$s</string>
@@ -422,4 +422,33 @@
     <string name="retry">Tentar novamente</string>
     <string name="software_decoding_av1">Decodificação de AV1 por software</string>
     <string name="upgrade_mpv_toast">O MPV é agora o reprodutor padrão, exceto para HDR.\nPode alterar esta configuração nas definições.</string>
+    <plurals name="days">
+        <item quantity="one">%s Dia</item>
+        <item quantity="many">%s Dias</item>
+        <item quantity="other">%s Dias</item>
+    </plurals>
+    <string name="hdr_subtitle_style">Estilo de legenda HDR</string>
+    <string name="image_subtitle_opacity">Transparência da legenda da imagem</string>
+    <string name="brightness">Brilho</string>
+    <string name="contrast">Contraste</string>
+    <string name="saturation">Saturação</string>
+    <string name="hue">Matiz</string>
+    <string name="red">Vermelho</string>
+    <string name="green">Verde</string>
+    <string name="blue">Azul</string>
+    <string name="blur">Desfoque</string>
+    <string name="save_for_album">Guardar para o álbum</string>
+    <string name="play_slideshow">Reproduzir slides</string>
+    <string name="stop_slideshow">Parar slides</string>
+    <string name="slideshow_at_beginning">No início</string>
+    <string name="no_more_images">Não há mais fotos</string>
+    <string name="rotate_left">Rodar para a esquerda</string>
+    <string name="rotate_right">Rodar para a direita</string>
+    <string name="zoom_in">Ampliar</string>
+    <string name="zoom_out">Diminuir</string>
+    <string name="slideshow_duration">Duração dos slides</string>
+    <string name="play_videos_during_slideshow">Reproduzir vídeos durante a apresentação de slides</string>
+    <string name="send_media_info_log_to_server">Enviar registo de informações de mídia para o servidor</string>
+    <string name="no_limit">Sem limite</string>
+    <string name="max_days_next_up">Dias máximos em \'A Seguir\'</string>
 </resources>

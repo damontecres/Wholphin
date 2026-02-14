@@ -33,6 +33,7 @@ import com.github.damontecres.wholphin.ui.detail.series.SeriesOverview
 import com.github.damontecres.wholphin.ui.discover.DiscoverPage
 import com.github.damontecres.wholphin.ui.main.HomePage
 import com.github.damontecres.wholphin.ui.main.SearchPage
+import com.github.damontecres.wholphin.ui.main.settings.HomeSettingsPage
 import com.github.damontecres.wholphin.ui.playback.PlaybackPage
 import com.github.damontecres.wholphin.ui.preferences.PreferencesPage
 import com.github.damontecres.wholphin.ui.preferences.subtitle.SubtitleStylePage
@@ -61,6 +62,10 @@ fun DestinationContent(
                 preferences = preferences,
                 modifier = modifier,
             )
+        }
+
+        is Destination.HomeSettings -> {
+            HomeSettingsPage(modifier)
         }
 
         is Destination.PlaybackList,
@@ -209,7 +214,7 @@ fun DestinationContent(
 
                 else -> {
                     Timber.w("Unsupported item type: ${destination.type}")
-                    Text("Unsupported item type: ${destination.type}")
+                    Text("Unsupported item type: ${destination.type}", modifier)
                 }
             }
         }

@@ -23,7 +23,7 @@
     <string name="confirm">Konfirmasi</string>
     <string name="continue_watching">Lanjutkan menonton</string>
     <string name="critic_rating">Penilaian Kritis</string>
-    <string name="decimal_seconds">%.1f detik</string>
+    <string name="decimal_seconds">%.2f detik</string>
     <string name="default_track">Bawaan</string>
     <string name="delete">Hapus</string>
     <string name="died">Meninggal</string>
@@ -389,4 +389,27 @@
     <string name="request">Minta</string>
     <string name="pending">Tertunda</string>
     <string name="software_decoding_av1">Dekode perangkat lunak AV1</string>
+    <string name="upgrade_mpv_toast">MPV sekarang adalah pemutar bawaan kecuali konten HDR.\nPerubahan dapat dilakukan di menu pengaturan.</string>
+    <string name="hdr_subtitle_style">Gaya subtitel HDR</string>
+    <string name="image_subtitle_opacity">Opasitas subtitel gambar</string>
+    <string name="brightness">Kecerahan</string>
+    <string name="contrast">Kontras</string>
+    <string name="saturation">Saturasi</string>
+    <string name="hue">Hue</string>
+    <string name="red">Merah</string>
+    <string name="green">Hijau</string>
+    <string name="blue">Biru</string>
+    <string name="blur">Kabur</string>
+    <string name="save_for_album">Simpan ke album</string>
+    <string name="play_slideshow">Putar tayangan slide</string>
+    <string name="stop_slideshow">Hentikan tayangan slide</string>
+    <string name="slideshow_at_beginning">Di awal</string>
+    <string name="no_more_images">Tidak ada foto lagi</string>
+    <string name="rotate_left">Putar kiri</string>
+    <string name="rotate_right">Putar kanan</string>
+    <string name="zoom_in">Perbesar</string>
+    <string name="zoom_out">Perkecil</string>
+    <string name="slideshow_duration">Durasi tayangan slide</string>
+    <string name="play_videos_during_slideshow">Putar video selama tayangan slide</string>
+    <string name="send_media_info_log_to_server">Kirim log info media ke server</string>
 </resources>

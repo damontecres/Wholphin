@@ -86,7 +86,6 @@ import com.github.damontecres.wholphin.util.mpv.MpvPlayer
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import org.jellyfin.sdk.model.extensions.ticks
 import timber.log.Timber
 import java.util.UUID
 import kotlin.time.Duration
@@ -163,8 +162,7 @@ fun PlaybackPageContent(
             itemId = UUID.randomUUID(),
         ),
     )
-    val currentSegment by viewModel.currentSegment.observeAsState(null)
-    var segmentCancelled by remember(currentSegment?.id) { mutableStateOf(false) }
+    val currentSegment by viewModel.currentSegment.collectAsState()
 
     val cues by viewModel.subtitleCues.observeAsState(listOf())
     var showDebugInfo by remember { mutableStateOf(prefs.showDebugInfo) }
@@ -303,10 +301,10 @@ fun PlaybackPageContent(
     }
 
     val showSegment =
-        !segmentCancelled && currentSegment != null &&
+        currentSegment?.interacted == false &&
             nextUp == null && !controllerViewState.controlsVisible && skipIndicatorDuration == 0L
     BackHandler(showSegment) {
-        segmentCancelled = true
+        viewModel.updateSegment(currentSegment?.segment?.id, true)
     }
 
     Box(
@@ -401,7 +399,7 @@ fun PlaybackPageContent(
                     onClickPlaylist = {
                         viewModel.playItemInPlaylist(it)
                     },
-                    currentSegment = currentSegment,
+                    currentSegment = currentSegment?.segment,
                     showClock = preferences.appPreferences.interfacePreferences.showClock,
                 )
             }
@@ -463,13 +461,12 @@ fun PlaybackPageContent(
                 LaunchedEffect(Unit) {
                     focusRequester.tryRequestFocus()
                     delay(10.seconds)
-                    segmentCancelled = true
+                    viewModel.updateSegment(segment.segment.id, true)
                 }
                 TextButton(
-                    stringRes = segment.type.skipStringRes,
+                    stringRes = segment.segment.type.skipStringRes,
                     onClick = {
-                        segmentCancelled = true
-                        player.seekTo(segment.endTicks.ticks.inWholeMilliseconds)
+                        viewModel.updateSegment(segment.segment.id, false)
                     },
                     modifier = Modifier.focusRequester(focusRequester),
                 )

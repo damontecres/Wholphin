@@ -122,7 +122,7 @@
     <string name="trailer">Trailer</string>
     <plurals name="trailers">
         <item quantity="one">Trailere</item>
-        <item quantity="other"></item>
+        <item quantity="other"/>
     </plurals>
     <string name="tv_dvr_schedule">DVR-plan</string>
     <string name="tv_guide">Programoversikt</string>
@@ -155,47 +155,47 @@
     <string name="extras">Ekstramateriale</string>
     <plurals name="other_extras">
         <item quantity="one">Annet</item>
-        <item quantity="other"></item>
+        <item quantity="other"/>
     </plurals>
     <plurals name="behind_the_scenes">
         <item quantity="one">Bak kulissene</item>
-        <item quantity="other"></item>
+        <item quantity="other"/>
     </plurals>
     <plurals name="theme_songs">
         <item quantity="one">Temasanger</item>
-        <item quantity="other"></item>
+        <item quantity="other"/>
     </plurals>
     <plurals name="theme_videos">
         <item quantity="one">Temavideoer</item>
-        <item quantity="other"></item>
+        <item quantity="other"/>
     </plurals>
     <plurals name="clips">
         <item quantity="one">Klipp</item>
-        <item quantity="other"></item>
+        <item quantity="other"/>
     </plurals>
     <plurals name="deleted_scenes">
         <item quantity="one">Slettede scener</item>
-        <item quantity="other"></item>
+        <item quantity="other"/>
     </plurals>
     <plurals name="interviews">
         <item quantity="one">Intervjuer</item>
-        <item quantity="other"></item>
+        <item quantity="other"/>
     </plurals>
     <plurals name="scenes">
         <item quantity="one">Scener</item>
-        <item quantity="other"></item>
+        <item quantity="other"/>
     </plurals>
     <plurals name="samples">
         <item quantity="one">Smakebiter</item>
-        <item quantity="other"></item>
+        <item quantity="other"/>
     </plurals>
     <plurals name="featurettes">
         <item quantity="one">Bakomfilmer</item>
-        <item quantity="other"></item>
+        <item quantity="other"/>
     </plurals>
     <plurals name="shorts">
         <item quantity="one">Kortfilmer</item>
-        <item quantity="other"></item>
+        <item quantity="other"/>
     </plurals>
     <plurals name="downloads">
         <item quantity="one">%s nedlasting</item>

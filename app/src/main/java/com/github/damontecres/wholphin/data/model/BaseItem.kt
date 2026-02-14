@@ -32,6 +32,7 @@ import kotlin.time.Duration
 data class BaseItem(
     val data: BaseItemDto,
     val useSeriesForPrimary: Boolean,
+    val imageUrlOverride: String? = null,
 ) : CardGridItem {
     val id get() = data.id
 
@@ -184,6 +185,25 @@ data class BaseItem(
                         BaseItemKind.SERIES,
                         SeasonEpisodeIds(id, indexNumber, null, null),
                     )
+                }
+
+                BaseItemKind.TV_CHANNEL -> {
+                    Destination.Playback(
+                        itemId = id,
+                        positionMs = 0L,
+                    )
+                }
+
+                BaseItemKind.PROGRAM -> {
+                    val channelId = data.channelId
+                    if (channelId != null) {
+                        Destination.Playback(
+                            itemId = channelId,
+                            positionMs = 0L,
+                        )
+                    } else {
+                        Destination.MediaItem(this)
+                    }
                 }
 
                 else -> {
