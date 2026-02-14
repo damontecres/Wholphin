@@ -478,4 +478,5 @@
     <string name="save_to_server">Salva sul server</string>
     <string name="load_from_web_client">Carica dal client web</string>
     <string name="use_series">Usa immagine delle serie</string>
+    <string name="customize_home_summary">Scegli righe e immagini nella home page</string>
 </resources>
