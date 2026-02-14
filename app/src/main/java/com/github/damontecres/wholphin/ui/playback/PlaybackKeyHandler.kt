@@ -20,6 +20,7 @@ class PlaybackKeyHandler(
     private val skipWithLeftRight: Boolean,
     private val seekBack: Duration,
     private val seekForward: Duration,
+    private val getDurationMs: () -> Long,
     private val controllerViewState: ControllerViewState,
     private val updateSkipIndicator: (Long) -> Unit,
     private val skipBackOnResume: Duration?,
@@ -31,12 +32,16 @@ class PlaybackKeyHandler(
     fun onKeyEvent(it: KeyEvent): Boolean {
         if (it.type == KeyEventType.KeyUp) onInteraction.invoke()
 
-        var result = true
         if (!controlsEnabled) {
-            result = false
+            return false
+        } else if (handleHoldSkip(it)) {
+            return true
         } else if (it.type != KeyEventType.KeyUp) {
-            result = false
-        } else if (isDirectionalDpad(it) || isEnterKey(it) || isControllerMedia(it)) {
+            return false
+        }
+
+        var result = true
+        if (isDirectionalDpad(it) || isEnterKey(it) || isControllerMedia(it)) {
             if (!controllerViewState.controlsVisible) {
                 if (skipWithLeftRight && isSkipBack(it)) {
                     updateSkipIndicator(-seekBack.inWholeMilliseconds)
@@ -110,5 +115,91 @@ class PlaybackKeyHandler(
             result = false
         }
         return result
+    }
+
+    private fun handleHoldSkip(event: KeyEvent): Boolean {
+        if (
+            controllerViewState.controlsVisible ||
+            !skipWithLeftRight ||
+            (!isSkipBack(event) && !isSkipForward(event))
+        ) {
+            return false
+        }
+
+        return when (event.type) {
+            KeyEventType.KeyDown -> {
+                val multiplier =
+                    calculateSeekMultiplier(
+                        repeatCount = event.nativeKeyEvent.repeatCount,
+                        durationMs = getDurationMs(),
+                    )
+                if (isSkipBack(event)) {
+                    val skipDuration = seekBack * multiplier
+                    player.seekBack(skipDuration)
+                    updateSkipIndicator(-skipDuration.inWholeMilliseconds)
+                } else {
+                    val skipDuration = seekForward * multiplier
+                    player.seekForward(skipDuration)
+                    updateSkipIndicator(skipDuration.inWholeMilliseconds)
+                }
+                true
+            }
+
+            KeyEventType.KeyUp -> {
+                true
+            }
+
+            else -> {
+                false
+            }
+        }
+    }
+
+    /**
+     * Match the seek acceleration profile from develop/seek-acceleration.
+     */
+    private fun calculateSeekMultiplier(
+        repeatCount: Int,
+        durationMs: Long,
+    ): Int {
+        if (repeatCount <= 0) return 1
+
+        val durationMinutes = if (durationMs > 0L) durationMs / 60_000L else 0L
+        return when {
+            durationMinutes < 30 -> {
+                when {
+                    repeatCount < 30 -> 1
+                    repeatCount < 60 -> 2
+                    else -> 2
+                }
+            }
+
+            durationMinutes < 90 -> {
+                when {
+                    repeatCount < 25 -> 1
+                    repeatCount < 50 -> 2
+                    repeatCount < 75 -> 3
+                    else -> 4
+                }
+            }
+
+            durationMinutes < 150 -> {
+                when {
+                    repeatCount < 20 -> 1
+                    repeatCount < 40 -> 2
+                    repeatCount < 60 -> 4
+                    else -> 6
+                }
+            }
+
+            else -> {
+                when {
+                    repeatCount < 20 -> 1
+                    repeatCount < 40 -> 3
+                    repeatCount < 60 -> 6
+                    else -> 10
+                }
+            }
+        }
     }
 }
