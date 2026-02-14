@@ -425,7 +425,24 @@
     <string name="genres_in">%1$s 類型</string>
     <string name="recently_released_in">最近發行於 %1$s</string>
     <string name="suggestions_for">推薦的 %1$s</string>
-    <string name="increase_all_cards_size">放大海報尺寸</string>
-    <string name="decrease_all_cards_size">縮小海報尺寸</string>
+    <string name="increase_all_cards_size">放大所有海報尺寸</string>
+    <string name="decrease_all_cards_size">縮小所有海報尺寸</string>
     <string name="use_thumb_images">使用橫向縮圖</string>
+    <string name="add_row">新增一列</string>
+    <string name="apply_all_rows">套用到所有列</string>
+    <string name="home_rows">首頁各列</string>
+    <string name="add_row_for">為 %1$s 新增列項目</string>
+    <string name="display_presets_description">快速設定所有項目為內建預設樣式</string>
+    <string name="customize_home_summary">選擇首頁要顯示的列項目及圖片樣式</string>
+    <string name="height">高度</string>
+    <string name="customize_home">自訂首頁</string>
+    <string name="load_from_server">從伺服器載入</string>
+    <string name="save_to_server">保存到伺服器</string>
+    <string name="load_from_web_client">從網頁版載入</string>
+    <string name="use_series">使用劇集圖片</string>
+    <string name="overwrite_server_settings">覆蓋伺服器上的設定？</string>
+    <string name="overwrite_local_settings">覆蓋本地設定？</string>
+    <string name="settings_saved">設定已儲存</string>
+    <string name="display_presets">顯示預設樣式</string>
+    <string name="for_episodes">針對單集</string>
 </resources>
