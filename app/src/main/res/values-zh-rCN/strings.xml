@@ -444,4 +444,5 @@
     <string name="settings_saved">设置已保存</string>
     <string name="display_presets">显示预设</string>
     <string name="display_presets_description">可快速设置所有行样式的内置预设</string>
+    <string name="customize_home_summary">选择首页上的行和图片</string>
 </resources>
