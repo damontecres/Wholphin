@@ -124,7 +124,7 @@ fun BannerCard(
                 Text(
                     text = name ?: "",
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    style = MaterialTheme.typography.titleLarge,
+                    style = MaterialTheme.typography.titleMedium,
                     textAlign = TextAlign.Center,
                     modifier =
                         Modifier

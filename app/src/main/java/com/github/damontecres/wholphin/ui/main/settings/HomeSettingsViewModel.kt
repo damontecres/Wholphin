@@ -306,7 +306,7 @@ class HomeSettingsViewModel
                                 title = title,
                                 config =
                                     HomeRowConfig.TvChannels(
-                                        viewOptions = HomeRowViewOptions.channelsDefault,
+                                        viewOptions = HomeRowViewOptions.liveTvDefault,
                                     ),
                             )
                         }
@@ -655,11 +655,11 @@ class HomeSettingsViewModel
                                 }
 
                                 is HomeRowConfig.TvPrograms -> {
-                                    it.config.updateViewOptions(preset.tvLibrary)
+                                    it.config.updateViewOptions(preset.liveTv)
                                 }
 
                                 is HomeRowConfig.TvChannels -> {
-                                    it.config
+                                    it.config.updateViewOptions(preset.liveTv)
                                 }
                             }
                         it.copy(config = newConfig)
