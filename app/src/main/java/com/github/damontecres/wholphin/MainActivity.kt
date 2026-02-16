@@ -409,7 +409,7 @@ class MainActivity : AppCompatActivity() {
         }
 
     fun changeDisplayMode(modeId: Int) {
-        lifecycleScope.launch(Dispatchers.Main + ExceptionHandler()) {
+        lifecycleScope.launch(Dispatchers.Main + ExceptionHandler(autoToast = true)) {
             val attrs = window.attributes
             if (attrs.preferredDisplayModeId != modeId) {
                 Timber.d("Switch preferredDisplayModeId to %s", modeId)
