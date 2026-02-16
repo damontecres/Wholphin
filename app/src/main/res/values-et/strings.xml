@@ -427,4 +427,8 @@
     <string name="zoom_out">Suumi välja</string>
     <string name="slideshow_duration">Slaidiesitluse kestus</string>
     <string name="play_videos_during_slideshow">Slaidiesitluse ajal esita videoid</string>
+    <plurals name="days">
+        <item quantity="one">%s päev</item>
+        <item quantity="other">%s päeva</item>
+    </plurals>
 </resources>
