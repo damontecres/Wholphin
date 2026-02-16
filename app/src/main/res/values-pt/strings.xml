@@ -451,4 +451,26 @@
     <string name="send_media_info_log_to_server">Enviar registo de informações de mídia para o servidor</string>
     <string name="no_limit">Sem limite</string>
     <string name="max_days_next_up">Dias máximos em \'A Seguir\'</string>
+    <string name="quick_connect">Ligação Rápida</string>
+    <string name="quick_connect_summary">Autorize outro dispositivo a iniciar sessão na sua conta</string>
+    <string name="quick_connect_code">Insira o código de Ligação Rápida</string>
+    <string name="quick_connect_code_error">Código deve ter 6 dígitos</string>
+    <string name="quick_connect_success">Dispositivo autorizado com sucesso</string>
+    <string name="add_row">Adicionar linha</string>
+    <string name="genres_in">Géneros em %1$s</string>
+    <string name="recently_released_in">Lançado recentemente em %1$s</string>
+    <string name="height">Altura</string>
+    <string name="apply_all_rows">Aplicar a todas as linhas</string>
+    <string name="customize_home">Personalizar página inicial</string>
+    <string name="home_rows">Linhas da página inicial</string>
+    <string name="load_from_server">Carregar do servidor</string>
+    <string name="save_to_server">Gravar para o servidor</string>
+    <string name="load_from_web_client">Carregar a partir do cliente web</string>
+    <string name="use_series">Usar imagem da série</string>
+    <string name="add_row_for">Adicionar linha para %1$s</string>
+    <string name="overwrite_server_settings">Substituir as definições no servidor?</string>
+    <string name="overwrite_local_settings">Substituir as definições locais?</string>
+    <string name="for_episodes">Por episódios</string>
+    <string name="suggestions_for">Sugestões para %1$s</string>
+    <string name="increase_all_cards_size">Aumentar o tamanho de todos os cartões</string>
 </resources>
