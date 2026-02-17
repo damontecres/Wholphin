@@ -431,4 +431,12 @@
         <item quantity="one">%s päev</item>
         <item quantity="other">%s päeva</item>
     </plurals>
+    <string name="quick_connect">Kiirühendus</string>
+    <string name="quick_connect_summary">Luba muul seadmel logida sinu kasutajakontoga sisse</string>
+    <string name="quick_connect_code">Sisesta kiirühenduse kood</string>
+    <string name="quick_connect_code_error">Kood peab olema kuuenumbriline</string>
+    <string name="quick_connect_success">Seadme autentimine õnnestus</string>
+    <string name="send_media_info_log_to_server">Salvesta meediumi infologi serverisse</string>
+    <string name="no_limit">Piirangut pole</string>
+    <string name="max_days_next_up">Järgmisena esitamisel sisu päevade ülempiir</string>
 </resources>
