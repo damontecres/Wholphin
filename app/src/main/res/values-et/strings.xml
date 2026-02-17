@@ -439,4 +439,27 @@
     <string name="send_media_info_log_to_server">Salvesta meediumi infologi serverisse</string>
     <string name="no_limit">Piirangut pole</string>
     <string name="max_days_next_up">Järgmisena esitamisel sisu päevade ülempiir</string>
+    <string name="add_row">Lisa rida</string>
+    <string name="genres_in">Žanrid: %1$s</string>
+    <string name="recently_released_in">Hiljuti avaldatud: %1$s</string>
+    <string name="height">Kõrgus</string>
+    <string name="apply_all_rows">Rakenda kõikidele ridadele</string>
+    <string name="customize_home">Kohanda kodulehte</string>
+    <string name="home_rows">Kodulehe/avalehe read</string>
+    <string name="load_from_server">Laadi serverist</string>
+    <string name="save_to_server">Salvesta serverisse</string>
+    <string name="load_from_web_client">Laadi veebikliendist</string>
+    <string name="use_series">Kasuta sarja pilti</string>
+    <string name="add_row_for">Lisa rida: %1$s</string>
+    <string name="overwrite_server_settings">Kas kirjutad serveris leiduvad seadistused üle?</string>
+    <string name="overwrite_local_settings">Kas kirjutad kohalikud seadistused üle?</string>
+    <string name="for_episodes">Episoodide jaoks</string>
+    <string name="suggestions_for">Soovitused: %1$s</string>
+    <string name="increase_all_cards_size">Suurenda suurust kõikide kaartide jaoks</string>
+    <string name="decrease_all_cards_size">Vähenda suurust kõikide kaartide jaoks</string>
+    <string name="use_thumb_images">Kasuta pisipilte</string>
+    <string name="settings_saved">Seadistused on salvesatatud</string>
+    <string name="display_presets">Kuvamise eelseadistused</string>
+    <string name="display_presets_description">Rakenduses kaasasolevad eelseadistused kõikide ridade kiireks muutmiseks</string>
+    <string name="customize_home_summary">Vali kodulehe/avalehe read ja pildid</string>
 </resources>
