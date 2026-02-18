@@ -42,7 +42,7 @@ workRuntimeKtx = "2.11.1"
 paletteKtx = "1.0.0"
 kotlinxCoroutinesTest = "1.10.2"
 coreTesting = "2.2.0"
-openapi-generator = "7.19.0"
+openapi-generator = "7.20.0"
 
 [libraries]
 aboutlibraries-core = { module = "com.mikepenz:aboutlibraries-core", version.ref = "aboutLibraries" }
