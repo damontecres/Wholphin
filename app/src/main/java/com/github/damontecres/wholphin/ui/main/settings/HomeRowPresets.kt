@@ -31,6 +31,7 @@ data class HomeRowPresets(
     val videoLibrary: HomeRowViewOptions,
     val photoLibrary: HomeRowViewOptions,
     val playlist: HomeRowViewOptions,
+    val liveTv: HomeRowViewOptions,
     val genreSize: Int,
 ) {
     fun getByCollectionType(collectionType: CollectionType): HomeRowViewOptions =
@@ -49,10 +50,11 @@ data class HomeRowPresets(
 
             CollectionType.PHOTOS -> photoLibrary
 
+            CollectionType.LIVETV -> liveTv
+
             CollectionType.UNKNOWN,
             CollectionType.MUSIC,
             CollectionType.BOOKS,
-            CollectionType.LIVETV,
             CollectionType.PLAYLISTS,
             CollectionType.FOLDERS,
             -> HomeRowViewOptions()
@@ -78,6 +80,7 @@ data class HomeRowPresets(
                         aspectRatio = AspectRatio.SQUARE,
                         contentScale = PrefContentScale.FIT,
                     ),
+                liveTv = HomeRowViewOptions.liveTvDefault,
                 genreSize = Cards.HEIGHT_2X3_DP,
             )
         }
@@ -115,6 +118,7 @@ data class HomeRowPresets(
                         aspectRatio = AspectRatio.SQUARE,
                         contentScale = PrefContentScale.FIT,
                     ),
+                liveTv = HomeRowViewOptions.liveTvDefault,
                 genreSize = epHeight,
             )
         }
@@ -156,6 +160,7 @@ data class HomeRowPresets(
                         aspectRatio = AspectRatio.SQUARE,
                         contentScale = PrefContentScale.FIT,
                     ),
+                liveTv = HomeRowViewOptions.liveTvDefault,
                 genreSize = epHeight,
             )
         }

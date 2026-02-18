@@ -859,8 +859,10 @@ class HomeSettingsService
                             userId = userDto.id,
                             fields = DefaultItemFields,
                             limit = limit,
-                            enableImages = true,
                             enableUserData = true,
+                            enableImages = true,
+                            enableImageTypes = listOf(ImageType.PRIMARY),
+                            imageTypeLimit = 1,
                         )
                     api.liveTvApi
                         .getRecommendedPrograms(request)
