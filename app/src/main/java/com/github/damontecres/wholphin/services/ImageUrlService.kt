@@ -9,6 +9,7 @@ import org.jellyfin.sdk.model.UUID
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.ImageFormat
 import org.jellyfin.sdk.model.api.ImageType
+import timber.log.Timber
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -30,6 +31,7 @@ class ImageUrlService
             useSeriesForPrimary: Boolean,
             imageTags: Map<ImageType, String?>,
             imageType: ImageType,
+            parentThumbId: UUID? = null,
             fillWidth: Int? = null,
             fillHeight: Int? = null,
         ): String? =
@@ -54,8 +56,46 @@ class ImageUrlService
                     }
                 }
 
+                ImageType.THUMB -> {
+                    if (useSeriesForPrimary && parentThumbId != null &&
+                        (itemType == BaseItemKind.EPISODE || itemType == BaseItemKind.SEASON)
+                    ) {
+                        getItemImageUrl(
+                            itemId = parentThumbId,
+                            imageType = imageType,
+                            fillWidth = fillWidth,
+                            fillHeight = fillHeight,
+                        )
+                    } else if (parentThumbId != null && itemType == BaseItemKind.SEASON && imageType !in imageTags) {
+                        getItemImageUrl(
+                            itemId = parentThumbId,
+                            imageType = imageType,
+                            fillWidth = fillWidth,
+                            fillHeight = fillHeight,
+                        )
+                    } else if (useSeriesForPrimary &&
+                        parentThumbId == null &&
+                        itemType == BaseItemKind.EPISODE &&
+                        imageType !in imageTags
+                    ) {
+                        // Workaround to fall back to episode image if no parent thumb
+                        getItemImageUrl(
+                            itemId = itemId,
+                            imageType = ImageType.PRIMARY,
+                            fillWidth = fillWidth,
+                            fillHeight = fillHeight,
+                        )
+                    } else {
+                        getItemImageUrl(
+                            itemId = itemId,
+                            imageType = imageType,
+                            fillWidth = fillWidth,
+                            fillHeight = fillHeight,
+                        )
+                    }
+                }
+
                 ImageType.PRIMARY,
-                ImageType.THUMB,
                 ImageType.BANNER,
                 -> {
                     if (useSeriesForPrimary && seriesId != null &&
@@ -101,6 +141,12 @@ class ImageUrlService
             fillHeight: Int? = null,
         ): String? =
             if (item != null) {
+                Timber.v(
+                    "itemId=%s, imageType=%s, parentThumbId=%s",
+                    item.id,
+                    imageType,
+                    item.data.parentThumbItemId,
+                )
                 getItemImageUrl(
                     itemId = item.id,
                     itemType = item.type,
@@ -108,6 +154,7 @@ class ImageUrlService
                     useSeriesForPrimary = item.useSeriesForPrimary,
                     imageTags = item.data.imageTags.orEmpty(),
                     imageType = imageType,
+                    parentThumbId = item.data.parentThumbItemId,
                     fillWidth = fillWidth,
                     fillHeight = fillHeight,
                 )
