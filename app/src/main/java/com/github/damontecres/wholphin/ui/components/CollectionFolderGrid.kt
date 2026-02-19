@@ -346,7 +346,12 @@ class CollectionFolderViewModel
                 filter.applyTo(
                     GetItemsRequest(
                         parentId = item?.id,
-                        enableImageTypes = listOf(ImageType.PRIMARY, ImageType.THUMB),
+                        enableImageTypes =
+                            listOf(
+                                ImageType.PRIMARY,
+                                ImageType.THUMB,
+                                ImageType.BACKDROP,
+                            ),
                         includeItemTypes = includeItemTypes,
                         recursive = recursive,
                         excludeItemIds = item?.let { listOf(item.id) },

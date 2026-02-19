@@ -9,7 +9,6 @@ import org.jellyfin.sdk.model.UUID
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.ImageFormat
 import org.jellyfin.sdk.model.api.ImageType
-import timber.log.Timber
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -32,6 +31,8 @@ class ImageUrlService
             imageTags: Map<ImageType, String?>,
             imageType: ImageType,
             parentThumbId: UUID? = null,
+            parentBackdropId: UUID? = null,
+            backdropTags: List<String> = emptyList(),
             fillWidth: Int? = null,
             fillHeight: Int? = null,
         ): String? =
@@ -60,9 +61,20 @@ class ImageUrlService
                     if (useSeriesForPrimary && parentThumbId != null &&
                         (itemType == BaseItemKind.EPISODE || itemType == BaseItemKind.SEASON)
                     ) {
+                        // Use parent's thumb
                         getItemImageUrl(
                             itemId = parentThumbId,
                             imageType = imageType,
+                            fillWidth = fillWidth,
+                            fillHeight = fillHeight,
+                        )
+                    } else if (useSeriesForPrimary && parentBackdropId != null &&
+                        (itemType == BaseItemKind.EPISODE || itemType == BaseItemKind.SEASON)
+                    ) {
+                        // No parent thumb, so use backdrop instead
+                        getItemImageUrl(
+                            itemId = parentBackdropId,
+                            imageType = ImageType.BACKDROP,
                             fillWidth = fillWidth,
                             fillHeight = fillHeight,
                         )
@@ -82,6 +94,14 @@ class ImageUrlService
                         getItemImageUrl(
                             itemId = itemId,
                             imageType = ImageType.PRIMARY,
+                            fillWidth = fillWidth,
+                            fillHeight = fillHeight,
+                        )
+                    } else if (imageType !in imageTags && backdropTags.isNotEmpty()) {
+                        // If no thumb, use backdrop if available
+                        getItemImageUrl(
+                            itemId = itemId,
+                            imageType = ImageType.BACKDROP,
                             fillWidth = fillWidth,
                             fillHeight = fillHeight,
                         )
@@ -141,12 +161,6 @@ class ImageUrlService
             fillHeight: Int? = null,
         ): String? =
             if (item != null) {
-                Timber.v(
-                    "itemId=%s, imageType=%s, parentThumbId=%s",
-                    item.id,
-                    imageType,
-                    item.data.parentThumbItemId,
-                )
                 getItemImageUrl(
                     itemId = item.id,
                     itemType = item.type,
@@ -155,6 +169,8 @@ class ImageUrlService
                     imageTags = item.data.imageTags.orEmpty(),
                     imageType = imageType,
                     parentThumbId = item.data.parentThumbItemId,
+                    parentBackdropId = item.data.parentBackdropItemId,
+                    backdropTags = item.data.backdropImageTags.orEmpty(),
                     fillWidth = fillWidth,
                     fillHeight = fillHeight,
                 )
