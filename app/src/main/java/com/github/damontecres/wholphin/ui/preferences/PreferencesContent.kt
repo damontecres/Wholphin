@@ -165,12 +165,13 @@ fun PreferencesContent(
         LaunchedEffect(Unit) {
             focusRequester.tryRequestFocus()
         }
+        val sidebarBackground = MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp)
         LazyColumn(
             state = state,
             horizontalAlignment = Alignment.Start,
             verticalArrangement = Arrangement.spacedBy(0.dp),
             contentPadding = PaddingValues(16.dp),
-            modifier = Modifier.background(MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp)),
+            modifier = Modifier.background(sidebarBackground),
         ) {
             stickyHeader {
                 Text(
@@ -181,6 +182,7 @@ fun PreferencesContent(
                     modifier =
                         Modifier
                             .fillMaxWidth()
+                            .background(sidebarBackground)
                             .padding(vertical = 8.dp),
                 )
             }
