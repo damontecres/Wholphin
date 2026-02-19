@@ -449,7 +449,7 @@ fun PlaybackOverlay(
                         modifier =
                             Modifier
                                 .background(Color.Black.copy(alpha = 0.6f), shape = RoundedCornerShape(4.dp))
-                                .padding(horizontal = 6.dp, vertical = 2.dp),
+                                .padding(horizontal = 8.dp, vertical = 4.dp),
                     )
                 }
             }
