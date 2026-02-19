@@ -1,6 +1,7 @@
 package com.github.damontecres.wholphin.ui.playback
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
@@ -18,10 +19,12 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -443,6 +446,10 @@ fun PlaybackOverlay(
                         text = (seekProgressMs / 1000L).seconds.toString(),
                         color = MaterialTheme.colorScheme.onSurface,
                         style = MaterialTheme.typography.labelLarge,
+                        modifier =
+                            Modifier
+                                .background(Color.Black.copy(alpha = 0.6f), shape = RoundedCornerShape(4.dp))
+                                .padding(horizontal = 6.dp, vertical = 2.dp),
                     )
                 }
             }
@@ -525,13 +532,22 @@ fun Controller(
     seekBarInteractionSource: MutableInteractionSource = remember { MutableInteractionSource() },
     onNextStateFocus: () -> Unit = {},
 ) {
+    val seekBarFocused by seekBarInteractionSource.collectIsFocusedAsState()
+    val verticalOffset by animateDpAsState(
+        targetValue = if (seekBarFocused) (-32).dp else 0.dp,
+        label = "TitleBumpOffset",
+    )
+
     Column(
         verticalArrangement = Arrangement.spacedBy(8.dp),
         modifier = modifier,
     ) {
         Column(
             verticalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.padding(start = 16.dp),
+            modifier =
+                Modifier
+                    .padding(start = 16.dp)
+                    .offset(y = verticalOffset),
         ) {
             title?.let {
                 Text(
