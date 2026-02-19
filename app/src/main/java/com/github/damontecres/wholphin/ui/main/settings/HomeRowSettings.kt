@@ -197,7 +197,7 @@ internal object Options {
             title = R.string.global_content_scale,
             defaultValue = PrefContentScale.FIT,
             displayValues = R.array.content_scale,
-            getter = { it.contentScale },
+            getter = { it.episodeContentScale },
             setter = { viewOptions, value -> viewOptions.copy(episodeContentScale = value) },
             indexToValue = { PrefContentScale.forNumber(it) },
             valueToIndex = { it.number },
@@ -219,7 +219,7 @@ internal object Options {
             title = R.string.image_type,
             defaultValue = ViewOptionImageType.PRIMARY,
             displayValues = R.array.image_types,
-            getter = { it.imageType },
+            getter = { it.episodeImageType },
             setter = { viewOptions, value ->
                 val aspectRatio =
                     when (value) {
