@@ -30,6 +30,8 @@ This is not a fork of the [official client](https://github.com/jellyfin/jellyfin
 
 ### User interface
 
+- Customize the home page to see the content you are interested in
+    - Use poster or thumb images, show/hide titles, add/remove/re-order different types of rows!
 - A navigation drawer for quick access to libraries, favorites, search, and settings from almost anywhere in the app
 - Integration with [Jellyseerr](https://github.com/seerr-team/seerr) to discover new movies and TV shows
 - Option to combine Continue Watching & Next Up rows
@@ -111,6 +113,10 @@ You can [help translate Wholphin](https://translate.codeberg.org/engage/wholphin
 - Thanks to numerous other libraries that make app development even possible
 
 ## Additional screenshots
+
+### Customized home page
+![customize_home_example](https://github.com/user-attachments/assets/9a4f04b7-9604-4ea7-b352-50f2b15dc2f1)
+
 
 ### Movie library browsing
 <img width="1280" height="771" alt="0 3 0_movies" src="https://github.com/user-attachments/assets/a49829b5-bc2c-4af9-8d5d-2f7d0973ce01" />
