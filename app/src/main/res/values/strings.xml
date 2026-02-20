@@ -188,6 +188,7 @@
     <string name="samples">Samples</string>
     <string name="featurettes">Featurettes</string>
     <string name="shorts">Shorts</string>
+    <string name="favorite_items">Favorite %s</string>
 
     <plurals name="trailers">
         <item quantity="zero">Trailers</item>
@@ -505,8 +506,8 @@
     <string name="apply_all_rows">Apply to all rows</string>
     <string name="customize_home">Customize home page</string>
     <string name="home_rows">Home rows</string>
-    <string name="load_from_server">Load from server</string>
-    <string name="save_to_server">Save to server</string>
+    <string name="load_from_server">Load from server user profile</string>
+    <string name="save_to_server">Save to server user profile</string>
     <string name="load_from_web_client">Load from web client</string>
     <string name="use_series">Use series image</string>
     <string name="add_row_for">Add row for %1$s</string>

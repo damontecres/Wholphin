@@ -13,6 +13,7 @@ import com.github.damontecres.wholphin.ui.DefaultItemFields
 import com.github.damontecres.wholphin.ui.SlimItemFields
 import com.github.damontecres.wholphin.ui.components.getGenreImageMap
 import com.github.damontecres.wholphin.ui.main.settings.Library
+import com.github.damontecres.wholphin.ui.main.settings.favoriteOptions
 import com.github.damontecres.wholphin.ui.toBaseItems
 import com.github.damontecres.wholphin.ui.toServerString
 import com.github.damontecres.wholphin.util.GetGenresRequestHandler
@@ -511,7 +512,11 @@ class HomeSettingsService
                 }
 
                 is HomeRowConfig.Favorite -> {
-                    val name = context.getString(R.string.favorites) // TODO "Favorite <type>"
+                    val name =
+                        context.getString(
+                            R.string.favorite_items,
+                            context.getString(favoriteOptions[config.kind]!!),
+                        )
                     HomeRowConfigDisplay(id, name, config)
                 }
 
@@ -785,6 +790,11 @@ class HomeSettingsService
                 }
 
                 is HomeRowConfig.Favorite -> {
+                    val title =
+                        context.getString(
+                            R.string.favorite_items,
+                            context.getString(favoriteOptions[row.kind]!!),
+                        )
                     if (row.kind == BaseItemKind.PERSON) {
                         val request =
                             GetPersonsRequest(
@@ -801,7 +811,7 @@ class HomeSettingsService
                             .map { BaseItem(it, true) }
                             .let {
                                 Success(
-                                    context.getString(R.string.favorites), // TODO
+                                    title,
                                     it,
                                     row.viewOptions,
                                 )
@@ -822,7 +832,7 @@ class HomeSettingsService
                             .map { BaseItem(it, row.viewOptions.useSeries) }
                             .let {
                                 Success(
-                                    context.getString(R.string.favorites), // TODO
+                                    title,
                                     it,
                                     row.viewOptions,
                                 )
