@@ -66,7 +66,7 @@
     <string name="more">Diğer</string>
     <plurals name="movies">
         <item quantity="one">Filmler</item>
-        <item quantity="other"/>
+        <item quantity="other">Filmler</item>
     </plurals>
     <string name="name">Ad</string>
     <string name="next_up">Sıradaki bölümler</string>
@@ -81,7 +81,7 @@
     <string name="path">Yol</string>
     <plurals name="people">
         <item quantity="one">Kişiler</item>
-        <item quantity="other"/>
+        <item quantity="other">Kişiler</item>
     </plurals>
     <string name="play_count">Oynatma Sayısı</string>
     <string name="play_from_here">Buradan oynat</string>
@@ -152,7 +152,7 @@
     <string name="trailer">Fragman</string>
     <plurals name="trailers">
         <item quantity="one">Fragmanlar</item>
-        <item quantity="other"/>
+        <item quantity="other">Fragmanlar</item>
     </plurals>
     <string name="tv_dvr_schedule">Kayıt Takvimi</string>
     <string name="tv_guide">Rehber</string>
@@ -160,7 +160,7 @@
     <string name="tv_seasons">Sezonlar</string>
     <plurals name="tv_shows">
         <item quantity="one">Diziler</item>
-        <item quantity="other"/>
+        <item quantity="other">Diziler</item>
     </plurals>
     <string name="ui_interface">Arayüz</string>
     <string name="unknown">Bilinmiyor</string>
@@ -436,4 +436,38 @@
     <string name="zoom_out">Uzaklaştır</string>
     <string name="slideshow_duration">Slayt Gösterisi Süresi</string>
     <string name="play_videos_during_slideshow">Slayt gösterisi sırasında videoları oynat</string>
+    <plurals name="days">
+        <item quantity="one">%s gün</item>
+        <item quantity="other">%s günler</item>
+    </plurals>
+    <string name="send_media_info_log_to_server">Medya bilgisini sunucuya gönder</string>
+    <string name="no_limit">Sınırsız</string>
+    <string name="max_days_next_up">Sıradaki bölümlerde kalacağı gün sayısı</string>
+    <string name="quick_connect">Hızlı Bağlan</string>
+    <string name="quick_connect_summary">Başka bir cihazın giriş yapmasına izin ver</string>
+    <string name="quick_connect_code">Hızlı Bağlan kodunu girin</string>
+    <string name="quick_connect_code_error">Kod 6 haneli olmalıdır</string>
+    <string name="quick_connect_success">Cihaz başarıyla yetkilendirildi</string>
+    <string name="add_row">Satır ekle</string>
+    <string name="genres_in">%1$s içindeki türler</string>
+    <string name="recently_released_in">%1$s kütüphanesinde son çıkanlar</string>
+    <string name="height">Yükseklik</string>
+    <string name="apply_all_rows">Tüm satırlara uygula</string>
+    <string name="customize_home">Ana ekranı özelleştir</string>
+    <string name="home_rows">Ana ekran satırları</string>
+    <string name="load_from_server">Sunucudan yükle</string>
+    <string name="save_to_server">Sunucuya kaydet</string>
+    <string name="load_from_web_client">Web istemcisinden yükle</string>
+    <string name="use_series">Dizi görselini kullan</string>
+    <string name="add_row_for">%1$s için satır ekle</string>
+    <string name="overwrite_server_settings">Sunucudaki ayarların üzerine yazılsın mı?</string>
+    <string name="overwrite_local_settings">Yerel ayarların üzerine yazılsın mı?</string>
+    <string name="for_episodes">Bölümler için</string>
+    <string name="suggestions_for">%1$s için tavsiyeler</string>
+    <string name="increase_all_cards_size">Tüm kartların boyutunu artır</string>
+    <string name="decrease_all_cards_size">Tüm kartların boyutunu azalt</string>
+    <string name="use_thumb_images">Küçük resimleri kullan</string>
+    <string name="settings_saved">Ayarlar kaydedildi</string>
+    <string name="display_presets">Görüntü ön ayarları</string>
+    <string name="display_presets_description">Tüm satırları hızlıca stilize etmek için hazır ayarlar</string>
 </resources>

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="about">O Wholphin</string>
+    <string name="about">Sobre</string>
     <string name="add_favorite">Favorito</string>
     <string name="add_server">Adicionar Servidor</string>
     <string name="add_user">Adicionar Utilizador</string>
@@ -10,8 +10,8 @@
     <string name="chapters">Capítulos</string>
     <string name="choose_stream">Escolher %1$s</string>
     <string name="clear_image_cache">Eliminar cache de imagens</string>
-    <string name="collection">Colecção</string>
-    <string name="collections">Colecções</string>
+    <string name="collection">Coleção</string>
+    <string name="collections">Coleções</string>
     <string name="confirm">Confirmar</string>
     <string name="decimal_seconds">%.2f segundos</string>
     <string name="default_track">Padrão</string>
@@ -27,7 +27,7 @@
     <string name="file_size">Tamanho</string>
     <string name="forced_track">Forçado</string>
     <string name="go_to">Ir para</string>
-    <string name="active_recordings">Gravações Activas</string>
+    <string name="active_recordings">Gravações Ativas</string>
     <string name="birthplace">Local de Nascimento</string>
     <string name="bitrate">Bitrate</string>
     <string name="born">Nascido</string>
@@ -451,4 +451,32 @@
     <string name="send_media_info_log_to_server">Enviar registo de informações de mídia para o servidor</string>
     <string name="no_limit">Sem limite</string>
     <string name="max_days_next_up">Dias máximos em \'A Seguir\'</string>
+    <string name="quick_connect">Ligação Rápida</string>
+    <string name="quick_connect_summary">Autorize outro dispositivo a iniciar sessão na sua conta</string>
+    <string name="quick_connect_code">Insira o código de Ligação Rápida</string>
+    <string name="quick_connect_code_error">Código deve ter 6 dígitos</string>
+    <string name="quick_connect_success">Dispositivo autorizado com sucesso</string>
+    <string name="add_row">Adicionar linha</string>
+    <string name="genres_in">Géneros em %1$s</string>
+    <string name="recently_released_in">Lançado recentemente em %1$s</string>
+    <string name="height">Altura</string>
+    <string name="apply_all_rows">Aplicar a todas as linhas</string>
+    <string name="customize_home">Personalizar página inicial</string>
+    <string name="home_rows">Linhas da página inicial</string>
+    <string name="load_from_server">Carregar do servidor</string>
+    <string name="save_to_server">Gravar para o servidor</string>
+    <string name="load_from_web_client">Carregar a partir do cliente web</string>
+    <string name="use_series">Usar imagem da série</string>
+    <string name="add_row_for">Adicionar linha para %1$s</string>
+    <string name="overwrite_server_settings">Substituir as definições no servidor?</string>
+    <string name="overwrite_local_settings">Substituir as definições locais?</string>
+    <string name="for_episodes">Por episódios</string>
+    <string name="suggestions_for">Sugestões para %1$s</string>
+    <string name="increase_all_cards_size">Aumentar o tamanho de todos os cartões</string>
+    <string name="use_thumb_images">Usar imagens de prévia</string>
+    <string name="settings_saved">Configurações salvas</string>
+    <string name="display_presets">Mostrar pré definições</string>
+    <string name="display_presets_description">Predefinições embarcadas para definir todas as linhas rapidamente</string>
+    <string name="customize_home_summary">Escolha as linhas e imagens na página inicial</string>
+    <string name="decrease_all_cards_size">Diminuir o tamanho de todos os cartões</string>
 </resources>
