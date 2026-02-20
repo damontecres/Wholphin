@@ -41,6 +41,7 @@ import com.github.damontecres.wholphin.preferences.SkipSegmentBehavior
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.DatePlayedService
 import com.github.damontecres.wholphin.services.DeviceProfileService
+import com.github.damontecres.wholphin.services.ImageUrlService
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.PlayerFactory
 import com.github.damontecres.wholphin.services.PlaylistCreationResult
@@ -95,6 +96,7 @@ import org.jellyfin.sdk.api.client.extensions.videosApi
 import org.jellyfin.sdk.api.sockets.subscribe
 import org.jellyfin.sdk.model.DeviceInfo
 import org.jellyfin.sdk.model.api.BaseItemKind
+import org.jellyfin.sdk.model.api.ImageType
 import org.jellyfin.sdk.model.api.MediaSegmentDto
 import org.jellyfin.sdk.model.api.MediaSegmentType
 import org.jellyfin.sdk.model.api.MediaStreamType
@@ -137,6 +139,7 @@ class PlaybackViewModel
         private val refreshRateService: RefreshRateService,
         val streamChoiceService: StreamChoiceService,
         private val userPreferencesService: UserPreferencesService,
+        private val imageUrlService: ImageUrlService,
         @Assisted private val destination: Destination,
     ) : ViewModel(),
         Player.Listener,
@@ -671,7 +674,15 @@ class PlaybackViewModel
                     MediaItem
                         .Builder()
                         .setMediaId(itemId.toString())
-                        .setUri(mediaUrl.toUri())
+                        .setMediaMetadata(
+                            item.toMediaMetadata(
+                                imageUrlService.getItemImageUrl(
+                                    item,
+                                    ImageType.PRIMARY,
+                                    useSeriesForPrimary = true,
+                                ),
+                            ),
+                        ).setUri(mediaUrl.toUri())
                         .setSubtitleConfigurations(listOfNotNull(externalSubtitle))
                         .apply {
                             when (source.container) {

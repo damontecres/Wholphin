@@ -3,7 +3,6 @@ package com.github.damontecres.wholphin.ui.preferences
 import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.asFlow
 import androidx.lifecycle.viewModelScope
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.JellyfinUser
@@ -22,7 +21,6 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.combine
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.model.ClientInfo
 import org.jellyfin.sdk.model.DeviceInfo
@@ -46,10 +44,7 @@ class PreferencesViewModel
         RememberTabManager by rememberTabManager {
         val currentUser get() = serverRepository.currentUser
 
-        val seerrEnabled =
-            seerrServerRepository.currentUser.combine(currentUser.asFlow()) { seerrUser, jellyfinUser ->
-                seerrUser != null && jellyfinUser != null && seerrUser.jellyfinUserRowId == jellyfinUser.rowId
-            }
+        val seerrConnection = seerrServerRepository.connection
 
         private val _quickConnectStatus = MutableStateFlow<LoadingState>(LoadingState.Pending)
         val quickConnectStatus: StateFlow<LoadingState> = _quickConnectStatus

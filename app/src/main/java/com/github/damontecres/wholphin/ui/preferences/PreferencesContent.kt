@@ -51,6 +51,7 @@ import com.github.damontecres.wholphin.preferences.PlayerBackend
 import com.github.damontecres.wholphin.preferences.advancedPreferences
 import com.github.damontecres.wholphin.preferences.basicPreferences
 import com.github.damontecres.wholphin.preferences.updatePlaybackPreferences
+import com.github.damontecres.wholphin.services.SeerrConnectionStatus
 import com.github.damontecres.wholphin.services.UpdateChecker
 import com.github.damontecres.wholphin.ui.components.ConfirmDialog
 import com.github.damontecres.wholphin.ui.ifElse
@@ -90,7 +91,7 @@ fun PreferencesContent(
     var showPinFlow by remember { mutableStateOf(false) }
 
     var cacheUsage by remember { mutableStateOf(CacheUsage(0, 0, 0)) }
-    val seerrIntegrationEnabled by viewModel.seerrEnabled.collectAsState(false)
+    val seerrConnection by viewModel.seerrConnection.collectAsState()
     var seerrDialogMode by remember { mutableStateOf<SeerrDialogMode>(SeerrDialogMode.None) }
     var showQuickConnectDialog by remember { mutableStateOf(false) }
 
@@ -387,19 +388,29 @@ fun PreferencesContent(
                                 ClickPreference(
                                     title = stringResource(pref.title),
                                     onClick = {
-                                        if (seerrIntegrationEnabled) {
-                                            seerrDialogMode = SeerrDialogMode.Remove
-                                        } else {
-                                            seerrVm.resetStatus()
-                                            seerrDialogMode = SeerrDialogMode.Add
-                                        }
+                                        seerrDialogMode =
+                                            when (val conn = seerrConnection) {
+                                                is SeerrConnectionStatus.Error -> {
+                                                    SeerrDialogMode.Error(conn.serverUrl, conn.ex)
+                                                }
+
+                                                SeerrConnectionStatus.NotConfigured -> {
+                                                    SeerrDialogMode.Add
+                                                }
+
+                                                is SeerrConnectionStatus.Success -> {
+                                                    SeerrDialogMode.Remove(
+                                                        conn.current.server.url,
+                                                    )
+                                                }
+                                            }
                                     },
                                     modifier = Modifier,
                                     summary =
-                                        if (seerrIntegrationEnabled) {
-                                            stringResource(R.string.enabled)
-                                        } else {
-                                            null
+                                        when (seerrConnection) {
+                                            is SeerrConnectionStatus.Error -> stringResource(R.string.voice_error_server)
+                                            SeerrConnectionStatus.NotConfigured -> stringResource(R.string.add_server)
+                                            is SeerrConnectionStatus.Success -> stringResource(R.string.enabled)
                                         },
                                     onLongClick = {},
                                     interactionSource = interactionSource,
@@ -481,11 +492,11 @@ fun PreferencesContent(
                 )
             }
         }
-        when (seerrDialogMode) {
-            SeerrDialogMode.Remove -> {
+        when (val mode = seerrDialogMode) {
+            is SeerrDialogMode.Remove -> {
                 ConfirmDialog(
                     title = stringResource(R.string.remove_seerr_server),
-                    body = currentServer?.url ?: "",
+                    body = mode.serverUrl,
                     onCancel = { seerrDialogMode = SeerrDialogMode.None },
                     onConfirm = {
                         seerrVm.removeServer()
@@ -509,6 +520,28 @@ fun PreferencesContent(
                     status = status,
                     onSubmit = seerrVm::submitServer,
                     onDismissRequest = { seerrDialogMode = SeerrDialogMode.None },
+                )
+            }
+
+            is SeerrDialogMode.Error -> {
+                val errorStr = stringResource(R.string.voice_error_server)
+                val body =
+                    remember(mode) {
+                        """
+                        ${mode.serverUrl}
+
+                        $errorStr: ${mode.ex.localizedMessage}
+                        """.trimIndent()
+                    }
+                ConfirmDialog(
+                    title = stringResource(R.string.remove_seerr_server),
+                    body = body,
+                    onCancel = { seerrDialogMode = SeerrDialogMode.None },
+                    onConfirm = {
+                        seerrVm.removeServer()
+                        seerrDialogMode = SeerrDialogMode.None
+                    },
+                    bodyColor = MaterialTheme.colorScheme.error,
                 )
             }
 
@@ -582,10 +615,17 @@ data class CacheUsage(
     val imageDiskUsed: Long,
 )
 
-private sealed class SeerrDialogMode {
-    data object None : SeerrDialogMode()
+private sealed interface SeerrDialogMode {
+    data object None : SeerrDialogMode
 
-    data object Add : SeerrDialogMode()
+    data object Add : SeerrDialogMode
 
-    data object Remove : SeerrDialogMode()
+    data class Remove(
+        val serverUrl: String,
+    ) : SeerrDialogMode
+
+    data class Error(
+        val serverUrl: String,
+        val ex: Exception,
+    ) : SeerrDialogMode
 }
