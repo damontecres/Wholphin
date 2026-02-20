@@ -65,7 +65,7 @@
     <string name="more">Mere</string>
     <plurals name="movies">
         <item quantity="one">Film</item>
-        <item quantity="other"></item>
+        <item quantity="other"/>
     </plurals>
     <string name="name">Navn</string>
     <string name="next_up">Næste</string>
@@ -80,7 +80,7 @@
     <string name="path">Filsti</string>
     <plurals name="people">
         <item quantity="one">Personer</item>
-        <item quantity="other"></item>
+        <item quantity="other"/>
     </plurals>
     <string name="play_count">Antal afspilninger</string>
     <string name="play_from_here">Afspil herfra</string>
@@ -91,4 +91,6 @@
     <string name="playlist">Playlist</string>
     <string name="playlists">Playlists</string>
     <string name="preview">Forhåndsvisning</string>
+    <string name="profile_specific_settings">Profilindstillinger</string>
+    <string name="queue">Kø</string>
 </resources>
