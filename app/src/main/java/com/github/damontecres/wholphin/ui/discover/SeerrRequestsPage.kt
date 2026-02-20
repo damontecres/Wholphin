@@ -64,7 +64,7 @@ class SeerrRequestsViewModel
             viewModelScope.launchIO {
                 backdropService.clearBackdrop()
             }
-            seerrServerRepository.current
+            seerrServerRepository.connection
                 .onEach { user ->
                     state.update { it.copy(requests = DataLoadingState.Loading) }
                     if (user != null) {
