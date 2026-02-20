@@ -12,7 +12,7 @@
     <string name="choose_stream">Elegir %1$s</string>
     <string name="collection">Colección</string>
     <string name="collections">Colecciones</string>
-    <string name="commercial">Comercial</string>
+    <string name="commercial">Anuncio</string>
     <string name="confirm">Confirmar</string>
     <string name="continue_watching">Continuar viendo</string>
     <string name="decimal_seconds">%.2f segundos</string>
@@ -119,7 +119,7 @@
     <string name="discovered_servers">Servidores detectados</string>
     <string name="download_and_update"><![CDATA[Descargar y actualizar]]></string>
     <string name="downloading">Descargando…</string>
-    <string name="enter_server_url">Introduce la IP o URL del servidor, incluido el puerto</string>
+    <string name="enter_server_url">Introduce la IP o URL del servidor</string>
     <string name="error_loading_collection">Error cargando la colección %1$s</string>
     <string name="forced_track">Forzado</string>
     <string name="go_to_series">Ir a la serie</string>
@@ -462,8 +462,8 @@
     <string name="apply_all_rows">Aplicar a todas las filas</string>
     <string name="customize_home">Personalizar página de inicio</string>
     <string name="home_rows">Filas de inicio</string>
-    <string name="load_from_server">Cargar desde el servidor</string>
-    <string name="save_to_server">Guardar en el servidor</string>
+    <string name="load_from_server">Cargar perfil de usuario desde el servidor</string>
+    <string name="save_to_server">Guardar perfil de usuario en el servidor</string>
     <string name="load_from_web_client">Cargar del cliente web</string>
     <string name="use_series">Usar imágenes de la serie</string>
     <string name="add_row_for">Agregar fila para %1$s</string>
@@ -479,4 +479,5 @@
     <string name="display_presets_description">Preajustes integrados para estilizar todas las filas</string>
     <string name="customize_home_summary">Elegir filas e imágenes en la página de inicio</string>
     <string name="recently_released_in">Lanzado recientemente en %1$s</string>
+    <string name="favorite_items">Favoritos%s</string>
 </resources>
