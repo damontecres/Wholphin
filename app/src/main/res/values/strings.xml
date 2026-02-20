@@ -188,6 +188,7 @@
     <string name="samples">Samples</string>
     <string name="featurettes">Featurettes</string>
     <string name="shorts">Shorts</string>
+    <string name="favorite_items">Favorite %s</string>
 
     <plurals name="trailers">
         <item quantity="zero">Trailers</item>

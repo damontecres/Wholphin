@@ -356,7 +356,11 @@ class HomeSettingsViewModel
                 val newRow =
                     HomeRowConfigDisplay(
                         id = id,
-                        title = context.getString(favoriteOptions[type]!!),
+                        title =
+                            context.getString(
+                                R.string.favorite_items,
+                                context.getString(favoriteOptions[type]!!),
+                            ),
                         config = HomeRowConfig.Favorite(type),
                     )
                 updateState {
