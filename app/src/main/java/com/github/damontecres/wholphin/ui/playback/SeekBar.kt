@@ -80,15 +80,16 @@ fun SteppedSeekBarImpl(
         enabled = enabled,
         progress = progressToUse,
         bufferedProgress = bufferedProgress,
-        onLeft = {
+        durationMs = durationMs,
+        onLeft = { multiplier ->
             controllerViewState.pulseControls()
-            seekProgress = (progressToUse - offset).coerceAtLeast(0f)
+            seekProgress = (seekProgress - offset * multiplier).coerceAtLeast(0f)
             hasSeeked = true
             seek(seekProgress)
         },
-        onRight = {
+        onRight = { multiplier ->
             controllerViewState.pulseControls()
-            seekProgress = (progressToUse + offset).coerceAtMost(1f)
+            seekProgress = (seekProgress + offset * multiplier).coerceAtMost(1f)
             hasSeeked = true
             seek(seekProgress)
         },
@@ -126,16 +127,17 @@ fun IntervalSeekBarImpl(
         enabled = enabled,
         progress = (progressToUse.toDouble() / durationMs).toFloat(),
         bufferedProgress = bufferedProgress,
-        onLeft = {
+        durationMs = durationMs,
+        onLeft = { multiplier ->
             controllerViewState.pulseControls()
-            seekPositionMs = (progressToUse - seekBack.inWholeMilliseconds).coerceAtLeast(0L)
+            seekPositionMs = (seekPositionMs - seekBack.inWholeMilliseconds * multiplier).coerceAtLeast(0L)
             hasSeeked = true
             onSeek(seekPositionMs)
         },
-        onRight = {
+        onRight = { multiplier ->
             controllerViewState.pulseControls()
             seekPositionMs =
-                (progressToUse + seekForward.inWholeMilliseconds).coerceAtMost(durationMs)
+                (seekPositionMs + seekForward.inWholeMilliseconds * multiplier).coerceAtMost(durationMs)
             hasSeeked = true
             onSeek(seekPositionMs)
         },
@@ -148,8 +150,9 @@ fun IntervalSeekBarImpl(
 fun SeekBarDisplay(
     progress: Float,
     bufferedProgress: Float,
-    onLeft: () -> Unit,
-    onRight: () -> Unit,
+    durationMs: Long,
+    onLeft: (Int) -> Unit,
+    onRight: (Int) -> Unit,
     interactionSource: MutableInteractionSource,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
@@ -162,6 +165,12 @@ fun SeekBarDisplay(
         targetValue = 6.dp.times((if (isFocused) 2f else 1f)),
     )
 
+    var leftRepeatCount by remember { mutableStateOf(0) }
+    var rightRepeatCount by remember { mutableStateOf(0) }
+
+    // Duration-based scaling factors
+    val durationMinutes = durationMs / 60000
+
     Column(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -173,24 +182,34 @@ fun SeekBarDisplay(
                     .height(animatedIndicatorHeight)
                     .padding(horizontal = 4.dp)
                     .onPreviewKeyEvent { event ->
-                        val trigger =
-                            event.type == KeyEventType.KeyUp || event.nativeKeyEvent.repeatCount > 0
+                        val repeatCount = event.nativeKeyEvent.repeatCount
+                        val trigger = event.type == KeyEventType.KeyUp || repeatCount > 0
+
                         when (event.nativeKeyEvent.keyCode) {
                             KeyEvent.KEYCODE_DPAD_LEFT, KeyEvent.KEYCODE_SYSTEM_NAVIGATION_LEFT -> {
-                                if (trigger) onLeft.invoke()
+                                if (event.type == KeyEventType.KeyUp) {
+                                    leftRepeatCount = 0
+                                } else if (trigger) {
+                                    leftRepeatCount = repeatCount
+                                    val multiplier = calculateMultiplier(repeatCount, durationMinutes)
+                                    onLeft.invoke(multiplier)
+                                }
                                 return@onPreviewKeyEvent true
                             }
 
                             KeyEvent.KEYCODE_DPAD_RIGHT, KeyEvent.KEYCODE_SYSTEM_NAVIGATION_RIGHT -> {
-                                if (trigger) onRight.invoke()
+                                if (event.type == KeyEventType.KeyUp) {
+                                    rightRepeatCount = 0
+                                } else if (trigger) {
+                                    rightRepeatCount = repeatCount
+                                    val multiplier = calculateMultiplier(repeatCount, durationMinutes)
+                                    onRight.invoke(multiplier)
+                                }
                                 return@onPreviewKeyEvent true
                             }
                         }
                         false
-                    }.handleDPadKeyEvents(
-                        onLeft = onLeft,
-                        onRight = onRight,
-                    ).focusable(enabled = enabled, interactionSource = interactionSource),
+                    }.focusable(enabled = enabled, interactionSource = interactionSource),
             onDraw = {
                 val yOffset = size.height.div(2)
                 drawLine(
@@ -230,5 +249,52 @@ fun SeekBarDisplay(
                 )
             },
         )
+    }
+}
+
+/**
+ * Calculates the seek multiplier based on repeat count and video duration.
+ * Shorter videos get less aggressive acceleration, longer videos get more aggressive acceleration.
+ */
+private fun calculateMultiplier(
+    repeatCount: Int,
+    durationMinutes: Long,
+): Int {
+    return when {
+        // Short videos (< 30 minutes): gentle acceleration
+        durationMinutes < 30 -> {
+            when {
+                repeatCount < 30 -> 1
+                repeatCount < 60 -> 2
+                else -> 2
+            }
+        }
+        // Medium videos (30-90 minutes): moderate acceleration
+        durationMinutes < 90 -> {
+            when {
+                repeatCount < 25 -> 1
+                repeatCount < 50 -> 2
+                repeatCount < 75 -> 3
+                else -> 4
+            }
+        }
+        // Long videos (90-150 minutes): more aggressive
+        durationMinutes < 150 -> {
+            when {
+                repeatCount < 20 -> 1
+                repeatCount < 40 -> 2
+                repeatCount < 60 -> 4
+                else -> 6
+            }
+        }
+        // Very long videos (150+ minutes): very aggressive for practical seeking
+        else -> {
+            when {
+                repeatCount < 20 -> 1
+                repeatCount < 40 -> 3
+                repeatCount < 60 -> 6
+                else -> 10
+            }
+        }
     }
 }
