@@ -99,11 +99,17 @@ class SuggestionsWorker
                                                 itemsPerRow,
                                             )
                                         ensureActive()
+                                        val newIds = suggestions.map { it.id }
+                                        val cachedIds = cache.get(userId, view.id, itemKind)?.ids
+                                        if (cachedIds == newIds) {
+                                            Timber.v("Suggestions unchanged for view %s, skipping cache write", view.id)
+                                            return@runCatching
+                                        }
                                         cache.put(
                                             userId,
                                             view.id,
                                             itemKind,
-                                            suggestions.map { it.id },
+                                            newIds,
                                         )
                                     }.onFailure { e ->
                                         Timber.e(
@@ -242,7 +248,7 @@ class SuggestionsWorker
                 GetItemsRequest(
                     parentId = parentId,
                     userId = userId,
-                    fields = listOf(ItemFields.PRIMARY_IMAGE_ASPECT_RATIO, ItemFields.OVERVIEW) + extraFields,
+                    fields = extraFields,
                     includeItemTypes = listOf(itemKind),
                     genreIds = genreIds,
                     recursive = true,
@@ -252,7 +258,7 @@ class SuggestionsWorker
                     sortOrder = sortOrder?.let { listOf(it) },
                     limit = limit,
                     enableTotalRecordCount = false,
-                    imageTypeLimit = 1,
+                    imageTypeLimit = 0,
                 )
             return GetItemsRequestHandler
                 .execute(api, request)
