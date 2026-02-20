@@ -159,13 +159,14 @@ class ImageUrlService
             imageType: ImageType,
             fillWidth: Int? = null,
             fillHeight: Int? = null,
+            useSeriesForPrimary: Boolean? = null,
         ): String? =
             if (item != null) {
                 getItemImageUrl(
                     itemId = item.id,
                     itemType = item.type,
                     seriesId = item.data.seriesId,
-                    useSeriesForPrimary = item.useSeriesForPrimary,
+                    useSeriesForPrimary = useSeriesForPrimary ?: item.useSeriesForPrimary,
                     imageTags = item.data.imageTags.orEmpty(),
                     imageType = imageType,
                     parentThumbId = item.data.parentThumbItemId,
