@@ -89,10 +89,12 @@ fun DiscoverSeriesDetails(
     val item by viewModel.tvSeries.observeAsState()
     val seasons by viewModel.seasons.observeAsState(listOf())
     val people by viewModel.people.observeAsState(listOf())
+    val trailers by viewModel.trailers.observeAsState(listOf())
     val similar by viewModel.similar.observeAsState(listOf())
     val recommended by viewModel.recommended.observeAsState(listOf())
     val userConfig by viewModel.userConfig.collectAsState(null)
     val request4kEnabled by viewModel.request4kEnabled.collectAsState(false)
+    val canCancel by viewModel.canCancelRequest.collectAsState()
 
     var overviewDialog by remember { mutableStateOf<ItemDetailsDialogInfo?>(null) }
     var seasonDialog by remember { mutableStateOf<DialogParams?>(null) }
@@ -103,13 +105,13 @@ fun DiscoverSeriesDetails(
 
     when (val state = loading) {
         is LoadingState.Error -> {
-            ErrorMessage(state)
+            ErrorMessage(state, modifier)
         }
 
         LoadingState.Loading,
         LoadingState.Pending,
         -> {
-            LoadingPage()
+            LoadingPage(modifier)
         }
 
         LoadingState.Success -> {
@@ -120,6 +122,7 @@ fun DiscoverSeriesDetails(
                     series = item,
                     userConfig = userConfig,
                     rating = rating,
+                    canCancel = canCancel,
                     seasons = seasons,
                     people = people,
                     similar = similar,
@@ -153,7 +156,7 @@ fun DiscoverSeriesDetails(
                     trailerOnClick = {
                         TrailerService.onClick(context, it, viewModel::navigateTo)
                     },
-                    trailers = listOf(),
+                    trailers = trailers,
                     requestOnClick = {
                         item.id?.let { id ->
                             if (request4kEnabled) {
@@ -230,6 +233,7 @@ fun DiscoverSeriesDetailsContent(
     userConfig: SeerrUserConfig?,
     series: TvDetails,
     rating: DiscoverRating?,
+    canCancel: Boolean,
     seasons: List<Season>,
     similar: List<DiscoverItem>,
     recommended: List<DiscoverItem>,
@@ -252,7 +256,7 @@ fun DiscoverSeriesDetailsContent(
     val bringIntoViewRequester = remember { BringIntoViewRequester() }
 
     var position by rememberInt()
-    val focusRequesters = remember { List(SIMILAR_ROW + 1) { FocusRequester() } }
+    val focusRequesters = remember { List(RECOMMENDED_ROW + 1) { FocusRequester() } }
     val playFocusRequester = remember { FocusRequester() }
     LaunchedEffect(Unit) {
         focusRequesters.getOrNull(position)?.tryRequestFocus()
@@ -290,15 +294,6 @@ fun DiscoverSeriesDetailsContent(
                                     .fillMaxWidth()
                                     .padding(top = 32.dp, bottom = 16.dp),
                         )
-                        val canCancel =
-                            remember(series, userConfig) {
-                                (
-                                    // User requested this
-                                    userConfig.hasPermission(SeerrPermission.REQUEST) &&
-                                        series.mediaInfo?.requests?.any { it.requestedBy?.id == userConfig?.id } == true
-                                ) ||
-                                    userConfig.hasPermission(SeerrPermission.MANAGE_REQUESTS)
-                            }
                         ExpandableDiscoverButtons(
                             availability =
                                 SeerrAvailability.from(series.mediaInfo?.status)
@@ -404,7 +399,7 @@ fun DiscoverSeriesDetailsContent(
                     item {
                         ItemRow(
                             title = stringResource(R.string.recommended),
-                            items = similar,
+                            items = recommended,
                             onClickItem = { index, item ->
                                 position = RECOMMENDED_ROW
                                 onClickItem.invoke(index, item)
@@ -468,7 +463,7 @@ fun DiscoverSeriesDetailsHeader(
         ) {
             val padding = 4.dp
             val details =
-                remember(series) {
+                remember(series, rating) {
                     buildList {
                         series.firstAirDate?.let(::add)
                         series.episodeRunTime

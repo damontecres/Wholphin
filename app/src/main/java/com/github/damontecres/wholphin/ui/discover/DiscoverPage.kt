@@ -18,18 +18,17 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.preferences.UserPreferences
+import com.github.damontecres.wholphin.ui.OneTimeLaunchedEffect
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.TabRow
 import com.github.damontecres.wholphin.ui.logTab
 import com.github.damontecres.wholphin.ui.nav.NavDrawerItem
 import com.github.damontecres.wholphin.ui.preferences.PreferencesViewModel
-import com.github.damontecres.wholphin.ui.tryRequestFocus
 
 @Composable
 fun DiscoverPage(
@@ -46,21 +45,16 @@ fun DiscoverPage(
             stringResource(R.string.request),
         )
     var selectedTabIndex by rememberSaveable { mutableIntStateOf(rememberedTabIndex) }
-    val focusRequester = remember { FocusRequester() }
     val tabFocusRequesters = remember(tabs) { List(tabs.size) { FocusRequester() } }
-
-    val firstTabFocusRequester = remember { FocusRequester() }
-    LaunchedEffect(Unit) { firstTabFocusRequester.tryRequestFocus() }
 
     LaunchedEffect(selectedTabIndex) {
         logTab("discover", selectedTabIndex)
         preferencesViewModel.saveRememberedTab(preferences, NavDrawerItem.Discover.id, selectedTabIndex)
-        preferencesViewModel.backdropService.clearBackdrop()
     }
+    OneTimeLaunchedEffect { preferencesViewModel.backdropService.clearBackdrop() }
 
     var showHeader by rememberSaveable { mutableStateOf(true) }
 
-    LaunchedEffect(Unit) { focusRequester.tryRequestFocus("page") }
     Column(
         modifier = modifier,
     ) {
@@ -73,8 +67,7 @@ fun DiscoverPage(
                 selectedTabIndex = selectedTabIndex,
                 modifier =
                     Modifier
-                        .padding(start = 32.dp, top = 16.dp, bottom = 16.dp)
-                        .focusRequester(firstTabFocusRequester),
+                        .padding(start = 32.dp, top = 16.dp, bottom = 16.dp),
                 tabs = tabs,
                 onClick = { selectedTabIndex = it },
                 focusRequesters = tabFocusRequesters,
@@ -87,8 +80,7 @@ fun DiscoverPage(
                     preferences = preferences,
                     modifier =
                         Modifier
-                            .fillMaxSize()
-                            .focusRequester(focusRequester),
+                            .fillMaxSize(),
                 )
             }
 
@@ -98,8 +90,7 @@ fun DiscoverPage(
                     focusRequesterOnEmpty = tabFocusRequesters.getOrNull(selectedTabIndex),
                     modifier =
                         Modifier
-                            .fillMaxSize()
-                            .focusRequester(focusRequester),
+                            .fillMaxSize(),
                 )
             }
 

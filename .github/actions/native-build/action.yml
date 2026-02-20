@@ -10,11 +10,30 @@ runs:
     - name: Load ffmpeg module cache
       id: cache_ffmpeg_module
       if: ${{ inputs.cache }}
-      uses: actions/cache/restore@v4
+      uses: actions/cache/restore@v5
       with:
         path: |
           app/libs
         key: ${{ runner.os }}-ffmpeg-${{ hashFiles('**/libs.versions.toml', '**/scripts/ffmpeg/build_ffmpeg_decoder.sh') }}
+    - name: Load libmpv module cache
+      id: cache_libmpv_module
+      if: ${{ inputs.cache }}
+      uses: actions/cache/restore@v5
+      with:
+        path: |
+          app/src/main/libs
+        key: ${{ runner.os }}-libmpv-${{ hashFiles('**/scripts/mpv/*.sh', '**/scripts/mpv/include/*', '**/scripts/mpv/scripts/*', 'app/src/main/jni/*') }}
+    - name: Install dependencies
+      if: steps.cache_ffmpeg_module.outputs.cache-hit != 'true' || steps.cache_libmpv_module.outputs.cache-hit != 'true'
+      shell: bash
+      run: |
+        python -m pip install --upgrade pip
+        pip install jsonschema jinja2
+        sudo apt update
+        sudo apt install -y build-essential autoconf pkg-config libtool ninja-build unzip wget meson nasm
+
+
+# ffmpeg
     - name: Build ffmpeg decoder
       id: ffmpeg-decoder
       if: steps.cache_ffmpeg_module.outputs.cache-hit != 'true'
@@ -24,29 +43,13 @@ runs:
         ./build_ffmpeg_decoder.sh "${{ env.ANDROID_SDK_ROOT }}/ndk/${{ env.NDK_VERSION }}"
     - name: Save ffmpeg module cache
       id: cache_ffmpeg_module_save
-      uses: actions/cache/save@v4
+      uses: actions/cache/save@v5
       with:
         path: |
           app/libs
         key: ${{ steps.cache_ffmpeg_module.outputs.cache-primary-key }}
 
-    - name: Load libmpv module cache
-      id: cache_libmpv_module
-      if: ${{ inputs.cache }}
-      uses: actions/cache/restore@v4
-      with:
-        path: |
-          app/src/main/libs
-        key: ${{ runner.os }}-libmpv-${{ hashFiles('**/scripts/mpv/*.sh', '**/scripts/mpv/include/*', '**/scripts/mpv/scripts/*', 'app/src/main/jni/*') }}
-
-    - name: Install dependencies
-      if: steps.cache_libmpv_module.outputs.cache-hit != 'true'
-      shell: bash
-      run: |
-        python -m pip install --upgrade pip
-        pip install jsonschema jinja2
-        sudo apt update
-        sudo apt install -y build-essential autoconf pkg-config libtool ninja-build unzip wget meson
+# libmpv
     - name: Get libmpv dependencies
       if: steps.cache_libmpv_module.outputs.cache-hit != 'true'
       shell: bash
@@ -72,7 +75,7 @@ runs:
         #ln -s libs jniLibs
     - name: Save libmpv module cache
       id: cache_libmpv_module_save
-      uses: actions/cache/save@v4
+      uses: actions/cache/save@v5
       with:
         path: |
           app/src/main/libs

@@ -7,7 +7,6 @@ import java.util.Properties
 
 plugins {
     alias(libs.plugins.android.application)
-    alias(libs.plugins.kotlin.android)
     alias(libs.plugins.ksp)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.hilt)
@@ -21,6 +20,7 @@ plugins {
 val isCI = if (System.getenv("CI") != null) System.getenv("CI").toBoolean() else false
 val shouldSign = isCI && System.getenv("KEY_ALIAS") != null
 val ffmpegModuleExists = project.file("libs/lib-decoder-ffmpeg-release.aar").exists()
+val av1ModuleExists = project.file("libs/lib-decoder-av1-release.aar").exists()
 
 val gitTags =
     providers
@@ -69,6 +69,7 @@ android {
     }
     kotlin {
         compilerOptions {
+            languageVersion = org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_2_3
             jvmTarget = JvmTarget.JVM_11
             javaParameters = true
         }
@@ -149,7 +150,7 @@ android {
 
     sourceSets {
         getByName("main") {
-            kotlin.srcDirs("$buildDir/generated/seerr_api/src/main/kotlin")
+            kotlin.directories += "$buildDir/generated/seerr_api/src/main/kotlin"
         }
     }
 }
@@ -222,6 +223,7 @@ dependencies {
     implementation(libs.androidx.tv.foundation)
     implementation(libs.androidx.tv.material)
     implementation(libs.androidx.lifecycle.runtime.ktx)
+    implementation(libs.androidx.lifecycle.livedata.ktx)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.datastore)
     implementation(libs.protobuf.kotlin.lite)
@@ -264,6 +266,7 @@ dependencies {
     implementation(libs.androidx.preference.ktx)
     implementation(libs.androidx.room.testing)
     implementation(libs.androidx.palette.ktx)
+    implementation(libs.androidx.media3.effect)
     ksp(libs.androidx.room.compiler)
     ksp(libs.hilt.android.compiler)
     ksp(libs.androidx.hilt.compiler)
@@ -282,6 +285,8 @@ dependencies {
     ksp(libs.auto.service.ksp)
     implementation(platform(libs.okhttp.bom))
     implementation(libs.okhttp)
+    implementation(libs.kache)
+    implementation(libs.kache.file)
 
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
@@ -291,8 +296,13 @@ dependencies {
     if (ffmpegModuleExists || isCI) {
         implementation(files("libs/lib-decoder-ffmpeg-release.aar"))
     }
+    if (av1ModuleExists || isCI) {
+        implementation(files("libs/lib-decoder-av1-release.aar"))
+    }
 
     testImplementation(libs.mockk.android)
     testImplementation(libs.mockk.agent)
+    testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.androidx.core.testing)
     testImplementation(libs.robolectric)
 }

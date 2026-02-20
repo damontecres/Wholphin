@@ -6,17 +6,17 @@ import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.view.Display
-import androidx.lifecycle.LiveData
-import com.github.damontecres.wholphin.ui.setValueOnMain
+import com.github.damontecres.wholphin.MainActivity
 import com.github.damontecres.wholphin.ui.showToast
-import com.github.damontecres.wholphin.util.EqualityMutableLiveData
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 import org.jellyfin.sdk.model.api.MediaStream
 import org.jellyfin.sdk.model.api.MediaStreamType
 import timber.log.Timber
-import java.util.concurrent.CountDownLatch
-import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.math.roundToInt
@@ -28,25 +28,6 @@ class RefreshRateService
     constructor(
         @param:ApplicationContext private val context: Context,
     ) {
-        private val displayManager = context.getSystemService(Context.DISPLAY_SERVICE) as DisplayManager
-        private val display = displayManager.getDisplay(Display.DEFAULT_DISPLAY)
-        private val originalMode = display.mode
-
-        val supportedDisplayModes get() = display.supportedModes.orEmpty()
-
-        private val displayModes: List<DisplayMode> by lazy {
-            display.supportedModes
-                .orEmpty()
-                .map { DisplayMode(it) }
-                .sortedWith(
-                    compareByDescending<DisplayMode>({ it.physicalWidth * it.physicalHeight })
-                        .thenBy { it.refreshRateRounded },
-                )
-        }
-
-        private val _refreshRateMode = EqualityMutableLiveData<Int>(originalMode.modeId)
-        val refreshRateMode: LiveData<Int> = _refreshRateMode
-
         /**
          * Find the best display mode for the given stream and signal to change to it
          */
@@ -54,11 +35,23 @@ class RefreshRateService
             stream: MediaStream,
             switchRefreshRate: Boolean,
             switchResolution: Boolean,
-        ) {
+        ) = withContext(Dispatchers.IO) {
             if (!switchRefreshRate && !switchResolution) {
                 Timber.v("Not switching either refresh rate nor resolution")
-                return
+                return@withContext
             }
+            val displayManager =
+                MainActivity.instance.getSystemService(Context.DISPLAY_SERVICE) as DisplayManager
+            val display = displayManager.getDisplay(Display.DEFAULT_DISPLAY)
+            val displayModes =
+                display.supportedModes
+                    .orEmpty()
+                    .map { DisplayMode(it) }
+                    .sortedWith(
+                        compareByDescending<DisplayMode>({ it.physicalWidth * it.physicalHeight })
+                            .thenBy { it.refreshRateRounded },
+                    )
+
             val currentDisplayMode = display.mode
             require(stream.type == MediaStreamType.VIDEO) { "Stream is not video" }
             val width = stream.width
@@ -67,7 +60,7 @@ class RefreshRateService
                 if (switchRefreshRate) stream.realFrameRate else currentDisplayMode.refreshRate
             if (width == null || height == null || frameRate == null) {
                 Timber.w("Video stream missing required info: width=%s, height=%s, frameRate=%s", width, height, frameRate)
-                return
+                return@withContext
             }
             Timber.d("Getting refresh rate for: width=%s, height=%s, frameRate=%s", width, height, frameRate)
             val targetMode =
@@ -86,14 +79,20 @@ class RefreshRateService
                     listener,
                     Handler(Looper.myLooper() ?: Looper.getMainLooper()),
                 )
-                _refreshRateMode.setValueOnMain(targetMode.modeId)
                 try {
-                    if (!listener.latch.await(5, TimeUnit.SECONDS)) {
+                    MainActivity.instance.changeDisplayMode(targetMode.modeId)
+                    val result =
+                        withTimeoutOrNull(5.seconds) {
+                            listener.deferred.await()
+                        }
+                    if (result == null) {
                         Timber.w("Timed out waiting for display change")
                         showToast(context, "Refresh rate switch is taking a long time")
                     }
-                } catch (ex: InterruptedException) {
+                } catch (ex: Exception) {
                     Timber.w(ex, "Exception waiting for refresh rate switch")
+                } finally {
+                    displayManager.unregisterDisplayListener(listener)
                 }
                 val targetRate = (targetMode.refreshRate * 1000).roundToInt()
                 val isSeamless =
@@ -110,7 +109,6 @@ class RefreshRateService
                     // Wait the recommended 2 seconds (https://developer.android.com/media/optimize/performance/frame-rate)
                     delay(2.seconds)
                 }
-                displayManager.unregisterDisplayListener(listener)
             }
         }
 
@@ -118,13 +116,13 @@ class RefreshRateService
          * Reset the display mode to the original
          */
         fun resetRefreshRate() {
-            _refreshRateMode.value = originalMode.modeId
+            MainActivity.instance.changeDisplayMode(0)
         }
 
         private class Listener(
             val displayId: Int,
         ) : DisplayManager.DisplayListener {
-            val latch = CountDownLatch(1)
+            val deferred = CompletableDeferred<Unit>()
 
             override fun onDisplayAdded(displayId: Int) {
             }
@@ -132,7 +130,7 @@ class RefreshRateService
             override fun onDisplayChanged(displayId: Int) {
                 if (displayId == this.displayId) {
                     Timber.v("Got display change for $displayId")
-                    latch.countDown()
+                    deferred.complete(Unit)
                 }
             }
 

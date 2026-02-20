@@ -45,9 +45,9 @@
     <string name="trailer">Zwiastun</string>
     <plurals name="trailers">
         <item quantity="one">Zwiastuny</item>
-        <item quantity="few"></item>
-        <item quantity="many"></item>
-        <item quantity="other"></item>
+        <item quantity="few"/>
+        <item quantity="many"/>
+        <item quantity="other"/>
     </plurals>
     <string name="submit">Potwierdź</string>
     <string name="sort_by_date_released">Data Wydania</string>
@@ -122,21 +122,21 @@
     <string name="one_click_pause_summary_on">Wciśnij środek by pauzować/wznowić</string>
     <plurals name="interviews">
         <item quantity="one">Wywiady</item>
-        <item quantity="few"></item>
-        <item quantity="many"></item>
-        <item quantity="other"></item>
+        <item quantity="few"/>
+        <item quantity="many"/>
+        <item quantity="other"/>
     </plurals>
     <plurals name="scenes">
         <item quantity="one">Sceny</item>
-        <item quantity="few"></item>
-        <item quantity="many"></item>
-        <item quantity="other"></item>
+        <item quantity="few"/>
+        <item quantity="many"/>
+        <item quantity="other"/>
     </plurals>
     <plurals name="theme_videos">
         <item quantity="one">Czołówki</item>
-        <item quantity="few"></item>
-        <item quantity="many"></item>
-        <item quantity="other"></item>
+        <item quantity="few"/>
+        <item quantity="many"/>
+        <item quantity="other"/>
     </plurals>
     <string name="create_playlist">Utwórz nową playliste</string>
     <string name="add_to_playlist">Dodaj do playlisty</string>
@@ -182,9 +182,9 @@
     <string name="italic_font">Czcionka kursywy</string>
     <plurals name="behind_the_scenes">
         <item quantity="one">Za kulisami</item>
-        <item quantity="few"></item>
-        <item quantity="many"></item>
-        <item quantity="other"></item>
+        <item quantity="few"/>
+        <item quantity="many"/>
+        <item quantity="other"/>
     </plurals>
     <string name="advanced_settings">Ustawienia zaawansowane</string>
     <string name="check_for_updates">Sprawdź dostępność aktualizacji</string>
@@ -270,15 +270,15 @@
     <string name="extras">Dodatki</string>
     <plurals name="other_extras">
         <item quantity="one">Inne</item>
-        <item quantity="few"></item>
-        <item quantity="many"></item>
-        <item quantity="other"></item>
+        <item quantity="few"/>
+        <item quantity="many"/>
+        <item quantity="other"/>
     </plurals>
     <plurals name="deleted_scenes">
         <item quantity="one">Usunięte sceny</item>
-        <item quantity="few"></item>
-        <item quantity="many"></item>
-        <item quantity="other"></item>
+        <item quantity="few"/>
+        <item quantity="many"/>
+        <item quantity="other"/>
     </plurals>
     <string name="nav_drawer_switch_on_focus_summary_off">Naciśnij by zmienić stronę</string>
     <string name="send_app_logs_summary">Przydatne do debugowania</string>

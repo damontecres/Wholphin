@@ -186,6 +186,45 @@ sealed interface AppPreference<Pref, T> {
                 summarizer = { value -> value?.toString() },
             )
 
+        val MaxDaysNextUpOptions = listOf(7, 14, 30, 60, 90, 180, 365)
+        val MaxDaysNextUp =
+            AppSliderPreference<AppPreferences>(
+                title = R.string.max_days_next_up,
+                defaultValue = -1,
+                min = 0,
+                // Max is "no limit" stored as -1
+                max = MaxDaysNextUpOptions.lastIndex + 1L,
+                interval = 1,
+                getter = {
+                    MaxDaysNextUpOptions
+                        .indexOf(it.homePagePreferences.maxDaysNextUp)
+                        .takeIf { it in MaxDaysNextUpOptions.indices }
+                        ?.toLong()
+                        ?: MaxDaysNextUpOptions.size.toLong()
+                },
+                setter = { prefs, index ->
+                    prefs.updateHomePagePreferences {
+                        maxDaysNextUp = MaxDaysNextUpOptions.getOrNull(index.toInt()) ?: -1
+                    }
+                },
+                summarizer = { value ->
+                    if (value != null) {
+                        val v = MaxDaysNextUpOptions.getOrNull(value.toInt()) ?: -1
+                        if (v == -1) {
+                            WholphinApplication.instance.getString(R.string.no_limit)
+                        } else {
+                            WholphinApplication.instance.resources.getQuantityString(
+                                R.plurals.days,
+                                v,
+                                v.toString(),
+                            )
+                        }
+                    } else {
+                        null
+                    }
+                },
+            )
+
         val CombineContinueNext =
             AppSwitchPreference<AppPreferences>(
                 title = R.string.combine_continue_next,
@@ -425,6 +464,18 @@ sealed interface AppPreference<Pref, T> {
                 summary = R.string.force_dovi_profile_7_summary,
             )
 
+        val DecodeAv1 =
+            AppSwitchPreference<AppPreferences>(
+                title = R.string.software_decoding_av1,
+                defaultValue = true,
+                getter = { it.playbackPreferences.overrides.decodeAv1 },
+                setter = { prefs, value ->
+                    prefs.updatePlaybackOverrides { decodeAv1 = value }
+                },
+                summaryOn = R.string.enabled,
+                summaryOff = R.string.disabled,
+            )
+
         val RememberSelectedTab =
             AppSwitchPreference<AppPreferences>(
                 title = R.string.remember_selected_tab,
@@ -605,6 +656,13 @@ sealed interface AppPreference<Pref, T> {
                 setter = { prefs, _ -> prefs },
             )
 
+        val CustomizeHome =
+            AppDestinationPreference<AppPreferences>(
+                title = R.string.customize_home,
+                destination = Destination.HomeSettings,
+                summary = R.string.customize_home_summary,
+            )
+
         val SendCrashReports =
             AppSwitchPreference<AppPreferences>(
                 title = R.string.send_crash_reports,
@@ -698,7 +756,7 @@ sealed interface AppPreference<Pref, T> {
         val SubtitleStyle =
             AppDestinationPreference<AppPreferences>(
                 title = R.string.subtitle_style,
-                destination = Destination.Settings(PreferenceScreenOption.SUBTITLES),
+                destination = Destination.SubtitleSettings(false),
             )
 
         val RefreshRateSwitching =
@@ -740,8 +798,21 @@ sealed interface AppPreference<Pref, T> {
                     prefs.updatePlaybackPreferences { playerBackend = value }
                 },
                 displayValues = R.array.player_backend_options,
+                subtitles = R.array.player_backend_options_subtitles,
                 indexToValue = { PlayerBackend.forNumber(it) },
                 valueToIndex = { it.number },
+            )
+
+        val ExoPlayerSettings =
+            AppDestinationPreference<AppPreferences>(
+                title = R.string.exoplayer_options,
+                destination = Destination.Settings(PreferenceScreenOption.EXO_PLAYER),
+            )
+
+        val MpvSettings =
+            AppDestinationPreference<AppPreferences>(
+                title = R.string.mpv_options,
+                destination = Destination.Settings(PreferenceScreenOption.MPV),
             )
 
         val MpvHardwareDecoding =
@@ -758,7 +829,7 @@ sealed interface AppPreference<Pref, T> {
         val MpvGpuNext =
             AppSwitchPreference<AppPreferences>(
                 title = R.string.mpv_use_gpu_next,
-                defaultValue = true,
+                defaultValue = false,
                 getter = { it.playbackPreferences.mpvOptions.useGpuNext },
                 setter = { prefs, value ->
                     prefs.updateMpvOptions { useGpuNext = value }
@@ -878,6 +949,54 @@ sealed interface AppPreference<Pref, T> {
                 getter = { },
                 setter = { prefs, _ -> prefs },
             )
+
+        val QuickConnect =
+            AppClickablePreference<AppPreferences>(
+                title = R.string.quick_connect,
+                summary = R.string.quick_connect_summary,
+                getter = { },
+                setter = { prefs, _ -> prefs },
+            )
+
+        val SlideshowDuration =
+            AppSliderPreference<AppPreferences>(
+                title = R.string.slideshow_duration,
+                defaultValue = 5_000,
+                min = 1_000,
+                max = 30.seconds.inWholeMilliseconds,
+                interval = 250,
+                getter = {
+                    it.photoPreferences.slideshowDuration
+                },
+                setter = { prefs, value ->
+                    prefs.updatePhotoPreferences {
+                        slideshowDuration = value
+                    }
+                },
+                summarizer = { value ->
+                    if (value != null) {
+                        val seconds = value / 1000.0
+                        WholphinApplication.instance.resources.getString(
+                            R.string.decimal_seconds,
+                            seconds,
+                        )
+                    } else {
+                        null
+                    }
+                },
+            )
+
+        val SlideshowPlayVideos =
+            AppSwitchPreference<AppPreferences>(
+                title = R.string.play_videos_during_slideshow,
+                defaultValue = false,
+                getter = { it.photoPreferences.slideshowPlayVideos },
+                setter = { prefs, value ->
+                    prefs.updatePhotoPreferences { slideshowPlayVideos = value }
+                },
+                summaryOn = R.string.enabled,
+                summaryOff = R.string.disabled,
+            )
     }
 }
 
@@ -888,9 +1007,6 @@ val basicPreferences =
             preferences =
                 listOf(
                     AppPreference.SignInAuto,
-                    AppPreference.HomePageItems,
-                    AppPreference.CombineContinueNext,
-                    AppPreference.RewatchNextUp,
                     AppPreference.PlayThemeMusic,
                     AppPreference.RememberSelectedTab,
                     AppPreference.SubtitleStyle,
@@ -920,8 +1036,8 @@ val basicPreferences =
             title = R.string.profile_specific_settings,
             preferences =
                 listOf(
-                    // TODO PIN-related
-                    // AppPreference.RequireProfilePin,
+                    AppPreference.RequireProfilePin,
+                    AppPreference.CustomizeHome,
                     AppPreference.UserPinnedNavDrawerItems,
                 ),
         ),
@@ -945,7 +1061,39 @@ val basicPreferences =
         ),
     )
 
-val uiPreferences = listOf<PreferenceGroup>()
+private val ExoPlayerSettings =
+    listOf(
+        AppPreference.FfmpegPreference,
+        AppPreference.DownMixStereo,
+        AppPreference.Ac3Supported,
+        AppPreference.DirectPlayAss,
+        AppPreference.DirectPlayPgs,
+        AppPreference.DirectPlayDoviProfile7,
+        AppPreference.DecodeAv1,
+    )
+
+val ExoPlayerPreferences =
+    listOf(
+        PreferenceGroup(
+            title = R.string.exoplayer_options,
+            preferences = ExoPlayerSettings,
+        ),
+    )
+
+private val MpvSettings =
+    listOf(
+        AppPreference.MpvHardwareDecoding,
+        AppPreference.MpvGpuNext,
+        AppPreference.MpvConfFile,
+    )
+
+val MpvPreferences =
+    listOf(
+        PreferenceGroup(
+            title = R.string.mpv_options,
+            preferences = MpvSettings,
+        ),
+    )
 
 val advancedPreferences =
     buildList {
@@ -955,10 +1103,13 @@ val advancedPreferences =
                 preferences =
                     listOf(
                         AppPreference.ShowClock,
+                        AppPreference.CombineContinueNext,
                         // Temporarily disabled, see https://github.com/damontecres/Wholphin/pull/127#issuecomment-3478058418
 //                    AppPreference.NavDrawerSwitchOnFocus,
                         AppPreference.ControllerTimeout,
                         AppPreference.BackdropStylePref,
+                        AppPreference.SlideshowDuration,
+                        AppPreference.SlideshowPlayVideos,
                     ),
             ),
         )
@@ -997,21 +1148,17 @@ val advancedPreferences =
                     listOf(
                         ConditionalPreferences(
                             { it.playbackPreferences.playerBackend == PlayerBackend.EXO_PLAYER },
-                            listOf(
-                                AppPreference.FfmpegPreference,
-                                AppPreference.DownMixStereo,
-                                AppPreference.Ac3Supported,
-                                AppPreference.DirectPlayAss,
-                                AppPreference.DirectPlayPgs,
-                                AppPreference.DirectPlayDoviProfile7,
-                            ),
+                            ExoPlayerSettings,
                         ),
                         ConditionalPreferences(
                             { it.playbackPreferences.playerBackend == PlayerBackend.MPV },
+                            MpvSettings,
+                        ),
+                        ConditionalPreferences(
+                            { it.playbackPreferences.playerBackend == PlayerBackend.PREFER_MPV },
                             listOf(
-                                AppPreference.MpvHardwareDecoding,
-                                AppPreference.MpvGpuNext,
-                                AppPreference.MpvConfFile,
+                                AppPreference.ExoPlayerSettings,
+                                AppPreference.MpvSettings,
                             ),
                         ),
                     ),
@@ -1034,6 +1181,7 @@ val advancedPreferences =
                 title = R.string.more,
                 preferences =
                     listOf(
+                        AppPreference.QuickConnect,
                         AppPreference.SendAppLogs,
                         AppPreference.SendCrashReports,
                         AppPreference.DebugLogging,
@@ -1096,6 +1244,7 @@ data class AppChoicePreference<Pref, T>(
     override val getter: (prefs: Pref) -> T,
     override val setter: (prefs: Pref, value: T) -> Pref,
     @param:StringRes val summary: Int? = null,
+    @param:ArrayRes val subtitles: Int? = null,
 ) : AppPreference<Pref, T>
 
 data class AppMultiChoicePreference<Pref, T>(

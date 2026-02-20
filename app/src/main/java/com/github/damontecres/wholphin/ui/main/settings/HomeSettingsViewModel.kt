@@ -1,0 +1,711 @@
+package com.github.damontecres.wholphin.ui.main.settings
+
+import android.content.Context
+import android.widget.Toast
+import androidx.compose.runtime.Immutable
+import androidx.datastore.core.DataStore
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.github.damontecres.wholphin.R
+import com.github.damontecres.wholphin.data.ServerRepository
+import com.github.damontecres.wholphin.data.model.BaseItem
+import com.github.damontecres.wholphin.data.model.HomePageSettings
+import com.github.damontecres.wholphin.data.model.HomeRowConfig
+import com.github.damontecres.wholphin.data.model.HomeRowConfig.ContinueWatching
+import com.github.damontecres.wholphin.data.model.HomeRowConfig.ContinueWatchingCombined
+import com.github.damontecres.wholphin.data.model.HomeRowConfig.Genres
+import com.github.damontecres.wholphin.data.model.HomeRowConfig.NextUp
+import com.github.damontecres.wholphin.data.model.HomeRowConfig.RecentlyAdded
+import com.github.damontecres.wholphin.data.model.HomeRowConfig.RecentlyReleased
+import com.github.damontecres.wholphin.data.model.HomeRowConfig.Suggestions
+import com.github.damontecres.wholphin.data.model.HomeRowViewOptions
+import com.github.damontecres.wholphin.data.model.SUPPORTED_HOME_PAGE_SETTINGS_VERSION
+import com.github.damontecres.wholphin.preferences.AppPreferences
+import com.github.damontecres.wholphin.services.BackdropService
+import com.github.damontecres.wholphin.services.HomePageResolvedSettings
+import com.github.damontecres.wholphin.services.HomeRowConfigDisplay
+import com.github.damontecres.wholphin.services.HomeSettingsService
+import com.github.damontecres.wholphin.services.NavDrawerService
+import com.github.damontecres.wholphin.services.SeerrServerRepository
+import com.github.damontecres.wholphin.services.UnsupportedHomeSettingsVersionException
+import com.github.damontecres.wholphin.services.UserPreferencesService
+import com.github.damontecres.wholphin.services.hilt.IoCoroutineScope
+import com.github.damontecres.wholphin.services.tvAccess
+import com.github.damontecres.wholphin.ui.launchIO
+import com.github.damontecres.wholphin.ui.showToast
+import com.github.damontecres.wholphin.util.HomeRowLoadingState
+import com.github.damontecres.wholphin.util.LoadingState
+import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
+import kotlinx.serialization.Serializable
+import org.jellyfin.sdk.api.client.ApiClient
+import org.jellyfin.sdk.api.client.extensions.userLibraryApi
+import org.jellyfin.sdk.model.api.BaseItemKind
+import org.jellyfin.sdk.model.api.CollectionType
+import org.jellyfin.sdk.model.serializer.UUIDSerializer
+import timber.log.Timber
+import java.util.UUID
+import javax.inject.Inject
+import kotlin.properties.Delegates
+
+@HiltViewModel
+class HomeSettingsViewModel
+    @Inject
+    constructor(
+        @param:ApplicationContext private val context: Context,
+        private val api: ApiClient,
+        private val homeSettingsService: HomeSettingsService,
+        private val serverRepository: ServerRepository,
+        private val userPreferencesService: UserPreferencesService,
+        private val navDrawerService: NavDrawerService,
+        private val backdropService: BackdropService,
+        private val seerrServerRepository: SeerrServerRepository,
+        val preferencesDataStore: DataStore<AppPreferences>,
+        @param:IoCoroutineScope private val ioScope: CoroutineScope,
+    ) : ViewModel() {
+        private val _state = MutableStateFlow(HomePageSettingsState.EMPTY)
+        val state: StateFlow<HomePageSettingsState> = _state
+
+        private var idCounter by Delegates.notNull<Int>()
+
+        val discoverEnabled = seerrServerRepository.active
+
+        private var originalLocalSettings: HomePageSettings? = null
+        private var originalRemoteSettings: HomePageSettings? = null
+
+        init {
+            addCloseable { saveToLocal() }
+            viewModelScope.launchIO {
+                val userDto = serverRepository.currentUserDto.value ?: return@launchIO
+                val libraries = navDrawerService.getAllUserLibraries(userDto.id, userDto.tvAccess)
+                val currentSettings =
+                    homeSettingsService.currentSettings.first { it != HomePageResolvedSettings.EMPTY }
+                originalLocalSettings = homeSettingsService.loadFromLocal(userDto.id)
+                originalRemoteSettings = homeSettingsService.loadFromServer(userDto.id)
+                Timber.v("currentSettings=%s", currentSettings)
+                idCounter = currentSettings.rows.maxOfOrNull { it.id }?.plus(1) ?: 0
+                _state.update {
+                    it.copy(
+                        libraries = libraries,
+                        rows = currentSettings.rows,
+                    )
+                }
+                fetchRowData()
+            }
+        }
+
+        fun updateBackdrop(item: BaseItem) {
+            viewModelScope.launchIO {
+                backdropService.submit(item)
+            }
+        }
+
+        private suspend fun fetchRowData() {
+            val limit = 6
+            val semaphore = Semaphore(4)
+            val rows =
+                serverRepository.currentUserDto.value?.let { userDto ->
+                    val prefs = userPreferencesService.getCurrent().appPreferences.homePagePreferences
+                    state.value
+                        .let { state ->
+                            state.rows
+                                .map { it.config }
+                                .map { row ->
+                                    viewModelScope.async(Dispatchers.IO) {
+                                        semaphore.withPermit {
+                                            homeSettingsService.fetchDataForRow(
+                                                row = row,
+                                                scope = viewModelScope,
+                                                prefs = prefs,
+                                                userDto = userDto,
+                                                libraries = state.libraries,
+                                                limit = limit,
+                                            )
+                                        }
+                                    }
+                                }
+                        }.awaitAll()
+                }
+            rows?.let { rows ->
+                rows
+                    .firstOrNull { it is HomeRowLoadingState.Success && it.items.isNotEmpty() }
+                    ?.let {
+                        it as HomeRowLoadingState.Success
+                        it.items.firstOrNull()?.let {
+                            Timber.v("Updating backdrop")
+                            updateBackdrop(it)
+                        }
+                    }
+                updateState {
+                    it.copy(loading = LoadingState.Success, rowData = rows)
+                }
+            }
+        }
+
+        private fun <T> List<T>.move(
+            direction: MoveDirection,
+            index: Int,
+        ): List<T> =
+            toMutableList().apply {
+                if (direction == MoveDirection.DOWN) {
+                    val down = this[index]
+                    val up = this[index + 1]
+                    set(index, up)
+                    set(index + 1, down)
+                } else {
+                    val up = this[index]
+                    val down = this[index - 1]
+                    set(index - 1, up)
+                    set(index, down)
+                }
+            }
+
+        fun moveRow(
+            direction: MoveDirection,
+            index: Int,
+        ) {
+            viewModelScope.launchIO {
+                updateState {
+                    val rows = it.rows.move(direction, index)
+                    val rowData = it.rowData.move(direction, index)
+                    it.copy(
+                        rows = rows,
+                        rowData = rowData,
+                    )
+                }
+            }
+//            viewModelScope.launchIO { fetchRowData() }
+        }
+
+        fun deleteRow(index: Int) {
+            viewModelScope.launchIO {
+                updateState {
+                    val rows = it.rows.toMutableList().apply { removeAt(index) }
+                    val rowData = it.rowData.toMutableList().apply { removeAt(index) }
+                    it.copy(
+                        rows = rows,
+                        rowData = rowData,
+                    )
+                }
+            }
+        }
+
+        fun addRow(type: MetaRowType): Job =
+            viewModelScope.launchIO {
+                val id = idCounter++
+                val newRow =
+                    when (type) {
+                        MetaRowType.CONTINUE_WATCHING -> {
+                            HomeRowConfigDisplay(
+                                id = id,
+                                title = context.getString(R.string.continue_watching),
+                                config = ContinueWatching(),
+                            )
+                        }
+
+                        MetaRowType.NEXT_UP -> {
+                            HomeRowConfigDisplay(
+                                id = id,
+                                title = context.getString(R.string.continue_watching),
+                                config = NextUp(),
+                            )
+                        }
+
+                        MetaRowType.COMBINED_CONTINUE_WATCHING -> {
+                            HomeRowConfigDisplay(
+                                id = id,
+                                title = context.getString(R.string.combine_continue_next),
+                                config = ContinueWatchingCombined(),
+                            )
+                        }
+
+                        MetaRowType.FAVORITES -> {
+                            throw IllegalArgumentException("Should use addRow(BaseItemKind) instead")
+                        }
+
+                        MetaRowType.DISCOVER -> {
+                            TODO()
+                        }
+                    }
+                updateState {
+                    it.copy(
+                        loading = LoadingState.Loading,
+                        rows = it.rows.toMutableList().apply { add(newRow) },
+                    )
+                }
+                fetchRowData()
+            }
+
+        fun addRow(
+            library: Library,
+            rowType: LibraryRowType,
+        ): Job =
+            viewModelScope.launchIO {
+                val id = idCounter++
+                val newRow =
+                    when (rowType) {
+                        LibraryRowType.RECENTLY_ADDED -> {
+                            val title =
+                                library.name.let { context.getString(R.string.recently_added_in, it) }
+                            HomeRowConfigDisplay(
+                                id = id,
+                                title = title,
+                                config = RecentlyAdded(library.itemId),
+                            )
+                        }
+
+                        LibraryRowType.RECENTLY_RELEASED -> {
+                            val title =
+                                library.name.let {
+                                    context.getString(
+                                        R.string.recently_released_in,
+                                        it,
+                                    )
+                                }
+                            HomeRowConfigDisplay(
+                                id = id,
+                                title = title,
+                                config = RecentlyReleased(library.itemId),
+                            )
+                        }
+
+                        LibraryRowType.GENRES -> {
+                            val title = library.name.let { context.getString(R.string.genres_in, it) }
+                            HomeRowConfigDisplay(
+                                id = id,
+                                title = title,
+                                config = Genres(library.itemId),
+                            )
+                        }
+
+                        LibraryRowType.SUGGESTIONS -> {
+                            val title =
+                                library.name.let { context.getString(R.string.suggestions_for, it) }
+                            HomeRowConfigDisplay(
+                                id = id,
+                                title = title,
+                                config = Suggestions(library.itemId),
+                            )
+                        }
+
+                        LibraryRowType.TV_CHANNELS -> {
+                            val title = context.getString(R.string.channels)
+                            HomeRowConfigDisplay(
+                                id = id,
+                                title = title,
+                                config =
+                                    HomeRowConfig.TvChannels(
+                                        viewOptions = HomeRowViewOptions.liveTvDefault,
+                                    ),
+                            )
+                        }
+
+                        LibraryRowType.TV_PROGRAMS -> {
+                            val title = context.getString(R.string.watch_live)
+                            HomeRowConfigDisplay(
+                                id = id,
+                                title = title,
+                                config = HomeRowConfig.TvPrograms(),
+                            )
+                        }
+
+                        LibraryRowType.RECENTLY_RECORDED -> {
+                            val title = context.getString(R.string.recently_recorded)
+                            HomeRowConfigDisplay(
+                                id = id,
+                                title = title,
+                                config = RecentlyAdded(library.itemId),
+                            )
+                        }
+                    }
+                updateState {
+                    it.copy(
+                        loading = LoadingState.Loading,
+                        rows = it.rows.toMutableList().apply { add(newRow) },
+                    )
+                }
+                fetchRowData()
+            }
+
+        fun addFavoriteRow(type: BaseItemKind): Job =
+            viewModelScope.launchIO {
+                Timber.v("Adding favorite row for $type")
+                val id = idCounter++
+                val newRow =
+                    HomeRowConfigDisplay(
+                        id = id,
+                        title = context.getString(favoriteOptions[type]!!),
+                        config = HomeRowConfig.Favorite(type),
+                    )
+                updateState {
+                    it.copy(
+                        loading = LoadingState.Loading,
+                        rows = it.rows.toMutableList().apply { add(newRow) },
+                    )
+                }
+                fetchRowData()
+            }
+
+        fun updateViewOptions(
+            rowId: Int,
+            viewOptions: HomeRowViewOptions,
+        ) {
+            viewModelScope.launchIO {
+                var fetchData = false
+                updateState {
+                    val index = it.rows.indexOfFirst { it.id == rowId }
+                    val config = it.rows[index].config
+                    val newRowConfig = config.updateViewOptions(viewOptions)
+                    val newRow = it.rows[index].copy(config = newRowConfig)
+                    if (config.viewOptions.useSeries != viewOptions.useSeries) {
+                        fetchData = true
+                    }
+                    it.copy(
+                        rows =
+                            it.rows.toMutableList().apply {
+                                set(index, newRow)
+                            },
+                        rowData =
+                            it.rowData.toMutableList().apply {
+                                val row = it.rowData[index]
+                                val newRow =
+                                    if (row is HomeRowLoadingState.Success) {
+                                        row.copy(viewOptions = viewOptions)
+                                    } else {
+                                        row
+                                    }
+                                set(index, newRow)
+                            },
+                    )
+                }
+                if (fetchData) {
+                    fetchRowData()
+                }
+            }
+        }
+
+        fun updateViewOptionsForAll(viewOptions: HomeRowViewOptions) {
+            viewModelScope.launchIO {
+                updateState {
+                    it.copy(
+                        rowData =
+                            it.rowData.toMutableList().map { row ->
+                                if (row is HomeRowLoadingState.Success) {
+                                    row.copy(viewOptions = viewOptions)
+                                } else {
+                                    row
+                                }
+                            },
+                    )
+                }
+            }
+        }
+
+        fun saveToRemote() {
+            viewModelScope.launchIO {
+                serverRepository.currentUser.value?.let { user ->
+                    Timber.d("Saving home settings to remote")
+                    val rows = state.value.rows.map { it.config }
+                    val settings =
+                        HomePageSettings(rows = rows, SUPPORTED_HOME_PAGE_SETTINGS_VERSION)
+                    try {
+                        Timber.d("saveToRemote")
+                        homeSettingsService.saveToServer(user.id, settings)
+                        showSaveToast()
+                    } catch (ex: Exception) {
+                        Timber.e(ex)
+                        showToast(context, "Error saving: ${ex.localizedMessage}")
+                    }
+                }
+            }
+        }
+
+        fun loadFromRemote() {
+            viewModelScope.launchIO {
+                serverRepository.currentUser.value?.let { user ->
+                    Timber.d("Loading home settings from remote")
+                    try {
+                        _state.update { it.copy(loading = LoadingState.Loading) }
+                        val result = homeSettingsService.loadFromServer(user.id)
+                        if (result != null) {
+                            Timber.v("Got remote settings")
+                            val newRows =
+                                result.rows.mapIndexed { index, config ->
+                                    homeSettingsService.resolve(index, config)
+                                }
+                            _state.update {
+                                it.copy(rows = newRows)
+                            }
+                        } else {
+                            Timber.v("No remote settings")
+                            showToast(context, "No server-side settings found")
+                        }
+                        fetchRowData()
+                    } catch (ex: UnsupportedHomeSettingsVersionException) {
+                        // TODO
+                        Timber.w(ex)
+                        showToast(context, "Error: ${ex.localizedMessage}")
+                    } catch (ex: Exception) {
+                        Timber.e(ex)
+                        showToast(context, "Error: ${ex.localizedMessage}")
+                    }
+                }
+            }
+        }
+
+        fun loadFromRemoteWeb() {
+            viewModelScope.launchIO {
+                serverRepository.currentUser.value?.let { user ->
+                    Timber.d("Loading home settings from web")
+                    try {
+                        _state.update { it.copy(loading = LoadingState.Loading) }
+                        val result = homeSettingsService.parseFromWebConfig(user.id)
+                        if (result != null) {
+                            Timber.v("Got web settings")
+                            _state.update {
+                                it.copy(rows = result.rows)
+                            }
+                        } else {
+                            Timber.v("No web settings")
+                            showToast(context, "No server-side web settings found")
+                        }
+                        fetchRowData()
+                    } catch (ex: Exception) {
+                        Timber.e(ex)
+                        showToast(context, "Error: ${ex.localizedMessage}")
+                    }
+                }
+            }
+        }
+
+        fun saveToLocal() {
+            // This uses injected ioScope so that it will still run when the page is closing
+            ioScope.launchIO {
+                serverRepository.currentUser.value?.let { user ->
+                    val rows = state.value.rows.map { it.config }
+                    val settings =
+                        HomePageSettings(rows = rows, SUPPORTED_HOME_PAGE_SETTINGS_VERSION)
+                    try {
+                        Timber.d("saveToLocal")
+                        // Only save if there are changes based on original source
+                        val shouldSave =
+                            if (originalLocalSettings != null) {
+                                originalLocalSettings != settings
+                            } else if (originalRemoteSettings != null) {
+                                originalRemoteSettings != settings
+                            } else {
+                                true
+                            }
+                        if (shouldSave) {
+                            homeSettingsService.saveToLocal(user.id, settings)
+                            homeSettingsService.updateCurrent(settings)
+                            showSaveToast()
+                        } else {
+                            Timber.d("No changes")
+                        }
+                    } catch (ex: UnsupportedHomeSettingsVersionException) {
+                        Timber.w(ex, "Overwriting local settings")
+                        homeSettingsService.saveToLocal(user.id, settings)
+                        showSaveToast()
+                    } catch (ex: Exception) {
+                        Timber.e(ex)
+                        showToast(context, "Error saving: ${ex.localizedMessage}")
+                    }
+                }
+            }
+        }
+
+        private fun updateState(update: (HomePageSettingsState) -> HomePageSettingsState) {
+            _state.update {
+                update.invoke(it)
+            }
+            homeSettingsService.currentSettings.update { HomePageResolvedSettings(state.value.rows) }
+        }
+
+        fun resizeCards(relative: Int) {
+            viewModelScope.launchIO {
+                updateState {
+                    val newRows =
+                        it.rows.toMutableList().map { row ->
+                            val vo = row.config.viewOptions
+                            val newVo = vo.copy(heightDp = vo.heightDp + (4 * relative))
+                            row.copy(config = row.config.updateViewOptions(newVo))
+                        }
+                    it.copy(
+                        rows = newRows,
+                        rowData =
+                            it.rowData.toMutableList().mapIndexed { index, row ->
+                                if (row is HomeRowLoadingState.Success) {
+                                    row.copy(viewOptions = newRows[index].config.viewOptions)
+                                } else {
+                                    row
+                                }
+                            },
+                    )
+                }
+            }
+        }
+
+        fun resetToDefault() {
+            viewModelScope.launchIO {
+                val userId = serverRepository.currentUser.value?.id ?: return@launchIO
+                _state.update { it.copy(loading = LoadingState.Loading) }
+                val result = homeSettingsService.createDefault(userId)
+                _state.update {
+                    it.copy(rows = result.rows)
+                }
+                fetchRowData()
+            }
+        }
+
+        private suspend fun showSaveToast() =
+            showToast(
+                context,
+                context.getString(R.string.settings_saved),
+                Toast.LENGTH_SHORT,
+            )
+
+        fun applyPreset(preset: HomeRowPresets) {
+            _state.update { it.copy(loading = LoadingState.Loading) }
+            viewModelScope.launchIO {
+                val state = state.value
+
+                val typeCache = mutableMapOf<UUID, CollectionType?>()
+
+                suspend fun getCollectionType(itemId: UUID): CollectionType =
+                    typeCache.getOrPut(itemId) {
+                        state.libraries
+                            .firstOrNull { it.itemId == itemId }
+                            ?.collectionType
+                            ?: api.userLibraryApi
+                                .getItem(itemId)
+                                .content.collectionType ?: CollectionType.UNKNOWN
+                    } ?: CollectionType.UNKNOWN
+
+                val newRows =
+                    state.rows.map {
+                        val newConfig =
+                            when (it.config) {
+                                is ContinueWatching,
+                                is NextUp,
+                                is ContinueWatchingCombined,
+                                -> {
+                                    it.config.updateViewOptions(preset.continueWatching)
+                                }
+
+                                is HomeRowConfig.ByParent -> {
+                                    val collectionType = getCollectionType(it.config.parentId)
+                                    val viewOptions = preset.getByCollectionType(collectionType)
+                                    it.config.updateViewOptions(viewOptions)
+                                }
+
+                                is HomeRowConfig.Favorite -> {
+                                    val viewOptions =
+                                        when (it.config.kind) {
+                                            BaseItemKind.MOVIE -> preset.movieLibrary
+                                            BaseItemKind.SERIES -> preset.tvLibrary
+                                            BaseItemKind.EPISODE -> preset.continueWatching
+                                            BaseItemKind.VIDEO -> preset.videoLibrary
+                                            BaseItemKind.PLAYLIST -> preset.playlist
+                                            BaseItemKind.PERSON -> preset.movieLibrary
+                                            else -> preset.movieLibrary
+                                        }
+                                    it.config.updateViewOptions(viewOptions)
+                                }
+
+                                is Genres -> {
+                                    it.config.updateViewOptions(it.config.viewOptions.copy(heightDp = preset.genreSize))
+                                }
+
+                                is HomeRowConfig.GetItems -> {
+                                    it.config
+                                }
+
+                                is RecentlyAdded -> {
+                                    val collectionType = getCollectionType(it.config.parentId)
+                                    val viewOptions = preset.getByCollectionType(collectionType)
+                                    it.config.updateViewOptions(viewOptions)
+                                }
+
+                                is RecentlyReleased -> {
+                                    val collectionType = getCollectionType(it.config.parentId)
+                                    val viewOptions = preset.getByCollectionType(collectionType)
+                                    it.config.updateViewOptions(viewOptions)
+                                }
+
+                                is HomeRowConfig.Recordings -> {
+                                    it.config.updateViewOptions(preset.tvLibrary)
+                                }
+
+                                is Suggestions -> {
+                                    val collectionType = getCollectionType(it.config.parentId)
+                                    val viewOptions = preset.getByCollectionType(collectionType)
+                                    it.config.updateViewOptions(viewOptions)
+                                }
+
+                                is HomeRowConfig.TvPrograms -> {
+                                    it.config.updateViewOptions(preset.liveTv)
+                                }
+
+                                is HomeRowConfig.TvChannels -> {
+                                    it.config.updateViewOptions(preset.liveTv)
+                                }
+                            }
+                        it.copy(config = newConfig)
+                    }
+
+                _state.update {
+                    it.copy(
+                        loading = LoadingState.Success,
+                        rows = newRows,
+                        rowData =
+                            it.rowData.toMutableList().mapIndexed { index, row ->
+                                if (row is HomeRowLoadingState.Success) {
+                                    row.copy(viewOptions = newRows[index].config.viewOptions)
+                                } else {
+                                    row
+                                }
+                            },
+                    )
+                }
+            }
+        }
+    }
+
+data class HomePageSettingsState(
+    val loading: LoadingState,
+    val rows: List<HomeRowConfigDisplay>,
+    val rowData: List<HomeRowLoadingState>,
+    val libraries: List<Library>,
+) {
+    companion object {
+        val EMPTY =
+            HomePageSettingsState(
+                LoadingState.Pending,
+                listOf(),
+                listOf(),
+                listOf(),
+            )
+    }
+}
+
+@Immutable
+@Serializable
+data class Library(
+    @Serializable(UUIDSerializer::class) val itemId: UUID,
+    val name: String,
+    val type: BaseItemKind,
+    val collectionType: CollectionType,
+    val isRecordingFolder: Boolean,
+)

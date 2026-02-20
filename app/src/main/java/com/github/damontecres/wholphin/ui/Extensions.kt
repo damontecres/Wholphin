@@ -56,7 +56,6 @@ import kotlin.contracts.contract
 import kotlin.coroutines.CoroutineContext
 import kotlin.math.min
 import kotlin.time.Duration
-import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 
@@ -234,7 +233,7 @@ val Duration.roundMinutes: Duration
  * Rounds a [Duration] to nearest whole second
  */
 val Duration.roundSeconds: Duration
-    get() = (this + 30.milliseconds).inWholeSeconds.seconds
+    get() = (this + .5.seconds).inWholeSeconds.seconds
 
 /**
  * Gets the user's playback position as a [Duration]
@@ -391,6 +390,15 @@ fun CoroutineScope.launchIO(
     start: CoroutineStart = CoroutineStart.DEFAULT,
     block: suspend CoroutineScope.() -> Unit,
 ): Job = launch(context = Dispatchers.IO + context, start = start, block = block)
+
+/**
+ * Launches a coroutine with [Dispatchers.Default] plus the provided [CoroutineContext] defaulting to using [ExceptionHandler]
+ */
+fun CoroutineScope.launchDefault(
+    context: CoroutineContext = ExceptionHandler(),
+    start: CoroutineStart = CoroutineStart.DEFAULT,
+    block: suspend CoroutineScope.() -> Unit,
+): Job = launch(context = Dispatchers.Default + context, start = start, block = block)
 
 /**
  * Converts a UUID to the format used server-side (ie without hyphens).

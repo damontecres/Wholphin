@@ -148,13 +148,13 @@ fun SeriesOverview(
 
     when (val state = loading) {
         is LoadingState.Error -> {
-            ErrorMessage(state)
+            ErrorMessage(state, modifier)
         }
 
         LoadingState.Loading,
         LoadingState.Pending,
         -> {
-            LoadingPage()
+            LoadingPage(modifier)
         }
 
         LoadingState.Success -> {
@@ -170,10 +170,8 @@ fun SeriesOverview(
                     "series_overview",
                 )
                 LifecycleResumeEffect(destination.itemId) {
-                    viewModel.maybePlayThemeSong(
-                        destination.itemId,
-                        preferences.appPreferences.interfacePreferences.playThemeSongs,
-                    )
+                    viewModel.onResumePage()
+
                     onPauseOrDispose {
                         viewModel.release()
                     }
@@ -217,6 +215,7 @@ fun SeriesOverview(
                                             playlistViewModel.loadPlaylists(MediaType.VIDEO)
                                             showPlaylistDialog = it
                                         },
+                                        onSendMediaInfo = viewModel.mediaReportService::sendReportFor,
                                     ),
                                 onChooseVersion = {
                                     chooseVersion =

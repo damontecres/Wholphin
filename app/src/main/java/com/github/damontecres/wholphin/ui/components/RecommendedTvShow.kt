@@ -14,7 +14,10 @@ import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.FavoriteWatchManager
 import com.github.damontecres.wholphin.services.LatestNextUpService
+import com.github.damontecres.wholphin.services.MediaReportService
 import com.github.damontecres.wholphin.services.NavigationManager
+import com.github.damontecres.wholphin.services.SuggestionService
+import com.github.damontecres.wholphin.services.SuggestionsResource
 import com.github.damontecres.wholphin.ui.SlimItemFields
 import com.github.damontecres.wholphin.ui.data.RowColumn
 import com.github.damontecres.wholphin.ui.setValueOnMain
@@ -23,7 +26,6 @@ import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.GetItemsRequestHandler
 import com.github.damontecres.wholphin.util.GetNextUpRequestHandler
 import com.github.damontecres.wholphin.util.GetResumeItemsRequestHandler
-import com.github.damontecres.wholphin.util.GetSuggestionsRequestHandler
 import com.github.damontecres.wholphin.util.HomeRowLoadingState
 import com.github.damontecres.wholphin.util.LoadingState
 import dagger.assisted.Assisted
@@ -31,6 +33,8 @@ import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -45,7 +49,6 @@ import org.jellyfin.sdk.model.api.SortOrder
 import org.jellyfin.sdk.model.api.request.GetItemsRequest
 import org.jellyfin.sdk.model.api.request.GetNextUpRequest
 import org.jellyfin.sdk.model.api.request.GetResumeItemsRequest
-import org.jellyfin.sdk.model.api.request.GetSuggestionsRequest
 import timber.log.Timber
 import java.util.UUID
 
@@ -58,11 +61,19 @@ class RecommendedTvShowViewModel
         private val serverRepository: ServerRepository,
         private val preferencesDataStore: DataStore<AppPreferences>,
         private val lastestNextUpService: LatestNextUpService,
+        private val suggestionService: SuggestionService,
         @Assisted val parentId: UUID,
         navigationManager: NavigationManager,
         favoriteWatchManager: FavoriteWatchManager,
+        mediaReportService: MediaReportService,
         backdropService: BackdropService,
-    ) : RecommendedViewModel(context, navigationManager, favoriteWatchManager, backdropService) {
+    ) : RecommendedViewModel(
+            context,
+            navigationManager,
+            favoriteWatchManager,
+            mediaReportService,
+            backdropService,
+        ) {
         @AssistedFactory
         interface Factory {
             fun create(parentId: UUID): RecommendedTvShowViewModel
@@ -86,7 +97,7 @@ class RecommendedTvShowViewModel
                 val userId = serverRepository.currentUser.value?.id
                 try {
                     val resumeItemsDeferred =
-                        viewModelScope.async(Dispatchers.IO) {
+                        async(Dispatchers.IO) {
                             val resumeItemsRequest =
                                 GetResumeItemsRequest(
                                     userId = userId,
@@ -104,7 +115,7 @@ class RecommendedTvShowViewModel
                         }
 
                     val nextUpItemsDeferred =
-                        viewModelScope.async(Dispatchers.IO) {
+                        async(Dispatchers.IO) {
                             val nextUpRequest =
                                 GetNextUpRequest(
                                     userId = userId,
@@ -116,19 +127,16 @@ class RecommendedTvShowViewModel
                                     enableUserData = true,
                                     enableRewatching = preferences.homePagePreferences.enableRewatchingNextUp,
                                 )
-
                             GetNextUpRequestHandler
                                 .execute(api, nextUpRequest)
                                 .toBaseItems(api, true)
                         }
+
                     val resumeItems = resumeItemsDeferred.await()
                     val nextUpItems = nextUpItemsDeferred.await()
+
                     if (combineNextUp) {
-                        val combined =
-                            lastestNextUpService.buildCombined(
-                                resumeItems,
-                                nextUpItems,
-                            )
+                        val combined = lastestNextUpService.buildCombined(resumeItems, nextUpItems)
                         update(
                             R.string.continue_watching,
                             HomeRowLoadingState.Success(
@@ -138,10 +146,7 @@ class RecommendedTvShowViewModel
                         )
                         update(
                             R.string.next_up,
-                            HomeRowLoadingState.Success(
-                                context.getString(R.string.next_up),
-                                listOf(),
-                            ),
+                            HomeRowLoadingState.Success(context.getString(R.string.next_up), listOf()),
                         )
                     } else {
                         update(
@@ -153,10 +158,7 @@ class RecommendedTvShowViewModel
                         )
                         update(
                             R.string.next_up,
-                            HomeRowLoadingState.Success(
-                                context.getString(R.string.next_up),
-                                nextUpItems,
-                            ),
+                            HomeRowLoadingState.Success(context.getString(R.string.next_up), nextUpItems),
                         )
                     }
 
@@ -170,8 +172,10 @@ class RecommendedTvShowViewModel
                     }
                 }
 
+                val jobs = mutableListOf<Deferred<HomeRowLoadingState>>()
+
                 update(R.string.recently_released) {
-                    val recentlyReleasedRequest =
+                    val request =
                         GetItemsRequest(
                             parentId = parentId,
                             fields = SlimItemFields,
@@ -184,14 +188,11 @@ class RecommendedTvShowViewModel
                             limit = itemsPerRow,
                             enableTotalRecordCount = false,
                         )
-
-                    GetItemsRequestHandler
-                        .execute(api, recentlyReleasedRequest)
-                        .toBaseItems(api, true)
-                }
+                    GetItemsRequestHandler.execute(api, request).toBaseItems(api, true)
+                }.also(jobs::add)
 
                 update(R.string.recently_added) {
-                    val recentlyAddedRequest =
+                    val request =
                         GetItemsRequest(
                             parentId = parentId,
                             fields = SlimItemFields,
@@ -204,29 +205,11 @@ class RecommendedTvShowViewModel
                             limit = itemsPerRow,
                             enableTotalRecordCount = false,
                         )
-
-                    GetItemsRequestHandler
-                        .execute(api, recentlyAddedRequest)
-                        .toBaseItems(api, true)
-                }
-
-                update(R.string.suggestions) {
-                    val suggestionsRequest =
-                        GetSuggestionsRequest(
-                            userId = serverRepository.currentUser.value?.id,
-                            type = listOf(BaseItemKind.SERIES),
-                            startIndex = 0,
-                            limit = itemsPerRow,
-                            enableTotalRecordCount = false,
-                        )
-
-                    GetSuggestionsRequestHandler
-                        .execute(api, suggestionsRequest)
-                        .toBaseItems(api, true)
-                }
+                    GetItemsRequestHandler.execute(api, request).toBaseItems(api, true)
+                }.also(jobs::add)
 
                 update(R.string.top_unwatched) {
-                    val unwatchedTopRatedRequest =
+                    val request =
                         GetItemsRequest(
                             parentId = parentId,
                             fields = SlimItemFields,
@@ -240,13 +223,61 @@ class RecommendedTvShowViewModel
                             limit = itemsPerRow,
                             enableTotalRecordCount = false,
                         )
-                    GetItemsRequestHandler
-                        .execute(api, unwatchedTopRatedRequest)
-                        .toBaseItems(api, true)
+                    GetItemsRequestHandler.execute(api, request).toBaseItems(api, true)
+                }.also(jobs::add)
+
+                viewModelScope.launch(Dispatchers.IO) {
+                    try {
+                        suggestionService
+                            .getSuggestionsFlow(parentId, BaseItemKind.SERIES)
+                            .collect { resource ->
+                                val state =
+                                    when (resource) {
+                                        is SuggestionsResource.Loading -> {
+                                            HomeRowLoadingState.Loading(
+                                                context.getString(R.string.suggestions),
+                                            )
+                                        }
+
+                                        is SuggestionsResource.Success -> {
+                                            HomeRowLoadingState.Success(
+                                                context.getString(R.string.suggestions),
+                                                resource.items,
+                                            )
+                                        }
+
+                                        is SuggestionsResource.Empty -> {
+                                            HomeRowLoadingState.Success(
+                                                context.getString(R.string.suggestions),
+                                                emptyList(),
+                                            )
+                                        }
+                                    }
+                                update(R.string.suggestions, state)
+                            }
+                    } catch (ex: CancellationException) {
+                        throw ex
+                    } catch (ex: Exception) {
+                        Timber.e(ex, "Failed to fetch suggestions")
+                        update(
+                            R.string.suggestions,
+                            HomeRowLoadingState.Error(
+                                title = context.getString(R.string.suggestions),
+                                exception = ex,
+                            ),
+                        )
+                    }
                 }
 
                 if (loading.value == LoadingState.Loading || loading.value == LoadingState.Pending) {
-                    loading.setValueOnMain(LoadingState.Success)
+                    for (i in 0..<jobs.size) {
+                        val result = jobs[i].await()
+                        if (result is HomeRowLoadingState.Success) {
+                            Timber.v("First success")
+                            loading.setValueOnMain(LoadingState.Success)
+                        }
+                        break
+                    }
                 }
             }
         }
@@ -254,10 +285,11 @@ class RecommendedTvShowViewModel
         override fun update(
             @StringRes title: Int,
             row: HomeRowLoadingState,
-        ) {
+        ): HomeRowLoadingState {
             rows.update { current ->
                 current.toMutableList().apply { set(rowTitles[title]!!, row) }
             }
+            return row
         }
 
         companion object {

@@ -37,7 +37,6 @@ import com.github.damontecres.wholphin.ui.data.VideoSortOptions
 import com.github.damontecres.wholphin.ui.logTab
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.preferences.PreferencesViewModel
-import com.github.damontecres.wholphin.ui.tryRequestFocus
 import org.jellyfin.sdk.model.api.BaseItemKind
 
 @Composable
@@ -72,7 +71,6 @@ fun CollectionFolderMovie(
 
     var showHeader by rememberSaveable { mutableStateOf(true) }
 
-    LaunchedEffect(Unit) { focusRequester.tryRequestFocus() }
     Column(
         modifier = modifier,
     ) {
@@ -85,7 +83,7 @@ fun CollectionFolderMovie(
                 selectedTabIndex = selectedTabIndex,
                 modifier =
                     Modifier
-                        .padding(start = 32.dp, top = 16.dp, bottom = 16.dp)
+                        .padding(vertical = 16.dp)
                         .focusRequester(firstTabFocusRequester),
                 tabs = tabs,
                 onClick = { selectedTabIndex = it },
@@ -103,7 +101,6 @@ fun CollectionFolderMovie(
                     },
                     modifier =
                         Modifier
-                            .padding(start = 16.dp)
                             .fillMaxSize()
                             .focusRequester(focusRequester),
                 )
@@ -131,7 +128,6 @@ fun CollectionFolderMovie(
                     defaultViewOptions = ViewOptionsPoster,
                     modifier =
                         Modifier
-                            .padding(start = 16.dp)
                             .fillMaxSize()
                             .focusRequester(focusRequester),
                     positionCallback = { columns, position ->
@@ -164,7 +160,6 @@ fun CollectionFolderMovie(
                     defaultViewOptions = ViewOptionsPoster,
                     modifier =
                         Modifier
-                            .padding(start = 16.dp)
                             .fillMaxSize()
                             .focusRequester(focusRequester),
                     positionCallback = { columns, position ->
@@ -182,7 +177,6 @@ fun CollectionFolderMovie(
                     includeItemTypes = listOf(BaseItemKind.MOVIE),
                     modifier =
                         Modifier
-                            .padding(start = 16.dp)
                             .fillMaxSize()
                             .focusRequester(focusRequester),
                 )

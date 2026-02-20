@@ -39,6 +39,17 @@ val DefaultForGenresFilterOptions =
         DecadeFilter,
     )
 
+val DefaultPlaylistItemsOptions =
+    listOf(
+        PlayedFilter,
+        FavoriteFilter,
+        CommunityRatingFilter,
+        OfficialRatingFilter,
+        VideoTypeFilter,
+        YearFilter,
+        DecadeFilter,
+    )
+
 sealed interface ItemFilterBy<T> {
     @get:StringRes
     val stringRes: Int

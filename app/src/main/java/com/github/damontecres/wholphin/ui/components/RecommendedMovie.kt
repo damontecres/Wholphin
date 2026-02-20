@@ -14,7 +14,10 @@ import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.FavoriteWatchManager
+import com.github.damontecres.wholphin.services.MediaReportService
 import com.github.damontecres.wholphin.services.NavigationManager
+import com.github.damontecres.wholphin.services.SuggestionService
+import com.github.damontecres.wholphin.services.SuggestionsResource
 import com.github.damontecres.wholphin.ui.SlimItemFields
 import com.github.damontecres.wholphin.ui.data.RowColumn
 import com.github.damontecres.wholphin.ui.setValueOnMain
@@ -22,7 +25,6 @@ import com.github.damontecres.wholphin.ui.toBaseItems
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.GetItemsRequestHandler
 import com.github.damontecres.wholphin.util.GetResumeItemsRequestHandler
-import com.github.damontecres.wholphin.util.GetSuggestionsRequestHandler
 import com.github.damontecres.wholphin.util.HomeRowLoadingState
 import com.github.damontecres.wholphin.util.LoadingState
 import dagger.assisted.Assisted
@@ -30,6 +32,8 @@ import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.firstOrNull
@@ -42,7 +46,6 @@ import org.jellyfin.sdk.model.api.ItemSortBy
 import org.jellyfin.sdk.model.api.SortOrder
 import org.jellyfin.sdk.model.api.request.GetItemsRequest
 import org.jellyfin.sdk.model.api.request.GetResumeItemsRequest
-import org.jellyfin.sdk.model.api.request.GetSuggestionsRequest
 import timber.log.Timber
 import java.util.UUID
 
@@ -54,11 +57,19 @@ class RecommendedMovieViewModel
         private val api: ApiClient,
         private val serverRepository: ServerRepository,
         private val preferencesDataStore: DataStore<AppPreferences>,
+        private val suggestionService: SuggestionService,
         @Assisted val parentId: UUID,
         navigationManager: NavigationManager,
         favoriteWatchManager: FavoriteWatchManager,
+        mediaReportService: MediaReportService,
         backdropService: BackdropService,
-    ) : RecommendedViewModel(context, navigationManager, favoriteWatchManager, backdropService) {
+    ) : RecommendedViewModel(
+            context,
+            navigationManager,
+            favoriteWatchManager,
+            mediaReportService,
+            backdropService,
+        ) {
         @AssistedFactory
         interface Factory {
             fun create(parentId: UUID): RecommendedMovieViewModel
@@ -114,8 +125,10 @@ class RecommendedMovieViewModel
                     }
                 }
 
+                val jobs = mutableListOf<Deferred<HomeRowLoadingState>>()
+
                 update(R.string.recently_released) {
-                    val recentlyReleasedRequest =
+                    val request =
                         GetItemsRequest(
                             parentId = parentId,
                             fields = SlimItemFields,
@@ -128,13 +141,11 @@ class RecommendedMovieViewModel
                             limit = itemsPerRow,
                             enableTotalRecordCount = false,
                         )
-                    GetItemsRequestHandler
-                        .execute(api, recentlyReleasedRequest)
-                        .toBaseItems(api, false)
-                }
+                    GetItemsRequestHandler.execute(api, request).toBaseItems(api, false)
+                }.also(jobs::add)
 
                 update(R.string.recently_added) {
-                    val recentlyAddedRequest =
+                    val request =
                         GetItemsRequest(
                             parentId = parentId,
                             fields = SlimItemFields,
@@ -147,27 +158,11 @@ class RecommendedMovieViewModel
                             limit = itemsPerRow,
                             enableTotalRecordCount = false,
                         )
-                    GetItemsRequestHandler
-                        .execute(api, recentlyAddedRequest)
-                        .toBaseItems(api, false)
-                }
-
-                update(R.string.suggestions) {
-                    val suggestionsRequest =
-                        GetSuggestionsRequest(
-                            userId = serverRepository.currentUser.value?.id,
-                            type = listOf(BaseItemKind.MOVIE),
-                            startIndex = 0,
-                            limit = itemsPerRow,
-                            enableTotalRecordCount = false,
-                        )
-                    GetSuggestionsRequestHandler
-                        .execute(api, suggestionsRequest)
-                        .toBaseItems(api, false)
-                }
+                    GetItemsRequestHandler.execute(api, request).toBaseItems(api, false)
+                }.also(jobs::add)
 
                 update(R.string.top_unwatched) {
-                    val unwatchedTopRatedRequest =
+                    val request =
                         GetItemsRequest(
                             parentId = parentId,
                             fields = SlimItemFields,
@@ -181,13 +176,63 @@ class RecommendedMovieViewModel
                             limit = itemsPerRow,
                             enableTotalRecordCount = false,
                         )
-                    GetItemsRequestHandler
-                        .execute(api, unwatchedTopRatedRequest)
-                        .toBaseItems(api, false)
+                    GetItemsRequestHandler.execute(api, request).toBaseItems(api, false)
+                }.also(jobs::add)
+
+                viewModelScope.launch(Dispatchers.IO) {
+                    try {
+                        suggestionService
+                            .getSuggestionsFlow(parentId, BaseItemKind.MOVIE)
+                            .collect { resource ->
+                                val state =
+                                    when (resource) {
+                                        is SuggestionsResource.Loading -> {
+                                            HomeRowLoadingState.Loading(
+                                                context.getString(R.string.suggestions),
+                                            )
+                                        }
+
+                                        is SuggestionsResource.Success -> {
+                                            HomeRowLoadingState.Success(
+                                                context.getString(R.string.suggestions),
+                                                resource.items,
+                                            )
+                                        }
+
+                                        is SuggestionsResource.Empty -> {
+                                            HomeRowLoadingState.Success(
+                                                context.getString(R.string.suggestions),
+                                                emptyList(),
+                                            )
+                                        }
+                                    }
+                                update(R.string.suggestions, state)
+                            }
+                    } catch (ex: CancellationException) {
+                        throw ex
+                    } catch (ex: Exception) {
+                        Timber.e(ex, "Failed to fetch suggestions")
+                        update(
+                            R.string.suggestions,
+                            HomeRowLoadingState.Error(
+                                title = context.getString(R.string.suggestions),
+                                exception = ex,
+                            ),
+                        )
+                    }
                 }
 
+                // If the continue watching row is empty, then wait until the first successful row
+                // is loaded before telling the UI that the page is loaded
                 if (loading.value == LoadingState.Loading || loading.value == LoadingState.Pending) {
-                    loading.setValueOnMain(LoadingState.Success)
+                    for (i in 0..<jobs.size) {
+                        val result = jobs[i].await()
+                        if (result.completed) {
+                            Timber.v("First success")
+                            loading.setValueOnMain(LoadingState.Success)
+                        }
+                        break
+                    }
                 }
             }
         }
@@ -195,10 +240,11 @@ class RecommendedMovieViewModel
         override fun update(
             @StringRes title: Int,
             row: HomeRowLoadingState,
-        ) {
+        ): HomeRowLoadingState {
             rows.update { current ->
                 current.toMutableList().apply { set(rowTitles[title]!!, row) }
             }
+            return row
         }
 
         companion object {

@@ -1,8 +1,8 @@
 package com.github.damontecres.wholphin.ui.main
 
-import android.widget.Toast
-import androidx.compose.foundation.background
-import androidx.compose.foundation.focusable
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.focusGroup
+import androidx.compose.foundation.gestures.LocalBringIntoViewSpec
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,16 +16,17 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -33,9 +34,9 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.focus.onFocusChanged
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -46,31 +47,36 @@ import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.BaseItem
+import com.github.damontecres.wholphin.data.model.HomeRowViewOptions
 import com.github.damontecres.wholphin.preferences.UserPreferences
-import com.github.damontecres.wholphin.ui.AspectRatios
 import com.github.damontecres.wholphin.ui.Cards
-import com.github.damontecres.wholphin.ui.abbreviateNumber
 import com.github.damontecres.wholphin.ui.cards.BannerCard
+import com.github.damontecres.wholphin.ui.cards.BannerCardWithTitle
+import com.github.damontecres.wholphin.ui.cards.GenreCard
 import com.github.damontecres.wholphin.ui.cards.ItemRow
 import com.github.damontecres.wholphin.ui.components.CircularProgress
 import com.github.damontecres.wholphin.ui.components.DialogParams
 import com.github.damontecres.wholphin.ui.components.DialogPopup
 import com.github.damontecres.wholphin.ui.components.EpisodeName
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
+import com.github.damontecres.wholphin.ui.components.FocusableItemRow
 import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.components.QuickDetails
 import com.github.damontecres.wholphin.ui.data.AddPlaylistViewModel
 import com.github.damontecres.wholphin.ui.data.RowColumn
-import com.github.damontecres.wholphin.ui.data.RowColumnSaver
 import com.github.damontecres.wholphin.ui.detail.MoreDialogActions
 import com.github.damontecres.wholphin.ui.detail.PlaylistDialog
 import com.github.damontecres.wholphin.ui.detail.PlaylistLoadingState
 import com.github.damontecres.wholphin.ui.detail.buildMoreDialogItemsForHome
+import com.github.damontecres.wholphin.ui.indexOfFirstOrNull
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.playback.isPlayKeyUp
 import com.github.damontecres.wholphin.ui.playback.playable
+import com.github.damontecres.wholphin.ui.playback.scale
+import com.github.damontecres.wholphin.ui.rememberPosition
 import com.github.damontecres.wholphin.ui.tryRequestFocus
+import com.github.damontecres.wholphin.ui.util.ScrollToTopBringIntoViewSpec
 import com.github.damontecres.wholphin.util.HomeRowLoadingState
 import com.github.damontecres.wholphin.util.LoadingState
 import kotlinx.coroutines.delay
@@ -88,50 +94,40 @@ fun HomePage(
     playlistViewModel: AddPlaylistViewModel = hiltViewModel(),
 ) {
     val context = LocalContext.current
-    var firstLoad by rememberSaveable { mutableStateOf(true) }
     LaunchedEffect(Unit) {
-        viewModel.init(preferences).join()
-        firstLoad = false
+        viewModel.init()
     }
-    val loading by viewModel.loadingState.observeAsState(LoadingState.Loading)
-    val refreshing by viewModel.refreshState.observeAsState(LoadingState.Loading)
-    val watchingRows by viewModel.watchingRows.observeAsState(listOf())
-    val latestRows by viewModel.latestRows.observeAsState(listOf())
-    LaunchedEffect(loading) {
-        val state = loading
-        if (!firstLoad && state is LoadingState.Error) {
-            // After the first load, refreshes occur in the background and an ErrorMessage won't show
-            // So send a Toast on errors instead
-            Toast
-                .makeText(
-                    context,
-                    "Home refresh error: ${state.localizedMessage}",
-                    Toast.LENGTH_LONG,
-                ).show()
-        }
-    }
+    val state by viewModel.state.collectAsState()
+    val loading = state.loadingState
+    val refreshing = state.refreshState
+    val homeRows = state.homeRows
 
     when (val state = loading) {
         is LoadingState.Error -> {
-            ErrorMessage(state)
+            ErrorMessage(state, modifier)
         }
 
         LoadingState.Loading,
         LoadingState.Pending,
         -> {
-            LoadingPage()
+            LoadingPage(modifier)
         }
 
         LoadingState.Success -> {
             var dialog by remember { mutableStateOf<DialogParams?>(null) }
             var showPlaylistDialog by remember { mutableStateOf<UUID?>(null) }
             val playlistState by playlistViewModel.playlistState.observeAsState(PlaylistLoadingState.Pending)
+            var position by rememberPosition()
             HomePageContent(
-                watchingRows + latestRows,
-                onClickItem = { position, item ->
+                homeRows = homeRows,
+                position = position,
+                onFocusPosition = { position = it },
+                onClickItem = { clickedPosition, item ->
+                    position = clickedPosition
                     viewModel.navigationManager.navigateTo(item.destination())
                 },
-                onLongClickItem = { position, item ->
+                onLongClickItem = { clickedPosition, item ->
+                    position = clickedPosition
                     val dialogItems =
                         buildMoreDialogItemsForHome(
                             context = context,
@@ -153,6 +149,7 @@ fun HomePage(
                                         playlistViewModel.loadPlaylists(MediaType.VIDEO)
                                         showPlaylistDialog = itemId
                                     },
+                                    onSendMediaInfo = viewModel.mediaReportService::sendReportFor,
                                 ),
                         )
                     dialog =
@@ -197,68 +194,55 @@ fun HomePage(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun HomePageContent(
     homeRows: List<HomeRowLoadingState>,
+    position: RowColumn,
+    onFocusPosition: (RowColumn) -> Unit,
     onClickItem: (RowColumn, BaseItem) -> Unit,
     onLongClickItem: (RowColumn, BaseItem) -> Unit,
     onClickPlay: (RowColumn, BaseItem) -> Unit,
     showClock: Boolean,
     onUpdateBackdrop: (BaseItem) -> Unit,
     modifier: Modifier = Modifier,
-    onFocusPosition: ((RowColumn) -> Unit)? = null,
     loadingState: LoadingState? = null,
+    listState: LazyListState = rememberLazyListState(),
+    takeFocus: Boolean = true,
+    showEmptyRows: Boolean = false,
 ) {
-    val context = LocalContext.current
-    val scope = rememberCoroutineScope()
-    val firstRow =
-        remember {
-            homeRows
-                .indexOfFirst {
-                    when (it) {
-                        is HomeRowLoadingState.Error -> false
-                        is HomeRowLoadingState.Loading -> true
-                        is HomeRowLoadingState.Pending -> true
-                        is HomeRowLoadingState.Success -> it.items.isNotEmpty()
-                    }
-                }.coerceAtLeast(0)
-        }
-    var position by rememberSaveable(stateSaver = RowColumnSaver) {
-        mutableStateOf(RowColumn(firstRow, 0))
-    }
     val focusedItem =
         position.let {
             (homeRows.getOrNull(it.row) as? HomeRowLoadingState.Success)?.items?.getOrNull(it.column)
         }
 
-    val listState = rememberLazyListState()
-    val rowFocusRequesters = remember(homeRows.size) { List(homeRows.size) { FocusRequester() } }
-    var firstFocused by rememberSaveable { mutableStateOf(false) }
-    LaunchedEffect(homeRows) {
-        if (!firstFocused) {
-            // Waiting for the first home row to load, then focus on it
-            homeRows
-                .indexOfFirst { it is HomeRowLoadingState.Success && it.items.isNotEmpty() }
-                .takeIf { it >= 0 }
-                ?.let {
-                    rowFocusRequesters[it].tryRequestFocus()
-                    delay(50)
-                    listState.scrollToItem(it)
+    val rowFocusRequesters = remember(homeRows) { List(homeRows.size) { FocusRequester() } }
+    var firstFocused by remember { mutableStateOf(false) }
+    if (takeFocus) {
+        LaunchedEffect(homeRows) {
+            if (!firstFocused && homeRows.isNotEmpty()) {
+                if (position.row >= 0) {
+                    val index = position.row.coerceIn(0, rowFocusRequesters.lastIndex)
+                    rowFocusRequesters.getOrNull(index)?.tryRequestFocus()
                     firstFocused = true
+                } else {
+                    // Waiting for the first home row to load, then focus on it
+                    homeRows
+                        .indexOfFirstOrNull { it is HomeRowLoadingState.Success && it.items.isNotEmpty() }
+                        ?.let {
+                            rowFocusRequesters[it].tryRequestFocus()
+                            firstFocused = true
+                            delay(50)
+                            listState.scrollToItem(it)
+                        }
                 }
-        }
-    }
-    LaunchedEffect(Unit) {
-        if (firstFocused) {
-            // After the first home row was loaded & focused, page recompositions should focus on the positioned row
-            val index = position.row
-            rowFocusRequesters.getOrNull(index)?.tryRequestFocus()
-            delay(50)
-            listState.scrollToItem(index)
+            }
         }
     }
     LaunchedEffect(position) {
-        listState.animateScrollToItem(position.row)
+        if (position.row >= 0) {
+            listState.animateScrollToItem(position.row)
+        }
     }
     LaunchedEffect(onUpdateBackdrop, focusedItem) {
         focusedItem?.let { onUpdateBackdrop.invoke(it) }
@@ -269,149 +253,113 @@ fun HomePageContent(
                 item = focusedItem,
                 modifier =
                     Modifier
-                        .padding(top = 48.dp, bottom = 32.dp, start = 32.dp)
+                        .padding(top = 48.dp, bottom = 32.dp, start = 8.dp)
                         .fillMaxHeight(.33f),
             )
-            LazyColumn(
-                state = listState,
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                contentPadding =
-                    PaddingValues(
-                        start = 16.dp,
-                        end = 16.dp,
-                        top = 0.dp,
-                        bottom = Cards.height2x3,
-                    ),
-                modifier =
-                    Modifier
-                        .focusRestorer(),
+            val density = LocalDensity.current
+            val spaceAbovePx =
+                with(density) {
+                    // The size of the row titles & spacing
+                    50.dp.toPx()
+                }
+            val defaultBringIntoViewSpec = LocalBringIntoViewSpec.current
+            CompositionLocalProvider(
+                LocalBringIntoViewSpec provides ScrollToTopBringIntoViewSpec(spaceAbovePx),
             ) {
-                itemsIndexed(homeRows) { rowIndex, row ->
-                    when (val r = row) {
-                        is HomeRowLoadingState.Loading,
-                        is HomeRowLoadingState.Pending,
-                        -> {
-                            Column(
-                                verticalArrangement = Arrangement.spacedBy(8.dp),
-                                modifier = Modifier.animateItem(),
-                            ) {
-                                Text(
-                                    text = r.title,
-                                    style = MaterialTheme.typography.titleLarge,
-                                    color = MaterialTheme.colorScheme.onBackground,
-                                )
-                                Text(
-                                    text = stringResource(R.string.loading),
-                                    style = MaterialTheme.typography.titleMedium,
-                                    color = MaterialTheme.colorScheme.onBackground,
-                                )
-                            }
-                        }
+                LazyColumn(
+                    state = listState,
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    contentPadding =
+                        PaddingValues(
+                            bottom = Cards.height2x3,
+                        ),
+                    modifier =
+                        Modifier
+                            .focusRestorer(),
+                ) {
+                    itemsIndexed(homeRows) { rowIndex, row ->
+                        CompositionLocalProvider(
+                            LocalBringIntoViewSpec provides defaultBringIntoViewSpec,
+                        ) {
+                            when (val r = row) {
+                                is HomeRowLoadingState.Loading,
+                                is HomeRowLoadingState.Pending,
+                                -> {
+                                    FocusableItemRow(
+                                        title = r.title,
+                                        subtitle = stringResource(R.string.loading),
+                                        modifier = Modifier.animateItem(),
+                                    )
+                                }
 
-                        is HomeRowLoadingState.Error -> {
-                            var focused by remember { mutableStateOf(false) }
-                            Column(
-                                verticalArrangement = Arrangement.spacedBy(8.dp),
-                                modifier =
-                                    Modifier
-                                        .onFocusChanged {
-                                            focused = it.isFocused
-                                        }.focusable()
-                                        .background(
-                                            if (focused) {
-                                                // Just so the user can tell it has focus
-                                                MaterialTheme.colorScheme.border.copy(alpha = .25f)
-                                            } else {
-                                                Color.Unspecified
+                                is HomeRowLoadingState.Error -> {
+                                    FocusableItemRow(
+                                        title = r.title,
+                                        subtitle = r.localizedMessage,
+                                        isError = true,
+                                        modifier = Modifier.animateItem(),
+                                    )
+                                }
+
+                                is HomeRowLoadingState.Success -> {
+                                    if (row.items.isNotEmpty()) {
+                                        val viewOptions = row.viewOptions
+                                        ItemRow(
+                                            title = row.title,
+                                            items = row.items,
+                                            onClickItem = { index, item ->
+                                                onClickItem.invoke(RowColumn(rowIndex, index), item)
                                             },
-                                        ).animateItem(),
-                            ) {
-                                Text(
-                                    text = r.title,
-                                    style = MaterialTheme.typography.titleLarge,
-                                    color = MaterialTheme.colorScheme.onBackground,
-                                )
-                                Text(
-                                    text = r.localizedMessage,
-                                    style = MaterialTheme.typography.titleMedium,
-                                    color = MaterialTheme.colorScheme.error,
-                                )
-                            }
-                        }
-
-                        is HomeRowLoadingState.Success -> {
-                            if (row.items.isNotEmpty()) {
-                                ItemRow(
-                                    title = row.title,
-                                    items = row.items,
-                                    onClickItem = { index, item ->
-                                        onClickItem.invoke(RowColumn(rowIndex, index), item)
-                                    },
-                                    onLongClickItem = { index, item ->
-                                        onLongClickItem.invoke(RowColumn(rowIndex, index), item)
-                                    },
-                                    modifier =
-                                        Modifier
-                                            .fillMaxWidth()
-                                            .focusRequester(rowFocusRequesters[rowIndex])
-                                            .animateItem(),
-                                    cardContent = { index, item, cardModifier, onClick, onLongClick ->
-                                        val cornerText =
-                                            remember(item) {
-                                                item?.data?.indexNumber?.let { "E$it" }
-                                                    ?: item
-                                                        ?.data
-                                                        ?.userData
-                                                        ?.unplayedItemCount
-                                                        ?.takeIf { it > 0 }
-                                                        ?.let { abbreviateNumber(it) }
-                                            }
-                                        BannerCard(
-                                            name = item?.data?.seriesName ?: item?.name,
-                                            item = item,
-                                            aspectRatio = AspectRatios.TALL,
-                                            cornerText = cornerText,
-                                            played = item?.data?.userData?.played ?: false,
-                                            favorite = item?.favorite ?: false,
-                                            playPercent =
-                                                item?.data?.userData?.playedPercentage
-                                                    ?: 0.0,
-                                            onClick = onClick,
-                                            onLongClick = onLongClick,
+                                            onLongClickItem = { index, item ->
+                                                onLongClickItem.invoke(
+                                                    RowColumn(rowIndex, index),
+                                                    item,
+                                                )
+                                            },
                                             modifier =
-                                                cardModifier
-                                                    .onFocusChanged {
-                                                        if (it.isFocused) {
-                                                            position = RowColumn(rowIndex, index)
-//                                                            item?.let(onUpdateBackdrop)
-                                                        }
-                                                        if (it.isFocused && onFocusPosition != null) {
-                                                            val nonEmptyRowBefore =
-                                                                homeRows
-                                                                    .subList(0, rowIndex)
-                                                                    .count {
-                                                                        it is HomeRowLoadingState.Success && it.items.isEmpty()
-                                                                    }
-                                                            onFocusPosition.invoke(
-                                                                RowColumn(
-                                                                    rowIndex - nonEmptyRowBefore,
-                                                                    index,
-                                                                ),
-                                                            )
-                                                        }
-                                                    }.onKeyEvent {
-                                                        if (isPlayKeyUp(it) && item?.type?.playable == true) {
-                                                            Timber.v("Clicked play on ${item.id}")
-                                                            onClickPlay.invoke(position, item)
-                                                            return@onKeyEvent true
-                                                        }
-                                                        return@onKeyEvent false
-                                                    },
-                                            interactionSource = null,
-                                            cardHeight = Cards.height2x3,
+                                                Modifier
+                                                    .fillMaxWidth()
+                                                    .focusGroup()
+                                                    .focusRequester(rowFocusRequesters[rowIndex])
+                                                    .animateItem(),
+                                            horizontalPadding = viewOptions.spacing.dp,
+                                            cardContent = { index, item, cardModifier, onClick, onLongClick ->
+                                                HomePageCardContent(
+                                                    index = index,
+                                                    item = item,
+                                                    onClick = onClick,
+                                                    onLongClick = onLongClick,
+                                                    viewOptions = viewOptions,
+                                                    modifier =
+                                                        cardModifier
+                                                            .onFocusChanged {
+                                                                if (it.isFocused) {
+                                                                    onFocusPosition?.invoke(
+                                                                        RowColumn(rowIndex, index),
+                                                                    )
+                                                                }
+                                                            }.onKeyEvent {
+                                                                if (isPlayKeyUp(it) && item?.type?.playable == true) {
+                                                                    Timber.v("Clicked play on ${item.id}")
+                                                                    onClickPlay.invoke(
+                                                                        position,
+                                                                        item,
+                                                                    )
+                                                                    return@onKeyEvent true
+                                                                }
+                                                                return@onKeyEvent false
+                                                            },
+                                                )
+                                            },
                                         )
-                                    },
-                                )
+                                    } else if (showEmptyRows) {
+                                        FocusableItemRow(
+                                            title = r.title,
+                                            subtitle = stringResource(R.string.no_results),
+                                            modifier = Modifier.animateItem(),
+                                        )
+                                    }
+                                }
                             }
                         }
                     }
@@ -443,19 +391,17 @@ fun HomePageHeader(
     item: BaseItem?,
     modifier: Modifier = Modifier,
 ) {
-    item?.let {
-        val isEpisode = item.type == BaseItemKind.EPISODE
-        val dto = item.data
-        HomePageHeader(
-            title = item.title,
-            subtitle = if (isEpisode) dto.name else null,
-            overview = dto.overview,
-            overviewTwoLines = isEpisode,
-            quickDetails = item.ui.quickDetails,
-            timeRemaining = item.timeRemainingOrRuntime,
-            modifier = modifier,
-        )
-    }
+    val isEpisode = item?.type == BaseItemKind.EPISODE
+    val dto = item?.data
+    HomePageHeader(
+        title = item?.title,
+        subtitle = if (isEpisode) dto?.name else null,
+        overview = dto?.overview,
+        overviewTwoLines = isEpisode,
+        quickDetails = item?.ui?.quickDetails ?: AnnotatedString(""),
+        timeRemaining = item?.timeRemainingOrRuntime,
+        modifier = modifier,
+    )
 }
 
 @Composable
@@ -464,7 +410,7 @@ fun HomePageHeader(
     subtitle: String?,
     overview: String?,
     overviewTwoLines: Boolean,
-    quickDetails: AnnotatedString,
+    quickDetails: AnnotatedString?,
     timeRemaining: Duration?,
     modifier: Modifier = Modifier,
 ) {
@@ -492,7 +438,7 @@ fun HomePageHeader(
             subtitle?.let {
                 EpisodeName(it)
             }
-            QuickDetails(quickDetails, timeRemaining)
+            QuickDetails(quickDetails ?: AnnotatedString(""), timeRemaining)
             val overviewModifier =
                 Modifier
                     .padding(0.dp)
@@ -509,6 +455,95 @@ fun HomePageHeader(
                 )
             } else {
                 Spacer(overviewModifier)
+            }
+        }
+    }
+}
+
+@Composable
+fun HomePageCardContent(
+    index: Int,
+    item: BaseItem?,
+    onClick: () -> Unit,
+    onLongClick: () -> Unit,
+    viewOptions: HomeRowViewOptions,
+    modifier: Modifier,
+) {
+    when (item?.type) {
+        BaseItemKind.GENRE -> {
+            GenreCard(
+                genreId = item.id,
+                name = item.name,
+                imageUrl = item.imageUrlOverride,
+                onClick = onClick,
+                onLongClick = onLongClick,
+                modifier = modifier.height(viewOptions.heightDp.dp),
+            )
+        }
+
+        else -> {
+            val imageType =
+                remember(item, viewOptions) {
+                    if (item?.type == BaseItemKind.EPISODE) {
+                        viewOptions.episodeImageType.imageType
+                    } else {
+                        viewOptions.imageType.imageType
+                    }
+                }
+            val ratio =
+                remember(item, viewOptions) {
+                    if (item?.type == BaseItemKind.EPISODE) {
+                        viewOptions.episodeAspectRatio.ratio
+                    } else {
+                        viewOptions.aspectRatio.ratio
+                    }
+                }
+            val scale =
+                remember(item, viewOptions) {
+                    if (item?.type == BaseItemKind.EPISODE) {
+                        viewOptions.episodeContentScale.scale
+                    } else {
+                        viewOptions.contentScale.scale
+                    }
+                }
+            if (viewOptions.showTitles) {
+                BannerCardWithTitle(
+                    title = item?.title,
+                    subtitle = item?.subtitle,
+                    item = item,
+                    aspectRatio = ratio,
+                    imageType = imageType,
+                    imageContentScale = scale,
+                    cornerText = item?.ui?.episodeUnplayedCornerText,
+                    played = item?.data?.userData?.played ?: false,
+                    favorite = item?.favorite ?: false,
+                    playPercent =
+                        item?.data?.userData?.playedPercentage
+                            ?: 0.0,
+                    onClick = onClick,
+                    onLongClick = onLongClick,
+                    modifier = modifier,
+                    cardHeight = viewOptions.heightDp.dp,
+                )
+            } else {
+                BannerCard(
+                    name = item?.data?.seriesName ?: item?.name,
+                    item = item,
+                    aspectRatio = ratio,
+                    imageType = imageType,
+                    imageContentScale = scale,
+                    cornerText = item?.ui?.episodeUnplayedCornerText,
+                    played = item?.data?.userData?.played ?: false,
+                    favorite = item?.favorite ?: false,
+                    playPercent =
+                        item?.data?.userData?.playedPercentage
+                            ?: 0.0,
+                    onClick = onClick,
+                    onLongClick = onLongClick,
+                    modifier = modifier,
+                    interactionSource = null,
+                    cardHeight = viewOptions.heightDp.dp,
+                )
             }
         }
     }

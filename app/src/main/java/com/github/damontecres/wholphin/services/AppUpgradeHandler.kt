@@ -10,9 +10,11 @@ import com.github.damontecres.wholphin.preferences.AppPreference
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.update
 import com.github.damontecres.wholphin.preferences.updateAdvancedPreferences
+import com.github.damontecres.wholphin.preferences.updateHomePagePreferences
 import com.github.damontecres.wholphin.preferences.updateInterfacePreferences
 import com.github.damontecres.wholphin.preferences.updateLiveTvPreferences
 import com.github.damontecres.wholphin.preferences.updateMpvOptions
+import com.github.damontecres.wholphin.preferences.updatePhotoPreferences
 import com.github.damontecres.wholphin.preferences.updatePlaybackOverrides
 import com.github.damontecres.wholphin.preferences.updateSubtitlePreferences
 import com.github.damontecres.wholphin.ui.preferences.PreferencesViewModel
@@ -194,6 +196,53 @@ suspend fun upgradeApp(
                 it.updateMpvOptions {
                     useGpuNext = false
                 }
+            }
+        }
+    }
+
+    // TODO temporarily disabled until some MPV bugs are fixed
+//    if (previous.isEqualOrBefore(Version.fromString("0.4.0-1-g0"))) {
+//        appPreferences.updateData {
+//            it.updatePlaybackPreferences { playerBackend = PlayerBackend.PREFER_MPV }
+//        }
+//        showToast(context, context.getString(R.string.upgrade_mpv_toast), Toast.LENGTH_LONG)
+//    }
+
+    if (previous.isEqualOrBefore(Version.fromString("0.4.0-2-g0"))) {
+        appPreferences.updateData {
+            it.updateMpvOptions {
+                useGpuNext = false
+            }
+        }
+    }
+
+    if (previous.isEqualOrBefore(Version.fromString("0.4.1-6-g0"))) {
+        appPreferences.updateData {
+            it.updateInterfacePreferences {
+                subtitlesPreferences =
+                    subtitlesPreferences
+                        .toBuilder()
+                        .apply {
+                            imageSubtitleOpacity = SubtitleSettings.ImageOpacity.defaultValue.toInt()
+                        }.build()
+                // Copy current subtitle prefs as HDR ones
+                hdrSubtitlesPreferences = subtitlesPreferences.toBuilder().build()
+            }
+        }
+    }
+
+    if (previous.isEqualOrBefore(Version.fromString("0.4.1-7-g0"))) {
+        appPreferences.updateData {
+            it.updatePhotoPreferences {
+                slideshowDuration = AppPreference.SlideshowDuration.defaultValue
+            }
+        }
+    }
+
+    if (previous.isEqualOrBefore(Version.fromString("0.4.1-14-g0"))) {
+        appPreferences.updateData {
+            it.updateHomePagePreferences {
+                maxDaysNextUp = AppPreference.MaxDaysNextUp.defaultValue.toInt()
             }
         }
     }

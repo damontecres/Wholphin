@@ -6,6 +6,7 @@ import androidx.compose.runtime.Stable
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.buildAnnotatedString
 import com.github.damontecres.wholphin.ui.DateFormatter
+import com.github.damontecres.wholphin.ui.abbreviateNumber
 import com.github.damontecres.wholphin.ui.detail.CardGridItem
 import com.github.damontecres.wholphin.ui.detail.series.SeasonEpisodeIds
 import com.github.damontecres.wholphin.ui.dot
@@ -31,6 +32,7 @@ import kotlin.time.Duration
 data class BaseItem(
     val data: BaseItemDto,
     val useSeriesForPrimary: Boolean,
+    val imageUrlOverride: String? = null,
 ) : CardGridItem {
     val id get() = data.id
 
@@ -71,8 +73,7 @@ data class BaseItem(
     @Transient
     val aspectRatio: Float? = data.primaryImageAspectRatio?.toFloat()?.takeIf { it > 0 }
 
-    @Transient
-    val indexNumber = data.indexNumber ?: dateAsIndex()
+    val indexNumber get() = data.indexNumber
 
     val playbackPosition get() = data.userData?.playbackPositionTicks?.ticks ?: Duration.ZERO
 
@@ -88,6 +89,19 @@ data class BaseItem(
     @Transient
     val ui =
         BaseItemUi(
+            episodeCornerText =
+                data.indexNumber?.let { "E$it" }
+                    ?: data.premiereDate?.let(::formatDateTime),
+            episodeUnplayedCornerText =
+                if (type == BaseItemKind.SERIES || type == BaseItemKind.SEASON || type == BaseItemKind.BOX_SET) {
+                    data.indexNumber?.let { "E$it" }
+                        ?: data.userData
+                            ?.unplayedItemCount
+                            ?.takeIf { it > 0 }
+                            ?.let { abbreviateNumber(it) }
+                } else {
+                    null
+                },
             quickDetails =
                 buildAnnotatedString {
                     val details =
@@ -97,6 +111,12 @@ data class BaseItem(
                                 data.premiereDate?.let { add(DateFormatter.format(it)) }
                             } else if (type == BaseItemKind.SERIES) {
                                 data.seriesProductionYears?.let(::add)
+                            } else if (type == BaseItemKind.PHOTO) {
+                                if (data.productionYear != null) {
+                                    add(data.productionYear!!.toString())
+                                } else if (data.premiereDate != null) {
+                                    add(data.premiereDate!!.toLocalDate().toString())
+                                }
                             } else {
                                 data.productionYear?.let { add(it.toString()) }
                             }
@@ -145,7 +165,7 @@ data class BaseItem(
                     it.dayOfMonth.toString().padStart(2, '0')
             }?.toIntOrNull()
 
-    fun destination(): Destination {
+    fun destination(index: Int? = null): Destination {
         val result =
             // Redirect episodes & seasons to their series if possible
             when (type) {
@@ -165,6 +185,25 @@ data class BaseItem(
                         BaseItemKind.SERIES,
                         SeasonEpisodeIds(id, indexNumber, null, null),
                     )
+                }
+
+                BaseItemKind.TV_CHANNEL -> {
+                    Destination.Playback(
+                        itemId = id,
+                        positionMs = 0L,
+                    )
+                }
+
+                BaseItemKind.PROGRAM -> {
+                    val channelId = data.channelId
+                    if (channelId != null) {
+                        Destination.Playback(
+                            itemId = channelId,
+                            positionMs = 0L,
+                        )
+                    } else {
+                        Destination.MediaItem(this)
+                    }
                 }
 
                 else -> {
@@ -191,5 +230,7 @@ val BaseItemDto.aspectRatioFloat: Float? get() = width?.let { w -> height?.let {
 
 @Immutable
 data class BaseItemUi(
+    val episodeCornerText: String?,
+    val episodeUnplayedCornerText: String?,
     val quickDetails: AnnotatedString,
 )

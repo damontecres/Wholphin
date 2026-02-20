@@ -97,17 +97,18 @@ fun EpisodeDetails(
                 playlistViewModel.loadPlaylists(MediaType.VIDEO)
                 showPlaylistDialog.makePresent(itemId)
             },
+            onSendMediaInfo = viewModel.mediaReportService::sendReportFor,
         )
 
     when (val state = loading) {
         is LoadingState.Error -> {
-            ErrorMessage(state)
+            ErrorMessage(state, modifier)
         }
 
         LoadingState.Loading,
         LoadingState.Pending,
         -> {
-            LoadingPage()
+            LoadingPage(modifier)
         }
 
         LoadingState.Success -> {
@@ -303,7 +304,7 @@ fun EpisodeDetailsContent(
     Box(modifier = modifier) {
         LazyColumn(
             verticalArrangement = Arrangement.spacedBy(16.dp),
-            contentPadding = PaddingValues(horizontal = 32.dp, vertical = 8.dp),
+            contentPadding = PaddingValues(vertical = 8.dp),
             modifier = Modifier.fillMaxSize(),
         ) {
             item {

@@ -34,7 +34,9 @@ import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -180,6 +182,63 @@ fun ExpandablePlayButton(
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
     mirrorIcon: Boolean = false,
     enabled: Boolean = true,
+) = ExpandablePlayButton(
+    title = title,
+    resume = resume,
+    icon = {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            modifier =
+                Modifier
+                    .size(28.dp)
+                    .ifElse(mirrorIcon, Modifier.graphicsLayer { scaleX = -1f }),
+        )
+    },
+    onClick = onClick,
+    modifier = modifier,
+    interactionSource = interactionSource,
+    enabled = enabled,
+)
+
+@Composable
+fun ExpandablePlayButton(
+    @StringRes title: Int,
+    resume: Duration,
+    icon: Painter,
+    onClick: (position: Duration) -> Unit,
+    modifier: Modifier = Modifier,
+    interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
+    mirrorIcon: Boolean = false,
+    enabled: Boolean = true,
+) = ExpandablePlayButton(
+    title = title,
+    resume = resume,
+    icon = {
+        Icon(
+            painter = icon,
+            contentDescription = null,
+            modifier =
+                Modifier
+                    .size(28.dp)
+                    .ifElse(mirrorIcon, Modifier.graphicsLayer { scaleX = -1f }),
+        )
+    },
+    onClick = onClick,
+    modifier = modifier,
+    interactionSource = interactionSource,
+    enabled = enabled,
+)
+
+@Composable
+fun ExpandablePlayButton(
+    @StringRes title: Int,
+    resume: Duration,
+    icon: @Composable () -> Unit,
+    onClick: (position: Duration) -> Unit,
+    modifier: Modifier = Modifier,
+    interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
+    enabled: Boolean = true,
 ) {
     val isFocused = interactionSource.collectIsFocusedAsState().value
     Button(
@@ -200,14 +259,7 @@ fun ExpandablePlayButton(
                     .padding(start = 2.dp, top = 2.dp)
                     .height(MinButtonSize),
         ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                modifier =
-                    Modifier
-                        .size(28.dp)
-                        .ifElse(mirrorIcon, Modifier.graphicsLayer { scaleX = -1f }),
-            )
+            icon.invoke()
         }
         AnimatedVisibility(isFocused) {
             Spacer(Modifier.size(8.dp))
@@ -340,6 +392,13 @@ private fun ViewOptionsPreview() {
                 title = R.string.play,
                 resume = Duration.ZERO,
                 icon = Icons.Default.PlayArrow,
+                onClick = {},
+                interactionSource = source,
+            )
+            ExpandablePlayButton(
+                title = R.string.play,
+                resume = Duration.ZERO,
+                icon = painterResource(R.drawable.baseline_pause_24),
                 onClick = {},
                 interactionSource = source,
             )

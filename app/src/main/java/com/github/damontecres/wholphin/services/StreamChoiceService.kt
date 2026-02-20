@@ -276,10 +276,16 @@ class StreamChoiceService
                     SubtitlePlaybackMode.SMART -> {
                         if (subtitleLanguage.isNotNullOrBlank()) {
                             val audioLanguage = userConfig?.audioLanguagePreference
-                            if (audioLanguage.isNullOrBlank() || audioLanguage != audioStreamLang) {
+                            if (
+                                // Has preferred subtitle lang & preferred audio, so only show subtitles if actual audio is different
+                                (audioLanguage.isNotNullOrBlank() && audioLanguage != audioStreamLang) ||
+                                // Has preferred subtitle lang, but no preferred audio lang, so show subtitle if subtitle lang is different from actual audio
+                                (audioLanguage.isNullOrBlank() && subtitleLanguage != audioStreamLang)
+                            ) {
                                 candidates.firstOrNull { it.language == subtitleLanguage }
                                     ?: candidates.firstOrNull { it.language.isUnknown }
                             } else {
+                                // Otherwise, show forced subtitles in preferred lang
                                 candidates.firstOrNull { it.isForced && it.language == subtitleLanguage }
                                     ?: candidates.firstOrNull { it.isForced && it.language.isUnknown }
                             }

@@ -22,6 +22,7 @@ import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.FavoriteWatchManager
+import com.github.damontecres.wholphin.services.MediaReportService
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.ui.OneTimeLaunchedEffect
 import com.github.damontecres.wholphin.ui.data.AddPlaylistViewModel
@@ -33,12 +34,14 @@ import com.github.damontecres.wholphin.ui.detail.buildMoreDialogItemsForHome
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.main.HomePageContent
 import com.github.damontecres.wholphin.ui.nav.Destination
+import com.github.damontecres.wholphin.ui.rememberPosition
 import com.github.damontecres.wholphin.util.ApiRequestPager
 import com.github.damontecres.wholphin.util.HomeRowLoadingState
 import com.github.damontecres.wholphin.util.LoadingState
+import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.launch
 import org.jellyfin.sdk.model.api.MediaType
 import java.util.UUID
 
@@ -46,6 +49,7 @@ abstract class RecommendedViewModel(
     val context: Context,
     val navigationManager: NavigationManager,
     val favoriteWatchManager: FavoriteWatchManager,
+    val mediaReportService: MediaReportService,
     private val backdropService: BackdropService,
 ) : ViewModel() {
     abstract fun init()
@@ -97,13 +101,13 @@ abstract class RecommendedViewModel(
     abstract fun update(
         @StringRes title: Int,
         row: HomeRowLoadingState,
-    )
+    ): HomeRowLoadingState
 
     fun update(
         @StringRes title: Int,
         block: suspend () -> List<BaseItem>,
-    ) {
-        viewModelScope.launch(Dispatchers.IO) {
+    ): Deferred<HomeRowLoadingState> =
+        viewModelScope.async(Dispatchers.IO) {
             val titleStr = context.getString(title)
             val row =
                 try {
@@ -113,7 +117,6 @@ abstract class RecommendedViewModel(
                 }
             update(title, row)
         }
-    }
 }
 
 @Composable
@@ -137,18 +140,20 @@ fun RecommendedContent(
 
     when (val state = loading) {
         is LoadingState.Error -> {
-            ErrorMessage(state)
+            ErrorMessage(state, modifier)
         }
 
         LoadingState.Loading,
         LoadingState.Pending,
         -> {
-            LoadingPage()
+            LoadingPage(modifier)
         }
 
         LoadingState.Success -> {
+            var position by rememberPosition()
             HomePageContent(
                 homeRows = rows,
+                position = position,
                 onClickItem = { _, item ->
                     viewModel.navigationManager.navigateTo(item.destination())
                 },
@@ -158,7 +163,21 @@ fun RecommendedContent(
                 onClickPlay = { _, item ->
                     viewModel.navigationManager.navigateTo(Destination.Playback(item))
                 },
-                onFocusPosition = onFocusPosition,
+                onFocusPosition = {
+                    position = it
+                    val nonEmptyRowBefore =
+                        rows
+                            .subList(0, it.row)
+                            .count {
+                                it is HomeRowLoadingState.Success && it.items.isEmpty()
+                            }
+                    onFocusPosition?.invoke(
+                        RowColumn(
+                            it.row - nonEmptyRowBefore,
+                            it.column,
+                        ),
+                    )
+                },
                 showClock = preferences.appPreferences.interfacePreferences.showClock,
                 onUpdateBackdrop = viewModel::updateBackdrop,
                 modifier = modifier,
@@ -190,6 +209,7 @@ fun RecommendedContent(
                                 playlistViewModel.loadPlaylists(MediaType.VIDEO)
                                 showPlaylistDialog.makePresent(it)
                             },
+                            onSendMediaInfo = viewModel.mediaReportService::sendReportFor,
                         ),
                 ),
             onDismissRequest = { moreDialog.makeAbsent() },

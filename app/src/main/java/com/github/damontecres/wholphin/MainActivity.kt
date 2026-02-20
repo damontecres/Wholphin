@@ -3,6 +3,7 @@ package com.github.damontecres.wholphin
 import android.content.Intent
 import android.content.res.Configuration
 import android.os.Bundle
+import android.view.WindowManager
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
@@ -20,6 +21,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.unit.dp
 import androidx.datastore.core.DataStore
@@ -50,12 +52,14 @@ import com.github.damontecres.wholphin.services.RefreshRateService
 import com.github.damontecres.wholphin.services.ServerEventListener
 import com.github.damontecres.wholphin.services.SetupDestination
 import com.github.damontecres.wholphin.services.SetupNavigationManager
+import com.github.damontecres.wholphin.services.SuggestionsSchedulerService
 import com.github.damontecres.wholphin.services.UpdateChecker
 import com.github.damontecres.wholphin.services.UserSwitchListener
 import com.github.damontecres.wholphin.services.hilt.AuthOkHttpClient
 import com.github.damontecres.wholphin.services.tvprovider.TvProviderSchedulerService
 import com.github.damontecres.wholphin.ui.CoilConfig
 import com.github.damontecres.wholphin.ui.LocalImageUrlService
+import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.detail.series.SeasonEpisodeIds
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.nav.ApplicationContent
@@ -65,9 +69,13 @@ import com.github.damontecres.wholphin.ui.setup.SwitchUserContent
 import com.github.damontecres.wholphin.ui.theme.WholphinTheme
 import com.github.damontecres.wholphin.ui.util.ProvideLocalClock
 import com.github.damontecres.wholphin.util.DebugLogTree
+import com.github.damontecres.wholphin.util.ExceptionHandler
 import dagger.hilt.android.AndroidEntryPoint
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.launch
 import okhttp3.OkHttpClient
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.serializer.toUUIDOrNull
@@ -112,6 +120,9 @@ class MainActivity : AppCompatActivity() {
     @Inject
     lateinit var tvProviderSchedulerService: TvProviderSchedulerService
 
+    @Inject
+    lateinit var suggestionsSchedulerService: SuggestionsSchedulerService
+
     // Note: unused but injected to ensure it is created
     @Inject
     lateinit var serverEventListener: ServerEventListener
@@ -125,23 +136,46 @@ class MainActivity : AppCompatActivity() {
     @OptIn(ExperimentalTvMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        instance = this
         Timber.i("MainActivity.onCreate: savedInstanceState is null=${savedInstanceState == null}")
         lifecycle.addObserver(playbackLifecycleObserver)
         if (savedInstanceState == null) {
-            appUpgradeHandler.copySubfont(false)
+            lifecycleScope.launchIO {
+                appUpgradeHandler.copySubfont(false)
+            }
         }
-        refreshRateService.refreshRateMode.observe(this) { modeId ->
-            // Listen for refresh rate changes
-            val attrs = window.attributes
-            if (attrs.preferredDisplayModeId != modeId) {
-                Timber.d("Switch preferredDisplayModeId to %s", modeId)
-                window.attributes = attrs.apply { preferredDisplayModeId = modeId }
+        viewModel.serverRepository.currentUser.observe(this) { user ->
+            if (user?.hasPin == true) {
+                window?.setFlags(
+                    WindowManager.LayoutParams.FLAG_SECURE,
+                    WindowManager.LayoutParams.FLAG_SECURE,
+                )
+            } else {
+                window?.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
             }
         }
         viewModel.appStart()
-        val requestedDestination = this.intent?.let(::extractDestination)
         setContent {
             val appPreferences by userPreferencesDataStore.data.collectAsState(null)
+            if (appPreferences == null) {
+                // Show loading page if it is taking a while to get app preferences
+                var showLoading by remember { mutableStateOf(false) }
+                LaunchedEffect(Unit) {
+                    delay(500)
+                    Timber.i("Showing loading page")
+                    showLoading = true
+                }
+                if (showLoading) {
+                    Box(
+                        modifier =
+                            Modifier
+                                .fillMaxSize()
+                                .background(Color.Black),
+                    ) {
+                        LoadingPage()
+                    }
+                }
+            }
             appPreferences?.let { appPreferences ->
                 LaunchedEffect(appPreferences.signInAutomatically) {
                     signInAuto = appPreferences.signInAutomatically
@@ -246,6 +280,10 @@ class MainActivity : AppCompatActivity() {
                                                     }
 
                                                     if (showContent) {
+                                                        val requestedDestination =
+                                                            remember(intent) {
+                                                                intent?.let(::extractDestination)
+                                                            }
                                                         ApplicationContent(
                                                             user = current.user,
                                                             server = current.server,
@@ -292,14 +330,6 @@ class MainActivity : AppCompatActivity() {
         super.onRestart()
         Timber.d("onRestart")
         viewModel.appStart()
-//        val signInAutomatically =
-//            runBlocking { userPreferencesDataStore.data.firstOrNull()?.signInAutomatically } ?: true
-
-//        // TODO PIN-related
-// //        if (!signInAutomatically || serverRepository.currentUser.value?.hasPin == true) {
-//        if (!signInAutomatically) {
-//            serverRepository.closeSession()
-//        }
     }
 
     override fun onStop() {
@@ -341,6 +371,7 @@ class MainActivity : AppCompatActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         Timber.v("onNewIntent")
+        setIntent(intent)
         extractDestination(intent)?.let {
             navigationManager.replace(it)
         }
@@ -377,6 +408,16 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+    fun changeDisplayMode(modeId: Int) {
+        lifecycleScope.launch(Dispatchers.Main + ExceptionHandler(autoToast = true)) {
+            val attrs = window.attributes
+            if (attrs.preferredDisplayModeId != modeId) {
+                Timber.d("Switch preferredDisplayModeId to %s", modeId)
+                window.attributes = attrs.apply { preferredDisplayModeId = modeId }
+            }
+        }
+    }
+
     companion object {
         const val INTENT_ITEM_ID = "itemId"
         const val INTENT_ITEM_TYPE = "itemType"
@@ -384,6 +425,9 @@ class MainActivity : AppCompatActivity() {
         const val INTENT_EPISODE_NUMBER = "epNum"
         const val INTENT_SEASON_NUMBER = "seaNum"
         const val INTENT_SEASON_ID = "seaId"
+
+        lateinit var instance: MainActivity
+            private set
     }
 }
 
@@ -392,7 +436,7 @@ class MainActivityViewModel
     @Inject
     constructor(
         private val preferences: DataStore<AppPreferences>,
-        private val serverRepository: ServerRepository,
+        val serverRepository: ServerRepository,
         private val navigationManager: SetupNavigationManager,
         private val deviceProfileService: DeviceProfileService,
         private val backdropService: BackdropService,
@@ -402,15 +446,20 @@ class MainActivityViewModel
                 try {
                     val prefs =
                         preferences.data.firstOrNull() ?: AppPreferences.getDefaultInstance()
-                    if (prefs.signInAutomatically) {
+                    val userHasPin = serverRepository.currentUser.value?.hasPin == true
+                    if (prefs.signInAutomatically && !userHasPin) {
                         val current =
                             serverRepository.restoreSession(
                                 prefs.currentServerId?.toUUIDOrNull(),
                                 prefs.currentUserId?.toUUIDOrNull(),
                             )
                         if (current != null) {
-                            // Restored
-                            navigationManager.navigateTo(SetupDestination.AppContent(current))
+                            if (current.user.hasPin) {
+                                navigationManager.navigateTo(SetupDestination.UserList(current.server))
+                            } else {
+                                // Restored
+                                navigationManager.navigateTo(SetupDestination.AppContent(current))
+                            }
                         } else {
                             // Did not restore
                             navigationManager.navigateTo(SetupDestination.ServerList)

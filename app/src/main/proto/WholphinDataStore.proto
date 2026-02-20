@@ -32,6 +32,7 @@ enum MediaExtensionStatus{
 enum PlayerBackend{
   EXO_PLAYER = 0;
   MPV = 1;
+  PREFER_MPV = 2;
 }
 
 message MpvOptions{
@@ -46,6 +47,7 @@ message PlaybackOverrides{
   bool direct_play_pgs = 4;
   MediaExtensionStatus media_extensions_enabled = 5;
   bool direct_play_dolby_vision_e_l = 6;
+  bool decode_av1 = 7;
 }
 
 message PlaybackPreferences {
@@ -80,6 +82,7 @@ message HomePagePreferences{
   int32 max_items_per_row = 1;
   bool enable_rewatching_next_up = 2;
   bool combine_continue_next = 3;
+  int32 max_days_next_up = 4;
 }
 
 enum ThemeSongVolume {
@@ -125,6 +128,7 @@ message SubtitlePreferences{
   bool font_italic = 10;
   int32 margin = 11;
   int32 edge_thickness = 12;
+  int32 image_subtitle_opacity = 13;
 }
 
 message LiveTvPreferences {
@@ -151,10 +155,16 @@ message InterfacePreferences {
   LiveTvPreferences live_tv_preferences = 8;
   BackdropStyle backdrop_style = 9;
   bool combined_search_results = 10;
+  SubtitlePreferences hdr_subtitles_preferences = 10;
 }
 
 message AdvancedPreferences {
   int64 image_disk_cache_size_bytes = 1;
+}
+
+message PhotoPreferences{
+  int64 slideshow_duration = 1;
+  bool slideshow_play_videos = 2;
 }
 
 message AppPreferences {
@@ -172,4 +182,5 @@ message AppPreferences {
   bool debug_logging = 9;
   AdvancedPreferences advanced_preferences = 10;
   bool sign_in_automatically = 11;
+  PhotoPreferences photo_preferences = 12;
 }

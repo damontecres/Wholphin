@@ -21,7 +21,10 @@ class PlaybackLifecycleObserver
 
         override fun onStart(owner: LifecycleOwner) {
             val lastDest = navigationManager.backStack.lastOrNull()
-            if (lastDest is Destination.Playback || lastDest is Destination.PlaybackList) {
+            if (lastDest is Destination.Playback ||
+                lastDest is Destination.PlaybackList ||
+                lastDest is Destination.Slideshow
+            ) {
                 navigationManager.goBack()
             }
             wasPlaying = null

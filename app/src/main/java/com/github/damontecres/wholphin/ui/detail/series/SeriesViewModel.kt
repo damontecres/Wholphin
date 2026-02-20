@@ -13,10 +13,10 @@ import com.github.damontecres.wholphin.data.model.DiscoverItem
 import com.github.damontecres.wholphin.data.model.ItemPlayback
 import com.github.damontecres.wholphin.data.model.Person
 import com.github.damontecres.wholphin.data.model.Trailer
-import com.github.damontecres.wholphin.preferences.ThemeSongVolume
 import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.ExtrasService
 import com.github.damontecres.wholphin.services.FavoriteWatchManager
+import com.github.damontecres.wholphin.services.MediaReportService
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.PeopleFavorites
 import com.github.damontecres.wholphin.services.SeerrService
@@ -40,6 +40,7 @@ import com.github.damontecres.wholphin.util.GetEpisodesRequestHandler
 import com.github.damontecres.wholphin.util.GetItemsRequestHandler
 import com.github.damontecres.wholphin.util.LoadingExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
+import com.google.common.cache.CacheBuilder
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
@@ -58,6 +59,7 @@ import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.libraryApi
 import org.jellyfin.sdk.api.client.extensions.tvShowsApi
+import org.jellyfin.sdk.api.client.extensions.userLibraryApi
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.ItemFields
 import org.jellyfin.sdk.model.api.ItemSortBy
@@ -84,6 +86,7 @@ class SeriesViewModel
         private val trailerService: TrailerService,
         private val extrasService: ExtrasService,
         val streamChoiceService: StreamChoiceService,
+        val mediaReportService: MediaReportService,
         private val userPreferencesService: UserPreferencesService,
         private val backdropService: BackdropService,
         private val seerrService: SeerrService,
@@ -122,6 +125,7 @@ class SeriesViewModel
                 ) + Dispatchers.IO,
             ) {
                 Timber.v("Start")
+                addCloseable { themeSongPlayer.stop() }
                 val item = fetchItem(seriesId)
                 backdropService.submit(item)
 
@@ -222,15 +226,16 @@ class SeriesViewModel
             }
         }
 
-        /**
-         * If the series has a theme song & app settings allow, play it
-         */
-        fun maybePlayThemeSong(
-            seriesId: UUID,
-            playThemeSongs: ThemeSongVolume,
-        ) {
+        fun onResumePage() {
             viewModelScope.launchIO {
-                themeSongPlayer.playThemeFor(seriesId, playThemeSongs)
+                item.value?.let {
+                    backdropService.submit(it)
+                    val playThemeSongs =
+                        userPreferencesService
+                            .getCurrent()
+                            .appPreferences.interfacePreferences.playThemeSongs
+                    themeSongPlayer.playThemeFor(seriesId, playThemeSongs)
+                }
             }
         }
 
@@ -292,14 +297,16 @@ class SeriesViewModel
                         listOf(
                             ItemFields.MEDIA_SOURCES,
                             ItemFields.MEDIA_SOURCE_COUNT,
-                            ItemFields.MEDIA_STREAMS,
                             ItemFields.OVERVIEW,
                             ItemFields.CUSTOM_RATING,
-                            ItemFields.TRICKPLAY,
                             ItemFields.PRIMARY_IMAGE_ASPECT_RATIO,
-                            ItemFields.PEOPLE,
                         ),
                 )
+            Timber.v(
+                "loadEpisodesInternal: episodeId=%s, episodeNumber=%s",
+                episodeId,
+                episodeNumber,
+            )
             val pager = ApiRequestPager(api, request, GetEpisodesRequestHandler, viewModelScope)
             pager.init(episodeNumber ?: 0)
             val initialIndex =
@@ -503,19 +510,34 @@ class SeriesViewModel
         }
 
         private var peopleInEpisodeJob: Job? = null
+        private val peopleInEpisodeCache =
+            CacheBuilder
+                .newBuilder()
+                .maximumSize(25)
+                .build<UUID, Deferred<PeopleInItem>>()
 
         suspend fun lookupPeopleInEpisode(item: BaseItem) {
             peopleInEpisodeJob?.cancel()
             if (peopleInEpisode.value?.itemId != item.id) {
                 peopleInEpisode.setValueOnMain(PeopleInItem())
+                val result =
+                    peopleInEpisodeCache
+                        .get(item.id) {
+                            viewModelScope.async(Dispatchers.IO) {
+                                val list =
+                                    api.userLibraryApi
+                                        .getItem(item.id)
+                                        .content.people
+                                        ?.map { Person.fromDto(it, api) }
+                                        .orEmpty()
+
+                                PeopleInItem(item.id, list)
+                            }
+                        }
                 peopleInEpisodeJob =
                     viewModelScope.launch(ExceptionHandler()) {
                         delay(250)
-                        val people =
-                            item.data.people
-                                ?.letNotEmpty { it.map { Person.fromDto(it, api) } }
-                                .orEmpty()
-                        peopleInEpisode.setValueOnMain(PeopleInItem(item.id, people))
+                        peopleInEpisode.setValueOnMain(result.await())
                     }
             }
         }

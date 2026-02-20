@@ -1,22 +1,21 @@
 [versions]
 aboutLibraries = "13.2.1"
 acra = "5.13.1"
-agp = "8.13.2"
+agp = "9.0.1"
 auto-service = "1.1.1"
 autoServiceKsp = "1.2.0"
 desugar_jdk_libs = "2.1.5"
-hiltCompiler = "1.3.0"
 hiltNavigationCompose = "1.3.0"
 hiltWork = "1.3.0"
-kotlin = "2.3.0"
-kotlinxCoroutinesCore = "1.10.2"
-ksp = "2.3.0"
+kache = "2.1.1"
+kotlin = "2.3.10"
+ksp = "2.3.6"
 coreKtx = "1.17.0"
 appcompat = "1.7.1"
-composeBom = "2025.12.01"
-mockk = "1.14.7"
-robolectric = "4.14.1"
-multiplatformMarkdownRenderer = "0.39.0"
+composeBom = "2026.02.00"
+mockk = "1.14.9"
+robolectric = "4.16.1"
+multiplatformMarkdownRenderer = "0.39.2"
 okhttpBom = "5.3.2"
 programguide = "1.6.0"
 slf4j2Timber = "1.2"
@@ -24,24 +23,26 @@ timber = "5.0.1"
 tvFoundation = "1.0.0-alpha12"
 tvMaterial = "1.0.1"
 lifecycleRuntimeKtx = "2.10.0"
-activityCompose = "1.12.2"
-androidx-media3 = "1.9.0"
+activityCompose = "1.12.4"
+androidx-media3 = "1.9.2"
 coil = "3.3.0"
 jellyfin-sdk = "1.7.1"
-nav3Core = "1.0.0"
+nav3Core = "1.0.1"
 lifecycleViewmodelNav3 = "2.10.0"
 material3AdaptiveNav3 = "1.0.0-alpha03"
 protobuf = "0.9.6"
 datastore = "1.2.0"
-kotlinx-serialization = "1.9.0"
-protobuf-javalite = "4.33.2"
-hilt = "2.57.2"
+kotlinx-serialization = "1.10.0"
+protobuf-javalite = "4.33.5"
+hilt = "2.59.1"
 room = "2.8.4"
 preferenceKtx = "1.2.1"
 tvprovider = "1.1.0"
-workRuntimeKtx = "2.11.0"
+workRuntimeKtx = "2.11.1"
 paletteKtx = "1.0.0"
-openapi-generator = "7.18.0"
+kotlinxCoroutinesTest = "1.10.2"
+coreTesting = "2.2.0"
+openapi-generator = "7.20.0"
 
 [libraries]
 aboutlibraries-core = { module = "com.mikepenz:aboutlibraries-core", version.ref = "aboutLibraries" }
@@ -67,6 +68,7 @@ androidx-hilt-navigation-compose = { module = "androidx.hilt:hilt-navigation-com
 androidx-tv-foundation = { group = "androidx.tv", name = "tv-foundation", version.ref = "tvFoundation" }
 androidx-tv-material = { group = "androidx.tv", name = "tv-material", version.ref = "tvMaterial" }
 androidx-lifecycle-runtime-ktx = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version.ref = "lifecycleRuntimeKtx" }
+androidx-lifecycle-livedata-ktx = { group = "androidx.lifecycle", name = "lifecycle-livedata-ktx", version.ref = "lifecycleRuntimeKtx" }
 androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }
 androidx-datastore = { module = "androidx.datastore:datastore", version.ref = "datastore" }
 androidx-tvprovider = { module = "androidx.tvprovider:tvprovider", version.ref = "tvprovider" }
@@ -77,7 +79,8 @@ auto-service-ksp = { module = "dev.zacsweers.autoservice:auto-service-ksp", vers
 desugar_jdk_libs = { module = "com.android.tools:desugar_jdk_libs", version.ref = "desugar_jdk_libs" }
 hilt-android = { module = "com.google.dagger:hilt-android", version.ref = "hilt" }
 hilt-android-compiler = { module = "com.google.dagger:hilt-android-compiler", version.ref = "hilt" }
-kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinxCoroutinesCore" }
+kache = { module = "com.mayakapps.kache:kache", version.ref = "kache" }
+kache-file = { module = "com.mayakapps.kache:file-kache", version.ref = "kache" }
 mockk-agent = { module = "io.mockk:mockk-agent", version.ref = "mockk" }
 mockk-android = { module = "io.mockk:mockk-android", version.ref = "mockk" }
 robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }
@@ -97,6 +100,7 @@ androidx-media3-exoplayer-hls = { module = "androidx.media3:media3-exoplayer-hls
 androidx-media3-exoplayer-dash = { module = "androidx.media3:media3-exoplayer-dash", version.ref = "androidx-media3" }
 androidx-media3-ui = { module = "androidx.media3:media3-ui", version.ref = "androidx-media3" }
 androidx-media3-ui-compose = { module = "androidx.media3:media3-ui-compose", version.ref = "androidx-media3" }
+androidx-media3-effect = { group = "androidx.media3", name = "media3-effect", version.ref = "androidx-media3" }
 
 coil-core = { module = "io.coil-kt.coil3:coil-core", version.ref = "coil" }
 coil-compose = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coil" }
@@ -123,10 +127,11 @@ timber = { module = "com.jakewharton.timber:timber", version.ref = "timber" }
 androidx-preference-ktx = { group = "androidx.preference", name = "preference-ktx", version.ref = "preferenceKtx" }
 androidx-room-testing = { group = "androidx.room", name = "room-testing", version.ref = "room" }
 androidx-palette-ktx = { group = "androidx.palette", name = "palette-ktx", version.ref = "paletteKtx" }
+kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinxCoroutinesTest" }
+androidx-core-testing = { module = "androidx.arch.core:core-testing", version.ref = "coreTesting" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
-kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlin-plugin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
