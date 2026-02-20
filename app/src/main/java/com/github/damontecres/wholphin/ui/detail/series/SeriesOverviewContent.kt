@@ -134,7 +134,7 @@ fun SeriesOverviewContent(
                     .onFocusChanged { pageHasFocus = it.hasFocus },
         ) {
             Column(
-                verticalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
                 modifier =
                     Modifier
                         .focusGroup()
@@ -159,6 +159,7 @@ fun SeriesOverviewContent(
                         Modifier
                             .focusRequester(tabRowFocusRequester)
                             .padding(paddingValues)
+                            .padding(bottom = 4.dp)
                             .fillMaxWidth(),
                 )
                 SeriesName(series.name, Modifier.padding(start = 8.dp))
