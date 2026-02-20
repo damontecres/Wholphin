@@ -65,7 +65,7 @@
     <string name="more_like_this">Benzerleri</string>
     <string name="more">Diğer</string>
     <plurals name="movies">
-        <item quantity="one">Filmler</item>
+        <item quantity="one">Film</item>
         <item quantity="other">Filmler</item>
     </plurals>
     <string name="name">Ad</string>
@@ -80,7 +80,7 @@
     <string name="outro">Kapanış jeneriği</string>
     <string name="path">Yol</string>
     <plurals name="people">
-        <item quantity="one">Kişiler</item>
+        <item quantity="one">Kişi</item>
         <item quantity="other">Kişiler</item>
     </plurals>
     <string name="play_count">Oynatma Sayısı</string>
@@ -151,7 +151,7 @@
     <string name="top_unwatched">İzlenmemiş En İyiler</string>
     <string name="trailer">Fragman</string>
     <plurals name="trailers">
-        <item quantity="one">Fragmanlar</item>
+        <item quantity="one">Fragman</item>
         <item quantity="other">Fragmanlar</item>
     </plurals>
     <string name="tv_dvr_schedule">Kayıt Takvimi</string>
@@ -159,7 +159,7 @@
     <string name="tv_season">Sezon</string>
     <string name="tv_seasons">Sezonlar</string>
     <plurals name="tv_shows">
-        <item quantity="one">Diziler</item>
+        <item quantity="one">Dizi</item>
         <item quantity="other">Diziler</item>
     </plurals>
     <string name="ui_interface">Arayüz</string>
@@ -187,48 +187,48 @@
     <string name="runtime_sort">Süre</string>
     <string name="extras">Ekstralar</string>
     <plurals name="other_extras">
-        <item quantity="one">Diğer Ekstralar</item>
-        <item quantity="other"/>
+        <item quantity="one">Diğer Ekstra</item>
+        <item quantity="other">Diğer Ekstralar</item>
     </plurals>
     <plurals name="behind_the_scenes">
         <item quantity="one">Sahne Arkası</item>
-        <item quantity="other"/>
+        <item quantity="other">Sahne Arkaları</item>
     </plurals>
     <plurals name="theme_songs">
-        <item quantity="one">Tema şarkıları</item>
-        <item quantity="other"/>
+        <item quantity="one">Tema şarkısı</item>
+        <item quantity="other">Tema şarkıları</item>
     </plurals>
     <plurals name="theme_videos">
-        <item quantity="one">Tema Videoları</item>
-        <item quantity="other"/>
+        <item quantity="one">Tema Videosu</item>
+        <item quantity="other">Tema Videoları</item>
     </plurals>
     <plurals name="clips">
-        <item quantity="one">Klipler</item>
-        <item quantity="other"/>
+        <item quantity="one">Klip</item>
+        <item quantity="other">Klipler</item>
     </plurals>
     <plurals name="deleted_scenes">
-        <item quantity="one">Silinmiş Sahneler</item>
-        <item quantity="other"/>
+        <item quantity="one">Silinmiş Sahne</item>
+        <item quantity="other">Silinmiş Sahneler</item>
     </plurals>
     <plurals name="interviews">
-        <item quantity="one">Röportajlar</item>
-        <item quantity="other"/>
+        <item quantity="one">Röportaj</item>
+        <item quantity="other">Röportajlar</item>
     </plurals>
     <plurals name="scenes">
-        <item quantity="one">Sahneler</item>
-        <item quantity="other"/>
+        <item quantity="one">Sahne</item>
+        <item quantity="other">Sahneler</item>
     </plurals>
     <plurals name="samples">
-        <item quantity="one">Örnekler</item>
-        <item quantity="other"/>
+        <item quantity="one">Örnek</item>
+        <item quantity="other">Örnekler</item>
     </plurals>
     <plurals name="featurettes">
-        <item quantity="one">Tanıtımlar</item>
-        <item quantity="other"/>
+        <item quantity="one">Tanıtım</item>
+        <item quantity="other">Tanıtımlar</item>
     </plurals>
     <plurals name="shorts">
-        <item quantity="one">Kısa Videolar</item>
-        <item quantity="other"/>
+        <item quantity="one">Kısa Video</item>
+        <item quantity="other">Kısa Videolar</item>
     </plurals>
     <plurals name="downloads">
         <item quantity="one">%s indirme</item>
@@ -240,7 +240,7 @@
     </plurals>
     <plurals name="items">
         <item quantity="one">%d öğe</item>
-        <item quantity="other">%d öğe</item>
+        <item quantity="other">%d öğeler</item>
     </plurals>
     <plurals name="seconds">
         <item quantity="one">%d saniye</item>
@@ -455,8 +455,8 @@
     <string name="apply_all_rows">Tüm satırlara uygula</string>
     <string name="customize_home">Ana ekranı özelleştir</string>
     <string name="home_rows">Ana ekran satırları</string>
-    <string name="load_from_server">Sunucudan yükle</string>
-    <string name="save_to_server">Sunucuya kaydet</string>
+    <string name="load_from_server">Kullanıcı profilinden yükle</string>
+    <string name="save_to_server">Kullanıcı profiline kaydet</string>
     <string name="load_from_web_client">Web istemcisinden yükle</string>
     <string name="use_series">Dizi görselini kullan</string>
     <string name="add_row_for">%1$s için satır ekle</string>
@@ -470,4 +470,6 @@
     <string name="settings_saved">Ayarlar kaydedildi</string>
     <string name="display_presets">Görüntü ön ayarları</string>
     <string name="display_presets_description">Tüm satırları hızlıca stilize etmek için hazır ayarlar</string>
+    <string name="favorite_items">Favori %s</string>
+    <string name="customize_home_summary">Ana sayfadaki satırları ve görselleri seçin</string>
 </resources>
