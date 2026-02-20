@@ -18,6 +18,8 @@ import com.github.damontecres.wholphin.data.model.HomeRowConfig.NextUp
 import com.github.damontecres.wholphin.data.model.HomeRowConfig.RecentlyAdded
 import com.github.damontecres.wholphin.data.model.HomeRowConfig.RecentlyReleased
 import com.github.damontecres.wholphin.data.model.HomeRowConfig.Suggestions
+import com.github.damontecres.wholphin.data.model.HomeRowConfig.TvChannels
+import com.github.damontecres.wholphin.data.model.HomeRowConfig.TvPrograms
 import com.github.damontecres.wholphin.data.model.HomeRowViewOptions
 import com.github.damontecres.wholphin.data.model.SUPPORTED_HOME_PAGE_SETTINGS_VERSION
 import com.github.damontecres.wholphin.preferences.AppPreferences
@@ -230,8 +232,11 @@ class HomeSettingsViewModel
                             )
                         }
 
-                        MetaRowType.FAVORITES -> {
-                            throw IllegalArgumentException("Should use addRow(BaseItemKind) instead")
+                        MetaRowType.FAVORITES,
+                        MetaRowType.COLLECTION,
+                        MetaRowType.PLAYLIST,
+                        -> {
+                            throw IllegalArgumentException("Should use a different addRow() instead")
                         }
 
                         MetaRowType.DISCOVER -> {
@@ -305,7 +310,7 @@ class HomeSettingsViewModel
                                 id = id,
                                 title = title,
                                 config =
-                                    HomeRowConfig.TvChannels(
+                                    TvChannels(
                                         viewOptions = HomeRowViewOptions.liveTvDefault,
                                     ),
                             )
@@ -316,7 +321,7 @@ class HomeSettingsViewModel
                             HomeRowConfigDisplay(
                                 id = id,
                                 title = title,
-                                config = HomeRowConfig.TvPrograms(),
+                                config = TvPrograms(),
                             )
                         }
 
@@ -327,6 +332,12 @@ class HomeSettingsViewModel
                                 title = title,
                                 config = RecentlyAdded(library.itemId),
                             )
+                        }
+
+                        LibraryRowType.COLLECTION,
+                        LibraryRowType.PLAYLIST,
+                        -> {
+                            throw IllegalArgumentException("Use different addRow")
                         }
                     }
                 updateState {
@@ -356,6 +367,31 @@ class HomeSettingsViewModel
                 }
                 fetchRowData()
             }
+
+        fun addRow(
+            type: BaseItemKind,
+            parent: BaseItem,
+        ) = viewModelScope.launchIO {
+            Timber.v("Adding %s row for %s", type, parent.id)
+            val id = idCounter++
+            val newRow =
+                HomeRowConfigDisplay(
+                    id = id,
+                    title = parent.name ?: "",
+                    config =
+                        HomeRowConfig.ByParent(
+                            parentId = parent.id,
+                            recursive = true,
+                        ),
+                )
+            updateState {
+                it.copy(
+                    loading = LoadingState.Loading,
+                    rows = it.rows.toMutableList().apply { add(newRow) },
+                )
+            }
+            fetchRowData()
+        }
 
         fun updateViewOptions(
             rowId: Int,
