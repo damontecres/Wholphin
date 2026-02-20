@@ -3,10 +3,13 @@ package com.github.damontecres.wholphin
 import android.content.Intent
 import android.content.res.Configuration
 import android.os.Bundle
+import android.view.KeyEvent
 import android.view.WindowManager
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -49,6 +52,7 @@ import com.github.damontecres.wholphin.services.ImageUrlService
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.PlaybackLifecycleObserver
 import com.github.damontecres.wholphin.services.RefreshRateService
+import com.github.damontecres.wholphin.services.ScreensaverService
 import com.github.damontecres.wholphin.services.ServerEventListener
 import com.github.damontecres.wholphin.services.SetupDestination
 import com.github.damontecres.wholphin.services.SetupNavigationManager
@@ -59,6 +63,7 @@ import com.github.damontecres.wholphin.services.hilt.AuthOkHttpClient
 import com.github.damontecres.wholphin.services.tvprovider.TvProviderSchedulerService
 import com.github.damontecres.wholphin.ui.CoilConfig
 import com.github.damontecres.wholphin.ui.LocalImageUrlService
+import com.github.damontecres.wholphin.ui.components.AppScreensaver
 import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.detail.series.SeasonEpisodeIds
 import com.github.damontecres.wholphin.ui.launchIO
@@ -131,6 +136,9 @@ class MainActivity : AppCompatActivity() {
     @Inject
     lateinit var datePlayedInvalidationService: DatePlayedInvalidationService
 
+    @Inject
+    lateinit var screensaverService: ScreensaverService
+
     private var signInAuto = true
 
     @OptIn(ExperimentalTvMaterial3Api::class)
@@ -155,6 +163,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
         viewModel.appStart()
+        screensaverService.pulse()
         setContent {
             val appPreferences by userPreferencesDataStore.data.collectAsState(null)
             if (appPreferences == null) {
@@ -311,10 +320,30 @@ class MainActivity : AppCompatActivity() {
                                     }
                                 },
                             )
+                            val screenSaverState by screensaverService.state.collectAsState()
+                            BackHandler(screenSaverState.show) { screensaverService.stop() }
+                            if (screenSaverState.enabled) {
+                                AnimatedVisibility(
+                                    screenSaverState.show,
+                                    Modifier.fillMaxSize(),
+                                ) {
+                                    AppScreensaver(Modifier.fillMaxSize())
+                                }
+                            }
                         }
                     }
                 }
             }
+        }
+    }
+
+    override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        if (screensaverService.state.value.show) {
+            screensaverService.stop()
+            return true
+        } else {
+            screensaverService.pulse()
+            return super.dispatchKeyEvent(event)
         }
     }
 
