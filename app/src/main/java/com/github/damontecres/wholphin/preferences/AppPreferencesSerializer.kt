@@ -120,6 +120,16 @@ class AppPreferencesSerializer
                                             colorCodePrograms =
                                                 AppPreference.LiveTvColorCodePrograms.defaultValue
                                         }.build()
+
+                                screensaverPreference =
+                                    ScreensaverPreferences
+                                        .newBuilder()
+                                        .apply {
+                                            startDelay = ScreensaverPreference.DEFAULT_START_DELAY
+                                            duration = ScreensaverPreference.DEFAULT_DURATION
+                                            animate = ScreensaverPreference.Animate.defaultValue
+                                            maxAgeFilter = ScreensaverPreference.DEFAULT_MAX_AGE
+                                        }.build()
                             }.build()
 
                     advancedPreferences =
@@ -198,6 +208,11 @@ inline fun AppPreferences.updateAdvancedPreferences(block: AdvancedPreferences.B
 inline fun AppPreferences.updatePhotoPreferences(block: PhotoPreferences.Builder.() -> Unit): AppPreferences =
     update {
         photoPreferences = photoPreferences.toBuilder().apply(block).build()
+    }
+
+inline fun AppPreferences.updateScreensaverPreferences(block: ScreensaverPreferences.Builder.() -> Unit): AppPreferences =
+    updateInterfacePreferences {
+        screensaverPreference = screensaverPreference.toBuilder().apply(block).build()
     }
 
 fun SubtitlePreferences.Builder.resetSubtitles() {

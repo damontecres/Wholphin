@@ -8,6 +8,7 @@ import androidx.preference.PreferenceManager
 import com.github.damontecres.wholphin.WholphinApplication
 import com.github.damontecres.wholphin.preferences.AppPreference
 import com.github.damontecres.wholphin.preferences.AppPreferences
+import com.github.damontecres.wholphin.preferences.ScreensaverPreference
 import com.github.damontecres.wholphin.preferences.update
 import com.github.damontecres.wholphin.preferences.updateAdvancedPreferences
 import com.github.damontecres.wholphin.preferences.updateHomePagePreferences
@@ -16,6 +17,7 @@ import com.github.damontecres.wholphin.preferences.updateLiveTvPreferences
 import com.github.damontecres.wholphin.preferences.updateMpvOptions
 import com.github.damontecres.wholphin.preferences.updatePhotoPreferences
 import com.github.damontecres.wholphin.preferences.updatePlaybackOverrides
+import com.github.damontecres.wholphin.preferences.updateScreensaverPreferences
 import com.github.damontecres.wholphin.preferences.updateSubtitlePreferences
 import com.github.damontecres.wholphin.ui.preferences.PreferencesViewModel
 import com.github.damontecres.wholphin.ui.preferences.subtitle.SubtitleSettings
@@ -243,6 +245,17 @@ suspend fun upgradeApp(
         appPreferences.updateData {
             it.updateHomePagePreferences {
                 maxDaysNextUp = AppPreference.MaxDaysNextUp.defaultValue.toInt()
+            }
+        }
+    }
+
+    if (previous.isEqualOrBefore(Version.fromString("0.5.0-6-g0"))) {
+        appPreferences.updateData {
+            it.updateScreensaverPreferences {
+                startDelay = ScreensaverPreference.DEFAULT_START_DELAY
+                duration = ScreensaverPreference.DEFAULT_DURATION
+                animate = ScreensaverPreference.Animate.defaultValue
+                maxAgeFilter = ScreensaverPreference.DEFAULT_MAX_AGE
             }
         }
     }

@@ -997,6 +997,12 @@ sealed interface AppPreference<Pref, T> {
                 summaryOn = R.string.enabled,
                 summaryOff = R.string.disabled,
             )
+
+        val ScreensaverSettings =
+            AppDestinationPreference<AppPreferences>(
+                title = R.string.screensaver,
+                destination = Destination.Settings(PreferenceScreenOption.SCREENSAVER),
+            )
     }
 }
 
@@ -1011,6 +1017,7 @@ val basicPreferences =
                     AppPreference.RememberSelectedTab,
                     AppPreference.SubtitleStyle,
                     AppPreference.ThemeColors,
+                    AppPreference.ScreensaverSettings,
                 ),
         ),
         PreferenceGroup(
@@ -1199,6 +1206,20 @@ val liveTvPreferences =
         AppPreference.LiveTvFavoriteChannelsBeginning,
         AppPreference.LiveTvChannelSortByWatched,
         AppPreference.LiveTvColorCodePrograms,
+    )
+
+val screensaverPreferences =
+    listOf(
+        PreferenceGroup(
+            title = R.string.screensaver,
+            preferences =
+                listOf(
+                    ScreensaverPreference.StartDelay,
+                    ScreensaverPreference.Duration,
+                    ScreensaverPreference.Animate,
+                    ScreensaverPreference.MaxAge,
+                ),
+        ),
     )
 
 data class AppSwitchPreference<Pref>(

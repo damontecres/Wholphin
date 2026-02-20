@@ -50,6 +50,7 @@ import com.github.damontecres.wholphin.preferences.MpvPreferences
 import com.github.damontecres.wholphin.preferences.PlayerBackend
 import com.github.damontecres.wholphin.preferences.advancedPreferences
 import com.github.damontecres.wholphin.preferences.basicPreferences
+import com.github.damontecres.wholphin.preferences.screensaverPreferences
 import com.github.damontecres.wholphin.preferences.updatePlaybackPreferences
 import com.github.damontecres.wholphin.services.SeerrConnectionStatus
 import com.github.damontecres.wholphin.services.UpdateChecker
@@ -126,6 +127,7 @@ fun PreferencesContent(
             PreferenceScreenOption.ADVANCED -> advancedPreferences
             PreferenceScreenOption.EXO_PLAYER -> ExoPlayerPreferences
             PreferenceScreenOption.MPV -> MpvPreferences
+            PreferenceScreenOption.SCREENSAVER -> screensaverPreferences
         }
     val screenTitle =
         when (preferenceScreenOption) {
@@ -133,6 +135,7 @@ fun PreferencesContent(
             PreferenceScreenOption.ADVANCED -> R.string.advanced_settings
             PreferenceScreenOption.EXO_PLAYER -> R.string.exoplayer_options
             PreferenceScreenOption.MPV -> R.string.mpv_options
+            PreferenceScreenOption.SCREENSAVER -> R.string.screensaver
         }
 
     var visible by remember { mutableStateOf(false) }
@@ -593,6 +596,7 @@ fun PreferencesPage(
             PreferenceScreenOption.ADVANCED,
             PreferenceScreenOption.EXO_PLAYER,
             PreferenceScreenOption.MPV,
+            PreferenceScreenOption.SCREENSAVER,
             -> {
                 PreferencesContent(
                     initialPreferences,

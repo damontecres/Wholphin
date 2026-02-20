@@ -276,6 +276,11 @@
         <item quantity="one">%d second</item>
         <item quantity="other">%d seconds</item>
     </plurals>
+    <plurals name="minutes">
+        <item quantity="zero">%s minutes</item>
+        <item quantity="one">%s minute</item>
+        <item quantity="other">%s minutes</item>
+    </plurals>
 
     <plurals name="movies">
         <item quantity="zero">Movies</item>
@@ -522,6 +527,13 @@
     <string name="display_presets">Display presets</string>
     <string name="display_presets_description">Built-in presets to quickly style all rows</string>
     <string name="customize_home_summary">Choose rows and images on the home page</string>
+    <string name="start_after">Start after</string>
+    <string name="animate">Animate</string>
+    <string name="max_age_rating">Max age rating</string>
+    <string name="no_max">No max</string>
+    <string name="for_all_ages">For all ages</string>
+    <string name="up_to_age">Up to age %s</string>
+    <string name="screensaver">Screensaver</string>
 
     <string-array name="theme_song_volume">
         <item>Disabled</item>
