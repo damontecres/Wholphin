@@ -30,6 +30,9 @@ class ImageUrlService
             useSeriesForPrimary: Boolean,
             imageTags: Map<ImageType, String?>,
             imageType: ImageType,
+            parentThumbId: UUID? = null,
+            parentBackdropId: UUID? = null,
+            backdropTags: List<String> = emptyList(),
             fillWidth: Int? = null,
             fillHeight: Int? = null,
         ): String? =
@@ -54,8 +57,65 @@ class ImageUrlService
                     }
                 }
 
+                ImageType.THUMB -> {
+                    if (useSeriesForPrimary && parentThumbId != null &&
+                        (itemType == BaseItemKind.EPISODE || itemType == BaseItemKind.SEASON)
+                    ) {
+                        // Use parent's thumb
+                        getItemImageUrl(
+                            itemId = parentThumbId,
+                            imageType = imageType,
+                            fillWidth = fillWidth,
+                            fillHeight = fillHeight,
+                        )
+                    } else if (useSeriesForPrimary && parentBackdropId != null &&
+                        (itemType == BaseItemKind.EPISODE || itemType == BaseItemKind.SEASON)
+                    ) {
+                        // No parent thumb, so use backdrop instead
+                        getItemImageUrl(
+                            itemId = parentBackdropId,
+                            imageType = ImageType.BACKDROP,
+                            fillWidth = fillWidth,
+                            fillHeight = fillHeight,
+                        )
+                    } else if (parentThumbId != null && itemType == BaseItemKind.SEASON && imageType !in imageTags) {
+                        getItemImageUrl(
+                            itemId = parentThumbId,
+                            imageType = imageType,
+                            fillWidth = fillWidth,
+                            fillHeight = fillHeight,
+                        )
+                    } else if (useSeriesForPrimary &&
+                        parentThumbId == null &&
+                        itemType == BaseItemKind.EPISODE &&
+                        imageType !in imageTags
+                    ) {
+                        // Workaround to fall back to episode image if no parent thumb
+                        getItemImageUrl(
+                            itemId = itemId,
+                            imageType = ImageType.PRIMARY,
+                            fillWidth = fillWidth,
+                            fillHeight = fillHeight,
+                        )
+                    } else if (imageType !in imageTags && backdropTags.isNotEmpty()) {
+                        // If no thumb, use backdrop if available
+                        getItemImageUrl(
+                            itemId = itemId,
+                            imageType = ImageType.BACKDROP,
+                            fillWidth = fillWidth,
+                            fillHeight = fillHeight,
+                        )
+                    } else {
+                        getItemImageUrl(
+                            itemId = itemId,
+                            imageType = imageType,
+                            fillWidth = fillWidth,
+                            fillHeight = fillHeight,
+                        )
+                    }
+                }
+
                 ImageType.PRIMARY,
-                ImageType.THUMB,
                 ImageType.BANNER,
                 -> {
                     if (useSeriesForPrimary && seriesId != null &&
@@ -108,6 +168,9 @@ class ImageUrlService
                     useSeriesForPrimary = item.useSeriesForPrimary,
                     imageTags = item.data.imageTags.orEmpty(),
                     imageType = imageType,
+                    parentThumbId = item.data.parentThumbItemId,
+                    parentBackdropId = item.data.parentBackdropItemId,
+                    backdropTags = item.data.backdropImageTags.orEmpty(),
                     fillWidth = fillWidth,
                     fillHeight = fillHeight,
                 )
