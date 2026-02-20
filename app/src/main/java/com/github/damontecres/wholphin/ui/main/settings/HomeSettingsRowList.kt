@@ -141,7 +141,7 @@ fun HomeSettingsRowList(
                 )
             }
             item {
-                TitleText(stringResource(R.string.home_rows))
+                TitleText(stringResource(R.string.home_rows) + " (${state.rows.size})")
                 HorizontalDivider()
             }
             itemsIndexed(state.rows, key = { _, row -> row.id }) { index, row ->

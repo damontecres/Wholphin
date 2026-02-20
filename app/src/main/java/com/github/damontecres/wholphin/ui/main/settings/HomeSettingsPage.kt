@@ -66,13 +66,18 @@ fun HomeSettingsPage(
     val discoverEnabled = false // by viewModel.discoverEnabled.collectAsState(false)
 
     // Adds a row, waits until its done loading, then scrolls to the new row
-    fun addRow(func: () -> Job) {
+    fun addRow(
+        scrollToBottom: Boolean = true,
+        func: () -> Job,
+    ) {
         scope.launch(ExceptionHandler(autoToast = true)) {
             while (backStack.size > 1) {
                 backStack.removeAt(backStack.lastIndex)
             }
             func.invoke().join()
-            listState.animateScrollToItem(state.rows.lastIndex)
+            if (scrollToBottom) {
+                listState.animateScrollToItem(state.rows.lastIndex)
+            }
         }
     }
 
@@ -273,7 +278,7 @@ fun HomeSettingsPage(
                                     onClickReset = {
                                         showConfirmDialog =
                                             ShowConfirm(R.string.overwrite_local_settings) {
-                                                viewModel.resetToDefault()
+                                                addRow(false) { viewModel.resetToDefault() }
                                             }
                                     },
                                     modifier = destModifier,

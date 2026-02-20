@@ -127,6 +127,6 @@ enum class LibraryRowType(
     TV_CHANNELS(R.string.channels),
     TV_PROGRAMS(R.string.live_tv),
     RECENTLY_RECORDED(R.string.recently_recorded),
-    COLLECTION(R.string.collections),
+    COLLECTION(R.string.collection),
     PLAYLIST(R.string.playlist),
 }
