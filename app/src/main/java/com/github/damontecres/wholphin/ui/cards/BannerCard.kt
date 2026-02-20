@@ -95,7 +95,7 @@ fun BannerCard(
                 null
             }
         }
-    var imageError by remember { mutableStateOf(false) }
+    var imageError by remember(imageUrl) { mutableStateOf(false) }
     Card(
         modifier = modifier.size(cardHeight * aspectRatio, cardHeight),
         onClick = onClick,

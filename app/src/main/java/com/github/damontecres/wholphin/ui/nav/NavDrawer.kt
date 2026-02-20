@@ -27,6 +27,7 @@ import androidx.compose.material.icons.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -54,6 +55,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.findViewTreeViewModelStoreOwner
+import androidx.lifecycle.viewModelScope
 import androidx.tv.material3.DrawerState
 import androidx.tv.material3.DrawerValue
 import androidx.tv.material3.Icon
@@ -77,7 +79,9 @@ import com.github.damontecres.wholphin.services.SetupNavigationManager
 import com.github.damontecres.wholphin.ui.FontAwesome
 import com.github.damontecres.wholphin.ui.components.TimeDisplay
 import com.github.damontecres.wholphin.ui.ifElse
+import com.github.damontecres.wholphin.ui.launchDefault
 import com.github.damontecres.wholphin.ui.preferences.PreferenceScreenOption
+import com.github.damontecres.wholphin.ui.setValueOnMain
 import com.github.damontecres.wholphin.ui.setup.UserIconCardImage
 import com.github.damontecres.wholphin.ui.spacedByWithFooter
 import com.github.damontecres.wholphin.ui.theme.LocalTheme
@@ -87,6 +91,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.imageApi
 import org.jellyfin.sdk.model.api.CollectionType
+import timber.log.Timber
 import java.util.UUID
 import javax.inject.Inject
 
@@ -145,6 +150,54 @@ class NavDrawerViewModel
         }
 
         fun getUserImage(user: JellyfinUser): String = api.imageApi.getUserImageUrl(user.id)
+
+        fun updateSelectedIndex() {
+            viewModelScope.launchDefault {
+                val asDestinations =
+                    (
+                        state.value.items +
+                            listOf(
+                                NavDrawerItem.More,
+                                NavDrawerItem.Discover,
+                            ) + state.value.moreItems
+                    ).map {
+                        if (it is ServerNavDrawerItem) {
+                            it.destination
+                        } else if (it is NavDrawerItem.Favorites) {
+                            Destination.Favorites
+                        } else if (it is NavDrawerItem.Discover) {
+                            Destination.Discover
+                        } else {
+                            null
+                        }
+                    }
+
+                val backstack = navigationManager.backStack.toList().reversed()
+                for (i in 0..<backstack.size) {
+                    val key = backstack[i]
+                    if (key is Destination) {
+                        val index =
+                            if (key is Destination.Home) {
+                                -1
+                            } else if (key is Destination.Search) {
+                                -2
+                            } else {
+                                val idx = asDestinations.indexOf(key)
+                                if (idx >= 0) {
+                                    idx
+                                } else {
+                                    null
+                                }
+                            }
+                        Timber.v("Found $index => $key")
+                        if (index != null) {
+                            selectedIndex.setValueOnMain(index)
+                            break
+                        }
+                    }
+                }
+            }
+        }
     }
 
 sealed interface NavDrawerItem {
@@ -208,6 +261,7 @@ fun NavDrawer(
             key = "${server.id}_${user.id}", // Keyed to the server & user to ensure its reset when switching either
         ),
 ) {
+    LaunchedEffect(Unit) { viewModel.updateSelectedIndex() }
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
     val density = LocalDensity.current
