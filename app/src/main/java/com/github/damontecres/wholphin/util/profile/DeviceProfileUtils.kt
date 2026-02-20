@@ -2,7 +2,9 @@ package com.github.damontecres.wholphin.util.profile
 
 // Adapted from https://github.com/jellyfin/jellyfin-androidtv/blob/v0.19.4/app/src/main/java/org/jellyfin/androidtv/util/profile/deviceProfile.kt
 
+import android.media.MediaCodecInfo
 import androidx.media3.common.MimeTypes
+import com.github.damontecres.wholphin.util.profile.KnownDefects.supportsHi10P52
 import org.jellyfin.sdk.model.api.CodecType
 import org.jellyfin.sdk.model.api.DlnaProfileType
 import org.jellyfin.sdk.model.api.EncodingContext
@@ -92,9 +94,14 @@ fun createDeviceProfile(
     val hevcMainLevel = mediaTest.getHevcMainLevel()
     val hevcMain10Level = mediaTest.getHevcMain10Level()
     val supportsAVC = mediaTest.supportsAVC()
-    val supportsAVCHigh10 = mediaTest.supportsAVCHigh10()
+    val supportsAVCHigh10 = mediaTest.supportsAVCHigh10() || supportsHi10P52
     val avcMainLevel = mediaTest.getAVCMainLevel()
-    val avcHigh10Level = mediaTest.getAVCHigh10Level()
+    val avcHigh10Level =
+        if (supportsHi10P52) {
+            MediaCodecInfo.CodecProfileLevel.AVCLevel52
+        } else {
+            mediaTest.getAVCHigh10Level()
+        }
     val supportsAV1 = mediaTest.supportsAV1()
     val supportsAV1Main10 = mediaTest.supportsAV1Main10()
     val supportsVC1 = mediaTest.supportsVc1()
