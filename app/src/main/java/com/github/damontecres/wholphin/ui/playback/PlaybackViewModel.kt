@@ -1430,9 +1430,9 @@ class PlaybackViewModel
             }
         }
 
-    override fun onIsPlayingChanged(isPlaying: Boolean) {
-        screensaverService.keepScreenOn(isPlaying)
-    }
+        override fun onIsPlayingChanged(isPlaying: Boolean) {
+            screensaverService.keepScreenOn(isPlaying)
+        }
     }
 
 data class PlayerState(

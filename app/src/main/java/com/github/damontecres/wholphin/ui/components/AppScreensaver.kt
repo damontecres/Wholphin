@@ -1,34 +1,46 @@
 package com.github.damontecres.wholphin.ui.components
 
 import android.content.Context
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.datastore.core.DataStore
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.LifecycleStartEffect
 import androidx.lifecycle.viewModelScope
+import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import coil3.compose.AsyncImage
+import coil3.imageLoader
 import coil3.request.ImageRequest
-import coil3.request.crossfade
+import coil3.request.transitionFactory
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.services.ImageUrlService
+import com.github.damontecres.wholphin.ui.CrossFadeFactory
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.util.ApiRequestPager
 import com.github.damontecres.wholphin.util.GetItemsRequestHandler
@@ -45,6 +57,7 @@ import org.jellyfin.sdk.model.api.ItemSortBy
 import org.jellyfin.sdk.model.api.request.GetItemsRequest
 import timber.log.Timber
 import javax.inject.Inject
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
 @HiltViewModel
@@ -83,7 +96,17 @@ class ScreensaverViewModel
                             val backdropUrl = imageUrlService.getItemImageUrl(item, ImageType.BACKDROP)
                             val logoUrl = imageUrlService.getItemImageUrl(item, ImageType.LOGO)
                             if (backdropUrl != null) {
+                                val result =
+                                    context.imageLoader
+                                        .enqueue(
+                                            ImageRequest
+                                                .Builder(context)
+                                                .data(backdropUrl)
+                                                .build(),
+                                        ).job
+                                        .await()
                                 currentItem.value = CurrentItem(item, backdropUrl, logoUrl, item.title ?: "")
+                                // TODO
                                 delay(5.seconds)
                             }
                         }
@@ -118,51 +141,82 @@ fun AppScreensaver(
     }
     val prefs by viewModel.preferencesDataStore.data.collectAsState(AppPreferences.getDefaultInstance())
     val currentItem by viewModel.currentItem.collectAsState()
+
     Box(
         modifier
             .background(Color.Black),
     ) {
         currentItem?.let { currentItem ->
-            AsyncImage(
-                model =
-                    ImageRequest
-                        .Builder(LocalContext.current)
-                        .data(currentItem.backdropUrl)
-                        .crossfade(true)
-                        .build(),
-                contentDescription = null,
-                modifier = Modifier.fillMaxSize(),
-            )
-
-            var logoError by remember(currentItem) { mutableStateOf(false) }
-            if (!logoError) {
+            key(currentItem) {
+                var started by remember(currentItem) { mutableStateOf(false) }
+                val scale by animateFloatAsState(
+                    if (started) 1.15f else 1f,
+                    animationSpec =
+                        tween(
+                            durationMillis = 10_000,
+                            delayMillis = 0,
+                            LinearEasing,
+                        ),
+                )
+                LaunchedEffect(Unit) {
+                    delay(100)
+                    started = true
+                }
                 AsyncImage(
                     model =
                         ImageRequest
                             .Builder(LocalContext.current)
-                            .data(currentItem.logoUrl)
-                            .crossfade(true)
+                            .data(currentItem.backdropUrl)
+                            .transitionFactory(CrossFadeFactory(750.milliseconds))
                             .build(),
-                    contentDescription = "Logo",
-                    alignment = Alignment.BottomStart,
-                    onError = {
-                        logoError = true
-                    },
+                    contentDescription = null,
                     modifier =
                         Modifier
-                            .align(Alignment.BottomStart)
-                            .size(width = 240.dp, height = 120.dp)
-                            .padding(16.dp),
+                            .fillMaxSize()
+                            .graphicsLayer {
+                                scaleX = scale
+                                scaleY = scale
+                            },
                 )
-            } else {
-                Text(
-                    text = currentItem.title,
-                    modifier =
-                        Modifier
-                            .align(Alignment.BottomStart)
-                            .size(width = 240.dp, height = 120.dp)
-                            .padding(16.dp),
-                )
+
+                var logoError by remember(currentItem) { mutableStateOf(false) }
+                val alignment = listOf(Alignment.BottomStart, Alignment.BottomEnd).random()
+                if (!logoError) {
+                    AsyncImage(
+                        model =
+                            ImageRequest
+                                .Builder(LocalContext.current)
+                                .data(currentItem.logoUrl)
+                                .transitionFactory(CrossFadeFactory(750.milliseconds))
+                                .build(),
+                        contentDescription = "Logo",
+                        onError = {
+                            logoError = true
+                        },
+                        modifier =
+                            Modifier
+                                .align(alignment)
+                                .size(width = 240.dp, height = 120.dp)
+                                .padding(16.dp),
+                    )
+                } else {
+                    Box(
+                        modifier =
+                            Modifier
+                                .align(alignment)
+                                .padding(16.dp)
+                                .fillMaxWidth(.5f)
+                                .fillMaxHeight(.3f),
+                    ) {
+                        Text(
+                            text = currentItem.title,
+                            style = MaterialTheme.typography.displaySmall,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.align(alignment),
+                        )
+                    }
+                }
             }
         }
         if (prefs.interfacePreferences.showClock) {

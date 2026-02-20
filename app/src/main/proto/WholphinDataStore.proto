@@ -144,6 +144,12 @@ enum BackdropStyle{
   BACKDROP_NONE = 2;
 }
 
+//message ScreensaverPreferences{
+//  int64 start_delay = 1;
+//  int64 duration = 2;
+//
+//}
+
 message InterfacePreferences {
   ThemeSongVolume play_theme_songs = 1;
   bool remember_selected_tab = 2;

@@ -66,6 +66,7 @@ import com.github.damontecres.wholphin.ui.LocalImageUrlService
 import com.github.damontecres.wholphin.ui.components.AppScreensaver
 import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.detail.series.SeasonEpisodeIds
+import com.github.damontecres.wholphin.ui.launchDefault
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.nav.ApplicationContent
 import com.github.damontecres.wholphin.ui.nav.Destination
@@ -163,7 +164,6 @@ class MainActivity : AppCompatActivity() {
             }
         }
         viewModel.appStart()
-        screensaverService.pulse()
         setContent {
             val appPreferences by userPreferencesDataStore.data.collectAsState(null)
             if (appPreferences == null) {
@@ -350,7 +350,8 @@ class MainActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         Timber.d("onResume")
-        lifecycleScope.launchIO {
+        lifecycleScope.launchDefault {
+            screensaverService.pulse()
             appUpgradeHandler.run()
         }
     }

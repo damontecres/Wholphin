@@ -36,29 +36,34 @@ class ScreensaverService
                 .onEach {
                     _state.update {
                         // TODO prefs
+                        keepScreenOnInternal(true)
                         ScreensaverState(true, false, false)
                     }
                 }.launchIn(scope)
         }
 
         fun pulse() {
-            Timber.v("pulse")
-            _state.update {
-                if (!it.active) {
-                    it.copy(active = false)
-                } else {
-                    it
-                }
-            }
             waitJob?.cancel()
-            if (!_state.value.paused) {
-                waitJob =
-                    scope.launch(ExceptionHandler()) {
-                        delay(10.seconds)
-                        _state.update {
-                            it.copy(active = true)
-                        }
+            if (_state.value.enabled) {
+                Timber.v("pulse")
+                _state.update {
+                    if (!it.active) {
+                        it.copy(active = false)
+                    } else {
+                        it
                     }
+                }
+
+                if (!_state.value.paused) {
+                    waitJob =
+                        scope.launch(ExceptionHandler()) {
+                            // TODO
+                            delay(10.seconds)
+                            _state.update {
+                                it.copy(active = true)
+                            }
+                        }
+                }
             }
         }
 
@@ -69,19 +74,27 @@ class ScreensaverService
         fun keepScreenOn(keep: Boolean) {
             scope.launch {
                 val screensaverEnabled = true // TODO userPreferencesService.getCurrent().appPreferences.interfacePreferences
+                Timber.d("Keep screen on: %s, screensaverEnabled=%s", keep, screensaverEnabled)
                 if (screensaverEnabled) {
                     // Page is requesting to keep screen on, so we don't wait to show the screensaver
                     _state.update {
                         it.copy(active = false, paused = keep)
                     }
-                } else {
-                    val window = MainActivity.instance.window
-                    if (keep) {
-                        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-                    } else {
-                        window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                    if (!keep) {
+                        pulse()
                     }
+                } else {
+                    keepScreenOnInternal(keep)
                 }
+            }
+        }
+
+        private fun keepScreenOnInternal(keep: Boolean) {
+            val window = MainActivity.instance.window
+            if (keep) {
+                window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+            } else {
+                window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
             }
         }
     }
