@@ -149,6 +149,7 @@ message ScreensaverPreferences{
   int64 duration = 2;
   bool animate = 3;
   int32 max_age_filter = 4;
+  bool enabled = 5;
 }
 
 message InterfacePreferences {

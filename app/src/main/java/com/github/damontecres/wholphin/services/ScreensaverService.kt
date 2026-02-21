@@ -5,6 +5,7 @@ import com.github.damontecres.wholphin.MainActivity
 import com.github.damontecres.wholphin.services.hilt.DefaultCoroutineScope
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -13,17 +14,17 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import timber.log.Timber
 import javax.inject.Inject
 import javax.inject.Singleton
-import kotlin.time.Duration.Companion.seconds
+import kotlin.time.Duration.Companion.milliseconds
 
 @Singleton
 class ScreensaverService
     @Inject
     constructor(
         @param:DefaultCoroutineScope private val scope: CoroutineScope,
-        private val navigationManager: NavigationManager,
         private val userPreferencesService: UserPreferencesService,
     ) {
         private val _state = MutableStateFlow(ScreensaverState(false, false, false))
@@ -33,11 +34,12 @@ class ScreensaverService
 
         init {
             userPreferencesService.flow
-                .onEach {
+                .onEach { prefs ->
                     _state.update {
-                        // TODO prefs
-                        keepScreenOnInternal(true)
-                        ScreensaverState(true, false, false)
+                        val enabled =
+                            prefs.appPreferences.interfacePreferences.screensaverPreference.enabled
+                        keepScreenOnInternal(enabled)
+                        ScreensaverState(enabled, false, false)
                     }
                 }.launchIn(scope)
         }
@@ -45,7 +47,7 @@ class ScreensaverService
         fun pulse() {
             waitJob?.cancel()
             if (_state.value.enabled) {
-                Timber.v("pulse")
+//                Timber.v("pulse")
                 _state.update {
                     if (!it.active) {
                         it.copy(active = false)
@@ -57,8 +59,11 @@ class ScreensaverService
                 if (!_state.value.paused) {
                     waitJob =
                         scope.launch(ExceptionHandler()) {
-                            // TODO
-                            delay(10.seconds)
+                            val startDelay =
+                                userPreferencesService
+                                    .getCurrent()
+                                    .appPreferences.interfacePreferences.screensaverPreference.startDelay.milliseconds
+                            delay(startDelay)
                             _state.update {
                                 it.copy(active = true)
                             }
@@ -67,13 +72,25 @@ class ScreensaverService
             }
         }
 
-        fun stop() {
-            _state.update { it.copy(active = false) }
+        fun start() {
+            _state.update { it.copy(enabled = true, active = true) }
+        }
+
+        suspend fun stop() {
+            _state.update {
+                it.copy(
+                    enabled =
+                        userPreferencesService
+                            .getCurrent()
+                            .appPreferences.interfacePreferences.screensaverPreference.enabled,
+                    active = false,
+                )
+            }
         }
 
         fun keepScreenOn(keep: Boolean) {
             scope.launch {
-                val screensaverEnabled = true // TODO userPreferencesService.getCurrent().appPreferences.interfacePreferences
+                val screensaverEnabled = _state.value.enabled
                 Timber.d("Keep screen on: %s, screensaverEnabled=%s", keep, screensaverEnabled)
                 if (screensaverEnabled) {
                     // Page is requesting to keep screen on, so we don't wait to show the screensaver
@@ -89,14 +106,15 @@ class ScreensaverService
             }
         }
 
-        private fun keepScreenOnInternal(keep: Boolean) {
-            val window = MainActivity.instance.window
-            if (keep) {
-                window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-            } else {
-                window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        private suspend fun keepScreenOnInternal(keep: Boolean) =
+            withContext(Dispatchers.Main) {
+                val window = MainActivity.instance.window
+                if (keep) {
+                    window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                } else {
+                    window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                }
             }
-        }
     }
 
 data class ScreensaverState(

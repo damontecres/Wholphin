@@ -49,6 +49,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.isActive
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.model.api.BaseItemKind
@@ -58,7 +59,6 @@ import org.jellyfin.sdk.model.api.request.GetItemsRequest
 import timber.log.Timber
 import javax.inject.Inject
 import kotlin.time.Duration.Companion.milliseconds
-import kotlin.time.Duration.Companion.seconds
 
 @HiltViewModel
 class ScreensaverViewModel
@@ -80,12 +80,20 @@ class ScreensaverViewModel
         fun init() {
             job =
                 viewModelScope.launchIO {
+                    val maxAge =
+                        preferencesDataStore.data
+                            .first()
+                            .interfacePreferences.screensaverPreference
+                            .maxAgeFilter
+                            .takeIf { it >= 0 }
                     val request =
                         GetItemsRequest(
                             recursive = true,
                             includeItemTypes = listOf(BaseItemKind.MOVIE, BaseItemKind.SERIES),
                             imageTypes = listOf(ImageType.BACKDROP),
                             sortBy = listOf(ItemSortBy.RANDOM),
+                            maxOfficialRating = maxAge?.toString(),
+                            hasParentalRating = maxAge?.let { true },
                         )
                     val pager = ApiRequestPager(api, request, GetItemsRequestHandler, viewModelScope).init()
                     var index = 0
@@ -106,8 +114,11 @@ class ScreensaverViewModel
                                         ).job
                                         .await()
                                 currentItem.value = CurrentItem(item, backdropUrl, logoUrl, item.title ?: "")
-                                // TODO
-                                delay(5.seconds)
+                                val duration =
+                                    preferencesDataStore.data
+                                        .first()
+                                        .interfacePreferences.screensaverPreference.duration.milliseconds
+                                delay(duration)
                             }
                         }
                         index++
@@ -118,6 +129,7 @@ class ScreensaverViewModel
         fun stop() {
             Timber.v("Stopping")
             job?.cancel()
+            currentItem.value = null
         }
     }
 
@@ -150,17 +162,21 @@ fun AppScreensaver(
             key(currentItem) {
                 var started by remember(currentItem) { mutableStateOf(false) }
                 val scale by animateFloatAsState(
-                    if (started) 1.15f else 1f,
+                    if (started) 1.10f else 1f,
                     animationSpec =
                         tween(
-                            durationMillis = 10_000,
+                            durationMillis =
+                                prefs.interfacePreferences.screensaverPreference.duration
+                                    .toInt(),
                             delayMillis = 0,
                             LinearEasing,
                         ),
                 )
                 LaunchedEffect(Unit) {
                     delay(100)
-                    started = true
+                    if (prefs.interfacePreferences.screensaverPreference.animate) {
+                        started = true
+                    }
                 }
                 AsyncImage(
                     model =

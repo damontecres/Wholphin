@@ -1000,7 +1000,7 @@ sealed interface AppPreference<Pref, T> {
 
         val ScreensaverSettings =
             AppDestinationPreference<AppPreferences>(
-                title = R.string.screensaver,
+                title = R.string.screensaver_settings,
                 destination = Destination.Settings(PreferenceScreenOption.SCREENSAVER),
             )
     }
@@ -1214,10 +1214,12 @@ val screensaverPreferences =
             title = R.string.screensaver,
             preferences =
                 listOf(
+                    ScreensaverPreference.Enabled,
                     ScreensaverPreference.StartDelay,
                     ScreensaverPreference.Duration,
                     ScreensaverPreference.Animate,
                     ScreensaverPreference.MaxAge,
+                    ScreensaverPreference.Start,
                 ),
         ),
     )

@@ -2,8 +2,21 @@ package com.github.damontecres.wholphin.preferences
 
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.WholphinApplication
+import kotlin.time.Duration.Companion.milliseconds
 
 object ScreensaverPreference {
+    val Enabled =
+        AppSwitchPreference<AppPreferences>(
+            title = R.string.enabled,
+            defaultValue = false,
+            getter = { it.interfacePreferences.screensaverPreference.enabled },
+            setter = { prefs, value ->
+                prefs.updateScreensaverPreferences { enabled = value }
+            },
+            summaryOn = R.string.yes,
+            summaryOff = R.string.no,
+        )
+
     const val DEFAULT_START_DELAY = 15 * 60_000L
     private val startDelayValues =
         listOf(
@@ -34,12 +47,7 @@ object ScreensaverPreference {
             summarizer = { value ->
                 if (value != null) {
                     val v = startDelayValues.getOrNull(value.toInt()) ?: DEFAULT_START_DELAY
-                    if (v < 60_000) {
-                        WholphinApplication.instance.resources.getQuantityString(R.plurals.seconds, 30, 30)
-                    } else {
-                        val minutes = (v / 60_000).toInt()
-                        WholphinApplication.instance.resources.getQuantityString(R.plurals.minutes, minutes, minutes)
-                    }
+                    v.milliseconds.toString()
                 } else {
                     null
                 }
@@ -56,7 +64,7 @@ object ScreensaverPreference {
         )
     val Duration =
         AppSliderPreference<AppPreferences>(
-            title = R.string.slideshow_duration,
+            title = R.string.duration,
             defaultValue = durationValues.indexOf(DEFAULT_DURATION).toLong(),
             min = 0,
             max = durationValues.size - 1L,
@@ -72,12 +80,7 @@ object ScreensaverPreference {
             summarizer = { value ->
                 if (value != null) {
                     val v = durationValues.getOrNull(value.toInt()) ?: DEFAULT_DURATION
-                    if (v < 60_000) {
-                        WholphinApplication.instance.resources.getQuantityString(R.plurals.seconds, 30, 30)
-                    } else {
-                        val minutes = (v / 60_000).toInt()
-                        WholphinApplication.instance.resources.getQuantityString(R.plurals.minutes, minutes, minutes)
-                    }
+                    v.milliseconds.toString()
                 } else {
                     null
                 }
@@ -118,11 +121,30 @@ object ScreensaverPreference {
             },
             summarizer = { value ->
                 when (value) {
-                    null -> null
-                    -1L -> WholphinApplication.instance.getString(R.string.no_max)
-                    0L -> WholphinApplication.instance.getString(R.string.for_all_ages)
-                    else -> WholphinApplication.instance.getString(R.string.up_to_age, value.toString())
+                    null -> {
+                        null
+                    }
+
+                    maxAgeValues.lastIndex.toLong() -> {
+                        WholphinApplication.instance.getString(R.string.no_max)
+                    }
+
+                    0L -> {
+                        WholphinApplication.instance.getString(R.string.for_all_ages)
+                    }
+
+                    else -> {
+                        WholphinApplication.instance.getString(
+                            R.string.up_to_age,
+                            maxAgeValues[value.toInt()].toString(),
+                        )
+                    }
                 }
             },
+        )
+
+    val Start =
+        AppClickablePreference<AppPreferences>(
+            title = R.string.start_screensaver,
         )
 }

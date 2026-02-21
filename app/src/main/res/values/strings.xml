@@ -534,6 +534,9 @@
     <string name="for_all_ages">For all ages</string>
     <string name="up_to_age">Up to age %s</string>
     <string name="screensaver">Screensaver</string>
+    <string name="screensaver_settings">Screensaver settings</string>
+    <string name="start_screensaver">Start screensaver</string>
+    <string name="duration">Duration</string>
 
     <string-array name="theme_song_volume">
         <item>Disabled</item>

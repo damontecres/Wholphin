@@ -5,7 +5,6 @@ import android.content.res.Configuration
 import android.os.Bundle
 import android.view.KeyEvent
 import android.view.WindowManager
-import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
@@ -321,7 +320,6 @@ class MainActivity : AppCompatActivity() {
                                 },
                             )
                             val screenSaverState by screensaverService.state.collectAsState()
-                            BackHandler(screenSaverState.show) { screensaverService.stop() }
                             if (screenSaverState.enabled) {
                                 AnimatedVisibility(
                                     screenSaverState.show,
@@ -339,7 +337,9 @@ class MainActivity : AppCompatActivity() {
 
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
         if (screensaverService.state.value.show) {
-            screensaverService.stop()
+            lifecycleScope.launchDefault {
+                screensaverService.stop()
+            }
             return true
         } else {
             screensaverService.pulse()

@@ -48,6 +48,7 @@ import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.ExoPlayerPreferences
 import com.github.damontecres.wholphin.preferences.MpvPreferences
 import com.github.damontecres.wholphin.preferences.PlayerBackend
+import com.github.damontecres.wholphin.preferences.ScreensaverPreference
 import com.github.damontecres.wholphin.preferences.advancedPreferences
 import com.github.damontecres.wholphin.preferences.basicPreferences
 import com.github.damontecres.wholphin.preferences.screensaverPreferences
@@ -135,7 +136,7 @@ fun PreferencesContent(
             PreferenceScreenOption.ADVANCED -> R.string.advanced_settings
             PreferenceScreenOption.EXO_PLAYER -> R.string.exoplayer_options
             PreferenceScreenOption.MPV -> R.string.mpv_options
-            PreferenceScreenOption.SCREENSAVER -> R.string.screensaver
+            PreferenceScreenOption.SCREENSAVER -> R.string.screensaver_settings
         }
 
     var visible by remember { mutableStateOf(false) }
@@ -426,6 +427,19 @@ fun PreferencesContent(
                                             viewModel.resetQuickConnectStatus()
                                             showQuickConnectDialog = true
                                         }
+                                    },
+                                    modifier = Modifier,
+                                    summary = pref.summary(context, null),
+                                    onLongClick = {},
+                                    interactionSource = interactionSource,
+                                )
+                            }
+
+                            ScreensaverPreference.Start -> {
+                                ClickPreference(
+                                    title = stringResource(pref.title),
+                                    onClick = {
+                                        viewModel.screensaverService.start()
                                     },
                                     modifier = Modifier,
                                     summary = pref.summary(context, null),
