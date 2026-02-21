@@ -5,6 +5,7 @@ import androidx.datastore.core.CorruptionException
 import androidx.datastore.core.Serializer
 import com.github.damontecres.wholphin.ui.preferences.subtitle.SubtitleSettings
 import com.google.protobuf.InvalidProtocolBufferException
+import org.jellyfin.sdk.model.api.BaseItemKind
 import java.io.InputStream
 import java.io.OutputStream
 import javax.inject.Inject
@@ -129,6 +130,9 @@ class AppPreferencesSerializer
                                             duration = ScreensaverPreference.DEFAULT_DURATION
                                             animate = ScreensaverPreference.Animate.defaultValue
                                             maxAgeFilter = ScreensaverPreference.DEFAULT_MAX_AGE
+                                            clearItemTypes()
+                                            addItemTypes(BaseItemKind.MOVIE.serialName)
+                                            addItemTypes(BaseItemKind.SERIES.serialName)
                                         }.build()
                             }.build()
 

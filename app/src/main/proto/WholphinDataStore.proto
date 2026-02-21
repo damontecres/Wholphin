@@ -150,6 +150,7 @@ message ScreensaverPreferences{
   bool animate = 3;
   int32 max_age_filter = 4;
   bool enabled = 5;
+  repeated string item_types = 6;
 }
 
 message InterfacePreferences {

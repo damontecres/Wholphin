@@ -537,6 +537,9 @@
     <string name="screensaver_settings">Screensaver settings</string>
     <string name="start_screensaver">Start screensaver</string>
     <string name="duration">Duration</string>
+    <string name="photos">Photos</string>
+    <string name="include_types">Include types</string>
+    <string name="include_types_summary">What types of items to show images for</string>
 
     <string-array name="theme_song_volume">
         <item>Disabled</item>
@@ -636,6 +639,12 @@
         <item>Image with dynamic color</item>
         <item>Image only</item>
         <item>None</item>
+    </string-array>
+
+    <string-array name="screensaver_item_types">
+        <item>@string/movies</item>
+        <item>@string/tv_shows</item>
+        <item>@string/photos</item>
     </string-array>
 
 </resources>

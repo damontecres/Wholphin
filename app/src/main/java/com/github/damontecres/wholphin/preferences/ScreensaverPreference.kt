@@ -2,6 +2,7 @@ package com.github.damontecres.wholphin.preferences
 
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.WholphinApplication
+import org.jellyfin.sdk.model.api.BaseItemKind
 import kotlin.time.Duration.Companion.milliseconds
 
 object ScreensaverPreference {
@@ -139,6 +140,26 @@ object ScreensaverPreference {
                             maxAgeValues[value.toInt()].toString(),
                         )
                     }
+                }
+            },
+        )
+
+    val ItemTypes =
+        AppMultiChoicePreference<AppPreferences, BaseItemKind>(
+            title = R.string.include_types,
+            summary = R.string.include_types_summary,
+            defaultValue = listOf(BaseItemKind.MOVIE, BaseItemKind.SERIES),
+            allValues = listOf(BaseItemKind.MOVIE, BaseItemKind.SERIES, BaseItemKind.PHOTO),
+            displayValues = R.array.screensaver_item_types,
+            getter = {
+                it.interfacePreferences.screensaverPreference.itemTypesList.map { type ->
+                    BaseItemKind.fromName(type)
+                }
+            },
+            setter = { prefs, value ->
+                prefs.updateScreensaverPreferences {
+                    clearItemTypes()
+                    addAllItemTypes(value.map { it.serialName })
                 }
             },
         )

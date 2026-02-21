@@ -23,6 +23,7 @@ import com.github.damontecres.wholphin.ui.preferences.PreferencesViewModel
 import com.github.damontecres.wholphin.ui.preferences.subtitle.SubtitleSettings
 import com.github.damontecres.wholphin.util.Version
 import dagger.hilt.android.qualifiers.ApplicationContext
+import org.jellyfin.sdk.model.api.BaseItemKind
 import timber.log.Timber
 import java.io.File
 import javax.inject.Inject
@@ -256,6 +257,9 @@ suspend fun upgradeApp(
                 duration = ScreensaverPreference.DEFAULT_DURATION
                 animate = ScreensaverPreference.Animate.defaultValue
                 maxAgeFilter = ScreensaverPreference.DEFAULT_MAX_AGE
+                clearItemTypes()
+                addItemTypes(BaseItemKind.MOVIE.serialName)
+                addItemTypes(BaseItemKind.SERIES.serialName)
             }
         }
     }

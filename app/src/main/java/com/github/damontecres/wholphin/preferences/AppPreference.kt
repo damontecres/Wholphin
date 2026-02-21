@@ -1219,6 +1219,7 @@ val screensaverPreferences =
                     ScreensaverPreference.Duration,
                     ScreensaverPreference.Animate,
                     ScreensaverPreference.MaxAge,
+                    ScreensaverPreference.ItemTypes,
                     ScreensaverPreference.Start,
                 ),
         ),
@@ -1278,8 +1279,6 @@ data class AppMultiChoicePreference<Pref, T>(
     override val getter: (prefs: Pref) -> List<T>,
     override val setter: (prefs: Pref, value: List<T>) -> Pref,
     @param:StringRes val summary: Int? = null,
-    val toSharedPrefs: (T) -> String,
-    val fromSharedPrefs: (String) -> T?,
 ) : AppPreference<Pref, List<T>>
 
 data class AppClickablePreference<Pref>(

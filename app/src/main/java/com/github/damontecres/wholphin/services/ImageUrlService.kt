@@ -37,9 +37,7 @@ class ImageUrlService
             fillHeight: Int? = null,
         ): String? =
             when (imageType) {
-                ImageType.BACKDROP,
-                ImageType.LOGO,
-                -> {
+                ImageType.LOGO -> {
                     if (seriesId != null && (itemType == BaseItemKind.EPISODE || itemType == BaseItemKind.SEASON)) {
                         getItemImageUrl(
                             itemId = seriesId,
@@ -54,6 +52,27 @@ class ImageUrlService
                             fillWidth = fillWidth,
                             fillHeight = fillHeight,
                         )
+                    }
+                }
+
+                ImageType.BACKDROP,
+                -> {
+                    if (seriesId != null && (itemType == BaseItemKind.EPISODE || itemType == BaseItemKind.SEASON)) {
+                        getItemImageUrl(
+                            itemId = seriesId,
+                            imageType = imageType,
+                            fillWidth = fillWidth,
+                            fillHeight = fillHeight,
+                        )
+                    } else if (backdropTags.isNotEmpty()) {
+                        getItemImageUrl(
+                            itemId = itemId,
+                            imageType = imageType,
+                            fillWidth = fillWidth,
+                            fillHeight = fillHeight,
+                        )
+                    } else {
+                        null
                     }
                 }
 

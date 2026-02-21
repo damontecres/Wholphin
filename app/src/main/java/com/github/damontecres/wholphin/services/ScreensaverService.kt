@@ -7,6 +7,7 @@ import coil3.request.ImageRequest
 import com.github.damontecres.wholphin.MainActivity
 import com.github.damontecres.wholphin.services.hilt.DefaultCoroutineScope
 import com.github.damontecres.wholphin.ui.components.CurrentItem
+import com.github.damontecres.wholphin.ui.formatDate
 import com.github.damontecres.wholphin.util.ApiRequestPager
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.GetItemsRequestHandler
@@ -28,6 +29,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
+import org.jellyfin.sdk.api.client.extensions.libraryApi
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.ImageType
 import org.jellyfin.sdk.model.api.ItemSortBy
@@ -141,24 +143,25 @@ class ScreensaverService
 
         fun createItemFlow(scope: CoroutineScope): Flow<CurrentItem?> =
             flow {
-                val maxAge =
+                val prefs =
                     userPreferencesService.flow
                         .first()
                         .appPreferences
                         .interfacePreferences.screensaverPreference
-                        .maxAgeFilter
-                        .takeIf { it >= 0 }
+                val maxAge = prefs.maxAgeFilter.takeIf { it >= 0 }
+                val itemTypes = prefs.itemTypesList.map { BaseItemKind.fromName(it) }
                 val request =
                     GetItemsRequest(
                         recursive = true,
-                        includeItemTypes = listOf(BaseItemKind.MOVIE, BaseItemKind.SERIES),
-                        imageTypes = listOf(ImageType.BACKDROP),
+                        includeItemTypes = itemTypes,
+                        imageTypes = if (BaseItemKind.PHOTO in itemTypes) null else listOf(ImageType.BACKDROP),
                         sortBy = listOf(ItemSortBy.RANDOM),
                         maxOfficialRating = maxAge?.toString(),
                         hasParentalRating = maxAge?.let { true },
                     )
                 val pager =
                     ApiRequestPager(api, request, GetItemsRequestHandler, scope).init()
+                Timber.v("Got %s items", pager.size)
                 var index = 0
                 if (pager.isEmpty()) {
                     emit(null)
@@ -167,7 +170,20 @@ class ScreensaverService
                         val item = pager.getBlocking(index)
                         Timber.v("Next index=%s, item=%s", index, item?.id)
                         if (item != null) {
-                            val backdropUrl = imageUrlService.getItemImageUrl(item, ImageType.BACKDROP)
+                            val backdropUrl =
+                                if (item.type == BaseItemKind.PHOTO) {
+                                    api.libraryApi.getDownloadUrl(item.id)
+                                } else {
+                                    imageUrlService.getItemImageUrl(item, ImageType.BACKDROP)
+                                }
+                            val title =
+                                if (item.type == BaseItemKind.PHOTO) {
+                                    item.data.premiereDate?.let {
+                                        formatDate(it.toLocalDate())
+                                    }
+                                } else {
+                                    item.title
+                                }
                             val logoUrl = imageUrlService.getItemImageUrl(item, ImageType.LOGO)
                             if (backdropUrl != null) {
                                 val result =
@@ -180,7 +196,7 @@ class ScreensaverService
                                         ).job
                                         .await()
                                 try {
-                                    emit(CurrentItem(item, backdropUrl, logoUrl, item.title ?: ""))
+                                    emit(CurrentItem(item, backdropUrl, logoUrl, title ?: ""))
                                 } catch (_: CancellationException) {
                                     break
                                 }
