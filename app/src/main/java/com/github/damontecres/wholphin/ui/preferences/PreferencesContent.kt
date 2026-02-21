@@ -441,7 +441,7 @@ fun PreferencesContent(
                                         value = value,
                                         onNavigate = viewModel.navigationManager::navigateTo,
                                         onValueChange = { newValue ->
-                                            val validation = pref.validate(newValue)
+                                            val validation = pref.validate(preferences, newValue)
                                             when (validation) {
                                                 is PreferenceValidation.Invalid -> {
                                                     // TODO?

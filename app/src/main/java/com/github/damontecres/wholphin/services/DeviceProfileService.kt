@@ -44,6 +44,7 @@ class DeviceProfileService
                             pgsDirectPlay = prefs.overrides.directPlayPgs,
                             dolbyVisionELDirectPlay = prefs.overrides.directPlayDolbyVisionEL,
                             decodeAv1 = prefs.overrides.decodeAv1,
+                            preferAc3ForSurround = prefs.overrides.preferAc3Surround,
                             jellyfinTenEleven =
                                 serverVersion != null && serverVersion >= ServerVersion(10, 11, 0),
                         )
@@ -59,6 +60,7 @@ class DeviceProfileService
                                 pgsDirectPlay = newConfig.pgsDirectPlay,
                                 dolbyVisionELDirectPlay = newConfig.dolbyVisionELDirectPlay,
                                 decodeAv1 = prefs.overrides.decodeAv1,
+                                preferAc3ForSurround = prefs.overrides.preferAc3Surround,
                                 jellyfinTenEleven = newConfig.jellyfinTenEleven,
                             )
                     }
@@ -78,5 +80,6 @@ data class DeviceProfileConfiguration(
     val pgsDirectPlay: Boolean,
     val dolbyVisionELDirectPlay: Boolean,
     val decodeAv1: Boolean,
+    val preferAc3ForSurround: Boolean,
     val jellyfinTenEleven: Boolean,
 )

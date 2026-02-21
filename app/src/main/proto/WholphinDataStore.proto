@@ -48,6 +48,7 @@ message PlaybackOverrides{
   MediaExtensionStatus media_extensions_enabled = 5;
   bool direct_play_dolby_vision_e_l = 6;
   bool decode_av1 = 7;
+  bool prefer_ac3_surround = 8;
 }
 
 message PlaybackPreferences {
