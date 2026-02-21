@@ -1,6 +1,5 @@
 package com.github.damontecres.wholphin.ui.components
 
-import android.content.Context
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -29,108 +28,30 @@ import androidx.compose.ui.unit.dp
 import androidx.datastore.core.DataStore
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.compose.LifecycleStartEffect
 import androidx.lifecycle.viewModelScope
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import coil3.compose.AsyncImage
-import coil3.imageLoader
 import coil3.request.ImageRequest
 import coil3.request.transitionFactory
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.preferences.AppPreferences
-import com.github.damontecres.wholphin.services.ImageUrlService
+import com.github.damontecres.wholphin.services.ScreensaverService
 import com.github.damontecres.wholphin.ui.CrossFadeFactory
-import com.github.damontecres.wholphin.ui.launchIO
-import com.github.damontecres.wholphin.util.ApiRequestPager
-import com.github.damontecres.wholphin.util.GetItemsRequestHandler
 import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.isActive
-import org.jellyfin.sdk.api.client.ApiClient
-import org.jellyfin.sdk.model.api.BaseItemKind
-import org.jellyfin.sdk.model.api.ImageType
-import org.jellyfin.sdk.model.api.ItemSortBy
-import org.jellyfin.sdk.model.api.request.GetItemsRequest
-import timber.log.Timber
 import javax.inject.Inject
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 
 @HiltViewModel
 class ScreensaverViewModel
     @Inject
     constructor(
-        @param:ApplicationContext private val context: Context,
-        private val api: ApiClient,
-        private val imageUrlService: ImageUrlService,
+        private val screensaverService: ScreensaverService,
         val preferencesDataStore: DataStore<AppPreferences>,
     ) : ViewModel() {
-        val currentItem = MutableStateFlow<CurrentItem?>(null)
-
-        private var job: Job? = null
-
-        init {
-            addCloseable { stop() }
-        }
-
-        fun init() {
-            job =
-                viewModelScope.launchIO {
-                    val maxAge =
-                        preferencesDataStore.data
-                            .first()
-                            .interfacePreferences.screensaverPreference
-                            .maxAgeFilter
-                            .takeIf { it >= 0 }
-                    val request =
-                        GetItemsRequest(
-                            recursive = true,
-                            includeItemTypes = listOf(BaseItemKind.MOVIE, BaseItemKind.SERIES),
-                            imageTypes = listOf(ImageType.BACKDROP),
-                            sortBy = listOf(ItemSortBy.RANDOM),
-                            maxOfficialRating = maxAge?.toString(),
-                            hasParentalRating = maxAge?.let { true },
-                        )
-                    val pager = ApiRequestPager(api, request, GetItemsRequestHandler, viewModelScope).init()
-                    var index = 0
-                    while (isActive) {
-                        val item = pager.getBlocking(index)
-                        Timber.v("Next index=%s, item=%s", index, item?.id)
-                        if (item != null) {
-                            val backdropUrl = imageUrlService.getItemImageUrl(item, ImageType.BACKDROP)
-                            val logoUrl = imageUrlService.getItemImageUrl(item, ImageType.LOGO)
-                            if (backdropUrl != null) {
-                                val result =
-                                    context.imageLoader
-                                        .enqueue(
-                                            ImageRequest
-                                                .Builder(context)
-                                                .data(backdropUrl)
-                                                .build(),
-                                        ).job
-                                        .await()
-                                currentItem.value = CurrentItem(item, backdropUrl, logoUrl, item.title ?: "")
-                                val duration =
-                                    preferencesDataStore.data
-                                        .first()
-                                        .interfacePreferences.screensaverPreference.duration.milliseconds
-                                delay(duration)
-                            }
-                        }
-                        index++
-                    }
-                }
-        }
-
-        fun stop() {
-            Timber.v("Stopping")
-            job?.cancel()
-            currentItem.value = null
-        }
+        val currentItem = screensaverService.createItemFlow(viewModelScope)
     }
 
 data class CurrentItem(
@@ -145,15 +66,25 @@ fun AppScreensaver(
     modifier: Modifier = Modifier,
     viewModel: ScreensaverViewModel = hiltViewModel(),
 ) {
-    LifecycleStartEffect(Unit) {
-        viewModel.init()
-        onStopOrDispose {
-            viewModel.stop()
-        }
-    }
     val prefs by viewModel.preferencesDataStore.data.collectAsState(AppPreferences.getDefaultInstance())
-    val currentItem by viewModel.currentItem.collectAsState()
+    val currentItem by viewModel.currentItem.collectAsState(null)
+    AppScreensaverContent(
+        currentItem = currentItem,
+        showClock = prefs.interfacePreferences.showClock,
+        duration = prefs.interfacePreferences.screensaverPreference.duration.milliseconds,
+        animate = prefs.interfacePreferences.screensaverPreference.animate,
+        modifier = modifier,
+    )
+}
 
+@Composable
+fun AppScreensaverContent(
+    currentItem: CurrentItem?,
+    showClock: Boolean,
+    duration: Duration,
+    animate: Boolean,
+    modifier: Modifier = Modifier,
+) {
     Box(
         modifier
             .background(Color.Black),
@@ -165,16 +96,14 @@ fun AppScreensaver(
                     if (started) 1.10f else 1f,
                     animationSpec =
                         tween(
-                            durationMillis =
-                                prefs.interfacePreferences.screensaverPreference.duration
-                                    .toInt(),
+                            durationMillis = duration.inWholeMilliseconds.toInt(),
                             delayMillis = 0,
                             LinearEasing,
                         ),
                 )
                 LaunchedEffect(Unit) {
                     delay(100)
-                    if (prefs.interfacePreferences.screensaverPreference.animate) {
+                    if (animate) {
                         started = true
                     }
                 }
@@ -234,9 +163,9 @@ fun AppScreensaver(
                     }
                 }
             }
-        }
-        if (prefs.interfacePreferences.showClock) {
-            TimeDisplay()
+            if (showClock) {
+                TimeDisplay()
+            }
         }
     }
 }
