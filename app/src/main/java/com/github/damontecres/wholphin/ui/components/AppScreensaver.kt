@@ -3,6 +3,7 @@ package com.github.damontecres.wholphin.ui.components
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -20,7 +21,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.geometry.center
+import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RadialGradientShader
+import androidx.compose.ui.graphics.Shader
+import androidx.compose.ui.graphics.ShaderBrush
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
@@ -37,6 +44,7 @@ import coil3.request.transitionFactory
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.services.ScreensaverService
+import com.github.damontecres.wholphin.ui.AppColors
 import com.github.damontecres.wholphin.ui.CrossFadeFactory
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
@@ -166,6 +174,26 @@ fun AppScreensaverContent(
             if (showClock) {
                 TimeDisplay()
             }
+        }
+        val largeRadialGradient =
+            remember {
+                object : ShaderBrush() {
+                    override fun createShader(size: Size): Shader {
+                        val biggerDimension = maxOf(size.height, size.width)
+                        return RadialGradientShader(
+                            colors = listOf(Color.Transparent, AppColors.TransparentBlack25),
+                            center = size.center,
+                            radius = biggerDimension / 1.5f,
+                            colorStops = listOf(0f, 0.95f),
+                        )
+                    }
+                }
+            }
+        Canvas(Modifier.fillMaxSize()) {
+            drawRect(
+                brush = largeRadialGradient,
+                blendMode = BlendMode.Multiply,
+            )
         }
     }
 }

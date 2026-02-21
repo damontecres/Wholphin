@@ -320,7 +320,7 @@ class MainActivity : AppCompatActivity() {
                                 },
                             )
                             val screenSaverState by screensaverService.state.collectAsState()
-                            if (screenSaverState.enabled) {
+                            if (screenSaverState.enabled || screenSaverState.enabledTemp) {
                                 AnimatedVisibility(
                                     screenSaverState.show,
                                     Modifier.fillMaxSize(),
