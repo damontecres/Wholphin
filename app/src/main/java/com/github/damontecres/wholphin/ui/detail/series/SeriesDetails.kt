@@ -621,7 +621,7 @@ fun SeriesDetailsHeader(
         ) {
             QuickDetails(series.ui.quickDetails, null, Modifier.padding(start = 8.dp))
             dto.genres?.letNotEmpty {
-                GenreText(it, Modifier.padding(start = 8.dp, bottom = 12.dp))
+                GenreText(it, Modifier.padding(start = 8.dp, bottom = 8.dp))
             }
             dto.overview?.let { overview ->
                 OverviewText(
