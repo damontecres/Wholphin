@@ -293,7 +293,10 @@ fun SeriesOverviewContent(
                                 }
                             }
                         },
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier =
+                            Modifier
+                                .padding(top = 4.dp)
+                                .fillMaxWidth(),
                     )
                 }
             }
