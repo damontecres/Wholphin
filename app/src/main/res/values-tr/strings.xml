@@ -52,7 +52,7 @@
     <string name="home">Ana Ekran</string>
     <string name="immediate">Hemen</string>
     <string name="intro">İntro</string>
-    <string name="jump_letters">#ABCÇDEFGĞHIİJKLMNOÖPRSŞTUÜVYZ</string>
+    <string name="jump_letters">#ABCDEFGHIJKLMNOPQRSTUVWXYZ</string>
     <string name="library">Kütüphane</string>
     <string name="license_info">Lisans bilgileri</string>
     <string name="live_tv">Canlı TV</string>
