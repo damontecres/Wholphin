@@ -2,6 +2,10 @@ package com.github.damontecres.wholphin.ui.detail
 
 import android.content.Context
 import android.hardware.display.DisplayManager
+import android.media.AudioDeviceCallback
+import android.media.AudioDeviceInfo
+import android.media.AudioFormat
+import android.media.AudioManager
 import android.os.Build
 import android.util.Log
 import android.view.Display
@@ -15,8 +19,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -39,11 +45,15 @@ import com.github.damontecres.wholphin.data.ItemPlaybackDao
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.ItemPlayback
 import com.github.damontecres.wholphin.preferences.UserPreferences
+import com.github.damontecres.wholphin.ui.launchDefault
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.showToast
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.acra.util.versionCodeLong
@@ -60,6 +70,7 @@ import javax.inject.Inject
 class DebugViewModel
     @Inject
     constructor(
+        @param:ApplicationContext private val context: Context,
         val serverRepository: ServerRepository,
         val itemPlaybackDao: ItemPlaybackDao,
         val clientInfo: ClientInfo,
@@ -67,6 +78,7 @@ class DebugViewModel
     ) : ViewModel() {
         val itemPlaybacks = MutableLiveData<List<ItemPlayback>>(listOf())
         val logcat = MutableLiveData<List<LogcatLine>>(listOf())
+        val audioInfo = MutableStateFlow<AudioInfo>(AudioInfo())
 
         val supportedModes by lazy {
             val displayManager =
@@ -87,6 +99,35 @@ class DebugViewModel
                 withContext(Dispatchers.Main) {
                     this@DebugViewModel.logcat.value = logcat
                 }
+            }
+            viewModelScope.launchDefault {
+                val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+                val callback =
+                    object : AudioDeviceCallback() {
+                        override fun onAudioDevicesAdded(addedDevices: Array<AudioDeviceInfo>) {
+                            audioInfo.update {
+                                it.copy(
+                                    devices =
+                                        it.devices
+                                            .toMutableList()
+                                            .apply { addAll(addedDevices.filter { it.isSink }) },
+                                )
+                            }
+                        }
+
+                        override fun onAudioDevicesRemoved(removedDevices: Array<out AudioDeviceInfo>) {
+                            audioInfo.update {
+                                it.copy(
+                                    devices =
+                                        it.devices
+                                            .toMutableList()
+                                            .apply { removeAll(removedDevices) },
+                                )
+                            }
+                        }
+                    }
+                audioManager.registerAudioDeviceCallback(callback, null)
+                addCloseable { audioManager.unregisterAudioDeviceCallback(callback) }
             }
         }
 
@@ -163,6 +204,127 @@ data class LogcatLine(
     val level: Int,
     val text: String,
 )
+
+data class AudioInfo(
+    val devices: List<AudioDeviceInfo> = emptyList(),
+)
+
+val AudioDeviceInfo.details: String
+    get() {
+        val typeName =
+            when (type) {
+                AudioDeviceInfo.TYPE_HDMI -> "HDMI"
+                AudioDeviceInfo.TYPE_HDMI_ARC -> "ARC"
+                AudioDeviceInfo.TYPE_HDMI_EARC -> "eARC"
+                AudioDeviceInfo.TYPE_BUILTIN_SPEAKER -> "Speaker"
+                AudioDeviceInfo.TYPE_BUILTIN_SPEAKER_SAFE -> "Speaker Safe"
+                else -> "N/A"
+            }
+        val addressStr =
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                address
+            } else {
+                null
+            }
+        val encodings =
+            encodings.map { enc ->
+                when (enc) {
+                    AudioFormat.ENCODING_INVALID -> "INVALID"
+
+                    AudioFormat.ENCODING_PCM_16BIT -> "PCM_16BIT"
+
+                    AudioFormat.ENCODING_PCM_8BIT -> "PCM_8BIT"
+
+                    AudioFormat.ENCODING_PCM_FLOAT -> "PCM_FLOAT"
+
+                    AudioFormat.ENCODING_AC3 -> "AC3"
+
+                    AudioFormat.ENCODING_E_AC3 -> "E_AC3"
+
+                    AudioFormat.ENCODING_DTS -> "DTS"
+
+                    AudioFormat.ENCODING_DTS_HD -> "DTS_HD"
+
+                    AudioFormat.ENCODING_MP3 -> "MP3"
+
+                    AudioFormat.ENCODING_AAC_LC -> "AAC_LC"
+
+                    AudioFormat.ENCODING_AAC_HE_V1 -> "AAC_HE_V1"
+
+                    AudioFormat.ENCODING_AAC_HE_V2 -> "AAC_HE_V2"
+
+                    AudioFormat.ENCODING_IEC61937 -> "IEC61937"
+
+                    AudioFormat.ENCODING_DOLBY_TRUEHD -> "DOLBY_TRUEHD"
+
+                    AudioFormat.ENCODING_AAC_ELD -> "AAC_ELD"
+
+                    AudioFormat.ENCODING_AAC_XHE -> "AAC_XHE"
+
+                    AudioFormat.ENCODING_AC4 -> "AC4"
+
+                    // AudioFormat.ENCODING_AC4_L4->"AC4_L4"
+
+                    AudioFormat.ENCODING_E_AC3_JOC -> "E_AC3_JOC"
+
+                    AudioFormat.ENCODING_DOLBY_MAT -> "DOLBY_MAT"
+
+                    AudioFormat.ENCODING_OPUS -> "OPUS"
+
+                    AudioFormat.ENCODING_PCM_24BIT_PACKED -> "PCM_24BIT_PACKED"
+
+                    AudioFormat.ENCODING_PCM_32BIT -> "PCM_32BIT"
+
+                    AudioFormat.ENCODING_MPEGH_BL_L3 -> "MPEGH_BL_L3"
+
+                    AudioFormat.ENCODING_MPEGH_BL_L4 -> "MPEGH_BL_L4"
+
+                    AudioFormat.ENCODING_MPEGH_LC_L3 -> "MPEGH_LC_L3"
+
+                    AudioFormat.ENCODING_MPEGH_LC_L4 -> "MPEGH_LC_L4"
+
+                    AudioFormat.ENCODING_DTS_UHD_P1 -> "DTS_UHD_P1"
+
+                    AudioFormat.ENCODING_DRA -> "DRA"
+
+                    AudioFormat.ENCODING_DTS_HD_MA -> "DTS_HD_MA"
+
+                    AudioFormat.ENCODING_DTS_UHD_P2 -> "DTS_UHD_P2"
+
+                    AudioFormat.ENCODING_DSD -> "DSD"
+
+                    AudioFormat.ENCODING_IAMF_BASE_ENHANCED_PROFILE_AAC -> "IAMF_BASE_ENHANCED_PROFILE_AAC"
+
+                    AudioFormat.ENCODING_IAMF_BASE_ENHANCED_PROFILE_FLAC -> "IAMF_BASE_ENHANCED_PROFILE_FLAC"
+
+                    AudioFormat.ENCODING_IAMF_BASE_ENHANCED_PROFILE_OPUS -> "IAMF_BASE_ENHANCED_PROFILE_OPUS"
+
+                    AudioFormat.ENCODING_IAMF_BASE_ENHANCED_PROFILE_PCM -> "IAMF_BASE_ENHANCED_PROFILE_PCM"
+
+                    AudioFormat.ENCODING_IAMF_BASE_PROFILE_AAC -> "IAMF_BASE_PROFILE_AAC"
+
+                    AudioFormat.ENCODING_IAMF_BASE_PROFILE_FLAC -> "IAMF_BASE_PROFILE_FLAC"
+
+                    AudioFormat.ENCODING_IAMF_BASE_PROFILE_OPUS -> "IAMF_BASE_PROFILE_OPUS"
+
+                    AudioFormat.ENCODING_IAMF_BASE_PROFILE_PCM -> "IAMF_BASE_PROFILE_PCM"
+
+                    AudioFormat.ENCODING_IAMF_SIMPLE_PROFILE_AAC -> "IAMF_SIMPLE_PROFILE_AAC"
+
+                    AudioFormat.ENCODING_IAMF_SIMPLE_PROFILE_FLAC -> "IAMF_SIMPLE_PROFILE_FLAC"
+
+                    AudioFormat.ENCODING_IAMF_SIMPLE_PROFILE_OPUS -> "IAMF_SIMPLE_PROFILE_OPUS"
+
+                    AudioFormat.ENCODING_IAMF_SIMPLE_PROFILE_PCM -> "IAMF_SIMPLE_PROFILE_PCM"
+
+                    else -> "invalid encoding $enc"
+                }
+            }
+        return "AudioDeviceInfo(id=$id, type=$type ($typeName), " +
+            "channelCounts=${channelCounts.contentToString()}, " +
+            "encodings=$encodings, " +
+            "productName=$productName, address=$addressStr)"
+    }
 
 @Composable
 fun DebugPage(
@@ -261,15 +423,21 @@ fun DebugPage(
                     style = MaterialTheme.typography.displaySmall,
                     color = MaterialTheme.colorScheme.onSurface,
                 )
-
-                listOf(
-                    "DeviceInfo:  ${viewModel.deviceInfo}",
-                    "Manufacturer: ${Build.MANUFACTURER}",
-                    "Model: ${Build.MODEL}",
-                    "API Level: ${Build.VERSION.SDK_INT}",
-                    "Display Modes:",
-                    *viewModel.supportedModes,
-                ).forEach {
+                val details =
+                    listOf(
+                        "DeviceInfo:  ${viewModel.deviceInfo}",
+                        "Manufacturer: ${Build.MANUFACTURER}",
+                        "Model: ${Build.MODEL}",
+                        "API Level: ${Build.VERSION.SDK_INT}",
+                        "",
+                        "Display Modes:",
+                        *viewModel.supportedModes,
+                        "",
+                        "Audio Devices:",
+                    )
+                val audioInfo by viewModel.audioInfo.collectAsState()
+                val audio = remember(audioInfo) { audioInfo.devices.map { it.details } }
+                (details + audio).forEach {
                     Text(
                         text = it.toString(),
                         style = MaterialTheme.typography.bodySmall,
