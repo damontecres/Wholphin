@@ -13,6 +13,8 @@ fun isDirectionalDpad(event: KeyEvent): Boolean =
         event.key == Key.DirectionDown ||
         event.key == Key.DirectionLeft ||
         event.key == Key.DirectionRight ||
+        event.key == Key.SystemNavigationLeft ||
+        event.key == Key.SystemNavigationRight ||
         event.key == Key.DirectionUpRight ||
         event.key == Key.DirectionUpLeft ||
         event.key == Key.DirectionDownRight ||
@@ -34,11 +36,13 @@ fun isControllerMedia(event: KeyEvent) =
 
 fun isSkipBack(event: KeyEvent) =
     event.key == Key.DirectionLeft ||
+        event.key == Key.SystemNavigationLeft ||
         event.key == Key.ButtonL1 ||
         event.key == Key.ButtonL2
 
 fun isSkipForward(event: KeyEvent) =
     event.key == Key.DirectionRight ||
+        event.key == Key.SystemNavigationRight ||
         event.key == Key.ButtonR1 ||
         event.key == Key.ButtonR2
 
