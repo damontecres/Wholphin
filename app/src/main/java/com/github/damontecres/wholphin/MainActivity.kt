@@ -337,9 +337,8 @@ class MainActivity : AppCompatActivity() {
 
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
         if (screensaverService.state.value.show) {
-            lifecycleScope.launchDefault {
-                screensaverService.stop()
-            }
+            screensaverService.stop(false)
+            screensaverService.pulse()
             return true
         } else {
             screensaverService.pulse()
@@ -365,6 +364,7 @@ class MainActivity : AppCompatActivity() {
     override fun onStop() {
         super.onStop()
         Timber.d("onStop")
+        screensaverService.stop(true)
         tvProviderSchedulerService.launchOneTimeRefresh()
     }
 

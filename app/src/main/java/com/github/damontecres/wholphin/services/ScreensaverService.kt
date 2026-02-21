@@ -27,7 +27,7 @@ class ScreensaverService
         @param:DefaultCoroutineScope private val scope: CoroutineScope,
         private val userPreferencesService: UserPreferencesService,
     ) {
-        private val _state = MutableStateFlow(ScreensaverState(false, false, false))
+        private val _state = MutableStateFlow(ScreensaverState(false, false, false, false))
         val state: StateFlow<ScreensaverState> = _state
 
         private var waitJob: Job? = null
@@ -39,7 +39,7 @@ class ScreensaverService
                         val enabled =
                             prefs.appPreferences.interfacePreferences.screensaverPreference.enabled
                         keepScreenOnInternal(enabled)
-                        ScreensaverState(enabled, false, false)
+                        ScreensaverState(enabled, false, false, false)
                     }
                 }.launchIn(scope)
         }
@@ -73,19 +73,22 @@ class ScreensaverService
         }
 
         fun start() {
-            _state.update { it.copy(enabled = true, active = true) }
-        }
-
-        suspend fun stop() {
             _state.update {
                 it.copy(
-                    enabled =
-                        userPreferencesService
-                            .getCurrent()
-                            .appPreferences.interfacePreferences.screensaverPreference.enabled,
+                    enabledTemp = true,
+                    active = true,
+                )
+            }
+        }
+
+        fun stop(cancelJob: Boolean) {
+            _state.update {
+                it.copy(
+                    enabledTemp = false,
                     active = false,
                 )
             }
+            if (cancelJob) waitJob?.cancel()
         }
 
         fun keepScreenOn(keep: Boolean) {
@@ -119,8 +122,9 @@ class ScreensaverService
 
 data class ScreensaverState(
     val enabled: Boolean,
+    val enabledTemp: Boolean,
     val active: Boolean,
     val paused: Boolean,
 ) {
-    val show get() = enabled && active && !paused
+    val show get() = (enabled || enabledTemp) && active && !paused
 }
