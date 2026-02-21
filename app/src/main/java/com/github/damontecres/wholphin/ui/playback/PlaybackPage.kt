@@ -186,7 +186,6 @@ fun PlaybackPageContent(
         }
     }
 
-    AmbientPlayerListener(player)
     var contentScale by remember(playerBackend) {
         mutableStateOf(
             if (playerBackend == PlayerBackend.MPV) {

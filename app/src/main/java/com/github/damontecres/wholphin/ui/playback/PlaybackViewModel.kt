@@ -47,6 +47,7 @@ import com.github.damontecres.wholphin.services.PlayerFactory
 import com.github.damontecres.wholphin.services.PlaylistCreationResult
 import com.github.damontecres.wholphin.services.PlaylistCreator
 import com.github.damontecres.wholphin.services.RefreshRateService
+import com.github.damontecres.wholphin.services.ScreensaverService
 import com.github.damontecres.wholphin.services.StreamChoiceService
 import com.github.damontecres.wholphin.services.UserPreferencesService
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
@@ -140,6 +141,7 @@ class PlaybackViewModel
         val streamChoiceService: StreamChoiceService,
         private val userPreferencesService: UserPreferencesService,
         private val imageUrlService: ImageUrlService,
+        private val screensaverService: ScreensaverService,
         @Assisted private val destination: Destination,
     ) : ViewModel(),
         Player.Listener,
@@ -189,7 +191,10 @@ class PlaybackViewModel
 
         init {
             viewModelScope.launchIO {
-                addCloseable { disconnectPlayer() }
+                addCloseable {
+                    screensaverService.keepScreenOn(false)
+                    disconnectPlayer()
+                }
                 init()
             }
         }
@@ -1423,6 +1428,10 @@ class PlaybackViewModel
                     }
                 }
             }
+        }
+
+        override fun onIsPlayingChanged(isPlaying: Boolean) {
+            screensaverService.keepScreenOn(isPlaying)
         }
     }
 

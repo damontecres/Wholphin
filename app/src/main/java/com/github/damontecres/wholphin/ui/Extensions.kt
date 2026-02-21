@@ -5,7 +5,6 @@ import android.content.Context
 import android.content.ContextWrapper
 import android.media.AudioManager
 import android.view.KeyEvent
-import android.view.WindowManager
 import android.widget.Toast
 import androidx.compose.foundation.MarqueeAnimationMode
 import androidx.compose.foundation.basicMarquee
@@ -296,7 +295,7 @@ fun Arrangement.spacedByWithFooter(space: Dp) =
     }
 
 /**
- * Tries to find the [Activity] for the given [Context]. Often used for [keepScreenOn].
+ * Tries to find the [Activity] for the given [Context]
  */
 fun Context.findActivity(): Activity? {
     if (this is Activity) {
@@ -308,18 +307,6 @@ fun Context.findActivity(): Activity? {
         context = context.baseContext
     }
     return null
-}
-
-/**
- * Keep the screen on for an [Activity]. Often used with [findActivity].
- */
-fun Activity.keepScreenOn(keep: Boolean) {
-    Timber.v("Keep screen on: $keep")
-    if (keep) {
-        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-    } else {
-        window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-    }
 }
 
 /**
