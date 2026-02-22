@@ -495,8 +495,8 @@
     <string name="apply_all_rows">Použít na všechny řádky</string>
     <string name="customize_home">Přizpůsobit domovskou stránku</string>
     <string name="home_rows">Řádky na domovské stránce</string>
-    <string name="load_from_server">Načíst ze serveru</string>
-    <string name="save_to_server">Uložit na server</string>
+    <string name="load_from_server">Načíst ze serverového uživatelského profilu</string>
+    <string name="save_to_server">Uložit do serverového uživatelského profilu</string>
     <string name="load_from_web_client">Načíst z webového klienta</string>
     <string name="use_series">Použít obrázek seriálu</string>
     <string name="add_row_for">Přidat řádek pro %1$s</string>
@@ -511,4 +511,5 @@
     <string name="display_presets">Zobrazit předvolby</string>
     <string name="display_presets_description">Vestavěné předvolby pro rychlou úpravu všech řádků</string>
     <string name="customize_home_summary">Vyberte řádky a obrázky na domovské stránce</string>
+    <string name="favorite_items">Oblíbené %s</string>
 </resources>
