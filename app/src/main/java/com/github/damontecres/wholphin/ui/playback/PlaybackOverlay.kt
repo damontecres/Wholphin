@@ -265,7 +265,18 @@ fun PlaybackOverlay(
                             chapters
                                 .indexOfFirst { it.position > position }
                                 .minus(1)
-                                .coerceIn(0, chapters.lastIndex)
+                                .let {
+                                    if (it < 0) {
+                                        // Didn't find a chapter, so it's either the first or last
+                                        if (position < chapters.first().position) {
+                                            0
+                                        } else {
+                                            chapters.lastIndex
+                                        }
+                                    } else {
+                                        it
+                                    }
+                                }.coerceIn(0, chapters.lastIndex)
                         index
                     }
                 val listState = rememberLazyListState(chapterIndex)
@@ -470,8 +481,10 @@ fun PlaybackOverlay(
                         style = MaterialTheme.typography.labelLarge,
                         modifier =
                             Modifier
-                                .background(Color.Black.copy(alpha = 0.6f), shape = RoundedCornerShape(4.dp))
-                                .padding(horizontal = 8.dp, vertical = 4.dp),
+                                .background(
+                                    Color.Black.copy(alpha = 0.6f),
+                                    shape = RoundedCornerShape(4.dp),
+                                ).padding(horizontal = 8.dp, vertical = 4.dp),
                     )
                 }
             }
