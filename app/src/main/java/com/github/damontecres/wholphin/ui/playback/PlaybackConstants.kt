@@ -11,7 +11,7 @@ val playbackSpeedOptions = listOf(".25", ".5", ".75", "1.0", "1.25", "1.5", "1.7
 val playbackScaleOptions =
     mapOf(
         ContentScale.Fit to R.string.content_scale_fit,
-        ContentScale.None to R.string.content_scale_none,
+        ContentScale.None to R.string.none,
         ContentScale.Crop to R.string.content_scale_crop,
 //        ContentScale.Inside to "Inside",
         ContentScale.FillBounds to R.string.content_scale_fill,
