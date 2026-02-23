@@ -24,6 +24,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -35,6 +38,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.focus.onFocusChanged
@@ -254,8 +258,34 @@ fun PlaybackOverlay(
             exit = slideOutVertically { it / 2 } + fadeOut(),
         ) {
             if (chapters.isNotEmpty()) {
+                val bringIntoViewRequester = remember { BringIntoViewRequester() }
+                val chapterIndex =
+                    remember {
+                        val position = playerControls.currentPosition.milliseconds
+                        val index =
+                            chapters
+                                .indexOfFirst { it.position > position }
+                                .minus(1)
+                                .let {
+                                    if (it < 0) {
+                                        // Didn't find a chapter, so it's either the first or last
+                                        if (position < chapters.first().position) {
+                                            0
+                                        } else {
+                                            chapters.lastIndex
+                                        }
+                                    } else {
+                                        it
+                                    }
+                                }.coerceIn(0, chapters.lastIndex)
+                        index
+                    }
+                val listState = rememberLazyListState(chapterIndex)
                 val focusRequester = remember { FocusRequester() }
-                LaunchedEffect(Unit) { focusRequester.tryRequestFocus() }
+                LaunchedEffect(Unit) {
+                    bringIntoViewRequester.bringIntoView()
+                    focusRequester.tryRequestFocus()
+                }
                 Column(
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                     modifier =
@@ -276,6 +306,7 @@ fun PlaybackOverlay(
                         style = MaterialTheme.typography.titleLarge,
                     )
                     LazyRow(
+                        state = listState,
                         contentPadding = PaddingValues(16.dp),
                         horizontalArrangement = Arrangement.spacedBy(16.dp),
                         modifier =
@@ -305,10 +336,19 @@ fun PlaybackOverlay(
                                 },
                                 interactionSource = interactionSource,
                                 modifier =
-                                    Modifier.ifElse(
-                                        index == 0,
-                                        Modifier.focusRequester(focusRequester),
-                                    ),
+                                    Modifier
+                                        .ifElse(
+                                            index == chapterIndex,
+                                            Modifier
+                                                .focusRequester(focusRequester)
+                                                .bringIntoViewRequester(bringIntoViewRequester),
+                                        ).ifElse(
+                                            index == 0,
+                                            Modifier.focusProperties {
+                                                // Prevent scrolling left on first card to prevent moving down
+                                                left = FocusRequester.Cancel
+                                            },
+                                        ),
                             )
                         }
                     }
@@ -448,8 +488,10 @@ fun PlaybackOverlay(
                         style = MaterialTheme.typography.labelLarge,
                         modifier =
                             Modifier
-                                .background(Color.Black.copy(alpha = 0.6f), shape = RoundedCornerShape(4.dp))
-                                .padding(horizontal = 8.dp, vertical = 4.dp),
+                                .background(
+                                    Color.Black.copy(alpha = 0.6f),
+                                    shape = RoundedCornerShape(4.dp),
+                                ).padding(horizontal = 8.dp, vertical = 4.dp),
                     )
                 }
             }
