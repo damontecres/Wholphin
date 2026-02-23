@@ -522,6 +522,12 @@
     <string name="display_presets">Display presets</string>
     <string name="display_presets_description">Built-in presets to quickly style all rows</string>
     <string name="customize_home_summary">Choose rows and images on the home page</string>
+    <string name="content_scale_fit">Fit</string>
+    <string name="content_scale_none">None</string>
+    <string name="content_scale_crop">Crop</string>
+    <string name="content_scale_fill">Fill</string>
+    <string name="content_scale_fill_width">Fill width</string>
+    <string name="content_scale_fill_height">Fill height</string>
 
     <string-array name="theme_song_volume">
         <item>Disabled</item>
