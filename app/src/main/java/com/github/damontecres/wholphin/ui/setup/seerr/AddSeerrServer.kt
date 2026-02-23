@@ -62,7 +62,7 @@ fun AddSeerrServerApiKey(
         val passwordFocusRequester = remember { FocusRequester() }
         LaunchedEffect(Unit) { focusRequester.tryRequestFocus() }
         Text(
-            text = "Enter URL & API Key",
+            text = stringResource(R.string.enter_url_api_key),
             style = MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.onSurface,
             textAlign = TextAlign.Center,
@@ -73,7 +73,7 @@ fun AddSeerrServerApiKey(
             modifier = Modifier.align(Alignment.CenterHorizontally),
         ) {
             Text(
-                text = "URL",
+                text = stringResource(R.string.url),
                 modifier = Modifier.padding(end = 8.dp),
             )
             EditTextBox(
@@ -104,7 +104,7 @@ fun AddSeerrServerApiKey(
             modifier = Modifier.align(Alignment.CenterHorizontally),
         ) {
             Text(
-                text = "API Key",
+                text = stringResource(R.string.api_key),
                 modifier = Modifier.padding(end = 8.dp),
             )
             EditTextBox(

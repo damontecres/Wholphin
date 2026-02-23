@@ -522,109 +522,161 @@
     <string name="display_presets">Display presets</string>
     <string name="display_presets_description">Built-in presets to quickly style all rows</string>
     <string name="customize_home_summary">Choose rows and images on the home page</string>
+    <string name="content_scale_fit">Fit</string>
+    <string name="content_scale_crop">Crop</string>
+    <string name="content_scale_fill">Fill</string>
+    <string name="content_scale_fill_width">Fill width</string>
+    <string name="content_scale_fill_height">Fill height</string>
     <string name="display_preset_default">Wholphin Default</string>
     <string name="display_preset_compact">Wholphin Compact</string>
     <string name="display_preset_series_thumb">Series Thumb images</string>
     <string name="display_preset_episode_thumbnails">Episode Thumbnail images</string>
 
+    <string name="volume_lowest">Lowest</string>
+    <string name="volume_low">Low</string>
+    <string name="volume_medium">Medium</string>
+    <string name="volume_high">High</string>
+    <string name="volume_full">Full</string>
     <string-array name="theme_song_volume">
-        <item>Disabled</item>
-        <item>Lowest</item>
-        <item>Low</item>
-        <item>Medium</item>
-        <item>High</item>
-        <item>Full</item>
+        <item>@string/disabled</item>
+        <item>@string/volume_lowest</item>
+        <item>@string/volume_low</item>
+        <item>@string/volume_medium</item>
+        <item>@string/volume_high</item>
+        <item>@string/volume_full</item>
     </string-array>
 
+    <string name="purple">Purple</string>
+    <string name="orange">Orange</string>
+    <string name="bold_blue">Bold Blue</string>
+    <string name="black">Black</string>
     <string-array name="app_theme_colors">
-        <item>Purple</item>
-        <item>Blue</item>
-        <item>Green</item>
-        <item>Orange</item>
-        <item>Bold Blue</item>
-        <item>Black</item>
+        <item>@string/purple</item>
+        <item>@string/blue</item>
+        <item>@string/green</item>
+        <item>@string/orange</item>
+        <item>@string/bold_blue</item>
+        <item>@string/black</item>
     </string-array>
 
+    <string name="skip_ignore">Ignore</string>
+    <string name="skip_automatically">Skip automatically</string>
+    <string name="skip_ask">Ask to skip</string>
     <string-array name="skip_behaviors">
-        <item>Ignore</item>
-        <item>Skip automatically</item>
-        <item>Ask to skip</item>
+        <item>@string/skip_ignore</item>
+        <item>@string/skip_automatically</item>
+        <item>@string/skip_ask</item>
     </string-array>
 
     <string-array name="content_scale">
-        <item>Fit</item>
-        <item>None</item>
-        <item>Crop</item>
-        <item>Fill</item>
-        <item>Fill Width</item>
-        <item>Fill Height</item>
+        <item>@string/content_scale_fit</item>
+        <item>@string/none</item>
+        <item>@string/content_scale_crop</item>
+        <item>@string/content_scale_fill</item>
+        <item>@string/content_scale_fill_width</item>
+        <item>@string/content_scale_fill_height</item>
     </string-array>
 
+    <string name="ffmpeg_fallback">Only use FFmpeg if no built-in decoder exists</string>
+    <string name="ffmpeg_prefer">Prefer to use FFmpeg over built-in decoders</string>
+    <string name="ffmpeg_never">Never use FFmpeg decoders</string>
     <string-array name="ffmpeg_extension_options">
-        <item>Only use FFmpeg if no built-in decoder exists</item>
-        <item>Prefer to use FFmpeg over built-in decoders</item>
-        <item>Never use FFmpeg decoders</item>
+        <item>@string/ffmpeg_fallback</item>
+        <item>@string/ffmpeg_prefer</item>
+        <item>@string/ffmpeg_never</item>
     </string-array>
 
+    <string name="next_up_playback_end">At the end of playback</string>
+    <string name="next_up_outro">During end credits/outro</string>
     <string-array name="show_next_up_when_options">
-        <item>At the end of playback</item>
-        <item>During end credits/outro</item>
+        <item>@string/next_up_playback_end</item>
+        <item>@string/next_up_outro</item>
     </string-array>
 
+    <string name="white">White</string>
+    <string name="light_gray">Light gray</string>
+    <string name="dark_gray">Dark gray</string>
+    <string name="yellow">Yellow</string>
+    <string name="cyan">Cyan</string>
+    <string name="magenta">Magenta</string>
     <string-array name="font_colors">
-        <item>White</item>
-        <item>Black</item>
-        <item>Light Gray</item>
-        <item>Dark Gray</item>
-        <item>Red</item>
-        <item>Yellow</item>
-        <item>Green</item>
-        <item>Cyan</item>
-        <item>Blue</item>
-        <item>Magenta</item>
+        <item>@string/white</item>
+        <item>@string/black</item>
+        <item>@string/light_gray</item>
+        <item>@string/dark_gray</item>
+        <item>@string/red</item>
+        <item>@string/yellow</item>
+        <item>@string/green</item>
+        <item>@string/cyan</item>
+        <item>@string/blue</item>
+        <item>@string/magenta</item>
     </string-array>
 
+    <string name="subtitle_edge_outline">Outline</string>
+    <string name="subtitle_edge_shadow">Shadow</string>
     <string-array name="subtitle_edge">
-        <item>None</item>
-        <item>Outline</item>
-        <item>Shadow</item>
+        <item>@string/none</item>
+        <item>@string/subtitle_edge_outline</item>
+        <item>@string/subtitle_edge_shadow</item>
     </string-array>
 
+    <string name="background_style_wrap">Wrap</string>
+    <string name="background_style_boxed">Boxed</string>
     <string-array name="background_style">
-        <item>None</item>
-        <item>Wrap</item>
-        <item>Boxed</item>
+        <item>@string/none</item>
+        <item>@string/background_style_wrap</item>
+        <item>@string/background_style_boxed</item>
     </string-array>
 
+    <string name="exoplayer" translatable="false">ExoPlayer</string>
+    <string name="mpv" translatable="false">MPV</string>
+    <string name="prefer_mpv">Prefer MPV</string>
     <string-array name="player_backend_options">
-        <item>ExoPlayer</item>
-        <item>MPV</item>
-        <item>Prefer MPV</item>
+        <item>@string/exoplayer</item>
+        <item>@string/mpv</item>
+        <item>@string/prefer_mpv</item>
     </string-array>
 
+    <string name="player_backend_options_subtitles_prefer_mpv">Use ExoPlayer for HDR playback</string>
     <string-array name="player_backend_options_subtitles">
-        <item />
-        <item />
-        <item>Use ExoPlayer for HDR playback</item>
+        <item /><!-- Intentionally blank -->
+        <item /><!-- Intentionally blank -->
+        <item>@string/player_backend_options_subtitles_prefer_mpv</item>
     </string-array>
 
+    <string name="aspect_ratios_poster">Poster (2:3)</string>
+    <string name="aspect_ratios_16_9">16:9</string>
+    <string name="aspect_ratios_4_3">4:3</string>
+    <string name="aspect_ratios_square">Square (1:1)</string>
     <string-array name="aspect_ratios">
-        <item>Poster (2:3)</item>
-        <item>16:9</item>
-        <item>4:3</item>
-        <item>Square (1:1)</item>
+        <item>@string/aspect_ratios_poster</item>
+        <item>@string/aspect_ratios_16_9</item>
+        <item>@string/aspect_ratios_4_3</item>
+        <item>@string/aspect_ratios_square</item>
     </string-array>
 
+    <string name="image_type_primary">Primary</string>
+    <string name="image_type_thumb">Thumbary</string>
     <string-array name="image_types">
-        <item>Primary</item>
-        <item>Thumb</item>
+        <item>@string/image_type_primary</item>
+        <item>@string/image_type_thumb</item>
         <!--        <item>Banner</item>-->
     </string-array>
 
+    <string name="backdrop_style_dynamic">Image with dynamic color</string>
+    <string name="backdrop_style_image">Image only</string>
+    <string name="enter_url_api_key"><![CDATA[Enter URL & API Key]]></string>
+    <string name="api_key">API Key</string>
+    <string name="seerr_login">Login to Seerr server</string>
+    <string name="seerr_jellyfin_user">Jellyfin user</string>
+    <string name="seerr_local_user">Local user</string>
+    <string name="search_and_download_subtitles"><![CDATA[Search & download subtitles]]></string>
+    <string name="no_subtitles_found">No remote subtitles were found</string>
+    <string name="series_continueing">Present</string>
     <string-array name="backdrop_style_options">
-        <item>Image with dynamic color</item>
-        <item>Image only</item>
-        <item>None</item>
+        <item>@string/backdrop_style_dynamic</item>
+        <item>@string/backdrop_style_image</item>
+        <item>@string/none</item>
     </string-array>
 
 </resources>

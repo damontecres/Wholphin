@@ -123,6 +123,9 @@ class MainActivity : AppCompatActivity() {
     @Inject
     lateinit var suggestionsSchedulerService: SuggestionsSchedulerService
 
+    @Inject
+    lateinit var backdropService: BackdropService
+
     // Note: unused but injected to ensure it is created
     @Inject
     lateinit var serverEventListener: ServerEventListener
@@ -247,6 +250,9 @@ class MainActivity : AppCompatActivity() {
                                             }
 
                                             is SetupDestination.AppContent -> {
+                                                LaunchedEffect(Unit) {
+                                                    backdropService.clearBackdrop()
+                                                }
                                                 val current = key.current
                                                 ProvideLocalClock {
                                                     if (UpdateChecker.ACTIVE && appPreferences.autoCheckForUpdates) {

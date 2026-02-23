@@ -1,6 +1,7 @@
 package com.github.damontecres.wholphin.ui.playback
 
 import androidx.compose.ui.layout.ContentScale
+import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.preferences.PrefContentScale
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.CollectionType
@@ -9,13 +10,13 @@ val playbackSpeedOptions = listOf(".25", ".5", ".75", "1.0", "1.25", "1.5", "1.7
 
 val playbackScaleOptions =
     mapOf(
-        ContentScale.Fit to "Fit",
-        ContentScale.None to "None",
-        ContentScale.Crop to "Crop",
+        ContentScale.Fit to R.string.content_scale_fit,
+        ContentScale.None to R.string.none,
+        ContentScale.Crop to R.string.content_scale_crop,
 //        ContentScale.Inside to "Inside",
-        ContentScale.FillBounds to "Fill",
-        ContentScale.FillWidth to "Fill Width",
-        ContentScale.FillHeight to "Fill Height",
+        ContentScale.FillBounds to R.string.content_scale_fill,
+        ContentScale.FillWidth to R.string.content_scale_fill_width,
+        ContentScale.FillHeight to R.string.content_scale_fill_height,
     )
 
 val PrefContentScale.scale: ContentScale
