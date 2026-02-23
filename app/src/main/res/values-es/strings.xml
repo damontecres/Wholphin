@@ -480,4 +480,20 @@
     <string name="customize_home_summary">Elegir filas e imágenes en la página de inicio</string>
     <string name="recently_released_in">Lanzado recientemente en %1$s</string>
     <string name="favorite_items">Favoritos%s</string>
+    <string name="content_scale_fit">Ajustar</string>
+    <string name="content_scale_crop">Recortar</string>
+    <string name="content_scale_fill">Rellenar</string>
+    <string name="content_scale_fill_width">Ajustar al ancho</string>
+    <string name="content_scale_fill_height">Ajustar al alto</string>
+    <string name="display_preset_series_thumb">Miniaturas de las series</string>
+    <string name="display_preset_episode_thumbnails">Miniaturas de los episodios</string>
+    <string name="volume_lowest">Mínimo</string>
+    <string name="volume_low">Bajo</string>
+    <string name="volume_medium">Medio</string>
+    <string name="volume_high">Alto</string>
+    <string name="volume_full">Máximo</string>
+    <string name="purple">Morado</string>
+    <string name="orange">Naranja</string>
+    <string name="bold_blue">Azul intenso</string>
+    <string name="black">Negro</string>
 </resources>
