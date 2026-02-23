@@ -71,6 +71,7 @@ fun createDeviceProfile(
     dolbyVisionELDirectPlay: Boolean,
     decodeAv1: Boolean,
     jellyfinTenEleven: Boolean,
+    preferAc3ForSurround: Boolean,
 ) = buildDeviceProfile {
     val allowedAudioCodecs =
         when {
@@ -132,6 +133,23 @@ fun createDeviceProfile(
 
     // / Transcoding profiles
     // Video
+    if (preferAc3ForSurround) {
+        transcodingProfile {
+            type = DlnaProfileType.VIDEO
+            context = EncodingContext.STREAMING
+
+            container = Codec.Container.TS
+            protocol = MediaStreamProtocol.HLS
+
+            if (supportsHevc) videoCodec(Codec.Video.HEVC)
+            videoCodec(Codec.Video.H264)
+
+            audioCodec(Codec.Audio.AC3)
+
+            copyTimestamps = false
+            enableSubtitlesInManifest = true
+        }
+    }
     transcodingProfile {
         type = DlnaProfileType.VIDEO
         context = EncodingContext.STREAMING
@@ -512,6 +530,33 @@ fun createDeviceProfile(
 
             applyConditions {
                 ProfileConditionValue.VIDEO_RANGE_TYPE inCollection unsupportedRangeTypesHevc
+            }
+        }
+    }
+
+    if (preferAc3ForSurround) {
+        codecProfile {
+            type = CodecType.VIDEO_AUDIO
+            codec = Codec.Audio.AAC
+
+            conditions {
+                ProfileConditionValue.AUDIO_PROFILE equals "none"
+            }
+
+            applyConditions {
+                ProfileConditionValue.AUDIO_CHANNELS greaterThanOrEquals 3
+            }
+        }
+        codecProfile {
+            type = CodecType.VIDEO_AUDIO
+            codec = Codec.Audio.OPUS
+
+            conditions {
+                ProfileConditionValue.AUDIO_PROFILE equals "none"
+            }
+
+            applyConditions {
+                ProfileConditionValue.AUDIO_CHANNELS greaterThanOrEquals 3
             }
         }
     }

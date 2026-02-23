@@ -52,7 +52,10 @@ sealed interface AppPreference<Pref, T> {
         value: T?,
     ): String? = null
 
-    fun validate(value: T): PreferenceValidation = PreferenceValidation.Valid
+    fun validate(
+        prefs: Pref,
+        value: T,
+    ): PreferenceValidation = PreferenceValidation.Valid
 
     companion object {
         val SkipForward =
@@ -414,10 +417,38 @@ sealed interface AppPreference<Pref, T> {
                 defaultValue = true,
                 getter = { it.playbackPreferences.overrides.ac3Supported },
                 setter = { prefs, value ->
-                    prefs.updatePlaybackOverrides { ac3Supported = value }
+                    prefs.updatePlaybackOverrides {
+                        ac3Supported = value
+                        if (!value) preferAc3Surround = false
+                    }
                 },
                 summaryOn = R.string.enabled,
                 summaryOff = R.string.disabled,
+            )
+        val PreferAc3ForSurround =
+            AppSwitchPreference<AppPreferences>(
+                title = R.string.prefer_ac3_for_surround,
+                defaultValue = true,
+                getter = { it.playbackPreferences.overrides.preferAc3Surround },
+                setter = { prefs, value ->
+                    prefs.updatePlaybackOverrides {
+                        preferAc3Surround = value
+                    }
+                },
+                summaryOn = R.string.prefer_ac3_for_surround_summary,
+//                summaryOn = R.string.enabled,
+                summaryOff = R.string.disabled,
+                validator = { prefs, value ->
+                    prefs.playbackPreferences.overrides.let {
+                        if (value && !it.ac3Supported) {
+                            PreferenceValidation.Invalid("AC3 support is not enabled")
+                        } else if (value && it.downmixStereo) {
+                            PreferenceValidation.Invalid("Always downmixing to stereo")
+                        } else {
+                            PreferenceValidation.Valid
+                        }
+                    }
+                },
             )
         val DownMixStereo =
             AppSwitchPreference<AppPreferences>(
@@ -425,7 +456,10 @@ sealed interface AppPreference<Pref, T> {
                 defaultValue = false,
                 getter = { it.playbackPreferences.overrides.downmixStereo },
                 setter = { prefs, value ->
-                    prefs.updatePlaybackOverrides { downmixStereo = value }
+                    prefs.updatePlaybackOverrides {
+                        downmixStereo = value
+                        if (value) preferAc3Surround = false
+                    }
                 },
                 summaryOn = R.string.enabled,
                 summaryOff = R.string.disabled,
@@ -1066,6 +1100,7 @@ private val ExoPlayerSettings =
         AppPreference.FfmpegPreference,
         AppPreference.DownMixStereo,
         AppPreference.Ac3Supported,
+        AppPreference.PreferAc3ForSurround,
         AppPreference.DirectPlayAss,
         AppPreference.DirectPlayPgs,
         AppPreference.DirectPlayDoviProfile7,
@@ -1206,11 +1241,16 @@ data class AppSwitchPreference<Pref>(
     override val defaultValue: Boolean,
     override val getter: (prefs: Pref) -> Boolean,
     override val setter: (prefs: Pref, value: Boolean) -> Pref,
-    val validator: (value: Boolean) -> PreferenceValidation = { PreferenceValidation.Valid },
+    val validator: (prefs: Pref, value: Boolean) -> PreferenceValidation = { _, _ -> PreferenceValidation.Valid },
     @param:StringRes val summary: Int? = null,
     @param:StringRes val summaryOn: Int? = null,
     @param:StringRes val summaryOff: Int? = null,
 ) : AppPreference<Pref, Boolean> {
+    override fun validate(
+        prefs: Pref,
+        value: Boolean,
+    ): PreferenceValidation = validator.invoke(prefs, value)
+
     override fun summary(
         context: Context,
         value: Boolean?,
