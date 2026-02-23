@@ -436,8 +436,8 @@
     <string name="customize_home_summary">選擇首頁要顯示的列項目及圖片樣式</string>
     <string name="height">高度</string>
     <string name="customize_home">自訂首頁</string>
-    <string name="load_from_server">從伺服器載入</string>
-    <string name="save_to_server">保存到伺服器</string>
+    <string name="load_from_server">從伺服器載入設定</string>
+    <string name="save_to_server">保存設定到伺服器</string>
     <string name="load_from_web_client">從網頁版載入</string>
     <string name="use_series">使用劇集圖片</string>
     <string name="overwrite_server_settings">覆蓋伺服器上的設定？</string>
@@ -445,4 +445,18 @@
     <string name="settings_saved">設定已儲存</string>
     <string name="display_presets">顯示預設樣式</string>
     <string name="for_episodes">針對單集</string>
+    <string name="content_scale_fit">原比例縮放</string>
+    <string name="content_scale_crop">裁切填滿</string>
+    <string name="content_scale_fill">拉伸填滿</string>
+    <string name="content_scale_fill_width">填滿寬度</string>
+    <string name="content_scale_fill_height">填滿高度</string>
+    <string name="volume_lowest">最低</string>
+    <string name="volume_low">低</string>
+    <string name="volume_medium">中等</string>
+    <string name="volume_high">高</string>
+    <string name="volume_full">最大</string>
+    <string name="purple">紫色</string>
+    <string name="orange">橘色</string>
+    <string name="bold_blue">深藍色</string>
+    <string name="black">黑色</string>
 </resources>
