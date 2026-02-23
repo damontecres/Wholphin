@@ -857,7 +857,7 @@ fun CollectionFolderGridContent(
                 DataLoadingState.Loading,
                 -> {
                     // This shouldn't happen, so just show placeholder
-                    Text("Loading")
+                    Text(stringResource(R.string.loading))
                 }
 
                 is DataLoadingState.Error -> {

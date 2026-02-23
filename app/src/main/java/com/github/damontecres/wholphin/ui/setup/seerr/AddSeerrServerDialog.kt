@@ -6,6 +6,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.res.stringResource
+import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.SeerrAuthMethod
 import com.github.damontecres.wholphin.ui.components.BasicDialog
 import com.github.damontecres.wholphin.ui.components.DialogItem
@@ -71,27 +73,26 @@ fun ChooseSeerrLoginType(
     onChoose: (SeerrAuthMethod) -> Unit,
 ) {
     val params =
-        remember {
-            DialogParams(
-                fromLongClick = false,
-                title = "Login to Seerr server",
-                items =
-                    listOf(
-                        DialogItem(
-                            text = "API Key",
-                            onClick = { onChoose.invoke(SeerrAuthMethod.API_KEY) },
-                        ),
-                        DialogItem(
-                            text = "Jellyfin user",
-                            onClick = { onChoose.invoke(SeerrAuthMethod.JELLYFIN) },
-                        ),
-                        DialogItem(
-                            text = "Local user",
-                            onClick = { onChoose.invoke(SeerrAuthMethod.LOCAL) },
-                        ),
+        DialogParams(
+            fromLongClick = false,
+            title = stringResource(R.string.seerr_login),
+            items =
+                listOf(
+                    DialogItem(
+                        text = stringResource(R.string.api_key),
+                        onClick = { onChoose.invoke(SeerrAuthMethod.API_KEY) },
                     ),
-            )
-        }
+                    DialogItem(
+                        text = stringResource(R.string.seerr_jellyfin_user),
+                        onClick = { onChoose.invoke(SeerrAuthMethod.JELLYFIN) },
+                    ),
+                    DialogItem(
+                        text = stringResource(R.string.seerr_local_user),
+                        onClick = { onChoose.invoke(SeerrAuthMethod.LOCAL) },
+                    ),
+                ),
+        )
+
     DialogPopup(
         params = params,
         onDismissRequest = onDismissRequest,
