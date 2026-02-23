@@ -459,4 +459,10 @@
     <string name="orange">橘色</string>
     <string name="bold_blue">深藍色</string>
     <string name="black">黑色</string>
+    <string name="skip_ignore">不處理</string>
+    <string name="skip_automatically">自動跳過</string>
+    <string name="skip_ask">詢問是否跳過</string>
+    <string name="ffmpeg_fallback">僅在無內建解碼器時使用 FFmpeg</string>
+    <string name="ffmpeg_prefer">優先使用 FFmpeg 而非內建解碼器</string>
+    <string name="ffmpeg_never">不使用 FFmpeg 解碼器</string>
 </resources>
