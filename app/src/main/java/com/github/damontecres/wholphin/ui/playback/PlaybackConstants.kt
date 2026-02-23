@@ -3,6 +3,7 @@ package com.github.damontecres.wholphin.ui.playback
 import androidx.compose.ui.layout.ContentScale
 import com.github.damontecres.wholphin.preferences.PrefContentScale
 import org.jellyfin.sdk.model.api.BaseItemKind
+import org.jellyfin.sdk.model.api.CollectionType
 
 val playbackSpeedOptions = listOf(".25", ".5", ".75", "1.0", "1.25", "1.5", "1.75", "2.0")
 
@@ -81,3 +82,20 @@ val BaseItemKind.playable: Boolean
             BaseItemKind.YEAR,
             -> false
         }
+
+fun getTypeFor(collectionType: CollectionType): BaseItemKind? =
+    when (collectionType) {
+        CollectionType.UNKNOWN -> null
+        CollectionType.MOVIES -> BaseItemKind.MOVIE
+        CollectionType.TVSHOWS -> BaseItemKind.SERIES
+        CollectionType.MUSIC -> BaseItemKind.AUDIO
+        CollectionType.MUSICVIDEOS -> BaseItemKind.MUSIC_VIDEO
+        CollectionType.TRAILERS -> BaseItemKind.TRAILER
+        CollectionType.HOMEVIDEOS -> BaseItemKind.VIDEO
+        CollectionType.BOXSETS -> BaseItemKind.BOX_SET
+        CollectionType.BOOKS -> BaseItemKind.BOOK
+        CollectionType.PHOTOS -> BaseItemKind.PHOTO_ALBUM
+        CollectionType.LIVETV -> BaseItemKind.LIVE_TV_CHANNEL
+        CollectionType.PLAYLISTS -> BaseItemKind.PLAYLIST
+        CollectionType.FOLDERS -> BaseItemKind.FOLDER
+    }

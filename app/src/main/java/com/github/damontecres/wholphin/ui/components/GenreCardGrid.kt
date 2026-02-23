@@ -21,8 +21,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.BaseItem
-import com.github.damontecres.wholphin.data.model.CollectionFolderFilter
-import com.github.damontecres.wholphin.data.model.GetItemsFilter
+import com.github.damontecres.wholphin.data.model.createGenreDestination
 import com.github.damontecres.wholphin.services.ImageUrlService
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.ui.OneTimeLaunchedEffect
@@ -30,7 +29,6 @@ import com.github.damontecres.wholphin.ui.SlimItemFields
 import com.github.damontecres.wholphin.ui.cards.GenreCard
 import com.github.damontecres.wholphin.ui.detail.CardGrid
 import com.github.damontecres.wholphin.ui.detail.CardGridItem
-import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.setValueOnMain
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.GetGenresRequestHandler
@@ -256,23 +254,12 @@ fun GenreCardGrid(
                     pager = genres,
                     onClickItem = { _, genre ->
                         viewModel.navigationManager.navigateTo(
-                            Destination.FilteredCollection(
-                                itemId = itemId,
-                                filter =
-                                    CollectionFolderFilter(
-                                        nameOverride =
-                                            listOfNotNull(
-                                                genre.name,
-                                                item?.title,
-                                            ).joinToString(" "),
-                                        filter =
-                                            GetItemsFilter(
-                                                genres = listOf(genre.id),
-                                                includeItemTypes = includeItemTypes,
-                                            ),
-                                        useSavedLibraryDisplayInfo = false,
-                                    ),
-                                recursive = true,
+                            createGenreDestination(
+                                genreId = genre.id,
+                                genreName = genre.name,
+                                parentId = itemId,
+                                parentName = item?.title,
+                                includeItemTypes = includeItemTypes,
                             ),
                         )
                     },
