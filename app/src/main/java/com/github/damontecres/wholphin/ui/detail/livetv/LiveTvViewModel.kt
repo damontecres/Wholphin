@@ -1,6 +1,7 @@
 package com.github.damontecres.wholphin.ui.detail.livetv
 
 import android.content.Context
+import android.util.Log
 import androidx.compose.ui.graphics.Color
 import androidx.datastore.core.DataStore
 import androidx.lifecycle.MutableLiveData
@@ -50,6 +51,8 @@ import org.jellyfin.sdk.model.api.request.GetLiveTvChannelsRequest
 import org.jellyfin.sdk.model.extensions.ticks
 import timber.log.Timber
 import java.time.LocalDateTime
+import java.time.ZoneId
+import java.time.ZoneOffset
 import java.time.temporal.ChronoUnit
 import java.util.UUID
 import javax.inject.Inject
@@ -106,7 +109,8 @@ class LiveTvViewModel
         }
 
         fun init() {
-            guideStart = LocalDateTime.now().truncatedTo(ChronoUnit.HOURS)
+            guideStart = LocalDateTime.now()
+                .truncatedTo(ChronoUnit.HOURS)
             viewModelScope.launch(
                 Dispatchers.IO +
                     LoadingExceptionHandler(
@@ -179,8 +183,15 @@ class LiveTvViewModel
             channels: List<TvChannel>,
             range: IntRange,
         ) = mutex.withLock {
-            val maxStartDate = guideStart.plusHours(MAX_HOURS).minusMinutes(1)
-            val minEndDate = guideStart.plusMinutes(1L)
+            val zone = ZoneId.systemDefault() // Get device's timezone
+            val guideStartUtc = guideStart
+                .atZone(zone) // This 17:00 is actually 17:00 CURRENT ZONE time
+                .withZoneSameInstant(ZoneOffset.UTC) // Convert to UTC ( for example UTC+2 -> 15:00)
+                .toLocalDateTime() // Strip the zone info
+
+            val maxStartDate = guideStartUtc.plusHours(MAX_HOURS).minusMinutes(1)
+            val minEndDate = guideStartUtc.plusMinutes(1L)
+
             val channelsToFetch = channels.subList(range.first, range.last + 1)
             Timber.v("Fetching programs for $range channels ${channelsToFetch.size}")
             val request =
