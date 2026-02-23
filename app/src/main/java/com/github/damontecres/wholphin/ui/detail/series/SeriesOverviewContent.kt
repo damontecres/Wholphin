@@ -267,6 +267,7 @@ fun SeriesOverviewContent(
                                             },
                                     interactionSource = interactionSource,
                                     cardHeight = 120.dp,
+                                    useSeriesForPrimary = false,
                                 )
                             }
                         }
