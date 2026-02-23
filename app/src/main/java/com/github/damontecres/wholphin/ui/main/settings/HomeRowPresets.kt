@@ -123,7 +123,7 @@ data class HomeRowPresets(
             )
         }
 
-        val Thumbnails by lazy {
+        val SeriesThumbs by lazy {
             val height = 148
             val epHeight = 100
             HomeRowPresets(
@@ -132,7 +132,52 @@ data class HomeRowPresets(
                         heightDp = epHeight,
                         imageType = ViewOptionImageType.THUMB,
                         aspectRatio = AspectRatio.WIDE,
+                        useSeries = true,
                         episodeImageType = ViewOptionImageType.THUMB,
+                        episodeAspectRatio = AspectRatio.WIDE,
+                    ),
+                movieLibrary =
+                    HomeRowViewOptions(
+                        heightDp = height,
+                    ),
+                tvLibrary =
+                    HomeRowViewOptions(
+                        heightDp = height,
+                    ),
+                videoLibrary =
+                    HomeRowViewOptions(
+                        heightDp = epHeight,
+                        aspectRatio = AspectRatio.WIDE,
+                    ),
+                photoLibrary =
+                    HomeRowViewOptions(
+                        heightDp = epHeight,
+                        aspectRatio = AspectRatio.WIDE,
+                        contentScale = PrefContentScale.CROP,
+                    ),
+                playlist =
+                    HomeRowViewOptions(
+                        heightDp = epHeight,
+                        aspectRatio = AspectRatio.SQUARE,
+                        contentScale = PrefContentScale.FIT,
+                    ),
+                liveTv = HomeRowViewOptions.liveTvDefault,
+                genreSize = epHeight,
+            )
+        }
+
+        val EpisodeThumbnails by lazy {
+            val height = 148
+            val epHeight = 100
+            HomeRowPresets(
+                continueWatching =
+                    HomeRowViewOptions(
+                        heightDp = epHeight,
+                        imageType = ViewOptionImageType.THUMB,
+                        aspectRatio = AspectRatio.WIDE,
+                        showTitles = true,
+                        useSeries = false,
+                        episodeImageType = ViewOptionImageType.PRIMARY,
                         episodeAspectRatio = AspectRatio.WIDE,
                     ),
                 movieLibrary =
@@ -177,7 +222,8 @@ fun HomeRowPresetsContent(
             listOf(
                 "Wholphin Default",
                 "Wholphin Compact",
-                "Thumbnails",
+                "Series Thumb images",
+                "Episode Thumbnail images",
             )
         }
     val focusRequesters = remember { List(presets.size) { FocusRequester() } }
@@ -200,7 +246,8 @@ fun HomeRowPresetsContent(
                         when (index) {
                             0 -> onApply.invoke(HomeRowPresets.WholphinDefault)
                             1 -> onApply.invoke(HomeRowPresets.WholphinCompact)
-                            2 -> onApply.invoke(HomeRowPresets.Thumbnails)
+                            2 -> onApply.invoke(HomeRowPresets.SeriesThumbs)
+                            3 -> onApply.invoke(HomeRowPresets.EpisodeThumbnails)
                         }
                     },
                     modifier = Modifier.focusRequester(focusRequesters[index]),
