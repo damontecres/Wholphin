@@ -38,6 +38,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.focus.onFocusChanged
@@ -341,6 +342,12 @@ fun PlaybackOverlay(
                                             Modifier
                                                 .focusRequester(focusRequester)
                                                 .bringIntoViewRequester(bringIntoViewRequester),
+                                        ).ifElse(
+                                            index == 0,
+                                            Modifier.focusProperties {
+                                                // Prevent scrolling left on first card to prevent moving down
+                                                left = FocusRequester.Cancel
+                                            },
                                         ),
                             )
                         }
