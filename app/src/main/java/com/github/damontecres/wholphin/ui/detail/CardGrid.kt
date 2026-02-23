@@ -4,6 +4,8 @@ import androidx.annotation.StringRes
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusGroup
+import androidx.compose.foundation.gestures.BringIntoViewSpec
+import androidx.compose.foundation.gestures.LocalBringIntoViewSpec
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
@@ -24,6 +26,7 @@ import androidx.compose.foundation.lazy.layout.LazyLayoutCacheWindow
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -112,6 +115,7 @@ fun <T : CardGridItem> CardGrid(
     },
     columns: Int = 6,
     spacing: Dp = 16.dp,
+    bringIntoViewSpec: BringIntoViewSpec = LocalBringIntoViewSpec.current,
 ) {
     val startPosition = initialPosition.coerceIn(0, (pager.size - 1).coerceAtLeast(0))
 
@@ -269,100 +273,102 @@ fun <T : CardGridItem> CardGrid(
             Box(
                 modifier = Modifier.weight(1f),
             ) {
-                LazyVerticalGrid(
-                    columns = GridCells.Fixed(columns),
-                    horizontalArrangement = Arrangement.spacedBy(spacing),
-                    verticalArrangement = Arrangement.spacedBy(spacing),
-                    state = gridState,
-                    contentPadding = PaddingValues(vertical = 16.dp),
-                    modifier =
-                        Modifier
-                            .fillMaxSize()
-                            .focusGroup()
-                            .focusRestorer(firstFocus)
-                            .focusProperties {
-                                onExit = {
-                                    // Leaving the grid, so "forget" the position
+                CompositionLocalProvider(LocalBringIntoViewSpec provides bringIntoViewSpec) {
+                    LazyVerticalGrid(
+                        columns = GridCells.Fixed(columns),
+                        horizontalArrangement = Arrangement.spacedBy(spacing),
+                        verticalArrangement = Arrangement.spacedBy(spacing),
+                        state = gridState,
+                        contentPadding = PaddingValues(vertical = 16.dp),
+                        modifier =
+                            Modifier
+                                .fillMaxSize()
+                                .focusGroup()
+                                .focusRestorer(firstFocus)
+                                .focusProperties {
+                                    onExit = {
+                                        // Leaving the grid, so "forget" the position
 //                                focusedIndex = -1
-                                }
-                                onEnter = {
-                                    if (focusedIndex < 0 && gridState.firstVisibleItemIndex <= startPosition) {
-                                        focusedIndex = startPosition
                                     }
-                                }
-                            },
-                ) {
-                    items(pager.size) { index ->
-                        val mod =
-                            if ((index == focusedIndex) or (focusedIndex < 0 && index == 0)) {
-                                if (DEBUG) Timber.d("Adding firstFocus to focusedIndex $index")
-                                Modifier
-                                    .focusRequester(firstFocus)
-                                    .focusRequester(gridFocusRequester)
-                                    .focusRequester(alphabetFocusRequester)
-                            } else {
-                                Modifier
-                            }
-                        val item = pager[index]
-                        cardContent(
-                            item,
-                            {
-                                if (item != null) {
-                                    focusedIndex = index
-                                    onClickItem.invoke(index, item)
-                                }
-                            },
-                            { if (item != null) onLongClickItem.invoke(index, item) },
-                            mod
-                                .ifElse(index == 0, Modifier.focusRequester(zeroFocus))
-                                .onFocusChanged { focusState ->
-                                    if (DEBUG) {
-                                        Timber.v(
-                                            "$index isFocused=${focusState.isFocused}",
-                                        )
+                                    onEnter = {
+                                        if (focusedIndex < 0 && gridState.firstVisibleItemIndex <= startPosition) {
+                                            focusedIndex = startPosition
+                                        }
                                     }
-                                    if (focusState.isFocused) {
-                                        // Focused, so set that up
-                                        focusOn(index)
-                                        positionCallback?.invoke(columns, index)
-                                    } else if (focusedIndex == index) {
+                                },
+                    ) {
+                        items(pager.size) { index ->
+                            val mod =
+                                if ((index == focusedIndex) or (focusedIndex < 0 && index == 0)) {
+                                    if (DEBUG) Timber.d("Adding firstFocus to focusedIndex $index")
+                                    Modifier
+                                        .focusRequester(firstFocus)
+                                        .focusRequester(gridFocusRequester)
+                                        .focusRequester(alphabetFocusRequester)
+                                } else {
+                                    Modifier
+                                }
+                            val item = pager[index]
+                            cardContent(
+                                item,
+                                {
+                                    if (item != null) {
+                                        focusedIndex = index
+                                        onClickItem.invoke(index, item)
+                                    }
+                                },
+                                { if (item != null) onLongClickItem.invoke(index, item) },
+                                mod
+                                    .ifElse(index == 0, Modifier.focusRequester(zeroFocus))
+                                    .onFocusChanged { focusState ->
+                                        if (DEBUG) {
+                                            Timber.v(
+                                                "$index isFocused=${focusState.isFocused}",
+                                            )
+                                        }
+                                        if (focusState.isFocused) {
+                                            // Focused, so set that up
+                                            focusOn(index)
+                                            positionCallback?.invoke(columns, index)
+                                        } else if (focusedIndex == index) {
 //                                        savedFocusedIndex = index
 //                                        // Was focused on this, so mark unfocused
 //                                        focusedIndex = -1
-                                    }
-                                },
-                        )
+                                        }
+                                    },
+                            )
+                        }
                     }
-                }
-                if (pager.isEmpty()) {
+                    if (pager.isEmpty()) {
 //                focusedIndex = -1
-                    Box(modifier = Modifier.fillMaxSize()) {
-                        Text(
-                            text = stringResource(R.string.no_results),
-                            color = MaterialTheme.colorScheme.onBackground,
-                            modifier = Modifier.align(Alignment.Center),
-                        )
+                        Box(modifier = Modifier.fillMaxSize()) {
+                            Text(
+                                text = stringResource(R.string.no_results),
+                                color = MaterialTheme.colorScheme.onBackground,
+                                modifier = Modifier.align(Alignment.Center),
+                            )
+                        }
                     }
-                }
-                if (showFooter) {
-                    // Footer
-                    Box(
-                        modifier =
-                            Modifier
-                                .align(Alignment.BottomCenter)
-                                .background(AppColors.TransparentBlack50),
-                    ) {
-                        val index = (focusedIndex + 1).takeIf { it > 0 } ?: "?"
+                    if (showFooter) {
+                        // Footer
+                        Box(
+                            modifier =
+                                Modifier
+                                    .align(Alignment.BottomCenter)
+                                    .background(AppColors.TransparentBlack50),
+                        ) {
+                            val index = (focusedIndex + 1).takeIf { it > 0 } ?: "?"
 //                        if (focusedIndex >= 0) {
 //                            focusedIndex + 1
 //                        } else {
 //                            max(savedFocusedIndex, focusedIndexOnExit) + 1
 //                        }
-                        Text(
-                            modifier = Modifier.padding(4.dp),
-                            color = MaterialTheme.colorScheme.onBackground,
-                            text = "$index / ${pager.size}",
-                        )
+                            Text(
+                                modifier = Modifier.padding(4.dp),
+                                color = MaterialTheme.colorScheme.onBackground,
+                                text = "$index / ${pager.size}",
+                            )
+                        }
                     }
                 }
             }

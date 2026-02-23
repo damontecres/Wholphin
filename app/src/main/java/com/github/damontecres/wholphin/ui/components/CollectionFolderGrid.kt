@@ -6,7 +6,9 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.LocalBringIntoViewSpec
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -33,6 +35,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -84,6 +87,7 @@ import com.github.damontecres.wholphin.ui.setValueOnMain
 import com.github.damontecres.wholphin.ui.toServerString
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.ui.util.FilterUtils
+import com.github.damontecres.wholphin.ui.util.ScrollToTopBringIntoViewSpec
 import com.github.damontecres.wholphin.util.ApiRequestPager
 import com.github.damontecres.wholphin.util.DataLoadingState
 import com.github.damontecres.wholphin.util.ExceptionHandler
@@ -735,6 +739,7 @@ fun CollectionFolderGrid(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun CollectionFolderGridContent(
     preferences: UserPreferences,
@@ -879,14 +884,16 @@ fun CollectionFolderGridContent(
                     }
                 }
             }
+            val defaultBringIntoViewSpec = LocalBringIntoViewSpec.current
+            val density = LocalDensity.current
             AnimatedVisibility(viewOptions.showDetails) {
                 HomePageHeader(
                     item = focusedItem,
                     modifier =
                         Modifier
                             .fillMaxWidth()
-                            .height(140.dp)
-                            .padding(16.dp),
+                            .height(200.dp)
+                            .padding(top = 48.dp, bottom = 32.dp, start = 8.dp),
                 )
             }
             when (val state = loadingState) {
@@ -932,6 +939,15 @@ fun CollectionFolderGridContent(
                         },
                         columns = viewOptions.columns,
                         spacing = viewOptions.spacing.dp,
+                        bringIntoViewSpec =
+                            remember(viewOptions) {
+                                val spacingPx = with(density) { viewOptions.spacing.dp.toPx() }
+                                if (viewOptions.showDetails) {
+                                    ScrollToTopBringIntoViewSpec(spacingPx)
+                                } else {
+                                    defaultBringIntoViewSpec
+                                }
+                            },
                     )
                     AnimatedVisibility(showViewOptions) {
                         ViewOptionsDialog(
