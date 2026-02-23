@@ -524,6 +524,7 @@ fun HomePageCardContent(
                     onLongClick = onLongClick,
                     modifier = modifier,
                     cardHeight = viewOptions.heightDp.dp,
+                    useSeriesForPrimary = viewOptions.useSeries,
                 )
             } else {
                 BannerCard(
@@ -543,6 +544,7 @@ fun HomePageCardContent(
                     modifier = modifier,
                     interactionSource = null,
                     cardHeight = viewOptions.heightDp.dp,
+                    useSeriesForPrimary = viewOptions.useSeries,
                 )
             }
         }

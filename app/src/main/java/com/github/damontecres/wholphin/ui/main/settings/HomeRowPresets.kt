@@ -123,7 +123,7 @@ data class HomeRowPresets(
             )
         }
 
-        val Thumbnails by lazy {
+        val SeriesThumbs by lazy {
             val height = 148
             val epHeight = 100
             HomeRowPresets(
@@ -132,7 +132,52 @@ data class HomeRowPresets(
                         heightDp = epHeight,
                         imageType = ViewOptionImageType.THUMB,
                         aspectRatio = AspectRatio.WIDE,
+                        useSeries = true,
                         episodeImageType = ViewOptionImageType.THUMB,
+                        episodeAspectRatio = AspectRatio.WIDE,
+                    ),
+                movieLibrary =
+                    HomeRowViewOptions(
+                        heightDp = height,
+                    ),
+                tvLibrary =
+                    HomeRowViewOptions(
+                        heightDp = height,
+                    ),
+                videoLibrary =
+                    HomeRowViewOptions(
+                        heightDp = epHeight,
+                        aspectRatio = AspectRatio.WIDE,
+                    ),
+                photoLibrary =
+                    HomeRowViewOptions(
+                        heightDp = epHeight,
+                        aspectRatio = AspectRatio.WIDE,
+                        contentScale = PrefContentScale.CROP,
+                    ),
+                playlist =
+                    HomeRowViewOptions(
+                        heightDp = epHeight,
+                        aspectRatio = AspectRatio.SQUARE,
+                        contentScale = PrefContentScale.FIT,
+                    ),
+                liveTv = HomeRowViewOptions.liveTvDefault,
+                genreSize = epHeight,
+            )
+        }
+
+        val EpisodeThumbnails by lazy {
+            val height = 148
+            val epHeight = 100
+            HomeRowPresets(
+                continueWatching =
+                    HomeRowViewOptions(
+                        heightDp = epHeight,
+                        imageType = ViewOptionImageType.THUMB,
+                        aspectRatio = AspectRatio.WIDE,
+                        showTitles = true,
+                        useSeries = false,
+                        episodeImageType = ViewOptionImageType.PRIMARY,
                         episodeAspectRatio = AspectRatio.WIDE,
                     ),
                 movieLibrary =
@@ -173,13 +218,13 @@ fun HomeRowPresetsContent(
     modifier: Modifier = Modifier,
 ) {
     val presets =
-        remember {
-            listOf(
-                "Wholphin Default",
-                "Wholphin Compact",
-                "Thumbnails",
-            )
-        }
+        listOf(
+            stringResource(R.string.display_preset_default) to HomeRowPresets.WholphinDefault,
+            stringResource(R.string.display_preset_compact) to HomeRowPresets.WholphinCompact,
+            stringResource(R.string.display_preset_series_thumb) to HomeRowPresets.SeriesThumbs,
+            stringResource(R.string.display_preset_episode_thumbnails) to HomeRowPresets.EpisodeThumbnails,
+        )
+
     val focusRequesters = remember { List(presets.size) { FocusRequester() } }
     LaunchedEffect(Unit) { focusRequesters[0].tryRequestFocus() }
     Column(modifier = modifier) {
@@ -192,16 +237,12 @@ fun HomeRowPresetsContent(
                     .fillMaxHeight()
                     .focusRestorer(focusRequesters[0]),
         ) {
-            itemsIndexed(presets) { index, title ->
+            itemsIndexed(presets) { index, (title, preset) ->
                 HomeSettingsListItem(
                     selected = false,
                     headlineText = title,
                     onClick = {
-                        when (index) {
-                            0 -> onApply.invoke(HomeRowPresets.WholphinDefault)
-                            1 -> onApply.invoke(HomeRowPresets.WholphinCompact)
-                            2 -> onApply.invoke(HomeRowPresets.Thumbnails)
-                        }
+                        onApply.invoke(preset)
                     },
                     modifier = Modifier.focusRequester(focusRequesters[index]),
                 )
