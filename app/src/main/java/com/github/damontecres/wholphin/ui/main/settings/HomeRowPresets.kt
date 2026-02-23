@@ -218,14 +218,13 @@ fun HomeRowPresetsContent(
     modifier: Modifier = Modifier,
 ) {
     val presets =
-        remember {
-            listOf(
-                "Wholphin Default",
-                "Wholphin Compact",
-                "Series Thumb images",
-                "Episode Thumbnail images",
-            )
-        }
+        listOf(
+            stringResource(R.string.display_preset_default) to HomeRowPresets.WholphinDefault,
+            stringResource(R.string.display_preset_compact) to HomeRowPresets.WholphinCompact,
+            stringResource(R.string.display_preset_series_thumb) to HomeRowPresets.SeriesThumbs,
+            stringResource(R.string.display_preset_episode_thumbnails) to HomeRowPresets.EpisodeThumbnails,
+        )
+
     val focusRequesters = remember { List(presets.size) { FocusRequester() } }
     LaunchedEffect(Unit) { focusRequesters[0].tryRequestFocus() }
     Column(modifier = modifier) {
@@ -238,17 +237,12 @@ fun HomeRowPresetsContent(
                     .fillMaxHeight()
                     .focusRestorer(focusRequesters[0]),
         ) {
-            itemsIndexed(presets) { index, title ->
+            itemsIndexed(presets) { index, (title, preset) ->
                 HomeSettingsListItem(
                     selected = false,
                     headlineText = title,
                     onClick = {
-                        when (index) {
-                            0 -> onApply.invoke(HomeRowPresets.WholphinDefault)
-                            1 -> onApply.invoke(HomeRowPresets.WholphinCompact)
-                            2 -> onApply.invoke(HomeRowPresets.SeriesThumbs)
-                            3 -> onApply.invoke(HomeRowPresets.EpisodeThumbnails)
-                        }
+                        onApply.invoke(preset)
                     },
                     modifier = Modifier.focusRequester(focusRequesters[index]),
                 )

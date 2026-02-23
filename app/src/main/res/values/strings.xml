@@ -522,6 +522,10 @@
     <string name="display_presets">Display presets</string>
     <string name="display_presets_description">Built-in presets to quickly style all rows</string>
     <string name="customize_home_summary">Choose rows and images on the home page</string>
+    <string name="display_preset_default">Wholphin Default</string>
+    <string name="display_preset_compact">Wholphin Compact</string>
+    <string name="display_preset_series_thumb">Series Thumb images</string>
+    <string name="display_preset_episode_thumbnails">Episode Thumbnail images</string>
 
     <string-array name="theme_song_volume">
         <item>Disabled</item>
