@@ -24,6 +24,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -254,8 +257,23 @@ fun PlaybackOverlay(
             exit = slideOutVertically { it / 2 } + fadeOut(),
         ) {
             if (chapters.isNotEmpty()) {
+                val bringIntoViewRequester = remember { BringIntoViewRequester() }
+                val chapterIndex =
+                    remember {
+                        val position = playerControls.currentPosition.milliseconds
+                        val index =
+                            chapters
+                                .indexOfFirst { it.position > position }
+                                .minus(1)
+                                .coerceIn(0, chapters.lastIndex)
+                        index
+                    }
+                val listState = rememberLazyListState(chapterIndex)
                 val focusRequester = remember { FocusRequester() }
-                LaunchedEffect(Unit) { focusRequester.tryRequestFocus() }
+                LaunchedEffect(Unit) {
+                    bringIntoViewRequester.bringIntoView()
+                    focusRequester.tryRequestFocus()
+                }
                 Column(
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                     modifier =
@@ -276,6 +294,7 @@ fun PlaybackOverlay(
                         style = MaterialTheme.typography.titleLarge,
                     )
                     LazyRow(
+                        state = listState,
                         contentPadding = PaddingValues(16.dp),
                         horizontalArrangement = Arrangement.spacedBy(16.dp),
                         modifier =
@@ -305,10 +324,13 @@ fun PlaybackOverlay(
                                 },
                                 interactionSource = interactionSource,
                                 modifier =
-                                    Modifier.ifElse(
-                                        index == 0,
-                                        Modifier.focusRequester(focusRequester),
-                                    ),
+                                    Modifier
+                                        .ifElse(
+                                            index == chapterIndex,
+                                            Modifier
+                                                .focusRequester(focusRequester)
+                                                .bringIntoViewRequester(bringIntoViewRequester),
+                                        ),
                             )
                         }
                     }
