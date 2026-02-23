@@ -656,7 +656,7 @@
     </string-array>
 
     <string name="image_type_primary">Primary</string>
-    <string name="image_type_thumb">Thumbary</string>
+    <string name="image_type_thumb">Thumb</string>
     <string-array name="image_types">
         <item>@string/image_type_primary</item>
         <item>@string/image_type_thumb</item>
