@@ -24,6 +24,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.runtime.Composable
@@ -178,9 +179,11 @@ class NavDrawerViewModel
                     if (key is Destination) {
                         val index =
                             if (key is Destination.Home) {
-                                -1
+                                HOME_INDEX
                             } else if (key is Destination.Search) {
-                                -2
+                                SEARCH_INDEX
+                            } else if (key is Destination.NowPlaying) {
+                                NOW_PLAYING_INDEX
                             } else {
                                 val idx = asDestinations.indexOf(key)
                                 if (idx >= 0) {
@@ -241,6 +244,10 @@ data class ServerNavDrawerItem(
         fun getId(itemId: UUID) = "s_" + itemId.toServerString()
     }
 }
+
+private const val HOME_INDEX = -1
+private const val SEARCH_INDEX = -2
+private const val NOW_PLAYING_INDEX = -3
 
 /**
  * Display the left side navigation drawer with [DestinationContent] on the right
@@ -353,32 +360,54 @@ fun NavDrawer(
                             IconNavItem(
                                 text = stringResource(R.string.search),
                                 icon = Icons.Default.Search,
-                                selected = selectedIndex == -2,
+                                selected = selectedIndex == SEARCH_INDEX,
                                 drawerOpen = isOpen,
                                 interactionSource = interactionSource,
                                 onClick = {
-                                    viewModel.setIndex(-2)
+                                    viewModel.setIndex(SEARCH_INDEX)
                                     viewModel.navigationManager.navigateToFromDrawer(Destination.Search)
                                 },
                                 modifier =
                                     Modifier
                                         .focusRequester(searchFocusRequester)
                                         .ifElse(
-                                            selectedIndex == -2,
+                                            selectedIndex == SEARCH_INDEX,
                                             Modifier.focusRequester(focusRequester),
                                         ),
                             )
+                        }
+                        if (state.nowPlayingEnabled) {
+                            item {
+                                val interactionSource = remember { MutableInteractionSource() }
+                                IconNavItem(
+                                    text = stringResource(R.string.now_playing),
+                                    icon = Icons.Default.PlayArrow,
+                                    selected = selectedIndex == NOW_PLAYING_INDEX,
+                                    drawerOpen = isOpen,
+                                    interactionSource = interactionSource,
+                                    onClick = {
+                                        viewModel.setIndex(NOW_PLAYING_INDEX)
+                                        viewModel.navigationManager.navigateToFromDrawer(Destination.NowPlaying)
+                                    },
+                                    modifier =
+                                        Modifier
+                                            .ifElse(
+                                                selectedIndex == NOW_PLAYING_INDEX,
+                                                Modifier.focusRequester(focusRequester),
+                                            ).animateItem(),
+                                )
+                            }
                         }
                         item {
                             val interactionSource = remember { MutableInteractionSource() }
                             IconNavItem(
                                 text = stringResource(R.string.home),
                                 icon = Icons.Default.Home,
-                                selected = selectedIndex == -1,
+                                selected = selectedIndex == HOME_INDEX,
                                 drawerOpen = isOpen,
                                 interactionSource = interactionSource,
                                 onClick = {
-                                    viewModel.setIndex(-1)
+                                    viewModel.setIndex(HOME_INDEX)
                                     if (destination is Destination.Home) {
                                         viewModel.navigationManager.reloadHome()
                                     } else {
@@ -388,7 +417,7 @@ fun NavDrawer(
                                 modifier =
                                     Modifier
                                         .ifElse(
-                                            selectedIndex == -1,
+                                            selectedIndex == HOME_INDEX,
                                             Modifier.focusRequester(focusRequester),
                                         ),
                             )

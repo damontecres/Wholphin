@@ -7,6 +7,7 @@ import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.JellyfinUser
 import com.github.damontecres.wholphin.data.model.NavPinType
 import com.github.damontecres.wholphin.services.hilt.DefaultCoroutineScope
+import com.github.damontecres.wholphin.ui.launchDefault
 import com.github.damontecres.wholphin.ui.main.settings.Library
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.nav.NavDrawerItem
@@ -14,8 +15,10 @@ import com.github.damontecres.wholphin.ui.nav.ServerNavDrawerItem
 import com.github.damontecres.wholphin.util.supportedCollectionTypes
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
@@ -40,6 +43,7 @@ class NavDrawerService
         private val serverRepository: ServerRepository,
         private val serverPreferencesDao: ServerPreferencesDao,
         private val seerrServerRepository: SeerrServerRepository,
+        private val musicService: MusicService,
     ) {
         private val _state = MutableStateFlow(NavDrawerItemState.EMPTY)
         val state: StateFlow<NavDrawerItemState> = _state
@@ -65,6 +69,23 @@ class NavDrawerService
                 .onEach { discoverActive ->
                     _state.update { it.copy(discoverEnabled = discoverActive) }
                 }.launchIn(coroutineScope)
+            coroutineScope.launchDefault {
+                musicService.state.collectLatest {
+                    Timber.v("MusicService updated")
+                    if (it.isPlaying) {
+                        _state.update {
+                            it.copy(nowPlayingEnabled = true)
+                        }
+                    } else {
+                        // Don't immediately remove the now playing
+                        // TODO need better now playing state to distinguish between paused & stopped
+                        delay(30_000)
+                        _state.update {
+                            it.copy(nowPlayingEnabled = false)
+                        }
+                    }
+                }
+            }
         }
 
         suspend fun getAllUserLibraries(
@@ -175,9 +196,10 @@ data class NavDrawerItemState(
     val items: List<NavDrawerItem>,
     val moreItems: List<NavDrawerItem>,
     val discoverEnabled: Boolean,
+    val nowPlayingEnabled: Boolean,
 ) {
     companion object {
-        val EMPTY = NavDrawerItemState(emptyList(), emptyList(), false)
+        val EMPTY = NavDrawerItemState(emptyList(), emptyList(), false, false)
     }
 }
 

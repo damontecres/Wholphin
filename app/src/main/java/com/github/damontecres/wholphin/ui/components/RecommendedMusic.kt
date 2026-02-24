@@ -190,10 +190,11 @@ class RecommendedMusicViewModel
         override fun update(
             @StringRes title: Int,
             row: HomeRowLoadingState,
-        ) {
+        ): HomeRowLoadingState {
             rows.update { current ->
                 current.toMutableList().apply { set(rowTitles[title]!!, row) }
             }
+            return row
         }
 
         companion object {

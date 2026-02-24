@@ -179,7 +179,7 @@ private class MusicPlayerListener(
         Timber.v("MusicPlayerListener init")
         state.update {
             it.copy(
-                queue = PlayerMediaItemList(player),
+                queue = PlayerMediaItemList(player, player.mediaItemCount),
                 currentIndex = player.currentMediaItemIndex,
                 isPlaying = player.isPlaying,
             )
@@ -215,7 +215,7 @@ private class MusicPlayerListener(
         if (reason == Player.TIMELINE_CHANGE_REASON_PLAYLIST_CHANGED) {
             state.update {
                 it.copy(
-                    queue = PlayerMediaItemList(player),
+                    queue = PlayerMediaItemList(player, player.mediaItemCount),
                     currentIndex = player.currentMediaItemIndex,
                 )
             }
@@ -225,15 +225,28 @@ private class MusicPlayerListener(
 
 private class PlayerMediaItemList(
     private val player: Player,
+    override val size: Int,
 ) : AbstractList<AudioItem>() {
     override fun get(index: Int): AudioItem {
 //        Timber.v("get %s", index)
         return player.getMediaItemAt(index).localConfiguration?.tag as AudioItem
     }
 
-    override val size: Int
-        get() {
-//            Timber.v("size %s", player.mediaItemCount)
-            return player.mediaItemCount
-        }
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is PlayerMediaItemList) return false
+        if (!super.equals(other)) return false
+
+        if (size != other.size) return false
+        if (player != other.player) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = super.hashCode()
+        result = 31 * result + size
+        result = 31 * result + player.hashCode()
+        return result
+    }
 }
