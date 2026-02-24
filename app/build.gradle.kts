@@ -49,17 +49,43 @@ android {
 
     buildTypes {
         release {
-            isMinifyEnabled = true
+            isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
             )
             isDebuggable = false
+            if (shouldSign) {
+                signingConfig = signingConfigs.getByName("ci")
+            } else {
+                val localPropertiesFile = project.rootProject.file("local.properties")
+                if (localPropertiesFile.exists()) {
+                    val properties = Properties()
+                    properties.load(localPropertiesFile.inputStream())
+                    val signingConfigName = properties["release.signing.config"]?.toString()
+                    if (signingConfigName != null) {
+                        signingConfig = signingConfigs.getByName(signingConfigName)
+                    }
+                }
+            }
         }
+
         debug {
             isMinifyEnabled = false
             isDebuggable = true
             applicationIdSuffix = ".debug"
+        }
+
+        applicationVariants.all {
+            val variant = this
+            variant.outputs
+                .map { it as com.android.build.gradle.internal.api.BaseVariantOutputImpl }
+                .forEach { output ->
+                    val abi = output.getFilter("ABI").let { if (it != null) "-$it" else "" }
+                    val outputFileName =
+                        "Wholphin-${variant.baseName}-${variant.versionName}-${variant.versionCode}$abi.apk"
+                    output.outputFileName = outputFileName
+                }
         }
     }
     compileOptions {
@@ -96,46 +122,6 @@ android {
                 enableV3Signing = true
                 enableV4Signing = true
             }
-        }
-    }
-    buildTypes {
-        release {
-            isMinifyEnabled = false
-
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro",
-            )
-            if (shouldSign) {
-                signingConfig = signingConfigs.getByName("ci")
-            } else {
-                val localPropertiesFile = project.rootProject.file("local.properties")
-                if (localPropertiesFile.exists()) {
-                    val properties = Properties()
-                    properties.load(localPropertiesFile.inputStream())
-                    val signingConfigName = properties["release.signing.config"]?.toString()
-                    if (signingConfigName != null) {
-                        signingConfig = signingConfigs.getByName(signingConfigName)
-                    }
-                }
-            }
-        }
-        debug {
-            if (shouldSign) {
-                signingConfig = signingConfigs.getByName("ci")
-            }
-        }
-
-        applicationVariants.all {
-            val variant = this
-            variant.outputs
-                .map { it as com.android.build.gradle.internal.api.BaseVariantOutputImpl }
-                .forEach { output ->
-                    val abi = output.getFilter("ABI").let { if (it != null) "-$it" else "" }
-                    val outputFileName =
-                        "Wholphin-${variant.baseName}-${variant.versionName}-${variant.versionCode}$abi.apk"
-                    output.outputFileName = outputFileName
-                }
         }
     }
 
