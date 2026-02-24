@@ -465,4 +465,17 @@
     <string name="ffmpeg_fallback">僅在無內建解碼器時使用 FFmpeg</string>
     <string name="ffmpeg_prefer">優先使用 FFmpeg 而非內建解碼器</string>
     <string name="ffmpeg_never">不使用 FFmpeg 解碼器</string>
+    <string name="next_up_playback_end">在播放結束時</string>
+    <string name="next_up_outro">在播到片尾時</string>
+    <string name="white">白色</string>
+    <string name="light_gray">淺灰色</string>
+    <string name="dark_gray">深灰色</string>
+    <string name="yellow">黃色</string>
+    <string name="cyan">青色</string>
+    <string name="magenta">洋紅色</string>
+    <string name="subtitle_edge_outline">外框</string>
+    <string name="subtitle_edge_shadow">陰影</string>
+    <string name="background_style_wrap">貼合文字</string>
+    <string name="background_style_boxed">長方底框</string>
+    <string name="prefer_mpv">優先使用 MPV</string>
 </resources>
