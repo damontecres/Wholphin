@@ -446,8 +446,8 @@
     <string name="apply_all_rows">Rakenda kõikidele ridadele</string>
     <string name="customize_home">Kohanda kodulehte</string>
     <string name="home_rows">Kodulehe/avalehe read</string>
-    <string name="load_from_server">Laadi serverist</string>
-    <string name="save_to_server">Salvesta serverisse</string>
+    <string name="load_from_server">Laadi kasutajaprofiil serverist</string>
+    <string name="save_to_server">Salvesta kasutajaprofiil serverisse</string>
     <string name="load_from_web_client">Laadi veebikliendist</string>
     <string name="use_series">Kasuta sarja pilti</string>
     <string name="add_row_for">Lisa rida: %1$s</string>
@@ -462,4 +462,5 @@
     <string name="display_presets">Kuvamise eelseadistused</string>
     <string name="display_presets_description">Rakenduses kaasasolevad eelseadistused kõikide ridade kiireks muutmiseks</string>
     <string name="customize_home_summary">Vali kodulehe/avalehe read ja pildid</string>
+    <string name="favorite_items">Märgi %s lemmikuks</string>
 </resources>
