@@ -78,6 +78,8 @@ class HomeViewModel
                         // Refreshing if a load has already occurred and the rows haven't significantly changed
                         val refresh =
                             state.loadingState == LoadingState.Success && state.settings == settings
+                        Timber.v("refresh=$refresh, state.loadingState=${state.loadingState}")
+                        _state.update { it.copy(settings = settings) }
 
                         val semaphore = Semaphore(4)
 
@@ -102,6 +104,7 @@ class HomeViewModel
                                                     userDto = userDto,
                                                     libraries = libraries,
                                                     limit = prefs.maxItemsPerRow,
+                                                    isRefresh = refresh,
                                                 )
                                             } catch (ex: Exception) {
                                                 Timber.e(ex, "Error on row %s", row)

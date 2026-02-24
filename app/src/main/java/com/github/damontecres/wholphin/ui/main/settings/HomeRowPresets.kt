@@ -19,7 +19,6 @@ import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.HomeRowViewOptions
 import com.github.damontecres.wholphin.preferences.PrefContentScale
 import com.github.damontecres.wholphin.ui.AspectRatio
-import com.github.damontecres.wholphin.ui.Cards
 import com.github.damontecres.wholphin.ui.components.ViewOptionImageType
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import org.jellyfin.sdk.model.api.CollectionType
@@ -81,7 +80,7 @@ data class HomeRowPresets(
                         contentScale = PrefContentScale.FIT,
                     ),
                 liveTv = HomeRowViewOptions.liveTvDefault,
-                genreSize = Cards.HEIGHT_2X3_DP,
+                genreSize = HomeRowViewOptions.genreDefault.heightDp,
             )
         }
 
