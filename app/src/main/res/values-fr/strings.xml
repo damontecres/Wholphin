@@ -463,8 +463,8 @@
     <string name="apply_all_rows">S\'applique à toutes les lignes</string>
     <string name="customize_home">Personnaliser la page d\'accueil</string>
     <string name="home_rows">Lignes d\'accueil</string>
-    <string name="load_from_server">Charger depuis le serveur</string>
-    <string name="save_to_server">Enregistrer sur le serveur</string>
+    <string name="load_from_server">Charger à partir du profil utilisateur du serveur</string>
+    <string name="save_to_server">Enregistrer dans le profil utilisateur du serveur</string>
     <string name="load_from_web_client">Charger à partir du client Web</string>
     <string name="use_series">Utiliser l\'image de la série</string>
     <string name="add_row_for">Ajouter une ligne pour %1$s</string>
@@ -479,4 +479,5 @@
     <string name="display_presets">Afficher les préréglages</string>
     <string name="display_presets_description">Préréglages intégrés pour styliser rapidement toutes les lignes</string>
     <string name="customize_home_summary">Choisissez des lignes et des images sur la page d\'accueil</string>
+    <string name="favorite_items">Favori %s</string>
 </resources>

@@ -429,8 +429,8 @@
     <string name="apply_all_rows">应用到所有行</string>
     <string name="customize_home">自定义首页</string>
     <string name="home_rows">首页行</string>
-    <string name="load_from_server">从服务器加载</string>
-    <string name="save_to_server">保存到服务器</string>
+    <string name="load_from_server">从服务器用户配置加载</string>
+    <string name="save_to_server">保存到服务器用户配置</string>
     <string name="load_from_web_client">从网络客户端加载</string>
     <string name="use_series">使用剧集图片</string>
     <string name="add_row_for">为 %1$s 添加行</string>
@@ -445,4 +445,5 @@
     <string name="display_presets">显示预设</string>
     <string name="display_presets_description">可快速设置所有行样式的内置预设</string>
     <string name="customize_home_summary">选择首页上的行和图片</string>
+    <string name="favorite_items">收藏的 %s</string>
 </resources>

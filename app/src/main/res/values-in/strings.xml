@@ -429,8 +429,8 @@
     <string name="apply_all_rows">Terapkan ke semua baris</string>
     <string name="customize_home">Kustomisasi beranda</string>
     <string name="home_rows">Baris beranda</string>
-    <string name="load_from_server">Muat dari server</string>
-    <string name="save_to_server">Simpan ke server</string>
+    <string name="load_from_server">Muat dari profil pengguna server</string>
+    <string name="save_to_server">Simpan ke profil pengguna server</string>
     <string name="load_from_web_client">Muat dari klien web</string>
     <string name="use_series">Gunakan gambar seri</string>
     <string name="add_row_for">Tambah baris untuk %1$s</string>
@@ -445,4 +445,5 @@
     <string name="display_presets">Preset tampilan</string>
     <string name="display_presets_description">Preset bawaan untuk kustomisasi cepat semua baris</string>
     <string name="customize_home_summary">Pilih baris dan gambar di halaman beranda</string>
+    <string name="favorite_items">Favoritkan %s</string>
 </resources>

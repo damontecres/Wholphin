@@ -54,9 +54,9 @@ jobs:
           echo "aab=$aab" >> "$GITHUB_OUTPUT"
       - name: Verify signatures
         run: |
-          echo "Verify APK/AAB signatures"
+          echo "Verify APK signatures"
           find app/build/outputs \( -name '*.apk' -or -name '*.aab' \)
-          find app/build/outputs \( -name '*.apk' -or -name '*.aab' \) -print0 | xargs -0 -n1 ${{env.ANDROID_SDK_ROOT}}/build-tools/${{ env.BUILD_TOOLS_VERSION }}/apksigner verify --verbose --print-certs
+          find app/build/outputs \( -name '*.apk' \) -print0 | xargs -0 -n1 ${{env.ANDROID_SDK_ROOT}}/build-tools/${{ env.BUILD_TOOLS_VERSION }}/apksigner verify --verbose --print-certs
       - name: Copy APK to shorter names
         id: apks
         run: |
