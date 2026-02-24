@@ -38,7 +38,18 @@ jobs:
           KEY_STORE_PASSWORD: "${{ secrets.KEY_STORE_PASSWORD }}"
           SIGNING_KEY: "${{ secrets.SIGNING_KEY }}"
         run: |
-          ./gradlew clean assembleRelease bundleRelease --no-daemon
+          ./gradlew clean assembleRelease --no-daemon
+
+      - name: Build app
+        id: buildaab
+        env:
+          KEY_ALIAS: "${{ secrets.KEY_ALIAS }}"
+          KEY_PASSWORD: "${{ secrets.KEY_PASSWORD }}"
+          KEY_STORE_PASSWORD: "${{ secrets.KEY_STORE_PASSWORD }}"
+          SIGNING_KEY: "${{ secrets.SIGNING_KEY }}"
+        run: |
+          git apply app/src/patches/play_store.patch
+          ./gradlew bundleRelease --no-daemon
           aab=$(find app/build/outputs -name '*.aab')
           echo "aab=$aab" >> "$GITHUB_OUTPUT"
       - name: Verify signatures
@@ -66,7 +77,7 @@ jobs:
         uses: actions/upload-artifact@v6
         with:
           name: AAB
-          path: "${{ steps.buildapp.outputs.aab }}"
+          path: "${{ steps.buildaab.outputs.aab }}"
           compression-level: 0
       - name: Create GitHub release
         env:
