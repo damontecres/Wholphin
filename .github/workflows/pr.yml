@@ -44,19 +44,18 @@ jobs:
         id: buildapp
         run: |
           ./gradlew clean assembleDebug testDebugUnitTest --no-daemon
-          apks=$(find app/build/outputs/apk -name '*.apk' -print0 | tr '\0' ',' | sed 's/,$//')
+          apks=$(find app/build/outputs \( -name '*.apk' -or -name '*.aab' \) -print0 | tr '\0' ',' | sed 's/,$//')
           echo "apks=$apks" >> "$GITHUB_OUTPUT"
-      - name: Tar build dirs
+
+  test-patch:
+    runs-on: ubuntu-latest
+    needs: pre-commit
+    steps:
+      - name: Checkout the code
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 1
+      - name: Test applying patch
         run: |
-          tar -czf build.tgz ./app/.
-      - uses: actions/upload-artifact@v6
-        id: upload-build-dirs
-        with:
-          name: "${{ env.BUILD_DIRS_ARTIFACT }}"
-          path: build.tgz
-          if-no-files-found: error
-      - uses: actions/upload-artifact@v6
-        with:
-          name: APKs
-          path: "${{ steps.buildapp.outputs.apks }}"
-          compression-level: 0
+          git apply app/src/patches/play_store.patch
+          git diff
