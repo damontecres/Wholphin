@@ -77,7 +77,8 @@ jobs:
         uses: actions/upload-artifact@v6
         with:
           name: AAB
-          path: "${{ steps.buildaab.outputs.aab }}"
+          path: |
+            app/build/outputs/bundle/**/*.aab
           compression-level: 0
       - name: Create GitHub release
         env:
