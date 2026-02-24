@@ -47,6 +47,24 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        if (shouldSign) {
+            create("ci") {
+                file("ci.keystore").writeBytes(
+                    Base64.getDecoder().decode(System.getenv("SIGNING_KEY")),
+                )
+                keyAlias = System.getenv("KEY_ALIAS")
+                keyPassword = System.getenv("KEY_PASSWORD")
+                storePassword = System.getenv("KEY_STORE_PASSWORD")
+                storeFile = file("ci.keystore")
+                enableV1Signing = true
+                enableV2Signing = true
+                enableV3Signing = true
+                enableV4Signing = true
+            }
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
@@ -106,23 +124,6 @@ android {
     }
     room {
         schemaDirectory("$projectDir/schemas")
-    }
-    signingConfigs {
-        if (shouldSign) {
-            create("ci") {
-                file("ci.keystore").writeBytes(
-                    Base64.getDecoder().decode(System.getenv("SIGNING_KEY")),
-                )
-                keyAlias = System.getenv("KEY_ALIAS")
-                keyPassword = System.getenv("KEY_PASSWORD")
-                storePassword = System.getenv("KEY_STORE_PASSWORD")
-                storeFile = file("ci.keystore")
-                enableV1Signing = true
-                enableV2Signing = true
-                enableV3Signing = true
-                enableV4Signing = true
-            }
-        }
     }
 
     splits {
