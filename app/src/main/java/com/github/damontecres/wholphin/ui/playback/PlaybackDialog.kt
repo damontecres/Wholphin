@@ -144,7 +144,9 @@ fun PlaybackDialog(
                             BottomDialogItem(
                                 data = PlaybackDialogType.VIDEO_SCALE,
                                 headline = stringResource(R.string.video_scale),
-                                supporting = playbackScaleOptions[settings.contentScale],
+                                supporting =
+                                    playbackScaleOptions[settings.contentScale]
+                                        ?.let { stringResource(it) },
                             ),
                         )
                     }
@@ -220,7 +222,7 @@ fun PlaybackDialog(
                 playbackScaleOptions.map { (scale, name) ->
                     BottomDialogItem(
                         data = scale,
-                        headline = name,
+                        headline = stringResource(name),
                         supporting = null,
                     )
                 }

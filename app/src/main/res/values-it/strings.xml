@@ -461,7 +461,7 @@
     <string name="recently_released_in">Recentemente rilasciato in %1$s</string>
     <string name="height">Altezza</string>
     <string name="apply_all_rows">Applica a tutte le righe</string>
-    <string name="load_from_server">Carica dal server</string>
+    <string name="load_from_server">Carica dal profilo utente del server</string>
     <string name="add_row_for">Aggiungi riga per %1$s</string>
     <string name="overwrite_server_settings">Sovrascrivere le impostazioni sul server?</string>
     <string name="overwrite_local_settings">Sovrascrivere le impostazioni locali?</string>
@@ -475,8 +475,9 @@
     <string name="home_rows">Righe home</string>
     <string name="for_episodes">Per gli episodi</string>
     <string name="customize_home">Personalizza home page</string>
-    <string name="save_to_server">Salva sul server</string>
+    <string name="save_to_server">Salva nel profilo utente del server</string>
     <string name="load_from_web_client">Carica dal client web</string>
     <string name="use_series">Usa immagine delle serie</string>
     <string name="customize_home_summary">Scegli righe e immagini nella home page</string>
+    <string name="favorite_items">Preferito %s</string>
 </resources>
