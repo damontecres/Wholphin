@@ -15,6 +15,8 @@ class UserPreferencesService
         private val serverRepository: ServerRepository,
         private val preferencesDataStore: DataStore<AppPreferences>,
     ) {
+        val flow = preferencesDataStore.data
+
         suspend fun getCurrent(): UserPreferences =
             serverRepository.currentUserDto.value!!.configuration.let { userConfig ->
                 val appPrefs = preferencesDataStore.data.firstOrNull() ?: AppPreferences.getDefaultInstance()

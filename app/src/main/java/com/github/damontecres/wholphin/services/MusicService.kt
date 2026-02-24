@@ -2,6 +2,7 @@ package com.github.damontecres.wholphin.services
 
 import android.content.Context
 import androidx.annotation.OptIn
+import androidx.compose.runtime.Stable
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.common.Timeline
@@ -28,6 +29,7 @@ import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.instantMixApi
 import org.jellyfin.sdk.api.client.extensions.universalAudioApi
 import org.jellyfin.sdk.model.api.BaseItemKind
+import org.jellyfin.sdk.model.api.ImageType
 import timber.log.Timber
 import java.util.UUID
 import javax.inject.Inject
@@ -42,6 +44,7 @@ class MusicService
         @param:AuthOkHttpClient private val authOkHttpClient: OkHttpClient,
         private val api: ApiClient,
         private val serverRepository: ServerRepository,
+        private val imageUrlService: ImageUrlService,
     ) {
         private val _state = MutableStateFlow(MusicServiceState.EMPTY)
         val state: StateFlow<MusicServiceState> = _state
@@ -147,15 +150,23 @@ class MusicService
                             Codec.Audio.FLAC,
                         ),
                 )
+            val imageUrl =
+                audio.data.albumId?.let { albumId ->
+                    imageUrlService.getItemImageUrl(
+                        itemId = albumId,
+                        imageType = ImageType.PRIMARY,
+                    )
+                }
             return MediaItem
                 .Builder()
                 .setUri(url)
                 .setMediaId(audio.id.toServerString())
-                .setTag(AudioItem.from(audio))
+                .setTag(AudioItem.from(audio, imageUrl))
                 .build()
         }
     }
 
+@Stable
 data class MusicServiceState(
     val queue: List<AudioItem>,
     val currentIndex: Int,

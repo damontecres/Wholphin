@@ -11,9 +11,13 @@ data class AudioItem(
     val albumTitle: String?,
     val artistNames: String?,
     val runtime: Duration?,
+    val imageUrl: String?,
 ) {
     companion object {
-        fun from(item: BaseItem): AudioItem =
+        fun from(
+            item: BaseItem,
+            imageUrl: String?,
+        ): AudioItem =
             AudioItem(
                 id = item.id,
                 albumId = item.data.albumId,
@@ -21,6 +25,7 @@ data class AudioItem(
                 albumTitle = item.data.album,
                 artistNames = item.data.albumArtist,
                 runtime = item.data.runTimeTicks?.ticks,
+                imageUrl = imageUrl,
             )
     }
 }
