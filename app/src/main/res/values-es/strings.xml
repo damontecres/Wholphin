@@ -35,7 +35,7 @@
     <string name="name">Nombre</string>
     <string name="no_results">Sin resultados</string>
     <string name="none">Ninguno</string>
-    <string name="outro">Outro</string>
+    <string name="outro">Créditos finales</string>
     <string name="people">Personas</string>
     <string name="play">Reproducir</string>
     <string name="playback">Reproducción</string>
@@ -264,8 +264,8 @@
     <string name="skip_back_preference">Retroceder</string>
     <string name="skip_commercials_behavior">Comportamiento al saltar anuncios</string>
     <string name="skip_forward_preference">Avanzar</string>
-    <string name="skip_intro_behavior">Comportamiento al saltar la intro</string>
-    <string name="skip_outro_behavior">Comportamiento al saltar el outro</string>
+    <string name="skip_intro_behavior">Comportamiento al saltar la cabecera</string>
+    <string name="skip_outro_behavior">Comportamiento al saltar créditos finales</string>
     <string name="skip_previews_behavior">Comportamiento al saltar avances</string>
     <string name="skip_recap_behavior">Comportamiento al saltar resumen</string>
     <string name="update_available">Actualización disponible</string>
@@ -291,8 +291,8 @@
     <string name="skip_segment_commercial">Saltar anuncios</string>
     <string name="skip_segment_preview">Saltar avance</string>
     <string name="skip_segment_recap">Saltar resumen</string>
-    <string name="skip_segment_outro">Saltar outro</string>
-    <string name="skip_segment_intro">Saltar intro</string>
+    <string name="skip_segment_outro">Saltar créditos finales</string>
+    <string name="skip_segment_intro">Saltar cabecera</string>
     <string name="played">Reproducido</string>
     <string name="filter">FIltrar</string>
     <string name="year">Año</string>
@@ -485,8 +485,8 @@
     <string name="content_scale_fill">Rellenar</string>
     <string name="content_scale_fill_width">Ajustar al ancho</string>
     <string name="content_scale_fill_height">Ajustar al alto</string>
-    <string name="display_preset_series_thumb">Miniaturas de las series</string>
-    <string name="display_preset_episode_thumbnails">Miniaturas de los episodios</string>
+    <string name="display_preset_series_thumb">Miniatura de la serie</string>
+    <string name="display_preset_episode_thumbnails">Miniatura del episodio</string>
     <string name="volume_lowest">Mínimo</string>
     <string name="volume_low">Bajo</string>
     <string name="volume_medium">Medio</string>
