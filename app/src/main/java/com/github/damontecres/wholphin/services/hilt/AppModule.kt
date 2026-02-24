@@ -44,6 +44,10 @@ annotation class StandardOkHttpClient
 @Retention(AnnotationRetention.BINARY)
 annotation class IoCoroutineScope
 
+@Qualifier
+@Retention(AnnotationRetention.BINARY)
+annotation class DefaultCoroutineScope
+
 @Module
 @InstallIn(SingletonComponent::class)
 object AppModule {
@@ -176,6 +180,11 @@ object AppModule {
     @Singleton
     @IoCoroutineScope
     fun ioCoroutineScope(): CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
+    @Provides
+    @Singleton
+    @DefaultCoroutineScope
+    fun defaultCoroutineScope(): CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     @Provides
     @Singleton

@@ -19,7 +19,7 @@
     <string name="confirm">Bestätigen</string>
     <string name="continue_watching">Weiterschauen</string>
     <string name="critic_rating">Kritiken</string>
-    <string name="decimal_seconds">%.1f Sekunden</string>
+    <string name="decimal_seconds">%.2f Sekunden</string>
     <string name="default_track">Standard</string>
     <string name="delete">Löschen</string>
     <string name="died">Gestorben</string>
@@ -321,7 +321,7 @@
     <string name="no">Nein</string>
     <string name="show_titles">Titel anzeigen</string>
     <string name="live_tv_repeat">Wiederholen</string>
-    <string name="general">Generell</string>
+    <string name="general">Allgemein</string>
     <string name="no_trailers">Keine Trailer</string>
     <string name="play_trailer">Trailer abspielen</string>
     <string name="local">Lokal</string>
@@ -417,4 +417,19 @@
     <string name="stop_slideshow">Diashow anhalten</string>
     <string name="brightness">Helligkeit</string>
     <string name="contrast">Kontrast</string>
+    <string name="zoom_out">Verkleinern</string>
+    <string name="zoom_in">Vergrößern</string>
+    <string name="quick_connect_success">Gerät erfolgreich authorisiert</string>
+    <string name="saturation">Sättigung</string>
+    <string name="hue">Farbton</string>
+    <plurals name="days">
+        <item quantity="one">%s Tag</item>
+        <item quantity="other">%s Tage</item>
+    </plurals>
+    <string name="quick_connect_code_error">Der Code muss aus 6 Ziffern bestehen</string>
+    <string name="hdr_subtitle_style">HDR-Untertitelstil</string>
+    <string name="slideshow_duration">Dauer der Diashow</string>
+    <string name="play_videos_during_slideshow">Videos während der Diashow abspielen</string>
+    <string name="max_days_next_up">Maximale Tage in \"Als nächstes\"</string>
+    <string name="quick_connect">Quick Connect</string>
 </resources>

@@ -123,6 +123,9 @@ class MainActivity : AppCompatActivity() {
     @Inject
     lateinit var suggestionsSchedulerService: SuggestionsSchedulerService
 
+    @Inject
+    lateinit var backdropService: BackdropService
+
     // Note: unused but injected to ensure it is created
     @Inject
     lateinit var serverEventListener: ServerEventListener
@@ -247,6 +250,9 @@ class MainActivity : AppCompatActivity() {
                                             }
 
                                             is SetupDestination.AppContent -> {
+                                                LaunchedEffect(Unit) {
+                                                    backdropService.clearBackdrop()
+                                                }
                                                 val current = key.current
                                                 ProvideLocalClock {
                                                     if (UpdateChecker.ACTIVE && appPreferences.autoCheckForUpdates) {
@@ -409,7 +415,7 @@ class MainActivity : AppCompatActivity() {
         }
 
     fun changeDisplayMode(modeId: Int) {
-        lifecycleScope.launch(Dispatchers.Main + ExceptionHandler()) {
+        lifecycleScope.launch(Dispatchers.Main + ExceptionHandler(autoToast = true)) {
             val attrs = window.attributes
             if (attrs.preferredDisplayModeId != modeId) {
                 Timber.d("Switch preferredDisplayModeId to %s", modeId)

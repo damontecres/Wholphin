@@ -1,8 +1,10 @@
 package com.github.damontecres.wholphin.ui.detail
 
 import android.content.Context
+import android.hardware.display.DisplayManager
 import android.os.Build
 import android.util.Log
+import android.view.Display
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.gestures.scrollBy
@@ -32,11 +34,11 @@ import androidx.lifecycle.viewModelScope
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.BuildConfig
+import com.github.damontecres.wholphin.MainActivity
 import com.github.damontecres.wholphin.data.ItemPlaybackDao
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.ItemPlayback
 import com.github.damontecres.wholphin.preferences.UserPreferences
-import com.github.damontecres.wholphin.services.RefreshRateService
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.showToast
 import com.github.damontecres.wholphin.util.ExceptionHandler
@@ -60,12 +62,18 @@ class DebugViewModel
     constructor(
         val serverRepository: ServerRepository,
         val itemPlaybackDao: ItemPlaybackDao,
-        val refreshRateService: RefreshRateService,
         val clientInfo: ClientInfo,
         val deviceInfo: DeviceInfo,
     ) : ViewModel() {
         val itemPlaybacks = MutableLiveData<List<ItemPlayback>>(listOf())
         val logcat = MutableLiveData<List<LogcatLine>>(listOf())
+
+        val supportedModes by lazy {
+            val displayManager =
+                MainActivity.instance.getSystemService(Context.DISPLAY_SERVICE) as DisplayManager
+            val display = displayManager.getDisplay(Display.DEFAULT_DISPLAY)
+            display.supportedModes.orEmpty()
+        }
 
         init {
             viewModelScope.launchIO {
@@ -260,7 +268,7 @@ fun DebugPage(
                     "Model: ${Build.MODEL}",
                     "API Level: ${Build.VERSION.SDK_INT}",
                     "Display Modes:",
-                    *viewModel.refreshRateService.supportedDisplayModes,
+                    *viewModel.supportedModes,
                 ).forEach {
                     Text(
                         text = it.toString(),

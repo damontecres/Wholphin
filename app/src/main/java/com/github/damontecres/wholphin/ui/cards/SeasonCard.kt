@@ -16,15 +16,16 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.tv.material3.Card
 import androidx.tv.material3.CardDefaults
+import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.ui.AspectRatios
@@ -126,21 +127,7 @@ fun SeasonCard(
     val focused by interactionSource.collectIsFocusedAsState()
     val spaceBetween by animateDpAsState(if (focused) 12.dp else 4.dp)
     val spaceBelow by animateDpAsState(if (focused) 4.dp else 12.dp)
-    var focusedAfterDelay by remember { mutableStateOf(false) }
-
-    val hideOverlayDelay = 500L
-    if (focused) {
-        LaunchedEffect(Unit) {
-            delay(hideOverlayDelay)
-            if (focused) {
-                focusedAfterDelay = true
-            } else {
-                focusedAfterDelay = false
-            }
-        }
-    } else {
-        focusedAfterDelay = false
-    }
+    val focusedAfterDelay by rememberFocusedAfterDelay(interactionSource)
     val aspectRationToUse = aspectRatio.coerceAtLeast(AspectRatios.MIN)
     val width = imageHeight * aspectRationToUse
     val height = imageWidth * (1f / aspectRationToUse)
@@ -193,6 +180,8 @@ fun SeasonCard(
                 text = title ?: "",
                 maxLines = 1,
                 textAlign = TextAlign.Center,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.SemiBold,
                 modifier =
                     Modifier
                         .fillMaxWidth()
@@ -203,6 +192,8 @@ fun SeasonCard(
                 text = subtitle ?: "",
                 maxLines = 1,
                 textAlign = TextAlign.Center,
+                style = MaterialTheme.typography.bodySmall,
+                fontWeight = FontWeight.Normal,
                 modifier =
                     Modifier
                         .fillMaxWidth()
@@ -211,4 +202,23 @@ fun SeasonCard(
             )
         }
     }
+}
+
+/**
+ * Returns a [androidx.compose.runtime.State] which represents if the item has been focused for a while
+ */
+@Composable
+fun rememberFocusedAfterDelay(interactionSource: MutableInteractionSource): androidx.compose.runtime.State<Boolean> {
+    val focused by interactionSource.collectIsFocusedAsState()
+    val state = remember { mutableStateOf(false) }
+
+    LaunchedEffect(focused) {
+        if (!focused) {
+            state.value = false
+            return@LaunchedEffect
+        }
+        delay(500L)
+        state.value = true
+    }
+    return state
 }

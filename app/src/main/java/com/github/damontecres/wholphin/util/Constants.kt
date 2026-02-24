@@ -9,6 +9,7 @@ val supportItemKinds =
         BaseItemKind.EPISODE,
         BaseItemKind.SERIES,
         BaseItemKind.VIDEO,
+        BaseItemKind.MUSIC_VIDEO,
         BaseItemKind.SEASON,
         BaseItemKind.COLLECTION_FOLDER,
         BaseItemKind.FOLDER,
@@ -35,11 +36,20 @@ val supportedCollectionTypes =
         null, // Mixed
     )
 
+val supportedHomeCollectionTypes =
+    setOf(
+        CollectionType.MOVIES,
+        CollectionType.TVSHOWS,
+        CollectionType.HOMEVIDEOS,
+        null, // Mixed
+    )
+
 val supportedPlayableTypes =
     setOf(
         BaseItemKind.MOVIE,
         BaseItemKind.EPISODE,
         BaseItemKind.VIDEO,
+        BaseItemKind.MUSIC_VIDEO,
         BaseItemKind.TV_CHANNEL,
         BaseItemKind.TV_PROGRAM,
         BaseItemKind.RECORDING,

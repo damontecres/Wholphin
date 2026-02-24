@@ -392,6 +392,15 @@ fun CoroutineScope.launchIO(
 ): Job = launch(context = Dispatchers.IO + context, start = start, block = block)
 
 /**
+ * Launches a coroutine with [Dispatchers.Default] plus the provided [CoroutineContext] defaulting to using [ExceptionHandler]
+ */
+fun CoroutineScope.launchDefault(
+    context: CoroutineContext = ExceptionHandler(),
+    start: CoroutineStart = CoroutineStart.DEFAULT,
+    block: suspend CoroutineScope.() -> Unit,
+): Job = launch(context = Dispatchers.Default + context, start = start, block = block)
+
+/**
  * Converts a UUID to the format used server-side (ie without hyphens).
  *
  * This is the inverse of [org.jellyfin.sdk.model.serializer.toUUID]

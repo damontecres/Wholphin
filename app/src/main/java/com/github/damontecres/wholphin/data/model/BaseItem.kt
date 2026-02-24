@@ -25,6 +25,7 @@ import org.jellyfin.sdk.model.api.BaseItemDto
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.extensions.ticks
 import java.util.Locale
+import java.util.UUID
 import kotlin.time.Duration
 
 @Serializable
@@ -32,6 +33,8 @@ import kotlin.time.Duration
 data class BaseItem(
     val data: BaseItemDto,
     val useSeriesForPrimary: Boolean,
+    val imageUrlOverride: String? = null,
+    val destinationOverride: Destination? = null,
 ) : CardGridItem {
     val id get() = data.id
 
@@ -165,6 +168,7 @@ data class BaseItem(
             }?.toIntOrNull()
 
     fun destination(index: Int? = null): Destination {
+        if (destinationOverride != null) return destinationOverride
         val result =
             // Redirect episodes & seasons to their series if possible
             when (type) {
@@ -184,6 +188,25 @@ data class BaseItem(
                         BaseItemKind.SERIES,
                         SeasonEpisodeIds(id, indexNumber, null, null),
                     )
+                }
+
+                BaseItemKind.TV_CHANNEL -> {
+                    Destination.Playback(
+                        itemId = id,
+                        positionMs = 0L,
+                    )
+                }
+
+                BaseItemKind.PROGRAM -> {
+                    val channelId = data.channelId
+                    if (channelId != null) {
+                        Destination.Playback(
+                            itemId = channelId,
+                            positionMs = 0L,
+                        )
+                    } else {
+                        Destination.MediaItem(this)
+                    }
                 }
 
                 else -> {
@@ -213,4 +236,29 @@ data class BaseItemUi(
     val episodeCornerText: String?,
     val episodeUnplayedCornerText: String?,
     val quickDetails: AnnotatedString,
+)
+
+fun createGenreDestination(
+    genreId: UUID,
+    genreName: String,
+    parentId: UUID,
+    parentName: String?,
+    includeItemTypes: List<BaseItemKind>?,
+) = Destination.FilteredCollection(
+    itemId = parentId,
+    filter =
+        CollectionFolderFilter(
+            nameOverride =
+                listOfNotNull(
+                    genreName,
+                    parentName,
+                ).joinToString(" "),
+            filter =
+                GetItemsFilter(
+                    genres = listOf(genreId),
+                    includeItemTypes = includeItemTypes,
+                ),
+            useSavedLibraryDisplayInfo = false,
+        ),
+    recursive = true,
 )

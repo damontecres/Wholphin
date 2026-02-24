@@ -408,12 +408,13 @@ fun ConfirmDialog(
     onConfirm: () -> Unit,
     properties: DialogProperties = DialogProperties(),
     elevation: Dp = 8.dp,
+    bodyColor: Color = MaterialTheme.colorScheme.onSurface,
 ) = BasicDialog(
     onDismissRequest = onCancel,
     properties = properties,
     elevation = elevation,
     content = {
-        ConfirmDialogContent(title, body, onCancel, onConfirm, Modifier)
+        ConfirmDialogContent(title, body, onCancel, onConfirm, Modifier, bodyColor)
     },
 )
 
@@ -427,6 +428,7 @@ fun ConfirmDialogContent(
     onCancel: () -> Unit,
     onConfirm: () -> Unit,
     modifier: Modifier = Modifier,
+    bodyColor: Color = MaterialTheme.colorScheme.onSurface,
 ) {
     LazyColumn(
         verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -446,7 +448,7 @@ fun ConfirmDialogContent(
             item {
                 Text(
                     text = body,
-                    color = MaterialTheme.colorScheme.onSurface,
+                    color = bodyColor,
                 )
             }
         }

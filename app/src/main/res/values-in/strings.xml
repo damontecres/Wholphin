@@ -412,4 +412,37 @@
     <string name="slideshow_duration">Durasi tayangan slide</string>
     <string name="play_videos_during_slideshow">Putar video selama tayangan slide</string>
     <string name="send_media_info_log_to_server">Kirim log info media ke server</string>
+    <plurals name="days">
+        <item quantity="other">%s hari</item>
+    </plurals>
+    <string name="quick_connect">Koneksi Cepat</string>
+    <string name="quick_connect_summary">Izinkan perangkat lain untuk masuk ke akun kamu</string>
+    <string name="quick_connect_code">Masukkan kode Koneksi Cepat</string>
+    <string name="quick_connect_code_error">Kode harus terdiri dari 6 digit</string>
+    <string name="quick_connect_success">Perangkat berhasil diizinkan</string>
+    <string name="no_limit">Tanpa batasan</string>
+    <string name="max_days_next_up">Batas hari untuk Berikutnya</string>
+    <string name="add_row">Tambah baris</string>
+    <string name="genres_in">Genre di %1$s</string>
+    <string name="recently_released_in">Baru saja dirilis di %1$s</string>
+    <string name="height">Tinggi</string>
+    <string name="apply_all_rows">Terapkan ke semua baris</string>
+    <string name="customize_home">Kustomisasi beranda</string>
+    <string name="home_rows">Baris beranda</string>
+    <string name="load_from_server">Muat dari server</string>
+    <string name="save_to_server">Simpan ke server</string>
+    <string name="load_from_web_client">Muat dari klien web</string>
+    <string name="use_series">Gunakan gambar seri</string>
+    <string name="add_row_for">Tambah baris untuk %1$s</string>
+    <string name="overwrite_server_settings">Timpa pengaturan di server?</string>
+    <string name="overwrite_local_settings">Timpa pengaturan lokal?</string>
+    <string name="for_episodes">Untuk episode</string>
+    <string name="suggestions_for">Rekomendasi untuk %1$s</string>
+    <string name="increase_all_cards_size">Perbesar ukuran semua kartu</string>
+    <string name="decrease_all_cards_size">Perkecil ukuran semua kartu</string>
+    <string name="use_thumb_images">Gunakan gambar thumbnail</string>
+    <string name="settings_saved">Pengaturan disimpan</string>
+    <string name="display_presets">Preset tampilan</string>
+    <string name="display_presets_description">Preset bawaan untuk kustomisasi cepat semua baris</string>
+    <string name="customize_home_summary">Pilih baris dan gambar di halaman beranda</string>
 </resources>

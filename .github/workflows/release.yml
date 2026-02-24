@@ -39,11 +39,24 @@ jobs:
           SIGNING_KEY: "${{ secrets.SIGNING_KEY }}"
         run: |
           ./gradlew clean assembleRelease --no-daemon
+
+      - name: Build app
+        id: buildaab
+        env:
+          KEY_ALIAS: "${{ secrets.KEY_ALIAS }}"
+          KEY_PASSWORD: "${{ secrets.KEY_PASSWORD }}"
+          KEY_STORE_PASSWORD: "${{ secrets.KEY_STORE_PASSWORD }}"
+          SIGNING_KEY: "${{ secrets.SIGNING_KEY }}"
+        run: |
+          git apply app/src/patches/play_store.patch
+          ./gradlew bundleRelease --no-daemon
+          aab=$(find app/build/outputs -name '*.aab')
+          echo "aab=$aab" >> "$GITHUB_OUTPUT"
       - name: Verify signatures
         run: |
-          echo "Verify APK signatures"
-          find app/build/outputs/apk -name '*.apk'
-          find app/build/outputs/apk -name '*.apk' -print0 | xargs -0 -n1 ${{env.ANDROID_SDK_ROOT}}/build-tools/${{ env.BUILD_TOOLS_VERSION }}/apksigner verify --verbose --print-certs
+          echo "Verify APK/AAB signatures"
+          find app/build/outputs \( -name '*.apk' -or -name '*.aab' \)
+          find app/build/outputs \( -name '*.apk' -or -name '*.aab' \) -print0 | xargs -0 -n1 ${{env.ANDROID_SDK_ROOT}}/build-tools/${{ env.BUILD_TOOLS_VERSION }}/apksigner verify --verbose --print-certs
       - name: Copy APK to shorter names
         id: apks
         run: |
@@ -59,11 +72,18 @@ jobs:
       - name: Checksums
         run: |
           echo "SHA256 checksums:"
-          find app/build/outputs/apk -name '*.apk' -print0 | xargs -0 sha256sum
+          find app/build/outputs \( -name '*.apk' -or -name '*.aab' \) -print0 | xargs -0 sha256sum
+      - name: Upload AAB
+        uses: actions/upload-artifact@v6
+        with:
+          name: AAB
+          path: |
+            app/build/outputs/bundle/**/*.aab
+          compression-level: 0
       - name: Create GitHub release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh release create "${{ env.TAG_NAME }}" \
-            --latest --title "${{ env.TAG_NAME }}" --verify-tag -n "Placeholder" --draft \
+            --latest --title "${{ env.TAG_NAME }}" --verify-tag -n "" --draft \
             "app/build/outputs/apk/**/*.apk"

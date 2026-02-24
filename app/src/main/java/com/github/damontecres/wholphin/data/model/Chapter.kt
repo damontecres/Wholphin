@@ -31,6 +31,7 @@ data class Chapter(
                             )
                         },
                     )
-                }.orEmpty()
+                }?.sortedBy { it.position }
+                .orEmpty()
     }
 }
