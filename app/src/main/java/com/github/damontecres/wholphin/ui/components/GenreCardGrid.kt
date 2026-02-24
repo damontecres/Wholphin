@@ -35,6 +35,7 @@ import com.github.damontecres.wholphin.util.GetGenresRequestHandler
 import com.github.damontecres.wholphin.util.GetItemsRequestHandler
 import com.github.damontecres.wholphin.util.LoadingExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
+import com.mayakapps.kache.InMemoryKache
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
@@ -55,8 +56,10 @@ import org.jellyfin.sdk.model.api.ItemFields
 import org.jellyfin.sdk.model.api.ItemSortBy
 import org.jellyfin.sdk.model.api.request.GetGenresRequest
 import org.jellyfin.sdk.model.api.request.GetItemsRequest
+import timber.log.Timber
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
+import kotlin.time.Duration.Companion.hours
 
 @HiltViewModel(assistedFactory = GenreViewModel.Factory::class)
 class GenreViewModel
@@ -110,6 +113,7 @@ class GenreViewModel
                 val genreToUrl =
                     getGenreImageMap(
                         api = api,
+                        userId = serverRepository.currentUser.value?.id,
                         scope = viewModelScope,
                         imageUrlService = imageUrlService,
                         genres = genres.map { it.id },
@@ -141,15 +145,35 @@ class GenreViewModel
             }
     }
 
+data class GenreCacheKey(
+    val userId: UUID?,
+    val parentId: UUID,
+)
+
+private val genreCache by lazy {
+    InMemoryKache<GenreCacheKey, Map<UUID, String?>>(8) {
+        expireAfterWriteDuration = 2.hours
+    }
+}
+
 suspend fun getGenreImageMap(
     api: ApiClient,
+    userId: UUID?,
     scope: CoroutineScope,
     imageUrlService: ImageUrlService,
     genres: List<UUID>,
     parentId: UUID,
     includeItemTypes: List<BaseItemKind>?,
     cardWidthPx: Int?,
+    useCache: Boolean = true,
 ): Map<UUID, String?> {
+    val key = GenreCacheKey(userId, parentId)
+    if (useCache) {
+        genreCache.getIfAvailable(key)?.let {
+            Timber.v("Got cached entry")
+            return it
+        }
+    }
     val genreToUrl = ConcurrentHashMap<UUID, String?>()
     val semaphore = Semaphore(4)
     genres
@@ -161,6 +185,7 @@ suspend fun getGenreImageMap(
                             .execute(
                                 api,
                                 GetItemsRequest(
+                                    userId = userId,
                                     parentId = parentId,
                                     recursive = true,
                                     limit = 1,
@@ -189,6 +214,7 @@ suspend fun getGenreImageMap(
                 }
             }
         }.awaitAll()
+    genreCache.put(key, genreToUrl)
     return genreToUrl
 }
 

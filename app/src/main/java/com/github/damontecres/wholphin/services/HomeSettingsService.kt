@@ -569,6 +569,7 @@ class HomeSettingsService
             userDto: UserDto,
             libraries: List<Library>,
             limit: Int = prefs.maxItemsPerRow,
+            isRefresh: Boolean,
         ): HomeRowLoadingState =
             when (row) {
                 is HomeRowConfig.ContinueWatching -> {
@@ -649,12 +650,14 @@ class HomeSettingsService
                     val genreImages =
                         getGenreImageMap(
                             api = api,
+                            userId = serverRepository.currentUser.value?.id,
                             scope = scope,
                             imageUrlService = imageUrlService,
                             genres = genreIds,
                             parentId = row.parentId,
                             includeItemTypes = null,
                             cardWidthPx = null,
+                            useCache = isRefresh,
                         )
                     val library =
                         libraries
