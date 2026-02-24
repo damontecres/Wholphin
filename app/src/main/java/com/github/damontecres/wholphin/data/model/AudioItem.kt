@@ -1,9 +1,11 @@
 package com.github.damontecres.wholphin.data.model
 
+import androidx.compose.runtime.Stable
 import org.jellyfin.sdk.model.extensions.ticks
 import java.util.UUID
 import kotlin.time.Duration
 
+@Stable
 data class AudioItem(
     val id: UUID,
     val albumId: UUID?,

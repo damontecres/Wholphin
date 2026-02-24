@@ -30,6 +30,7 @@ import com.github.damontecres.wholphin.services.ImageUrlService
 import com.github.damontecres.wholphin.services.MusicService
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.UserPreferencesService
+import com.github.damontecres.wholphin.services.rememberQueue
 import com.github.damontecres.wholphin.ui.playback.ControllerViewState
 import com.github.damontecres.wholphin.ui.playback.PlaybackKeyHandler
 import com.github.damontecres.wholphin.ui.tryRequestFocus
@@ -67,6 +68,9 @@ class NowPlayingViewModel
         val state get() = musicService.state
         val player get() = musicService.player
 
+        init {
+        }
+
         fun reportInteraction() {
             controllerViewState.pulseControls()
         }
@@ -83,7 +87,9 @@ fun NowPlayingPage(
 ) {
     val state by viewModel.state.collectAsState()
     val player = viewModel.player
-    val current = state.queue.getOrNull(state.currentIndex)
+    val queue = rememberQueue(player, state.queueSize)
+    val current = queue.getOrNull(state.currentIndex)
+
     val controllerViewState = viewModel.controllerViewState
     val preferences by viewModel.userPreferencesService.flow.collectAsState(AppPreferences.getDefaultInstance())
 
@@ -131,6 +137,8 @@ fun NowPlayingPage(
             NowPlayingOverlay(
                 state = state,
                 player = player,
+                current = current,
+                queue = queue,
                 controllerViewState = controllerViewState,
                 modifier = Modifier.fillMaxSize(),
             )

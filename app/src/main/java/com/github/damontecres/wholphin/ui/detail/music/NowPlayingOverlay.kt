@@ -23,6 +23,7 @@ import androidx.media3.ui.compose.state.rememberNextButtonState
 import androidx.media3.ui.compose.state.rememberPlayPauseButtonState
 import androidx.media3.ui.compose.state.rememberPreviousButtonState
 import androidx.tv.material3.Text
+import com.github.damontecres.wholphin.data.model.AudioItem
 import com.github.damontecres.wholphin.services.MusicServiceState
 import com.github.damontecres.wholphin.ui.playback.ControllerViewState
 import com.github.damontecres.wholphin.ui.playback.PlaybackButtons
@@ -37,11 +38,11 @@ import kotlin.time.Duration.Companion.seconds
 fun NowPlayingOverlay(
     state: MusicServiceState,
     player: Player,
+    current: AudioItem?,
+    queue: List<AudioItem>,
     controllerViewState: ControllerViewState,
     modifier: Modifier = Modifier,
 ) {
-    val current = state.queue.getOrNull(state.currentIndex)
-
     val focusRequester = remember { FocusRequester() }
     LaunchedEffect(Unit) { focusRequester.tryRequestFocus() }
     val playPauseState = rememberPlayPauseButtonState(player)
@@ -77,7 +78,7 @@ fun NowPlayingOverlay(
             PlaybackButtons(
                 player = player,
                 initialFocusRequester = focusRequester,
-                onControllerInteraction = {},
+                onControllerInteraction = { controllerViewState.pulseControls() },
                 onPlaybackActionClick = {},
                 showPlay = playPauseState.showPlay,
                 previousEnabled = previousState.isEnabled,
@@ -87,21 +88,21 @@ fun NowPlayingOverlay(
                 seekForward = 30.seconds,
             )
         }
-        if (state.queue.isEmpty()) {
+        if (queue.isEmpty()) {
             Text("No items")
         } else {
             LazyColumn(
                 contentPadding = PaddingValues(16.dp),
                 modifier = Modifier.fillMaxSize(),
             ) {
-                itemsIndexed(state.queue) { index, song ->
+                itemsIndexed(queue) { index, song ->
                     SongListItem(
                         title = song.title,
                         artist = song.artistNames,
                         indexNumber = index + 1,
                         runtime = song.runtime?.roundSeconds,
                         showArtist = true,
-                        isPlaying = state.currentIndex == index,
+                        isPlaying = current?.id == song.id,
                         onClick = {
                             player.seekTo(index, 0L)
                         },

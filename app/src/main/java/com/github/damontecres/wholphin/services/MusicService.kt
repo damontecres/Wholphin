@@ -2,7 +2,9 @@ package com.github.damontecres.wholphin.services
 
 import android.content.Context
 import androidx.annotation.OptIn
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
+import androidx.compose.runtime.remember
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.common.Timeline
@@ -15,6 +17,7 @@ import com.github.damontecres.wholphin.data.model.AudioItem
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.services.hilt.AuthOkHttpClient
 import com.github.damontecres.wholphin.ui.DefaultItemFields
+import com.github.damontecres.wholphin.ui.onMain
 import com.github.damontecres.wholphin.ui.toServerString
 import com.github.damontecres.wholphin.util.BlockingList
 import com.github.damontecres.wholphin.util.profile.Codec
@@ -30,6 +33,7 @@ import org.jellyfin.sdk.api.client.extensions.instantMixApi
 import org.jellyfin.sdk.api.client.extensions.universalAudioApi
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.ImageType
+import org.jellyfin.sdk.model.serializer.toUUIDOrNull
 import timber.log.Timber
 import java.util.UUID
 import javax.inject.Inject
@@ -95,15 +99,7 @@ class MusicService
                 player.shuffleModeEnabled = shuffled
                 player.play()
             }
-            (startIndex..items.lastIndex).forEach {
-                val item = items.getBlocking(it)
-                if (item != null && item.type == BaseItemKind.AUDIO) {
-                    val mediaItem = convert(item)
-                    withContext(Dispatchers.Main) {
-                        player.addMediaItem(mediaItem)
-                    }
-                }
-            }
+            addAllToQueue(items)
         }
 
         suspend fun setQueue(
@@ -116,6 +112,7 @@ class MusicService
                     .filter { it.type == BaseItemKind.AUDIO }
                     .map(::convert)
             withContext(Dispatchers.Main) {
+                updateQueueSize()
                 player.setMediaItems(mediaItems)
                 player.shuffleModeEnabled = shuffled
                 player.play()
@@ -124,18 +121,39 @@ class MusicService
 
         suspend fun addToQueue(
             item: BaseItem,
-            position: Int? = null,
+            index: Int? = null,
         ) {
             if (item.type == BaseItemKind.AUDIO) {
                 val mediaItem = convert(item)
                 withContext(Dispatchers.Main) {
-                    player.addMediaItem(mediaItem)
+                    if (index != null) {
+                        player.addMediaItem(index, mediaItem)
+                    } else {
+                        player.addMediaItem(mediaItem)
+                    }
+                    updateQueueSize()
                     if (player.mediaItemCount == 1) {
                         // Start playing if this was the first time added
                         player.play()
                     }
                 }
             }
+        }
+
+        suspend fun addAllToQueue(list: BlockingList<BaseItem?>) {
+            list.indices
+                .chunked(25)
+                .forEach {
+                    val mediaItems =
+                        it.mapNotNull {
+                            list
+                                .getBlocking(it)
+                                ?.takeIf { it.type == BaseItemKind.AUDIO }
+                                ?.let(::convert)
+                        }
+                    onMain { player.addMediaItems(mediaItems) }
+                }
+            updateQueueSize()
         }
 
         private fun convert(audio: BaseItem): MediaItem {
@@ -164,19 +182,26 @@ class MusicService
                 .setTag(AudioItem.from(audio, imageUrl))
                 .build()
         }
+
+        private suspend fun updateQueueSize() {
+            withContext(Dispatchers.Main) {
+                _state.update {
+                    it.copy(queueSize = player.mediaItemCount)
+                }
+            }
+        }
     }
 
 @Stable
 data class MusicServiceState(
-    val queue: List<AudioItem>,
+    val queueSize: Int,
     val currentIndex: Int,
+    val currentItemId: UUID?,
     val isPlaying: Boolean,
 ) {
     companion object {
-        val EMPTY = MusicServiceState(emptyList(), 0, false)
+        val EMPTY = MusicServiceState(0, 0, null, false)
     }
-
-    val currentItemId: UUID? get() = if (isPlaying) queue.getOrNull(currentIndex)?.id else null
 }
 
 /**
@@ -190,7 +215,7 @@ private class MusicPlayerListener(
         Timber.v("MusicPlayerListener init")
         state.update {
             it.copy(
-                queue = PlayerMediaItemList(player, player.mediaItemCount),
+                queueSize = player.mediaItemCount,
                 currentIndex = player.currentMediaItemIndex,
                 isPlaying = player.isPlaying,
             )
@@ -211,11 +236,7 @@ private class MusicPlayerListener(
         reason: Int,
     ) {
         Timber.v("MusicPlayerListener onMediaItemTransition")
-        state.update {
-            it.copy(
-                currentIndex = player.currentMediaItemIndex,
-            )
-        }
+        updateCurrentIndex()
     }
 
     override fun onTimelineChanged(
@@ -224,40 +245,41 @@ private class MusicPlayerListener(
     ) {
         Timber.v("MusicPlayerListener onTimelineChanged")
         if (reason == Player.TIMELINE_CHANGE_REASON_PLAYLIST_CHANGED) {
-            state.update {
-                it.copy(
-                    queue = PlayerMediaItemList(player, player.mediaItemCount),
-                    currentIndex = player.currentMediaItemIndex,
-                )
-            }
+            updateCurrentIndex()
+        }
+    }
+
+    private fun updateCurrentIndex() {
+        state.update {
+            it.copy(
+                currentIndex = player.currentMediaItemIndex,
+                currentItemId = player.getMediaItemAt(player.currentMediaItemIndex).mediaId.toUUIDOrNull(),
+            )
         }
     }
 }
 
-private class PlayerMediaItemList(
+data class PlayerMediaItemList(
     private val player: Player,
-    override val size: Int,
-) : AbstractList<AudioItem>() {
-    override fun get(index: Int): AudioItem {
+) {
+    val size: Int get() = player.mediaItemCount
+
+    operator fun get(index: Int): AudioItem {
 //        Timber.v("get %s", index)
         return player.getMediaItemAt(index).localConfiguration?.tag as AudioItem
     }
-
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (other !is PlayerMediaItemList) return false
-        if (!super.equals(other)) return false
-
-        if (size != other.size) return false
-        if (player != other.player) return false
-
-        return true
-    }
-
-    override fun hashCode(): Int {
-        var result = super.hashCode()
-        result = 31 * result + size
-        result = 31 * result + player.hashCode()
-        return result
-    }
 }
+
+@Composable
+fun rememberQueue(
+    player: Player,
+    queueSize: Int,
+): List<AudioItem> =
+    remember(queueSize) {
+        object : AbstractList<AudioItem>() {
+            override val size: Int
+                get() = player.mediaItemCount
+
+            override fun get(index: Int): AudioItem = player.getMediaItemAt(index).localConfiguration?.tag as AudioItem
+        }
+    }
