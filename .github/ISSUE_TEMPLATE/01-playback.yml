@@ -1,9 +1,10 @@
 name: "Playback Problem"
 description: Report an issue with playback
-title: "[BUG] - <title>"
+title: "<title>"
 labels: [
   "bug", "playback"
 ]
+type: "Bug"
 body:
   - type: textarea
     id: description
@@ -17,6 +18,7 @@ body:
     attributes:
       label: "Media info"
       description: Please enter details about what media you are trying to play (video or audio codecs, container, etc)
+      placeholder: Use mediainfo or "Send media info to server" in the app to gather this
     validations:
       required: true
   - type: dropdown
@@ -35,7 +37,7 @@ body:
     attributes:
       label: "App Version"
       description: What version of the app?
-      placeholder: "v0.3.0"
+      placeholder: "v0.5.1"
     validations:
       required: true
   - type: input
@@ -43,7 +45,7 @@ body:
     attributes:
       label: "Server Version"
       description: What version of the server?
-      placeholder: "10.11.3"
+      placeholder: "10.11.6"
     validations:
       required: true
   - type: input
