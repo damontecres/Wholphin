@@ -132,10 +132,15 @@ class PlaybackKeyHandler(
         val isBack = isSkipBack(event)
         return when (event.type) {
             KeyEventType.KeyDown -> {
-                if (event.nativeKeyEvent.repeatCount > 0) {
+                val repeatCount = event.nativeKeyEvent.repeatCount
+                if (repeatCount > 0) {
+                    if (repeatCount < HOLD_TO_SEEK_REPEAT_START_COUNT) {
+                        setHandledByRepeat(isBack = isBack, handled = false)
+                        return true
+                    }
                     val multiplier =
                         calculateSeekAccelerationMultiplier(
-                            repeatCount = event.nativeKeyEvent.repeatCount,
+                            repeatCount = repeatCount - HOLD_TO_SEEK_REPEAT_START_COUNT,
                             durationMs = normalizedDurationMs(),
                         )
                     setHandledByRepeat(isBack = isBack, handled = true)

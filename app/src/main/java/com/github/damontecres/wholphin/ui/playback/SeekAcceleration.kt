@@ -1,5 +1,7 @@
 package com.github.damontecres.wholphin.ui.playback
 
+internal const val HOLD_TO_SEEK_REPEAT_START_COUNT = 12
+
 /**
  * Shared seek acceleration profile for hold-to-seek behavior.
  * Keep this in sync anywhere directional key repeat seeking is handled.

@@ -184,11 +184,16 @@ fun SeekBarDisplay(
                             KeyEvent.KEYCODE_DPAD_LEFT, KeyEvent.KEYCODE_SYSTEM_NAVIGATION_LEFT -> {
                                 when (event.type) {
                                     KeyEventType.KeyDown -> {
-                                        if (event.nativeKeyEvent.repeatCount > 0) {
+                                        val repeatCount = event.nativeKeyEvent.repeatCount
+                                        if (repeatCount > 0) {
+                                            if (repeatCount < HOLD_TO_SEEK_REPEAT_START_COUNT) {
+                                                leftHandledByRepeat = false
+                                                return@onPreviewKeyEvent true
+                                            }
                                             leftHandledByRepeat = true
                                             onLeft.invoke(
                                                 calculateSeekAccelerationMultiplier(
-                                                    repeatCount = event.nativeKeyEvent.repeatCount,
+                                                    repeatCount = repeatCount - HOLD_TO_SEEK_REPEAT_START_COUNT,
                                                     durationMs = durationMs,
                                                 ),
                                             )
@@ -214,11 +219,16 @@ fun SeekBarDisplay(
                             KeyEvent.KEYCODE_DPAD_RIGHT, KeyEvent.KEYCODE_SYSTEM_NAVIGATION_RIGHT -> {
                                 when (event.type) {
                                     KeyEventType.KeyDown -> {
-                                        if (event.nativeKeyEvent.repeatCount > 0) {
+                                        val repeatCount = event.nativeKeyEvent.repeatCount
+                                        if (repeatCount > 0) {
+                                            if (repeatCount < HOLD_TO_SEEK_REPEAT_START_COUNT) {
+                                                rightHandledByRepeat = false
+                                                return@onPreviewKeyEvent true
+                                            }
                                             rightHandledByRepeat = true
                                             onRight.invoke(
                                                 calculateSeekAccelerationMultiplier(
-                                                    repeatCount = event.nativeKeyEvent.repeatCount,
+                                                    repeatCount = repeatCount - HOLD_TO_SEEK_REPEAT_START_COUNT,
                                                     durationMs = durationMs,
                                                 ),
                                             )
