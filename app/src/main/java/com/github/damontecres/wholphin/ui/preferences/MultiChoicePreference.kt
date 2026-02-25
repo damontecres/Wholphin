@@ -19,12 +19,12 @@ import com.github.damontecres.wholphin.ui.components.DialogPopup
 fun <T> MultiChoicePreference(
     title: String,
     summary: String?,
-    possibleValues: Set<T>,
+    possibleValues: List<T>,
     selectedValues: Set<T>,
     onValueChange: (List<T>) -> Unit,
     modifier: Modifier = Modifier,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
-    valueDisplay: @Composable (item: T) -> Unit = { Text(it.toString()) },
+    valueDisplay: @Composable (index: Int, item: T) -> Unit = { _, item -> Text(item.toString()) },
 ) {
 //    val values = stringArrayResource(preference.displayValues).toList()
 //    val summary =
@@ -59,7 +59,7 @@ fun <T> MultiChoicePreference(
                     items =
                         possibleValues.mapIndexed { index, item ->
                             DialogItem(
-                                headlineContent = { valueDisplay.invoke(item) },
+                                headlineContent = { valueDisplay.invoke(index, item) },
                                 trailingContent = {
                                     Switch(
                                         checked = selectedValues.contains(item),

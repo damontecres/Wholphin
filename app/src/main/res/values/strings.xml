@@ -276,6 +276,11 @@
         <item quantity="one">%d second</item>
         <item quantity="other">%d seconds</item>
     </plurals>
+    <plurals name="minutes">
+        <item quantity="zero">%s minutes</item>
+        <item quantity="one">%s minute</item>
+        <item quantity="other">%s minutes</item>
+    </plurals>
 
     <plurals name="movies">
         <item quantity="zero">Movies</item>
@@ -522,6 +527,19 @@
     <string name="display_presets">Display presets</string>
     <string name="display_presets_description">Built-in presets to quickly style all rows</string>
     <string name="customize_home_summary">Choose rows and images on the home page</string>
+    <string name="start_after">Start after</string>
+    <string name="animate">Animate</string>
+    <string name="max_age_rating">Max age rating</string>
+    <string name="no_max">No max</string>
+    <string name="for_all_ages">For all ages</string>
+    <string name="up_to_age">Up to age %s</string>
+    <string name="screensaver">Screensaver</string>
+    <string name="screensaver_settings">Screensaver settings</string>
+    <string name="start_screensaver">Start screensaver</string>
+    <string name="duration">Duration</string>
+    <string name="photos">Photos</string>
+    <string name="include_types">Include types</string>
+    <string name="include_types_summary">What types of items to show images for</string>
     <string name="content_scale_fit">Fit</string>
     <string name="content_scale_crop">Crop</string>
     <string name="content_scale_fill">Fill</string>
@@ -673,10 +691,17 @@
     <string name="search_and_download_subtitles"><![CDATA[Search & download subtitles]]></string>
     <string name="no_subtitles_found">No remote subtitles were found</string>
     <string name="series_continueing">Present</string>
+    <string name="in_app_screensaver">Use in-app screensaver</string>
     <string-array name="backdrop_style_options">
         <item>@string/backdrop_style_dynamic</item>
         <item>@string/backdrop_style_image</item>
         <item>@string/none</item>
+    </string-array>
+
+    <string-array name="screensaver_item_types">
+        <item>@string/movies</item>
+        <item>@string/tv_shows</item>
+        <item>@string/photos</item>
     </string-array>
 
 </resources>

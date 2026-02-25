@@ -3,10 +3,12 @@ package com.github.damontecres.wholphin
 import android.content.Intent
 import android.content.res.Configuration
 import android.os.Bundle
+import android.view.KeyEvent
 import android.view.WindowManager
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -49,6 +51,7 @@ import com.github.damontecres.wholphin.services.ImageUrlService
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.PlaybackLifecycleObserver
 import com.github.damontecres.wholphin.services.RefreshRateService
+import com.github.damontecres.wholphin.services.ScreensaverService
 import com.github.damontecres.wholphin.services.ServerEventListener
 import com.github.damontecres.wholphin.services.SetupDestination
 import com.github.damontecres.wholphin.services.SetupNavigationManager
@@ -59,8 +62,10 @@ import com.github.damontecres.wholphin.services.hilt.AuthOkHttpClient
 import com.github.damontecres.wholphin.services.tvprovider.TvProviderSchedulerService
 import com.github.damontecres.wholphin.ui.CoilConfig
 import com.github.damontecres.wholphin.ui.LocalImageUrlService
+import com.github.damontecres.wholphin.ui.components.AppScreensaver
 import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.detail.series.SeasonEpisodeIds
+import com.github.damontecres.wholphin.ui.launchDefault
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.nav.ApplicationContent
 import com.github.damontecres.wholphin.ui.nav.Destination
@@ -133,6 +138,9 @@ class MainActivity : AppCompatActivity() {
     // Note: unused but injected to ensure it is created
     @Inject
     lateinit var datePlayedInvalidationService: DatePlayedInvalidationService
+
+    @Inject
+    lateinit var screensaverService: ScreensaverService
 
     private var signInAuto = true
 
@@ -317,6 +325,15 @@ class MainActivity : AppCompatActivity() {
                                     }
                                 },
                             )
+                            val screenSaverState by screensaverService.state.collectAsState()
+                            if (screenSaverState.enabled || screenSaverState.enabledTemp) {
+                                AnimatedVisibility(
+                                    screenSaverState.show,
+                                    Modifier.fillMaxSize(),
+                                ) {
+                                    AppScreensaver(appPreferences, Modifier.fillMaxSize())
+                                }
+                            }
                         }
                     }
                 }
@@ -324,10 +341,22 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        if (screensaverService.state.value.show) {
+            screensaverService.stop(false)
+            screensaverService.pulse()
+            return true
+        } else {
+            screensaverService.pulse()
+            return super.dispatchKeyEvent(event)
+        }
+    }
+
     override fun onResume() {
         super.onResume()
         Timber.d("onResume")
-        lifecycleScope.launchIO {
+        lifecycleScope.launchDefault {
+            screensaverService.pulse()
             appUpgradeHandler.run()
         }
     }
@@ -341,6 +370,7 @@ class MainActivity : AppCompatActivity() {
     override fun onStop() {
         super.onStop()
         Timber.d("onStop")
+        screensaverService.stop(true)
         tvProviderSchedulerService.launchOneTimeRefresh()
     }
 

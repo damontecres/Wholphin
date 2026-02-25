@@ -43,7 +43,6 @@ import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import kotlinx.coroutines.launch
 import java.io.File
-import java.util.SortedSet
 
 @Suppress("UNCHECKED_CAST")
 @Composable
@@ -226,7 +225,7 @@ fun <T> ComposablePreference(
         }
 
         is AppMultiChoicePreference<*, *> -> {
-            val values = stringArrayResource(preference.displayValues).toSortedSet()
+            val values = stringArrayResource(preference.displayValues)
             val summary =
                 preference.summary?.let { stringResource(it) }
                     ?: preference.summary(context, value)
@@ -237,12 +236,15 @@ fun <T> ComposablePreference(
                     list
                 }
             MultiChoicePreference(
-                possibleValues = values as SortedSet<Any>,
+                possibleValues = preference.allValues,
                 selectedValues = selectedValues,
                 title = title,
                 summary = summary,
                 onValueChange = {
-                    onValueChange.invoke(selectedValues.toList() as T)
+                    onValueChange.invoke(it.toList() as T)
+                },
+                valueDisplay = { index, _ ->
+                    Text(values[index])
                 },
             )
         }
