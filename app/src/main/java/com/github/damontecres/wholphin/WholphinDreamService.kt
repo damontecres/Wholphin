@@ -2,9 +2,12 @@ package com.github.damontecres.wholphin
 
 import android.service.dreams.DreamService
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.ComposeView
 import androidx.lifecycle.Lifecycle
@@ -15,13 +18,13 @@ import androidx.savedstate.SavedStateRegistry
 import androidx.savedstate.SavedStateRegistryController
 import androidx.savedstate.SavedStateRegistryOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
-import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.ScreensaverService
 import com.github.damontecres.wholphin.services.UserPreferencesService
 import com.github.damontecres.wholphin.ui.components.AppScreensaverContent
 import com.github.damontecres.wholphin.ui.theme.WholphinTheme
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.flow.collectLatest
 import javax.inject.Inject
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -60,25 +63,22 @@ class WholphinDreamService :
                 setViewTreeLifecycleOwner(this@WholphinDreamService)
                 setViewTreeSavedStateRegistryOwner(this@WholphinDreamService)
                 setContent {
-                    val prefs by userPreferencesService.flow.collectAsState(
-                        UserPreferences(
-                            AppPreferences.getDefaultInstance(),
-                        ),
-                    )
-                    WholphinTheme(appThemeColors = prefs.appPreferences.interfacePreferences.appThemeColors) {
-                        val screensaverPrefs =
-                            prefs.appPreferences.interfacePreferences.screensaverPreference
-                        val currentItem by itemFlow.collectAsState(null)
-                        currentItem?.let { currentItem ->
-                            key(currentItem) {
-                                AppScreensaverContent(
-                                    currentItem = currentItem,
-                                    showClock = prefs.appPreferences.interfacePreferences.showClock,
-                                    duration = screensaverPrefs.duration.milliseconds,
-                                    animate = screensaverPrefs.animate,
-                                    modifier = Modifier.fillMaxSize(),
-                                )
-                            }
+                    var prefs by remember { mutableStateOf<UserPreferences?>(null) }
+                    LaunchedEffect(Unit) {
+                        userPreferencesService.flow.collectLatest { prefs = it }
+                    }
+                    prefs?.let { prefs ->
+                        WholphinTheme(appThemeColors = prefs.appPreferences.interfacePreferences.appThemeColors) {
+                            val screensaverPrefs =
+                                prefs.appPreferences.interfacePreferences.screensaverPreference
+                            val currentItem by itemFlow.collectAsState(null)
+                            AppScreensaverContent(
+                                currentItem = currentItem,
+                                showClock = prefs.appPreferences.interfacePreferences.showClock,
+                                duration = screensaverPrefs.duration.milliseconds,
+                                animate = screensaverPrefs.animate,
+                                modifier = Modifier.fillMaxSize(),
+                            )
                         }
                     }
                 }

@@ -331,7 +331,7 @@ class MainActivity : AppCompatActivity() {
                                     screenSaverState.show,
                                     Modifier.fillMaxSize(),
                                 ) {
-                                    AppScreensaver(Modifier.fillMaxSize())
+                                    AppScreensaver(appPreferences, Modifier.fillMaxSize())
                                 }
                             }
                         }
