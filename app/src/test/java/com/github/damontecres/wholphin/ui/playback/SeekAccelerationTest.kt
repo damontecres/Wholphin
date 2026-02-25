@@ -35,11 +35,11 @@ class SeekAccelerationTest {
 
         assertEquals(
             1,
-            calculateSeekAccelerationMultiplier(repeatCount = 74, durationMs = mediumDurationMs),
+            calculateSeekAccelerationMultiplier(repeatCount = 38, durationMs = mediumDurationMs),
         )
         assertEquals(
             2,
-            calculateSeekAccelerationMultiplier(repeatCount = 75, durationMs = mediumDurationMs),
+            calculateSeekAccelerationMultiplier(repeatCount = 39, durationMs = mediumDurationMs),
         )
         assertEquals(
             3,

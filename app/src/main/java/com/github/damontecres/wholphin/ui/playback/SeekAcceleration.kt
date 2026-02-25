@@ -23,7 +23,7 @@ fun calculateSeekAccelerationMultiplier(
 
         durationMinutes < 90 -> {
             when {
-                scaledRepeatCount < 25 -> 1
+                scaledRepeatCount < 13 -> 1
                 scaledRepeatCount < 50 -> 2
                 scaledRepeatCount < 75 -> 3
                 else -> 4
