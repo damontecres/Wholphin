@@ -120,6 +120,8 @@ class AppPreferencesSerializer
                                             colorCodePrograms =
                                                 AppPreference.LiveTvColorCodePrograms.defaultValue
                                         }.build()
+
+                                combinedSearchResults = false
                             }.build()
 
                     advancedPreferences =
