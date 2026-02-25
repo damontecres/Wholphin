@@ -15,7 +15,7 @@ fun calculateSeekAccelerationMultiplier(
     if (scaledRepeatCount <= 0) return 1
 
     // Unknown/unset durations fall back to the shortest-content profile.
-    val durationMinutes = if (durationMs > 0L) durationMs / 60_000L else 0L
+    val durationMinutes = durationMs / 60_000L
     return when {
         durationMinutes < 30 -> {
             if (scaledRepeatCount < 30) 1 else 2
