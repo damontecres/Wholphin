@@ -193,5 +193,5 @@ class PlaybackKeyHandler(
             rightHandledByRepeat
         }
 
-    private fun normalizedDurationMs(): Long = getDurationMs().takeIf { it > 0L } ?: 0L
+    private fun normalizedDurationMs(): Long = getDurationMs().coerceAtLeast(0L)
 }
