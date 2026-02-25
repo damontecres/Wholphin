@@ -74,7 +74,7 @@ class WholphinDreamService :
                             val currentItem by itemFlow.collectAsState(null)
                             AppScreensaverContent(
                                 currentItem = currentItem,
-                                showClock = prefs.appPreferences.interfacePreferences.showClock,
+                                showClock = screensaverPrefs.showClock,
                                 duration = screensaverPrefs.duration.milliseconds,
                                 animate = screensaverPrefs.animate,
                                 modifier = Modifier.fillMaxSize(),

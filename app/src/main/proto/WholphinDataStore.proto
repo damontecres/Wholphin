@@ -151,6 +151,7 @@ message ScreensaverPreferences{
   int32 max_age_filter = 4;
   bool enabled = 5;
   repeated string item_types = 6;
+  bool show_clock = 7;
 }
 
 message InterfacePreferences {

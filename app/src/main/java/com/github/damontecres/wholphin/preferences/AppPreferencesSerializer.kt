@@ -130,6 +130,7 @@ class AppPreferencesSerializer
                                             duration = ScreensaverPreference.DEFAULT_DURATION
                                             animate = ScreensaverPreference.Animate.defaultValue
                                             maxAgeFilter = ScreensaverPreference.DEFAULT_MAX_AGE
+                                            showClock = ScreensaverPreference.ShowClock.defaultValue
                                             clearItemTypes()
                                             addItemTypes(BaseItemKind.MOVIE.serialName)
                                             addItemTypes(BaseItemKind.SERIES.serialName)

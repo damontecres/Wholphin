@@ -691,6 +691,7 @@
     <string name="search_and_download_subtitles"><![CDATA[Search & download subtitles]]></string>
     <string name="no_subtitles_found">No remote subtitles were found</string>
     <string name="series_continueing">Present</string>
+    <string name="in_app_screensaver">Use in-app screensaver</string>
     <string-array name="backdrop_style_options">
         <item>@string/backdrop_style_dynamic</item>
         <item>@string/backdrop_style_image</item>

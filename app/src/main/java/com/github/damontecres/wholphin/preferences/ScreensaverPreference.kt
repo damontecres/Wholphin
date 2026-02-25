@@ -8,7 +8,7 @@ import kotlin.time.Duration.Companion.milliseconds
 object ScreensaverPreference {
     val Enabled =
         AppSwitchPreference<AppPreferences>(
-            title = R.string.enabled,
+            title = R.string.in_app_screensaver,
             defaultValue = false,
             getter = { it.interfacePreferences.screensaverPreference.enabled },
             setter = { prefs, value ->
@@ -86,6 +86,18 @@ object ScreensaverPreference {
                     null
                 }
             },
+        )
+
+    val ShowClock =
+        AppSwitchPreference<AppPreferences>(
+            title = R.string.show_clock,
+            defaultValue = AppPreference.ShowClock.defaultValue,
+            getter = { it.interfacePreferences.screensaverPreference.showClock },
+            setter = { prefs, value ->
+                prefs.updateScreensaverPreferences { showClock = value }
+            },
+            summaryOn = R.string.yes,
+            summaryOff = R.string.no,
         )
 
     val Animate =

@@ -1217,6 +1217,7 @@ val screensaverPreferences =
                     ScreensaverPreference.Enabled,
                     ScreensaverPreference.StartDelay,
                     ScreensaverPreference.Duration,
+                    ScreensaverPreference.ShowClock,
                     ScreensaverPreference.Animate,
                     ScreensaverPreference.MaxAge,
                     ScreensaverPreference.ItemTypes,

@@ -25,6 +25,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.geometry.center
 import androidx.compose.ui.graphics.BlendMode
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RadialGradientShader
 import androidx.compose.ui.graphics.Shader
@@ -49,6 +50,8 @@ import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.services.ScreensaverService
 import com.github.damontecres.wholphin.ui.AppColors
 import com.github.damontecres.wholphin.ui.CrossFadeFactory
+import com.github.damontecres.wholphin.ui.nav.TOP_SCRIM_ALPHA
+import com.github.damontecres.wholphin.ui.nav.TOP_SCRIM_END_FRACTION
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlin.time.Duration
@@ -80,7 +83,7 @@ fun AppScreensaver(
     val currentItem by viewModel.currentItem.collectAsState(null)
     AppScreensaverContent(
         currentItem = currentItem,
-        showClock = prefs.interfacePreferences.showClock,
+        showClock = prefs.interfacePreferences.screensaverPreference.showClock,
         duration = prefs.interfacePreferences.screensaverPreference.duration.milliseconds,
         animate = prefs.interfacePreferences.screensaverPreference.animate,
         modifier = modifier,
@@ -170,10 +173,6 @@ fun AppScreensaverContent(
             }
         }
 
-        if (showClock) {
-            TimeDisplay()
-        }
-
         val largeRadialGradient =
             remember {
                 object : ShaderBrush() {
@@ -193,6 +192,23 @@ fun AppScreensaverContent(
                 brush = largeRadialGradient,
                 blendMode = BlendMode.Multiply,
             )
+            if (showClock) {
+                // Add scrim to make clock more readable
+                drawRect(
+                    brush =
+                        Brush.verticalGradient(
+                            colorStops =
+                                arrayOf(
+                                    0f to Color.Black.copy(alpha = TOP_SCRIM_ALPHA),
+                                    TOP_SCRIM_END_FRACTION to Color.Transparent,
+                                ),
+                        ),
+                    blendMode = BlendMode.Multiply,
+                )
+            }
+        }
+        if (showClock) {
+            TimeDisplay()
         }
     }
 }
