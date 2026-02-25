@@ -1,6 +1,6 @@
 title: "<title>"
 labels: [
-  "new feature"
+  "enhancement"
 ]
 body:
   - type: textarea
