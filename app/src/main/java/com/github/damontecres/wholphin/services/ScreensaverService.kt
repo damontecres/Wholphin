@@ -1,13 +1,12 @@
 package com.github.damontecres.wholphin.services
 
 import android.content.Context
-import android.view.WindowManager
 import coil3.imageLoader
 import coil3.request.ImageRequest
-import com.github.damontecres.wholphin.MainActivity
 import com.github.damontecres.wholphin.services.hilt.DefaultCoroutineScope
 import com.github.damontecres.wholphin.ui.components.CurrentItem
 import com.github.damontecres.wholphin.ui.formatDate
+import com.github.damontecres.wholphin.ui.launchDefault
 import com.github.damontecres.wholphin.util.ApiRequestPager
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.GetItemsRequestHandler
@@ -23,11 +22,11 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.cancellable
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.libraryApi
 import org.jellyfin.sdk.model.api.BaseItemKind
@@ -51,6 +50,8 @@ class ScreensaverService
     ) {
         private val _state = MutableStateFlow(ScreensaverState(false, false, false, false))
         val state: StateFlow<ScreensaverState> = _state
+
+        val keepScreenOn = MutableStateFlow(false)
 
         private var waitJob: Job? = null
 
@@ -114,7 +115,7 @@ class ScreensaverService
         }
 
         fun keepScreenOn(keep: Boolean) {
-            scope.launch {
+            scope.launchDefault {
                 val screensaverEnabled = _state.value.enabled
                 Timber.d("Keep screen on: %s, screensaverEnabled=%s", keep, screensaverEnabled)
                 if (screensaverEnabled) {
@@ -131,15 +132,9 @@ class ScreensaverService
             }
         }
 
-        private suspend fun keepScreenOnInternal(keep: Boolean) =
-            withContext(Dispatchers.Main) {
-                val window = MainActivity.instance.window
-                if (keep) {
-                    window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-                } else {
-                    window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-                }
-            }
+        private fun keepScreenOnInternal(keep: Boolean) {
+            keepScreenOn.update { keep }
+        }
 
         fun createItemFlow(scope: CoroutineScope): Flow<CurrentItem?> =
             flow {
@@ -211,7 +206,7 @@ class ScreensaverService
                         index++
                     }
                 }
-            }.cancellable()
+            }.flowOn(Dispatchers.Default).cancellable()
     }
 
 data class ScreensaverState(
