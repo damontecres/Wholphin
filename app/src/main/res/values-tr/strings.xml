@@ -526,4 +526,22 @@
     <string name="search_and_download_subtitles"><![CDATA[Altyazı ara ve indir]]></string>
     <string name="no_subtitles_found">Uzak altyazı bulunamadı</string>
     <string name="series_continueing">Mevcut</string>
+    <plurals name="minutes">
+        <item quantity="one">%s dakika</item>
+        <item quantity="other">%s dakika</item>
+    </plurals>
+    <string name="start_after">Başlama süresi</string>
+    <string name="animate">Oynatma Süresi</string>
+    <string name="max_age_rating">Maksimum yaş sınırı</string>
+    <string name="no_max">Sınır yok</string>
+    <string name="for_all_ages">Genel İzleyici</string>
+    <string name="up_to_age">%s yaşa kadar</string>
+    <string name="screensaver">Ekran koruyucu</string>
+    <string name="screensaver_settings">Ekran koruyucu ayarları</string>
+    <string name="start_screensaver">Ekran koruyucuyu başlat</string>
+    <string name="duration">Süre</string>
+    <string name="photos">Fotoğraflar</string>
+    <string name="include_types">İçerik türleri</string>
+    <string name="include_types_summary">Görsel gösterilecek öğe türleri</string>
+    <string name="in_app_screensaver">Uygulama içi ekran koruyucuyu kullan</string>
 </resources>
