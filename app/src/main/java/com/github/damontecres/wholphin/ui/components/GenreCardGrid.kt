@@ -209,6 +209,7 @@ suspend fun getGenreImageMap(
                                 imageType = ImageType.BACKDROP,
                                 imageTags = item.imageTags.orEmpty(),
                                 fillWidth = cardWidthPx,
+                                backdropTags = item.backdropImageTags.orEmpty(),
                             )
                     }
                 }

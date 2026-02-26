@@ -45,7 +45,6 @@ import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.Response
 import org.jellyfin.sdk.model.api.BaseItemDto
 import org.jellyfin.sdk.model.api.BaseItemDtoQueryResult
-import org.jellyfin.sdk.model.api.ImageType
 import org.jellyfin.sdk.model.extensions.ticks
 import timber.log.Timber
 import java.util.UUID
@@ -428,12 +427,6 @@ fun Response<BaseItemDtoQueryResult>.toBaseItems(
     api: ApiClient,
     useSeriesForPrimary: Boolean,
 ) = this.content.items.map { BaseItem.from(it, api, useSeriesForPrimary) }
-
-@Composable
-fun rememberBackDropImage(item: BaseItem): String? {
-    val imageUrlService = LocalImageUrlService.current
-    return remember(item) { imageUrlService.getItemImageUrl(item, ImageType.BACKDROP) }
-}
 
 /**
  * Check if this, coalescing nulls to zero, is greater than that
