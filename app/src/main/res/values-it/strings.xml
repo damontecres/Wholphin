@@ -534,4 +534,9 @@
     <string name="search_and_download_subtitles"><![CDATA[Cerca e scarica sottotitoli]]></string>
     <string name="no_subtitles_found">Nessun sottotitolo remoto trovato</string>
     <string name="series_continueing">In corso</string>
+    <plurals name="minutes">
+        <item quantity="one">%s minuto</item>
+        <item quantity="many">%s minuti</item>
+        <item quantity="other">%s minuti</item>
+    </plurals>
 </resources>
