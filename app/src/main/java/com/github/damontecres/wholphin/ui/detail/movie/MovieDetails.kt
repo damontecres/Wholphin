@@ -126,6 +126,7 @@ fun MovieDetails(
                 showPlaylistDialog.makePresent(itemId)
             },
             onSendMediaInfo = viewModel.mediaReportService::sendReportFor,
+            onClickDelete = viewModel::deleteItem,
         )
 
     when (val state = loading) {
@@ -201,6 +202,7 @@ fun MovieDetails(
                                         seriesId = null,
                                         sourceId = chosenStreams?.source?.id?.toUUIDOrNull(),
                                         canClearChosenStreams = chosenStreams?.itemPlayback != null || chosenStreams?.plc != null,
+                                        canDelete = viewModel.canDelete,
                                         actions = moreActions,
                                         onChooseVersion = {
                                             chooseVersion =
@@ -291,6 +293,7 @@ fun MovieDetails(
                                 playbackPosition = similar.playbackPosition,
                                 watched = similar.played,
                                 favorite = similar.favorite,
+                                canDelete = false,
                                 actions = moreActions,
                             )
                         moreDialog =

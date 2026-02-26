@@ -18,6 +18,7 @@ import com.github.damontecres.wholphin.preferences.ThemeSongVolume
 import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.ExtrasService
 import com.github.damontecres.wholphin.services.FavoriteWatchManager
+import com.github.damontecres.wholphin.services.MediaManagementService
 import com.github.damontecres.wholphin.services.MediaReportService
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.PeopleFavorites
@@ -73,6 +74,7 @@ class MovieViewModel
         private val extrasService: ExtrasService,
         private val userPreferencesService: UserPreferencesService,
         private val backdropService: BackdropService,
+        private val mediaManagementService: MediaManagementService,
         @Assisted val itemId: UUID,
     ) : ViewModel() {
         @AssistedFactory
@@ -90,6 +92,9 @@ class MovieViewModel
         val chosenStreams = MutableLiveData<ChosenStreams?>(null)
         val discovered = MutableStateFlow<List<DiscoverItem>>(listOf())
 
+        var canDelete: Boolean = false
+            private set
+
         init {
             init()
         }
@@ -106,6 +111,7 @@ class MovieViewModel
                     api.userLibraryApi.getItem(itemId).content.let {
                         BaseItem.from(it, api)
                     }
+                canDelete = mediaManagementService.canDelete(item)
                 this@MovieViewModel.item.setValueOnMain(item)
                 item
             }
@@ -271,6 +277,14 @@ class MovieViewModel
                             userPreferencesService.getCurrent(),
                         )
                     this@MovieViewModel.chosenStreams.setValueOnMain(result)
+                }
+            }
+        }
+
+        fun deleteItem(item: BaseItem) {
+            viewModelScope.launchIO {
+                if (mediaManagementService.deleteItem(item)) {
+                    navigationManager.goBack()
                 }
             }
         }

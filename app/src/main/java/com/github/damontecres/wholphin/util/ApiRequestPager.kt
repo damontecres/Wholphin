@@ -166,6 +166,22 @@ class ApiRequestPager<T>(
         }
     }
 
+    /**
+     * Dumps the cache for all the pages at or after the given position and fetches a new page
+     */
+    suspend fun refreshPagesAfter(position: Int) {
+        val pageNumber = position / pageSize
+        cachedPages.asMap().apply {
+            keys.forEach { pageKey ->
+                if (pageKey >= pageNumber) {
+                    if (DEBUG) Timber.v("refreshPagesAfter: dropping %s", pageKey)
+                    remove(pageKey)
+                }
+            }
+        }
+        fetchPageBlocking(position, true)
+    }
+
     companion object {
         private const val DEBUG = false
     }

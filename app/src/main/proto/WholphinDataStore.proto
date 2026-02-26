@@ -166,6 +166,7 @@ message InterfacePreferences {
   BackdropStyle backdrop_style = 9;
   SubtitlePreferences hdr_subtitles_preferences = 10;
   ScreensaverPreferences screensaver_preference = 11;
+  bool enable_media_management = 12;
 }
 
 message AdvancedPreferences {

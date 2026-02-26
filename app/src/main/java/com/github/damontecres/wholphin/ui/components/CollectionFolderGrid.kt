@@ -62,6 +62,7 @@ import com.github.damontecres.wholphin.data.model.LibraryDisplayInfo
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.FavoriteWatchManager
+import com.github.damontecres.wholphin.services.MediaManagementService
 import com.github.damontecres.wholphin.services.MediaReportService
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.ThemeSongPlayer
@@ -78,6 +79,7 @@ import com.github.damontecres.wholphin.ui.detail.MoreDialogActions
 import com.github.damontecres.wholphin.ui.detail.PlaylistDialog
 import com.github.damontecres.wholphin.ui.detail.PlaylistLoadingState
 import com.github.damontecres.wholphin.ui.detail.buildMoreDialogItemsForHome
+import com.github.damontecres.wholphin.ui.launchDefault
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.main.HomePageHeader
 import com.github.damontecres.wholphin.ui.nav.Destination
@@ -130,6 +132,7 @@ class CollectionFolderViewModel
         private val navigationManager: NavigationManager,
         private val themeSongPlayer: ThemeSongPlayer,
         private val userPreferencesService: UserPreferencesService,
+        private val mediaManagementService: MediaManagementService,
         val mediaReportService: MediaReportService,
         @Assisted itemId: String,
         @Assisted initialSortAndDirection: SortAndDirection?,
@@ -199,6 +202,19 @@ class CollectionFolderViewModel
                 } catch (ex: Exception) {
                     Timber.e(ex, "Error during init")
                     loading.setValueOnMain(DataLoadingState.Error(ex))
+                }
+            }
+            viewModelScope.launchDefault {
+                mediaManagementService.deletedItemFlow.collect { deletedItem ->
+                    val pager =
+                        ((loading.value as? DataLoadingState.Success)?.data as? ApiRequestPager<*>)
+                    position.let {
+                        Timber.v("Item deleted: position=%s, id=%s", it, deletedItem.item.id)
+                        val item = pager?.get(it)
+                        if (item?.id == deletedItem.item.id) {
+                            pager.refreshPagesAfter(position)
+                        }
+                    }
                 }
             }
         }
