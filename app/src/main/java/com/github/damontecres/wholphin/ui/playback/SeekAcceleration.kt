@@ -10,8 +10,7 @@ fun calculateSeekAccelerationMultiplier(
     repeatCount: Int,
     durationMs: Long,
 ): Int {
-    if (repeatCount <= 0) return 1
-    if (durationMs <= 0L) return 1
+    if (repeatCount <= 0 || durationMs <= 0L) return 1
 
     // Repeat cadence varies by device. Scaling down by 3 keeps ramp-up closer to multi-second holds.
     val scaledRepeatCount = repeatCount / 3
