@@ -612,29 +612,28 @@ fun Controller(
                         fontSize = subtitleTextSize,
                     )
                 }
-                if (showClock) {
-                    var endTimeStr by remember { mutableStateOf("...") }
-                    LaunchedEffect(playerControls) {
-                        while (isActive) {
-                            val remaining =
-                                (playerControls.duration - playerControls.currentPosition)
-                                    .div(playerControls.playbackParameters.speed)
-                                    .toLong()
-                                    .milliseconds
-                            val endTime = LocalTime.now().plusSeconds(remaining.inWholeSeconds)
-                            endTimeStr = TimeFormatter.format(endTime)
-                            delay(1.seconds)
-                        }
+
+                var endTimeStr by remember { mutableStateOf("...") }
+                LaunchedEffect(playerControls) {
+                    while (isActive) {
+                        val remaining =
+                            (playerControls.duration - playerControls.currentPosition)
+                                .div(playerControls.playbackParameters.speed)
+                                .toLong()
+                                .milliseconds
+                        val endTime = LocalTime.now().plusSeconds(remaining.inWholeSeconds)
+                        endTimeStr = TimeFormatter.format(endTime)
+                        delay(1.seconds)
                     }
-                    Text(
-                        text = "Ends $endTimeStr",
-                        color = MaterialTheme.colorScheme.onSurface,
-                        style = MaterialTheme.typography.labelLarge,
-                        modifier =
-                            Modifier
-                                .padding(end = 32.dp),
-                    )
                 }
+                Text(
+                    text = "Ends $endTimeStr",
+                    color = MaterialTheme.colorScheme.onSurface,
+                    style = MaterialTheme.typography.labelLarge,
+                    modifier =
+                        Modifier
+                            .padding(end = 32.dp),
+                )
             }
         }
         // TODO need to move these up a level?
