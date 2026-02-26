@@ -28,11 +28,11 @@ class ImageUrlService
             itemType: BaseItemKind,
             seriesId: UUID?,
             useSeriesForPrimary: Boolean,
-            imageTags: Map<ImageType, String?>,
             imageType: ImageType,
+            imageTags: Map<ImageType, String?>,
+            backdropTags: List<String>,
             parentThumbId: UUID? = null,
             parentBackdropId: UUID? = null,
-            backdropTags: List<String> = emptyList(),
             fillWidth: Int? = null,
             fillHeight: Int? = null,
         ): String? =
