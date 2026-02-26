@@ -150,7 +150,7 @@
     <string name="font">字体</string>
     <string name="background">背景</string>
     <string name="success">成功</string>
-    <string name="official_rating">年龄分级</string>
+    <string name="official_rating">内容分级</string>
     <string name="runtime_sort">播放时长</string>
     <string name="extras">附加内容</string>
     <plurals name="other_extras">
@@ -500,4 +500,21 @@
     <string name="background_style_wrap">环绕式</string>
     <string name="background_style_boxed">框式</string>
     <string name="series_continueing">当前</string>
+    <plurals name="minutes">
+        <item quantity="other">%s 分钟</item>
+    </plurals>
+    <string name="animate">动画</string>
+    <string name="start_after">启动时间</string>
+    <string name="max_age_rating">最高年龄分级</string>
+    <string name="no_max">无上限</string>
+    <string name="for_all_ages">所有年龄</string>
+    <string name="up_to_age">最高至 %s 岁</string>
+    <string name="screensaver">屏幕保护程序</string>
+    <string name="screensaver_settings">屏幕保护程序设置</string>
+    <string name="start_screensaver">启动屏幕保护程序</string>
+    <string name="duration">时长</string>
+    <string name="photos">照片</string>
+    <string name="include_types">包含类型</string>
+    <string name="include_types_summary">要显示图片的项目类型</string>
+    <string name="in_app_screensaver">使用应用内屏幕保护程序</string>
 </resources>
