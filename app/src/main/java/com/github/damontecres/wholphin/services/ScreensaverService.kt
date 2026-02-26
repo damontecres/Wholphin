@@ -181,7 +181,7 @@ class ScreensaverService
                                 }
                             val logoUrl = imageUrlService.getItemImageUrl(item, ImageType.LOGO)
                             if (backdropUrl != null) {
-                                val result =
+                                try {
                                     context.imageLoader
                                         .enqueue(
                                             ImageRequest
@@ -190,7 +190,6 @@ class ScreensaverService
                                                 .build(),
                                         ).job
                                         .await()
-                                try {
                                     emit(CurrentItem(item, backdropUrl, logoUrl, title ?: ""))
                                 } catch (_: CancellationException) {
                                     break
