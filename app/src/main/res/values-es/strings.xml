@@ -534,4 +534,23 @@
     <string name="search_and_download_subtitles"><![CDATA[Buscar y descargar subtítulos]]></string>
     <string name="no_subtitles_found">No se encontraron subtítulos externos</string>
     <string name="series_continueing">Actualidad</string>
+    <plurals name="minutes">
+        <item quantity="one">%s minuto</item>
+        <item quantity="many">%s minutos</item>
+        <item quantity="other">%s minutos</item>
+    </plurals>
+    <string name="start_after">Comenzar después de</string>
+    <string name="animate">Animación</string>
+    <string name="max_age_rating">Clasificación por edad máxima</string>
+    <string name="for_all_ages">Para todas las edades</string>
+    <string name="up_to_age">Menores de %s</string>
+    <string name="screensaver">Salvapantallas</string>
+    <string name="screensaver_settings">Configuración de salvapantallas</string>
+    <string name="start_screensaver">Iniciar salvapantallas</string>
+    <string name="duration">Duración</string>
+    <string name="photos">Fotos</string>
+    <string name="include_types">Incluir tipos</string>
+    <string name="include_types_summary">Qué tipos de elementos mostrar</string>
+    <string name="in_app_screensaver">Usar salvapantallas de la aplicación</string>
+    <string name="no_max">Sin límite</string>
 </resources>
