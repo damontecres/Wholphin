@@ -539,4 +539,18 @@
         <item quantity="many">%s minuti</item>
         <item quantity="other">%s minuti</item>
     </plurals>
+    <string name="start_after">Inizia dopo</string>
+    <string name="animate">Anima</string>
+    <string name="max_age_rating">Età massima</string>
+    <string name="for_all_ages">Per tutte le età</string>
+    <string name="up_to_age">Fino a %s anni</string>
+    <string name="screensaver">Salvaschermo</string>
+    <string name="screensaver_settings">Impostazioni salvaschermo</string>
+    <string name="start_screensaver">Avvia salvaschermo</string>
+    <string name="duration">Durata</string>
+    <string name="photos">Foto</string>
+    <string name="include_types">Includi tipi</string>
+    <string name="include_types_summary">Quali tipi di elementi mostrare nelle immagini</string>
+    <string name="no_max">Nessun massimo</string>
+    <string name="in_app_screensaver">Usa salvaschermo dell\'app</string>
 </resources>
