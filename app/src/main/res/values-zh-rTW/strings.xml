@@ -500,4 +500,7 @@
     <string name="search_and_download_subtitles"><![CDATA[搜尋和下載字幕]]></string>
     <string name="no_subtitles_found">未找到遠端字幕</string>
     <string name="series_continueing">至今</string>
+    <plurals name="minutes">
+        <item quantity="other">%s 分鐘</item>
+    </plurals>
 </resources>
