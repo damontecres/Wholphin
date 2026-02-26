@@ -11,12 +11,12 @@ fun calculateSeekAccelerationMultiplier(
     durationMs: Long,
 ): Int {
     if (repeatCount <= 0) return 1
+    if (durationMs <= 0L) return 1
 
     // Repeat cadence varies by device. Scaling down by 3 keeps ramp-up closer to multi-second holds.
     val scaledRepeatCount = repeatCount / 3
     if (scaledRepeatCount <= 0) return 1
 
-    // Unknown/unset durations fall back to the shortest-content profile.
     val durationMinutes = durationMs / 60_000L
     return when {
         durationMinutes < 30 -> {

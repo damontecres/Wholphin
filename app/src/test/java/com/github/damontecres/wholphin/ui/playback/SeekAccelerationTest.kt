@@ -10,9 +10,9 @@ class SeekAccelerationTest {
     }
 
     @Test
-    fun unknownDurationUsesShortestProfile() {
+    fun unknownDurationDoesNotAccelerate() {
         assertEquals(1, calculateSeekAccelerationMultiplier(repeatCount = 89, durationMs = 0L))
-        assertEquals(2, calculateSeekAccelerationMultiplier(repeatCount = 300, durationMs = -1L))
+        assertEquals(1, calculateSeekAccelerationMultiplier(repeatCount = 300, durationMs = -1L))
     }
 
     @Test
