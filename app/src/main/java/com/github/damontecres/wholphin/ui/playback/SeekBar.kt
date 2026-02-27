@@ -82,15 +82,13 @@ fun SteppedSeekBarImpl(
         durationMs = durationMs,
         onLeft = { multiplier ->
             controllerViewState.pulseControls()
-            val baseProgress = if (hasSeeked) seekProgress else progressToUse
-            seekProgress = (baseProgress - offset * multiplier).coerceAtLeast(0f)
+            seekProgress = (progressToUse - offset * multiplier).coerceAtLeast(0f)
             hasSeeked = true
             seek(seekProgress)
         },
         onRight = { multiplier ->
             controllerViewState.pulseControls()
-            val baseProgress = if (hasSeeked) seekProgress else progressToUse
-            seekProgress = (baseProgress + offset * multiplier).coerceAtMost(1f)
+            seekProgress = (progressToUse + offset * multiplier).coerceAtMost(1f)
             hasSeeked = true
             seek(seekProgress)
         },
