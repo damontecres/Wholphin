@@ -517,4 +517,16 @@
     <string name="include_types">包含类型</string>
     <string name="include_types_summary">要显示图片的项目类型</string>
     <string name="in_app_screensaver">使用应用内屏幕保护程序</string>
+    <string name="actor">演员</string>
+    <string name="composer">作曲</string>
+    <string name="writer">编剧</string>
+    <string name="guest_star">客串</string>
+    <string name="producer">制片</string>
+    <string name="conductor">指挥</string>
+    <string name="lyricist">作词</string>
+    <string name="arranger">编曲</string>
+    <string name="engineer">录音</string>
+    <string name="mixer">混音</string>
+    <string name="creator">主创</string>
+    <string name="artist">艺人</string>
 </resources>
