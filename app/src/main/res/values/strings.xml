@@ -704,4 +704,17 @@
         <item>@string/photos</item>
     </string-array>
 
+    <string name="actor">Actor</string>
+    <string name="composer">Composer</string>
+    <string name="writer">Writer</string>
+    <string name="guest_star">Guest star</string>
+    <string name="producer">Producer</string>
+    <string name="conductor">Conductor</string>
+    <string name="lyricist">Lyricist</string>
+    <string name="arranger">Arranger</string>
+    <string name="engineer">Engineer</string>
+    <string name="mixer">Mixer</string>
+    <string name="creator">Creator</string>
+    <string name="artist">Artist</string>
+
 </resources>
