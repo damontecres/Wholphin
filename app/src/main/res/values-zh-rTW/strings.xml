@@ -503,4 +503,30 @@
     <plurals name="minutes">
         <item quantity="other">%s 分鐘</item>
     </plurals>
+    <string name="start_after">啟動時間</string>
+    <string name="animate">動態效果</string>
+    <string name="max_age_rating">年齡分級上限</string>
+    <string name="no_max">不限制</string>
+    <string name="for_all_ages">適合所有年齡</string>
+    <string name="up_to_age">最高至 %s 歲</string>
+    <string name="screensaver">螢幕保護程式</string>
+    <string name="screensaver_settings">螢幕保護程式設定</string>
+    <string name="start_screensaver">立即開始</string>
+    <string name="duration">切換間隔</string>
+    <string name="photos">照片</string>
+    <string name="include_types">包含類型</string>
+    <string name="include_types_summary">要顯示圖片的類型</string>
+    <string name="in_app_screensaver">使用內建螢幕保護程式</string>
+    <string name="guest_star">客串演員</string>
+    <string name="actor">演員</string>
+    <string name="composer">作曲</string>
+    <string name="writer">編劇</string>
+    <string name="producer">製作人</string>
+    <string name="conductor">指揮</string>
+    <string name="lyricist">作詞</string>
+    <string name="arranger">編曲</string>
+    <string name="engineer">錄音師</string>
+    <string name="mixer">混音師</string>
+    <string name="creator">創作者</string>
+    <string name="artist">演出者</string>
 </resources>
