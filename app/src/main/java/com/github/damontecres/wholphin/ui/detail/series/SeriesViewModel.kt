@@ -263,9 +263,12 @@ class SeriesViewModel
                             if (seriesPageType == SeriesPageType.DETAILS) {
                                 listOf(
                                     ItemFields.PRIMARY_IMAGE_ASPECT_RATIO,
+                                    ItemFields.CAN_DELETE,
                                 )
                             } else {
-                                null
+                                listOf(
+                                    ItemFields.CAN_DELETE,
+                                )
                             },
                     )
                 val pager =
@@ -559,34 +562,45 @@ class SeriesViewModel
 
         fun deleteItem(item: BaseItem) {
             deleteItem(context, mediaManagementService, item) {
-                position.value.let { (_, episodeIndex) ->
-                    viewModelScope.launchDefault {
-                        val eps = episodes.value as? EpisodeList.Success
-                        if (eps != null) {
-                            val pager = eps.episodes
-                            val lastIndex = pager.lastIndex
-                            pager.refreshPagesAfter(episodeIndex)
-                            if (pager.isEmpty()) {
+                viewModelScope.launchDefault {
+                    if (seriesPageType == SeriesPageType.DETAILS) {
+                        this@SeriesViewModel.item.value?.let { series ->
+                            val seasons = getSeasons(series, null).await()
+                            if (seasons.isEmpty()) {
                                 navigationManager.goBack()
                             } else {
-                                if (episodeIndex == lastIndex) {
-                                    // Deleted last episode, so need to move left
-                                    episodes.setValueOnMain(
-                                        EpisodeList.Success(
-                                            eps.seasonId,
-                                            pager,
-                                            episodeIndex - 1,
-                                        ),
-                                    )
-                                    position.update { it.copy(episodeRowIndex = episodeIndex - 1) }
+                                this@SeriesViewModel.seasons.setValueOnMain(seasons)
+                            }
+                        }
+                    } else {
+                        position.value.let { (_, episodeIndex) ->
+                            val eps = episodes.value as? EpisodeList.Success
+                            if (eps != null) {
+                                val pager = eps.episodes
+                                val lastIndex = pager.lastIndex
+                                pager.refreshPagesAfter(episodeIndex)
+                                if (pager.isEmpty()) {
+                                    navigationManager.goBack()
                                 } else {
-                                    episodes.setValueOnMain(
-                                        EpisodeList.Success(
-                                            eps.seasonId,
-                                            pager,
-                                            episodeIndex,
-                                        ),
-                                    )
+                                    if (episodeIndex == lastIndex) {
+                                        // Deleted last episode, so need to move left
+                                        episodes.setValueOnMain(
+                                            EpisodeList.Success(
+                                                eps.seasonId,
+                                                pager,
+                                                episodeIndex - 1,
+                                            ),
+                                        )
+                                        position.update { it.copy(episodeRowIndex = episodeIndex - 1) }
+                                    } else {
+                                        episodes.setValueOnMain(
+                                            EpisodeList.Success(
+                                                eps.seasonId,
+                                                pager,
+                                                episodeIndex,
+                                            ),
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -595,7 +609,7 @@ class SeriesViewModel
             }
         }
 
-        fun canDelete(ep: BaseItem): Boolean = mediaManagementService.canDelete(ep)
+        fun canDelete(item: BaseItem): Boolean = mediaManagementService.canDelete(item)
     }
 
 sealed interface EpisodeList {

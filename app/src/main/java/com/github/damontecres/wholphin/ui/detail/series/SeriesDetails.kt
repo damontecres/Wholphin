@@ -14,6 +14,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -24,12 +25,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -102,6 +105,7 @@ fun SeriesDetails(
     playlistViewModel: AddPlaylistViewModel = hiltViewModel(),
 ) {
     val context = LocalContext.current
+    val focusManager = LocalFocusManager.current
     val loading by viewModel.loading.observeAsState(LoadingState.Loading)
 
     val item by viewModel.item.observeAsState()
@@ -167,6 +171,7 @@ fun SeriesDetails(
                             buildDialogForSeason(
                                 context = context,
                                 s = season,
+                                canDelete = viewModel.canDelete(season),
                                 onClickItem = { viewModel.navigateTo(it.destination()) },
                                 markPlayed = { played ->
                                     viewModel.setSeasonWatched(season.id, played)
@@ -178,6 +183,12 @@ fun SeriesDetails(
                                             shuffle = shuffle,
                                         ),
                                     )
+                                },
+                                onClickDelete = {
+                                    if (seasons?.lastOrNull()?.id == it.id) {
+                                        focusManager.moveFocus(FocusDirection.Previous)
+                                    }
+                                    viewModel.deleteItem(it)
                                 },
                             )
                     },
@@ -638,9 +649,11 @@ fun SeriesDetailsHeader(
 fun buildDialogForSeason(
     context: Context,
     s: BaseItem,
+    canDelete: Boolean,
     onClickItem: (BaseItem) -> Unit,
     markPlayed: (Boolean) -> Unit,
     onClickPlay: (Boolean) -> Unit,
+    onClickDelete: (BaseItem) -> Unit,
 ): DialogParams {
     val items =
         buildList {
@@ -679,6 +692,17 @@ fun buildDialogForSeason(
                     onClickPlay.invoke(true)
                 },
             )
+            if (canDelete) {
+                add(
+                    DialogItem(
+                        context.getString(R.string.delete),
+                        Icons.Default.Delete,
+                        iconColor = Color.Red.copy(alpha = .8f),
+                    ) {
+                        onClickDelete.invoke(s)
+                    },
+                )
+            }
         }
     return DialogParams(
         title = s.name ?: context.getString(R.string.tv_season),
