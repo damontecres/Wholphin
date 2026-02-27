@@ -46,6 +46,7 @@ import com.github.damontecres.wholphin.ui.cards.ExtrasRow
 import com.github.damontecres.wholphin.ui.cards.ItemRow
 import com.github.damontecres.wholphin.ui.cards.PersonRow
 import com.github.damontecres.wholphin.ui.cards.SeasonCard
+import com.github.damontecres.wholphin.ui.components.ConfirmDeleteDialog
 import com.github.damontecres.wholphin.ui.components.DialogParams
 import com.github.damontecres.wholphin.ui.components.DialogPopup
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
@@ -111,6 +112,7 @@ fun MovieDetails(
     var chooseVersion by remember { mutableStateOf<DialogParams?>(null) }
     var showPlaylistDialog by remember { mutableStateOf<Optional<UUID>>(Optional.absent()) }
     val playlistState by playlistViewModel.playlistState.observeAsState(PlaylistLoadingState.Pending)
+    var showDeleteDialog by remember { mutableStateOf<BaseItem?>(null) }
 
     val moreActions =
         MoreDialogActions(
@@ -126,7 +128,7 @@ fun MovieDetails(
                 showPlaylistDialog.makePresent(itemId)
             },
             onSendMediaInfo = viewModel.mediaReportService::sendReportFor,
-            onClickDelete = viewModel::deleteItem,
+            onClickDelete = { showDeleteDialog = it },
         )
 
     when (val state = loading) {
@@ -363,6 +365,16 @@ fun MovieDetails(
                 showPlaylistDialog.makeAbsent()
             },
             elevation = 3.dp,
+        )
+    }
+    showDeleteDialog?.let { item ->
+        ConfirmDeleteDialog(
+            itemTitle = item.title ?: "",
+            onCancel = { showDeleteDialog = null },
+            onConfirm = {
+                viewModel.deleteItem(item)
+                showDeleteDialog = null
+            },
         )
     }
 }

@@ -23,6 +23,7 @@ import com.github.damontecres.wholphin.data.ChosenStreams
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.RequestOrRestoreFocus
+import com.github.damontecres.wholphin.ui.components.ConfirmDeleteDialog
 import com.github.damontecres.wholphin.ui.components.DialogParams
 import com.github.damontecres.wholphin.ui.components.DialogPopup
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
@@ -119,6 +120,7 @@ fun SeriesOverview(
     val playlistState by playlistViewModel.playlistState.observeAsState(PlaylistLoadingState.Pending)
 
     var rowFocused by rememberInt()
+    var showDeleteDialog by remember { mutableStateOf<BaseItem?>(null) }
 
     LaunchedEffect(episodes) {
         episodes?.let { episodes ->
@@ -219,8 +221,7 @@ fun SeriesOverview(
                                         },
                                         onSendMediaInfo = viewModel.mediaReportService::sendReportFor,
                                         onClickDelete = {
-                                            viewModel.deleteItem(it)
-                                            episodeRowFocusRequester.tryRequestFocus()
+                                            showDeleteDialog = it
                                         },
                                     ),
                                 onChooseVersion = {
@@ -424,6 +425,17 @@ fun SeriesOverview(
                 showPlaylistDialog = null
             },
             elevation = 3.dp,
+        )
+    }
+    showDeleteDialog?.let { item ->
+        ConfirmDeleteDialog(
+            itemTitle = item.subtitle ?: "",
+            onCancel = { showDeleteDialog = null },
+            onConfirm = {
+                viewModel.deleteItem(item)
+                episodeRowFocusRequester.tryRequestFocus()
+                showDeleteDialog = null
+            },
         )
     }
 }

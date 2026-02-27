@@ -471,6 +471,20 @@ fun ConfirmDialogContent(
     }
 }
 
+@Composable
+fun ConfirmDeleteDialog(
+    itemTitle: String,
+    onCancel: () -> Unit,
+    onConfirm: () -> Unit,
+) {
+    ConfirmDialog(
+        title = stringResource(R.string.delete),
+        body = stringResource(R.string.delete_item, itemTitle),
+        onCancel = onCancel,
+        onConfirm = onConfirm,
+    )
+}
+
 fun chooseVersionParams(
     context: Context,
     sources: List<MediaSourceInfo>,

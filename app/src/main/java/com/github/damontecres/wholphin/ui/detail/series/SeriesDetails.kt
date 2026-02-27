@@ -56,6 +56,7 @@ import com.github.damontecres.wholphin.ui.cards.ExtrasRow
 import com.github.damontecres.wholphin.ui.cards.ItemRow
 import com.github.damontecres.wholphin.ui.cards.PersonRow
 import com.github.damontecres.wholphin.ui.cards.SeasonCard
+import com.github.damontecres.wholphin.ui.components.ConfirmDeleteDialog
 import com.github.damontecres.wholphin.ui.components.ConfirmDialog
 import com.github.damontecres.wholphin.ui.components.DeleteButton
 import com.github.damontecres.wholphin.ui.components.DialogItem
@@ -117,12 +118,13 @@ fun SeriesDetails(
     val people by viewModel.people.observeAsState(listOf())
     val similar by viewModel.similar.observeAsState(listOf())
     val discovered by viewModel.discovered.collectAsState()
+    val playlistState by playlistViewModel.playlistState.observeAsState(PlaylistLoadingState.Pending)
 
     var overviewDialog by remember { mutableStateOf<ItemDetailsDialogInfo?>(null) }
     var showWatchConfirmation by remember { mutableStateOf(false) }
     var seasonDialog by remember { mutableStateOf<DialogParams?>(null) }
     var showPlaylistDialog by remember { mutableStateOf<Optional<UUID>>(Optional.absent()) }
-    val playlistState by playlistViewModel.playlistState.observeAsState(PlaylistLoadingState.Pending)
+    var showDeleteDialog by remember { mutableStateOf<BaseItem?>(null) }
 
     when (val state = loading) {
         is LoadingState.Error -> {
@@ -188,10 +190,7 @@ fun SeriesDetails(
                                     )
                                 },
                                 onClickDelete = {
-                                    if (seasons?.lastOrNull()?.id == it.id) {
-                                        focusManager.moveFocus(FocusDirection.Previous)
-                                    }
-                                    viewModel.deleteItem(it)
+                                    showDeleteDialog = it
                                 },
                             )
                     },
@@ -246,7 +245,7 @@ fun SeriesDetails(
                             },
                             onSendMediaInfo = viewModel.mediaReportService::sendReportFor,
                             onClickDelete = {
-                                viewModel.deleteItem(it)
+                                showDeleteDialog = it
                             },
                         ),
                 )
@@ -298,6 +297,19 @@ fun SeriesDetails(
                 showPlaylistDialog.makeAbsent()
             },
             elevation = 3.dp,
+        )
+    }
+    showDeleteDialog?.let { item ->
+        ConfirmDeleteDialog(
+            itemTitle = item.title ?: "",
+            onCancel = { showDeleteDialog = null },
+            onConfirm = {
+                if (seasons?.lastOrNull()?.id == item.id) {
+                    focusManager.moveFocus(FocusDirection.Previous)
+                }
+                viewModel.deleteItem(item)
+                showDeleteDialog = null
+            },
         )
     }
 }
