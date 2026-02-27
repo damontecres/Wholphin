@@ -752,5 +752,6 @@
     <string name="view_more">View more</string>
     <string name="discover_tv">Discover TV Shows</string>
     <string name="discover_movies">Discover Movies</string>
+    <string name="studios_in">Studios in %1$s</string>
 
 </resources>

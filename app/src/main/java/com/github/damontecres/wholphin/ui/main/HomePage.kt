@@ -54,6 +54,7 @@ import com.github.damontecres.wholphin.ui.cards.BannerCard
 import com.github.damontecres.wholphin.ui.cards.BannerCardWithTitle
 import com.github.damontecres.wholphin.ui.cards.GenreCard
 import com.github.damontecres.wholphin.ui.cards.ItemRow
+import com.github.damontecres.wholphin.ui.cards.StudioCard
 import com.github.damontecres.wholphin.ui.components.CircularProgress
 import com.github.damontecres.wholphin.ui.components.ConfirmDeleteDialog
 import com.github.damontecres.wholphin.ui.components.DialogParams
@@ -527,6 +528,17 @@ fun HomePageCardContent(
         BaseItemKind.GENRE -> {
             GenreCard(
                 genreId = item.id,
+                name = item.name,
+                imageUrl = item.imageUrlOverride,
+                onClick = onClick,
+                onLongClick = onLongClick,
+                modifier = modifier.height(viewOptions.heightDp.dp),
+            )
+        }
+
+        BaseItemKind.STUDIO -> {
+            StudioCard(
+                studioId = item.id,
                 name = item.name,
                 imageUrl = item.imageUrlOverride,
                 onClick = onClick,

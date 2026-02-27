@@ -286,3 +286,28 @@ fun createGenreDestination(
         ),
     recursive = true,
 )
+
+fun createStudioDestination(
+    studioId: UUID,
+    name: String,
+    parentId: UUID,
+    parentName: String?,
+    includeItemTypes: List<BaseItemKind>?,
+) = Destination.FilteredCollection(
+    itemId = parentId,
+    filter =
+        CollectionFolderFilter(
+            nameOverride =
+                listOfNotNull(
+                    name,
+                    parentName,
+                ).joinToString(" "),
+            filter =
+                GetItemsFilter(
+                    studios = listOf(studioId),
+                    includeItemTypes = includeItemTypes,
+                ),
+            useSavedLibraryDisplayInfo = false,
+        ),
+    recursive = true,
+)

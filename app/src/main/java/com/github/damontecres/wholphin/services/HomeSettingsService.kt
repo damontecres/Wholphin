@@ -8,6 +8,7 @@ import com.github.damontecres.wholphin.data.model.HomePageSettings
 import com.github.damontecres.wholphin.data.model.HomeRowConfig
 import com.github.damontecres.wholphin.data.model.SUPPORTED_HOME_PAGE_SETTINGS_VERSION
 import com.github.damontecres.wholphin.data.model.createGenreDestination
+import com.github.damontecres.wholphin.data.model.createStudioDestination
 import com.github.damontecres.wholphin.preferences.DefaultUserConfiguration
 import com.github.damontecres.wholphin.preferences.HomePagePreferences
 import com.github.damontecres.wholphin.ui.DefaultItemFields
@@ -21,6 +22,7 @@ import com.github.damontecres.wholphin.ui.toServerString
 import com.github.damontecres.wholphin.util.GetGenresRequestHandler
 import com.github.damontecres.wholphin.util.GetItemsRequestHandler
 import com.github.damontecres.wholphin.util.GetPersonsHandler
+import com.github.damontecres.wholphin.util.GetStudiosRequestHandler
 import com.github.damontecres.wholphin.util.HomeRowLoadingState
 import com.github.damontecres.wholphin.util.HomeRowLoadingState.Error
 import com.github.damontecres.wholphin.util.HomeRowLoadingState.Success
@@ -58,6 +60,7 @@ import org.jellyfin.sdk.model.api.request.GetLatestMediaRequest
 import org.jellyfin.sdk.model.api.request.GetPersonsRequest
 import org.jellyfin.sdk.model.api.request.GetRecommendedProgramsRequest
 import org.jellyfin.sdk.model.api.request.GetRecordingsRequest
+import org.jellyfin.sdk.model.api.request.GetStudiosRequest
 import timber.log.Timber
 import java.io.File
 import javax.inject.Inject
@@ -483,6 +486,18 @@ class HomeSettingsService
                     )
                 }
 
+                is HomeRowConfig.Studios -> {
+                    val name =
+                        api.userLibraryApi
+                            .getItem(itemId = config.parentId)
+                            .content.name ?: ""
+                    HomeRowConfigDisplay(
+                        id,
+                        context.getString(R.string.studios_in, name),
+                        config,
+                    )
+                }
+
                 is HomeRowConfig.GetItems -> {
                     HomeRowConfigDisplay(id, config.name, config)
                 }
@@ -682,6 +697,56 @@ class HomeSettingsService
                                 createGenreDestination(
                                     genreId = it.id,
                                     genreName = it.name ?: "",
+                                    parentId = row.parentId,
+                                    parentName = library?.name,
+                                    includeItemTypes =
+                                        library?.collectionType?.let {
+                                            getTypeFor(it)?.let {
+                                                listOf(it)
+                                            }
+                                        },
+                                ),
+                            )
+                        }
+
+                    Success(
+                        title,
+                        genres,
+                        viewOptions = row.viewOptions,
+                    )
+                }
+
+                is HomeRowConfig.Studios -> {
+                    val request =
+                        GetStudiosRequest(
+                            parentId = row.parentId,
+                            userId = userDto.id,
+                            limit = limit,
+                        )
+                    val items =
+                        GetStudiosRequestHandler
+                            .execute(api, request)
+                            .content.items
+                    val library =
+                        libraries
+                            .firstOrNull { it.itemId == row.parentId }
+                    val title =
+                        library?.name?.let { context.getString(R.string.studios_in, it) }
+                            ?: context.getString(R.string.studios)
+                    val genres =
+                        items.map {
+                            val imageUrl =
+                                imageUrlService.getItemImageUrl(
+                                    itemId = it.id,
+                                    imageType = ImageType.THUMB,
+                                )
+                            BaseItem(
+                                it,
+                                false,
+                                imageUrl,
+                                createStudioDestination(
+                                    studioId = it.id,
+                                    name = it.name ?: "",
                                     parentId = row.parentId,
                                     parentName = library?.name,
                                     includeItemTypes =

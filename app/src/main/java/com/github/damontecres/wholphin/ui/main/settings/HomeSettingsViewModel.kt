@@ -323,6 +323,16 @@ class HomeSettingsViewModel
                             )
                         }
 
+                        LibraryRowType.STUDIOS -> {
+                            val title =
+                                library.name.let { context.getString(R.string.studios_in, it) }
+                            HomeRowConfigDisplay(
+                                id = id,
+                                title = title,
+                                config = HomeRowConfig.Studios(library.itemId),
+                            )
+                        }
+
                         LibraryRowType.SUGGESTIONS -> {
                             val title =
                                 library.name.let { context.getString(R.string.suggestions_for, it) }
@@ -697,6 +707,10 @@ class HomeSettingsViewModel
                                 }
 
                                 is Genres -> {
+                                    it.config.updateViewOptions(it.config.viewOptions.copy(heightDp = preset.genreSize))
+                                }
+
+                                is HomeRowConfig.Studios -> {
                                     it.config.updateViewOptions(it.config.viewOptions.copy(heightDp = preset.genreSize))
                                 }
 

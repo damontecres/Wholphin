@@ -29,6 +29,7 @@ import com.github.damontecres.wholphin.ui.components.CollectionFolderGrid
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.GenreCardGrid
 import com.github.damontecres.wholphin.ui.components.RecommendedTvShow
+import com.github.damontecres.wholphin.ui.components.StudioCardGrid
 import com.github.damontecres.wholphin.ui.components.TabRow
 import com.github.damontecres.wholphin.ui.components.ViewOptionsPoster
 import com.github.damontecres.wholphin.ui.data.SeriesSortOptions
@@ -53,6 +54,7 @@ fun CollectionFolderTv(
             stringResource(R.string.recommended),
             stringResource(R.string.library),
             stringResource(R.string.genres),
+            stringResource(R.string.studios),
         )
     var selectedTabIndex by rememberSaveable { mutableIntStateOf(rememberedTabIndex) }
     val focusRequester = remember { FocusRequester() }
@@ -142,6 +144,18 @@ fun CollectionFolderTv(
             // Genres
             2 -> {
                 GenreCardGrid(
+                    itemId = destination.itemId,
+                    includeItemTypes = listOf(BaseItemKind.SERIES),
+                    modifier =
+                        Modifier
+                            .fillMaxSize()
+                            .focusRequester(focusRequester),
+                )
+            }
+
+            // Studios
+            3 -> {
+                StudioCardGrid(
                     itemId = destination.itemId,
                     includeItemTypes = listOf(BaseItemKind.SERIES),
                     modifier =
