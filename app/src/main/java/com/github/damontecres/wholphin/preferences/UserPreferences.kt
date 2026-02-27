@@ -8,9 +8,7 @@ import org.jellyfin.sdk.model.api.UserConfiguration
  */
 data class UserPreferences(
     val appPreferences: AppPreferences,
-) {
-    val canDelete: Boolean get() = appPreferences.interfacePreferences.enableMediaManagement
-}
+)
 
 val DefaultUserConfiguration =
     UserConfiguration(

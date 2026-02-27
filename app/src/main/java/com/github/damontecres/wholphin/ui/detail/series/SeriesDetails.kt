@@ -81,6 +81,7 @@ import com.github.damontecres.wholphin.ui.detail.buildMoreDialogItemsForHome
 import com.github.damontecres.wholphin.ui.detail.buildMoreDialogItemsForPerson
 import com.github.damontecres.wholphin.ui.discover.DiscoverRow
 import com.github.damontecres.wholphin.ui.discover.DiscoverRowData
+import com.github.damontecres.wholphin.ui.launchDefault
 import com.github.damontecres.wholphin.ui.letNotEmpty
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.rememberInt
@@ -107,6 +108,7 @@ fun SeriesDetails(
     playlistViewModel: AddPlaylistViewModel = hiltViewModel(),
 ) {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     val focusManager = LocalFocusManager.current
     val loading by viewModel.loading.observeAsState(LoadingState.Loading)
 
@@ -172,27 +174,29 @@ fun SeriesDetails(
                         )
                     },
                     onLongClickItem = { index, season ->
-                        seasonDialog =
-                            buildDialogForSeason(
-                                context = context,
-                                s = season,
-                                canDelete = viewModel.canDelete(season),
-                                onClickItem = { viewModel.navigateTo(it.destination()) },
-                                markPlayed = { played ->
-                                    viewModel.setSeasonWatched(season.id, played)
-                                },
-                                onClickPlay = { shuffle ->
-                                    viewModel.navigateTo(
-                                        Destination.PlaybackList(
-                                            itemId = season.id,
-                                            shuffle = shuffle,
-                                        ),
-                                    )
-                                },
-                                onClickDelete = {
-                                    showDeleteDialog = it
-                                },
-                            )
+                        scope.launchDefault {
+                            seasonDialog =
+                                buildDialogForSeason(
+                                    context = context,
+                                    s = season,
+                                    canDelete = viewModel.canDelete(season),
+                                    onClickItem = { viewModel.navigateTo(it.destination()) },
+                                    markPlayed = { played ->
+                                        viewModel.setSeasonWatched(season.id, played)
+                                    },
+                                    onClickPlay = { shuffle ->
+                                        viewModel.navigateTo(
+                                            Destination.PlaybackList(
+                                                itemId = season.id,
+                                                shuffle = shuffle,
+                                            ),
+                                        )
+                                    },
+                                    onClickDelete = {
+                                        showDeleteDialog = it
+                                    },
+                                )
+                        }
                     },
                     overviewOnClick = {
                         overviewDialog =

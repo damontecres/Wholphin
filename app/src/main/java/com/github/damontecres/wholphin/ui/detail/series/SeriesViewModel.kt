@@ -613,7 +613,7 @@ class SeriesViewModel
             }
         }
 
-        fun canDelete(item: BaseItem): Boolean = mediaManagementService.canDelete(item)
+        suspend fun canDelete(item: BaseItem): Boolean = mediaManagementService.canDelete(item)
     }
 
 sealed interface EpisodeList {

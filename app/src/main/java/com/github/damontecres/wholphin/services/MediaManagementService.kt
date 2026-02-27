@@ -25,6 +25,7 @@ class MediaManagementService
         @param:ApplicationContext private val context: Context,
         private val api: ApiClient,
         private val serverRepository: ServerRepository,
+        private val userPreferencesService: UserPreferencesService,
     ) {
         private val _deletedItemFlow =
             MutableSharedFlow<DeletedItem>(
@@ -38,10 +39,14 @@ class MediaManagementService
          */
         val deletedItemFlow: SharedFlow<DeletedItem> = _deletedItemFlow
 
-        fun canDelete(item: BaseItem): Boolean {
+        suspend fun canDelete(item: BaseItem): Boolean {
             Timber.v("canDelete %s: %s", item.id, item.canDelete)
-            // TODO check app preferences
-            return item.canDelete &&
+            val enabled =
+                userPreferencesService
+                    .getCurrent()
+                    .appPreferences.interfacePreferences.enableMediaManagement
+            return enabled &&
+                item.canDelete &&
                 if (item.type == BaseItemKind.RECORDING) {
                     serverRepository.currentUserDto.value
                         ?.policy

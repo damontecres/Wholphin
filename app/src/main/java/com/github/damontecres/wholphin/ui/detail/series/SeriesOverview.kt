@@ -9,6 +9,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -37,6 +38,7 @@ import com.github.damontecres.wholphin.ui.detail.MoreDialogActions
 import com.github.damontecres.wholphin.ui.detail.PlaylistDialog
 import com.github.damontecres.wholphin.ui.detail.PlaylistLoadingState
 import com.github.damontecres.wholphin.ui.detail.buildMoreDialogItems
+import com.github.damontecres.wholphin.ui.launchDefault
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.rememberInt
 import com.github.damontecres.wholphin.ui.seasonEpisode
@@ -91,6 +93,7 @@ fun SeriesOverview(
     playlistViewModel: AddPlaylistViewModel = hiltViewModel(),
 ) {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     val firstItemFocusRequester = remember { FocusRequester() }
     val episodeRowFocusRequester = remember { FocusRequester() }
     val castCrewRowFocusRequester = remember { FocusRequester() }
@@ -180,7 +183,7 @@ fun SeriesOverview(
                     }
                 }
 
-                fun buildMoreForEpisode(
+                suspend fun buildMoreForEpisode(
                     ep: BaseItem,
                     chosenStreams: ChosenStreams?,
                     fromLongClick: Boolean,
@@ -322,7 +325,9 @@ fun SeriesOverview(
                         )
                     },
                     onLongClick = { ep ->
-                        moreDialog = buildMoreForEpisode(ep, chosenStreams, true)
+                        scope.launchDefault {
+                            moreDialog = buildMoreForEpisode(ep, chosenStreams, true)
+                        }
                     },
                     playOnClick = { resume ->
                         rowFocused = EPISODE_ROW
@@ -350,18 +355,22 @@ fun SeriesOverview(
                     },
                     moreOnClick = {
                         episodeList?.getOrNull(position.episodeRowIndex)?.let { ep ->
-                            moreDialog = buildMoreForEpisode(ep, chosenStreams, false)
+                            scope.launchDefault {
+                                moreDialog = buildMoreForEpisode(ep, chosenStreams, false)
+                            }
                         }
                     },
                     overviewOnClick = {
                         episodeList?.getOrNull(position.episodeRowIndex)?.let {
-                            overviewDialog =
-                                ItemDetailsDialogInfo(
-                                    title = it.name ?: context.getString(R.string.unknown),
-                                    overview = it.data.overview,
-                                    genres = it.data.genres.orEmpty(),
-                                    files = it.data.mediaSources.orEmpty(),
-                                )
+                            scope.launchDefault {
+                                overviewDialog =
+                                    ItemDetailsDialogInfo(
+                                        title = it.name ?: context.getString(R.string.unknown),
+                                        overview = it.data.overview,
+                                        genres = it.data.genres.orEmpty(),
+                                        files = it.data.mediaSources.orEmpty(),
+                                    )
+                            }
                         }
                     },
                     personOnClick = {
