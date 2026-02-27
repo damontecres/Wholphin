@@ -553,4 +553,16 @@
     <string name="include_types_summary">Qué tipos de elementos mostrar</string>
     <string name="in_app_screensaver">Usar salvapantallas de la aplicación</string>
     <string name="no_max">Sin límite</string>
+    <string name="actor">Intérprete</string>
+    <string name="composer">Compositor</string>
+    <string name="writer">Guionista</string>
+    <string name="guest_star">Estrella invitada</string>
+    <string name="producer">Productor</string>
+    <string name="conductor">Director musical</string>
+    <string name="lyricist">Letrista</string>
+    <string name="arranger">Arreglista</string>
+    <string name="engineer">Ingeniero de sonido</string>
+    <string name="mixer">Ingeniero de mezcla</string>
+    <string name="creator">Creador</string>
+    <string name="artist">Artista</string>
 </resources>
