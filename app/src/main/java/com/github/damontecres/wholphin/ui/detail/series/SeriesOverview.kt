@@ -39,6 +39,7 @@ import com.github.damontecres.wholphin.ui.detail.buildMoreDialogItems
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.rememberInt
 import com.github.damontecres.wholphin.ui.seasonEpisode
+import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.LoadingState
 import kotlinx.coroutines.flow.update
 import kotlinx.serialization.Serializable
@@ -194,6 +195,7 @@ fun SeriesOverview(
                                 seriesId = series.id,
                                 sourceId = chosenStreams?.source?.id?.toUUIDOrNull(),
                                 canClearChosenStreams = chosenStreams?.itemPlayback != null || chosenStreams?.plc != null,
+                                canDelete = viewModel.canDelete(ep),
                                 actions =
                                     MoreDialogActions(
                                         navigateTo = viewModel::navigateTo,
@@ -216,6 +218,10 @@ fun SeriesOverview(
                                             showPlaylistDialog = it
                                         },
                                         onSendMediaInfo = viewModel.mediaReportService::sendReportFor,
+                                        onClickDelete = {
+                                            viewModel.deleteItem(it)
+                                            episodeRowFocusRequester.tryRequestFocus()
+                                        },
                                     ),
                                 onChooseVersion = {
                                     chooseVersion =

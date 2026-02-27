@@ -16,6 +16,7 @@ import com.github.damontecres.wholphin.data.model.Trailer
 import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.ExtrasService
 import com.github.damontecres.wholphin.services.FavoriteWatchManager
+import com.github.damontecres.wholphin.services.MediaManagementService
 import com.github.damontecres.wholphin.services.MediaReportService
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.PeopleFavorites
@@ -24,10 +25,12 @@ import com.github.damontecres.wholphin.services.StreamChoiceService
 import com.github.damontecres.wholphin.services.ThemeSongPlayer
 import com.github.damontecres.wholphin.services.TrailerService
 import com.github.damontecres.wholphin.services.UserPreferencesService
+import com.github.damontecres.wholphin.services.deleteItem
 import com.github.damontecres.wholphin.ui.SlimItemFields
 import com.github.damontecres.wholphin.ui.detail.ItemViewModel
 import com.github.damontecres.wholphin.ui.equalsNotNull
 import com.github.damontecres.wholphin.ui.gt
+import com.github.damontecres.wholphin.ui.launchDefault
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.letNotEmpty
 import com.github.damontecres.wholphin.ui.lt
@@ -90,6 +93,7 @@ class SeriesViewModel
         private val userPreferencesService: UserPreferencesService,
         private val backdropService: BackdropService,
         private val seerrService: SeerrService,
+        private val mediaManagementService: MediaManagementService,
         @Assisted val seriesId: UUID,
         @Assisted val seasonEpisodeIds: SeasonEpisodeIds?,
         @Assisted val seriesPageType: SeriesPageType,
@@ -300,6 +304,7 @@ class SeriesViewModel
                             ItemFields.OVERVIEW,
                             ItemFields.CUSTOM_RATING,
                             ItemFields.PRIMARY_IMAGE_ASPECT_RATIO,
+                            ItemFields.CAN_DELETE,
                         ),
                 )
             Timber.v(
@@ -551,6 +556,46 @@ class SeriesViewModel
                 lookUpChosenTracks(item.id, item)
             }
         }
+
+        fun deleteItem(item: BaseItem) {
+            deleteItem(context, mediaManagementService, item) {
+                position.value.let { (_, episodeIndex) ->
+                    viewModelScope.launchDefault {
+                        val eps = episodes.value as? EpisodeList.Success
+                        if (eps != null) {
+                            val pager = eps.episodes
+                            val lastIndex = pager.lastIndex
+                            pager.refreshPagesAfter(episodeIndex)
+                            if (pager.isEmpty()) {
+                                navigationManager.goBack()
+                            } else {
+                                if (episodeIndex == lastIndex) {
+                                    // Deleted last episode, so need to move left
+                                    episodes.setValueOnMain(
+                                        EpisodeList.Success(
+                                            eps.seasonId,
+                                            pager,
+                                            episodeIndex - 1,
+                                        ),
+                                    )
+                                    position.update { it.copy(episodeRowIndex = episodeIndex - 1) }
+                                } else {
+                                    episodes.setValueOnMain(
+                                        EpisodeList.Success(
+                                            eps.seasonId,
+                                            pager,
+                                            episodeIndex,
+                                        ),
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        fun canDelete(ep: BaseItem): Boolean = mediaManagementService.canDelete(ep)
     }
 
 sealed interface EpisodeList {

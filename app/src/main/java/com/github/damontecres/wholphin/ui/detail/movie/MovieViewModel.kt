@@ -27,6 +27,7 @@ import com.github.damontecres.wholphin.services.StreamChoiceService
 import com.github.damontecres.wholphin.services.ThemeSongPlayer
 import com.github.damontecres.wholphin.services.TrailerService
 import com.github.damontecres.wholphin.services.UserPreferencesService
+import com.github.damontecres.wholphin.services.deleteItem
 import com.github.damontecres.wholphin.ui.SlimItemFields
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.letNotEmpty
@@ -282,10 +283,8 @@ class MovieViewModel
         }
 
         fun deleteItem(item: BaseItem) {
-            viewModelScope.launchIO {
-                if (mediaManagementService.deleteItem(item)) {
-                    navigationManager.goBack()
-                }
+            deleteItem(context, mediaManagementService, item) {
+                navigationManager.goBack()
             }
         }
     }
