@@ -553,4 +553,16 @@
     <string name="include_types_summary">Quali tipi di elementi mostrare nelle immagini</string>
     <string name="no_max">Nessun massimo</string>
     <string name="in_app_screensaver">Usa salvaschermo dell\'app</string>
+    <string name="composer">Compositore</string>
+    <string name="writer">Sceneggiatore</string>
+    <string name="actor">Attore</string>
+    <string name="producer">Produttore</string>
+    <string name="guest_star">Ospite speciale</string>
+    <string name="conductor">Direttore d’orchestra</string>
+    <string name="lyricist">Paroliere</string>
+    <string name="arranger">Arrangiatore</string>
+    <string name="engineer">Ingegnere del suono</string>
+    <string name="mixer">Tecnico di mixaggio</string>
+    <string name="artist">Artista</string>
+    <string name="creator">Creatore</string>
 </resources>
