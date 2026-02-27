@@ -544,4 +544,16 @@
     <string name="include_types">İçerik türleri</string>
     <string name="include_types_summary">Görsel gösterilecek öğe türleri</string>
     <string name="in_app_screensaver">Uygulama içi ekran koruyucuyu kullan</string>
+    <string name="actor">Aktör</string>
+    <string name="composer">Besteci</string>
+    <string name="writer">Yazar</string>
+    <string name="guest_star">Konuk sanatçı</string>
+    <string name="producer">Yapımcı</string>
+    <string name="conductor">Orkestra şefi</string>
+    <string name="lyricist">Söz yazarı</string>
+    <string name="arranger">Aranjör</string>
+    <string name="engineer">Mühendis</string>
+    <string name="mixer">Karıştırıcı</string>
+    <string name="creator">Yaratıcı</string>
+    <string name="artist">Sanatçı</string>
 </resources>
