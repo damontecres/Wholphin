@@ -115,6 +115,7 @@ class SeriesViewModel
         val extras = MutableLiveData<List<ExtrasItem>>(listOf())
         val people = MutableLiveData<List<Person>>(listOf())
         val similar = MutableLiveData<List<BaseItem>>()
+        val canDeleteSeries = MutableStateFlow(false)
 
         val peopleInEpisode = MutableLiveData<PeopleInItem>(PeopleInItem())
         val discovered = MutableStateFlow<List<DiscoverItem>>(listOf())
@@ -131,6 +132,7 @@ class SeriesViewModel
                 Timber.v("Start")
                 addCloseable { themeSongPlayer.stop() }
                 val item = fetchItem(seriesId)
+                canDeleteSeries.update { mediaManagementService.canDelete(item) }
                 backdropService.submit(item)
 
                 val seasonsDeferred = getSeasons(item, seasonEpisodeIds?.seasonNumber)
@@ -563,7 +565,9 @@ class SeriesViewModel
         fun deleteItem(item: BaseItem) {
             deleteItem(context, mediaManagementService, item) {
                 viewModelScope.launchDefault {
-                    if (seriesPageType == SeriesPageType.DETAILS) {
+                    if (item.type == BaseItemKind.SERIES) {
+                        navigationManager.goBack()
+                    } else if (seriesPageType == SeriesPageType.DETAILS) {
                         this@SeriesViewModel.item.value?.let { series ->
                             val seasons = getSeasons(series, null).await()
                             if (seasons.isEmpty()) {

@@ -57,6 +57,7 @@ import com.github.damontecres.wholphin.ui.cards.ItemRow
 import com.github.damontecres.wholphin.ui.cards.PersonRow
 import com.github.damontecres.wholphin.ui.cards.SeasonCard
 import com.github.damontecres.wholphin.ui.components.ConfirmDialog
+import com.github.damontecres.wholphin.ui.components.DeleteButton
 import com.github.damontecres.wholphin.ui.components.DialogItem
 import com.github.damontecres.wholphin.ui.components.DialogParams
 import com.github.damontecres.wholphin.ui.components.DialogPopup
@@ -109,6 +110,7 @@ fun SeriesDetails(
     val loading by viewModel.loading.observeAsState(LoadingState.Loading)
 
     val item by viewModel.item.observeAsState()
+    val canDelete by viewModel.canDeleteSeries.collectAsState()
     val seasons by viewModel.seasons.observeAsState(listOf())
     val trailers by viewModel.trailers.observeAsState(listOf())
     val extras by viewModel.extras.observeAsState(listOf())
@@ -154,6 +156,7 @@ fun SeriesDetails(
                     similar = similar,
                     played = played,
                     favorite = item.data.userData?.isFavorite ?: false,
+                    canDelete = canDelete,
                     modifier = modifier,
                     onClickItem = { index, item ->
                         viewModel.navigateTo(item.destination())
@@ -242,6 +245,9 @@ fun SeriesDetails(
                                 showPlaylistDialog.makePresent(itemId)
                             },
                             onSendMediaInfo = viewModel.mediaReportService::sendReportFor,
+                            onClickDelete = {
+                                viewModel.deleteItem(it)
+                            },
                         ),
                 )
                 if (showWatchConfirmation) {
@@ -316,6 +322,7 @@ fun SeriesDetailsContent(
     discovered: List<DiscoverItem>,
     played: Boolean,
     favorite: Boolean,
+    canDelete: Boolean,
     onClickItem: (Int, BaseItem) -> Unit,
     onClickPerson: (Person) -> Unit,
     onLongClickItem: (Int, BaseItem) -> Unit,
@@ -447,6 +454,23 @@ fun SeriesDetailsContent(
                                     }
                                 },
                         )
+                        if (canDelete) {
+                            DeleteButton(
+                                onClick = {
+                                    position = HEADER_ROW
+                                    moreActions.onClickDelete.invoke(series)
+                                },
+                                modifier =
+                                    Modifier
+                                        .onFocusChanged {
+                                            if (it.isFocused) {
+                                                scope.launch(ExceptionHandler()) {
+                                                    bringIntoViewRequester.bringIntoView()
+                                                }
+                                            }
+                                        },
+                            )
+                        }
                     }
                 }
                 item {

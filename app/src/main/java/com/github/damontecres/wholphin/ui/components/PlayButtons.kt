@@ -2,6 +2,7 @@ package com.github.damontecres.wholphin.ui.components
 
 import androidx.annotation.StringRes
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
@@ -17,6 +18,7 @@ import androidx.compose.foundation.layout.requiredSizeIn
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
@@ -34,6 +36,7 @@ import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.isSpecified
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
@@ -42,6 +45,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.tv.material3.Icon
+import androidx.tv.material3.LocalContentColor
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.R
@@ -359,6 +363,36 @@ fun TrailerButton(
     }
 }
 
+@Composable
+fun DeleteButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val focused by interactionSource.collectIsFocusedAsState()
+    val iconTint by
+        animateColorAsState(
+            targetValue = if (focused) Color.Red else Color.Unspecified,
+        )
+    ExpandablePlayButton(
+        title = R.string.delete,
+        resume = Duration.ZERO,
+        icon = {
+            Icon(
+                imageVector = Icons.Default.Delete,
+                contentDescription = null,
+                tint = if (iconTint.isSpecified) iconTint else LocalContentColor.current,
+                modifier =
+                    Modifier
+                        .size(28.dp),
+            )
+        },
+        onClick = { onClick.invoke() },
+        interactionSource = interactionSource,
+        modifier = modifier,
+    )
+}
+
 @PreviewTvSpec
 @Composable
 private fun ExpandablePlayButtonsPreview() {
@@ -416,6 +450,9 @@ private fun ViewOptionsPreview() {
                     iconStringRes = R.string.fa_eye,
                     onClick = {},
                     modifier = Modifier,
+                )
+                DeleteButton(
+                    onClick = {},
                 )
                 SortByButton(
                     sortOptions = listOf(),
