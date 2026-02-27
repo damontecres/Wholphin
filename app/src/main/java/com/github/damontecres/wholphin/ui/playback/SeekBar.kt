@@ -138,9 +138,8 @@ fun IntervalSeekBarImpl(
         },
         onRight = { multiplier ->
             controllerViewState.pulseControls()
-            val basePositionMs = if (hasSeeked) seekPositionMs else progressToUse
             seekPositionMs =
-                (basePositionMs + seekForward.inWholeMilliseconds * multiplier)
+                (progressToUse + seekForward.inWholeMilliseconds * multiplier)
                     .coerceAtMost(durationMs)
             hasSeeked = true
             onSeek(seekPositionMs)
