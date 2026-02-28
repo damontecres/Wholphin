@@ -24,8 +24,8 @@ import androidx.media3.ui.compose.state.rememberPlayPauseButtonState
 import androidx.media3.ui.compose.state.rememberPreviousButtonState
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.data.model.AudioItem
-import com.github.damontecres.wholphin.services.MusicServiceState
 import com.github.damontecres.wholphin.ui.playback.ControllerViewState
+import com.github.damontecres.wholphin.ui.playback.PlaybackAction
 import com.github.damontecres.wholphin.ui.playback.PlaybackButtons
 import com.github.damontecres.wholphin.ui.playback.SeekBar
 import com.github.damontecres.wholphin.ui.roundSeconds
@@ -36,7 +36,7 @@ import kotlin.time.Duration.Companion.seconds
 @OptIn(UnstableApi::class)
 @Composable
 fun NowPlayingOverlay(
-    state: MusicServiceState,
+    state: NowPlayingState,
     player: Player,
     current: AudioItem?,
     queue: List<AudioItem>,
@@ -79,7 +79,23 @@ fun NowPlayingOverlay(
                 player = player,
                 initialFocusRequester = focusRequester,
                 onControllerInteraction = { controllerViewState.pulseControls() },
-                onPlaybackActionClick = {},
+                onPlaybackActionClick = {
+                    when (it) {
+                        PlaybackAction.Next -> {
+                            nextState.onClick()
+                        }
+
+                        PlaybackAction.Previous -> {
+                            previousState.onClick()
+                        }
+
+                        is PlaybackAction.ToggleCaptions -> {
+                            TODO()
+                        }
+
+                        else -> {}
+                    }
+                },
                 showPlay = playPauseState.showPlay,
                 previousEnabled = previousState.isEnabled,
                 nextEnabled = nextState.isEnabled,

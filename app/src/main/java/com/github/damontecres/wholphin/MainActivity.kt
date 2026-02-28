@@ -87,6 +87,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import org.jellyfin.sdk.model.api.BaseItemKind
+import org.jellyfin.sdk.model.api.CollectionType
+import org.jellyfin.sdk.model.serializer.toUUID
 import org.jellyfin.sdk.model.serializer.toUUIDOrNull
 import timber.log.Timber
 import javax.inject.Inject
@@ -321,7 +323,13 @@ class MainActivity : AppCompatActivity() {
                                                             server = current.server,
                                                             startDestination =
                                                                 requestedDestination
-                                                                    ?: Destination.Home(),
+//                                                                    ?: Destination.Home(),
+                                                                    // TODO undo
+                                                                    ?: Destination.MediaItem(
+                                                                        itemId = "7e64e319-657a-9516-ec78-490da03edccb".toUUID(),
+                                                                        type = BaseItemKind.COLLECTION_FOLDER,
+                                                                        collectionType = CollectionType.MUSIC,
+                                                                    ),
                                                             navigationManager = navigationManager,
                                                             preferences = preferences,
                                                             modifier = Modifier.fillMaxSize(),

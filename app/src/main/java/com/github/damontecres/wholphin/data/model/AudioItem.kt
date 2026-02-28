@@ -14,6 +14,7 @@ data class AudioItem(
     val artistNames: String?,
     val runtime: Duration?,
     val imageUrl: String?,
+    val hasLyrics: Boolean,
 ) {
     companion object {
         fun from(
@@ -28,6 +29,7 @@ data class AudioItem(
                 artistNames = item.data.albumArtist,
                 runtime = item.data.runTimeTicks?.ticks,
                 imageUrl = imageUrl,
+                hasLyrics = item.data.hasLyrics == true,
             )
     }
 }
