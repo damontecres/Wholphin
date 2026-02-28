@@ -3,11 +3,14 @@ package com.github.damontecres.wholphin.ui.components
 import androidx.annotation.StringRes
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -238,7 +241,7 @@ fun ExpandablePlayButton(
 fun ExpandablePlayButton(
     @StringRes title: Int,
     resume: Duration,
-    icon: @Composable () -> Unit,
+    icon: @Composable BoxScope.() -> Unit,
     onClick: (position: Duration) -> Unit,
     modifier: Modifier = Modifier,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
@@ -258,12 +261,13 @@ fun ExpandablePlayButton(
         interactionSource = interactionSource,
     ) {
         Box(
+            contentAlignment = Alignment.Center,
             modifier =
                 Modifier
-                    .padding(start = 2.dp, top = 2.dp)
+                    .padding(start = 2.dp)
                     .height(MinButtonSize),
         ) {
-            icon.invoke()
+            icon.invoke(this)
         }
         AnimatedVisibility(isFocused) {
             Spacer(Modifier.size(8.dp))
@@ -367,12 +371,23 @@ fun TrailerButton(
 fun DeleteButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
 ) {
-    val interactionSource = remember { MutableInteractionSource() }
     val focused by interactionSource.collectIsFocusedAsState()
     val iconTint by
         animateColorAsState(
-            targetValue = if (focused) Color.Red else Color.Unspecified,
+            targetValue =
+                if (focused) {
+                    Color.Red.copy(alpha = .8f)
+                } else {
+                    MaterialTheme.colorScheme.onSurface.copy(
+                        alpha = 0.8f,
+                    )
+                },
+            animationSpec =
+                tween(
+                    easing = LinearEasing,
+                ),
         )
     ExpandablePlayButton(
         title = R.string.delete,
@@ -384,7 +399,8 @@ fun DeleteButton(
                 tint = if (iconTint.isSpecified) iconTint else LocalContentColor.current,
                 modifier =
                     Modifier
-                        .size(28.dp),
+                        .padding(start = 2.dp)
+                        .size(24.dp),
             )
         },
         onClick = { onClick.invoke() },
@@ -460,6 +476,10 @@ private fun ViewOptionsPreview() {
                     onSortChange = {},
                 )
             }
+            DeleteButton(
+                onClick = {},
+                interactionSource = source,
+            )
         }
     }
 }

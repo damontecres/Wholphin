@@ -304,6 +304,17 @@ fun buildMoreDialogItemsForHome(
                 actions.onClickAddPlaylist.invoke(itemId)
             },
         )
+        if (canDelete) {
+            add(
+                DialogItem(
+                    context.getString(R.string.delete),
+                    Icons.Default.Delete,
+                    iconColor = Color.Red.copy(alpha = .8f),
+                ) {
+                    actions.onClickDelete.invoke(item)
+                },
+            )
+        }
         add(
             DialogItem(
                 text = if (watched) R.string.mark_unwatched else R.string.mark_watched,
@@ -345,17 +356,6 @@ fun buildMoreDialogItemsForHome(
                 actions.onSendMediaInfo.invoke(itemId)
             },
         )
-        if (canDelete) {
-            add(
-                DialogItem(
-                    context.getString(R.string.delete),
-                    Icons.Default.Delete,
-                    iconColor = Color.Red.copy(alpha = .8f),
-                ) {
-                    actions.onClickDelete.invoke(item)
-                },
-            )
-        }
     }
 
 fun buildMoreDialogItemsForPerson(
