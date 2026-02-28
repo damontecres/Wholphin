@@ -72,6 +72,8 @@ data class BaseItem(
         }
     }
 
+    val canDelete: Boolean get() = data.canDelete == true
+
     @Transient
     val aspectRatio: Float? = data.primaryImageAspectRatio?.toFloat()?.takeIf { it > 0 }
 

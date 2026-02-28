@@ -741,6 +741,18 @@ sealed interface AppPreference<Pref, T> {
                 valueToIndex = { it.number },
             )
 
+        val ManageMedia =
+            AppSwitchPreference<AppPreferences>(
+                title = R.string.show_media_management,
+                defaultValue = false,
+                getter = { it.interfacePreferences.enableMediaManagement },
+                setter = { prefs, value ->
+                    prefs.updateInterfacePreferences { enableMediaManagement = value }
+                },
+                summaryOn = R.string.enabled,
+                summaryOff = R.string.disabled,
+            )
+
         val OneClickPause =
             AppSwitchPreference<AppPreferences>(
                 title = R.string.one_click_pause,
@@ -1110,6 +1122,7 @@ val advancedPreferences =
                 preferences =
                     listOf(
                         AppPreference.ShowClock,
+                        AppPreference.ManageMedia,
                         AppPreference.CombineContinueNext,
                         // Temporarily disabled, see https://github.com/damontecres/Wholphin/pull/127#issuecomment-3478058418
 //                    AppPreference.NavDrawerSwitchOnFocus,

@@ -29,6 +29,7 @@ data class MoreDialogActions(
     val onClickFavorite: (UUID, Boolean) -> Unit,
     val onClickAddPlaylist: (UUID) -> Unit,
     val onSendMediaInfo: (UUID) -> Unit,
+    val onClickDelete: (BaseItem) -> Unit = {},
 )
 
 enum class ClearChosenStreams {
@@ -62,6 +63,7 @@ fun buildMoreDialogItems(
     watched: Boolean,
     favorite: Boolean,
     canClearChosenStreams: Boolean,
+    canDelete: Boolean = false,
     actions: MoreDialogActions,
     onChooseVersion: () -> Unit,
     onChooseTracks: (MediaStreamType) -> Unit,
@@ -139,6 +141,17 @@ fun buildMoreDialogItems(
                 actions.onClickAddPlaylist.invoke(item.id)
             },
         )
+        if (canDelete) {
+            add(
+                DialogItem(
+                    context.getString(R.string.delete),
+                    Icons.Default.Delete,
+                    iconColor = Color.Red.copy(alpha = .8f),
+                ) {
+                    actions.onClickDelete.invoke(item)
+                },
+            )
+        }
         add(
             DialogItem(
                 text = if (watched) R.string.mark_unwatched else R.string.mark_watched,
@@ -223,6 +236,7 @@ fun buildMoreDialogItemsForHome(
     playbackPosition: Duration,
     watched: Boolean,
     favorite: Boolean,
+    canDelete: Boolean = false,
     actions: MoreDialogActions,
 ): List<DialogItem> =
     buildList {
@@ -290,6 +304,17 @@ fun buildMoreDialogItemsForHome(
                 actions.onClickAddPlaylist.invoke(itemId)
             },
         )
+        if (canDelete) {
+            add(
+                DialogItem(
+                    context.getString(R.string.delete),
+                    Icons.Default.Delete,
+                    iconColor = Color.Red.copy(alpha = .8f),
+                ) {
+                    actions.onClickDelete.invoke(item)
+                },
+            )
+        }
         add(
             DialogItem(
                 text = if (watched) R.string.mark_unwatched else R.string.mark_watched,

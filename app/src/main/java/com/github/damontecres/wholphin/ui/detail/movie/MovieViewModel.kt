@@ -18,6 +18,7 @@ import com.github.damontecres.wholphin.preferences.ThemeSongVolume
 import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.ExtrasService
 import com.github.damontecres.wholphin.services.FavoriteWatchManager
+import com.github.damontecres.wholphin.services.MediaManagementService
 import com.github.damontecres.wholphin.services.MediaReportService
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.PeopleFavorites
@@ -26,6 +27,7 @@ import com.github.damontecres.wholphin.services.StreamChoiceService
 import com.github.damontecres.wholphin.services.ThemeSongPlayer
 import com.github.damontecres.wholphin.services.TrailerService
 import com.github.damontecres.wholphin.services.UserPreferencesService
+import com.github.damontecres.wholphin.services.deleteItem
 import com.github.damontecres.wholphin.ui.SlimItemFields
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.letNotEmpty
@@ -73,6 +75,7 @@ class MovieViewModel
         private val extrasService: ExtrasService,
         private val userPreferencesService: UserPreferencesService,
         private val backdropService: BackdropService,
+        private val mediaManagementService: MediaManagementService,
         @Assisted val itemId: UUID,
     ) : ViewModel() {
         @AssistedFactory
@@ -90,6 +93,9 @@ class MovieViewModel
         val chosenStreams = MutableLiveData<ChosenStreams?>(null)
         val discovered = MutableStateFlow<List<DiscoverItem>>(listOf())
 
+        var canDelete: Boolean = false
+            private set
+
         init {
             init()
         }
@@ -106,6 +112,7 @@ class MovieViewModel
                     api.userLibraryApi.getItem(itemId).content.let {
                         BaseItem.from(it, api)
                     }
+                canDelete = mediaManagementService.canDelete(item)
                 this@MovieViewModel.item.setValueOnMain(item)
                 item
             }
@@ -272,6 +279,12 @@ class MovieViewModel
                         )
                     this@MovieViewModel.chosenStreams.setValueOnMain(result)
                 }
+            }
+        }
+
+        fun deleteItem(item: BaseItem) {
+            deleteItem(context, mediaManagementService, item) {
+                navigationManager.goBack()
             }
         }
     }
