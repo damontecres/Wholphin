@@ -2,10 +2,8 @@ package com.github.damontecres.wholphin.ui.components
 
 import android.content.Context
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.LocalBringIntoViewSpec
@@ -818,8 +816,8 @@ fun CollectionFolderGridContent(
         ) {
             AnimatedVisibility(
                 showHeader || loadingState !is DataLoadingState.Success,
-                enter = slideInVertically() + fadeIn(),
-                exit = slideOutVertically() + fadeOut(),
+                enter = expandVertically(),
+                exit = shrinkVertically(),
             ) {
                 Column(
                     verticalArrangement = Arrangement.spacedBy(8.dp),

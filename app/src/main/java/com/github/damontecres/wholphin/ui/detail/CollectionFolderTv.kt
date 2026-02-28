@@ -1,10 +1,8 @@
 package com.github.damontecres.wholphin.ui.detail
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -80,8 +78,8 @@ fun CollectionFolderTv(
     ) {
         AnimatedVisibility(
             showHeader,
-            enter = slideInVertically() + fadeIn(),
-            exit = slideOutVertically() + fadeOut(),
+            enter = expandVertically(),
+            exit = shrinkVertically(),
         ) {
             TabRow(
                 selectedTabIndex = selectedTabIndex,
