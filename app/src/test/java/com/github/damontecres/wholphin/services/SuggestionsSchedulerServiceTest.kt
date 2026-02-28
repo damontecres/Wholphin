@@ -12,6 +12,7 @@ import com.github.damontecres.wholphin.data.CurrentUser
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.JellyfinServer
 import com.github.damontecres.wholphin.data.model.JellyfinUser
+import com.google.common.util.concurrent.ListenableFuture
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
@@ -37,7 +38,6 @@ class SuggestionsSchedulerServiceTest {
     private val currentLiveData = MutableLiveData<CurrentUser?>()
     private val mockActivity = mockk<AppCompatActivity>(relaxed = true)
     private val mockServerRepository = mockk<ServerRepository>(relaxed = true)
-    private val mockCache = mockk<SuggestionsCache>(relaxed = true)
     private val mockWorkManager = mockk<WorkManager>(relaxed = true)
     private val lifecycleRegistry = LifecycleRegistry(mockk<LifecycleOwner>(relaxed = true))
 
@@ -56,13 +56,23 @@ class SuggestionsSchedulerServiceTest {
         SuggestionsSchedulerService(
             context = mockActivity,
             serverRepository = mockServerRepository,
-            cache = mockCache,
             workManager = mockWorkManager,
-        ).also { it.dispatcher = testDispatcher }
+        ).also {
+            it.dispatcher = testDispatcher
+            it.initialDelaySecondsProvider = { 60L }
+        }
+
+    private fun mockWorkInfos(infos: List<androidx.work.WorkInfo>) {
+        @Suppress("UNCHECKED_CAST")
+        val future = mockk<ListenableFuture<List<androidx.work.WorkInfo>>>()
+        every { future.get() } returns infos
+        every { mockWorkManager.getWorkInfosForUniqueWork(SuggestionsWorker.WORK_NAME) } returns future
+    }
 
     @Test
     fun schedules_periodic_work_when_user_present() =
         runTest {
+            mockWorkInfos(emptyList())
             createService()
             currentLiveData.value =
                 CurrentUser(
@@ -76,6 +86,7 @@ class SuggestionsSchedulerServiceTest {
     @Test
     fun cancels_work_when_user_null() =
         runTest {
+            mockWorkInfos(emptyList())
             createService()
             currentLiveData.value =
                 CurrentUser(
@@ -91,6 +102,7 @@ class SuggestionsSchedulerServiceTest {
     @Test
     fun schedules_periodic_work_with_delay_when_cache_empty() =
         runTest {
+            mockWorkInfos(emptyList())
             val workRequestSlot = slot<PeriodicWorkRequest>()
             every {
                 mockWorkManager.enqueueUniquePeriodicWork(
@@ -115,6 +127,7 @@ class SuggestionsSchedulerServiceTest {
     @Test
     fun schedules_periodic_work_with_delay_when_cache_not_empty() =
         runTest {
+            mockWorkInfos(emptyList())
             val workRequestSlot = slot<PeriodicWorkRequest>()
             every {
                 mockWorkManager.enqueueUniquePeriodicWork(
@@ -134,5 +147,25 @@ class SuggestionsSchedulerServiceTest {
 
             verify { mockWorkManager.enqueueUniquePeriodicWork(SuggestionsWorker.WORK_NAME, any(), any()) }
             assertEquals(60000L, workRequestSlot.captured.workSpec.initialDelay)
+        }
+
+    @Test
+    fun does_not_schedule_if_already_scheduled_for_same_user() =
+        runTest {
+            val userId = UUID.randomUUID()
+            val workInfo = mockk<androidx.work.WorkInfo>()
+            every { workInfo.state } returns androidx.work.WorkInfo.State.ENQUEUED
+            every { workInfo.tags } returns setOf("user:$userId")
+            mockWorkInfos(listOf(workInfo))
+
+            createService()
+            currentLiveData.value =
+                CurrentUser(
+                    user = JellyfinUser(id = userId, name = "User", serverId = UUID.randomUUID(), accessToken = "token"),
+                    server = JellyfinServer(id = UUID.randomUUID(), name = "Server", url = "http://localhost", version = null),
+                )
+            advanceUntilIdle()
+
+            verify(exactly = 0) { mockWorkManager.enqueueUniquePeriodicWork(any(), any(), any()) }
         }
 }
