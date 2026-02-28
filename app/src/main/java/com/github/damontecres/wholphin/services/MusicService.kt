@@ -99,7 +99,7 @@ class MusicService
                 player.shuffleModeEnabled = shuffled
                 player.play()
             }
-            addAllToQueue(items)
+            addAllToQueue(items, startIndex)
         }
 
         suspend fun setQueue(
@@ -140,16 +140,26 @@ class MusicService
             }
         }
 
-        suspend fun addAllToQueue(list: BlockingList<BaseItem?>) {
+        suspend fun addAllToQueue(
+            list: BlockingList<BaseItem?>,
+            startIndex: Int,
+        ) {
+            var remaining = startIndex
             list.indices
                 .chunked(25)
                 .forEach {
                     val mediaItems =
                         it.mapNotNull {
-                            list
-                                .getBlocking(it)
-                                ?.takeIf { it.type == BaseItemKind.AUDIO }
-                                ?.let(::convert)
+                            if (remaining == 0) {
+                                list
+                                    .getBlocking(it)
+                                    ?.takeIf { it.type == BaseItemKind.AUDIO }
+                                    ?.let(::convert)
+                            } else {
+                                Timber.v("Skipping $remaining")
+                                remaining--
+                                null
+                            }
                         }
                     onMain { player.addMediaItems(mediaItems) }
                 }
@@ -243,18 +253,24 @@ private class MusicPlayerListener(
         timeline: Timeline,
         reason: Int,
     ) {
-        Timber.v("MusicPlayerListener onTimelineChanged")
+//        Timber.v("MusicPlayerListener onTimelineChanged")
         if (reason == Player.TIMELINE_CHANGE_REASON_PLAYLIST_CHANGED) {
             updateCurrentIndex()
         }
     }
 
     private fun updateCurrentIndex() {
-        state.update {
-            it.copy(
-                currentIndex = player.currentMediaItemIndex,
-                currentItemId = player.getMediaItemAt(player.currentMediaItemIndex).mediaId.toUUIDOrNull(),
-            )
+        state.update { state ->
+            player.currentMediaItemIndex.takeIf { it >= 0 }?.let { currentMediaItemIndex ->
+                if (currentMediaItemIndex in (0..<player.mediaItemCount)) {
+                    state.copy(
+                        currentIndex = currentMediaItemIndex,
+                        currentItemId = player.getMediaItemAt(currentMediaItemIndex).mediaId.toUUIDOrNull(),
+                    )
+                } else {
+                    state
+                }
+            } ?: state
         }
     }
 }

@@ -54,4 +54,5 @@
     <string name="fa_cloud_arrow_up" translatable="false">&#xf0ee;</string>
     <string name="fa_cloud_arrow_down" translatable="false">&#xf0ed;</string>
     <string name="fa_compass" translatable="false">&#xf14e;</string>
+    <string name="fa_repeat" translatable="false">&#xf363;</string>
 </resources>

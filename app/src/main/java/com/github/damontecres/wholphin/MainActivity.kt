@@ -87,7 +87,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import org.jellyfin.sdk.model.api.BaseItemKind
-import org.jellyfin.sdk.model.api.CollectionType
 import org.jellyfin.sdk.model.serializer.toUUID
 import org.jellyfin.sdk.model.serializer.toUUIDOrNull
 import timber.log.Timber
@@ -326,9 +325,8 @@ class MainActivity : AppCompatActivity() {
 //                                                                    ?: Destination.Home(),
                                                                     // TODO undo
                                                                     ?: Destination.MediaItem(
-                                                                        itemId = "7e64e319-657a-9516-ec78-490da03edccb".toUUID(),
-                                                                        type = BaseItemKind.COLLECTION_FOLDER,
-                                                                        collectionType = CollectionType.MUSIC,
+                                                                        itemId = "011ef0c7-ca45-684f-2cd9-dd3b020ca5f6".toUUID(),
+                                                                        type = BaseItemKind.MUSIC_ALBUM,
                                                                     ),
                                                             navigationManager = navigationManager,
                                                             preferences = preferences,

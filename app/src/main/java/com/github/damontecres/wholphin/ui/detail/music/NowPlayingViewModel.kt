@@ -87,8 +87,12 @@ class NowPlayingViewModel
 
         private suspend fun getCurrent(): AudioItem? {
             val mediaItem =
-                onMain { player.currentMediaItemIndex.let { player.getMediaItemAt(it) } }
-            return mediaItem.localConfiguration?.tag as? AudioItem
+                onMain {
+                    player.currentMediaItemIndex
+                        .takeIf { it >= 0 }
+                        ?.let { player.getMediaItemAt(it) }
+                }
+            return mediaItem?.localConfiguration?.tag as? AudioItem
         }
 
         private fun playbackLoop() {
@@ -125,7 +129,7 @@ class NowPlayingViewModel
                         }
                     }
 
-                    delay(250)
+                    delay(150)
                 }
             }
         }

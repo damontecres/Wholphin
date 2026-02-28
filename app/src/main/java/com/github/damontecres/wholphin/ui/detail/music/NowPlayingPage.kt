@@ -5,6 +5,7 @@ import androidx.annotation.OptIn
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandHorizontally
 import androidx.compose.animation.shrinkHorizontally
+import androidx.compose.foundation.background
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -31,6 +32,7 @@ import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.preferences.skipBackOnResume
 import com.github.damontecres.wholphin.services.rememberQueue
+import com.github.damontecres.wholphin.ui.AppColors
 import com.github.damontecres.wholphin.ui.playback.PlaybackKeyHandler
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import kotlin.time.Duration.Companion.milliseconds
@@ -127,14 +129,22 @@ fun NowPlayingPage(
         BackHandler(controllerViewState.controlsVisible) {
             controllerViewState.hideControls()
         }
-        AnimatedVisibility(controllerViewState.controlsVisible) {
+        AnimatedVisibility(
+            controllerViewState.controlsVisible,
+            modifier =
+                Modifier
+                    .align(Alignment.BottomCenter),
+        ) {
             NowPlayingOverlay(
                 state = state,
                 player = player,
                 current = current,
                 queue = queue,
                 controllerViewState = controllerViewState,
-                modifier = Modifier.fillMaxSize(),
+                modifier =
+                    Modifier
+                        .background(AppColors.TransparentBlack50)
+                        .align(Alignment.BottomCenter),
             )
         }
     }
