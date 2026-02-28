@@ -65,7 +65,7 @@ fun CollectionFolderPhotoAlbum(
                 } else {
                     item.destination(index)
                 }
-            viewModel.navigationManager.navigateTo(destination)
+            viewModel.navigateTo(destination)
         },
         itemId = itemId.toServerString(),
         initialFilter = filter,

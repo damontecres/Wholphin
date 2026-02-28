@@ -20,6 +20,7 @@ import org.jellyfin.sdk.api.client.extensions.userLibraryApi
 import org.jellyfin.sdk.api.client.extensions.userViewsApi
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.CollectionType
+import org.jellyfin.sdk.model.api.ImageType
 import org.jellyfin.sdk.model.api.UserDto
 import org.jellyfin.sdk.model.api.request.GetLatestMediaRequest
 import org.jellyfin.sdk.model.api.request.GetNextUpRequest
@@ -60,6 +61,12 @@ class LatestNextUpService
                                     remove(BaseItemKind.EPISODE)
                                 }
                         },
+                    enableImageTypes =
+                        listOf(
+                            ImageType.PRIMARY,
+                            ImageType.THUMB,
+                            ImageType.BACKDROP,
+                        ),
                 )
             val items =
                 api.itemsApi

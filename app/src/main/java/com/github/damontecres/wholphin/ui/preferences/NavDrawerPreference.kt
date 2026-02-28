@@ -15,7 +15,9 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -26,17 +28,44 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.datastore.core.DataStore
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import androidx.tv.material3.ListItem
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Switch
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.R
+import com.github.damontecres.wholphin.data.ServerPreferencesDao
+import com.github.damontecres.wholphin.data.ServerRepository
+import com.github.damontecres.wholphin.data.model.NavDrawerPinnedItem
+import com.github.damontecres.wholphin.data.model.NavPinType
+import com.github.damontecres.wholphin.preferences.AppPreferences
+import com.github.damontecres.wholphin.services.BackdropService
+import com.github.damontecres.wholphin.services.NavDrawerItemState
+import com.github.damontecres.wholphin.services.NavDrawerService
+import com.github.damontecres.wholphin.services.NavigationManager
+import com.github.damontecres.wholphin.services.SeerrServerRepository
 import com.github.damontecres.wholphin.ui.FontAwesome
 import com.github.damontecres.wholphin.ui.PreviewTvSpec
 import com.github.damontecres.wholphin.ui.components.BasicDialog
 import com.github.damontecres.wholphin.ui.components.Button
+import com.github.damontecres.wholphin.ui.launchDefault
+import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.nav.NavDrawerItem
 import com.github.damontecres.wholphin.ui.theme.WholphinTheme
+import com.github.damontecres.wholphin.util.ExceptionHandler
+import com.github.damontecres.wholphin.util.RememberTabManager
+import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.withContext
+import org.jellyfin.sdk.api.client.ApiClient
+import javax.inject.Inject
 
 data class NavDrawerPin(
     val id: String,
@@ -83,11 +112,11 @@ private fun <T> List<T>.move(
 fun NavDrawerPreference(
     title: String,
     summary: String?,
-    items: List<NavDrawerPin>,
-    onSave: (List<NavDrawerPin>) -> Unit,
     modifier: Modifier = Modifier,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
+    viewModel: NavDrawerPreferencesViewModel = hiltViewModel(),
 ) {
+    val items by viewModel.state.collectAsState()
     var showDialog by remember { mutableStateOf(false) }
     ClickPreference(
         title = title,
@@ -99,19 +128,22 @@ fun NavDrawerPreference(
     if (showDialog) {
         NavDrawerPreferenceDialog(
             items = items,
-            onDismissRequest = { showDialog = false },
+            onDismissRequest = {
+                viewModel.save()
+                showDialog = false
+            },
             onClick = { index ->
                 val newItems =
                     items.toMutableList().apply {
                         set(index, items[index].let { it.copy(pinned = !it.pinned) })
                     }
-                onSave.invoke(newItems)
+                viewModel.update(newItems)
             },
             onMoveUp = { index ->
-                onSave(items.move(MoveDirection.UP, index))
+                viewModel.update(items.move(MoveDirection.UP, index))
             },
             onMoveDown = { index ->
-                onSave(items.move(MoveDirection.DOWN, index))
+                viewModel.update(items.move(MoveDirection.DOWN, index))
             },
         )
     }
@@ -127,9 +159,12 @@ fun NavDrawerPreferenceDialog(
 ) {
     BasicDialog(
         onDismissRequest = onDismissRequest,
+        elevation = 3.dp,
     ) {
         Column(
-            modifier = Modifier.padding(16.dp),
+            modifier =
+                Modifier
+                    .padding(16.dp),
         ) {
             Text(
                 text = stringResource(R.string.nav_drawer_pins),
@@ -137,7 +172,9 @@ fun NavDrawerPreferenceDialog(
                 color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.padding(bottom = 8.dp),
             )
+            val listState = rememberLazyListState()
             LazyColumn(
+                state = listState,
                 verticalArrangement = Arrangement.spacedBy(0.dp),
             ) {
                 itemsIndexed(items, key = { _, item -> item.id }) { index, item ->
@@ -149,7 +186,7 @@ fun NavDrawerPreferenceDialog(
                         onClick = { onClick.invoke(index) },
                         onMoveUp = { onMoveUp.invoke(index) },
                         onMoveDown = { onMoveDown.invoke(index) },
-                        modifier = Modifier,
+                        modifier = Modifier.animateItem(),
                     )
                 }
             }
@@ -243,3 +280,86 @@ fun NavDrawerPreferenceListItemPreview() {
         )
     }
 }
+
+@HiltViewModel
+class NavDrawerPreferencesViewModel
+    @Inject
+    constructor(
+        @param:ApplicationContext private val context: Context,
+        private val api: ApiClient,
+        val preferenceDataStore: DataStore<AppPreferences>,
+        val navigationManager: NavigationManager,
+        val backdropService: BackdropService,
+        private val rememberTabManager: RememberTabManager,
+        private val serverRepository: ServerRepository,
+        private val navDrawerService: NavDrawerService,
+        private val serverPreferencesDao: ServerPreferencesDao,
+        private val seerrServerRepository: SeerrServerRepository,
+    ) : ViewModel() {
+        val state = MutableStateFlow<List<NavDrawerPin>>(listOf())
+
+        init {
+            viewModelScope.launchDefault {
+                val state = navDrawerService.state.value
+                val user = serverRepository.currentUser.value
+                val seerr = seerrServerRepository.active.firstOrNull()
+                if (state == NavDrawerItemState.EMPTY || user == null || seerr == null) {
+                    return@launchDefault
+                }
+                val navDrawerPins =
+                    withContext(Dispatchers.IO) {
+                        serverPreferencesDao
+                            .getNavDrawerPinnedItems(user)
+                            .associateBy { it.itemId }
+                    }
+                val allItems = state.let { it.items + it.moreItems }
+                val pins =
+                    allItems
+                        .sortedBy {
+                            navDrawerPins[it.id]?.order?.takeIf { it >= 0 } ?: Int.MAX_VALUE
+                        }.mapNotNull {
+                            if (!seerr && it is NavDrawerItem.Discover) {
+                                null
+                            } else {
+                                // Assume pinned if unknown
+                                val pinned = navDrawerPins[it.id]?.type ?: NavPinType.PINNED
+                                NavDrawerPin(
+                                    it.id,
+                                    it.name(context),
+                                    pinned == NavPinType.PINNED,
+                                    it,
+                                )
+                            }
+                        }
+                this@NavDrawerPreferencesViewModel.state.value = pins
+            }
+        }
+
+        fun update(items: List<NavDrawerPin>) {
+            state.update { items }
+        }
+
+        fun save() {
+            viewModelScope.launchIO(ExceptionHandler(true)) {
+                serverRepository.currentUser.value?.let { user ->
+                    serverRepository.currentUserDto.value?.let { userDto ->
+                        if (user.id == userDto.id) {
+                            val toSave =
+                                state.value.mapIndexed { index, item ->
+                                    NavDrawerPinnedItem(
+                                        user.rowId,
+                                        item.id,
+                                        if (item.pinned) NavPinType.PINNED else NavPinType.UNPINNED,
+                                        index,
+                                    )
+                                }
+                            serverPreferencesDao.saveNavDrawerPinnedItems(*toSave.toTypedArray())
+                            navDrawerService.updateNavDrawer(user, userDto)
+                        } else {
+                            throw IllegalStateException("User IDs do not match")
+                        }
+                    }
+                }
+            }
+        }
+    }

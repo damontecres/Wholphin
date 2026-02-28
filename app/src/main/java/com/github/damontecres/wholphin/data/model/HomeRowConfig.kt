@@ -127,7 +127,7 @@ sealed interface HomeRowConfig {
     @Serializable
     @SerialName("TvPrograms")
     data class TvPrograms(
-        override val viewOptions: HomeRowViewOptions = HomeRowViewOptions(),
+        override val viewOptions: HomeRowViewOptions = HomeRowViewOptions.liveTvDefault,
     ) : HomeRowConfig {
         override fun updateViewOptions(viewOptions: HomeRowViewOptions): TvPrograms = this.copy(viewOptions = viewOptions)
     }
@@ -138,7 +138,7 @@ sealed interface HomeRowConfig {
     @Serializable
     @SerialName("TvChannels")
     data class TvChannels(
-        override val viewOptions: HomeRowViewOptions = HomeRowViewOptions(),
+        override val viewOptions: HomeRowViewOptions = HomeRowViewOptions.liveTvDefault,
     ) : HomeRowConfig {
         override fun updateViewOptions(viewOptions: HomeRowViewOptions): TvChannels = this.copy(viewOptions = viewOptions)
     }
@@ -213,12 +213,12 @@ const val SUPPORTED_HOME_PAGE_SETTINGS_VERSION = 1
 data class HomeRowViewOptions(
     val heightDp: Int = Cards.HEIGHT_2X3_DP,
     val spacing: Int = 16,
-    val contentScale: PrefContentScale = PrefContentScale.FIT,
+    val contentScale: PrefContentScale = PrefContentScale.FILL,
     val aspectRatio: AspectRatio = AspectRatio.TALL,
     val imageType: ViewOptionImageType = ViewOptionImageType.PRIMARY,
     val showTitles: Boolean = false,
     val useSeries: Boolean = true,
-    val episodeContentScale: PrefContentScale = PrefContentScale.FIT,
+    val episodeContentScale: PrefContentScale = PrefContentScale.FILL,
     val episodeAspectRatio: AspectRatio = AspectRatio.TALL,
     val episodeImageType: ViewOptionImageType = ViewOptionImageType.PRIMARY,
 ) {
@@ -229,10 +229,11 @@ data class HomeRowViewOptions(
                 aspectRatio = AspectRatio.WIDE,
             )
 
-        val channelsDefault =
+        val liveTvDefault =
             HomeRowViewOptions(
                 heightDp = 96,
                 aspectRatio = AspectRatio.WIDE,
+                contentScale = PrefContentScale.FIT,
             )
     }
 }

@@ -137,11 +137,11 @@ fun HomeSettingsRowList(
                         position = 2
                         onClickPresets.invoke()
                     },
-                    modifier = Modifier.focusRequester(focusRequesters[1]),
+                    modifier = Modifier.focusRequester(focusRequesters[2]),
                 )
             }
             item {
-                TitleText(stringResource(R.string.home_rows))
+                TitleText(stringResource(R.string.home_rows) + " (${state.rows.size})")
                 HorizontalDivider()
             }
             itemsIndexed(state.rows, key = { _, row -> row.id }) { index, row ->

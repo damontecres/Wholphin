@@ -3,7 +3,6 @@ package com.github.damontecres.wholphin
 import android.app.Application
 import android.os.Build
 import android.os.StrictMode
-import android.os.StrictMode.ThreadPolicy
 import android.util.Log
 import androidx.compose.runtime.Composer
 import androidx.compose.runtime.ExperimentalComposeRuntimeApi
@@ -26,16 +25,6 @@ class WholphinApplication :
     Configuration.Provider {
     init {
         instance = this
-
-        if (BuildConfig.DEBUG) {
-            StrictMode.setThreadPolicy(
-                ThreadPolicy
-                    .Builder()
-                    .detectNetwork()
-                    .penaltyLog()
-                    .build(),
-            )
-        }
 
         if (BuildConfig.DEBUG) {
             Timber.plant(Timber.DebugTree())
@@ -64,6 +53,23 @@ class WholphinApplication :
 
     override fun onCreate() {
         super.onCreate()
+        if (BuildConfig.DEBUG) {
+            StrictMode.setThreadPolicy(
+                StrictMode.ThreadPolicy
+                    .Builder()
+                    .detectNetwork()
+                    .penaltyLog()
+                    .penaltyDeathOnNetwork()
+                    .build(),
+            )
+            StrictMode.setVmPolicy(
+                StrictMode.VmPolicy
+                    .Builder()
+                    .detectAll()
+                    .penaltyLog()
+                    .build(),
+            )
+        }
         OkHttp.initialize(this)
         initAcra {
             buildConfigClass = BuildConfig::class.java

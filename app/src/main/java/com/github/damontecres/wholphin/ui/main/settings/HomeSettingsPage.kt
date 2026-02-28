@@ -34,6 +34,7 @@ import com.github.damontecres.wholphin.data.model.HomeRowViewOptions
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.ui.components.ConfirmDialog
 import com.github.damontecres.wholphin.ui.data.RowColumn
+import com.github.damontecres.wholphin.ui.detail.search.SearchForDialog
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.main.HomePageContent
 import com.github.damontecres.wholphin.ui.main.settings.HomeSettingsDestination.ChooseRowType
@@ -43,6 +44,7 @@ import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.HomeRowLoadingState
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import org.jellyfin.sdk.model.api.BaseItemKind
 import timber.log.Timber
 
 val settingsWidth = 360.dp
@@ -56,6 +58,7 @@ fun HomeSettingsPage(
     val listState = rememberLazyListState()
     val backStack = rememberNavBackStack(HomeSettingsDestination.RowList)
     var showConfirmDialog by remember { mutableStateOf<ShowConfirm?>(null) }
+    var searchForDialog by remember { mutableStateOf<BaseItemKind?>(null) }
 
     val state by viewModel.state.collectAsState()
     var position by rememberPosition(0, 0)
@@ -63,13 +66,18 @@ fun HomeSettingsPage(
     val discoverEnabled = false // by viewModel.discoverEnabled.collectAsState(false)
 
     // Adds a row, waits until its done loading, then scrolls to the new row
-    fun addRow(func: () -> Job) {
+    fun addRow(
+        scrollToBottom: Boolean = true,
+        func: () -> Job,
+    ) {
         scope.launch(ExceptionHandler(autoToast = true)) {
             while (backStack.size > 1) {
                 backStack.removeAt(backStack.lastIndex)
             }
             func.invoke().join()
-            listState.animateScrollToItem(state.rows.lastIndex)
+            if (scrollToBottom) {
+                listState.animateScrollToItem(state.rows.lastIndex)
+            }
         }
     }
 
@@ -149,6 +157,14 @@ fun HomeSettingsPage(
                                             MetaRowType.DISCOVER -> {
                                                 backStack.add(HomeSettingsDestination.ChooseDiscover)
                                             }
+
+                                            MetaRowType.COLLECTION -> {
+                                                searchForDialog = BaseItemKind.BOX_SET
+                                            }
+
+                                            MetaRowType.PLAYLIST -> {
+                                                searchForDialog = BaseItemKind.PLAYLIST
+                                            }
                                         }
                                     },
                                     modifier = destModifier,
@@ -159,7 +175,19 @@ fun HomeSettingsPage(
                                 HomeLibraryRowTypeList(
                                     library = dest.library,
                                     onClick = { type ->
-                                        addRow { viewModel.addRow(dest.library, type) }
+                                        when (type) {
+                                            LibraryRowType.COLLECTION -> {
+                                                searchForDialog = BaseItemKind.BOX_SET
+                                            }
+
+                                            LibraryRowType.PLAYLIST -> {
+                                                searchForDialog = BaseItemKind.PLAYLIST
+                                            }
+
+                                            else -> {
+                                                addRow { viewModel.addRow(dest.library, type) }
+                                            }
+                                        }
                                     },
                                     modifier = destModifier,
                                 )
@@ -250,7 +278,7 @@ fun HomeSettingsPage(
                                     onClickReset = {
                                         showConfirmDialog =
                                             ShowConfirm(R.string.overwrite_local_settings) {
-                                                viewModel.resetToDefault()
+                                                addRow(false) { viewModel.resetToDefault() }
                                             }
                                     },
                                     modifier = destModifier,
@@ -295,6 +323,16 @@ fun HomeSettingsPage(
             onConfirm = {
                 onConfirm.invoke()
                 showConfirmDialog = null
+            },
+        )
+    }
+    searchForDialog?.let { searchType ->
+        SearchForDialog(
+            onDismissRequest = { searchForDialog = null },
+            searchType = searchType,
+            onClick = {
+                searchForDialog = null
+                addRow { viewModel.addRow(searchType, it) }
             },
         )
     }

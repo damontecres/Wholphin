@@ -47,19 +47,63 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        if (shouldSign) {
+            create("ci") {
+                file("ci.keystore").writeBytes(
+                    Base64.getDecoder().decode(System.getenv("SIGNING_KEY")),
+                )
+                keyAlias = System.getenv("KEY_ALIAS")
+                keyPassword = System.getenv("KEY_PASSWORD")
+                storePassword = System.getenv("KEY_STORE_PASSWORD")
+                storeFile = file("ci.keystore")
+                enableV1Signing = true
+                enableV2Signing = true
+                enableV3Signing = true
+                enableV4Signing = true
+            }
+        }
+    }
+
     buildTypes {
         release {
-            isMinifyEnabled = true
+            isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
             )
             isDebuggable = false
+            if (shouldSign) {
+                signingConfig = signingConfigs.getByName("ci")
+            } else {
+                val localPropertiesFile = project.rootProject.file("local.properties")
+                if (localPropertiesFile.exists()) {
+                    val properties = Properties()
+                    properties.load(localPropertiesFile.inputStream())
+                    val signingConfigName = properties["release.signing.config"]?.toString()
+                    if (signingConfigName != null) {
+                        signingConfig = signingConfigs.getByName(signingConfigName)
+                    }
+                }
+            }
         }
+
         debug {
             isMinifyEnabled = false
             isDebuggable = true
             applicationIdSuffix = ".debug"
+        }
+
+        applicationVariants.all {
+            val variant = this
+            variant.outputs
+                .map { it as com.android.build.gradle.internal.api.BaseVariantOutputImpl }
+                .forEach { output ->
+                    val abi = output.getFilter("ABI").let { if (it != null) "-$it" else "" }
+                    val outputFileName =
+                        "Wholphin-${variant.baseName}-${variant.versionName}-${variant.versionCode}$abi.apk"
+                    output.outputFileName = outputFileName
+                }
         }
     }
     compileOptions {
@@ -80,63 +124,6 @@ android {
     }
     room {
         schemaDirectory("$projectDir/schemas")
-    }
-    signingConfigs {
-        if (shouldSign) {
-            create("ci") {
-                file("ci.keystore").writeBytes(
-                    Base64.getDecoder().decode(System.getenv("SIGNING_KEY")),
-                )
-                keyAlias = System.getenv("KEY_ALIAS")
-                keyPassword = System.getenv("KEY_PASSWORD")
-                storePassword = System.getenv("KEY_STORE_PASSWORD")
-                storeFile = file("ci.keystore")
-                enableV1Signing = true
-                enableV2Signing = true
-                enableV3Signing = true
-                enableV4Signing = true
-            }
-        }
-    }
-    buildTypes {
-        release {
-            isMinifyEnabled = false
-
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro",
-            )
-            if (shouldSign) {
-                signingConfig = signingConfigs.getByName("ci")
-            } else {
-                val localPropertiesFile = project.rootProject.file("local.properties")
-                if (localPropertiesFile.exists()) {
-                    val properties = Properties()
-                    properties.load(localPropertiesFile.inputStream())
-                    val signingConfigName = properties["release.signing.config"]?.toString()
-                    if (signingConfigName != null) {
-                        signingConfig = signingConfigs.getByName(signingConfigName)
-                    }
-                }
-            }
-        }
-        debug {
-            if (shouldSign) {
-                signingConfig = signingConfigs.getByName("ci")
-            }
-        }
-
-        applicationVariants.all {
-            val variant = this
-            variant.outputs
-                .map { it as com.android.build.gradle.internal.api.BaseVariantOutputImpl }
-                .forEach { output ->
-                    val abi = output.getFilter("ABI").let { if (it != null) "-$it" else "" }
-                    val outputFileName =
-                        "Wholphin-${variant.baseName}-${variant.versionName}-${variant.versionCode}$abi.apk"
-                    output.outputFileName = outputFileName
-                }
-        }
     }
 
     splits {

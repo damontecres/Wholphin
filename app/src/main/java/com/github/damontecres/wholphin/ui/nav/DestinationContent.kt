@@ -121,7 +121,9 @@ fun DestinationContent(
                     )
                 }
 
-                BaseItemKind.VIDEO -> {
+                BaseItemKind.VIDEO,
+                BaseItemKind.MUSIC_VIDEO,
+                -> {
                     // TODO Use VideoDetails
                     MovieDetails(
                         preferences,

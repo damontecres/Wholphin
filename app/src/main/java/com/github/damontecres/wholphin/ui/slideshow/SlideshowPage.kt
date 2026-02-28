@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -63,8 +62,6 @@ import com.github.damontecres.wholphin.data.model.VideoFilter
 import com.github.damontecres.wholphin.ui.AppColors
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.LoadingPage
-import com.github.damontecres.wholphin.ui.findActivity
-import com.github.damontecres.wholphin.ui.keepScreenOn
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.playback.isDirectionalDpad
 import com.github.damontecres.wholphin.ui.playback.isDpad
@@ -208,12 +205,6 @@ fun SlideshowPage(
     LaunchedEffect(slideshowActive) {
         player.repeatMode =
             if (slideshowState.enabled) Player.REPEAT_MODE_OFF else Player.REPEAT_MODE_ONE
-        context.findActivity()?.keepScreenOn(slideshowActive)
-    }
-    DisposableEffect(Unit) {
-        onDispose {
-            context.findActivity()?.keepScreenOn(false)
-        }
     }
 
     var longPressing by remember { mutableStateOf(false) }

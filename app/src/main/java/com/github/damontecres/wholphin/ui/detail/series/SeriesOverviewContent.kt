@@ -134,7 +134,7 @@ fun SeriesOverviewContent(
                     .onFocusChanged { pageHasFocus = it.hasFocus },
         ) {
             Column(
-                verticalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
                 modifier =
                     Modifier
                         .focusGroup()
@@ -159,9 +159,10 @@ fun SeriesOverviewContent(
                         Modifier
                             .focusRequester(tabRowFocusRequester)
                             .padding(paddingValues)
+                            .padding(bottom = 4.dp)
                             .fillMaxWidth(),
                 )
-                SeriesName(series.name, Modifier)
+                SeriesName(series.name, Modifier.padding(start = 8.dp))
                 FocusedEpisodeHeader(
                     preferences = preferences,
                     ep = focusedEpisode,
@@ -266,6 +267,7 @@ fun SeriesOverviewContent(
                                             },
                                     interactionSource = interactionSource,
                                     cardHeight = 120.dp,
+                                    useSeriesForPrimary = false,
                                 )
                             }
                         }
@@ -294,8 +296,8 @@ fun SeriesOverviewContent(
                         },
                         modifier =
                             Modifier
-                                .fillMaxWidth()
-                                .padding(start = 16.dp),
+                                .padding(top = 4.dp)
+                                .fillMaxWidth(),
                     )
                 }
             }

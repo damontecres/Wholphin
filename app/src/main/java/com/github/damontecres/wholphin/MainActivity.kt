@@ -3,10 +3,12 @@ package com.github.damontecres.wholphin
 import android.content.Intent
 import android.content.res.Configuration
 import android.os.Bundle
+import android.view.KeyEvent
 import android.view.WindowManager
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -49,6 +51,7 @@ import com.github.damontecres.wholphin.services.ImageUrlService
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.PlaybackLifecycleObserver
 import com.github.damontecres.wholphin.services.RefreshRateService
+import com.github.damontecres.wholphin.services.ScreensaverService
 import com.github.damontecres.wholphin.services.ServerEventListener
 import com.github.damontecres.wholphin.services.SetupDestination
 import com.github.damontecres.wholphin.services.SetupNavigationManager
@@ -59,8 +62,10 @@ import com.github.damontecres.wholphin.services.hilt.AuthOkHttpClient
 import com.github.damontecres.wholphin.services.tvprovider.TvProviderSchedulerService
 import com.github.damontecres.wholphin.ui.CoilConfig
 import com.github.damontecres.wholphin.ui.LocalImageUrlService
+import com.github.damontecres.wholphin.ui.components.AppScreensaver
 import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.detail.series.SeasonEpisodeIds
+import com.github.damontecres.wholphin.ui.launchDefault
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.nav.ApplicationContent
 import com.github.damontecres.wholphin.ui.nav.Destination
@@ -74,8 +79,12 @@ import dagger.hilt.android.AndroidEntryPoint
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.serializer.toUUIDOrNull
@@ -123,6 +132,9 @@ class MainActivity : AppCompatActivity() {
     @Inject
     lateinit var suggestionsSchedulerService: SuggestionsSchedulerService
 
+    @Inject
+    lateinit var backdropService: BackdropService
+
     // Note: unused but injected to ensure it is created
     @Inject
     lateinit var serverEventListener: ServerEventListener
@@ -130,6 +142,9 @@ class MainActivity : AppCompatActivity() {
     // Note: unused but injected to ensure it is created
     @Inject
     lateinit var datePlayedInvalidationService: DatePlayedInvalidationService
+
+    @Inject
+    lateinit var screensaverService: ScreensaverService
 
     private var signInAuto = true
 
@@ -154,6 +169,20 @@ class MainActivity : AppCompatActivity() {
                 window?.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
             }
         }
+        screensaverService.keepScreenOn
+            .onEach { keepScreenOn ->
+                Timber.v("keepScreenOn: %s", keepScreenOn)
+                withContext(Dispatchers.Main) {
+                    if (keepScreenOn) {
+                        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                    } else {
+                        window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                    }
+                }
+            }.catch { ex ->
+                Timber.e(ex, "Error with keepScreenOn")
+            }.launchIn(lifecycleScope)
+
         viewModel.appStart()
         setContent {
             val appPreferences by userPreferencesDataStore.data.collectAsState(null)
@@ -247,6 +276,9 @@ class MainActivity : AppCompatActivity() {
                                             }
 
                                             is SetupDestination.AppContent -> {
+                                                LaunchedEffect(Unit) {
+                                                    backdropService.clearBackdrop()
+                                                }
                                                 val current = key.current
                                                 ProvideLocalClock {
                                                     if (UpdateChecker.ACTIVE && appPreferences.autoCheckForUpdates) {
@@ -311,6 +343,15 @@ class MainActivity : AppCompatActivity() {
                                     }
                                 },
                             )
+                            val screenSaverState by screensaverService.state.collectAsState()
+                            if (screenSaverState.enabled || screenSaverState.enabledTemp) {
+                                AnimatedVisibility(
+                                    screenSaverState.show,
+                                    Modifier.fillMaxSize(),
+                                ) {
+                                    AppScreensaver(appPreferences, Modifier.fillMaxSize())
+                                }
+                            }
                         }
                     }
                 }
@@ -318,10 +359,22 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        if (screensaverService.state.value.show) {
+            screensaverService.stop(false)
+            screensaverService.pulse()
+            return true
+        } else {
+            screensaverService.pulse()
+            return super.dispatchKeyEvent(event)
+        }
+    }
+
     override fun onResume() {
         super.onResume()
         Timber.d("onResume")
-        lifecycleScope.launchIO {
+        lifecycleScope.launchDefault {
+            screensaverService.pulse()
             appUpgradeHandler.run()
         }
     }
@@ -335,6 +388,7 @@ class MainActivity : AppCompatActivity() {
     override fun onStop() {
         super.onStop()
         Timber.d("onStop")
+        screensaverService.stop(true)
         tvProviderSchedulerService.launchOneTimeRefresh()
     }
 
@@ -409,7 +463,7 @@ class MainActivity : AppCompatActivity() {
         }
 
     fun changeDisplayMode(modeId: Int) {
-        lifecycleScope.launch(Dispatchers.Main + ExceptionHandler()) {
+        lifecycleScope.launch(Dispatchers.Main + ExceptionHandler(autoToast = true)) {
             val attrs = window.attributes
             if (attrs.preferredDisplayModeId != modeId) {
                 Timber.d("Switch preferredDisplayModeId to %s", modeId)

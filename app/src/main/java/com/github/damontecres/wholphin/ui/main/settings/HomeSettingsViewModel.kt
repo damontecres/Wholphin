@@ -18,6 +18,8 @@ import com.github.damontecres.wholphin.data.model.HomeRowConfig.NextUp
 import com.github.damontecres.wholphin.data.model.HomeRowConfig.RecentlyAdded
 import com.github.damontecres.wholphin.data.model.HomeRowConfig.RecentlyReleased
 import com.github.damontecres.wholphin.data.model.HomeRowConfig.Suggestions
+import com.github.damontecres.wholphin.data.model.HomeRowConfig.TvChannels
+import com.github.damontecres.wholphin.data.model.HomeRowConfig.TvPrograms
 import com.github.damontecres.wholphin.data.model.HomeRowViewOptions
 import com.github.damontecres.wholphin.data.model.SUPPORTED_HOME_PAGE_SETTINGS_VERSION
 import com.github.damontecres.wholphin.preferences.AppPreferences
@@ -112,7 +114,7 @@ class HomeSettingsViewModel
         }
 
         private suspend fun fetchRowData() {
-            val limit = 6
+            val limit = 8
             val semaphore = Semaphore(4)
             val rows =
                 serverRepository.currentUserDto.value?.let { userDto ->
@@ -131,6 +133,7 @@ class HomeSettingsViewModel
                                                 userDto = userDto,
                                                 libraries = state.libraries,
                                                 limit = limit,
+                                                isRefresh = false,
                                             )
                                         }
                                     }
@@ -217,7 +220,7 @@ class HomeSettingsViewModel
                         MetaRowType.NEXT_UP -> {
                             HomeRowConfigDisplay(
                                 id = id,
-                                title = context.getString(R.string.continue_watching),
+                                title = context.getString(R.string.next_up),
                                 config = NextUp(),
                             )
                         }
@@ -230,8 +233,11 @@ class HomeSettingsViewModel
                             )
                         }
 
-                        MetaRowType.FAVORITES -> {
-                            throw IllegalArgumentException("Should use addRow(BaseItemKind) instead")
+                        MetaRowType.FAVORITES,
+                        MetaRowType.COLLECTION,
+                        MetaRowType.PLAYLIST,
+                        -> {
+                            throw IllegalArgumentException("Should use a different addRow() instead")
                         }
 
                         MetaRowType.DISCOVER -> {
@@ -305,8 +311,8 @@ class HomeSettingsViewModel
                                 id = id,
                                 title = title,
                                 config =
-                                    HomeRowConfig.TvChannels(
-                                        viewOptions = HomeRowViewOptions.channelsDefault,
+                                    TvChannels(
+                                        viewOptions = HomeRowViewOptions.liveTvDefault,
                                     ),
                             )
                         }
@@ -316,7 +322,7 @@ class HomeSettingsViewModel
                             HomeRowConfigDisplay(
                                 id = id,
                                 title = title,
-                                config = HomeRowConfig.TvPrograms(),
+                                config = TvPrograms(),
                             )
                         }
 
@@ -327,6 +333,12 @@ class HomeSettingsViewModel
                                 title = title,
                                 config = RecentlyAdded(library.itemId),
                             )
+                        }
+
+                        LibraryRowType.COLLECTION,
+                        LibraryRowType.PLAYLIST,
+                        -> {
+                            throw IllegalArgumentException("Use different addRow")
                         }
                     }
                 updateState {
@@ -345,7 +357,11 @@ class HomeSettingsViewModel
                 val newRow =
                     HomeRowConfigDisplay(
                         id = id,
-                        title = context.getString(favoriteOptions[type]!!),
+                        title =
+                            context.getString(
+                                R.string.favorite_items,
+                                context.getString(favoriteOptions[type]!!),
+                            ),
                         config = HomeRowConfig.Favorite(type),
                     )
                 updateState {
@@ -356,6 +372,31 @@ class HomeSettingsViewModel
                 }
                 fetchRowData()
             }
+
+        fun addRow(
+            type: BaseItemKind,
+            parent: BaseItem,
+        ) = viewModelScope.launchIO {
+            Timber.v("Adding %s row for %s", type, parent.id)
+            val id = idCounter++
+            val newRow =
+                HomeRowConfigDisplay(
+                    id = id,
+                    title = parent.name ?: "",
+                    config =
+                        HomeRowConfig.ByParent(
+                            parentId = parent.id,
+                            recursive = true,
+                        ),
+                )
+            updateState {
+                it.copy(
+                    loading = LoadingState.Loading,
+                    rows = it.rows.toMutableList().apply { add(newRow) },
+                )
+            }
+            fetchRowData()
+        }
 
         fun updateViewOptions(
             rowId: Int,
@@ -444,6 +485,7 @@ class HomeSettingsViewModel
                                 result.rows.mapIndexed { index, config ->
                                     homeSettingsService.resolve(index, config)
                                 }
+                            idCounter = newRows.maxOfOrNull { it.id }?.plus(1) ?: 0
                             _state.update {
                                 it.copy(rows = newRows)
                             }
@@ -473,6 +515,7 @@ class HomeSettingsViewModel
                         val result = homeSettingsService.parseFromWebConfig(user.id)
                         if (result != null) {
                             Timber.v("Got web settings")
+                            idCounter = result.rows.maxOfOrNull { it.id }?.plus(1) ?: 0
                             _state.update {
                                 it.copy(rows = result.rows)
                             }
@@ -557,17 +600,17 @@ class HomeSettingsViewModel
             }
         }
 
-        fun resetToDefault() {
+        fun resetToDefault() =
             viewModelScope.launchIO {
                 val userId = serverRepository.currentUser.value?.id ?: return@launchIO
                 _state.update { it.copy(loading = LoadingState.Loading) }
                 val result = homeSettingsService.createDefault(userId)
+                idCounter = result.rows.maxOfOrNull { it.id }?.plus(1) ?: 0
                 _state.update {
-                    it.copy(rows = result.rows)
+                    it.copy(rows = result.rows, rowData = emptyList())
                 }
                 fetchRowData()
             }
-        }
 
         private suspend fun showSaveToast() =
             showToast(
@@ -655,11 +698,11 @@ class HomeSettingsViewModel
                                 }
 
                                 is HomeRowConfig.TvPrograms -> {
-                                    it.config.updateViewOptions(preset.tvLibrary)
+                                    it.config.updateViewOptions(preset.liveTv)
                                 }
 
                                 is HomeRowConfig.TvChannels -> {
-                                    it.config
+                                    it.config.updateViewOptions(preset.liveTv)
                                 }
                             }
                         it.copy(config = newConfig)
@@ -693,9 +736,9 @@ data class HomePageSettingsState(
         val EMPTY =
             HomePageSettingsState(
                 LoadingState.Pending,
-                listOf(),
-                listOf(),
-                listOf(),
+                emptyList(),
+                emptyList(),
+                emptyList(),
             )
     }
 }

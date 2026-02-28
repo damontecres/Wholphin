@@ -1,6 +1,6 @@
 name: "Bug Report"
 description: Report a bug
-title: "[BUG] - <title>"
+title: "<title>"
 labels: [
   "bug"
 ]
@@ -28,7 +28,7 @@ body:
     attributes:
       label: "App Version"
       description: What version of the app?
-      placeholder: "v0.3.0"
+      placeholder: "v0.5.1"
     validations:
       required: true
   - type: input
@@ -36,7 +36,7 @@ body:
     attributes:
       label: "Server Version"
       description: What version of the server?
-      placeholder: "10.11.3"
+      placeholder: "10.11.6"
     validations:
       required: true
   - type: input

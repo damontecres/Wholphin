@@ -2,11 +2,11 @@ package com.github.damontecres.wholphin.ui.components
 
 import android.content.Context
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.LocalBringIntoViewSpec
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -33,6 +33,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -41,6 +42,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.SavedStateHandle
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.viewModelScope
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
@@ -60,6 +62,8 @@ import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.FavoriteWatchManager
 import com.github.damontecres.wholphin.services.MediaReportService
 import com.github.damontecres.wholphin.services.NavigationManager
+import com.github.damontecres.wholphin.services.ThemeSongPlayer
+import com.github.damontecres.wholphin.services.UserPreferencesService
 import com.github.damontecres.wholphin.ui.AspectRatios
 import com.github.damontecres.wholphin.ui.RequestOrRestoreFocus
 import com.github.damontecres.wholphin.ui.SlimItemFields
@@ -81,6 +85,7 @@ import com.github.damontecres.wholphin.ui.setValueOnMain
 import com.github.damontecres.wholphin.ui.toServerString
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.ui.util.FilterUtils
+import com.github.damontecres.wholphin.ui.util.ScrollToTopBringIntoViewSpec
 import com.github.damontecres.wholphin.util.ApiRequestPager
 import com.github.damontecres.wholphin.util.DataLoadingState
 import com.github.damontecres.wholphin.util.ExceptionHandler
@@ -120,7 +125,9 @@ class CollectionFolderViewModel
         private val libraryDisplayInfoDao: LibraryDisplayInfoDao,
         private val favoriteWatchManager: FavoriteWatchManager,
         private val backdropService: BackdropService,
-        val navigationManager: NavigationManager,
+        private val navigationManager: NavigationManager,
+        private val themeSongPlayer: ThemeSongPlayer,
+        private val userPreferencesService: UserPreferencesService,
         val mediaReportService: MediaReportService,
         @Assisted itemId: String,
         @Assisted initialSortAndDirection: SortAndDirection?,
@@ -157,9 +164,10 @@ class CollectionFolderViewModel
             viewModelScope.launchIO {
                 super.itemId = itemId
                 try {
-                    itemId.toUUIDOrNull()?.let {
-                        fetchItem(it)
-                    }
+                    val item =
+                        itemId.toUUIDOrNull()?.let {
+                            fetchItem(it)
+                        }
 
                     val libraryDisplayInfo =
                         serverRepository.currentUser.value?.let { user ->
@@ -184,6 +192,8 @@ class CollectionFolderViewModel
                         }
 
                     loadResults(true, sortAndDirection, recursive, filterToUse, useSeriesForPrimary)
+                        .join()
+//                    onResumePage()
                 } catch (ex: Exception) {
                     Timber.e(ex, "Error during init")
                     loading.setValueOnMain(DataLoadingState.Error(ex))
@@ -254,34 +264,32 @@ class CollectionFolderViewModel
             recursive: Boolean,
             filter: GetItemsFilter,
             useSeriesForPrimary: Boolean,
-        ) {
-            viewModelScope.launch(Dispatchers.IO) {
-                withContext(Dispatchers.Main) {
-                    if (resetState) {
-                        loading.value = DataLoadingState.Loading
-                    }
-                    backgroundLoading.value = LoadingState.Loading
-                    this@CollectionFolderViewModel.sortAndDirection.value = sortAndDirection
-                    this@CollectionFolderViewModel.filter.value = filter
+        ) = viewModelScope.launch(Dispatchers.IO) {
+            withContext(Dispatchers.Main) {
+                if (resetState) {
+                    loading.value = DataLoadingState.Loading
                 }
-                try {
-                    val newPager =
-                        createPager(sortAndDirection, recursive, filter, useSeriesForPrimary).init()
-                    if (newPager.isNotEmpty()) newPager.getBlocking(0)
-                    withContext(Dispatchers.Main) {
-                        loading.value = DataLoadingState.Success(newPager)
-                        backgroundLoading.value = LoadingState.Success
-                    }
-                } catch (ex: Exception) {
-                    Timber.e(
-                        ex,
-                        "Exception while loading data: sort=%s, filter=%s",
-                        sortAndDirection,
-                        filter,
-                    )
-                    withContext(Dispatchers.Main) {
-                        loading.value = DataLoadingState.Error(ex)
-                    }
+                backgroundLoading.value = LoadingState.Loading
+                this@CollectionFolderViewModel.sortAndDirection.value = sortAndDirection
+                this@CollectionFolderViewModel.filter.value = filter
+            }
+            try {
+                val newPager =
+                    createPager(sortAndDirection, recursive, filter, useSeriesForPrimary).init()
+                if (newPager.isNotEmpty()) newPager.getBlocking(0)
+                withContext(Dispatchers.Main) {
+                    loading.value = DataLoadingState.Success(newPager)
+                    backgroundLoading.value = LoadingState.Success
+                }
+            } catch (ex: Exception) {
+                Timber.e(
+                    ex,
+                    "Exception while loading data: sort=%s, filter=%s",
+                    sortAndDirection,
+                    filter,
+                )
+                withContext(Dispatchers.Main) {
+                    loading.value = DataLoadingState.Error(ex)
                 }
             }
         }
@@ -346,7 +354,12 @@ class CollectionFolderViewModel
                 filter.applyTo(
                     GetItemsRequest(
                         parentId = item?.id,
-                        enableImageTypes = listOf(ImageType.PRIMARY, ImageType.THUMB),
+                        enableImageTypes =
+                            listOf(
+                                ImageType.PRIMARY,
+                                ImageType.THUMB,
+                                ImageType.BACKDROP,
+                            ),
                         includeItemTypes = includeItemTypes,
                         recursive = recursive,
                         excludeItemIds = item?.let { listOf(item.id) },
@@ -436,6 +449,30 @@ class CollectionFolderViewModel
         fun updateBackdrop(item: BaseItem) {
             viewModelScope.launchIO {
                 backdropService.submit(item)
+            }
+        }
+
+        fun navigateTo(destination: Destination) {
+            release()
+            navigationManager.navigateTo(destination)
+        }
+
+        fun release() {
+            themeSongPlayer.stop()
+        }
+
+        fun onResumePage() {
+            viewModelScope.launchIO {
+                item.value?.let {
+                    Timber.v("onResumePage: %s", loading.value!!::class)
+                    if (it.type == BaseItemKind.BOX_SET && loading.value !is DataLoadingState.Error) {
+                        val volume =
+                            userPreferencesService
+                                .getCurrent()
+                                .appPreferences.interfacePreferences.playThemeSongs
+                        themeSongPlayer.playThemeFor(it.id, volume)
+                    }
+                }
             }
         }
     }
@@ -543,6 +580,13 @@ fun CollectionFolderGrid(
                     ?: item?.data?.collectionType?.name
                     ?: stringResource(R.string.collection)
             Box(modifier = modifier) {
+                LifecycleResumeEffect(itemId) {
+                    viewModel.onResumePage()
+
+                    onPauseOrDispose {
+                        viewModel.release()
+                    }
+                }
                 CollectionFolderGridContent(
                     preferences = preferences,
                     initialPosition = viewModel.position,
@@ -593,7 +637,7 @@ fun CollectionFolderGrid(
                             } else {
                                 Destination.Playback(item)
                             }
-                        viewModel.navigationManager.navigateTo(destination)
+                        viewModel.navigateTo(destination)
                     },
                     onClickPlayAll = { shuffle ->
                         itemId.toUUIDOrNull()?.let {
@@ -617,7 +661,7 @@ fun CollectionFolderGrid(
                                         filter = filter,
                                     )
                                 }
-                            viewModel.navigationManager.navigateTo(destination)
+                            viewModel.navigateTo(destination)
                         }
                     },
                 )
@@ -655,7 +699,7 @@ fun CollectionFolderGrid(
                     favorite = item.favorite,
                     actions =
                         MoreDialogActions(
-                            navigateTo = { viewModel.navigationManager.navigateTo(it) },
+                            navigateTo = { viewModel.navigateTo(it) },
                             onClickWatch = { itemId, watched ->
                                 viewModel.setWatched(position, itemId, watched)
                             },
@@ -693,6 +737,7 @@ fun CollectionFolderGrid(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun CollectionFolderGridContent(
     preferences: UserPreferences,
@@ -755,8 +800,8 @@ fun CollectionFolderGridContent(
         ) {
             AnimatedVisibility(
                 showHeader || loadingState !is DataLoadingState.Success,
-                enter = slideInVertically() + fadeIn(),
-                exit = slideOutVertically() + fadeOut(),
+                enter = expandVertically(),
+                exit = shrinkVertically(),
             ) {
                 Column(
                     verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -837,14 +882,16 @@ fun CollectionFolderGridContent(
                     }
                 }
             }
+            val defaultBringIntoViewSpec = LocalBringIntoViewSpec.current
+            val density = LocalDensity.current
             AnimatedVisibility(viewOptions.showDetails) {
                 HomePageHeader(
                     item = focusedItem,
                     modifier =
                         Modifier
                             .fillMaxWidth()
-                            .height(140.dp)
-                            .padding(16.dp),
+                            .height(200.dp)
+                            .padding(top = 48.dp, bottom = 32.dp, start = 8.dp),
                 )
             }
             when (val state = loadingState) {
@@ -852,7 +899,7 @@ fun CollectionFolderGridContent(
                 DataLoadingState.Loading,
                 -> {
                     // This shouldn't happen, so just show placeholder
-                    Text("Loading")
+                    Text(stringResource(R.string.loading))
                 }
 
                 is DataLoadingState.Error -> {
@@ -890,6 +937,15 @@ fun CollectionFolderGridContent(
                         },
                         columns = viewOptions.columns,
                         spacing = viewOptions.spacing.dp,
+                        bringIntoViewSpec =
+                            remember(viewOptions) {
+                                val spacingPx = with(density) { viewOptions.spacing.dp.toPx() }
+                                if (viewOptions.showDetails) {
+                                    ScrollToTopBringIntoViewSpec(spacingPx)
+                                } else {
+                                    defaultBringIntoViewSpec
+                                }
+                            },
                     )
                     AnimatedVisibility(showViewOptions) {
                         ViewOptionsDialog(

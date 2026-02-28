@@ -2,6 +2,7 @@ package com.github.damontecres.wholphin.ui.detail.series
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusState
@@ -31,17 +32,17 @@ fun FocusedEpisodeHeader(
         verticalArrangement = Arrangement.spacedBy(8.dp),
         modifier = modifier,
     ) {
-        EpisodeName(dto, modifier = Modifier)
+        EpisodeName(dto, modifier = Modifier.padding(start = 8.dp))
 
         ep?.ui?.quickDetails?.let {
-            QuickDetails(it, ep.timeRemainingOrRuntime)
+            QuickDetails(it, ep.timeRemainingOrRuntime, Modifier.padding(start = 8.dp))
         }
 
         if (dto != null) {
             VideoStreamDetails(
                 chosenStreams = chosenStreams,
                 numberOfVersions = dto.mediaSourceCount ?: 0,
-                modifier = Modifier,
+                modifier = Modifier.padding(start = 8.dp),
             )
         }
         OverviewText(

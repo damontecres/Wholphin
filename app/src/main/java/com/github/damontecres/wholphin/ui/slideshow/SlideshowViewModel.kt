@@ -18,6 +18,7 @@ import com.github.damontecres.wholphin.data.model.VideoFilter
 import com.github.damontecres.wholphin.preferences.AppPreference
 import com.github.damontecres.wholphin.services.ImageUrlService
 import com.github.damontecres.wholphin.services.PlayerFactory
+import com.github.damontecres.wholphin.services.ScreensaverService
 import com.github.damontecres.wholphin.services.UserPreferencesService
 import com.github.damontecres.wholphin.ui.PhotoItemFields
 import com.github.damontecres.wholphin.ui.launchIO
@@ -67,6 +68,7 @@ class SlideshowViewModel
         private val serverRepository: ServerRepository,
         private val imageUrlService: ImageUrlService,
         private val userPreferencesService: UserPreferencesService,
+        private val screensaverService: ScreensaverService,
         @Assisted val slideshowSettings: Destination.Slideshow,
     ) : ViewModel(),
         Player.Listener {
@@ -110,6 +112,7 @@ class SlideshowViewModel
 
         init {
             addCloseable {
+                screensaverService.keepScreenOn(false)
                 player.removeListener(this@SlideshowViewModel)
                 player.release()
             }
@@ -282,6 +285,7 @@ class SlideshowViewModel
         private var slideshowJob: Job? = null
 
         fun startSlideshow() {
+            screensaverService.keepScreenOn(true)
             _slideshow.update {
                 SlideshowState(enabled = true, paused = false)
             }
@@ -295,6 +299,7 @@ class SlideshowViewModel
         }
 
         fun stopSlideshow() {
+            screensaverService.keepScreenOn(false)
             slideshowJob?.cancel()
             _slideshow.update {
                 SlideshowState(enabled = false, paused = false)

@@ -55,8 +55,8 @@ import javax.inject.Inject
 import kotlin.time.Duration.Companion.milliseconds
 
 // Top scrim configuration for text readability (clock, season tabs)
-private const val TOP_SCRIM_ALPHA = 0.55f
-private const val TOP_SCRIM_END_FRACTION = 0.25f // Fraction of backdrop image height
+const val TOP_SCRIM_ALPHA = 0.55f
+const val TOP_SCRIM_END_FRACTION = 0.25f // Fraction of backdrop image height
 
 @HiltViewModel
 class ApplicationContentViewModel
