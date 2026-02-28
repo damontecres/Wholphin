@@ -6,6 +6,8 @@ import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.gestures.scrollBy
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
@@ -19,7 +21,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
@@ -33,6 +35,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -56,8 +60,12 @@ import androidx.tv.material3.surfaceColorAtElevation
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.TrackIndex
 import com.github.damontecres.wholphin.ui.FontAwesome
+import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.playback.SimpleMediaStream
+import com.github.damontecres.wholphin.ui.playback.isDown
+import com.github.damontecres.wholphin.ui.playback.isUp
+import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -259,31 +267,65 @@ fun DialogPopupContent(
             style = MaterialTheme.typography.titleLarge,
             color = MaterialTheme.colorScheme.onSurface,
         )
+        val scope = rememberCoroutineScope()
+        val listState = rememberLazyListState()
+        val focusRequesters = remember { List(dialogItems.size) { FocusRequester() } }
         LazyColumn(
+            state = listState,
             modifier = Modifier,
         ) {
-            items(dialogItems) {
-                when (it) {
+            itemsIndexed(dialogItems) { index, item ->
+                when (item) {
                     is DialogItemDivider -> {
                         HorizontalDivider(Modifier.height(16.dp))
                     }
 
                     is DialogItem -> {
+                        val interactionSource = remember { MutableInteractionSource() }
+                        val focused by interactionSource.collectIsFocusedAsState()
                         ListItem(
-                            selected = it.selected,
-                            enabled = !waiting && it.enabled,
+                            selected = item.selected,
+                            enabled = !waiting && item.enabled,
                             onClick = {
                                 if (dismissOnClick) {
                                     onDismissRequest.invoke()
                                 }
-                                it.onClick.invoke()
+                                item.onClick.invoke()
                             },
-                            headlineContent = it.headlineContent,
-                            overlineContent = it.overlineContent,
-                            supportingContent = it.supportingContent,
-                            leadingContent = it.leadingContent,
-                            trailingContent = it.trailingContent,
-                            modifier = Modifier,
+                            headlineContent = item.headlineContent,
+                            overlineContent = item.overlineContent,
+                            supportingContent = item.supportingContent,
+                            leadingContent = item.leadingContent,
+                            trailingContent = item.trailingContent,
+                            interactionSource = interactionSource,
+                            modifier =
+                                Modifier
+                                    .focusRequester(focusRequesters[index])
+                                    .ifElse(
+                                        index == 0,
+                                        Modifier.onKeyEvent {
+                                            if (focused && isUp(it) && it.type == KeyEventType.KeyDown) {
+                                                scope.launch {
+                                                    listState.animateScrollToItem(dialogItems.lastIndex)
+                                                    focusRequesters[dialogItems.lastIndex].tryRequestFocus()
+                                                }
+                                                return@onKeyEvent true
+                                            }
+                                            false
+                                        },
+                                    ).ifElse(
+                                        index == dialogItems.lastIndex,
+                                        Modifier.onKeyEvent {
+                                            if (focused && isDown(it) && it.type == KeyEventType.KeyDown) {
+                                                scope.launch {
+                                                    listState.animateScrollToItem(0)
+                                                    focusRequesters[0].tryRequestFocus()
+                                                }
+                                                return@onKeyEvent true
+                                            }
+                                            false
+                                        },
+                                    ),
                         )
                     }
                 }
